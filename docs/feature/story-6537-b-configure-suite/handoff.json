@@ -151,11 +151,54 @@
 "stimulus": "F72",
 "user_result": "F74"
 }
+],
+"S5": [
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F79",
+"test": "docs/feature/story-6537-b-configure-suite/evidence/s5_compare_ids.py"
+},
+"expected": "F77",
+"stimulus": "F76",
+"user_result": "F78"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F83",
+"test": "docs/feature/story-6537-b-configure-suite/evidence/s5_compare_ids.py"
+},
+"expected": "F81",
+"stimulus": "F80",
+"user_result": "F82"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F87",
+"test": "docs/feature/story-6537-b-configure-suite/evidence/s5_compare_ids.py"
+},
+"expected": "F85",
+"stimulus": "F84",
+"user_result": "F86"
+}
 ]
 },
 "counters": {
 "E": 3,
-"F": 75,
+"F": 87,
 "P": 3,
 "S": 5
 },
@@ -410,7 +453,19 @@
 "F73": "No production or budget file changed, no guard-list line was added, only the Slice09 line is admitted to leave, and Slice12, Slice10 and Slice11 keep at least one host row each",
 "F74": "The wiring is still proven by a host row per route and nothing in production changed",
 "F75": "A production file edited alongside the tests, which the oracle lists as CHANGED",
+"F76": "A changed Teams default is saved with and without Save and update, and the connection has followers, owners and a Portfolio",
+"F77": "Only the Teams that follow the default are updated and only on Save and update; the log entry names the followers or says none follow; owners and Portfolios are not touched; each rule has a unit row that turns red when its production line is broken",
+"F78": "An admin who changes a default sees the followers take it, an owner keep its own value, and one log entry say who follows",
+"F79": "a save without Save and update still queued the followers, or an owner counted as a follower",
 "F8": "The Jira named-link and refresh-history rules of Slice02NamedLinkThatMatchedNothing and Slice01JiraDependenciesFromANamedLink are proven by unit tests of the Jira connector and the refresh log; their end-to-end rows stay",
+"F80": "A Portfolio and a Team read, show and save the Parent default of their own grain, a default is left out of a save, sent as empty, or named by a field added in the same save",
+"F81": "A grain never reads the other grain's default; an owner keeps its own value; a left-out default is kept; an empty one is cleared and logged; a new field becomes the Portfolios default only; each rule has a unit row that turns red under a deliberate break",
+"F82": "An admin sees the Portfolios default separate from the Teams default and a save from an older page never clears a default",
+"F83": "a Portfolio read the Teams default, or a save that left a default out cleared it",
+"F84": "The host classes of the slice, the guard list and the production tree are compared with the slice base",
+"F85": "Slice06 keeps its end-to-end row and its fingerprint row, Slice08 keeps its Portfolio end-to-end row; their guard lines stay; no production or budget file changes",
+"F86": "The wiring of the default change still has host rows proving it and the product behaves as before",
+"F87": "a guard line was added, a production file changed, or the last host row of a route was removed",
 "F9": "The Azure DevOps relation rules of Slice04AzureDevOpsDependenciesFromANamedRelationEnd and Slice03AzureDevOpsRelationTypeAccepted, for a portfolio and for a team, are proven by unit tests of the Azure DevOps connector and the settings that accept a relation type; their wire rows stay"
 },
 "product": {

@@ -342,6 +342,102 @@ A production file edited alongside the tests, which the oracle lists as CHANGED
 
 None.
 
+### S5
+
+##### Covers
+
+P1
+
+P2
+
+```text
+A changed Teams default is saved with and without Save and update, and the connection has followers, owners and a Portfolio
+```
+
+```text
+Only the Teams that follow the default are updated and only on Save and update; the log entry names the followers or says none follow; owners and Portfolios are not touched; each rule has a unit row that turns red when its production line is broken
+```
+
+```text
+An admin who changes a default sees the followers take it, an owner keep its own value, and one log entry say who follows
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s5\_compare\_ids\.py
+
+```text
+a save without Save and update still queued the followers, or an owner counted as a follower
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+P2
+
+```text
+A Portfolio and a Team read, show and save the Parent default of their own grain, a default is left out of a save, sent as empty, or named by a field added in the same save
+```
+
+```text
+A grain never reads the other grain's default; an owner keeps its own value; a left-out default is kept; an empty one is cleared and logged; a new field becomes the Portfolios default only; each rule has a unit row that turns red under a deliberate break
+```
+
+```text
+An admin sees the Portfolios default separate from the Teams default and a save from an older page never clears a default
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s5\_compare\_ids\.py
+
+```text
+a Portfolio read the Teams default, or a save that left a default out cleared it
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+The host classes of the slice, the guard list and the production tree are compared with the slice base
+```
+
+```text
+Slice06 keeps its end-to-end row and its fingerprint row, Slice08 keeps its Portfolio end-to-end row; their guard lines stay; no production or budget file changes
+```
+
+```text
+The wiring of the default change still has host rows proving it and the product behaves as before
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s5\_compare\_ids\.py
+
+```text
+a guard line was added, a production file changed, or the last host row of a route was removed
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows
