@@ -13,6 +13,7 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { differenceInCalendarDays, isSameDay } from "date-fns";
 import type { ReactNode } from "react";
 import { MemoryRouter, useSearchParams } from "react-router";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
@@ -1475,23 +1476,9 @@ describe("BaseMetricsView component", () => {
 
 		const startDate = new Date(startDateElement.textContent ?? "");
 		const endDate = new Date(endDateElement.textContent ?? "");
-		const today = new Date();
 
-		// Set both dates to midnight for comparison
-		today.setHours(0, 0, 0, 0);
-		endDate.setHours(0, 0, 0, 0);
-
-		const daysDifference = Math.floor(
-			(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24) + 1,
-		);
-
-		// Check that start date is roughly 60 days before end date (allowing for some hours difference)
-		expect(daysDifference).toBeCloseTo(60, 0);
-
-		// Check that end date is today
-		expect(endDate.getDate()).toBe(today.getDate());
-		expect(endDate.getMonth()).toBe(today.getMonth());
-		expect(endDate.getFullYear()).toBe(today.getFullYear());
+		expect(differenceInCalendarDays(endDate, startDate)).toBe(60);
+		expect(isSameDay(endDate, new Date())).toBe(true);
 	});
 
 	it("falls back to default date range of 30 days when not specified", async () => {
