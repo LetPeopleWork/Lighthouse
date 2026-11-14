@@ -88,6 +88,22 @@ describe("OutlierChip", () => {
 		vi.unstubAllGlobals();
 	});
 
+	it("does not reopen by itself once the widget has reloaded", () => {
+		phone(false);
+		const { rerender } = render(chip());
+		fireEvent.click(screen.getByTestId("outlier-chip"));
+		expect(screen.getByText("2 outliers", { selector: "h3" })).toBeTruthy();
+
+		rerender(chip({ disabled: true }));
+		rerender(chip({ disabled: false }));
+
+		expect(screen.queryByText("2 outliers", { selector: "h3" })).toBeNull();
+		expect(
+			screen.getByTestId("outlier-chip").getAttribute("aria-expanded"),
+		).toBe("false");
+		vi.unstubAllGlobals();
+	});
+
 	it("gives the loading chip no tooltip and the ready chip its accessible name", async () => {
 		phone(false);
 		const { rerender } = render(chip({ disabled: true }));
@@ -124,6 +140,20 @@ describe("OutlierPopoverContent", () => {
 		expect(screen.queryByText(/Above the axis/)).toBeNull();
 		rerender(content({ aboveTheAxis: "Above the axis: 95% at 33 days." }));
 		expect(screen.getByText("Above the axis: 95% at 33 days.")).toBeTruthy();
+	});
+
+	it("shows the line above the axis only when one is given, and not when it is empty", () => {
+		const paragraphs = () => document.querySelectorAll("p");
+		const { rerender } = render(content({ aboveTheAxis: null }));
+		const withoutTheLine = paragraphs().length;
+		expect(screen.queryByText(/Above the axis/)).toBeNull();
+		rerender(content({ aboveTheAxis: "" }));
+		expect(paragraphs()).toHaveLength(withoutTheLine);
+		rerender(content({ aboveTheAxis: "Above the axis: 85% at 20 days." }));
+		expect(paragraphs()).toHaveLength(withoutTheLine + 1);
+		expect(screen.getByText("Above the axis: 85% at 20 days.").tagName).toBe(
+			"P",
+		);
 	});
 
 	it("mentions further rows only when more than none are left out", () => {

@@ -1,7 +1,7 @@
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlineOutlined";
 import { Chip, Popover, Tooltip, useMediaQuery } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { OutlierWording } from "../../../utils/charts/outlierWording";
 import OutlierPopoverContent, {
 	type OutlierRow,
@@ -43,9 +43,8 @@ const OutlierChip: React.FC<OutlierChipProps> = ({
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 	const isPhone = useMediaQuery(PHONE_WIDTH_QUERY);
 
-	useEffect(() => {
-		if (disabled) setAnchor(null);
-	}, [disabled]);
+	// A popover left open when the widget reloads must not reopen by itself afterwards.
+	if (disabled && anchor !== null) setAnchor(null);
 
 	const open = anchor !== null && !disabled;
 	const accessibleName = disabled
