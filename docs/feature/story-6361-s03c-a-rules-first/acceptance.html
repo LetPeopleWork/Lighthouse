@@ -151,6 +151,346 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The shared rule for who may reach a module&#x27;s Application runs over a made-up module that is not Flow metrics, where only the API, the composition root and its nested type, a listed caller and a caller of the Domain reach it
+</code></pre>
+
+<pre><code>The rule finds exactly the listed caller and passes
+</code></pre>
+
+<pre><code>Another module can use the shared Application rule with its own namespaces and compliant code stays green
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs::AnotherModuleWhoseApplicationIsReachedOnlyByAllowedCallers_PassesTheSharedApplicationRule</p>
+
+<pre><code>A rule that ignores the outside pattern and reads every namespace, since no other type in the test project reaches the made-up Application
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The same made-up module gains an outside caller of its policies that is not on the list
+</code></pre>
+
+<pre><code>The failure names the newcomer as not on the list and says which policy it reaches, and asks to delete nothing
+</code></pre>
+
+<pre><code>A new caller of another module&#x27;s Application is caught and named
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs::AnOutsideCallerOfAnotherModulesApplicationNotOnTheList_FailsTheSharedApplicationRuleAndIsNamed</p>
+
+<pre><code>A rule whose failure names the newcomer but words the reached type differently than the dependent reaches target form
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The same made-up module gains an outside caller that reaches its Application only inside an async method
+</code></pre>
+
+<pre><code>The failure names that caller as not on the list and says which Application service it reaches
+</code></pre>
+
+<pre><code>A caller hidden in an async body is caught in another module too
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs::ACallerReachingAnotherModulesApplicationOnlyInsideAnAsyncMethod_FailsTheSharedApplicationRuleAndIsNamed</p>
+
+<pre><code>A rule that reads async bodies only for direct method calls and misses one reached through a field of the state machine
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The list of the made-up module still names a caller that no longer reaches its Application
+</code></pre>
+
+<pre><code>The failure names that listed caller for deletion and names no newcomer
+</code></pre>
+
+<pre><code>A list of allowed callers in another module can only shrink
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs::AListedCallerThatNoLongerReachesAnotherModulesApplication_FailsTheSharedApplicationRuleAndIsNamedForDeletion</p>
+
+<pre><code>A rule that names the stale entry but words the deletion hint differently from the shared list comparison
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The shared edge rule runs over a made-up Application of another module that reaches a neighbouring module only through the listed edge
+</code></pre>
+
+<pre><code>The rule finds exactly that edge and passes
+</code></pre>
+
+<pre><code>Another module can use the shared edge rule with its own namespaces and compliant code stays green
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs::AnotherModulesApplicationReachingItsNeighbourOnlyThroughAListedEdge_PassesTheSharedEdgeRule</p>
+
+<pre><code>A rule that ignores the Application parameter and reads every made-up Application, if it then only met edges that are listed
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A listed type of the made-up Application also reaches a second type of the neighbour
+</code></pre>
+
+<pre><code>The failure names only the new edge to the second type, and asks to delete nothing
+</code></pre>
+
+<pre><code>A new edge into a neighbour module is caught even from a type already on the list
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs::AnotherModulesListedTypeReachingASecondNeighbourType_FailsTheSharedEdgeRuleAndNamesTheNewEdge</p>
+
+<pre><code>A rule that names the new edge but would also accept a list keyed by type rather than by edge if every type had one edge
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up Application reaches the neighbour only inside an async method and its list is empty
+</code></pre>
+
+<pre><code>The failure names that edge as not on the list
+</code></pre>
+
+<pre><code>An edge hidden in an async body is caught in another module too
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs::AnotherModulesApplicationReachingItsNeighbourOnlyInsideAnAsyncMethod_FailsTheSharedEdgeRuleAndIsNamed</p>
+
+<pre><code>A rule that reports the async edge under the compiler-made state machine name only if the reader strips it the same way
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The list of the made-up Application still names an edge that is gone
+</code></pre>
+
+<pre><code>The failure names that edge for deletion and names no new edge
+</code></pre>
+
+<pre><code>A list of allowed edges in another module can only shrink
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs::AListedEdgeOfAnotherModulesApplicationThatIsGone_FailsTheSharedEdgeRuleAndIsNamedForDeletion</p>
+
+<pre><code>A rule that names the gone edge but words the deletion hint differently from the shared list comparison
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The compiled Flow metrics rule tests are read for what they call, and the test project for a second rules class or a copied Application rule
+</code></pre>
+
+<pre><code>Each of the four Flow metrics rule tests calls the shared module rules, the old Flow metrics rules class is gone, and no Flow metrics test keeps its own Application rule or edge verdict
+</code></pre>
+
+<pre><code>Flow metrics&#x27; rules catch their made-up offenders through the one shared class the next module uses
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs::TheFlowMetricsRuleTests_CallTheSharedModuleRules_AndKeepNoRulesClassOrApplicationRuleOfTheirOwn</p>
+
+<pre><code>A Flow metrics test that calls the shared class for one rule but keeps a private copy of a rule under a different name
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The Flow metrics rule tests run over the real code and their own made-up offenders after they call the shared rules
+</code></pre>
+
+<pre><code>Every Flow metrics rule test stays green: the real code passes and each made-up newcomer, async-only caller or edge, and stale entry still fails and is named
+</code></pre>
+
+<pre><code>Flow metrics keeps the same rules with the same meaning after the move to the shared class
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture::Lighthouse.Backend.Tests.Architecture.FlowMetrics</p>
+
+<pre><code>A crafter edit that changes a Flow metrics rule&#x27;s failure wording while keeping the offender name and the list format
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>With the random numbers pinned, ask the forecast service how many Work Items fit in thirty days, given a fixed fourteen-day throughput history
+</code></pre>
+
+<pre><code>The 50th, 70th, 85th and 95th percentiles read 53, 49, 44 and 42 out of 20 simulated runs
+</code></pre>
+
+<pre><code>A How Many forecast over the same history gives the same answer before and after the forecasting code moves
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs::How_many_Work_Items_fit_in_thirty_days_reads_the_same_percentiles_from_the_same_history</p>
+
+<pre><code>A change that alters only the forecast creation time or a value outside the four percentiles and the run count
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>With the draws pinned, ask the forecast service when twenty Work Items are done for a stored Team that finished an uneven fortnight of Work Items
+</code></pre>
+
+<pre><code>The 50th, 70th, 85th and 95th percentiles read 13, 16, 19 and 22 days out of 20 simulated runs
+</code></pre>
+
+<pre><code>A When forecast for the same Team and history gives the same answer before and after the forecasting code moves
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs::When_twenty_Work_Items_are_done_reads_the_same_percentiles_from_the_same_history</p>
+
+<pre><code>A change to the dependency or start-date parts of a forecast, which this Team with no dependencies does not reach
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the forecast-answers-compare command with a base revision and a candidate revision on the seeded demo data
+</code></pre>
+
+<pre><code>The command captures the forecast answers on both revisions with a fixed seed and reports them identical with exit 0, or names each difference and exits non-zero
+</code></pre>
+
+<pre><code>The maintainer and the examiner can see that the forecast answers on demo data did not change across the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/bin/forecast-answers-compare</p>
+
+<pre><code>A capture that leaves out one of the forecast endpoints, so a change there is never compared
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>
