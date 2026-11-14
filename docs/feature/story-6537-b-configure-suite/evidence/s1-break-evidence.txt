@@ -1,0 +1,457 @@
+=== A1 a save that removes a field in use is not refused
+Failed Commit_RemovingTheSecondFieldOfAPortfoliosList_IsRefusedNamingThePortfolio [37 ms]
+Failed Commit_RemovingTheThirdFieldOfAPortfoliosList_IsRefusedNamingThePortfolio [6 ms]
+Failed Commit_RemovingTheFirstFieldOfAPortfoliosList_IsRefusedNamingThePortfolio [6 ms]
+Failed Commit_RemovingTheSecondFieldOfATeamsList_IsRefusedNamingTheTeam [7 ms]
+Failed Commit_RemovingTheThirdFieldOfATeamsList_IsRefusedNamingTheTeam [6 ms]
+Failed Commit_RemovingTheFirstFieldOfATeamsList_IsRefusedNamingTheTeam [6 ms]
+Failed Commit_RemovingAFieldBothDefaultsName_IsRefusedInTheWordsThisInstanceUses [8 ms]
+Failed Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated [10 ms]
+Failed Commit_RemovingAFieldTeamsOnThisConnectionChoseThemselves_IsRefusedNamingThoseTeamsInTheOrderTheyWereCreated [6 ms]
+Failed Commit_RemovingTheFieldOnlyTheTeamsDefaultNames_IsRefusedNamingThatDefault [6 ms]
+Failed Commit_RemovingTheFieldThePortfoliosDefaultNames_IsRefusedNamingThatDefault [6 ms]
+Failed Commit_RemovingTheFieldThePortfoliosDependencyDefaultNames_IsRefusedInTheWordsThisInstanceUses [6 ms]
+Failed Commit_RemovingTheFieldThePortfoliosEstimationDefaultNames_IsRefusedInTheWordsThisInstanceUses [6 ms]
+Failed Commit_RemovingTheFieldThePortfoliosFeatureOwnerDefaultNames_IsRefusedInTheWordsThisInstanceUses [6 ms]
+Failed Commit_RemovingTheFieldThePortfoliosSizeEstimateDefaultNames_IsRefusedInTheWordsThisInstanceUses [6 ms]
+Failed!  - Failed:    15, Passed:   223, Skipped:     0, Total:   238, Duration: 415 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A2 a save that removes a field nobody uses is treated as refused
+Failed Commit_AParentSourcesDefaultOfAFieldThenTheOwnParent_IsLoggedByThatFieldAlone [75 ms]
+Failed Commit_AParentSourcesDefaultOfSeveralSources_IsLoggedAsTheListItIs [3 ms]
+Failed Commit_AParentSourcesDefaultOfTheOwnParentThenAField_NamesBoth [2 ms]
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [25 ms]
+Failed Commit_FieldAdded_PublishesTheTeamsAndPortfoliosOnThisConnectionOnly [10 ms]
+Failed Commit_FieldAddedButUpdatesLeftForLater_PublishesNothing [12 ms]
+Failed Commit_FieldAddedToAConnectionNoTeamOrPortfolioUses_PublishesNothing [1 ms]
+Failed Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter [5 ms]
+Failed Commit_OnlyTheNameChanged_PublishesNothing [2 ms]
+Failed Commit_PointingBothDefaultsAtFieldsAddedInThisSaveFails_SaysNeitherDefaultWasApplied [6 ms]
+Failed Commit_PointingTheDefaultAtAFieldAddedInThisSaveFails_FailsTheSaveSayingWhichDefaultWasNotApplied [2 ms]
+Failed Commit_PointingThePortfoliosDefaultAtAFieldAddedInThisSaveFails_SaysThePortfoliosDefaultWasNotApplied [2 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [3 ms]
+Failed Commit_RemovingAFieldATeamListedBeforeItWentBackToTheDefault_IsSaved [6 ms]
+Failed Commit_StartingUpdatesFailsAfterAStoredSave_ReportsSavedAndLogsOneError(LookingUpTheTeamsAndPortfolios) [2 ms]
+Failed Commit_StartingUpdatesFailsAfterAStoredSave_ReportsSavedAndLogsOneError(PublishingTheChange) [1 ms]
+Failed Commit_TheCopyIsStale_LetsTheConflictThroughAndLogsAndPublishesNothing [4 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [2 ms]
+Failed Commit_TheParentDefaultChangedButTheListsCouldNotBeReadBack_LogsThatTheCountIsNotKnown [2 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [2 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [4 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [2 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [2 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [2 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [2 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [2 ms]
+Failed Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories [2 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(Own,AddsAField,True,True,True) [6 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsDefault,True,True,False) [1 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,AddsAField,True,True,True) [1 ms]
+Failed Commit_WithoutAConcurrencyToken_SavesWithoutApplyingOne [2 ms]
+Failed Commit_WithTheClientsConcurrencyToken_AppliesItBeforeSaving [5 ms]
+Failed!  - Failed:    32, Passed:   206, Skipped:     0, Total:   238, Duration: 366 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A3 a Team's own Parent sources are not looked at
+Failed Commit_RemovingTheSecondFieldOfATeamsList_IsRefusedNamingTheTeam [22 ms]
+Failed Commit_RemovingTheThirdFieldOfATeamsList_IsRefusedNamingTheTeam [6 ms]
+Failed Commit_RemovingTheFirstFieldOfATeamsList_IsRefusedNamingTheTeam [5 ms]
+Failed Commit_RemovingAFieldTeamsOnThisConnectionChoseThemselves_IsRefusedNamingThoseTeamsInTheOrderTheyWereCreated [6 ms]
+Failed!  - Failed:     4, Passed:   234, Skipped:     0, Total:   238, Duration: 374 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A4 a Team's own Estimation field is not looked at
+Failed Commit_RemovingAFieldTeamsOnThisConnectionChoseThemselves_IsRefusedNamingThoseTeamsInTheOrderTheyWereCreated [21 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 352 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A5 a Portfolio's own Parent sources are not looked at
+Failed Commit_RemovingTheSecondFieldOfAPortfoliosList_IsRefusedNamingThePortfolio [31 ms]
+Failed Commit_RemovingTheThirdFieldOfAPortfoliosList_IsRefusedNamingThePortfolio [7 ms]
+Failed Commit_RemovingTheFirstFieldOfAPortfoliosList_IsRefusedNamingThePortfolio [6 ms]
+Failed Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated [8 ms]
+Failed!  - Failed:     4, Passed:   234, Skipped:     0, Total:   238, Duration: 408 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A6 a Portfolio's own Dependency Field is not looked at
+Failed Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated [21 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 359 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A7 a Portfolio's own Size Estimate Field is not looked at
+Failed Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated [22 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 366 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A8 a Portfolio's own Feature Owner Field is not looked at
+Failed Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated [21 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 363 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A9 a Portfolio's own Estimation Field is not looked at
+Failed Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated [22 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 346 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A10 the Teams' Parent sources default does not count as naming its fields
+Failed A_Parent_default_left_out_of_the_save_keeps_what_the_connection_holds [24 ms]
+Failed Commit_RemovingAFieldBothDefaultsName_IsRefusedInTheWordsThisInstanceUses [8 ms]
+Failed Commit_RemovingTheFieldOnlyTheTeamsDefaultNames_IsRefusedNamingThatDefault [9 ms]
+Failed!  - Failed:     3, Passed:   235, Skipped:     0, Total:   238, Duration: 375 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A11 a default is judged by the wrong field
+Failed A_field_a_default_and_an_owner_use_is_refused_naming_both [22 ms]
+Failed A_field_nobody_uses_is_not_in_use [2 ms]
+Failed A_field_only_a_default_names_is_refused_naming_only_the_default [< 1 ms]
+Failed A_field_only_an_owner_uses_is_refused_naming_only_the_owner [< 1 ms]
+Failed Each_removed_field_in_use_gets_its_own_sentence_and_one_that_is_not_gets_none [< 1 ms]
+Failed Several_defaults_and_two_owners_are_all_named [< 1 ms]
+Failed Commit_RemovingAFieldBothDefaultsName_IsRefusedInTheWordsThisInstanceUses [8 ms]
+Failed Commit_RemovingTheFieldOnlyTheTeamsDefaultNames_IsRefusedNamingThatDefault [9 ms]
+Failed Commit_RemovingTheFieldThePortfoliosDefaultNames_IsRefusedNamingThatDefault [6 ms]
+Failed Commit_RemovingTheFieldThePortfoliosDependencyDefaultNames_IsRefusedInTheWordsThisInstanceUses [6 ms]
+Failed Commit_RemovingTheFieldThePortfoliosEstimationDefaultNames_IsRefusedInTheWordsThisInstanceUses [6 ms]
+Failed Commit_RemovingTheFieldThePortfoliosFeatureOwnerDefaultNames_IsRefusedInTheWordsThisInstanceUses [6 ms]
+Failed Commit_RemovingTheFieldThePortfoliosSizeEstimateDefaultNames_IsRefusedInTheWordsThisInstanceUses [6 ms]
+Failed!  - Failed:    13, Passed:   225, Skipped:     0, Total:   238, Duration: 361 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A12 an owner is judged by the wrong field
+Failed A_field_a_default_and_an_owner_use_is_refused_naming_both [27 ms]
+Failed A_field_nobody_uses_is_not_in_use [3 ms]
+Failed A_field_only_a_default_names_is_refused_naming_only_the_default [9 ms]
+Failed A_field_only_an_owner_uses_is_refused_naming_only_the_owner [< 1 ms]
+Failed An_owner_naming_the_field_for_several_settings_is_named_once [< 1 ms]
+Failed Each_removed_field_in_use_gets_its_own_sentence_and_one_that_is_not_gets_none [< 1 ms]
+Failed Several_defaults_and_two_owners_are_all_named [< 1 ms]
+Failed Several_owners_are_listed_in_the_order_given [< 1 ms]
+Failed Commit_RemovingTheSecondFieldOfAPortfoliosList_IsRefusedNamingThePortfolio [11 ms]
+Failed Commit_RemovingTheThirdFieldOfAPortfoliosList_IsRefusedNamingThePortfolio [6 ms]
+Failed Commit_RemovingTheFirstFieldOfAPortfoliosList_IsRefusedNamingThePortfolio [5 ms]
+Failed Commit_RemovingAFieldATeamListedBeforeItWentBackToTheDefault_IsSaved [5 ms]
+Failed Commit_RemovingTheSecondFieldOfATeamsList_IsRefusedNamingTheTeam [6 ms]
+Failed Commit_RemovingTheThirdFieldOfATeamsList_IsRefusedNamingTheTeam [5 ms]
+Failed Commit_RemovingTheFirstFieldOfATeamsList_IsRefusedNamingTheTeam [5 ms]
+Failed Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated [7 ms]
+Failed Commit_RemovingAFieldTeamsOnThisConnectionChoseThemselves_IsRefusedNamingThoseTeamsInTheOrderTheyWereCreated [5 ms]
+Failed!  - Failed:    17, Passed:   221, Skipped:     0, Total:   238, Duration: 349 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A13 a field the connection lacks is accepted
+Failed A_list_whose_every_field_the_connection_holds_is_not_refused [28 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 348 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A14 a source this version does not know is accepted
+Failed An empty list [108 ms]
+Failed An entry naming no field [1 ms]
+Failed Six entries [< 1 ms]
+Failed The own parent twice [< 1 ms]
+Failed A field twice [< 1 ms]
+Failed A field nobody holds twice [5 ms]
+Failed A_list_whose_every_field_the_connection_holds_is_not_refused [2 ms]
+Failed A_portfolios_refusal_carries_its_own_code_and_noun [1 ms]
+Failed A_repeated_field_is_named_as_the_connection_the_save_moves_to_calls_it [< 1 ms]
+Failed A_source_this_version_does_not_know_is_refused_as_the_source_of_the_list [13 ms]
+Failed One_field_the_connection_lacks_refuses_a_list_whose_other_fields_it_holds [< 1 ms]
+Failed!  - Failed:    11, Passed:   227, Skipped:     0, Total:   238, Duration: 340 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A15 the refusal for a missing field carries another code
+Failed One_field_the_connection_lacks_refuses_a_list_whose_other_fields_it_holds [29 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 367 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== B1 a sent value equal to what the owner reads still counts as a choice
+Failed A_new_Team_copied_from_a_follower_without_its_source_follows_the_default [46 ms]
+Failed A_save_naming_no_source_only_echoes_the_list_the_owner_reads [19 ms]
+Failed A_new_Team_sent_another_field_without_a_source_owns_it [< 1 ms]
+Failed A_save_naming_no_source_owns_a_list_that_differs_from_the_one_the_owner_reads [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,null,WhatTheOwnerReads,ConnectionDefault,null) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,null,AnotherField,Own,7) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,null,AnotherField,Own,7) [< 1 ms]
+Failed A_follower_saved_back_without_its_source_echoing_the_default_keeps_following [1 ms]
+Failed A_follower_sent_another_field_without_a_source_owns_it [< 1 ms]
+Failed An_older_clients_round_trip_keeps_the_Dependency_Fields_source_and_value(True,False) [1 ms]
+Failed An_older_clients_round_trip_keeps_the_Feature_Owner_Fields_source_and_value(True,False) [< 1 ms]
+Failed An_older_clients_round_trip_keeps_the_Size_Estimate_Fields_source_and_value(True,False) [< 1 ms]
+Failed!  - Failed:    12, Passed:   226, Skipped:     0, Total:   238, Duration: 344 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== B2 a sent source is always read as Own
+Failed A_Dependency_Field_owner_sent_as_following_drops_its_own_field [15 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,ConnectionDefault,Nothing,ConnectionDefault,null) [34 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,ConnectionDefault,WhatTheOwnerReads,ConnectionDefault,null) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,ConnectionDefault,AnotherField,ConnectionDefault,null) [< 1 ms]
+Failed A_Feature_Owner_Field_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,ConnectionDefault,Nothing,ConnectionDefault,null) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,ConnectionDefault,WhatTheOwnerReads,ConnectionDefault,null) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,ConnectionDefault,AnotherField,ConnectionDefault,null) [< 1 ms]
+Failed A_save_following_the_Feature_Owner_Field_default_keeps_the_Portfolios_own_Owning_Team [2 ms]
+Failed A_Size_Estimate_Field_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed An_older_clients_round_trip_keeps_the_Dependency_Fields_source_and_value(True,True) [48 ms]
+Failed An_older_clients_round_trip_keeps_the_Feature_Owner_Fields_source_and_value(True,True) [< 1 ms]
+Failed An_older_clients_round_trip_keeps_the_Size_Estimate_Fields_source_and_value(True,True) [< 1 ms]
+Failed An_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed!  - Failed:    14, Passed:   224, Skipped:     0, Total:   238, Duration: 344 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== B3 a save without a source and without a new value takes the Own source
+Failed A_new_Team_copied_from_a_follower_without_its_source_follows_the_default [49 ms]
+Failed A_save_naming_no_source_only_echoes_the_list_the_owner_reads [21 ms]
+Failed A_follower_saved_back_without_its_source_echoing_the_default_keeps_following [1 ms]
+Failed A_follower_saved_back_without_its_source_or_a_field_keeps_following [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,null,Nothing,ConnectionDefault,null) [3 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,null,WhatTheOwnerReads,ConnectionDefault,null) [1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,null,Nothing,Own,5) [< 1 ms]
+Failed An_older_clients_round_trip_keeps_the_Dependency_Fields_source_and_value(True,False) [1 ms]
+Failed An_older_clients_round_trip_keeps_the_Feature_Owner_Fields_source_and_value(True,False) [< 1 ms]
+Failed An_older_clients_round_trip_keeps_the_Size_Estimate_Fields_source_and_value(True,False) [< 1 ms]
+Failed An_owner_saved_back_without_its_source_or_a_field_keeps_its_own_field [< 1 ms]
+Failed!  - Failed:    11, Passed:   227, Skipped:     0, Total:   238, Duration: 402 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== B4 an owner that takes Own holds the value it read before
+Failed A_new_Team_sent_another_field_without_a_source_owns_it [24 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,null,AnotherField,Own,7) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,null,AnotherField,Own,7) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,Own,Nothing,Own,null) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,Own,AnotherField,Own,7) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,Own,Nothing,Own,null) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,Own,AnotherField,Own,7) [< 1 ms]
+Failed A_Dependency_Field_follower_sent_None_as_its_own_chooses_None [58 ms]
+Failed A_Feature_Owner_Field_follower_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed A_follower_sent_another_field_without_a_source_owns_it [< 1 ms]
+Failed A_Size_Estimate_Field_follower_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [110 ms]
+Failed An_owner_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed!  - Failed:    13, Passed:   225, Skipped:     0, Total:   238, Duration: 350 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== B5 an owner that takes the default keeps what it held
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,ConnectionDefault,Nothing,ConnectionDefault,null) [19 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,ConnectionDefault,WhatTheOwnerReads,ConnectionDefault,null) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,ConnectionDefault,AnotherField,ConnectionDefault,null) [< 1 ms]
+Failed A_Dependency_Field_owner_sent_as_following_drops_its_own_field [1 ms]
+Failed A_Feature_Owner_Field_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed A_Size_Estimate_Field_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed An_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed!  - Failed:     7, Passed:   231, Skipped:     0, Total:   238, Duration: 349 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== B6 a set value is not counted as a choice
+Failed A_new_Team_sent_another_field_without_a_source_owns_it [23 ms]
+Failed A_save_naming_no_source_owns_a_list_that_differs_from_the_one_the_owner_reads [16 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,null,Nothing,ConnectionDefault,null) [3 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(ConnectionDefault,null,AnotherField,Own,7) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,null,Nothing,Own,5) [< 1 ms]
+Failed A_sent_setting_is_applied_as_sent_when_it_carries_a_source_and_only_as_a_new_value_when_it_does_not(Own,null,AnotherField,Own,7) [< 1 ms]
+Failed A_follower_saved_back_without_its_source_or_a_field_keeps_following [< 1 ms]
+Failed A_follower_sent_another_field_without_a_source_owns_it [< 1 ms]
+Failed An_owner_saved_back_without_its_source_or_a_field_keeps_its_own_field [< 1 ms]
+Failed!  - Failed:     9, Passed:   229, Skipped:     0, Total:   238, Duration: 364 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== C1 a follower reads its own field
+Failed A_new_Team_copied_from_a_follower_without_its_source_follows_the_default [50 ms]
+Failed A_new_Portfolio_follows_the_connections_Dependency_Field_default [11 ms]
+Failed A_new_Portfolio_follows_the_connections_Feature_Owner_Field_default [< 1 ms]
+Failed A_new_Portfolio_follows_the_connections_Portfolio_default [< 1 ms]
+Failed A_new_Portfolio_follows_the_connections_Size_Estimate_Field_default [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Dependency_Field_owner_sent_as_following_drops_its_own_field [1 ms]
+Failed A_Feature_Owner_Field_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed A_follower_saved_back_without_its_source_echoing_the_default_keeps_following [11 ms]
+Failed A_follower_saved_back_without_its_source_or_a_field_keeps_following [< 1 ms]
+Failed A_save_following_the_Feature_Owner_Field_default_keeps_the_Portfolios_own_Owning_Team [3 ms]
+Failed A_Size_Estimate_Field_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed!  - Failed:    21, Passed:   217, Skipped:     0, Total:   238, Duration: 355 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== C2 an owner reads the connection's default
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(Own,null,9,null) [24 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Dependency_Field_follower_sent_None_as_its_own_chooses_None [78 ms]
+Failed A_Feature_Owner_Field_follower_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed A_Size_Estimate_Field_follower_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [122 ms]
+Failed EverySettingOfATeamSurvivesBeingSavedAndReadBack [5 ms]
+Failed An_owner_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed!  - Failed:    21, Passed:   217, Skipped:     0, Total:   238, Duration: 362 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== C3 an owner that owns its value counts as following
+Failed A_changed_old_field_beside_the_list_the_client_read_edits_the_field_and_not_the_list [37 ms]
+Failed A_save_naming_no_source_only_echoes_the_list_the_owner_reads [< 1 ms]
+Failed A_save_naming_no_source_owns_a_list_that_differs_from_the_one_the_owner_reads [< 1 ms]
+Failed An_old_field_beside_a_new_list_has_nothing_left_to_say [< 1 ms]
+Failed A_Team_that_chose_None_hangs_its_item_under_the_trackers_own_parent_whatever_the_default_names [4 ms]
+Failed A_Team_that_followed_the_default_hangs_its_item_under_the_trackers_own_parent_once_the_default_is_cleared [< 1 ms]
+Failed A_Team_that_follows_the_default_hangs_its_item_under_the_field_the_default_names [< 1 ms]
+Failed A_Team_with_its_own_field_hangs_its_item_under_that_field_whatever_the_default_names [< 1 ms]
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [108 ms]
+Failed EverySettingOfATeamSurvivesBeingSavedAndReadBack [10 ms]
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [7 ms]
+Failed FollowerGroupsByConnection_CountsEachOwnerOnceUnderTheDefaultsItFollows [31 ms]
+Failed FollowersByConnection_ConnectionWhoseTeamsAllOwnTheirValue_IsNotListed [2 ms]
+Failed FollowersByConnection_CountsOnlyTheOwnersThatFollowTheirParentOverrideDefault [3 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [5 ms]
+Failed Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated [7 ms]
+Failed Commit_RemovingAFieldTeamsOnThisConnectionChoseThemselves_IsRefusedNamingThoseTeamsInTheOrderTheyWereCreated [5 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [4 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [6 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [4 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [3 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(Own,ChangesTheTeamsDefault,True,False,False) [5 ms]
+Failed!  - Failed:    26, Passed:   212, Skipped:     0, Total:   238, Duration: 346 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== C4 a Team never follows the Parent default
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [15 ms]
+Failed FollowerGroupsByConnection_CountsEachOwnerOnceUnderTheDefaultsItFollows [51 ms]
+Failed FollowersByConnection_CountsOnlyTheOwnersThatFollowTheirParentOverrideDefault [3 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [4 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [3 ms]
+Failed!  - Failed:    10, Passed:   228, Skipped:     0, Total:   238, Duration: 368 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== C5 a new Team does not follow the Parent default
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [17 ms]
+Failed FollowerGroupsByConnection_CountsEachOwnerOnceUnderTheDefaultsItFollows [53 ms]
+Failed FollowersByConnection_ConnectionWhoseTeamsAllOwnTheirValue_IsNotListed [2 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [4 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [3 ms]
+Failed!  - Failed:    11, Passed:   227, Skipped:     0, Total:   238, Duration: 370 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== D1 Jira and Azure DevOps offer only what a CSV file offers
+Failed AzureDevOps × ParentOverrideForTeams [39 ms]
+Failed Jira × ParentOverrideForTeams [< 1 ms]
+Failed!  - Failed:     2, Passed:   236, Skipped:     0, Total:   238, Duration: 332 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== D2 a CSV file offers every default
+Failed Csv × ParentOverrideForTeams [43 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 404 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== D3 a tracker with no defaults offers what a CSV file offers
+Failed Linear × EstimationForTeams [32 ms]
+Failed ServiceNow × EstimationForTeams [< 1 ms]
+Failed!  - Failed:     2, Passed:   236, Skipped:     0, Total:   238, Duration: 351 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== D4 a CSV file no longer offers Feature Owner
+Failed Csv × FeatureOwnerFieldForPortfolios [45 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 357 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E1 a save that changes no default still writes a log entry
+Failed Commit_AParentSourcesDefaultOfAFieldThenTheOwnParent_IsLoggedByThatFieldAlone [93 ms]
+Failed Commit_AParentSourcesDefaultOfSeveralSources_IsLoggedAsTheListItIs [3 ms]
+Failed Commit_AParentSourcesDefaultOfTheOwnParentThenAField_NamesBoth [3 ms]
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [20 ms]
+Failed Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter [6 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [5 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [4 ms]
+Failed Commit_TheParentDefaultChangedButTheListsCouldNotBeReadBack_LogsThatTheCountIsNotKnown [2 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [5 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsDefaultUnchanged_LogsNothing [9 ms]
+Failed Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories [3 ms]
+Failed!  - Failed:    17, Passed:   221, Skipped:     0, Total:   238, Duration: 678 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E2 a default nobody follows says one Team follows it
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [18 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 361 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E3 a cleared default does not name the field it was
+Failed Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter [25 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed!  - Failed:     2, Passed:   236, Skipped:     0, Total:   238, Duration: 373 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E4 a default naming a field added in the same save is not pointed at it
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [21 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 439 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E5 a default left out of a save is cleared
+Failed A_Parent_default_left_out_of_the_save_keeps_what_the_connection_holds [24 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 342 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E6 a default left out of a save drops the entries of its list
+Failed A_connection_is_read_with_the_list_of_each_grain [119 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 651 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== G1 a Team that owns its field reads the list of a follower
+Failed A_changed_old_field_beside_the_list_the_client_read_edits_the_field_and_not_the_list [47 ms]
+Failed A_save_naming_no_source_only_echoes_the_list_the_owner_reads [< 1 ms]
+Failed A_save_naming_no_source_owns_a_list_that_differs_from_the_one_the_owner_reads [< 1 ms]
+Failed An_old_field_beside_a_new_list_has_nothing_left_to_say [< 1 ms]
+Failed A_Team_that_chose_None_hangs_its_item_under_the_trackers_own_parent_whatever_the_default_names [4 ms]
+Failed A_Team_with_its_own_field_hangs_its_item_under_that_field_whatever_the_default_names [< 1 ms]
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [108 ms]
+Failed EverySettingOfATeamSurvivesBeingSavedAndReadBack [10 ms]
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [9 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [5 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [4 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [4 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [3 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(Own,ChangesTheTeamsDefault,True,False,False) [5 ms]
+Failed!  - Failed:    17, Passed:   221, Skipped:     0, Total:   238, Duration: 373 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== G2 a Team that follows the default never reads it
+Failed A_Team_that_followed_the_default_hangs_its_item_under_the_trackers_own_parent_once_the_default_is_cleared [42 ms]
+Failed A_Team_that_follows_the_default_hangs_its_item_under_the_field_the_default_names [< 1 ms]
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [8 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [5 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [5 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [2 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [2 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsDefault,True,True,False) [5 ms]
+Failed!  - Failed:    12, Passed:   226, Skipped:     0, Total:   238, Duration: 386 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== G3 a Team follows the default of the Portfolios
+Failed A_Team_that_followed_the_default_hangs_its_item_under_the_trackers_own_parent_once_the_default_is_cleared [34 ms]
+Failed A_Team_that_follows_the_default_hangs_its_item_under_the_field_the_default_names [< 1 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [5 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [3 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [2 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsDefault,True,True,False) [2 ms]
+Failed!  - Failed:    11, Passed:   227, Skipped:     0, Total:   238, Duration: 378 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== G4 a Team that chose None still reads a field
+Failed A_Team_that_chose_None_hangs_its_item_under_the_trackers_own_parent_whatever_the_default_names [42 ms]
+Failed!  - Failed:     1, Passed:   237, Skipped:     0, Total:   238, Duration: 366 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== G5 an item is hung under nothing
+Failed A_Team_that_chose_None_hangs_its_item_under_the_trackers_own_parent_whatever_the_default_names [49 ms]
+Failed A_Team_that_followed_the_default_hangs_its_item_under_the_trackers_own_parent_once_the_default_is_cleared [2 ms]
+Failed A_Team_that_follows_a_default_nobody_set_hangs_its_item_under_the_trackers_own_parent [< 1 ms]
+Failed A_Team_that_follows_the_default_hangs_its_item_under_the_field_the_default_names [< 1 ms]
+Failed A_Team_with_its_own_field_hangs_its_item_under_that_field_whatever_the_default_names [< 1 ms]
+Failed!  - Failed:     5, Passed:   233, Skipped:     0, Total:   238, Duration: 408 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F1 a list the save sends is not taken as the owner's own
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [126 ms]
+Failed EverySettingOfATeamSurvivesBeingSavedAndReadBack [4 ms]
+Failed!  - Failed:     2, Passed:   236, Skipped:     0, Total:   238, Duration: 355 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F2 a list the save sends is never recognised
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [167 ms]
+Failed EverySettingOfATeamSurvivesBeingSavedAndReadBack [12 ms]
+Failed!  - Failed:     2, Passed:   236, Skipped:     0, Total:   238, Duration: 512 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F3 a save that sends its own list also takes the old field
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [192 ms]
+Failed EverySettingOfATeamSurvivesBeingSavedAndReadBack [7 ms]
+Failed!  - Failed:     2, Passed:   236, Skipped:     0, Total:   238, Duration: 514 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F4 a save without its own list ignores the old field and source
+Failed A_new_Team_sent_another_field_without_a_source_owns_it [29 ms]
+Failed A_new_Team_sent_its_default_as_its_own_owns_it [< 1 ms]
+Failed A_follower_sent_another_field_without_a_source_owns_it [< 1 ms]
+Failed An_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed An_owner_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed!  - Failed:     5, Passed:   233, Skipped:     0, Total:   238, Duration: 373 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F5 the old field beside a list is judged the wrong way round
+Failed A_changed_old_field_beside_the_list_the_client_read_edits_the_field_and_not_the_list [51 ms]
+Failed An_old_field_beside_a_new_list_has_nothing_left_to_say [< 1 ms]
+Failed!  - Failed:     2, Passed:   236, Skipped:     0, Total:   238, Duration: 378 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F6 a save that names no source always chooses to own
+Failed A_save_choosing_to_own_the_list_it_read_keeps_it_when_it_names_no_old_field [29 ms]
+Failed A_save_naming_no_source_only_echoes_the_list_the_owner_reads [13 ms]
+Failed A_save_naming_no_source_owns_a_list_that_differs_from_the_one_the_owner_reads [< 1 ms]
+Failed An empty list [77 ms]
+Failed An entry naming no field [1 ms]
+Failed Six entries [< 1 ms]
+Failed The own parent twice [< 1 ms]
+Failed A field twice [< 1 ms]
+Failed A field nobody holds twice [< 1 ms]
+Failed A_portfolios_refusal_carries_its_own_code_and_noun [2 ms]
+Failed A_repeated_field_is_named_as_the_connection_the_save_moves_to_calls_it [< 1 ms]
+Failed One_field_the_connection_lacks_refuses_a_list_whose_other_fields_it_holds [< 1 ms]
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [109 ms]
+Failed EverySettingOfATeamSurvivesBeingSavedAndReadBack [6 ms]
+Failed!  - Failed:    14, Passed:   224, Skipped:     0, Total:   238, Duration: 363 ms - Lighthouse.Backend.Tests.dll (net10.0)

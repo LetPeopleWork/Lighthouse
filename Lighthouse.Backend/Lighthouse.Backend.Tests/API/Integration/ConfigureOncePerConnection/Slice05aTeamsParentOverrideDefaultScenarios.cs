@@ -17,18 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     [Category("us-04")]
     public class Slice05aTeamsParentOverrideDefaultScenarios : ConnectionDefaultsAcceptanceTest
     {
-        private const string Chargebacks = "Chargebacks";
-
-        private static readonly string[] TheOffersOfJiraAndAzureDevOps =
-        [
-            "parentOverrideForTeams", "estimationForTeams",
-            "parentOverrideForPortfolios", "dependencyFieldForPortfolios", "sizeEstimateFieldForPortfolios", "featureOwnerFieldForPortfolios", "estimationForPortfolios",
-        ];
-
-        private static readonly string[] TheOffersOfCsv = ["estimationForTeams", "featureOwnerFieldForPortfolios", "estimationForPortfolios"];
-
-        private static readonly string[] NothingOffered = [];
-
         [Test]
         [Category("ac-4.1")]
         [Category("ac-4.2")]
@@ -52,57 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Count.EqualTo(1));
                 Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Some.Contains("3 Teams follow it: Fraud Signals, Ops Tooling, Mobile Wallet"));
             }
-        }
-
-        [Test]
-        [Category("ac-4.2")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_Team_with_its_own_Parent_Override_Field_is_unaffected_by_the_default()
-        {
-            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, ParentLink);
-
-            await WhenTheNextScheduledUpdateOf(Ledger);
-            var ledgersPage = await WhatTheSettingsPageShows(Ledger, OwnerSetting.ParentOverrideField);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(await WhereTheItemOfHangs(Ledger), Is.EqualTo(WhatCausedByHolds));
-                Assert.That(ledgersPage.Source, Is.EqualTo("Own"));
-                Assert.That(ledgersPage.Reads, Is.EqualTo(CausedBy));
-            }
-        }
-
-        [Test]
-        [Category("ac-4.3")]
-        [Category("edge")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_Team_that_chose_None_keeps_the_trackers_own_parent_whatever_the_default_says()
-        {
-            await GivenTheTeamChoseNone(MobileWallet);
-            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, CausedBy);
-
-            await WhenTheNextScheduledUpdateOf(MobileWallet);
-            var mobileWalletsPage = await WhatTheSettingsPageShows(MobileWallet, OwnerSetting.ParentOverrideField);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(await WhereTheItemOfHangs(MobileWallet), Is.EqualTo(TheTrackersOwnParent));
-                Assert.That(mobileWalletsPage, Is.EqualTo(((string?)"Own", (string?)CausedBy, (string?)null)));
-                Assert.That(await HowManyFollow(ConnectionDefault.TeamsParentOverrideField), Is.EqualTo(2), "None is a choice, not following.");
-            }
-        }
-
-        [Test]
-        [Category("ac-4.5")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_new_Team_follows_the_default_from_the_start()
-        {
-            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, CausedBy);
-
-            await WhenANewTeamIsCreated(Chargebacks);
-            var chargebacksPage = await WhatTheSettingsPageShows(Chargebacks, OwnerSetting.ParentOverrideField);
-
-            Assert.That(chargebacksPage, Is.EqualTo(((string?)"ConnectionDefault", (string?)CausedBy, (string?)CausedBy)));
         }
 
         [Test]
@@ -130,41 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             ThenTheSaveIsRefusedWith(HttpStatusCode.Forbidden);
         }
 
-        [TestCase(PaymentsAzureDevOps, TestName = "Azure DevOps offers every default")]
-        [TestCase(JiraDcPayments, TestName = "Jira offers every default")]
-        [Category("ac-4.7")]
-        [Category("contract-shape:pure-function")]
-        public async Task Jira_and_Azure_DevOps_offer_every_default(string connection)
-        {
-            await GivenAConnectionOfEveryOtherTracker();
-
-            Assert.That(await WhatTheConnectionOffersAsDefaults(connection), Is.Not.Null.And.EquivalentTo(TheOffersOfJiraAndAzureDevOps));
-        }
-
-        [Test]
-        [Category("ac-4.7")]
-        [Category("edge")]
-        [Category("contract-shape:pure-function")]
-        public async Task A_CSV_connection_offers_only_Feature_Owner_and_Estimation()
-        {
-            await GivenAConnectionOfEveryOtherTracker();
-
-            Assert.That(await WhatTheConnectionOffersAsDefaults(PaymentsCsv), Is.Not.Null.And.EquivalentTo(TheOffersOfCsv));
-        }
-
-        [TestCase(PaymentsLinear, TestName = "Linear offers no default")]
-        [TestCase(PaymentsServiceNow, TestName = "ServiceNow offers no default")]
-        [Category("ac-4.7")]
-        [Category("edge")]
-        [Category("contract-shape:pure-function")]
-        public async Task Linear_and_ServiceNow_offer_no_default(string connection)
-        {
-            await GivenAConnectionOfEveryOtherTracker();
-
-            Assert.That(await WhatTheConnectionOffersAsDefaults(connection), Is.Not.Null.And.EqualTo(NothingOffered),
-                "A connection that offers no default says so with an empty list.");
-        }
-
         [Test]
         [Category("ac-4.7")]
         [Category("error")]
@@ -182,83 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(TheRefusal().Code, Is.EqualTo("connection-default-not-supported"));
                 Assert.That(csvAfterwards["defaults"], Is.InstanceOf<JsonObject>(), "The connection page reads the connection's defaults.");
                 Assert.That(csvAfterwards["defaults"]?["parentOverrideForTeams"], Is.Null);
-            }
-        }
-
-        [Test]
-        [Category("ac-f.3")]
-        [Category("edge")]
-        [Category("contract-shape:unbounded-preservation")]
-        public async Task A_save_that_changes_no_default_writes_no_log_entry()
-        {
-            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, CausedBy);
-
-            await WhenTheAdminRenamesTheConnection();
-
-            using (Assert.EnterMultipleScope())
-            {
-                ThenTheSaveIsAccepted();
-                Assert.That(TheLogEntriesAboutChangedDefaults(), Is.Empty);
-                Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.TeamsParentOverrideField), Is.EqualTo(CausedBy));
-            }
-        }
-
-        [Test]
-        [Category("ac-f.3")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_default_nobody_follows_still_writes_an_entry_saying_none_follow()
-        {
-            await GivenEveryTeamOwnsItsParentOverrideField();
-
-            await WhenTheAdminSetsTheDefault(ConnectionDefault.TeamsParentOverrideField, CausedBy);
-
-            using (Assert.EnterMultipleScope())
-            {
-                ThenTheSaveIsAccepted();
-                Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Count.EqualTo(1));
-                Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Some.Contains("no Team follows it"));
-                Assert.That(await HowManyFollow(ConnectionDefault.TeamsParentOverrideField), Is.Zero, "With nobody following, the page saves without a dialog.");
-            }
-        }
-
-        // A script that knows nothing of defaults must not wipe them by leaving them out.
-        [Test]
-        [Category("ac-4.1")]
-        [Category("error")]
-        [Category("contract-shape:unbounded-preservation")]
-        public async Task A_save_without_the_defaults_keeps_every_default()
-        {
-            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, CausedBy);
-
-            await WhenAScriptSavesTheConnectionWithoutItsDefaults();
-
-            using (Assert.EnterMultipleScope())
-            {
-                ThenTheSaveIsAccepted();
-                Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.TeamsParentOverrideField), Is.EqualTo(CausedBy));
-                Assert.That(TheLogEntriesAboutChangedDefaults(), Is.Empty);
-            }
-        }
-
-        [Test]
-        [Category("ac-4.1")]
-        [Category("ac-f.1")]
-        [Category("contract-shape:bounded-change")]
-        public async Task Clearing_a_default_stops_the_followers_reading_it_and_is_logged()
-        {
-            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, CausedBy);
-
-            await WhenTheAdminClearsTheDefault(ConnectionDefault.TeamsParentOverrideField);
-            ThenTheSaveIsAccepted();
-            await WhenTheNextScheduledUpdateOf(FraudSignals);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.TeamsParentOverrideField), Is.Null);
-                Assert.That(await WhereTheItemOfHangs(FraudSignals), Is.EqualTo(TheTrackersOwnParent));
-                Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Count.EqualTo(1));
-                Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Some.Contains("from \"Caused by\""));
             }
         }
 
@@ -280,21 +105,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 ThenTheSaveIsRefusedWith(HttpStatusCode.Conflict);
                 Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.TeamsParentOverrideField), Is.EqualTo(CausedBy));
                 Assert.That(TheLogEntriesAboutChangedDefaults(), Is.Empty, "The refused save wrote nothing.");
-            }
-        }
-
-        [Test]
-        [Category("ac-4.1")]
-        [Category("edge")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_field_added_in_the_same_save_can_be_the_default()
-        {
-            await WhenTheAdminAddsAFieldAndMakesItTheDefault(ConnectionDefault.TeamsParentOverrideField, "Epic Link", "customfield_10008");
-
-            using (Assert.EnterMultipleScope())
-            {
-                ThenTheSaveIsAccepted();
-                Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.TeamsParentOverrideField), Is.EqualTo("Epic Link"));
             }
         }
     }

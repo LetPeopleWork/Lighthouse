@@ -1,0 +1,353 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F29",
+"test": "docs/feature/story-6537-b-configure-suite/evidence/s1_compare_ids.py"
+},
+"expected": "F27",
+"stimulus": "F26",
+"user_result": "F28"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F40",
+"test": "docs/feature/story-6537-b-configure-suite/evidence/s1_breaks.py"
+},
+"expected": "F39",
+"stimulus": "F38",
+"user_result": "F32"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F37",
+"test": "docs/feature/story-6537-b-configure-suite/evidence/s1_compare_ids.py"
+},
+"expected": "F35",
+"stimulus": "F34",
+"user_result": "F36"
+}
+]
+},
+"counters": {
+"E": 3,
+"F": 40,
+"P": 3,
+"S": 5
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "docs/feature/story-6537-b-configure-suite/evidence/s1_compare_ids.py",
+"public_oracle": {
+"expected": "F13",
+"falsifier": "F14",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F12"
+},
+"supports": [
+"docs/feature/story-6537-b-configure-suite/evidence/s1-expected-ids.txt"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs"
+}
+],
+"verification": [
+"python3 docs/feature/story-6537-b-configure-suite/evidence/s1_compare_ids.py"
+]
+},
+"S2": {
+"oracle": "docs/feature/story-6537-b-configure-suite/evidence/s2_compare_ids.py",
+"public_oracle": {
+"expected": "F16",
+"falsifier": "F14",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F15"
+},
+"supports": [
+"docs/feature/story-6537-b-configure-suite/evidence/s2-expected-ids.txt"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice02NamedLinkThatMatchedNothingScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice01JiraDependenciesFromANamedLinkScenarios.cs"
+}
+],
+"verification": [
+"python3 docs/feature/story-6537-b-configure-suite/evidence/s2_compare_ids.py"
+]
+},
+"S3": {
+"oracle": "docs/feature/story-6537-b-configure-suite/evidence/s3_compare_ids.py",
+"public_oracle": {
+"expected": "F18",
+"falsifier": "F14",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F17"
+},
+"supports": [
+"docs/feature/story-6537-b-configure-suite/evidence/s3-expected-ids.txt"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice03AzureDevOpsRelationTypeAcceptedScenarios.cs"
+}
+],
+"verification": [
+"python3 docs/feature/story-6537-b-configure-suite/evidence/s3_compare_ids.py"
+]
+},
+"S4": {
+"oracle": "docs/feature/story-6537-b-configure-suite/evidence/s4_compare_ids.py",
+"public_oracle": {
+"expected": "F20",
+"falsifier": "F14",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F19"
+},
+"supports": [
+"docs/feature/story-6537-b-configure-suite/evidence/s4-expected-ids.txt"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice12EstimationDefaultScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice09PortfoliosDependencyFieldDefaultScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice10PortfoliosSizeEstimateFieldDefaultScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice11PortfoliosFeatureOwnerFieldDefaultScenarios.cs"
+}
+],
+"verification": [
+"python3 docs/feature/story-6537-b-configure-suite/evidence/s4_compare_ids.py"
+]
+},
+"S5": {
+"oracle": "docs/feature/story-6537-b-configure-suite/evidence/s5_compare_ids.py",
+"public_oracle": {
+"expected": "F22",
+"falsifier": "F14",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F21"
+},
+"supports": [
+"docs/feature/story-6537-b-configure-suite/evidence/s5-expected-ids.txt"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice06DefaultChangeUpdatesTheFollowersScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice08PortfoliosParentOverrideDefaultScenarios.cs"
+}
+],
+"verification": [
+"python3 docs/feature/story-6537-b-configure-suite/evidence/s5_compare_ids.py"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F23"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F24"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F25"
+}
+]
+},
+"facts": {
+"F1": "Story 6537 (T10), suite 2: the ConfigureOncePerConnection family. Move each rule its host tests prove to the lowest layer that can prove it (a unit test of the computing class or of the connector, else the service port). 135 of its 163 host rows can move by the screen (section 7 of the story's screen.md); wire, real-store concurrency and end-to-end rows stay. Behaviour-free: no production file changes.",
+"F10": "The estimation and portfolio-default rules of Slice12EstimationDefault, Slice09PortfoliosDependencyFieldDefault, Slice10PortfoliosSizeEstimateFieldDefault and Slice11PortfoliosFeatureOwnerFieldDefault are proven by unit tests of the effective-setting and save classes; their wire rows stay",
+"F11": "The default-change rules of Slice06DefaultChangeUpdatesTheFollowers and Slice08PortfoliosParentOverrideDefault (followers take a changed default, an override keeps its own value) are proven by unit tests of the save and effective-setting classes; their end-to-end rows stay",
+"F12": "Run the host classes Slice05bReferencedFieldsAndOlderPayloads Slice05aTeamsParentOverrideDefault and the unit classes named in the S1 id table (Debug, tokens removed), compare their sorted test ids with the expected id lists, check that no production or budget file changed since the slice base and that the host-user guard list only lost the lines of classes that left the host, then apply one deliberate break per moved rule and run its named row",
+"F13": "Each host class of the slice holds only the rows the S1 id table keeps as wire, concurrency or end-to-end rows, and they pass; every expected id is present and passes; each removed host row maps in the id table to a named unit or port row, and each deliberate break of a production line on its path turns that row red",
+"F14": "A removed host row whose rule, or a loop, gate or branch it walked, no unit or port row turns red for; an id missing or extra; a production or budget file in the diff; a guard-list line added",
+"F15": "Run the host classes Slice02NamedLinkThatMatchedNothing Slice01JiraDependenciesFromANamedLink and the unit classes named in the S2 id table (Debug, tokens removed), compare their sorted test ids with the expected id lists, check that no production or budget file changed since the slice base and that the host-user guard list only lost the lines of classes that left the host, then apply one deliberate break per moved rule and run its named row",
+"F16": "Each host class of the slice holds only the rows the S2 id table keeps as wire, concurrency or end-to-end rows, and they pass; every expected id is present and passes; each removed host row maps in the id table to a named unit or port row, and each deliberate break of a production line on its path turns that row red",
+"F17": "Run the host classes Slice04AzureDevOpsDependenciesFromANamedRelationEnd Slice03AzureDevOpsRelationTypeAccepted and the unit classes named in the S3 id table (Debug, tokens removed), compare their sorted test ids with the expected id lists, check that no production or budget file changed since the slice base and that the host-user guard list only lost the lines of classes that left the host, then apply one deliberate break per moved rule and run its named row",
+"F18": "Each host class of the slice holds only the rows the S3 id table keeps as wire, concurrency or end-to-end rows, and they pass; every expected id is present and passes; each removed host row maps in the id table to a named unit or port row, and each deliberate break of a production line on its path turns that row red",
+"F19": "Run the host classes Slice12EstimationDefault Slice09PortfoliosDependencyFieldDefault Slice10PortfoliosSizeEstimateFieldDefault Slice11PortfoliosFeatureOwnerFieldDefault and the unit classes named in the S4 id table (Debug, tokens removed), compare their sorted test ids with the expected id lists, check that no production or budget file changed since the slice base and that the host-user guard list only lost the lines of classes that left the host, then apply one deliberate break per moved rule and run its named row",
+"F2": "The backend Integration tier spends less time re-proving connection-default, named-link and settings-save rules through a web host, and every rule still has a test that goes red when its production line breaks",
+"F20": "Each host class of the slice holds only the rows the S4 id table keeps as wire, concurrency or end-to-end rows, and they pass; every expected id is present and passes; each removed host row maps in the id table to a named unit or port row, and each deliberate break of a production line on its path turns that row red",
+"F21": "Run the host classes Slice06DefaultChangeUpdatesTheFollowers Slice08PortfoliosParentOverrideDefault and the unit classes named in the S5 id table (Debug, tokens removed), compare their sorted test ids with the expected id lists, check that no production or budget file changed since the slice base and that the host-user guard list only lost the lines of classes that left the host, then apply one deliberate break per moved rule and run its named row",
+"F22": "Each host class of the slice holds only the rows the S5 id table keeps as wire, concurrency or end-to-end rows, and they pass; every expected id is present and passes; each removed host row maps in the id table to a named unit or port row, and each deliberate break of a production line on its path turns that row red",
+"F23": "Each rule that a ConfigureOncePerConnection host test proves is proven by a test at the lowest layer that can prove it (unit test of the computing class or connector, else the service port); the host classes keep only wire, concurrency and end-to-end rows.",
+"F24": "No rule loses its test: every removed host row has an id-table row naming the test that now proves its rule, and a deliberate break of that rule's production line turns that test red.",
+"F25": "No production file changes, the test-host guard lists do not grow, and each route keeps at least one host row that proves its wiring.",
+"F26": "Run the two host classes and the unit classes that now prove their rules, compare sorted test ids with the expected list",
+"F27": "Each host class holds only its wire, concurrency and skeleton rows; every moved rule has a unit row that passes; the host rows the move removes are listed as extra until the craft removes them",
+"F28": "The backend Integration tier runs 41 fewer host rows, so it takes less time",
+"F29": "A host row is removed while its unit twin is missing or renamed, or a unit row stays on the host",
+"F3": "Each rule a ConfigureOncePerConnection host test proves is proven by a test at the lowest layer that can prove it (a unit test of the computing class or of the connector, else the service port), so the backend Integration tier takes less time",
+"F32": "No rule loses its test: each removed host row maps in the id table to a unit row that fails when the production line is broken",
+"F34": "Compare the working tree with the slice base for production files, the time budget list and the host-user guard list",
+"F35": "No production or budget file differs, no guard line is added, and the rows that stay still prove the wiring of each route",
+"F36": "Nothing the product does changes; the wiring rows of each route still run on the host",
+"F37": "A production file is edited to make a moved row pass, or a guard line is added for a new host user",
+"F38": "Apply one deliberate break per rule and per loop, gate or branch a removed host row walks, including where a Team's item hangs and the refusal when only the Teams default names a field, and run the unit classes",
+"F39": "Every break turns at least one named unit row red, all failed rows are printed, and the file is restored after each",
+"F4": "No rule loses its test: every removed host row has an id-table row naming the test that now proves its rule, and one deliberate break of that rule's production line turns that test red",
+"F40": "A unit row only restates the production result so that a break on its path leaves it green, or a removed host row that walks the hang of an item has only a reading test",
+"F5": "No production file changes, the test-host guard lists do not grow, and at least one host row per route still proves the wiring",
+"F6": "The 28 host rows the screen keeps (wire, real-store concurrency, end-to-end, or a rule whose owner was not located), ClockIsolationScenarios, live connector tests, and any production change",
+"F7": "The save-pipeline rules of Slice05bReferencedFieldsAndOlderPayloads and Slice05aTeamsParentOverrideDefault (referenced fields, older payloads, a team's parent override against the connection default) are proven by unit tests of the classes that compute them; their wire and concurrency rows stay",
+"F8": "The Jira named-link and refresh-history rules of Slice02NamedLinkThatMatchedNothing and Slice01JiraDependenciesFromANamedLink are proven by unit tests of the Jira connector and the refresh log; their end-to-end rows stay",
+"F9": "The Azure DevOps relation rules of Slice04AzureDevOpsDependenciesFromANamedRelationEnd and Slice03AzureDevOpsRelationTypeAccepted, for a portfolio and for a team, are proven by unit tests of the Azure DevOps connector and the settings that accept a relation type; their wire rows stay"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_out": [
+"F6"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F7",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+},
+{
+"id": "S2",
+"observation": "F8",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+},
+{
+"id": "S3",
+"observation": "F9",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+},
+{
+"id": "S4",
+"observation": "F10",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+},
+{
+"id": "S5",
+"observation": "F11",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6537-b-configure-suite",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

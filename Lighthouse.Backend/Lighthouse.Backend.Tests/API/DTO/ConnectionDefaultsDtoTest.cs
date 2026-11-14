@@ -90,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        [Category("contract-shape:pure-function")]
         public void A_saved_Dependency_Field_default_binds_to_the_default_this_build_holds()
         {
             var connection = JsonSerializer.Deserialize<WorkTrackingSystemConnectionDto>(
@@ -107,7 +106,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        [Category("contract-shape:pure-function")]
         public void A_saved_Estimation_default_is_sent_as_its_whole_bundle_and_an_explicit_null_clears_the_other()
         {
             var connection = JsonSerializer.Deserialize<WorkTrackingSystemConnectionDto>(
@@ -127,7 +125,16 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        [Category("contract-shape:pure-function")]
+        public void A_Parent_default_left_out_of_the_save_keeps_what_the_connection_holds()
+        {
+            var connection = new WorkTrackingSystemConnection { ParentOverrideForTeams = 5 };
+
+            var defaults = new ConnectionDefaultsDto(connection);
+
+            Assert.That(defaults.FieldOf(ConnectionDefaultSetting.ParentOverrideForTeams), Is.EqualTo(5), "A save that names no Parent default must not clear the one the connection holds.");
+        }
+
+        [Test]
         public void An_Estimation_default_left_out_of_the_save_is_not_sent()
         {
             var defaults = new ConnectionDefaultsDto { ParentOverrideForTeams = 5 };
