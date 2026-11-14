@@ -81,12 +81,59 @@
 "stimulus": "F123",
 "user_result": "F125"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F130",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs"
+},
+"expected": "F128",
+"stimulus": "F127",
+"user_result": "F129"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F134",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs"
+},
+"expected": "F132",
+"stimulus": "F131",
+"user_result": "F133"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "crafter",
+"reason": "F137"
+},
+"expected": "F136",
+"stimulus": "F135",
+"user_result": "F6"
+}
 ]
 },
 "counters": {
 "D": 4,
 "E": 4,
-"F": 126,
+"F": 137,
 "K": 3,
 "P": 4,
 "S": 3,
@@ -649,7 +696,18 @@
 "F124": "Forecast results equal the recorded answers",
 "F125": "Users see the same forecasts after the move",
 "F126": "A move that changes draw order but is not caught by the recorded answers",
+"F127": "Read the compiled production assembly and the production sources and check where the forecast, reality-check and filter-rule services, their ports, the lane and the updater port live",
+"F128": "All ten Application types are in the Forecasting Application namespace and folder and none is left under Services",
+"F129": "The forecast services sit in the Forecasting module's Application layer; a type left behind is named",
 "F13": "The forecast updater and seeder live in Adapters/Background and the four triggers in Application/Policies; handler order unchanged",
+"F130": "A type is moved in namespace but its file stays in the old folder, or the nested inputs record is forgotten; both are caught by the file and the type checks",
+"F131": "Read the two Flow metrics rule lists",
+"F132": "Both lists name the moved forecast types by their new Application full names and no entry names a Services namespace for them",
+"F133": "The Flow metrics rules compare against lists that name the forecast services where they now live",
+"F134": "A list keeps a stale Services name next to the new one, or drops an entry; both are caught",
+"F135": "Run the architecture rules and the seeded forecasts check after the move",
+"F136": "Layout and list checks pass with no behaviour change; the seeded forecast answers stay the same",
+"F137": "Seeded forecasts check and forecast answers comparison already exist from feature A and run as declared commands; this oracle adds no new observation of them",
 "F14": "Pure moves only: 31 Forecasting files git-mv from Services into Modules/Forecasting, type and file names unchanged, namespace = folder (Lighthouse.Backend.Modules.Forecasting.{Domain,Application,Application.Policies,Adapters.Background}). Each slice is a pure-move commit, then a separate edit commit for using lines, Flow metrics list strings and the Stryker path. Layers per D-4: Domain = 16 types reaching only kernel and BCL; Application = services, ports, ForecastLane, IForecastUpdater; Policies = four triggers; Adapters/Background = ForecastUpdater and ForecastInputsForgottenAtStartSeeder.",
 "F15": "Checker mapping: no state machine or temporal claim exists (behaviour-free relocation), so Quint, TLA+/TLC and Agda are not applicable; liveness is not applicable (no new progress claim, no scheduling change). The dependency-direction and placement claims are checked by the IL-reading ArchUnit rules in the three slice oracles; behaviour preservation is checked by SeededForecastsStayTheSameTest and bash Scripts/examine/bin/forecast-answers-compare (base 39a7f598f vs HEAD). No property-based law: the finite relocation has no broad input domain.",
 "F16": "Paradigm object_oriented: owners are unchanged; every moved type keeps its owner and responsibility. No domain decision moves into a service, no new class is created, no type is split or merged. Carriers: decisions stay in Domain policies and ForecastSimulation; effects stay in ForecastUpdater, ForecastLane and the seeder; per-process state stays in ForecastLane.",

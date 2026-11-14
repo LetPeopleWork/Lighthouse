@@ -278,6 +278,80 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the compiled production assembly and the production sources and check where the forecast, reality-check and filter-rule services, their ports, the lane and the updater port live
+</code></pre>
+
+<pre><code>All ten Application types are in the Forecasting Application namespace and folder and none is left under Services
+</code></pre>
+
+<pre><code>The forecast services sit in the Forecasting module&#x27;s Application layer; a type left behind is named
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>A type is moved in namespace but its file stays in the old folder, or the nested inputs record is forgotten; both are caught by the file and the type checks
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the two Flow metrics rule lists
+</code></pre>
+
+<pre><code>Both lists name the moved forecast types by their new Application full names and no entry names a Services namespace for them
+</code></pre>
+
+<pre><code>The Flow metrics rules compare against lists that name the forecast services where they now live
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>A list keeps a stale Services name next to the new one, or drops an entry; both are caught
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the architecture rules and the seeded forecasts check after the move
+</code></pre>
+
+<pre><code>Layout and list checks pass with no behaviour change; the seeded forecast answers stay the same
+</code></pre>
+
+<pre><code>Forecasts and forecast answers are identical before and after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Seeded forecasts check and forecast answers comparison already exist from feature A and run as declared commands; this oracle adds no new observation of them
+</code></pre>
+
+<p>crafter</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

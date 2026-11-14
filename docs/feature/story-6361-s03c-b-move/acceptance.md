@@ -149,6 +149,92 @@ A move that changes draw order but is not caught by the recorded answers
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Read the compiled production assembly and the production sources and check where the forecast, reality-check and filter-rule services, their ports, the lane and the updater port live
+```
+
+```text
+All ten Application types are in the Forecasting Application namespace and folder and none is left under Services
+```
+
+```text
+The forecast services sit in the Forecasting module's Application layer; a type left behind is named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingApplicationLayoutArchUnitTest\.cs
+
+```text
+A type is moved in namespace but its file stays in the old folder, or the nested inputs record is forgotten; both are caught by the file and the type checks
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Read the two Flow metrics rule lists
+```
+
+```text
+Both lists name the moved forecast types by their new Application full names and no entry names a Services namespace for them
+```
+
+```text
+The Flow metrics rules compare against lists that name the forecast services where they now live
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingApplicationLayoutArchUnitTest\.cs
+
+```text
+A list keeps a stale Services name next to the new one, or drops an entry; both are caught
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Run the architecture rules and the seeded forecasts check after the move
+```
+
+```text
+Layout and list checks pass with no behaviour change; the seeded forecast answers stay the same
+```
+
+```text
+Forecasts and forecast answers are identical before and after the move
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Seeded forecasts check and forecast answers comparison already exist from feature A and run as declared commands; this oracle adds no new observation of them
+```
+
+crafter
+
 ## Expectations
 
 ### Rows
