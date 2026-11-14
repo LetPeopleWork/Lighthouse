@@ -1,4 +1,4 @@
-suite_scope_check.py, run on HEAD 26d4596ac (2026-11-14)
+suite_scope_check.py, run on HEAD a264d6f58 plus the untracked-file scan (2026-11-14)
 
 == --self-test
 ok   production edit: 1 finding(s), expected 1
@@ -10,12 +10,17 @@ ok   test-only change: 0 finding(s), expected 0
 exit=0
 
 == HEAD, clean tree
-suite commits=69 findings=0
+suite commits=71 findings=0
 exit=0
 
 == HEAD with a deliberate line appended to Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs (restored afterwards)
 SCOPE    uncommitted change to Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs
-suite commits=69 findings=1
+suite commits=71 findings=1
+exit=1
+
+== HEAD with an untracked file Lighthouse.Backend/Lighthouse.Backend/Models/ScopeProbeUntracked.cs (removed afterwards)
+SCOPE    uncommitted change to Lighthouse.Backend/Lighthouse.Backend/Models/ScopeProbeUntracked.cs
+suite commits=71 findings=1
 exit=1
 
 The one suite commit that changed the guard list is e64325dc8 (Slice09's line removed, which the check admits).

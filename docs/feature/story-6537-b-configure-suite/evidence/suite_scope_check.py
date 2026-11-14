@@ -85,7 +85,7 @@ def main():
         suite += 1
         guard_diff = git("diff", "-U0", f"{commit}^", commit, "--", GUARD) if GUARD in paths else ""
         findings += findings_for(commit[:9], paths, guard_diff)
-    for p in git("diff", "--name-only", "HEAD").splitlines():
+    for p in git("diff", "--name-only", "HEAD").splitlines() + git("ls-files", "--others", "--exclude-standard").splitlines():
         if any(p == u or p.startswith(u) for u in UNTOUCHED):
             findings.append(f"SCOPE    uncommitted change to {p}")
     with open(GUARD, encoding="utf-8") as handle:
