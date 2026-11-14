@@ -152,12 +152,25 @@
 "expected": "F78",
 "stimulus": "F77",
 "user_result": "F79"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F84",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s4_breaks.py"
+},
+"expected": "F82",
+"stimulus": "F81",
+"user_result": "F83"
 }
 ]
 },
 "counters": {
 "E": 3,
-"F": 80,
+"F": 84,
 "P": 3,
 "S": 4
 },
@@ -383,6 +396,10 @@
 "F79": "The retention and nothing-to-show rules of the percentiles fill are proven by fast unit tests, so the Integration tier takes less time and no rule loses its test",
 "F8": "Slice07WhereTheLimitsActuallyMovedTest holds exactly one row, Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing, and it passes; every other id of the three classes equals the expected list and passes; each of the nine removed host rows maps in the id table to a named unit row; each deliberate break (a family line removed from FamiliesFor, the zero-band gate removed, the retention edge anchored on today instead of the last observed day, FillDayIfAbsent passing asOf null) turns its named unit row red",
 "F80": "a unit row exists but no deliberate break of the retention guard, edge, first-day gate or pass allowance turns it red",
+"F81": "Apply one deliberate break to each production line a removed Slice10 or Slice08 host row walked: the retention guard and edge of the fill target for a team and a portfolio, the first-day and last-day gates of the filler, the pass allowance and the 90-day pass cap, the instance day of a team's last refresh, the span of a team's limits window and the start of the window a limits day or percentile day reads, then run the unit rows",
+"F82": "Every break turns at least one named unit row of the id table red, and the production file is put back",
+"F83": "No retention or nothing-to-show rule loses its proof when its host row is removed",
+"F84": "a removed host row walks a production line, such as the pass cap, the last refresh day or the limits window span, that no unit row turns red for",
 "F9": "A removed host row with no unit row that turns red for its rule's production line; an id missing or extra beyond the nine removed and the added unit rows; Slice07 holding more or fewer than the one route row; a production file in the diff"
 },
 "product": {

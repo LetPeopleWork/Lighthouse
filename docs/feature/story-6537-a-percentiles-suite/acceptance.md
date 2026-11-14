@@ -346,6 +346,36 @@ a unit row exists but no deliberate break of the retention guard, edge, first-da
 
 None.
 
+##### Covers
+
+P2
+
+```text
+Apply one deliberate break to each production line a removed Slice10 or Slice08 host row walked: the retention guard and edge of the fill target for a team and a portfolio, the first-day and last-day gates of the filler, the pass allowance and the 90-day pass cap, the instance day of a team's last refresh, the span of a team's limits window and the start of the window a limits day or percentile day reads, then run the unit rows
+```
+
+```text
+Every break turns at least one named unit row of the id table red, and the production file is put back
+```
+
+```text
+No retention or nothing-to-show rule loses its proof when its host row is removed
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\_breaks\.py
+
+```text
+a removed host row walks a production line, such as the pass cap, the last refresh day or the limits window span, that no unit row turns red for
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows
