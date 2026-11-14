@@ -1,0 +1,78 @@
+=== A1 the filler works out days before the first supported day
+Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [18 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== A2 the filler works out days when nothing has ever finished
+Failed AnOwnerThatHasNeverFinishedAnything_HasNoDayWorkedOut [35 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== A3 the filler works out days after the last refresh
+Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [18 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== A4 days stepped over spend the pass allowance
+Failed APassThatWorksOutNoDay_LeavesTheOwnersCachedMetricsInPlace [17 ms]
+Failed DaysBeforeTheFirstFinishedItem_DoNotSpendThePassAllowance [6 ms]
+Failed!  - Failed:     2, Passed:    79, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== B1 the team target no longer guards its percentile families
+Failed ATeamsPercentileFamilies_ReadNothingForAWindowReachingPastWhatItKeeps_AndReadAWindowStartingOnTheEdge [22 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== B2 the portfolio target no longer guards its percentile families
+Failed APortfoliosPercentileFamilies_ReadNothingForAWindowReachingPastWhatItKeeps_AndReadAWindowStartingOnTheEdge [30 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== B3 the team target no longer guards its limit families
+Failed ATeamsLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [25 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== B4 the portfolio target no longer guards its limit families
+Failed APortfoliosLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [28 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== B5 the team target starts its history before the edge
+Failed ATeamThatKeepsWorkForThirtyDays_HasNoHistoryBeforeTheEdge [44 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== B6 the portfolio target starts its history before the edge
+Failed APortfolioThatKeepsWorkForThirtyDays_HasNoHistoryBeforeTheEdge [32 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== C1 a window starting on the edge is refused
+Failed APercentileWindowStartingOnTheEdge_IsRead [31 ms]
+Failed LimitsWhoseWindowLiesInsideWhatIsKept_AreReadAsOfTheDayAsked [3 ms]
+Failed APortfoliosLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [2 ms]
+Failed APortfoliosPercentileFamilies_ReadNothingForAWindowReachingPastWhatItKeeps_AndReadAWindowStartingOnTheEdge [6 ms]
+Failed ATeamsLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [1 ms]
+Failed ATeamsPercentileFamilies_ReadNothingForAWindowReachingPastWhatItKeeps_AndReadAWindowStartingOnTheEdge [2 ms]
+Failed!  - Failed:     6, Passed:    75, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== C2 limits are judged on the day's window end and not its start
+Failed LimitsWhoseOwnWindowReachesPastTheEdge_ComeBackNotReady [25 ms]
+Failed APortfoliosLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [3 ms]
+Failed ATeamsLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [1 ms]
+Failed!  - Failed:     3, Passed:    78, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== C3 limits judge a pinned stretch only when it starts after the window
+Failed APinnedStretchInReachOnTheLastRefresh_IsOutOfReachOfAnEdgeDrawnOnALaterDay [28 ms]
+Failed LimitsDrawnFromAPinnedStretchThatBeginsBeforeTheEdge_ComeBackNotReady_EvenForAWindowInsideWhatIsKept [< 1 ms]
+Failed!  - Failed:     2, Passed:    79, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== C4 the edge is drawn a day late
+Failed APercentileWindowStartingOnTheEdge_IsRead [28 ms]
+Failed FinishedWorkOlderThanWhatIsKept_MovesTheFirstDayTheWalkMayWorkOutUpToTheEdge [2 ms]
+Failed LimitsWhoseWindowLiesInsideWhatIsKept_AreReadAsOfTheDayAsked [2 ms]
+Failed APortfoliosLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [2 ms]
+Failed APortfoliosPercentileFamilies_ReadNothingForAWindowReachingPastWhatItKeeps_AndReadAWindowStartingOnTheEdge [5 ms]
+Failed APortfolioThatKeepsWorkForThirtyDays_HasNoHistoryBeforeTheEdge [3 ms]
+Failed ATeamsLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [1 ms]
+Failed ATeamsPercentileFamilies_ReadNothingForAWindowReachingPastWhatItKeeps_AndReadAWindowStartingOnTheEdge [2 ms]
+Failed ATeamThatKeepsWorkForThirtyDays_HasNoHistoryBeforeTheEdge [2 ms]
+Failed!  - Failed:     9, Passed:    72, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== C5 the first day is the oldest finished day even past the edge
+Failed FinishedWorkOlderThanWhatIsKept_MovesTheFirstDayTheWalkMayWorkOutUpToTheEdge [27 ms]
+Failed APortfolioThatKeepsWorkForThirtyDays_HasNoHistoryBeforeTheEdge [3 ms]
+Failed ATeamThatKeepsWorkForThirtyDays_HasNoHistoryBeforeTheEdge [3 ms]
+Failed!  - Failed:     3, Passed:    78, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== C6 an owner that keeps work for ever gets an edge
+Failed AnOwnerThatKeepsFinishedWorkForEver_HasNoEdge_SoTheWalkMayReachBackToItsFirstFinishedItem [39 ms]
+Failed APercentileWindowOfAnOwnerThatKeepsEverything_IsReadHoweverFarBackItReaches [5 ms]
+Failed APortfoliosHistory_BeginsOnTheEarliestDayOneOfItsOwnDeliveriesFinished [13 ms]
+Failed ATeamsHistory_BeginsOnTheEarliestDayOneOfItsOwnItemsFinished [3 ms]
+Failed EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfAPortfolio [17 ms]
+Failed!  - Failed:     5, Passed:    76, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== C7 an owner with nothing finished gets a first day
+Failed AnOwnerWithNothingFinished_StillHasNoFirstDay_WhateverItKeeps [20 ms]
+Failed AnOwnerThatHasNeverFinishedAnything_HasNoDayWorkedOut [16 ms]
+Failed!  - Failed:     2, Passed:    79, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== D1 the window a day reads starts a day early
+Failed ADayWithoutRows_IsWorkedOutAtEveryHorizon_OverAWindowEndingOnThatDay [22 ms]
+Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
