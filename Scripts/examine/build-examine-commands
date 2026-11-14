@@ -497,6 +497,9 @@ cat > "$out/feature-proof" <<EOF
 #                      slice with the rows it turns red
 #   diff <base>        lists files changed since <base> under the production project, in the host-user guard list and in
 #                      the test time budget, with the guard list's added and removed lines
+#   scope              runs the feature's own scope check (evidence/suite_scope_check.py), when it has one: it looks only at
+#                      the feature's own commits, so other work that reached main in the meantime is not charged to it
+#                      (exit 0 = no production, budget or forbidden guard-list change by this feature)
 # Example: feature-proof story-6537-a-percentiles-suite oracles
 set -euo pipefail
 if [ "\${1:-}" = "--help" ] || [ "\${1:-}" = "-h" ] || [ \$# -lt 2 ]; then
@@ -530,9 +533,13 @@ case "\$action" in
     echo "host-user guard list, lines added and removed:"
     git diff "\$base" HEAD -- Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs \\
       | grep -E '^[+-][^+-]' | sed 's/^/  /' || echo "  none" ;;
+  scope)
+    [ -f "\$ev/suite_scope_check.py" ] || { echo "no scope check for \$feature"; exit 0; }
+    set +e; python3 "\$ev/suite_scope_check.py"; code=\$?; set -e; echo "(exit \$code)" ;;
   summary)
     base="\${1:?base revision}"
-    echo "##### diff since \$base"; "\$0" "\$feature" diff "\$base"
+    echo "##### diff since \$base (includes other work merged meanwhile)"; "\$0" "\$feature" diff "\$base"
+    if [ -f "\$ev/suite_scope_check.py" ]; then echo "##### scope of this feature's own commits"; "\$0" "\$feature" scope; fi
     echo "##### oracles"; "\$0" "\$feature" oracles
     for b in \$(ls "\$ev" | grep -E '^s[0-9]+_breaks\.py\$' | sort -V); do
       n="\${b#s}"; n="\${n%%_*}"
