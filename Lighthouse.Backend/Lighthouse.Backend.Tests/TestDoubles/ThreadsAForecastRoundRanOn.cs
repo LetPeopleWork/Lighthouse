@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.TestDoubles
 {

@@ -7,6 +7,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {

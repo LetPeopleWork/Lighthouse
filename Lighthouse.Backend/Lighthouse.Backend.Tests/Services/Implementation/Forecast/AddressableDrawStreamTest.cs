@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 {

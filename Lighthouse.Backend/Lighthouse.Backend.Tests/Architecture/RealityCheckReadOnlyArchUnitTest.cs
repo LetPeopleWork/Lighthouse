@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using ArchUnitNET.Fluent.Syntax.Elements.Types;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

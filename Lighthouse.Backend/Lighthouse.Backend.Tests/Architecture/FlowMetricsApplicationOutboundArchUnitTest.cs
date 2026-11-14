@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] ForecastingEdgesOfTheApplication =
         [
             "Lighthouse.Backend.Modules.FlowMetrics.Application.BaseMetricsService -> Lighthouse.Backend.Services.Interfaces.Forecast.IForecastService",
-            "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService -> Lighthouse.Backend.Services.Implementation.Forecast.ForecastDataSufficiencyPolicy",
+            "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService -> Lighthouse.Backend.Modules.Forecasting.Domain.ForecastDataSufficiencyPolicy",
             "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService -> Lighthouse.Backend.Services.Interfaces.Forecast.IForecastFilterRuleService",
         ];
 

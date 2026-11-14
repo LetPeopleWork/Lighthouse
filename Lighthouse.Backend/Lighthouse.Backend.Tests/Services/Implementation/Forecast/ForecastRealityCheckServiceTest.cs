@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Moq;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 {

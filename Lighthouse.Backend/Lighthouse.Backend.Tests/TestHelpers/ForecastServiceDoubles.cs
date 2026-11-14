@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Moq;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

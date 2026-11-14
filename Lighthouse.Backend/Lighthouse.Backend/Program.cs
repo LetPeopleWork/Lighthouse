@@ -86,6 +86,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend
 {

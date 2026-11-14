@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 {

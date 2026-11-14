@@ -17,6 +17,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
 {

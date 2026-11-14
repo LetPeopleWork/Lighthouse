@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.TestDoubles
 {

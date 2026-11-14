@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

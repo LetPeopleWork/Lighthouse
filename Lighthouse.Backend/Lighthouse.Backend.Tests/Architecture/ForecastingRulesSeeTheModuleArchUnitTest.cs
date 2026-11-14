@@ -10,6 +10,7 @@ using Lighthouse.Backend.Modules.ForecastingFixtures.RulesSeeTheModule;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Mono.Cecil;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -250,7 +251,7 @@ namespace Lighthouse.Backend.Modules.Forecasting.Domain.ForecastingFixtures
 
     internal static class AMadeUpSimulatedRunStep
     {
-        public static bool Continues(global::Lighthouse.Backend.Services.Implementation.Forecast.TrialState run) => run is not null;
+        public static bool Continues(global::Lighthouse.Backend.Modules.Forecasting.Domain.TrialState run) => run is not null;
     }
 }
 
@@ -286,7 +287,7 @@ namespace Lighthouse.Backend.Modules.ForecastingFixtures.RulesSeeTheModule
 
     internal static class AnOutsiderHoldingARun
     {
-        public static bool Continues(global::Lighthouse.Backend.Services.Implementation.Forecast.TrialState run) => run is not null;
+        public static bool Continues(global::Lighthouse.Backend.Modules.Forecasting.Domain.TrialState run) => run is not null;
     }
 
     internal static class AnOutsiderAskingForAForecast

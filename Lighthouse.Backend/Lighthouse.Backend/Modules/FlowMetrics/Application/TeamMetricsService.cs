@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {

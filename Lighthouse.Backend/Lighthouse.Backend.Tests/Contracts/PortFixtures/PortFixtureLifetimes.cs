@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.Extensions.DependencyInjection;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
 {

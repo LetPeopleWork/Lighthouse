@@ -12,6 +12,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 {
