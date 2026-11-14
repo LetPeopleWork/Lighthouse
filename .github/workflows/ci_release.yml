@@ -41,13 +41,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # A pull + tag + push would publish only the runner's platform as latest, so the
+      # multi-platform manifest list is copied in the registry instead.
       - name: Tag docker image with latest
         run: |
           REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          docker pull ghcr.io/$REPO_NAME:${{ inputs.fileversion }}
-          docker tag ghcr.io/$REPO_NAME:${{ inputs.fileversion }} ghcr.io/$REPO_NAME:latest
-          docker push ghcr.io/$REPO_NAME:latest
-      
+          docker buildx imagetools create -t ghcr.io/$REPO_NAME:latest ghcr.io/$REPO_NAME:${{ inputs.fileversion }}
+
+      - name: Verify latest carries every platform
+        run: |
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker manifest inspect ghcr.io/$REPO_NAME:latest \
+            | jq -e '[.manifests[]?.platform | "\(.os)/\(.architecture)"] as $p | ($p | index("linux/amd64")) != null and ($p | index("linux/arm64")) != null' >/dev/null \
+            || { echo "::error::ghcr.io/$REPO_NAME:latest does not list both linux/amd64 and linux/arm64"; exit 1; }
+
           # Install Cosign
       - name: Install Cosign
         uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
