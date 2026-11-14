@@ -4,13 +4,10 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 {
     /// <summary>
-    /// DISTILL acceptance scenarios for story 6053, slice 01 - the cycle-time trend a team's data already
-    /// supports. A flow coach opens Team - Metrics - Predictability - Percentiles Over Time on an instance
-    /// that has been running intermittently, and reads a continuous line across the period under review
-    /// instead of the handful of days the recorder happened to catch.
-    ///
-    /// Driving port: the shipped percentiles-over-time read endpoint. Nothing here reaches for a filler or
-    /// a reconciler to start the work - opening the chart is what starts it, which is the whole claim.
+    /// The cycle-time trend a team's data already supports, read through the percentiles-over-time
+    /// endpoint. Opening the chart is what starts the filling in; nothing here starts a filler or a
+    /// reconciler by hand. These rows keep the wiring: the read route, the read-fill-read loop, and a
+    /// refresh landing mid-fill. The fill's rules themselves are tested on the classes that compute them.
     ///
     /// Step definitions live in Slice05ReconstructCycleTimeHistorySpecifications.cs (same partial class).
     /// </summary>
@@ -21,9 +18,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     public partial class Slice05ReconstructCycleTimeHistoryTest
     {
         /// <summary>
-        /// The one scenario in this fixture that runs today. It pins what must survive the story rather
-        /// than what the story adds: a chart load answers with what is there, and the filling in happens
-        /// out of the reader's way.
+        /// A chart load answers with what is there, and the filling in happens out of the reader's way.
         /// </summary>
         [Test]
         public async Task Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits()
