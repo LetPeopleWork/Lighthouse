@@ -216,6 +216,64 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>unmet</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests deliveryFormRules: passing rows for the launch-date rule: no date, yesterday, today and tomorrow each judged by whether after today; yesterday, today and tomorrow each answered with the message that names its fix. No failing row in the output shown; output cut at 6000 bytes by my head filter.
+</code></pre>
+
+<pre><code>Probe frontend-tests westOfUtc: 1 file, 7 of 7 passed. Passing rows: clock-behind-UTC guard; tomorrow accepted and today and past refused in early morning and in late evening when UTC is already the next day; named launch dated tomorrow saved and today blocked; 2027-13-01 and 2027-00-10 refused as not on any calendar.
+</code></pre>
+
+<pre><code>Limit: no Delivery dialog in a browser was driven. Only Vitest rule-level rows under a faked west-of-UTC clock were observed. I did not capture the YYYY-MM-DD stimulus or its response myself, no time zone other than the faked clock, and no verbatim error text. Row names and pass marks are project test-suite output, not user-observed behavior.
+</code></pre>
+
+<pre><code>Non-probe: E1, E2 and E3 at dialog level (typed YYYY-MM-DD in the Delivery dialog, clock in America/New_York, tomorrow/today/yesterday) were not probed; no browser probe exists on the public surface. Only rule-level rows were observed.
+</code></pre>
+
+<p>observation_gap</p>
+
+<h3>E2</h3>
+
+<p>unmet</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests deliveryFormRules: passing rows for the launch-date rule: no date, yesterday, today and tomorrow each judged by whether after today; yesterday, today and tomorrow each answered with the message that names its fix. No failing row in the output shown; output cut at 6000 bytes by my head filter.
+</code></pre>
+
+<pre><code>Probe frontend-tests westOfUtc: 1 file, 7 of 7 passed. Passing rows: clock-behind-UTC guard; tomorrow accepted and today and past refused in early morning and in late evening when UTC is already the next day; named launch dated tomorrow saved and today blocked; 2027-13-01 and 2027-00-10 refused as not on any calendar.
+</code></pre>
+
+<pre><code>Limit: no Delivery dialog in a browser was driven. Only Vitest rule-level rows under a faked west-of-UTC clock were observed. I did not capture the YYYY-MM-DD stimulus or its response myself, no time zone other than the faked clock, and no verbatim error text. Row names and pass marks are project test-suite output, not user-observed behavior.
+</code></pre>
+
+<pre><code>Non-probe: E1, E2 and E3 at dialog level (typed YYYY-MM-DD in the Delivery dialog, clock in America/New_York, tomorrow/today/yesterday) were not probed; no browser probe exists on the public surface. Only rule-level rows were observed.
+</code></pre>
+
+<p>observation_gap</p>
+
+<h3>E3</h3>
+
+<p>unmet</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests deliveryFormRules: passing rows for the launch-date rule: no date, yesterday, today and tomorrow each judged by whether after today; yesterday, today and tomorrow each answered with the message that names its fix. No failing row in the output shown; output cut at 6000 bytes by my head filter.
+</code></pre>
+
+<pre><code>Probe frontend-tests westOfUtc: 1 file, 7 of 7 passed. Passing rows: clock-behind-UTC guard; tomorrow accepted and today and past refused in early morning and in late evening when UTC is already the next day; named launch dated tomorrow saved and today blocked; 2027-13-01 and 2027-00-10 refused as not on any calendar.
+</code></pre>
+
+<pre><code>Limit: no Delivery dialog in a browser was driven. Only Vitest rule-level rows under a faked west-of-UTC clock were observed. I did not capture the YYYY-MM-DD stimulus or its response myself, no time zone other than the faked clock, and no verbatim error text. Row names and pass marks are project test-suite output, not user-observed behavior.
+</code></pre>
+
+<pre><code>Non-probe: E1, E2 and E3 at dialog level (typed YYYY-MM-DD in the Delivery dialog, clock in America/New_York, tomorrow/today/yesterday) were not probed; no browser probe exists on the public surface. Only rule-level rows were observed.
+</code></pre>
+
+<p>observation_gap</p>
 
 </body></html>
