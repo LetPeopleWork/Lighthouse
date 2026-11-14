@@ -753,6 +753,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
+        public async Task Commit_RemovingTheFieldOnlyTheTeamsDefaultNames_IsRefusedNamingThatDefault()
+        {
+            var subject = CreateSubjectWithOwnersOfTheCausedByField([], []);
+            connectionRepositoryMock.Object.GetById(OwnedConnectionId)!.ParentOverrideForTeams = CausedById;
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
+
+            var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Refused, Is.True);
+                Assert.That(outcome.FieldsInUse.Single().Defaults.Single(), Is.EqualTo("Teams' Parent sources"));
+                Assert.That(AdditionalFieldInUse.Refusal(outcome.FieldsInUse), Is.EqualTo(
+                    "\"Caused by\" cannot be removed. It is the Teams' Parent sources default. Nothing was saved."));
+            }
+
+            connectionRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
         public async Task Commit_RemovingTheFieldThePortfoliosDefaultNames_IsRefusedNamingThatDefault()
         {
             var subject = CreateSubjectWithOwnersOfTheCausedByField([], []);

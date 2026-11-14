@@ -18,10 +18,12 @@ DTO = B + "API/DTO/ConnectionDefaultsDto.cs"
 UNITS = "|".join("FullyQualifiedName~" + name for name in (
     "ConnectionSaveServiceTest.", "IncomingSettingTest.", "OwnerSettingRefusalsTest.", "EffectiveSettingTest.",
     "SupportedConnectionDefaultsTest.", "ConnectionDefaultsDtoTest.", "SettingsOwnerDtoRoundTripTest.",
-    "WorkTrackingSystemConnectionUsageTest.", "AdditionalFieldInUseTest.", "TeamExtensionsTest.", "PortfolioExtensionsTest.",
+    "WorkTrackingSystemConnectionUsageTest.", "AdditionalFieldInUseTest.", "WhereATeamsWorkItemHangsTest.", "TeamExtensionsTest.", "PortfolioExtensionsTest.",
     "WorkTrackingSystemOptionsOwnerExtensionsParentSourcesTest.",
 ))
 EXT = B + "API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs"
+OWNER = B + "Models/WorkTrackingSystemOptionsOwner.cs"
+SEL = B + "Services/Implementation/Parents/ParentSourceSelector.cs"
 
 OWNED = ".Select(portfolio => new OwnerNamingFields(portfolio.Name, [\n                    .. portfolio.ParentSources?.AdditionalFieldIds() ?? [],\n"
 DEP = "                    portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,\n"
@@ -80,6 +82,15 @@ BREAKS = [
     ("E5 a default left out of a save is cleared", DTO, "sent[fieldDefault.Setting] = fieldDefault.FirstFieldOn(connection);", "sent[fieldDefault.Setting] = null;"),
     ("E6 a default left out of a save drops the entries of its list", DTO,
      "? ParentSourceEntryDto.ListOf(list) : null;", "? ParentSourceEntryDto.ListOf(list).Take(0).ToList() : null;"),
+    ("G1 a Team that owns its field reads the list of a follower", OWNER,
+     "=> (FollowsParentOverrideDefault ? null : ParentSources)", "=> (!FollowsParentOverrideDefault ? null : ParentSources)"),
+    ("G2 a Team that follows the default never reads it", OWNER,
+     "                ?? ParentSourcesConnectionDefault\n", ""),
+    ("G3 a Team follows the default of the Portfolios", TEAM,
+     "WorkTrackingSystemConnection?.ParentSourcesForTeams;", "WorkTrackingSystemConnection?.ParentSourcesForPortfolios;"),
+    ("G4 a Team that chose None still reads a field", OWNER,
+     ": ParentSources.FromTheLegacyField(setting.OwnValue);", ": ParentSources.FromTheLegacyField(setting.OwnValue ?? 9);"),
+    ("G5 an item is hung under nothing", SEL, "record.ParentReferenceId = choice.Key;", "record.ParentReferenceId = string.Empty;"),
     ("F1 a list the save sends is not taken as the owner's own", EXT, "                owner.OwnParentSources(list);\n", "                _ = list;\n"),
     ("F2 a list the save sends is never recognised", EXT, "?.List is { } list)", "?.List is { } list && list.AdditionalFieldIds().Count() > 99)"),
     ("F3 a save that sends its own list also takes the old field", EXT, "                owner.OwnParentSources(list);\n                return;\n", "                owner.OwnParentSources(list);\n"),
@@ -110,8 +121,7 @@ for name, path, old, new, *own in BREAKS:
         for line in out.splitlines():
             if re.match(r"\s*(Failed [A-Za-z]|.*error [A-Z]+[0-9]+)", line):
                 shown += 1
-                if shown <= 6:
-                    print(line.strip()[:200])
+                print(line.strip()[:200])
         found = re.findall(r"(?:Failed!|Passed!).*", out)
         print(found[-1] if found else "NO SUMMARY (the edit did not compile)", flush=True)
     finally:
