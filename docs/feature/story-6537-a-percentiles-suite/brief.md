@@ -123,3 +123,25 @@ None.
 #### Slice work
 
 None.
+
+### S4
+
+```text
+The rules of Slice10OnlyWhatTheTeamStillKeepsTest (the fill reaches back no further than the done items the team still keeps, for each family, for a team and a portfolio) and of Slice08NothingToShowTest (a team or portfolio with nothing finished, nothing in flight or no history gets no rows and the chart reads empty rather than zero) are proven by unit tests of the classes that compute them; neither class starts a web host any more
+```
+
+#### Promises
+
+P1
+
+P2
+
+P3
+
+#### Depends on
+
+None.
+
+#### Slice work
+
+None.

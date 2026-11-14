@@ -184,6 +184,76 @@ None.
 
 None.
 
+### S4
+
+#### Targets
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/Slice10OnlyWhatTheTeamStillKeepsScenarios\.cs
+
+Extend
+
+None.
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/Slice10OnlyWhatTheTeamStillKeepsSpecifications\.cs
+
+Extend
+
+None.
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/Slice08NothingToShowScenarios\.cs
+
+Extend
+
+None.
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/Slice08NothingToShowSpecifications\.cs
+
+Extend
+
+None.
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\_compare\_ids\.py
+
+#### Verification
+
+```text
+python3 docs/feature/story-6537-a-percentiles-suite/evidence/s4_compare_ids.py
+```
+
+#### Supports
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\-expected\-ids\.txt
+
+#### Public oracle
+
+```text
+Run the unit classes named in the S4 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production or budget file changed since the slice base and that Slice10 and Slice08 left the host-user guard list, then apply one deliberate break per moved or rewritten rule and run its named row
+```
+
+```text
+Slice10OnlyWhatTheTeamStillKeepsTest and Slice08NothingToShowTest hold no host rows and their guard-list lines are gone; every expected id is present and passes; each removed host row maps in the S4 id table to a named unit row, and each deliberate break of a production line on its path, including the retention guard and edge applied by the fill target for a team and a portfolio, turns that row red
+```
+
+```text
+A removed host row whose rule, or a loop, gate or retention path it walked, no unit row turns red for; an id missing or extra; a production or budget file in the diff; a guard-list line left for a class that no longer starts a host
+```
+
+##### Promises
+
+P1
+
+P2
+
+P3
+
+#### Prefactoring
+
+None.
+
+#### Records
+
+None.
+
 ## ADRs
 
 None.

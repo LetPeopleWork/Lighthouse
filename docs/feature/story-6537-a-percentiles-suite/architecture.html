@@ -321,6 +321,72 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice10OnlyWhatTheTeamStillKeepsScenarios.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice10OnlyWhatTheTeamStillKeepsSpecifications.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice08NothingToShowScenarios.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice08NothingToShowSpecifications.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s4_compare_ids.py</p>
+
+<h4>Verification</h4>
+
+<pre><code>python3 docs/feature/story-6537-a-percentiles-suite/evidence/s4_compare_ids.py
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s4-expected-ids.txt</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the unit classes named in the S4 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production or budget file changed since the slice base and that Slice10 and Slice08 left the host-user guard list, then apply one deliberate break per moved or rewritten rule and run its named row
+</code></pre>
+
+<pre><code>Slice10OnlyWhatTheTeamStillKeepsTest and Slice08NothingToShowTest hold no host rows and their guard-list lines are gone; every expected id is present and passes; each removed host row maps in the S4 id table to a named unit row, and each deliberate break of a production line on its path, including the retention guard and edge applied by the fill target for a team and a portfolio, turns that row red
+</code></pre>
+
+<pre><code>A removed host row whose rule, or a loop, gate or retention path it walked, no unit row turns red for; an id missing or extra; a production or budget file in the diff; a guard-list line left for a class that no longer starts a host
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<p>None.</p>
+
 <h2>ADRs</h2>
 
 <p>None.</p>
