@@ -128,8 +128,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var verdict = await organisation.Connector.ValidateConnection(AConnectionNaming(reference));
 
-            Assert.That(verdict.Code, Is.EqualTo("additional_fields_invalid"),
-                "A base name names a relation type only when both its ends are listed, and an attachment links no work item to another.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False, "A reference that names nothing fails the connection check.");
+                Assert.That(verdict.Code, Is.EqualTo("additional_fields_invalid"),
+                    "A base name names a relation type only when both its ends are listed, and an attachment links no work item to another.");
+            }
         }
 
         [Test]
@@ -141,6 +145,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(verdict.IsValid, Is.False, "References that name nothing fail the connection check.");
                 Assert.That(verdict.Message, Is.EqualTo(
                     $"Some additional fields could not be found: {NotAnythingAtAll}, {AlsoNotAnything}. This Azure DevOps organisation defines no field "
                     + "and no relation type of that name. The relation types it does define are: "
@@ -157,7 +162,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var verdict = await organisation.Connector.ValidateConnection(AConnectionNaming(NotAnythingAtAll));
 
-            Assert.That(verdict.Message, Does.EndWith("of that name. It listed no relation types at all to check them against."));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False, "A reference no relation type can match fails the connection check.");
+                Assert.That(verdict.Message, Does.EndWith("of that name. It listed no relation types at all to check them against."));
+            }
         }
 
         [Test]
@@ -169,6 +178,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(verdict.IsValid, Is.False, "A reference that could not be checked fails the connection check.");
                 Assert.That(verdict.Code, Is.EqualTo("relation_types_unreadable"));
                 Assert.That(verdict.Message, Is.EqualTo(
                     "Azure DevOps would not list its relation types, so the relation types could not be read and a reference naming one could not "
@@ -186,8 +196,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var verdict = await organisation.Connector.ValidateConnection(AConnectionNaming(NotAnythingAtAll));
 
-            Assert.That(verdict.Code, Is.EqualTo("relation_types_unreadable"),
-                "Nobody cancelled anything, so a request that ran out of time is a listing that could not be read.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False, "A listing that could not be read fails the connection check.");
+                Assert.That(verdict.Code, Is.EqualTo("relation_types_unreadable"),
+                    "Nobody cancelled anything, so a request that ran out of time is a listing that could not be read.");
+            }
         }
 
         [Test]
@@ -197,7 +211,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var verdict = await organisation.Connector.ValidateConnection(AConnectionNaming(NotAnythingAtAll));
 
-            Assert.That(verdict.Code, Is.EqualTo("validation_failed"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False, "An unexpected failure fails the connection check.");
+                Assert.That(verdict.Code, Is.EqualTo("validation_failed"));
+            }
         }
 
         [Test]
@@ -600,7 +618,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var verdict = await organisation.Connector.ValidateConnection(AConnectionNaming(NotAnythingAtAll));
 
-            Assert.That(verdict.Message, Does.EndWith("It listed no relation types at all to check them against."));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False, "A reference no relation type can match fails the connection check.");
+                Assert.That(verdict.Message, Does.EndWith("It listed no relation types at all to check them against."));
+            }
         }
 
         [TestCase(typeof(TimeoutException))]
@@ -611,8 +633,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var verdict = await organisation.Connector.ValidateConnection(AConnectionNaming(DependsOnForward));
 
-            Assert.That(verdict.Code, Is.EqualTo("relation_types_unreadable"),
-                "A listing that never reached Azure DevOps says no more about the reference than a refusal does.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False, "A listing that could not be read fails the connection check.");
+                Assert.That(verdict.Code, Is.EqualTo("relation_types_unreadable"),
+                    "A listing that never reached Azure DevOps says no more about the reference than a refusal does.");
+            }
         }
 
         [Test]

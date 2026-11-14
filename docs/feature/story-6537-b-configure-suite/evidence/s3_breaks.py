@@ -9,8 +9,16 @@ CON = B + "Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOp
 EXT = B + "Services/Implementation/WorkTrackingConnectors/AzureDevOps/WorkItemExtensions.cs"
 LIST = B + "Services/Implementation/WorkTrackingConnectors/AzureDevOps/RelationTypeListing.cs"
 TEAMUP = B + "Services/Implementation/BackgroundServices/Update/TeamUpdater.cs"
+WIS = B + "Services/Implementation/WorkItems/WorkItemService.cs"
+CTRL = B + "API/WorkTrackingSystemConnectionsController.cs"
+RESULT = B + "Models/Validation/ConnectionValidationResult.cs"
 
-UNITS = "FullyQualifiedName~AzureDevOpsNamedRelationEndTest.|FullyQualifiedName~TeamUpdaterTest.TriggerUpdate_ACheapRefresh|FullyQualifiedName~TeamUpdaterTest.TriggerUpdate_TheRefreshFound"
+UNITS = (
+    "FullyQualifiedName~AzureDevOpsNamedRelationEndTest.|FullyQualifiedName~TeamUpdaterTest.TriggerUpdate_ACheapRefresh|FullyQualifiedName~TeamUpdaterTest.TriggerUpdate_TheRefreshFound"
+    "|FullyQualifiedName~WorkItemServiceTest.UpdateFeaturesForPortfolio_FullRefreshWhereSeveralFeaturesLackTheNamedLink"
+    "|FullyQualifiedName~WorkItemServiceTest.UpdateWorkItemsForTeam_FullRefreshWhereARecordCarriesAFinding"
+    "|FullyQualifiedName~WorkTrackingSystemConnectionsControllerTest.ValidateConnection_DetailedValidationFailure"
+)
 
 KEPT = "        private static RelationTypeListing? TheKeptListing;\n\n        private async Task<AdditionalFieldResolution> ResolveTheAdditionalFields("
 RESOLVE = "        private async Task<AdditionalFieldResolution> ResolveTheAdditionalFields("
@@ -100,6 +108,16 @@ BREAKS = [
         "(TheEndCalled(reference) is { } end && !HasNoDirection(end)) || TheEndsOf(reference).Count > 0;")]),
     ("A36 a Portfolio naming nothing no longer reads the Predecessor link", [(CON,
         "? adoWorkItem.ExtractDependencyReferences()\n", "? []\n")]),
+    ("A37 a refresh records one finding per work item instead of one per kind, setting and name", [(WIS,
+        ".DistinctBy(finding => (finding.Kind, finding.Setting, finding.Named))", "")]),
+    ("A38 a refresh writes the warning for each finding twice", [(WIS,
+        "foreach (var finding in findings)\n            {\n                WarnAbout(owner, finding);",
+        "foreach (var finding in findings.Concat(findings))\n            {\n                WarnAbout(owner, finding);")]),
+    ("A39 a refused connection check reports the connection as valid", [(RESULT,
+        "IsValid = false,", "IsValid = true,")]),
+    ("A40 a failed connection check is answered with success instead of a refusal", [(CTRL,
+        "if (!validationResult.IsValid)\n            {\n                return BadRequest(validationResult);",
+        "if (!validationResult.IsValid)\n            {\n                return Ok(validationResult);")]),
 ]
 
 only = sys.argv[1:]

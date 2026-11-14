@@ -24,6 +24,9 @@ FILTER = (
     "|FullyQualifiedName~Slice03AzureDevOpsRelationTypeAcceptedScenarios"
     "|FullyQualifiedName~AzureDevOpsNamedRelationEndTest."
     "|FullyQualifiedName~TeamUpdaterTest.TriggerUpdate_ACheapRefresh_LeavesTheFindingsOfItsRowUnsaid"
+    "|FullyQualifiedName~WorkItemServiceTest.UpdateFeaturesForPortfolio_FullRefreshWhereSeveralFeaturesLackTheNamedLink_RecordsOneFindingAndOneWarning"
+    "|FullyQualifiedName~WorkItemServiceTest.UpdateWorkItemsForTeam_FullRefreshWhereARecordCarriesAFinding_ReportsItOnceUnderTheTeamsName"
+    "|FullyQualifiedName~WorkTrackingSystemConnectionsControllerTest.ValidateConnection_DetailedValidationFailure_ReturnsBadRequestWithMessage"
 )
 SLICE_BASE = "d7326c838"
 
