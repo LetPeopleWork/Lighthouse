@@ -40,7 +40,7 @@ Stays: row 1 (409, code and read-back through the controller), row 11 (a save in
 | 16 | Clearing_a_default_stops_the_followers_reading_it_and_is_logged | a cleared default names the field it was; its followers then hang under the tracker's own parent | ConnectionSaveServiceTest `Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas`, EffectiveSettingTest; WhereATeamsWorkItemHangsTest `A_Team_that_followed_the_default_hangs_its_item_under_the_trackers_own_parent_once_the_default_is_cleared` and `A_Team_that_follows_a_default_nobody_set_...` | E3, C1; G2 (follower never reads the default), G3 (wrong default read), G5 | the log row, the reading rows, the hang rows |
 | 18 | A_field_added_in_the_same_save_can_be_the_default | the default is pointed at the stored field | ConnectionSaveServiceTest `Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField` | E4 | that row |
 
-The hang rows (2, 3, 16) are proven by WhereATeamsWorkItemHangsTest, which reads each entry of the Team's effective list as the Jira connector does and applies the selector; the connector's own reading of a field is proven by the unchanged live Jira connector tests and stays outside S1.
+The hang rows (2, 3, 16) are proven by WhereATeamsWorkItemHangsTest, which runs the Team's effective list through the production selector with a fixed stand-in for what each field holds; the connector's own reading of a field is proven by the unchanged, non-live JiraParentReadingsTest (23 rows) and stays outside the S1 break set.
 
 The screen lists 13 moves: rows 2, 3, 4, 7, 8, 9, 10, 11, 13, 14, 15, 16, 18.
 
