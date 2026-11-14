@@ -112,3 +112,6 @@ Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(0,5,0,0) [17 ms]
 Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(0,0,5,0) [< 1 ms]
 Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(0,0,0,5) [< 1 ms]
 Failed!  - Failed:     3, Passed:    81, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== S20 a reading above zero on the first percentile only counts as nothing to report
+Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(5,0,0,0) [44 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)

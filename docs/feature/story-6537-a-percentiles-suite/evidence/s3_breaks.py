@@ -93,6 +93,9 @@ BREAKS = [
     ("S19 a reading above zero on one percentile only counts as nothing to report", W,
      "public bool AreEmpty => P50 == 0 && P70 == 0 && P85 == 0 && P95 == 0;",
      "public bool AreEmpty => P50 == 0;"),
+    ("S20 a reading above zero on the first percentile only counts as nothing to report", W,
+     "public bool AreEmpty => P50 == 0 && P70 == 0 && P85 == 0 && P95 == 0;",
+     "public bool AreEmpty => P70 == 0 && P85 == 0 && P95 == 0;"),
 ]
 
 only = sys.argv[1:]
