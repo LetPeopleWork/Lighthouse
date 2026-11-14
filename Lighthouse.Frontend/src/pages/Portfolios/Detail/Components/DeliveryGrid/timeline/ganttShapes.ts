@@ -332,6 +332,7 @@ export function scalesForSpan(
 	availableWidth: number = ASSUMED_PANEL_WIDTH,
 ) {
 	const days = Math.round(
+		// biome-ignore lint/plugin/no-day-count-from-milliseconds: rounding absorbs the one-hour daylight-saving shift
 		(end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000),
 	);
 

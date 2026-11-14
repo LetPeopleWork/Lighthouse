@@ -27,6 +27,7 @@ const millisecondsPerDay = 86_400_000;
 // window by a day.
 const dayNumber = (day: string): number => {
 	const [year, month, date] = day.split("-").map(Number);
+	// biome-ignore lint/plugin/no-day-count-from-milliseconds: a UTC day is always 24 hours, so this division names the UTC day exactly
 	return Date.UTC(year, month - 1, date) / millisecondsPerDay;
 };
 

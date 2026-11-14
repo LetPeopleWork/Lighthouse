@@ -17,7 +17,7 @@ What already runs, so you know what you can leave to it:
   `Lighthouse.Frontend/biome.json` turns on, at `error`, every Biome rule that matches a rule in the
   Sonar TS profile, and its GritQL plugins in `biome-plugins/` cover Sonar rules Biome lacks (S7761,
   S7770, S7727 for reducers, S4624, S3358 in templates, S6754 setter prefix, MUI `Select` labels, local
-  day keys in production code). Vitest pins the zone and checks `NULLABLE_FIELDS` and the E2E test ids.
+  day keys in production code, and day counts made by dividing milliseconds by 24 hours, in tests too). Vitest pins the zone and checks `NULLABLE_FIELDS` and the E2E test ids.
   `Lighthouse.EndToEndTests/` has its own `biome.json` and plugins (`pnpm run lint`, `pnpm run
   typecheck`, run in CI). Biome does **not** run on pre-push: it belongs to the refactor gate.
 - **Backend**: `Directory.Build.props` adds SonarAnalyzer.CSharp to every non-migration project, with

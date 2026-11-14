@@ -1501,12 +1501,7 @@ describe("BaseMetricsView component", () => {
 		const startDate = new Date(startDateElement.textContent ?? "");
 		const endDate = new Date(endDateElement.textContent ?? "");
 
-		const daysDifference = Math.round(
-			(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-		);
-
-		// Check that start date is roughly 30 days before end date
-		expect(daysDifference).toBeCloseTo(30, 0);
+		expect(differenceInCalendarDays(endDate, startDate)).toBe(30);
 	});
 
 	it("handles API errors gracefully", async () => {
@@ -2878,13 +2873,7 @@ describe("BaseMetricsView component", () => {
 			expect(startDateText).toBeTruthy();
 			expect(endDateText).toBeTruthy();
 
-			// The end date should be close to today
-			const endDate = new Date(endDateText);
-			const now = new Date();
-			const diffInDays = Math.abs(
-				(endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-			);
-			expect(diffInDays).toBeLessThan(1); // Within 1 day
+			expect(isSameDay(new Date(endDateText), new Date())).toBe(true);
 		});
 
 		it("falls back to defaults when URL parameters contain invalid dates", async () => {
@@ -3045,10 +3034,9 @@ describe("BaseMetricsView component", () => {
 			const actualStart = new Date(startDateElement.textContent || "");
 			const actualEnd = new Date(endDateElement.textContent || "");
 
-			// Verify the start date is approximately 60 days ago
-			const diffInDays =
-				(actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60 * 24);
-			expect(Math.abs(diffInDays - customDateRange)).toBeLessThan(1); // Within 1 day tolerance
+			expect(differenceInCalendarDays(actualEnd, actualStart)).toBe(
+				customDateRange,
+			);
 		});
 	});
 

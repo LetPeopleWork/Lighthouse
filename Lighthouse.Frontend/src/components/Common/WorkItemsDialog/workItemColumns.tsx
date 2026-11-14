@@ -195,6 +195,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const utcDayOf = (value: ServerDate): number | null => {
 	if (value === null || value === undefined) return null;
 	const time = new Date(value).getTime();
+	// biome-ignore lint/plugin/no-day-count-from-milliseconds: a UTC day is always 24 hours, so this division names the UTC day exactly
 	return time > 0 ? Math.floor(time / MS_PER_DAY) : null;
 };
 
@@ -222,6 +223,7 @@ const ageOf = (
 	const onDay = new Date(
 		Date.UTC(ageOn.getFullYear(), ageOn.getMonth(), ageOn.getDate(), 12),
 	);
+	// biome-ignore lint/plugin/no-day-count-from-milliseconds: a UTC day is always 24 hours, so this division names the UTC day exactly
 	return underWayOn(row, Math.floor(onDay.getTime() / MS_PER_DAY))
 		? calculateHistoricalAge(row, onDay)
 		: null;

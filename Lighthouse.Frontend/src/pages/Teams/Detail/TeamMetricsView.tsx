@@ -97,11 +97,10 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 		if (team.useFixedDatesForThroughput) {
 			setDateRange(30);
 		} else {
-			const range = Math.round(
-				(team.throughputEndDate.valueOf() -
-					team.throughputStartDate.valueOf()) /
-					(1000 * 60 * 60 * 24),
-			);
+			const elapsed =
+				team.throughputEndDate.valueOf() - team.throughputStartDate.valueOf();
+			// biome-ignore lint/plugin/no-day-count-from-milliseconds: rounding absorbs the one-hour daylight-saving shift
+			const range = Math.round(elapsed / (1000 * 60 * 60 * 24));
 
 			setDateRange(range);
 		}

@@ -21,6 +21,7 @@ export const getAgeInDaysFromStart = (
 	);
 
 	const diffMs = referenceDateOnly - startDateOnly;
+	// biome-ignore lint/plugin/no-day-count-from-milliseconds: both ends are UTC midnights and a UTC day is always 24 hours
 	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
 
 	// Ensure at least 1 day is returned (an item started today counts as 1)

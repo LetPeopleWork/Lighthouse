@@ -56,6 +56,7 @@ export function computeMaxBlockedAgeDays(
 		if (!item.blockedSince) continue;
 		const since = new Date(item.blockedSince).getTime();
 		if (Number.isNaN(since)) continue;
+		// biome-ignore lint/plugin/no-day-count-from-milliseconds: how long an item has been blocked is an elapsed time in whole 24-hour periods, not a count of calendar days
 		const days = Math.floor((now - since) / MS_PER_DAY);
 		if (max === null || days > max) {
 			max = days;

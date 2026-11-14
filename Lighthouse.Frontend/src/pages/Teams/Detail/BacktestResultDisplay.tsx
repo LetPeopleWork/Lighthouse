@@ -8,6 +8,7 @@ import {
 	ChartsXAxis,
 	ChartsYAxis,
 } from "@mui/x-charts";
+import { differenceInCalendarDays } from "date-fns";
 import type React from "react";
 import { useMemo } from "react";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
@@ -46,10 +47,7 @@ export const computeAverageForecast = (
 	const backtestStartDate = new Date(backtestResult.startDate);
 	const backtestEndDate = new Date(backtestResult.endDate);
 	const backtestDays =
-		Math.floor(
-			(backtestEndDate.getTime() - backtestStartDate.getTime()) /
-				(1000 * 60 * 60 * 24),
-		) + 1; // +1 for inclusive
+		differenceInCalendarDays(backtestEndDate, backtestStartDate) + 1; // +1 for inclusive
 
 	// Project the average to the backtest period
 	const avgForecast = avgPerDay * backtestDays;

@@ -10,7 +10,8 @@
 		"./biome-plugins/use-state-pair-naming.grit",
 		"./biome-plugins/wrap-own-reducer.grit",
 		"./biome-plugins/merge-consecutive-push.grit",
-		"./biome-plugins/use-concise-digit-class.grit"
+		"./biome-plugins/use-concise-digit-class.grit",
+		"./biome-plugins/no-day-count-from-milliseconds.grit"
 	],
 	"linter": {
 		"rules": {
