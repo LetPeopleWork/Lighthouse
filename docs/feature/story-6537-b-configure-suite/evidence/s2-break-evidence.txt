@@ -1,0 +1,155 @@
+=== H2 the refresh records one finding per Feature
+Failed UpdateFeaturesForPortfolio_FullRefreshWhereSeveralFeaturesLackTheNamedLink_RecordsOneFindingAndOneWarning [76 ms]
+Failed UpdateFeaturesForPortfolio_FullRefreshWhereTheDependencyFieldPointsBothWays_RecordsOneFindingAndOneWarning("Dependency","depends on","is depended on by") [38 ms]
+Failed UpdateFeaturesForPortfolio_FullRefreshWhereTheDependencyFieldPointsBothWays_RecordsOneFindingAndOneWarning("relates to","relates to","relates to") [32 ms]
+Failed!  - Failed:     3, Passed:    77, Skipped:     0, Total:    80, Duration: 569 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H3 the log line for a named link that matched nothing is worded differently
+Failed UpdateFeaturesForPortfolio_FullRefreshWhereTheNamedLinkMatchedNothing_WarnsInPlainLanguage [53 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 511 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H4 a named link that one Feature carries is still told as matching nothing
+Failed A_named_link_that_one_Feature_carries_is_not_told_as_matching_nothing [18 ms]
+Failed A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name("blocks","PAY-98") [1 ms]
+Failed A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name("is blocked by","PAY-50") [1 ms]
+Failed!  - Failed:     3, Passed:    77, Skipped:     0, Total:    80, Duration: 347 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H5 a Portfolio whose Features carry no links is told a link matched nothing
+Failed Features_carrying_no_links_at_all_are_told_nothing_about_the_named_link [26 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 581 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H8 the oldest run that recorded findings is the one shown
+Failed A_later_full_run_that_found_nothing_replaces_the_findings_of_an_older_one [35 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 475 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H9 a run that recorded no findings counts as the latest full run
+Failed A_cheap_runs_row_shows_the_findings_and_the_time_of_the_last_full_run_that_recorded_any [64 ms]
+Failed A_later_full_run_that_found_nothing_replaces_the_findings_of_an_older_one [5 ms]
+Failed An_entity_none_of_whose_runs_recorded_findings_sends_its_row_without_the_two_members [< 1 ms]
+Failed!  - Failed:     3, Passed:    77, Skipped:     0, Total:    80, Duration: 534 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H10 the finding is labelled with the time of the row that shows it
+Failed A_cheap_runs_row_shows_the_findings_and_the_time_of_the_last_full_run_that_recorded_any [65 ms]
+Failed A_later_full_run_that_found_nothing_replaces_the_findings_of_an_older_one [7 ms]
+Failed An_entity_none_of_whose_runs_recorded_findings_sends_its_row_without_the_two_members [1 ms]
+Failed!  - Failed:     3, Passed:    77, Skipped:     0, Total:    80, Duration: 518 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H11 an entity shows the findings of another entity
+Failed The_findings_of_one_entity_are_not_shown_on_the_rows_of_another [35 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 524 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H12 a cheap refresh records findings on its row
+Failed TriggerUpdate_ACheapRefresh_LeavesTheFindingsOfItsRowUnsaid [69 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 335 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H14 the history keeps the newest row without findings instead
+Failed LogRefreshAsync_MoreCheapRunsThanKept_KeepsTheNewestRunThatRecordedFindings [18 ms]
+Failed LogRefreshAsync_NewerFullRunFoundNothing_PrunesTheOlderRunsFindings [3 ms]
+Failed!  - Failed:     2, Passed:    78, Skipped:     0, Total:    80, Duration: 313 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K1 a phrase typed as one end reads the other end
+Failed A_named_link_that_one_Feature_carries_is_not_told_as_matching_nothing [20 ms]
+Failed A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name("blocks","PAY-98") [2 ms]
+Failed A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name("is blocked by","PAY-50") [1 ms]
+Failed Naming_a_link_replaces_is_blocked_by_for_that_Portfolio [2 ms]
+Failed Only_links_of_the_type_the_reference_settled_on_are_read [1 ms]
+Failed!  - Failed:     5, Passed:    75, Skipped:     0, Total:    80, Duration: 357 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K3 a renamed phrase is matched case-sensitively
+Failed A_renamed_phrase_typed_in_any_case_is_read_like_the_stock_one [19 ms]
+Failed The_types_name_reads_nothing_and_says_it_points_both_ways("BLOCKS") [1 ms]
+Failed!  - Failed:     2, Passed:    78, Skipped:     0, Total:    80, Duration: 378 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K4 a link type wins over a field of the same name
+Failed A_real_field_carrying_the_name_of_a_link_phrase_is_read_as_the_field [18 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 362 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K5 a name that points both ways reads both ends
+Failed A_link_types_own_name_reads_nothing_on_either_end_and_the_finding_names_both_phrases [20 ms]
+Failed A_phrase_both_ends_of_a_link_type_share_reads_nothing_and_says_so [3 ms]
+Failed The_types_name_reads_nothing_and_says_it_points_both_ways("Blocks") [3 ms]
+Failed The_types_name_reads_nothing_and_says_it_points_both_ways("BLOCKS") [1 ms]
+Failed!  - Failed:     4, Passed:    76, Skipped:     0, Total:    80, Duration: 355 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K6 a name that points both ways raises no finding
+Failed A_Dependency_Field_naming_an_ordinary_field_says_nothing_about_the_links_its_Features_carry [26 ms]
+Failed A_finding_names_what_was_typed_into_the_Dependency_Field [10 ms]
+Failed A_link_types_own_name_reads_nothing_on_either_end_and_the_finding_names_both_phrases [4 ms]
+Failed A_name_pointing_both_ways_offers_the_outward_phrase_before_the_inward_one [2 ms]
+Failed A_named_link_that_matched_nothing_is_not_also_told_about_is_blocked_by [10 ms]
+Failed A_named_link_that_one_Feature_carries_is_not_told_as_matching_nothing [3 ms]
+Failed A_phrase_both_ends_of_a_link_type_share_reads_nothing_and_says_so [3 ms]
+Failed A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name("blocks","PAY-98") [2 ms]
+Failed A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name("is blocked by","PAY-50") [1 ms]
+Failed A_Portfolio_naming_nothing_whose_links_carry_no_is_blocked_by_is_told_so_in_the_log_only [2 ms]
+Failed Features_carrying_no_links_at_all_are_told_nothing_about_the_named_link [2 ms]
+Failed Features_carrying_only_the_outward_end_of_other_links_are_told_the_named_link_matched_nothing [5 ms]
+Failed The_types_name_reads_nothing_and_says_it_points_both_ways("Blocks") [4 ms]
+Failed The_types_name_reads_nothing_and_says_it_points_both_ways("BLOCKS") [1 ms]
+Failed!  - Failed:    14, Passed:    66, Skipped:     0, Total:    80, Duration: 351 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K7 the two phrases are offered inward end first
+Failed A_name_pointing_both_ways_offers_the_outward_phrase_before_the_inward_one [18 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 348 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K8 a finding names another setting
+Failed A_link_types_own_name_reads_nothing_on_either_end_and_the_finding_names_both_phrases [19 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 312 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K11 naming a link adds it to is blocked by
+Failed TheDependenciesOf_ANamedLinkTypeNoLinkCarries_WaitsOnNothingRatherThanFallingBack [26 ms]
+Failed TheDependenciesOf_ReadsOneSourceDecidedByThePortfolioAndTheTracker(ALinkType,OneWhoseFieldMayNameALinkType,["LGHTHSDMO-98"],TrackerLink) [2 ms]
+Failed A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name("blocks","PAY-98") [2 ms]
+Failed A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name("is blocked by","PAY-50") [2 ms]
+Failed Naming_a_link_replaces_is_blocked_by_for_that_Portfolio [1 ms]
+Failed Only_links_of_the_type_the_reference_settled_on_are_read [1 ms]
+Failed The_types_name_reads_nothing_and_says_it_points_both_ways("Blocks") [3 ms]
+Failed The_types_name_reads_nothing_and_says_it_points_both_ways("BLOCKS") [1 ms]
+Failed!  - Failed:     8, Passed:    72, Skipped:     0, Total:    80, Duration: 340 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K12 a field's keys are recorded as read from a tracker link
+Failed TheDependenciesOf_APortfolioNamingAField_ReadsThatFieldAndNotTheLink [23 ms]
+Failed TheDependenciesOf_ReadsOneSourceDecidedByThePortfolioAndTheTracker(AnOrdinaryField,OneWhoseFieldMayNameALinkType,["LGHTHSDMO-11", "LGHTHSDMO-12"],PortfolioField) [< 1 ms]
+Failed TheDependenciesOf_ReadsOneSourceDecidedByThePortfolioAndTheTracker(AnOrdinaryField,OneThatServesOnlyFields,["LGHTHSDMO-11", "LGHTHSDMO-12"],PortfolioField) [< 1 ms]
+Failed TheDependenciesOf_ReadsOneSourceDecidedByThePortfolioAndTheTracker(ALinkType,OneThatServesOnlyFields,["LGHTHSDMO-11", "LGHTHSDMO-12"],PortfolioField) [< 1 ms]
+Failed A_Dependency_Field_naming_an_ordinary_field_reads_its_keys_and_not_the_links [12 ms]
+Failed!  - Failed:     5, Passed:    75, Skipped:     0, Total:    80, Duration: 337 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K13 an ordinary field is read as a link type that matched nothing
+Failed A_Dependency_Field_naming_a_field_reads_what_was_typed_into_it [186 ms]
+Failed A_Dependency_Field_naming_an_ordinary_field_reads_its_keys_and_not_the_links [12 ms]
+Failed A_real_field_carrying_the_name_of_a_link_phrase_is_read_as_the_field [2 ms]
+Failed!  - Failed:     3, Passed:    77, Skipped:     0, Total:    80, Duration: 329 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K14 a Portfolio naming nothing no longer reads is blocked by
+Failed ReadsTheTrackersOwnLink_TurnsOnWhetherThePortfolioNamedAField [28 ms]
+Failed TheDependenciesOf_APortfolioNamingNoField_ReadsTheTrackersOwnLink [2 ms]
+Failed TheDependenciesOf_ReadsOneSourceDecidedByThePortfolioAndTheTracker(Nothing,OneWhoseFieldMayNameALinkType,["LGHTHSDMO-7", "LGHTHSDMO-9"],TrackerLink) [< 1 ms]
+Failed TheDependenciesOf_ReadsOneSourceDecidedByThePortfolioAndTheTracker(Nothing,OneThatServesOnlyFields,["LGHTHSDMO-7", "LGHTHSDMO-9"],TrackerLink) [< 1 ms]
+Failed A_Portfolio_naming_nothing_still_reads_is_blocked_by [2 ms]
+Failed A_Portfolio_naming_nothing_whose_links_carry_no_is_blocked_by_is_told_so_in_the_log_only [2 ms]
+Failed!  - Failed:     6, Passed:    74, Skipped:     0, Total:    80, Duration: 370 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K15 is blocked by is read from the wrong links
+Failed A_Portfolio_naming_nothing_still_reads_is_blocked_by [19 ms]
+Failed A_Portfolio_naming_nothing_whose_links_carry_no_is_blocked_by_is_told_so_in_the_log_only [2 ms]
+Failed!  - Failed:     2, Passed:    78, Skipped:     0, Total:    80, Duration: 363 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K16 links of another type are read too
+Failed Features_carrying_only_the_outward_end_of_other_links_are_told_the_named_link_matched_nothing [28 ms]
+Failed Only_links_of_the_type_the_reference_settled_on_are_read [3 ms]
+Failed!  - Failed:     2, Passed:    78, Skipped:     0, Total:    80, Duration: 339 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H1 every Feature carries a finding object of its own, so one refresh tells it several times
+Failed Features_carrying_only_the_outward_end_of_other_links_are_told_the_named_link_matched_nothing [29 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 320 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H6 a Dependency Field naming an ordinary field is told its links matched nothing
+Failed A_Dependency_Field_naming_an_ordinary_field_says_nothing_about_the_links_its_Features_carry [31 ms]
+Failed A_Portfolio_naming_nothing_whose_links_carry_no_is_blocked_by_is_told_so_in_the_log_only [3 ms]
+Failed!  - Failed:     2, Passed:    78, Skipped:     0, Total:    80, Duration: 342 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H7 a Dependency Field naming an ordinary field is warned about links in the log
+Failed A_Portfolio_naming_nothing_whose_links_carry_no_is_blocked_by_is_told_so_in_the_log_only [21 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 376 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== H13 the history prunes the full run that recorded findings
+Failed LogRefreshAsync_MoreCheapRunsThanKept_KeepsTheNewestRunThatRecordedFindings [20 ms]
+Failed LogRefreshAsync_NewerFullRunFoundNothing_PrunesTheOlderRunsFindings [3 ms]
+Failed LogRefreshAsync_PrunesToRetentionLimit [2 ms]
+Failed LogRefreshAsync_RunsRecordedAtTheSameInstant_PrunesTheOneWrittenFirst [3 ms]
+Failed!  - Failed:     4, Passed:    76, Skipped:     0, Total:    80, Duration: 362 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K2 a phrase typed exactly as one end reads does not pick its end
+Failed A_finding_names_what_was_typed_into_the_Dependency_Field [44 ms]
+Failed A_link_types_own_name_reads_nothing_on_either_end_and_the_finding_names_both_phrases [25 ms]
+Failed A_name_pointing_both_ways_offers_the_outward_phrase_before_the_inward_one [4 ms]
+Failed A_phrase_both_ends_of_a_link_type_share_reads_nothing_and_says_so [7 ms]
+Failed A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name("blocks","PAY-98") [4 ms]
+Failed A_renamed_phrase_typed_in_any_case_is_read_like_the_stock_one [4 ms]
+Failed The_types_name_reads_nothing_and_says_it_points_both_ways("Blocks") [5 ms]
+Failed The_types_name_reads_nothing_and_says_it_points_both_ways("BLOCKS") [2 ms]
+Failed!  - Failed:     8, Passed:    72, Skipped:     0, Total:    80, Duration: 773 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K9 a finding does not quote what was typed
+Failed A_finding_names_what_was_typed_into_the_Dependency_Field [34 ms]
+Failed A_link_types_own_name_reads_nothing_on_either_end_and_the_finding_names_both_phrases [5 ms]
+Failed!  - Failed:     2, Passed:    78, Skipped:     0, Total:    80, Duration: 436 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K10 a phrase both ends share is read as the inward end
+Failed A_phrase_both_ends_of_a_link_type_share_reads_nothing_and_says_so [26 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 402 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K17 naming a link asks Jira for its link types again
+Failed Naming_a_link_costs_the_Jira_instance_no_extra_request [32 ms]
+Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 527 ms - Lighthouse.Backend.Tests.dll (net10.0)
