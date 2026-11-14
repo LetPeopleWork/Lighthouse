@@ -221,9 +221,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>Reuse</h3>
 
-<p>FlowMetricsModuleRules</p>
+<p>ModuleRules</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:14</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15</p>
 
 <p>Extend</p>
 
@@ -250,7 +250,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>InboundVerdict</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:137</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:186</p>
 
 <p>Reuse</p>
 
@@ -746,6 +746,13 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <pre><code>Forecasting namespace, folder or file key widened to also see Modules/Forecasting
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Its target ServicesPattern matches Services.Implementation.Forecast today, so a moved Forecasting type would leave its forbidden set; widened to also see Modules/Forecasting
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs</p>
 
 <h4>Verification</h4>
@@ -781,7 +788,8 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <h5>Decisions</h5>
 
-<p>None.</p>
+<pre><code>The S2 oracle reads two rule members by name: StalenessPolicyPurityArchUnitTest.ServicesPattern (its widened target pattern) and a new member RefinementModuleArchUnitTest.BackgroundUpdatesPattern (the background-updates key that rule widens). Both stay members of their owning rule class with those exact names.
+</code></pre>
 
 <h5>Constraints</h5>
 
@@ -852,6 +860,15 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <pre><code>Already Services or Modules; forbidden target for RealityCheckReadOnly
 </code></pre>
 
+<p>StalenessPolicyPurityArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the rule; widened in place, no second rule
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>test-architecture-rule</p>
@@ -919,15 +936,6 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <p>test-architecture-rule</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16</p>
-
-<p>UnchangedCompatible</p>
-
-<pre><code>Same conditional check; Services pattern already covers sub-namespaces
-</code></pre>
-
-<p>test-architecture-rule</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UpdateHoldsAreForecastOnlyArchUnitTest.cs:32</p>
 
 <p>UnchangedCompatible</p>
@@ -951,6 +959,15 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <p>UnchangedCompatible</p>
 
 <pre><code>Reads ForecastingPattern by reflection, so widened through it
+</code></pre>
+
+<p>test-architecture-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>Test project only; ServicesPattern widened so the forbidden set examines at least the types it examined before plus Modules/Forecasting
 </code></pre>
 
 <h5>Agreement</h5>
@@ -1025,18 +1042,18 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 <h4>Targets</h4>
 
-<p>Scripts/examine/bin/forecast-answers-compare</p>
-
-<p>Create</p>
-
-<pre><code>Built like metrics-answers-compare; no forecast comparison exists
-</code></pre>
-
 <p>.nwave/examine.json</p>
 
 <p>Extend</p>
 
 <pre><code>Declares forecast-answers-compare before the first EXAMINE
+</code></pre>
+
+<p>Scripts/examine/build-examine-commands</p>
+
+<p>Extend</p>
+
+<pre><code>Committed generator: writes Scripts/examine/bin/forecast-answers-compare and its C# driver forecast-answers-capture.cs beside metrics-answers-compare
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs</p>
@@ -1074,7 +1091,8 @@ bash Scripts/examine/bin/forecast-answers-compare HEAD
 
 <h5>Decisions</h5>
 
-<p>None.</p>
+<pre><code>Scripts/examine/bin/ is git-ignored and generated: the committed target is Scripts/examine/build-examine-commands, which writes forecast-answers-compare and its C# driver forecast-answers-capture.cs. The verification command still runs the generated bash Scripts/examine/bin/forecast-answers-compare HEAD after the generator has run.
+</code></pre>
 
 <h5>Constraints</h5>
 
@@ -1086,15 +1104,6 @@ bash Scripts/examine/bin/forecast-answers-compare HEAD
 
 <h5>Impact</h5>
 
-<p>examine-script</p>
-
-<p>Scripts/examine/bin/forecast-answers-compare:1</p>
-
-<p>Changed</p>
-
-<pre><code>New script; reads only
-</code></pre>
-
 <p>examine-config</p>
 
 <p>.nwave/examine.json:1</p>
@@ -1102,6 +1111,15 @@ bash Scripts/examine/bin/forecast-answers-compare HEAD
 <p>Changed</p>
 
 <pre><code>One added entry
+</code></pre>
+
+<p>examine-script-generator</p>
+
+<p>Scripts/examine/build-examine-commands:51</p>
+
+<p>Changed</p>
+
+<pre><code>Generator gains forecast-answers-compare and forecast-answers-capture.cs; existing generated commands unchanged; generated scripts read only
 </code></pre>
 
 <h5>Agreement</h5>

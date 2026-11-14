@@ -283,7 +283,7 @@
 "counters": {
 "D": 7,
 "E": 3,
-"F": 174,
+"F": 180,
 "K": 3,
 "P": 3,
 "S": 3,
@@ -411,9 +411,9 @@
 "reuse": [
 {
 "decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:14",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15",
 "reason": "F26",
-"symbol": "FlowMetricsModuleRules"
+"symbol": "ModuleRules"
 },
 {
 "decision": "Extend",
@@ -429,7 +429,7 @@
 },
 {
 "decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:137",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:186",
 "reason": "F29",
 "symbol": "InboundVerdict"
 },
@@ -608,6 +608,9 @@
 "stimulus": "F56"
 },
 "records": {
+"decisions": [
+"F176"
+],
 "impact": [
 {
 "decision": "Changed",
@@ -654,12 +657,6 @@
 {
 "decision": "UnchangedCompatible",
 "kind": "test-architecture-rule",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16",
-"reason": "F63"
-},
-{
-"decision": "UnchangedCompatible",
-"kind": "test-architecture-rule",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UpdateHoldsAreForecastOnlyArchUnitTest.cs:32",
 "reason": "F64"
 },
@@ -674,6 +671,12 @@
 "kind": "test-architecture-rule",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:247",
 "reason": "F66"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16",
+"reason": "F177"
 }
 ],
 "not_applicable": [
@@ -728,6 +731,12 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs:20",
 "reason": "F60",
 "symbol": "ApplicationCore"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16",
+"reason": "F59",
+"symbol": "StalenessPolicyPurityArchUnitTest"
 }
 ]
 },
@@ -761,6 +770,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs",
 "reason": "F55"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs",
+"reason": "F175"
 }
 ],
 "verification": [
@@ -779,18 +793,21 @@
 "stimulus": "F83"
 },
 "records": {
+"decisions": [
+"F179"
+],
 "impact": [
-{
-"decision": "Changed",
-"kind": "examine-script",
-"locator": "Scripts/examine/bin/forecast-answers-compare:1",
-"reason": "F86"
-},
 {
 "decision": "Changed",
 "kind": "examine-config",
 "locator": ".nwave/examine.json:1",
 "reason": "F87"
+},
+{
+"decision": "Changed",
+"kind": "examine-script-generator",
+"locator": "Scripts/examine/build-examine-commands:51",
+"reason": "F180"
 }
 ],
 "not_applicable": [
@@ -810,14 +827,14 @@
 },
 "targets": [
 {
-"change": "Create",
-"path": "Scripts/examine/bin/forecast-answers-compare",
-"reason": "F81"
-},
-{
 "change": "Extend",
 "path": ".nwave/examine.json",
 "reason": "F82"
+},
+{
+"change": "Extend",
+"path": "Scripts/examine/build-examine-commands",
+"reason": "F178"
 }
 ],
 "verification": [
@@ -937,7 +954,13 @@
 "F172": "No change: no Forecasting type sits in the recurring blackout rule's subject or target set, and a type key sees the type wherever it lives",
 "F173": "These rules keep guarding what they guard today when Forecasting moves",
 "F174": "No Forecasting namespace, folder or file key to widen: the recurring blackout rule's subject is a Models entity and API metrics controllers and its targets are the exact Services.Implementation namespace, the blackout service port and repository contracts, none of which holds a Forecasting type; the other three key on the types themselves, which no made-up type can stand in for",
+"F175": "Its target ServicesPattern matches Services.Implementation.Forecast today, so a moved Forecasting type would leave its forbidden set; widened to also see Modules/Forecasting",
+"F176": "The S2 oracle reads two rule members by name: StalenessPolicyPurityArchUnitTest.ServicesPattern (its widened target pattern) and a new member RefinementModuleArchUnitTest.BackgroundUpdatesPattern (the background-updates key that rule widens). Both stay members of their owning rule class with those exact names.",
+"F177": "Test project only; ServicesPattern widened so the forbidden set examines at least the types it examined before plus Modules/Forecasting",
+"F178": "Committed generator: writes Scripts/examine/bin/forecast-answers-compare and its C# driver forecast-answers-capture.cs beside metrics-answers-compare",
+"F179": "Scripts/examine/bin/ is git-ignored and generated: the committed target is Scripts/examine/build-examine-commands, which writes forecast-answers-compare and its C# driver forecast-answers-capture.cs. The verification command still runs the generated bash Scripts/examine/bin/forecast-answers-compare HEAD after the generator has run.",
 "F18": "Made-up types that prove a widened Forecasting pattern live in the test assembly under namespaces the real widened pattern matches, i.e. below Lighthouse.Backend.Modules.Forecasting, with a last segment naming them as fixtures (for example Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastingFixtures). Deviation from the example namespace Lighthouse.Backend.Modules.ForecastingFixtures in the story design: the widened patterns end in (\\.|$), so a type in Modules.ForecastingFixtures lies outside them and would prove only a rule shape with a substituted pattern, not the real constant. Rule-shape cases that pass their namespaces as parameters may keep the Modules.ForecastingFixtures namespaces the S02 way.",
+"F180": "Generator gains forecast-answers-compare and forecast-answers-capture.cs; existing generated commands unchanged; generated scripts read only",
 "F19": "Widening per rule (Ratchet design, Rules first): ModuleBoundariesArchUnitTest.ForecastingPattern gains |^Lighthouse\\.Backend\\.Modules\\.Forecasting(\\.|$) and Flow metrics outbound rule keeps reading it; SimulatedRunIsolationArchUnitTest uses an old-or-module namespace pattern; RealityCheckReadOnlyArchUnitTest matches the two policies by typeof and forbids ApplicationCoreRules.ApplicationCore minus the two policies; DependencyAwareForecastSeamArchUnitTest subject is the update components or Modules.Forecasting.Adapters.Background, exemption by typeof(ForecastUpdater); FastWithManyFeaturesArchUnitTest locates ForecastService.cs and ForecastUpdater.cs by file name under the production source as it does for ForecastLane.cs; RefinementModuleArchUnitTest forbidden background set adds Modules.Forecasting.Adapters. UpdateHoldsAreForecastOnly, ForecastFilterSeam and DomainEventHandlerOrderPin already key on typeof or short names and are left unchanged. RecurringBlackoutEventsSeam and StalenessPolicyPurity: the crafter checks whether a Forecasting type is in their subject or target set and widens to ApplicationCore only if so. Flow metrics full-name strings for Forecasting types are not touched here (feature B rewrites them).",
 "F2": "The Forecasting move (features B and C) can start with every rule already watching the new place and a capture that proves nothing changed",
 "F20": "Safety net: a port-level seeded check under Tests/Acceptance/Forecasting runs ForecastSimulation and ForecastService (How Many and When) with DrawsFromAPinnedStartingNumber over ServicePortHarness and compares percentiles to literal values written in the test. A new Scripts/examine/bin/forecast-answers-compare, built like metrics-answers-compare (usage: forecast-answers-compare [base-revision [candidate-revision]]), captures the bodies of the GET forecast endpoints on seeded demo data with a fixed seed and diffs them; declared in .nwave/examine.json. The production-like database comparison is a maintainer-run step, not an EXAMINE expectation.",
@@ -987,7 +1010,6 @@
 "F60": "Already Services or Modules; forbidden target for RealityCheckReadOnly",
 "F61": "Test project only; examines at least the types it examined before",
 "F62": "Widened to ApplicationCore only if the crafter finds a Forecasting type in its subject or target set",
-"F63": "Same conditional check; Services pattern already covers sub-namespaces",
 "F64": "Keys on typeof; sees the type wherever it lives",
 "F65": "Keys on typeof",
 "F66": "Reads ForecastingPattern by reflection, so widened through it",
@@ -1007,12 +1029,10 @@
 "F79": "Renamed to ModuleRules.cs; every consumer migrated in the same commit",
 "F8": "Removing the Flow metrics to Forecasting cycle and Forecasting's own module rules (feature C)",
 "F80": "Reuse is decided in the shared rows: ModuleRules.cs is FlowMetricsModuleRules renamed and extended with ApplicationIsReachedFromOutsideOnlyBy and OutboundEdges; the four Flow metrics rule tests are Extended to call it",
-"F81": "Built like metrics-answers-compare; no forecast comparison exists",
 "F82": "Declares forecast-answers-compare before the first EXAMINE",
 "F83": "Through ServicePortHarness with FakeLighthouseClock and DrawsFromAPinnedStartingNumber, ask ForecastService for a How Many and a When forecast and run ForecastSimulation over fixed inputs",
 "F84": "The returned percentiles equal literal values written in the test",
 "F85": "A changed draw, percentile or input (for example a percentile index shifted by one) and the test stays green",
-"F86": "New script; reads only",
 "F87": "One added entry",
 "F88": "Adds a test and a script; no existing code moves",
 "F89": "No dependency or owner law is reachable from a test and a read-only script",

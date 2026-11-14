@@ -82,9 +82,9 @@ Governed slices: S3
 
 ### Reuse
 
-FlowMetricsModuleRules
+ModuleRules
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsModuleRules\.cs\:14
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs\:15
 
 Extend
 
@@ -114,7 +114,7 @@ Lifted with OutboundVerdict into ModuleRules
 
 InboundVerdict
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsModuleRules\.cs\:137
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs\:186
 
 Reuse
 
@@ -665,6 +665,14 @@ Extend
 Forecasting namespace, folder or file key widened to also see Modules/Forecasting
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/StalenessPolicyPurityArchUnitTest\.cs
+
+Extend
+
+```text
+Its target ServicesPattern matches Services.Implementation.Forecast today, so a moved Forecasting type would leave its forbidden set; widened to also see Modules/Forecasting
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingRulesSeeTheModuleArchUnitTest\.cs
 
 #### Verification
@@ -704,7 +712,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+The S2 oracle reads two rule members by name: StalenessPolicyPurityArchUnitTest.ServicesPattern (its widened target pattern) and a new member RefinementModuleArchUnitTest.BackgroundUpdatesPattern (the background-updates key that rule widens). Both stay members of their owning rule class with those exact names.
+```
 
 ##### Constraints
 
@@ -782,6 +792,16 @@ Reuse
 Already Services or Modules; forbidden target for RealityCheckReadOnly
 ```
 
+StalenessPolicyPurityArchUnitTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/StalenessPolicyPurityArchUnitTest\.cs\:16
+
+Extend
+
+```text
+Existing owner of the rule; widened in place, no second rule
+```
+
 ##### Impact
 
 test\-architecture\-rule
@@ -856,16 +876,6 @@ Widened to ApplicationCore only if the crafter finds a Forecasting type in its s
 
 test\-architecture\-rule
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/StalenessPolicyPurityArchUnitTest\.cs\:16
-
-UnchangedCompatible
-
-```text
-Same conditional check; Services pattern already covers sub-namespaces
-```
-
-test\-architecture\-rule
-
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/UpdateHoldsAreForecastOnlyArchUnitTest\.cs\:32
 
 UnchangedCompatible
@@ -892,6 +902,16 @@ UnchangedCompatible
 
 ```text
 Reads ForecastingPattern by reflection, so widened through it
+```
+
+test\-architecture\-rule
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/StalenessPolicyPurityArchUnitTest\.cs\:16
+
+Changed
+
+```text
+Test project only; ServicesPattern widened so the forbidden set examines at least the types it examined before plus Modules/Forecasting
 ```
 
 ##### Agreement
@@ -968,20 +988,20 @@ None.
 
 #### Targets
 
-Scripts\/examine\/bin\/forecast\-answers\-compare
-
-Create
-
-```text
-Built like metrics-answers-compare; no forecast comparison exists
-```
-
 \.nwave\/examine\.json
 
 Extend
 
 ```text
 Declares forecast-answers-compare before the first EXAMINE
+```
+
+Scripts\/examine\/build\-examine\-commands
+
+Extend
+
+```text
+Committed generator: writes Scripts/examine/bin/forecast-answers-compare and its C# driver forecast-answers-capture.cs beside metrics-answers-compare
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/Forecasting\/SeededForecastsStayTheSameTest\.cs
@@ -1023,7 +1043,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+Scripts/examine/bin/ is git-ignored and generated: the committed target is Scripts/examine/build-examine-commands, which writes forecast-answers-compare and its C# driver forecast-answers-capture.cs. The verification command still runs the generated bash Scripts/examine/bin/forecast-answers-compare HEAD after the generator has run.
+```
 
 ##### Constraints
 
@@ -1035,16 +1057,6 @@ None.
 
 ##### Impact
 
-examine\-script
-
-Scripts\/examine\/bin\/forecast\-answers\-compare\:1
-
-Changed
-
-```text
-New script; reads only
-```
-
 examine\-config
 
 \.nwave\/examine\.json\:1
@@ -1053,6 +1065,16 @@ Changed
 
 ```text
 One added entry
+```
+
+examine\-script\-generator
+
+Scripts\/examine\/build\-examine\-commands\:51
+
+Changed
+
+```text
+Generator gains forecast-answers-compare and forecast-answers-capture.cs; existing generated commands unchanged; generated scripts read only
 ```
 
 ##### Agreement
