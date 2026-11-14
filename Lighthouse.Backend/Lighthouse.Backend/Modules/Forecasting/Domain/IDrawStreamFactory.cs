@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Interfaces.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// Hands a forecast the numbers it will draw from. Production starts every run from a fresh number, so

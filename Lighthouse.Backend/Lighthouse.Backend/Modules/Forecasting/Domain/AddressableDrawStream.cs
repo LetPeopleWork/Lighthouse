@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// A draw worked out from its coordinates by hashing them, so nothing is stored, nothing is allocated

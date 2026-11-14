@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// How a forecast simulates the work: where its random numbers come from, and how far and how often it

@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// A fresh starting number for every run, which is what the forecast has always done - two refreshes

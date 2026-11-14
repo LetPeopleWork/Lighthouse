@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Interfaces.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// Where the feature forecast gets its random numbers. A draw is decided by the place it is asked for

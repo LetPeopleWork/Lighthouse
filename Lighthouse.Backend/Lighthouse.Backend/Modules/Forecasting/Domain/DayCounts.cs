@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// How often something happened on each simulated day, one count per row or per Feature.

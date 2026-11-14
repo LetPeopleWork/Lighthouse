@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// How often each row finished on each day, and how often work first began on each row and on each

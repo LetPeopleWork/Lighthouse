@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Interfaces.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// What a Portfolio's forecast run did. A run either simulated and saved new forecasts, or found the

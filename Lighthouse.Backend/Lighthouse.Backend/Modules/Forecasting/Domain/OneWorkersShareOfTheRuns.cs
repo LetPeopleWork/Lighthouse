@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// One worker's share of a forecast's simulated runs, and everything that share needs to carry them out.

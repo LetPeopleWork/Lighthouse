@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// One simulated run of a forecast: a single day counter, and on each day every Team that still has work

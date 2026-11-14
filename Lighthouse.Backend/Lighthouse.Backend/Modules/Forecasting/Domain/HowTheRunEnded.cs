@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     public enum HowTheRunEnded
     {

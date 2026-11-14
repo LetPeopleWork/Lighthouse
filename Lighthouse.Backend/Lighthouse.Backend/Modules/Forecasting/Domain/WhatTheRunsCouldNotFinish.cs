@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>
     /// What a forecast's simulated runs left behind, collected as they happen so that the two things worth

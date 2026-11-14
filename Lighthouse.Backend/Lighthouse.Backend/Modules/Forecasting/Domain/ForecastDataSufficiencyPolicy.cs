@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Metrics;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     public static class ForecastDataSufficiencyPolicy
     {
