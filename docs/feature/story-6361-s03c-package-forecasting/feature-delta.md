@@ -538,3 +538,20 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 - **EXAMINE data:** answer comparisons on demo data; the maintainer runs one comparison on the production-like
   database by hand.
 - **Size:** L, all 9 slices kept. The catalogue is corrected at close-out.
+
+## Wave: DEVOPS / [REF] Platform lens and usage data (2026-11-14)
+
+- **Platform risk: none material.** Nothing is deployed differently: no new env var, chart value, credential,
+  workflow, container or migration (D-0, no schema change). Standalone, Docker and Helm builds are unchanged; the
+  single binary keeps its shape (ADR-027 D4).
+- **CI:** no workflow change. Feature B and C edit `Program.cs` (`using` lines and the three new port
+  registrations), so the push runs the full CI backend suite, live tracker tests included. Budget for the longer run;
+  a red live-tracker test there is checked against the environmental signatures in CLAUDE.md before it is called a
+  regression.
+- **Observability:** log categories change with the namespace (`Lighthouse.Backend.Services.Implementation.Forecast`
+  → `Lighthouse.Backend.Modules.Forecasting.*`). No appsettings, script or workflow filters on the old names (checked
+  at DESIGN, D-7), so no configuration changes. Self-hosters who filter logs by category would see the new names;
+  that is a log-category change, not user-facing behaviour, and needs no release note.
+- **Rollback:** revert the commit range; no data to undo.
+- **Usage-data event: N/A, because the Story is behaviour-free.** It adds nothing a user can use, so there is nothing
+  to count. No `UsageDataEventName` entry, no `docs/settings/usagedata.md` line.
