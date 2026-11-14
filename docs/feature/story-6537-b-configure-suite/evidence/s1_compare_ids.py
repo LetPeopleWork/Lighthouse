@@ -31,6 +31,7 @@ FILTER = (
     "|FullyQualifiedName~SettingsOwnerDtoRoundTripTest."
     "|FullyQualifiedName~WorkTrackingSystemConnectionUsageTest."
     "|FullyQualifiedName~AdditionalFieldInUseTest."
+    "|FullyQualifiedName~WhereATeamsWorkItemHangsTest."
     "|FullyQualifiedName~TeamExtensionsTest."
     "|FullyQualifiedName~PortfolioExtensionsTest."
     "|FullyQualifiedName~WorkTrackingSystemOptionsOwnerExtensionsParentSourcesTest."
