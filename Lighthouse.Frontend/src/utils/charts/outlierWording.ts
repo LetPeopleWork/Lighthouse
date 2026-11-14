@@ -39,9 +39,6 @@ export function outlierWording(terms: OutlierTerms) {
 		aboveTheAxis: (lines: readonly AboveAxisLine[]) =>
 			`Above the axis: ${lines.map(aboveAxisPhrase).join(", ")}.`,
 		moreRows: (count: number) => `and ${count} more`,
-		openInList: "Open in a list",
-		dialogTitle: (cut: number) =>
-			`${terms.workItems} longer than ${cut} days, not drawn on the ${terms.cycleTime} chart`,
 		allVisibleAreOutliers: `All visible ${terms.workItems} are outliers.`,
 		allTypesHidden: "All types are hidden.",
 		columns: {

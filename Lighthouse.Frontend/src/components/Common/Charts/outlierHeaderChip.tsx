@@ -15,7 +15,6 @@ interface OutlierHeaderChipInput {
 	readonly offScaleLines: readonly IPlotLine[];
 	readonly disabled: boolean;
 	readonly onOpened: () => void;
-	readonly onOpenInList: (outliers: readonly IWorkItem[]) => void;
 }
 
 /** The chip for the widget header, or nothing when no outlier of a visible type is left out of the plot. */
@@ -27,7 +26,6 @@ export function outlierHeaderChip({
 	offScaleLines,
 	disabled,
 	onOpened,
-	onOpenInList,
 }: OutlierHeaderChipInput): ReactNode {
 	if (outliers.length === 0 || median === null || cut === null) return null;
 
@@ -46,7 +44,6 @@ export function outlierHeaderChip({
 			}
 			disabled={disabled}
 			onOpened={onOpened}
-			onOpenInList={() => onOpenInList(outliers)}
 		/>
 	);
 }

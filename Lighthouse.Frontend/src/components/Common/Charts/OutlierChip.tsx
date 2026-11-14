@@ -21,7 +21,6 @@ interface OutlierChipProps {
 	readonly disabled: boolean;
 	/** Called once each time the popover goes from closed to open. */
 	readonly onOpened: () => void;
-	readonly onOpenInList: () => void;
 }
 
 const OutlierChip: React.FC<OutlierChipProps> = ({
@@ -34,7 +33,6 @@ const OutlierChip: React.FC<OutlierChipProps> = ({
 	aboveTheAxis,
 	disabled,
 	onOpened,
-	onOpenInList,
 }) => {
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 	const isPhone = useMediaQuery(PHONE_WIDTH_QUERY);
@@ -90,10 +88,6 @@ const OutlierChip: React.FC<OutlierChipProps> = ({
 						rows={rows}
 						moreCount={moreCount}
 						aboveTheAxis={aboveTheAxis}
-						onOpenInList={() => {
-							close();
-							onOpenInList();
-						}}
 					/>
 				</Popover>
 			)}
