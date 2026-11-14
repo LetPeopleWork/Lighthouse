@@ -1347,7 +1347,7 @@ Render the chart with outliers, open the chip popover, activate 'Open in a list'
 ```
 
 ```text
-The Work Items dialog opens with exactly the chip's outliers (effective copies, same ids, sortable and exportable through the existing dialog), the popover closes, and on dialog close focus returns to the chip; the widget help names the outlier rule (5 times the 50th percentile) using the configured Work Item, Cycle Time and SLE terms, with 'outlier' fixed
+The outliers open in the existing Work Items dialog with exactly the chip's outliers (same ids, effective copies), the popover closes, and on dialog close focus returns to the chip; the widget help names the outlier rule (5 times the 50th percentile) using the configured Work Item and Cycle Time terms, with 'outlier' fixed
 ```
 
 ```text

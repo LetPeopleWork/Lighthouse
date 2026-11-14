@@ -466,7 +466,7 @@ The popover closes, the Work Items list opens titled with the reader's Work Item
 ```
 
 ```text
-The reader sees every outlier in the sortable, exportable list and keyboard focus is not lost
+The reader sees every outlier in the list and keyboard focus is not lost
 ```
 
 ##### Disposition
@@ -476,7 +476,7 @@ Tested
 Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierList\.test\.tsx
 
 ```text
-The list holds only the ten shown rows, or all items, or focus falls to the page body after closing
+The popover stays open behind the list, the list holds only the ten shown rows or all items, or focus falls to the page body after closing
 ```
 
 ###### Obligations

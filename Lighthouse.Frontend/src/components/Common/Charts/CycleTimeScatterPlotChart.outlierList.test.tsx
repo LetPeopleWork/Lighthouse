@@ -174,6 +174,7 @@ describe("Cycle Time scatterplot opens the outliers in the Work Items list", () 
 
 		fireEvent.click(screen.getByRole("button", { name: "Open in a list" }));
 
+		expect(screen.queryByText("Open in a list")).toBeNull();
 		expect(screen.queryByText("and 1 more")).toBeNull();
 		expect(screen.queryByText(/Not drawn: longer than/)).toBeNull();
 		expect(
