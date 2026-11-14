@@ -82,11 +82,65 @@
 "stimulus": "F45",
 "user_result": "F47"
 }
+],
+"S3": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F58",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py"
+},
+"expected": "F56",
+"stimulus": "F55",
+"user_result": "F57"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F62",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s3_breaks.py"
+},
+"expected": "F60",
+"stimulus": "F59",
+"user_result": "F61"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F66",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/TwoCopiesFillingTheSameDayAtThePortTest.cs"
+},
+"expected": "F64",
+"stimulus": "F63",
+"user_result": "F65"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F70",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py"
+},
+"expected": "F68",
+"stimulus": "F67",
+"user_result": "F69"
+}
 ]
 },
 "counters": {
 "E": 3,
-"F": 54,
+"F": 70,
 "P": 3,
 "S": 3
 },
@@ -248,8 +302,24 @@
 "F52": "Run Slice05ReconstructCycleTimeHistoryTest and the unit and port classes named in the S3 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production, guard-list or budget file changed since the slice base, then apply one deliberate break per moved or rewritten rule and run its named row",
 "F53": "Slice05ReconstructCycleTimeHistoryTest holds exactly three rows (Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits, The_days_the_first_visit_could_not_show_are_there_on_the_next_one, A_refresh_landing_mid_fill_neither_loses_its_day_nor_duplicates_one) and they pass; every other id equals the expected list and passes; each of the sixteen removed host rows maps in the id table to a named unit or port row, and each deliberate break of a production line on its path turns that row red",
 "F54": "A removed host row whose rule, or a loop, cap, budget, gate or unique-day path it walked, no unit or port row turns red for; an id missing or extra; Slice05 holding other than the three staying rows; a production, guard-list or budget file in the diff",
+"F55": "Run the Slice05 host class and the unit and port classes named in the id table, compare sorted test ids with the expected list",
+"F56": "Slice05ReconstructCycleTimeHistoryTest holds three rows after the craft (the read route, the read-fill-read loop, a refresh landing mid-fill); every other id equals the expected list and passes; the sixteen removed host rows are not in the oracle's observed list",
+"F57": "The backend Integration tier no longer runs sixteen host rows whose rules a unit or port row proves",
+"F58": "A removed host row stays in the class (the oracle lists it as EXTRA), or a unit id is renamed or dropped (MISSING)",
+"F59": "Apply one deliberate break to each production line a removed host row walked (the walk of every asked day, the 90-day cap, the time budget, the last-observed and first-supported day bounds, the held-day ask, the blank quiet day on fill and daily recording, no rewrite of a written day, the afterwards window, the restore gate and stand-down, the unique-day absorb, the failing-day continue) and run the unit and port classes",
 "F6": "Pilot: the rules of Slice07WhereTheLimitsActuallyMovedTest (which limit families a team and a portfolio fill, the not-ready and zero-band gates, the retention edge as of a day, a refilled day reading as the watched day) are proven by unit tests of ProcessBehaviorSnapshotWriter and RetentionEdge; one host row stays for the limits route",
+"F60": "Every break (S1 to S16 incl. S5r, S9r, S16r in the break evidence) turns at least one named unit or port row red, and each removed host row has an id-table row naming them",
+"F61": "No rule the removed host rows proved loses its test",
+"F62": "A loop, cap, budget, gate or unique-day line is broken and every unit and port row stays green (the break evidence shows a red row for all of them)",
+"F63": "Two copies of the application fill the same day against a real database with no web host",
+"F64": "One point is held for the day, not two; a refusal caused by another copy storing the day is absorbed and a refusal for any other reason is thrown on",
+"F65": "A chart never shows two points for one day when two copies of the application run",
+"F66": "The writer has no backstop for a duplicate day (S15 turns the port row and the writer row red)",
+"F67": "Check which production, guard-list and budget files differ from the slice base, and which host rows stay",
+"F68": "No file under the backend project, the host-user guard list or the time budget list is in the diff; the three staying host rows cover the read route, the read-fill-read loop and a refresh landing mid-fill",
+"F69": "The wiring of the trend route stays proven by host rows while no product behaviour changes",
 "F7": "Run Slice07WhereTheLimitsActuallyMovedTest, ProcessBehaviorSnapshotWriterTest and RetentionEdgeTest (Debug, tokens removed), compare their sorted test ids with the expected id list, then apply one deliberate break per moved or rewritten rule in the working tree and run the named unit row",
+"F70": "A production or guard-list file is changed (the oracle prints CHANGED)",
 "F8": "Slice07WhereTheLimitsActuallyMovedTest holds exactly one row, Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing, and it passes; every other id of the three classes equals the expected list and passes; each of the nine removed host rows maps in the id table to a named unit row; each deliberate break (a family line removed from FamiliesFor, the zero-band gate removed, the retention edge anchored on today instead of the last observed day, FillDayIfAbsent passing asOf null) turns its named unit row red",
 "F9": "A removed host row with no unit row that turns red for its rule's production line; an id missing or extra beyond the nine removed and the added unit rows; Slice07 holding more or fewer than the one route row; a production file in the diff"
 },

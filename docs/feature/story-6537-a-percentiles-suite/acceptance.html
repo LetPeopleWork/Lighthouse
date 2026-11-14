@@ -313,6 +313,112 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Slice05 host class and the unit and port classes named in the id table, compare sorted test ids with the expected list
+</code></pre>
+
+<pre><code>Slice05ReconstructCycleTimeHistoryTest holds three rows after the craft (the read route, the read-fill-read loop, a refresh landing mid-fill); every other id equals the expected list and passes; the sixteen removed host rows are not in the oracle&#x27;s observed list
+</code></pre>
+
+<pre><code>The backend Integration tier no longer runs sixteen host rows whose rules a unit or port row proves
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py</p>
+
+<pre><code>A removed host row stays in the class (the oracle lists it as EXTRA), or a unit id is renamed or dropped (MISSING)
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Apply one deliberate break to each production line a removed host row walked (the walk of every asked day, the 90-day cap, the time budget, the last-observed and first-supported day bounds, the held-day ask, the blank quiet day on fill and daily recording, no rewrite of a written day, the afterwards window, the restore gate and stand-down, the unique-day absorb, the failing-day continue) and run the unit and port classes
+</code></pre>
+
+<pre><code>Every break (S1 to S16 incl. S5r, S9r, S16r in the break evidence) turns at least one named unit or port row red, and each removed host row has an id-table row naming them
+</code></pre>
+
+<pre><code>No rule the removed host rows proved loses its test
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s3_breaks.py</p>
+
+<pre><code>A loop, cap, budget, gate or unique-day line is broken and every unit and port row stays green (the break evidence shows a red row for all of them)
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Two copies of the application fill the same day against a real database with no web host
+</code></pre>
+
+<pre><code>One point is held for the day, not two; a refusal caused by another copy storing the day is absorbed and a refusal for any other reason is thrown on
+</code></pre>
+
+<pre><code>A chart never shows two points for one day when two copies of the application run
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/TwoCopiesFillingTheSameDayAtThePortTest.cs</p>
+
+<pre><code>The writer has no backstop for a duplicate day (S15 turns the port row and the writer row red)
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Check which production, guard-list and budget files differ from the slice base, and which host rows stay
+</code></pre>
+
+<pre><code>No file under the backend project, the host-user guard list or the time budget list is in the diff; the three staying host rows cover the read route, the read-fill-read loop and a refresh landing mid-fill
+</code></pre>
+
+<pre><code>The wiring of the trend route stays proven by host rows while no product behaviour changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py</p>
+
+<pre><code>A production or guard-list file is changed (the oracle prints CHANGED)
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

@@ -188,6 +188,128 @@ A route that returned the stored days of one tab for every tab would be caught o
 
 None.
 
+### S3
+
+##### Covers
+
+P1
+
+```text
+Run the Slice05 host class and the unit and port classes named in the id table, compare sorted test ids with the expected list
+```
+
+```text
+Slice05ReconstructCycleTimeHistoryTest holds three rows after the craft (the read route, the read-fill-read loop, a refresh landing mid-fill); every other id equals the expected list and passes; the sixteen removed host rows are not in the oracle's observed list
+```
+
+```text
+The backend Integration tier no longer runs sixteen host rows whose rules a unit or port row proves
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\_compare\_ids\.py
+
+```text
+A removed host row stays in the class (the oracle lists it as EXTRA), or a unit id is renamed or dropped (MISSING)
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Apply one deliberate break to each production line a removed host row walked (the walk of every asked day, the 90-day cap, the time budget, the last-observed and first-supported day bounds, the held-day ask, the blank quiet day on fill and daily recording, no rewrite of a written day, the afterwards window, the restore gate and stand-down, the unique-day absorb, the failing-day continue) and run the unit and port classes
+```
+
+```text
+Every break (S1 to S16 incl. S5r, S9r, S16r in the break evidence) turns at least one named unit or port row red, and each removed host row has an id-table row naming them
+```
+
+```text
+No rule the removed host rows proved loses its test
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\_breaks\.py
+
+```text
+A loop, cap, budget, gate or unique-day line is broken and every unit and port row stays green (the break evidence shows a red row for all of them)
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Two copies of the application fill the same day against a real database with no web host
+```
+
+```text
+One point is held for the day, not two; a refusal caused by another copy storing the day is absorbed and a refusal for any other reason is thrown on
+```
+
+```text
+A chart never shows two points for one day when two copies of the application run
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/TwoCopiesFillingTheSameDayAtThePortTest\.cs
+
+```text
+The writer has no backstop for a duplicate day (S15 turns the port row and the writer row red)
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Check which production, guard-list and budget files differ from the slice base, and which host rows stay
+```
+
+```text
+No file under the backend project, the host-user guard list or the time budget list is in the diff; the three staying host rows cover the read route, the read-fill-read loop and a refresh landing mid-fill
+```
+
+```text
+The wiring of the trend route stays proven by host rows while no product behaviour changes
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\_compare\_ids\.py
+
+```text
+A production or guard-list file is changed (the oracle prints CHANGED)
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows
