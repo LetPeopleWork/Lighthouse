@@ -39,11 +39,11 @@ None.
 P2
 
 ```text
-Apply one deliberate break per rule and per loop, gate or branch a removed host row walks, and run the unit classes
+Apply one deliberate break per rule and per loop, gate or branch a removed host row walks, including where a Team's item hangs and the refusal when only the Teams default names a field, and run the unit classes
 ```
 
 ```text
-Every break turns at least one named unit row red, and the file is restored after each
+Every break turns at least one named unit row red, all failed rows are printed, and the file is restored after each
 ```
 
 ```text
@@ -57,7 +57,7 @@ Tested
 docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s1\_breaks\.py
 
 ```text
-A unit row only restates the production result so that a break on its path leaves it green
+A unit row only restates the production result so that a break on its path leaves it green, or a removed host row that walks the hang of an item has only a reading test
 ```
 
 ###### Obligations

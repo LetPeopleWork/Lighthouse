@@ -20,11 +20,11 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F33",
+"still_passes_if": "F40",
 "test": "docs/feature/story-6537-b-configure-suite/evidence/s1_breaks.py"
 },
-"expected": "F31",
-"stimulus": "F30",
+"expected": "F39",
+"stimulus": "F38",
 "user_result": "F32"
 },
 {
@@ -44,7 +44,7 @@
 },
 "counters": {
 "E": 3,
-"F": 37,
+"F": 40,
 "P": 3,
 "S": 5
 },
@@ -255,15 +255,15 @@
 "F28": "The backend Integration tier runs 41 fewer host rows, so it takes less time",
 "F29": "A host row is removed while its unit twin is missing or renamed, or a unit row stays on the host",
 "F3": "Each rule a ConfigureOncePerConnection host test proves is proven by a test at the lowest layer that can prove it (a unit test of the computing class or of the connector, else the service port), so the backend Integration tier takes less time",
-"F30": "Apply one deliberate break per rule and per loop, gate or branch a removed host row walks, and run the unit classes",
-"F31": "Every break turns at least one named unit row red, and the file is restored after each",
 "F32": "No rule loses its test: each removed host row maps in the id table to a unit row that fails when the production line is broken",
-"F33": "A unit row only restates the production result so that a break on its path leaves it green",
 "F34": "Compare the working tree with the slice base for production files, the time budget list and the host-user guard list",
 "F35": "No production or budget file differs, no guard line is added, and the rows that stay still prove the wiring of each route",
 "F36": "Nothing the product does changes; the wiring rows of each route still run on the host",
 "F37": "A production file is edited to make a moved row pass, or a guard line is added for a new host user",
+"F38": "Apply one deliberate break per rule and per loop, gate or branch a removed host row walks, including where a Team's item hangs and the refusal when only the Teams default names a field, and run the unit classes",
+"F39": "Every break turns at least one named unit row red, all failed rows are printed, and the file is restored after each",
 "F4": "No rule loses its test: every removed host row has an id-table row naming the test that now proves its rule, and one deliberate break of that rule's production line turns that test red",
+"F40": "A unit row only restates the production result so that a break on its path leaves it green, or a removed host row that walks the hang of an item has only a reading test",
 "F5": "No production file changes, the test-host guard lists do not grow, and at least one host row per route still proves the wiring",
 "F6": "The 28 host rows the screen keeps (wire, real-store concurrency, end-to-end, or a rule whose owner was not located), ClockIsolationScenarios, live connector tests, and any production change",
 "F7": "The save-pipeline rules of Slice05bReferencedFieldsAndOlderPayloads and Slice05aTeamsParentOverrideDefault (referenced fields, older payloads, a team's parent override against the connection default) are proven by unit tests of the classes that compute them; their wire and concurrency rows stay",
