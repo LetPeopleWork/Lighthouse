@@ -576,7 +576,12 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 - **Waiver: "improve the tests you touch" for using-only edits in feature B.** About 40 test classes in feature B change only
   by a `using` line, because the types they cover moved namespace. Making each of them better is not part of a pure move,
   and C3 moves them anyway, which is when they are touched for real. Recorded as an explicit waiver (host decision under
-  AFK; maintainer may revisit).
+  AFK; maintainer may revisit). The waiver also covers a full type name inside a test that the move forces, such as the
+  two `global::…IForecastService` fixture parameters in feature A's `ForecastingRulesSeeTheModuleArchUnitTest` (B2 review
+  F1): the offender type stays the same, so the oracle's meaning does not change and its approval still stands.
+- **B2 review F2 (wording only):** B2's stimulus says nine Application types, while the oracle lists ten names in nine
+  files, because `ForecastInputs` shares a file with `ForecastInputFingerprint`. The `TypesLiveInTheirLayer` advice text
+  reads like a list fix when the fix is a move; C2 makes that wording a parameter anyway.
 - **Follow-up, out of scope:** `Architecture/IlDependencies` does not read catch-clause types, events or named attribute
   arguments, so a reference used only there escapes every IL rule. No current code hits it. Candidate for a small
   improvement item.
