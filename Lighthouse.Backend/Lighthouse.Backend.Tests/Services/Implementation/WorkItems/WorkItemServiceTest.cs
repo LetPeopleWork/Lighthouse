@@ -1854,6 +1854,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 + "Name one end: 'depends on' or 'is depended on by'."));
         }
 
+        /// <summary>
+        /// Several Features that lack the named link all carry the same misconfiguration, so the refresh
+        /// records one finding and writes one line, never one per Feature.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWhereSeveralFeaturesLackTheNamedLink_RecordsOneFindingAndOneWarning()
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => new Feature
+                {
+                    ReferenceId = referenceId,
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, "depends on", TheLinksSeenWhereNothingMatched)],
+                })]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            var outcome = await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Findings, Has.Count.EqualTo(1), "A finding per Feature buries the rest of the refresh under it.");
+                Assert.That(whatTheServiceWrote.Warnings.Where(line => line.Contains("'depends on'", StringComparison.Ordinal)), Has.Exactly(1).Items);
+            }
+        }
+
         [Test]
         public async Task UpdateFeaturesForPortfolio_FullRefreshWhereTheNamedLinkMatchedNothing_WarnsInPlainLanguage()
         {

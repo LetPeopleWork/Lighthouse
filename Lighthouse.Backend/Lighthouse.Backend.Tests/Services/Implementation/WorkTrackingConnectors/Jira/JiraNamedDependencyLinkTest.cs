@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using System.Net;
@@ -32,6 +33,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string[] TheStockBlocksPhrasesOutwardFirst = ["blocks", "is blocked by"];
 
         private static readonly string[] TheOutwardPhrasesOfBlocksAndRelates = ["blocks", "relates to"];
+
+        private static readonly string[] TheTwoPhrasesOfTheDependencyType = ["depends on", "is depended on by"];
+
+        private static readonly DependencySource[] ReadFromThePortfoliosField = [DependencySource.PortfolioField];
 
         /// <summary>
         /// Jira's stock Blocks type is named the word its outward end reads. Typed exactly as one end reads,
@@ -320,6 +325,276 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatGatesIt }));
         }
+
+        /// <summary>
+        /// One Feature that carries the named link is enough: the Portfolio has dependencies, so nothing
+        /// went unmatched and the refresh says nothing.
+        /// </summary>
+        [Test]
+        public async Task A_named_link_that_one_Feature_carries_is_not_told_as_matching_nothing()
+        {
+            var subject = AnInstanceDefining(
+                [Dependency, Relates],
+                [
+                    JiraWireFormat.AnEpic(TheFeature, Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks)),
+                    JiraWireFormat.AnEpic(WhatGatesIt, Relates.LinkWhoseOutwardIssueIs(WhatItBlocks)),
+                ],
+                new RecordingLogger<JiraWorkTrackingConnector>());
+
+            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features.SelectMany(feature => feature.RefreshFindings), Is.Empty);
+                Assert.That(WhatItWaitsOn(features.Single(feature => feature.ReferenceId == TheFeature)), Is.EqualTo(new List<string> { WhatItBlocks }));
+            }
+        }
+
+        /// <summary>
+        /// Having no dependencies is the ordinary case, so Features that carry no links at all are told
+        /// nothing about the named link.
+        /// </summary>
+        [Test]
+        public async Task Features_carrying_no_links_at_all_are_told_nothing_about_the_named_link()
+        {
+            var subject = AnInstanceDefining(
+                [StockBlocks, Dependency, Relates],
+                [JiraWireFormat.AnEpic(TheFeature), JiraWireFormat.AnEpic(WhatItBlocks)],
+                new RecordingLogger<JiraWorkTrackingConnector>());
+
+            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None);
+
+            Assert.That(features.SelectMany(feature => feature.RefreshFindings), Is.Empty);
+        }
+
+        /// <summary>
+        /// A Portfolio reading a field of its own has deliberately stopped reading links, so its links are
+        /// neither a finding nor a log line, even when its Features carry links that read nothing.
+        /// </summary>
+        [Test]
+        public async Task A_Dependency_Field_naming_an_ordinary_field_says_nothing_about_the_links_its_Features_carry()
+        {
+            var log = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = AnInstanceDefiningFieldsAndLinkTypes(
+                ["Blocked By Keys"], [Relates], [JiraWireFormat.AnEpic(TheFeature, Relates.LinkWhoseOutwardIssueIs(WhatItBlocks))], log);
+
+            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Blocked By Keys"), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features.SelectMany(feature => feature.RefreshFindings), Is.Empty);
+                Assert.That(log.Warnings, Is.Empty);
+            }
+        }
+
+        /// <summary>
+        /// A link type's own name says nothing about which end waits, on either Feature, and the finding
+        /// names the setting, what was typed and the two phrases to choose between.
+        /// </summary>
+        [Test]
+        public async Task A_link_types_own_name_reads_nothing_on_either_end_and_the_finding_names_both_phrases()
+        {
+            var subject = AnInstanceDefining(
+                [Dependency],
+                [
+                    JiraWireFormat.AnEpic(TheFeature, Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks)),
+                    JiraWireFormat.AnEpic(WhatItBlocks, Dependency.LinkWhoseInwardIssueIs(TheFeature)),
+                ],
+                new RecordingLogger<JiraWorkTrackingConnector>());
+
+            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Dependency"), CancellationToken.None);
+            var findings = features.SelectMany(feature => feature.RefreshFindings).Distinct().ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features.SelectMany(WhatItWaitsOn), Is.Empty);
+                Assert.That(findings, Has.Count.EqualTo(1), "One finding per refresh, never one per Feature.");
+                Assert.That(findings[0].Kind, Is.EqualTo(RefreshFindingKind.NamedLinkPointsBothWays));
+                Assert.That(findings[0].Setting, Is.EqualTo(RefreshFindingSetting.DependencyField));
+                Assert.That(findings[0].Named, Is.EqualTo("Dependency"));
+                Assert.That(findings[0].Seen, Is.EquivalentTo(TheTwoPhrasesOfTheDependencyType));
+            }
+        }
+
+        /// <summary>
+        /// "relates to" is what both ends of the stock Relates type read, so it points nowhere either.
+        /// </summary>
+        [Test]
+        public async Task A_phrase_both_ends_of_a_link_type_share_reads_nothing_and_says_so()
+        {
+            var subject = AnInstanceDefining(
+                [Relates],
+                [
+                    JiraWireFormat.AnEpic(TheFeature, Relates.LinkWhoseOutwardIssueIs(WhatItBlocks)),
+                    JiraWireFormat.AnEpic(WhatItBlocks, Relates.LinkWhoseInwardIssueIs(TheFeature)),
+                ],
+                new RecordingLogger<JiraWorkTrackingConnector>());
+
+            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("relates to"), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features.SelectMany(WhatItWaitsOn), Is.Empty);
+                Assert.That(
+                    features.SelectMany(feature => feature.RefreshFindings).Select(finding => finding.Kind).Distinct(),
+                    Is.EqualTo(new List<RefreshFindingKind> { RefreshFindingKind.NamedLinkPointsBothWays }));
+            }
+        }
+
+        /// <summary>
+        /// An instance renamed the inward end of Blocks to "waits for", and it is typed with capitals: the
+        /// same result "is blocked by" gives on a stock instance.
+        /// </summary>
+        [Test]
+        public async Task A_renamed_phrase_typed_in_any_case_is_read_like_the_stock_one()
+        {
+            var renamed = new JiraLinkType("Blocks", "waits for", "blocks");
+            var subject = AnInstanceDefining(
+                [renamed],
+                [
+                    JiraWireFormat.AnEpic(TheFeature, renamed.LinkWhoseInwardIssueIs(WhatBlocksIt)),
+                    JiraWireFormat.AnEpic(WhatBlocksIt, renamed.LinkWhoseOutwardIssueIs(TheFeature)),
+                ],
+                new RecordingLogger<JiraWorkTrackingConnector>());
+
+            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Waits For"), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatItWaitsOn(features.Single(feature => feature.ReferenceId == TheFeature)), Is.EqualTo(new List<string> { WhatBlocksIt }));
+                Assert.That(WhatItWaitsOn(features.Single(feature => feature.ReferenceId == WhatBlocksIt)), Is.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Field lookup runs first, so a field that carries the very name of a link phrase is read as the
+        /// field and no reference that read a field before changes meaning.
+        /// </summary>
+        [Test]
+        public async Task A_real_field_carrying_the_name_of_a_link_phrase_is_read_as_the_field()
+        {
+            var subject = AnInstanceDefiningFieldsAndLinkTypes(
+                ["depends on"],
+                [Dependency],
+                [JiraWireFormat.AnIssueCarrying(
+                    TheFeature, "Epic", $",\"{JiraWireFormat.TheCustomFieldIdAt(0)}\":\"{WhatGatesIt}\"", Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks))],
+                new RecordingLogger<JiraWorkTrackingConnector>());
+
+            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None)).Single();
+
+            Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatGatesIt }));
+        }
+
+        /// <summary>
+        /// Naming a link type replaces "is blocked by" for that Portfolio; reading both would leave nobody
+        /// able to say where an edge came from.
+        /// </summary>
+        [Test]
+        public async Task Naming_a_link_replaces_is_blocked_by_for_that_Portfolio()
+        {
+            var subject = AnInstanceDefining(
+                [Dependency, StockBlocks],
+                JiraWireFormat.AnEpic(TheFeature, Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks), StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt)));
+
+            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None)).Single();
+
+            Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatItBlocks }));
+        }
+
+        /// <summary>
+        /// A Portfolio naming nothing reads "is blocked by" and ignores the other links, as it always did.
+        /// </summary>
+        [Test]
+        public async Task A_Portfolio_naming_nothing_still_reads_is_blocked_by()
+        {
+            var subject = AnInstanceDefining(
+                [Dependency, StockBlocks],
+                JiraWireFormat.AnEpic(TheFeature, Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks), StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt)));
+
+            var feature = (await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None)).Single();
+
+            Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatBlocksIt }));
+        }
+
+        /// <summary>
+        /// A Dependency Field naming an ordinary field reads the keys typed into it, whatever the Feature's
+        /// links say, and records that they came from the Portfolio's field.
+        /// </summary>
+        [Test]
+        public async Task A_Dependency_Field_naming_an_ordinary_field_reads_its_keys_and_not_the_links()
+        {
+            var subject = AnInstanceDefiningFieldsAndLinkTypes(
+                ["Blocked By Keys"],
+                [Dependency],
+                [JiraWireFormat.AnIssueCarrying(
+                    TheFeature, "Epic", $",\"{JiraWireFormat.TheCustomFieldIdAt(0)}\":\"{WhatGatesIt}; {WhatBlocksIt}\"", Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks))],
+                new RecordingLogger<JiraWorkTrackingConnector>());
+
+            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Blocked By Keys"), CancellationToken.None)).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatItWaitsOn(feature), Is.EquivalentTo(new List<string> { WhatGatesIt, WhatBlocksIt }));
+                Assert.That(feature.DependsOnReferences.Select(reference => reference.Source).Distinct(), Is.EqualTo(ReadFromThePortfoliosField));
+            }
+        }
+
+        /// <summary>
+        /// The links already arrive with every Feature, so naming one costs the instance nothing. The
+        /// baseline is the same Portfolio on the same connection, with the link registered and not named.
+        /// </summary>
+        [Test]
+        public async Task Naming_a_link_costs_the_Jira_instance_no_extra_request()
+        {
+            var feature = JiraWireFormat.AnEpic(TheFeature, Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks));
+            var askedWithTheLinkNamed = new List<string>();
+            var askedWithNothingNamed = new List<string>();
+            var named = APortfolioNamingAsItsDependencyField("depends on");
+            var notNamed = JiraConnectorTestSetup.APortfolioOnJiraCloud();
+            notNamed.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = TheDependencyFieldId,
+                DisplayName = "depends on",
+                Reference = "depends on",
+            });
+
+            await AnInstanceCountingItsRequests([Dependency], feature, askedWithTheLinkNamed).GetFeaturesForProject(named, CancellationToken.None);
+            await AnInstanceCountingItsRequests([Dependency], feature, askedWithNothingNamed).GetFeaturesForProject(notNamed, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(askedWithNothingNamed, Is.Not.Empty, "positive control: the refresh naming nothing reached Jira at all");
+                Assert.That(askedWithTheLinkNamed, Is.EqualTo(askedWithNothingNamed),
+                    "A refresh naming the link asks Jira for no more than the same refresh naming nothing.");
+            }
+        }
+
+        private static JiraWorkTrackingConnector AnInstanceCountingItsRequests(JiraLinkType[] linkTypes, string issue, List<string> asked)
+            => JiraConnectorTestSetup.AConnectorOver(StubTransport.RespondingWith(request =>
+            {
+                var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+                asked.Add(path);
+
+                return path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal)
+                    ? JiraWireFormat.TheLinkTypeListDefining(linkTypes.Select((type, index) => JiraWireFormat.ALinkTypeDefinition(index, type)))
+                    : AnInstanceAnswering(request, [issue]);
+            }), new RecordingLogger<JiraWorkTrackingConnector>());
+
+        private static JiraWorkTrackingConnector AnInstanceDefiningFieldsAndLinkTypes(
+            string[] fields, JiraLinkType[] linkTypes, string[] issues, RecordingLogger<JiraWorkTrackingConnector> log)
+            => JiraConnectorTestSetup.AConnectorOver(StubTransport.RespondingWith(request =>
+            {
+                var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+
+                if (path.EndsWith(JiraWireFormat.FieldListEndpoint, StringComparison.Ordinal))
+                {
+                    return JiraWireFormat.TheFieldListDefining(fields);
+                }
+
+                return path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal)
+                    ? JiraWireFormat.TheLinkTypeListDefining(linkTypes.Select((type, index) => JiraWireFormat.ALinkTypeDefinition(index, type)))
+                    : AnInstanceAnswering(request, issues);
+            }), log);
 
         private static JiraWorkTrackingConnector AnInstanceAnsweringTheLinkTypeListWith(HttpStatusCode status, string[] issues)
             => JiraConnectorTestSetup.AConnectorOver(StubTransport.AnsweringWith(request =>
