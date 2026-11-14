@@ -20,7 +20,7 @@ New unit rows (all added by this slice):
 - PortfolioExtensionsTest: `A_script_saving_back_the_settings_without_Ignore_Dependencies_leaves_a_Portfolio_that_ignores_them_ignoring_them`.
 - ConnectionSaveServiceTest: `Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem` (Dependency, SizeEstimate, FeatureOwner). Real service over mocked repositories and dispatcher; one follower and one owner Portfolio; asserts the published Portfolio ids, no Team ids and the log line naming the follower.
 
-## Slice12EstimationDefaultScenarios (18 rows leave, 2 stay)
+## Slice12EstimationDefaultScenarios (16 rows leave, 4 stay)
 
 | Row | Removed host row | Path it walks | Now proven by | Break | Red rows |
 |---|---|---|---|---|---|

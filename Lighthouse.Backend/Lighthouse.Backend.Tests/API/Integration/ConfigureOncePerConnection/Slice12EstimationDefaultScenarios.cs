@@ -10,10 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-6303-configure-once-per-connection")]
-    [Category("story-6313")]
-    [Category("slice-12")]
-    [Category("us-11")]
     public class Slice12EstimationDefaultScenarios : ConnectionDefaultsAcceptanceTest
     {
         private const string StoryPointsInPoints = "Story Points, Points";
