@@ -110,32 +110,6 @@ Walking skeleton: typical work readable, outliers disclosed in the header chip a
 
 None.
 
-### S2
-
-```text
-Slice 02: the outlier chip follows the type chips, a named Cycle Time and the date range, the cut and axis stay put when a type is toggled, and an all-outlier or all-hidden view says so instead of 'No data available'.
-```
-
-#### Promises
-
-P3
-
-#### Depends on
-
-S1
-
-#### Slice work
-
-S
-
-```text
-The chip stays truthful whatever the reader filters.
-```
-
-##### Rework
-
-None.
-
 ### S3
 
 ```text

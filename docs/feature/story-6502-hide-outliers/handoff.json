@@ -236,7 +236,7 @@
 "C": 1,
 "D": 12,
 "E": 5,
-"F": 268,
+"F": 292,
 "K": 3,
 "L": 3,
 "P": 5,
@@ -909,79 +909,6 @@
 "pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx"
 ]
 },
-"S2": {
-"oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx",
-"prefactoring": {
-"existing_oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx",
-"move": "F106",
-"preserved": "F107",
-"verification": [
-"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx"
-]
-},
-"public_oracle": {
-"expected": "F104",
-"falsifier": "F105",
-"promises": [
-"P3"
-],
-"stimulus": "F103"
-},
-"records": {
-"agreement": [
-{
-"contract": "Named percentile fetch result tagged with definitionId",
-"decision": "Migrated",
-"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:179",
-"party": "Producer",
-"reason": "F110"
-},
-{
-"contract": "Named percentile fetch result tagged with definitionId",
-"decision": "Migrated",
-"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:259",
-"party": "Consumer",
-"reason": "F111"
-}
-],
-"impact": [
-{
-"decision": "Changed",
-"kind": "component",
-"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22",
-"reason": "F109"
-}
-],
-"not_applicable": [
-{
-"analysis": "architectural_tests",
-"reason": "F112"
-},
-{
-"analysis": "contract_tests",
-"reason": "F112"
-}
-],
-"reuse": [
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22",
-"reason": "F108",
-"symbol": "useChartVisibility"
-}
-]
-},
-"targets": [
-{
-"change": "Extend",
-"path": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
-"reason": "F102"
-}
-],
-"verification": [
-"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx"
-]
-},
 "S3": {
 "oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx",
 "prefactoring": {
@@ -1181,17 +1108,6 @@
 "F10": "Walking skeleton: typical work readable, outliers disclosed in the header chip and popover.",
 "F100": "a second multiple constant",
 "F101": "constant-versus-copy test pins the wording to the constant",
-"F102": "Visible-type filter of the chip count, named Cycle Time tag, empty-plot states",
-"F103": "Render the chart with a closed set holding outliers in two Work Item types; toggle type chips off and on, select a named Cycle Time (and change it again with a late answer for the old one), change the date range, then hide every type, and then use a set where every visible item is an outlier",
-"F104": "Chip count and popover list include only outliers of visible types; the cut and the axis top do not change on type toggles; the count follows the selected named Cycle Time percentiles and the date range; a late answer for a superseded definition is ignored; all-visible-outliers shows 'All visible Work Items are outliers.' and all-types-off shows 'All types are hidden.' with legend row and axes kept, never 'No data available'",
-"F105": "A cut taken from the visible subset, a count from hidden types, a stale named answer, or the 'No data available' text in those two states fails",
-"F106": "L1: none beyond slice 1 useMemo derivations",
-"F107": "Slice 1 behaviour",
-"F108": "Already owns the visible type state; the chip reads it and never changes it",
-"F109": "Adds the visibility filter, tag and empty states on top of slice 1",
-"F11": "Slice 02: the outlier chip follows the type chips, a named Cycle Time and the date range, the cut and axis stay put when a type is toggled, and an all-outlier or all-hidden view says so instead of 'No data available'.",
-"F110": "State carries {definitionId, fetcher, percentiles}",
-"F111": "Consumers read only the answer matching the selected definition",
 "F112": "Covered by the shared record",
 "F113": "Pure rule: fiftiethPercentile, findOutliers, axisTop, timesTheMedian, formatTimesTheMedian, OUTLIER_MEDIAN_MULTIPLE",
 "F114": "Term-injected popover, chip and tooltip strings",
@@ -1200,7 +1116,6 @@
 "F117": "Header chip with popover open flag and effect-port props",
 "F118": "Pure popover view with 10-row table",
 "F119": "Memoised partition, filter, axis, chip handoff, tagged named percentiles",
-"F12": "The chip stays truthful whatever the reader filters.",
 "F120": "Header slot context rendered after the RAG chip, carries frameIsReady",
 "F121": "Add OutlierPopoverOpened name",
 "F122": "Append OutlierPopoverOpened = 27",
@@ -1474,20 +1389,6 @@
 "work": {
 "size": "M",
 "value": "F10"
-}
-},
-{
-"depends_on": [
-"S1"
-],
-"id": "S2",
-"observation": "F11",
-"promises": [
-"P3"
-],
-"work": {
-"size": "S",
-"value": "F12"
 }
 },
 {
