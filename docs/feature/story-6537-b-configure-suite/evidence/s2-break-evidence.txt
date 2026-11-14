@@ -125,8 +125,9 @@ Failed A_Dependency_Field_naming_an_ordinary_field_says_nothing_about_the_links_
 Failed A_Portfolio_naming_nothing_whose_links_carry_no_is_blocked_by_is_told_so_in_the_log_only [3 ms]
 Failed!  - Failed:     2, Passed:    78, Skipped:     0, Total:    80, Duration: 342 ms - Lighthouse.Backend.Tests.dll (net10.0)
 === H7 a Dependency Field naming an ordinary field is warned about links in the log
-Failed A_Portfolio_naming_nothing_whose_links_carry_no_is_blocked_by_is_told_so_in_the_log_only [21 ms]
-Failed!  - Failed:     1, Passed:    79, Skipped:     0, Total:    80, Duration: 376 ms - Lighthouse.Backend.Tests.dll (net10.0)
+Failed A_Dependency_Field_naming_an_ordinary_field_says_nothing_about_the_links_its_Features_carry [32 ms]
+Failed A_Portfolio_naming_nothing_whose_links_carry_no_is_blocked_by_is_told_so_in_the_log_only [3 ms]
+Failed!  - Failed:     2, Passed:    78, Skipped:     0, Total:    80, Duration: 500 ms - Lighthouse.Backend.Tests.dll (net10.0)
 === H13 the history prunes the full run that recorded findings
 Failed LogRefreshAsync_MoreCheapRunsThanKept_KeepsTheNewestRunThatRecordedFindings [20 ms]
 Failed LogRefreshAsync_NewerFullRunFoundNothing_PrunesTheOlderRunsFindings [3 ms]

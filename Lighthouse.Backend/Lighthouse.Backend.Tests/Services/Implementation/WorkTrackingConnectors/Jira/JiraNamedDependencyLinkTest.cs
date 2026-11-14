@@ -376,7 +376,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var log = new RecordingLogger<JiraWorkTrackingConnector>();
             var subject = AnInstanceDefiningFieldsAndLinkTypes(
-                ["Blocked By Keys"], [Relates], [JiraWireFormat.AnEpic(TheFeature, Relates.LinkWhoseOutwardIssueIs(WhatItBlocks))], log);
+                ["Blocked By Keys"], [Relates], [JiraWireFormat.AnEpic(TheFeature, Relates.LinkWhoseInwardIssueIs(WhatBlocksIt))], log);
 
             var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Blocked By Keys"), CancellationToken.None);
 
