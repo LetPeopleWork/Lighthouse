@@ -7,7 +7,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
+namespace Lighthouse.Backend.Tests.Acceptance.PercentilesOverTime
 {
     /// <summary>
     /// Two copies of the application serving one database can both work out the same missing day. Each

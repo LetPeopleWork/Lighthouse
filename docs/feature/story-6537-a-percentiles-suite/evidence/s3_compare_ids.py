@@ -26,7 +26,7 @@ FILTER = (
     "|FullyQualifiedName~Adapters.Background.OverTimeHistoryFillerTest."
     "|FullyQualifiedName~Services.Implementation.DatabaseMaintenanceGateTest."
 )
-SLICE_BASE = "a81f95fd1ff70d97f66953dee2ffba3564738ae5"
+SLICE_BASE = "c95a6d02f"
 UNTOUCHED = [
     "Lighthouse.Backend/Lighthouse.Backend/",
     "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",

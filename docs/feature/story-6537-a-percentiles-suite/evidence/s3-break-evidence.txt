@@ -1,112 +1,114 @@
 === S1 filler walks only the first asked day
-Failed APassWorksOutNinetyDaysAtMost [22 ms]
+Failed APassWorksOutNinetyDaysAtMost [15 ms]
 Failed DaysThatCannotBeWritten_AreReportedOnceWithTheCauseAndOnceAsATally [19 ms]
 Failed EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfAPortfolio [13 ms]
-Failed EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfATeam [9 ms]
-Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [4 ms]
+Failed EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfATeam [10 ms]
+Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [5 ms]
 Failed TwoDaysThatCannotBeWritten_AreTalliedOnceTheCauseHasBeenReported [4 ms]
 Failed!  - Failed:     6, Passed:    78, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S2 reconciler asks for every second missing day
-Failed APeriodReachingPastToday_AsksForNoDayAfterToday [122 ms]
-Failed DaysTheChartHoldsAndDaysNoPassCanWrite_AreLeftOutOfTheAsk [4 ms]
-Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed APeriodReachingPastToday_AsksForNoDayAfterToday [121 ms]
+Failed DaysTheChartHoldsAndDaysNoPassCanWrite_AreLeftOutOfTheAsk [5 ms]
+Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S3 reconciler ignores the days the chart holds
-Failed APeriodTheChartAlreadyHoldsInFull_AsksForNothing [18 ms]
-Failed DaysTheChartHoldsAndDaysNoPassCanWrite_AreLeftOutOfTheAsk [30 ms]
+Failed APeriodTheChartAlreadyHoldsInFull_AsksForNothing [17 ms]
+Failed DaysTheChartHoldsAndDaysNoPassCanWrite_AreLeftOutOfTheAsk [29 ms]
 Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S4 gap-asking query passes no held days
 Failed APercentileSeries_IsServedAsStored_AndTheDaysItHoldsArePassedOnForThePeriodAsked [40 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S5 reconciler asks even when nothing is missing [SUPERSEDED: the edit did not compile; see Reruns]
-NO SUMMARY (the edit did not compile)
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S6 filler walks one day past the last observation
-Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [26 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [25 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S6b team last observation read one day late
-Failed ATeamLastSeenInTheEveningWestOfUtc_WasLastObservedOnThatEveningsDay [43 ms]
-Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [11 ms]
+Failed ATeamLastSeenInTheEveningWestOfUtc_WasLastObservedOnThatEveningsDay [26 ms]
+Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [13 ms]
 Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S7 filler walks one day before the first supported day
-Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [16 ms]
+Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [21 ms]
 Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S7b earliest finished day taken from the latest item
-Failed APortfoliosHistory_BeginsOnTheEarliestDayOneOfItsOwnDeliveriesFinished [63 ms]
-Failed ATeamsHistory_BeginsOnTheEarliestDayOneOfItsOwnItemsFinished [2 ms]
+Failed APortfoliosHistory_BeginsOnTheEarliestDayOneOfItsOwnDeliveriesFinished [65 ms]
+Failed ATeamsHistory_BeginsOnTheEarliestDayOneOfItsOwnItemsFinished [3 ms]
 Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S8 cap of a pass raised to 91 days
-Failed APassWorksOutNinetyDaysAtMost [22 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S8b cap check let one more day through
 Failed APassWorksOutNinetyDaysAtMost [20 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S9 time budget never reached [SUPERSEDED: the edit did not compile; see Reruns]
-NO SUMMARY (the edit did not compile)
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== S8b cap check let one more day through
+Failed APassWorksOutNinetyDaysAtMost [22 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S9b time budget stops a pass before its first day
-Failed APassOutOfTime_StillWorksOutItsFirstDay_AndGivesTheRestBack [16 ms]
+Failed APassOutOfTime_StillWorksOutItsFirstDay_AndGivesTheRestBack [17 ms]
 Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S10 a day with nothing to report gets a row (fill and daily recording)
-Failed ADayOnWhichNothingFinished_GetsNoRow [37 ms]
-Failed AnAgeDayWithNothingInFlight_GetsNoRow_WhileTheNextDayWithWorkInFlightDoes [4 ms]
-Failed ATodayOnWhichNothingFinished_GetsNoRowFromTheDailyRecording [3 ms]
+Failed ADayOnWhichNothingFinished_GetsNoRow [20 ms]
+Failed AnAgeDayWithNothingInFlight_GetsNoRow_WhileTheNextDayWithWorkInFlightDoes [3 ms]
+Failed ATodayOnWhichNothingFinished_GetsNoRowFromTheDailyRecording [1 ms]
 Failed!  - Failed:     3, Passed:    81, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S10b the daily recording writes a day with nothing to report
-Failed ATodayOnWhichNothingFinished_GetsNoRowFromTheDailyRecording [26 ms]
+Failed ATodayOnWhichNothingFinished_GetsNoRowFromTheDailyRecording [18 ms]
 Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S11 writer rewrites a day that already carries a row
-Failed AHorizonThatAlreadyHasARow_KeepsWhatWasObserved_WhileTheOtherHorizonsAreFilled [26 ms]
+Failed AHorizonThatAlreadyHasARow_KeepsWhatWasObserved_WhileTheOtherHorizonsAreFilled [36 ms]
 Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S12 a day filled in afterwards is read as of today
-Failed ACycleTimeDayFilledInAfterwards_ReadsTheSameAtEveryHorizonAsWhenItWasRecordedOnTheDay [1 s]
-Failed ADayWithoutRows_IsWorkedOutAtEveryHorizon_OverAWindowEndingOnThatDay [48 ms]
-Failed AnAgeDayFilledInAfterwards_ReadsTheSameAsWhenItWasRecordedOnTheDay [11 ms]
+Failed ACycleTimeDayFilledInAfterwards_ReadsTheSameAtEveryHorizonAsWhenItWasRecordedOnTheDay [996 ms]
+Failed ADayWithoutRows_IsWorkedOutAtEveryHorizon_OverAWindowEndingOnThatDay [31 ms]
+Failed AnAgeDayFilledInAfterwards_ReadsTheSameAsWhenItWasRecordedOnTheDay [22 ms]
 Failed AWorkItemAgeDay_IsOneRowUnderNoHorizon_ReadAsOfThatDayAlone [2 ms]
 Failed!  - Failed:     4, Passed:    80, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S12b the window of a day ends a day late
-Failed ADayWithoutRows_IsWorkedOutAtEveryHorizon_OverAWindowEndingOnThatDay [74 ms]
-Failed AWorkItemAgeDay_IsOneRowUnderNoHorizon_ReadAsOfThatDayAlone [3 ms]
-Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed ADayWithoutRows_IsWorkedOutAtEveryHorizon_OverAWindowEndingOnThatDay [49 ms]
+Failed AWorkItemAgeDay_IsOneRowUnderNoHorizon_ReadAsOfThatDayAlone [2 ms]
+Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S13 the gate ignores a pass in flight
 Failed IsMaintenanceOperationWaiting_TurnedAwayByAFill_IsTrue [30 ms]
-Failed TryAcquire_APassFillingInChartDaysIsInFlight_IsRefusedWithAReason_AndLetInOnceThePassIsOver [16 ms]
-Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [5 ms]
+Failed TryAcquire_APassFillingInChartDaysIsInFlight_IsRefusedWithAReason_AndLetInOnceThePassIsOver [18 ms]
+Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [4 ms]
 Failed!  - Failed:     3, Passed:    81, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S13b the filler never counts its pass as running
-Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [25 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [29 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S13c the filler keeps counting a finished pass as running
-Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [39 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 3 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [22 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S14 a pass does not stand down before it starts
-Failed APass_WhileABackupRuns_LoadsNoOwner [24 ms]
-Failed APass_WhileARestoreRuns_WorksOutNoDayAndLoadsNoOwner [5 ms]
-Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [7 ms]
-Failed!  - Failed:     3, Passed:    81, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed APass_WhileABackupRuns_LoadsNoOwner [14 ms]
+Failed APass_WhileARestoreRuns_WorksOutNoDayAndLoadsNoOwner [3 ms]
+Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [3 ms]
+Failed!  - Failed:     3, Passed:    81, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S14b a pass does not stand down between two days
-Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [18 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [19 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S14c a running maintenance operation is not noticed
 Failed APass_WhileABackupRuns_LoadsNoOwner [15 ms]
 Failed APass_WhileARestoreRuns_WorksOutNoDayAndLoadsNoOwner [4 ms]
 Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S14d a waiting operator is not noticed
-Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [24 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry [20 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
 === S15 a row refused because another copy stored the day is thrown on
-Failed ARowRefusedBecauseAnotherCopyStoredThatDayFirst_IsAbsorbed [41 ms]
-Failed Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two [2 s]
-Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 3 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S16 a day that cannot be written takes the rest of the pass down [SUPERSEDED: the edit did not compile; see Reruns]
-/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs(389,30): error CS0168: The va
-NO SUMMARY (the edit did not compile)
-
-=== Reruns
-=== S5r reconciler asks even when nothing is missing (rerun of S5)
-Failed APeriodTheChartAlreadyHoldsInFull_AsksForNothing [33 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S9r time budget never reached (rerun of S9)
-Failed APassOutOfTime_StillWorksOutItsFirstDay_AndGivesTheRestBack [21 ms]
-Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S16r a day that cannot be written takes the rest of the pass down (rerun of S16)
-Failed DaysThatCannotBeWritten_AreReportedOnceWithTheCauseAndOnceAsATally [37 ms]
-Failed TwoDaysThatCannotBeWritten_AreTalliedOnceTheCauseHasBeenReported [5 ms]
-Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed ARowRefusedBecauseAnotherCopyStoredThatDayFirst_IsAbsorbed [31 ms]
+Failed Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two [1 s]
+Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== S5 reconciler asks even when nothing is missing
+Failed APeriodTheChartAlreadyHoldsInFull_AsksForNothing [17 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== S9 time budget never reached
+Failed APassOutOfTime_StillWorksOutItsFirstDay_AndGivesTheRestBack [15 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== S16 a day that cannot be written takes the rest of the pass down
+Failed DaysThatCannotBeWritten_AreReportedOnceWithTheCauseAndOnceAsATally [24 ms]
+Failed TwoDaysThatCannotBeWritten_AreTalliedOnceTheCauseHasBeenReported [4 ms]
+Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== S17 an owner stays marked as asked after its pass is over
+Failed AnOwnerAskedForAgainOnceItsPassIsOver_IsTakenAgain [16 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== S18 a day written in full is not remembered as worked out
+Failed ADayWrittenInFull_IsNotAskedForAgain [26 ms]
+Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== S19 a reading above zero on one percentile only counts as nothing to report
+Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(0,5,0,0) [17 ms]
+Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(0,0,5,0) [< 1 ms]
+Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(0,0,0,5) [< 1 ms]
+Failed!  - Failed:     3, Passed:    81, Skipped:     0, Total:    84, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
