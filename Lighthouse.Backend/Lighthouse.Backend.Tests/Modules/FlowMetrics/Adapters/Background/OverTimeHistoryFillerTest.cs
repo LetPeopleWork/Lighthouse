@@ -310,6 +310,26 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
             }
         }
 
+        [Test]
+        public async Task APass_WhileARestoreRuns_WorksOutNoDayAndLoadsNoOwner()
+        {
+            GivenATeamLastObservedOn(Today);
+            GivenTheTeamFinishedAnItemOn(Today.AddDays(-60));
+            var restore = services.GetRequiredService<DatabaseMaintenanceGate>().TryAcquire(DatabaseOperationType.Restore, "restore-under-way");
+
+            subject.AskFor(RequestFor(TeamId, Today.AddDays(-2), Today.AddDays(-1)));
+            await subject.DrainAsync(CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(restore.Acquired, Is.True);
+                teamRepositoryMock.Verify(repository => repository.GetById(TeamId), Times.Never,
+                    "The pass loaded its owner from a database a restore is replacing.");
+                percentileWriterMock.Verify(writer => writer.SaveFilledDay(), Times.Never,
+                    "The pass wrote a day while a restore was replacing the database under it.");
+            }
+        }
+
         /// <summary>
         /// Every day before the first finished item is a day no pass can ever write, so once a pass
         /// has found out where that is, a chart load stops asking for those days.

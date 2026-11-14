@@ -266,6 +266,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void TryAcquire_APassFillingInChartDaysIsInFlight_IsRefusedWithAReason_AndLetInOnceThePassIsOver()
+        {
+            var (gate, fill, _) = AGateWithAPassInFlight();
+
+            var whileThePassRuns = gate.TryAcquire(DatabaseOperationType.Restore, "op-1");
+            fill.Setup(activity => activity.HasPassInFlight).Returns(false);
+            var oncePassIsOver = gate.TryAcquire(DatabaseOperationType.Restore, "op-2");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whileThePassRuns.Acquired, Is.False,
+                    "A restore was let in while chart days were being written, which swaps the file out from under an open transaction.");
+                Assert.That(whileThePassRuns.BlockedReason, Is.Not.Null.And.Not.Empty,
+                    "A refusal with no reason leaves the operator guessing why the button did nothing.");
+                Assert.That(oncePassIsOver.Acquired, Is.True,
+                    $"Nothing was holding the database once the pass was over. Refused anyway: {oncePassIsOver.BlockedReason}");
+            }
+        }
+
+        [Test]
         public void TryAcquire_TwoBackupsSimultaneously_SecondFails()
         {
             subject.TryAcquire(DatabaseOperationType.Backup, "op-1");

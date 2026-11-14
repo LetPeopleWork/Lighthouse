@@ -176,6 +176,51 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             }
         }
 
+        /// <summary>
+        /// The rule that a quiet day is left blank holds on the path that records today as well as on the
+        /// one that fills a past day, or the first of the two to reach a day would settle it for good.
+        /// </summary>
+        [Test]
+        public async Task ATodayOnWhichNothingFinished_GetsNoRowFromTheDailyRecording()
+        {
+            subject.RecordToday(OwnerId, OwnerType.Team, MetricType.CycleTime, (_, _) => []);
+            await repository.Save();
+
+            Assert.That(StoredRows(), Is.Empty,
+                "The daily recording wrote a row for a day on which nothing finished. A row of zeros draws a floor the team never stood on, and because a stored day is never rewritten it would stay on the chart.");
+        }
+
+        /// <summary>
+        /// Every horizon of a day worked out afterwards reads what the recording wrote on that day. Each
+        /// reading is built from the start and the end of the window it is asked for, so a day read over
+        /// any other window, or as of any other day, comes out different.
+        /// </summary>
+        [Test]
+        public async Task ACycleTimeDayFilledInAfterwards_ReadsTheSameAtEveryHorizonAsWhenItWasRecordedOnTheDay()
+        {
+            var epoch = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            List<PercentileValue> ReadingOf(DateTime start, DateTime end)
+                => Percentiles((int)(end - epoch).TotalDays, (int)(start - epoch).TotalDays, (end - start).Days, start.Day + end.Day);
+            var recordedOnTheDay = new PercentileSnapshotWriter(repository, new FakeLighthouseClock(new DateTimeOffset(2026, 7, 15, 9, 0, 0, TimeSpan.Zero)));
+            recordedOnTheDay.RecordToday(OwnerId, OwnerType.Team, MetricType.CycleTime, ReadingOf);
+            await repository.Save();
+            var asRecorded = ReadingsOf(StoredRows());
+            context.PercentilesOverTimeSnapshots.RemoveRange(context.PercentilesOverTimeSnapshots);
+            await context.SaveChangesAsync();
+
+            subject.FillDayIfAbsent(OwnerId, OwnerType.Team, MetricType.CycleTime, Day, ReadingOf);
+            await repository.Save();
+
+            var filledAfterwards = ReadingsOf(StoredRows());
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(asRecorded, Has.Count.EqualTo(EveryCycleTimeHorizon.Length),
+                    "The recording did not write the three horizons of the day, so there is nothing to hold the filled day to.");
+                Assert.That(filledAfterwards, Is.EqualTo(asRecorded),
+                    "A day worked out afterwards must read exactly as the day recorded live at every horizon, or the chart draws two different readings as one line.");
+            }
+        }
+
         [TestCase(5, 0, 0, 0)]
         [TestCase(0, 5, 0, 0)]
         [TestCase(0, 0, 5, 0)]
@@ -239,6 +284,9 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
 
         private List<PercentilesOverTimeSnapshot> StoredRows()
             => [.. context.PercentilesOverTimeSnapshots.AsNoTracking().Where(row => row.OwnerId == OwnerId).OrderBy(row => row.Horizon)];
+
+        private static List<(int? Horizon, DateOnly RecordedAt, int P50, int P70, int P85, int P95)> ReadingsOf(List<PercentilesOverTimeSnapshot> rows)
+            => [.. rows.Select(row => (row.Horizon, row.RecordedAt, row.P50, row.P70, row.P85, row.P95))];
 
         private static List<PercentileValue> Percentiles(int p50, int p70, int p85, int p95)
             => [new(50, p50), new(70, p70), new(85, p85), new(95, p95)];
