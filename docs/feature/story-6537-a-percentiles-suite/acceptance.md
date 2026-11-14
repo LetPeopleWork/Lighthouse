@@ -310,6 +310,42 @@ A production or guard-list file is changed (the oracle prints CHANGED)
 
 None.
 
+### S4
+
+##### Covers
+
+P1
+
+P2
+
+P3
+
+```text
+Run the unit classes named in the S4 id table and the two host classes, compare their test ids with the expected list, and check the guard list and production files
+```
+
+```text
+Every expected id is present and passes; the nine host rows of the two classes are the only extra ids; both classes leave the host-user guard list; no production or budget file changed
+```
+
+```text
+The retention and nothing-to-show rules of the percentiles fill are proven by fast unit tests, so the Integration tier takes less time and no rule loses its test
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\_compare\_ids\.py
+
+```text
+a unit row exists but no deliberate break of the retention guard, edge, first-day gate or pass allowance turns it red
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows
