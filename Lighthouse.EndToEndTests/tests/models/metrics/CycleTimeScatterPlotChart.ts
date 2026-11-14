@@ -24,6 +24,24 @@ export class CycleTimeScatterPlotChart {
 		return this.Widget.locator("circle > title");
 	}
 
+	get outlierChip(): Locator {
+		return this.frame.Widget.getByRole("button", { name: /outlier/i });
+	}
+
+	async getOutlierChipText(): Promise<string> {
+		await this.frame.waitUntilLoaded();
+		return (await this.outlierChip.textContent())?.trim() ?? "";
+	}
+
+	async openOutlierList(): Promise<void> {
+		await this.frame.waitUntilLoaded();
+		await this.outlierChip.click();
+	}
+
+	outlierRow(referenceId: string): Locator {
+		return this.page.getByRole("row", { name: new RegExp(referenceId) });
+	}
+
 	async countDots(): Promise<number> {
 		await this.frame.waitUntilLoaded();
 		return this.dots.count();

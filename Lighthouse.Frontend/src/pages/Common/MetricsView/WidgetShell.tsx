@@ -17,7 +17,8 @@ import {
 	useTheme,
 } from "@mui/material";
 import type React from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { WidgetHeaderSlotContext } from "../../../components/Common/Charts/widgetHeaderSlot";
 import InfoPopoverButton from "../../../components/Common/InfoPopoverButton/InfoPopoverButton";
 import WorkItemsDialog, {
 	type TimeInStateColumnDefinition,
@@ -97,6 +98,8 @@ type HeaderParts = {
 	readonly viewData?: ViewDataPayload;
 	readonly trend?: TrendPayload;
 	readonly rag?: WidgetFooter;
+	/** What the chart put in the header for itself, drawn after the rating. */
+	readonly slot?: React.ReactNode;
 };
 
 function viewDataWithItems(
@@ -120,12 +123,14 @@ function headerPartsFor(
 	viewData: ViewDataPayload | undefined,
 	trend: TrendPayload | undefined,
 	rag: WidgetFooter | undefined,
+	slot: React.ReactNode,
 ): HeaderParts {
 	if (!chartOnScreen) return {};
 	return {
 		viewData: viewDataWithItems(viewData),
 		trend: trendToDraw(trend),
 		rag,
+		slot,
 	};
 }
 
@@ -512,6 +517,7 @@ const WidgetHeader: React.FC<{
 					/>
 				</Tooltip>
 			)}
+			{parts.slot}
 
 			{!title && <Box sx={{ flex: 1 }} />}
 			{title && (
@@ -542,20 +548,28 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 		chartReport,
 	);
 	const [viewDataOpen, setViewDataOpen] = useState(false);
+	const [headerSlot, setHeaderSlot] = useState<React.ReactNode>(null);
 
 	const isLoading = status === "loading";
+	const frameIsReady = status === "ready";
+	const headerSlotOffer = useMemo(
+		() => ({ offer: setHeaderSlot, frameIsReady }),
+		[frameIsReady],
+	);
 	const headerParts = headerPartsFor(
 		chartIsOnScreen(bodyLookFor(status, hasContentToDim)),
 		viewData,
 		trend,
 		showTips ? header : undefined,
+		headerSlot,
 	);
 	const hasHeader =
 		!!title ||
 		!!headerParts.rag ||
 		!!info ||
 		!!headerParts.viewData ||
-		!!headerParts.trend;
+		!!headerParts.trend ||
+		!!headerParts.slot;
 
 	return (
 		<>
@@ -588,7 +602,9 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 					hasContentToDim={hasContentToDim}
 				>
 					<WidgetStatusReporterContext value={setChartReport}>
-						{children}
+						<WidgetHeaderSlotContext value={headerSlotOffer}>
+							{children}
+						</WidgetHeaderSlotContext>
 					</WidgetStatusReporterContext>
 				</WidgetBody>
 			</Box>

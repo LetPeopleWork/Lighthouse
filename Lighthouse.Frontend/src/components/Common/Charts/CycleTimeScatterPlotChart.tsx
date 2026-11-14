@@ -26,13 +26,20 @@ import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCyc
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import {
 	dateValueFormatter,
 	getDateOnlyTimestamp,
-	getMaxYAxisHeight,
 	integerValueFormatter,
 } from "../../../utils/charts/chartAxisUtils";
+import {
+	markerSpecs,
+	splitLinesByAxis,
+} from "../../../utils/charts/offScaleLines";
+import { axisTop, findOutliers } from "../../../utils/charts/outliers";
+import { outlierWording } from "../../../utils/charts/outlierWording";
 import {
 	getBubbleSize,
 	getMarkerColor,
@@ -45,8 +52,18 @@ import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
 import LegendChip from "./LegendChip";
+import OffScaleLineMarkers, { MARKER_ROW_HEIGHT } from "./OffScaleLineMarkers";
+import { outlierHeaderChip } from "./outlierHeaderChip";
+import {
+	buildPlotLines,
+	currentNamedPercentiles,
+	type INamedAnswer,
+	isOfVisibleType,
+	reservedMarkerRows,
+} from "./outlierPlot";
 import PercentileLegend from "./PercentileLegend";
 import TimeBlackoutOverlay from "./TimeBlackoutOverlay";
+import { useFrameIsReady, useHeaderSlotContent } from "./widgetHeaderSlot";
 
 interface IGroupedWorkItem {
 	closedDateTimestamp: number;
@@ -148,6 +165,12 @@ interface CycleTimeScatterPlotChartProps {
 }
 
 const DEFAULT_SELECTION = "default";
+const PLOT_TOP_MARGIN = 8;
+
+const plotMargin = (markerRows: number) =>
+	markerRows > 0
+		? { top: PLOT_TOP_MARGIN + markerRows * MARKER_ROW_HEIGHT }
+		: undefined;
 
 const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	percentileValues,
@@ -172,9 +195,9 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	const [selectedDefinitionId, setSelectedDefinitionId] = useState<
 		number | null
 	>(null);
-	const [namedPercentiles, setNamedPercentiles] = useState<IPercentileValue[]>(
-		[],
-	);
+	const [namedAnswer, setNamedAnswer] = useState<INamedAnswer | null>(null);
+	const frameIsReady = useFrameIsReady();
+	const reportUsage = useUsageDataReporter();
 
 	useEffect(() => {
 		if (selectedDefinitionId === null) {
@@ -190,17 +213,22 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 
 	useEffect(() => {
 		if (selectedDefinitionId === null || !onFetchNamedCycleTimePercentiles) {
-			setNamedPercentiles([]);
+			setNamedAnswer(null);
 			return;
 		}
 
 		let cancelled = false;
 		onFetchNamedCycleTimePercentiles(selectedDefinitionId)
 			.then((percentiles) => {
-				if (!cancelled) setNamedPercentiles(percentiles);
+				if (!cancelled)
+					setNamedAnswer({
+						definitionId: selectedDefinitionId,
+						fetcher: onFetchNamedCycleTimePercentiles,
+						percentiles,
+					});
 			})
 			.catch(() => {
-				if (!cancelled) setNamedPercentiles([]);
+				if (!cancelled) setNamedAnswer(null);
 			});
 		return () => {
 			cancelled = true;
@@ -219,6 +247,13 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 			return named ? [{ ...item, cycleTime: named.days }] : [];
 		});
 	}, [cycleTimeDataPoints, selectedDefinitionId]);
+
+	// An answer fetched for another definition, or by an older callback, is not the current one.
+	const namedPercentiles = currentNamedPercentiles(
+		namedAnswer,
+		selectedDefinitionId,
+		onFetchNamedCycleTimePercentiles,
+	);
 
 	const effectivePercentiles =
 		selectedDefinitionId === null ? percentileValues : namedPercentiles;
@@ -243,61 +278,121 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	} = useChartVisibility({
 		percentiles: effectivePercentiles,
 		types,
+		canHideEveryType: true,
+		sleInitiallyVisible: true,
 	});
 
-	const [groupedDataPoints, setGroupedDataPoints] = useState<
-		IGroupedWorkItem[]
-	>([]);
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
-	const [fixedXAxisDomain, setFixedXAxisDomain] = useState<
-		[number, number] | null
-	>(null);
-	const [fixedYAxisMax, setFixedYAxisMax] = useState<number | null>(null);
+	const [dialogContent, setDialogContent] = useState<{
+		title: string;
+		items: IWorkItem[];
+	}>({ title: "", items: [] });
 
-	// Calculate fixed axis domains
-	useEffect(() => {
-		if (effectiveDataPoints.length === 0) {
-			setFixedXAxisDomain(null);
-			setFixedYAxisMax(null);
-			return;
-		}
+	// The cut and the axis come from every item, so hiding a type never moves them.
+	const analysis = useMemo(
+		() => findOutliers(effectiveDataPoints, (item) => item.cycleTime),
+		[effectiveDataPoints],
+	);
 
-		// X-axis domain (time range)
+	const fixedXAxisDomain = useMemo((): [number, number] | null => {
+		if (effectiveDataPoints.length === 0) return null;
 		const timestamps = effectiveDataPoints.map((item) =>
 			getDateOnlyTimestamp(item.closedDate),
 		);
-		const minTimestamp = Math.min(...timestamps);
-		const maxTimestamp = Math.max(...timestamps);
-		setFixedXAxisDomain([minTimestamp, maxTimestamp]);
+		return [Math.min(...timestamps), Math.max(...timestamps)];
+	}, [effectiveDataPoints]);
 
-		// Y-axis max - Using utility function!
-		const yMax = getMaxYAxisHeight({
-			percentiles: effectivePercentiles,
+	const yAxisMax = useMemo(
+		() =>
+			axisTop({
+				typicalValues: analysis.typical.map((item) => item.cycleTime),
+				lineValues: [
+					...effectivePercentiles.map((p) => p.value),
+					...(serviceLevelExpectation ? [serviceLevelExpectation.value] : []),
+				],
+				cut: analysis.cut,
+				hasOutliers: analysis.outliers.length > 0,
+			}),
+		[analysis, effectivePercentiles, serviceLevelExpectation],
+	);
+
+	const groupedDataPoints = useMemo(
+		() =>
+			groupWorkItems(analysis.typical).filter((group) =>
+				group.items.some((item) => isOfVisibleType(item, visibleTypes)),
+			),
+		[analysis, visibleTypes],
+	);
+
+	const visibleOutliers = analysis.outliers.filter((item) =>
+		isOfVisibleType(item, visibleTypes),
+	);
+
+	const plotLines = useMemo(
+		() =>
+			buildPlotLines({
+				percentiles: effectivePercentiles,
+				visiblePercentiles,
+				sle: serviceLevelExpectation,
+				sleVisible,
+				sleTerm,
+				sleColor: theme.palette.primary.main,
+			}),
+		[
+			effectivePercentiles,
+			visiblePercentiles,
+			sleVisible,
 			serviceLevelExpectation,
-			dataPoints: effectiveDataPoints,
-			getDataValue: (item) => item.cycleTime,
-		});
-		setFixedYAxisMax(yMax);
-	}, [effectiveDataPoints, effectivePercentiles, serviceLevelExpectation]);
+			sleTerm,
+			theme.palette.primary.main,
+		],
+	);
 
-	// Group and filter work items
-	useEffect(() => {
-		const grouped = groupWorkItems(effectiveDataPoints);
-		const filtered = grouped.filter((g) => {
-			return g.items.some((item) => {
-				const itemType = item.type || "";
-				if (!itemType) return true;
-				return visibleTypes[itemType] !== false;
-			});
-		});
-		setGroupedDataPoints(filtered);
-	}, [effectiveDataPoints, visibleTypes]);
+	const offScaleLines = splitLinesByAxis(plotLines, yAxisMax).offScale;
+	const markerRows = reservedMarkerRows(
+		effectivePercentiles,
+		serviceLevelExpectation,
+		yAxisMax,
+		analysis.outliers.length > 0,
+	);
 
 	const handleShowItems = (items: IWorkItem[]) => {
-		setSelectedItems(items);
+		setDialogContent({
+			title: `${workItemsTerm} closed on ${items[0]?.closedDate.toLocaleDateString()} with ${cycleTimeTerm} of ${items[0]?.cycleTime} days`,
+			items,
+		});
 		setDialogOpen(true);
 	};
+
+	const wording = useMemo(
+		() =>
+			outlierWording({
+				workItems: workItemsTerm,
+				sle: sleTerm,
+				cycleTime: cycleTimeTerm,
+			}),
+		[workItemsTerm, sleTerm, cycleTimeTerm],
+	);
+
+	useHeaderSlotContent(
+		outlierHeaderChip({
+			wording,
+			outliers: visibleOutliers,
+			median: analysis.median,
+			cut: analysis.cut,
+			offScaleLines,
+			disabled: !frameIsReady,
+			onOpened: () =>
+				reportUsage({ name: UsageDataEventName.OutlierPopoverOpened }),
+			onOpenInList: (outliers) => {
+				setDialogContent({
+					title: wording.dialogTitle(analysis.cut ?? 0),
+					items: [...outliers],
+				});
+				setDialogOpen(true);
+			},
+		}),
+	);
 
 	const cycleTimeSelector =
 		namedCycleTimeDefinitions.length > 0 ? (
@@ -358,7 +453,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 						{cycleTimeSelector}
 					</Stack>
 
-					{groupedDataPoints.length > 0 ? (
+					{effectiveDataPoints.length > 0 ? (
 						<>
 							<Stack
 								direction="row"
@@ -399,153 +494,165 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 								)}
 							</Stack>
 
-							<ChartsContainer
-								sx={{ flex: 1, minHeight: 0, height: "100%" }}
-								xAxis={[
-									{
-										id: "timeAxis",
-										scaleType: "time",
-										label: "Date",
-										height: 56,
-										min: fixedXAxisDomain?.[0],
-										max: fixedXAxisDomain?.[1],
-										valueFormatter: dateValueFormatter,
-									},
-								]}
-								yAxis={[
-									{
-										id: "cycleTimeAxis",
-										scaleType: "linear",
-										label: `${cycleTimeTerm} (days)`,
-										min: 1,
-										max:
-											fixedYAxisMax ??
-											getMaxYAxisHeight({
-												percentiles: effectivePercentiles,
-												serviceLevelExpectation,
-												dataPoints: effectiveDataPoints,
-												getDataValue: (item) => item.cycleTime,
-											}),
-										valueFormatter: integerValueFormatter,
-									},
-								]}
-								series={[
-									{
-										type: "scatter",
-										data: groupedDataPoints.map((group, index) => ({
-											x: group.closedDateTimestamp,
-											y: group.cycleTime,
-											id: index,
-											itemCount: group.items.length,
-											color: getMarkerColor(group, colorMap, theme),
-										})),
-										xAxisId: "timeAxis",
-										yAxisId: "cycleTimeAxis",
-										color: theme.palette.primary.main,
-										markerSize: 4,
-										highlightScope: {
-											highlight: "item",
-											fade: "global",
+							{groupedDataPoints.length > 0 ? (
+								<ChartsContainer
+									sx={{ flex: 1, minHeight: 0, height: "100%" }}
+									margin={plotMargin(markerRows)}
+									xAxis={[
+										{
+											id: "timeAxis",
+											scaleType: "time",
+											label: "Date",
+											height: 56,
+											min: fixedXAxisDomain?.[0],
+											max: fixedXAxisDomain?.[1],
+											valueFormatter: dateValueFormatter,
 										},
-										valueFormatter: (item) => {
-											if (item?.id === undefined) return "";
-
-											const group = groupedDataPoints[item.id as number];
-											if (!group) return "";
-
-											const numberOfClosedItems = group.items.length ?? 0;
-
-											if (numberOfClosedItems === 1) {
-												const workItem = group.items[0];
-												return `${getWorkItemName(workItem.name, workItem.referenceId)} (Click for details)`;
-											}
-
-											return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
+									]}
+									yAxis={[
+										{
+											id: "cycleTimeAxis",
+											scaleType: "linear",
+											label: `${cycleTimeTerm} (days)`,
+											min: 1,
+											max: yAxisMax,
+											valueFormatter: integerValueFormatter,
 										},
-									},
-								]}
-							>
-								{/* Reference lines for percentiles */}
-								{effectivePercentiles.map((p) => {
-									const forecastLevel = new ForecastLevel(p.percentile);
-									return visiblePercentiles[p.percentile] ? (
-										<ChartsReferenceLine
-											key={`percentile-${p.percentile}`}
-											y={p.value}
-											label={`${p.percentile}%`}
-											labelAlign="end"
-											lineStyle={{
-												stroke: forecastLevel.color,
-												strokeWidth: 1,
-												strokeDasharray: "5 5",
-											}}
-										/>
-									) : null;
-								})}
+									]}
+									series={[
+										{
+											type: "scatter",
+											data: groupedDataPoints.map((group, index) => ({
+												x: group.closedDateTimestamp,
+												y: group.cycleTime,
+												id: index,
+												itemCount: group.items.length,
+												color: getMarkerColor(group, colorMap, theme),
+											})),
+											xAxisId: "timeAxis",
+											yAxisId: "cycleTimeAxis",
+											color: theme.palette.primary.main,
+											markerSize: 4,
+											highlightScope: {
+												highlight: "item",
+												fade: "global",
+											},
+											valueFormatter: (item) => {
+												if (item?.id === undefined) return "";
 
-								{/* SLE reference line */}
-								{sleVisible && serviceLevelExpectation && (
-									<ChartsReferenceLine
-										key="sle-reference-line"
-										y={serviceLevelExpectation.value}
-										label={`${sleTerm}: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
-										labelAlign="start"
-										lineStyle={{
-											stroke: theme.palette.primary.main,
-											strokeWidth: 2,
-											strokeDasharray: "3 3",
+												const group = groupedDataPoints[item.id as number];
+												if (!group) return "";
+
+												const numberOfClosedItems = group.items.length ?? 0;
+
+												if (numberOfClosedItems === 1) {
+													const workItem = group.items[0];
+													return `${getWorkItemName(workItem.name, workItem.referenceId)} (Click for details)`;
+												}
+
+												return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
+											},
+										},
+									]}
+								>
+									{/* Reference lines for percentiles */}
+									{effectivePercentiles.map((p) => {
+										const forecastLevel = new ForecastLevel(p.percentile);
+										return visiblePercentiles[p.percentile] &&
+											p.value <= yAxisMax ? (
+											<ChartsReferenceLine
+												key={`percentile-${p.percentile}`}
+												y={p.value}
+												label={`${p.percentile}%`}
+												labelAlign="end"
+												lineStyle={{
+													stroke: forecastLevel.color,
+													strokeWidth: 1,
+													strokeDasharray: "5 5",
+												}}
+											/>
+										) : null;
+									})}
+
+									{/* SLE reference line */}
+									{sleVisible &&
+										serviceLevelExpectation &&
+										serviceLevelExpectation.value <= yAxisMax && (
+											<ChartsReferenceLine
+												key="sle-reference-line"
+												y={serviceLevelExpectation.value}
+												label={`${sleTerm}: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
+												labelAlign="start"
+												lineStyle={{
+													stroke: theme.palette.primary.main,
+													strokeWidth: 2,
+													strokeDasharray: "3 3",
+												}}
+											/>
+										)}
+
+									{offScaleLines.length > 0 && (
+										<OffScaleLineMarkers markers={markerSpecs(offScaleLines)} />
+									)}
+									<ChartsXAxis axisId="timeAxis" />
+									<ChartsYAxis axisId="cycleTimeAxis" />
+									<TimeBlackoutOverlay
+										blackoutPeriods={blackoutPeriods}
+										axisId="timeAxis"
+									/>
+									<ScatterPlot
+										slots={{
+											marker: (props) =>
+												ScatterMarker(
+													props,
+													groupedDataPoints,
+													theme,
+													workItemsTerm,
+													blockedTerm,
+													colorMap,
+													handleShowItems,
+												),
 										}}
 									/>
-								)}
 
-								<ChartsXAxis axisId="timeAxis" />
-								<ChartsYAxis axisId="cycleTimeAxis" />
-								<TimeBlackoutOverlay
-									blackoutPeriods={blackoutPeriods}
-									axisId="timeAxis"
-								/>
-								<ScatterPlot
-									slots={{
-										marker: (props) =>
-											ScatterMarker(
-												props,
-												groupedDataPoints,
-												theme,
-												workItemsTerm,
-												blockedTerm,
-												colorMap,
-												handleShowItems,
-											),
-									}}
-								/>
-
-								<ChartsTooltip
-									trigger="item"
-									sx={{
-										zIndex: 1200,
-										maxWidth: "400px",
-										"& .MuiChartsTooltip-mark": {
-											display: "none",
-										},
-										"& .MuiChartsTooltip-markContainer": {
-											display: "none",
-										},
-										"& .MuiChartsTooltip-table": {
-											maxWidth: "100%",
-											wordBreak: "break-word",
-										},
-										"& .MuiChartsTooltip-valueCell": {
-											whiteSpace: "pre-line",
-											maxWidth: "300px",
-											overflowWrap: "break-word",
-										},
-										"& .MuiPopper-root": {
-											transition: "opacity 0.2s ease-in-out",
-											transitionDelay: "150ms",
-										},
-									}}
-								/>
-							</ChartsContainer>
+									<ChartsTooltip
+										trigger="item"
+										sx={{
+											zIndex: 1200,
+											maxWidth: "400px",
+											"& .MuiChartsTooltip-mark": {
+												display: "none",
+											},
+											"& .MuiChartsTooltip-markContainer": {
+												display: "none",
+											},
+											"& .MuiChartsTooltip-table": {
+												maxWidth: "100%",
+												wordBreak: "break-word",
+											},
+											"& .MuiChartsTooltip-valueCell": {
+												whiteSpace: "pre-line",
+												maxWidth: "300px",
+												overflowWrap: "break-word",
+											},
+											"& .MuiPopper-root": {
+												transition: "opacity 0.2s ease-in-out",
+												transitionDelay: "150ms",
+											},
+										}}
+									/>
+								</ChartsContainer>
+							) : (
+								<Typography
+									variant="body2"
+									color="text.secondary"
+									sx={{ flex: 1 }}
+								>
+									{visibleOutliers.length > 0
+										? wording.allVisibleAreOutliers
+										: wording.allTypesHidden}
+								</Typography>
+							)}
 						</>
 					) : (
 						<Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
@@ -555,8 +662,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				</CardContent>
 			</Card>
 			<WorkItemsDialog
-				title={`${workItemsTerm} closed on ${selectedItems[0]?.closedDate.toLocaleDateString()} with ${cycleTimeTerm} of ${selectedItems[0]?.cycleTime} days`}
-				items={selectedItems}
+				title={dialogContent.title}
+				items={dialogContent.items}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
 				context="closedItems"

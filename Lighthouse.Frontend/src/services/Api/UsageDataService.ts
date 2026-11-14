@@ -49,6 +49,7 @@ export const UsageDataEventName = {
 	ReportCombinedPdfExportStarted: "ReportCombinedPdfExportStarted",
 	ParentSourcesSavedWithSeveralEntries: "ParentSourcesSavedWithSeveralEntries",
 	SystemWideAccessGranted: "SystemWideAccessGranted",
+	OutlierPopoverOpened: "OutlierPopoverOpened",
 } as const;
 
 export type UsageDataEventName =

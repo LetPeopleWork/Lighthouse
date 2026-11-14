@@ -326,6 +326,31 @@ namespace Lighthouse.Backend.Tests.Factories
             Assert.That(completedDates, Has.None.Matches<DateTime>(IsWeekend));
         }
 
+        [Test]
+        public void CreateDemoTeam_GoodThroughputTeam_HoldsAClosedWorkItemMoreThanFiveTimesItsOwnMedianCycleTime()
+        {
+            var subject = CreateSubject();
+
+            var demoTeam = subject.CreateDemoTeam(DemoTeamNames.GoodThroughput);
+
+            var closed = demoTeam.DataRetrievalValue
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Skip(1)
+                .Select(line => line.Split(','))
+                .Where(cells => cells.Length > 6 && cells[5].Length > 0 && cells[6].Length > 0)
+                .Select(cells => (
+                    Id: cells[0],
+                    CycleTime: (DateTime.ParseExact(cells[6], "yyyy-MM-dd", CultureInfo.InvariantCulture)
+                        - DateTime.ParseExact(cells[5], "yyyy-MM-dd", CultureInfo.InvariantCulture)).Days + 1))
+                .ToList();
+            var sorted = closed.Select(item => item.CycleTime).Order().ToList();
+            var median = sorted[Math.Clamp((int)Math.Floor(0.5 * sorted.Count) - 1, 0, sorted.Count - 1)];
+
+            var outliers = closed.Where(item => item.CycleTime > 5 * median).Select(item => item.Id).ToList();
+
+            Assert.That(outliers, Does.Contain("TZ-301"));
+        }
+
         /// <summary>
         /// Bug #5567: 23:30 UTC is already the next day in Zurich, so the UTC day and the instance
         /// day disagree - and every migrated read path reports the instance day.

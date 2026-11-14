@@ -1394,3 +1394,4 @@ reads `frameIsReady` from that context instead of a new `buildWidgetNodes` ctx f
 free integer, **27** (`SystemWideAccessGranted = 26`), still appended, never renumbered. ADR-282 is still free.
 **The spike (AFK-9) runs inside slice 01:** the crafter builds the top-margin markers; the orchestrator checks them in
 a real browser on a fixture before the slice commits, and takes the S-5 fallback if they fail.
+| S-8 SLE default | **The Cycle Time scatterplot draws its SLE line by default** (maintainer, 2026-11-14, after the S1 crafter raised it); the reader can still switch it off. Other charts keep SLE off by default. |

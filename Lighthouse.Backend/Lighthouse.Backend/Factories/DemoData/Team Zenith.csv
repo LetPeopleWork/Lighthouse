@@ -42,6 +42,7 @@ TZ-040,Database migration tools,Implementation,User Story,,{-3},,Blocked,{-12},5
 TZ-300,Hotfix triage for login regression,Analysing,User Story,AP-001,{-0},,,{-0},1
 TZ-041,Telemetry data ingestion pipeline,Done,User Story,ALT-91,{w-114},{w-110},,,3
 TZ-042,Real-time sensor monitoring UI,Done,User Story,ALT-91,{w-111},{w-110},,,2
+TZ-301,Legacy data store migration,Done,User Story,,{w-45},{w-4},,,5
 TZ-043,Spacecraft health metrics dashboard,Done,User Story,ALT-91,{w-114},{w-109},,,5
 TZ-044,Telemetry data validation layer,Done,User Story,ALT-91,{w-111},{w-109},,,5
 TZ-045,Historical telemetry archive system,Done,User Story,ALT-91,{w-110},{w-107},,,2

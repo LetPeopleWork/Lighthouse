@@ -94,5 +94,12 @@ namespace Lighthouse.Backend.Models.UsageData
         /// "Everyone signed in" on. It carries nothing: not the group, not who did it, not how many people it reaches.
         /// </summary>
         SystemWideAccessGranted = 26,
+
+        /// <summary>
+        /// Somebody opened the list of outliers on a Cycle Time scatterplot, the chip in the widget header that names
+        /// the closed Work Items too long to be drawn. It carries nothing: not which Team or Portfolio, not how many
+        /// outliers, not which items.
+        /// </summary>
+        OutlierPopoverOpened = 27,
     }
 }

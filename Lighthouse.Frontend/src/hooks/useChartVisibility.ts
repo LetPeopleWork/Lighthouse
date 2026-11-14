@@ -65,8 +65,8 @@ export function usePercentileVisibility(percentiles: IPercentileValue[]) {
 	};
 }
 
-export function useServiceLevelExpectationVisibility() {
-	const [sleVisible, setSleVisible] = useState<boolean>(false);
+export function useServiceLevelExpectationVisibility(initiallyVisible = false) {
+	const [sleVisible, setSleVisible] = useState<boolean>(initiallyVisible);
 
 	const toggleSleVisibility = useCallback(() => {
 		setSleVisible((prev) => !prev);
@@ -81,6 +81,7 @@ export function useServiceLevelExpectationVisibility() {
 export function useTypesVisibility<T extends string>(
 	types: T[],
 	initialVisibility?: Record<T, boolean>,
+	canHideEveryType = false,
 ) {
 	const typesRef = useRef<string>("");
 	const [visibleTypes, setVisibleTypes] = useState<Record<T, boolean>>(() => {
@@ -115,23 +116,26 @@ export function useTypesVisibility<T extends string>(
 		}
 	}, [types, initialVisibility]);
 
-	const toggleTypeVisibility = useCallback((type: T) => {
-		setVisibleTypes((prev) => {
-			const visibleCount = Object.values(prev).filter(
-				(v) => v !== false,
-			).length;
+	const toggleTypeVisibility = useCallback(
+		(type: T) => {
+			setVisibleTypes((prev) => {
+				const visibleCount = Object.values(prev).filter(
+					(v) => v !== false,
+				).length;
 
-			// Prevent hiding the last visible type
-			if (prev[type] !== false && visibleCount <= 1) {
-				return prev;
-			}
+				// Prevent hiding the last visible type
+				if (!canHideEveryType && prev[type] !== false && visibleCount <= 1) {
+					return prev;
+				}
 
-			return {
-				...prev,
-				[type]: !prev[type],
-			};
-		});
-	}, []);
+				return {
+					...prev,
+					[type]: !prev[type],
+				};
+			});
+		},
+		[canHideEveryType],
+	);
 
 	return {
 		visibleTypes,
@@ -143,16 +147,27 @@ export interface UseChartVisibilityProps<T extends string> {
 	percentiles: IPercentileValue[];
 	types: T[];
 	initialTypeVisibility?: Record<T, boolean>;
+	/** A chart that says so in its plot can let the reader switch every type off. */
+	canHideEveryType?: boolean;
+	/** Whether the SLE line is drawn until the reader switches it off. */
+	sleInitiallyVisible?: boolean;
 }
 
 export function useChartVisibility<T extends string>({
 	percentiles,
 	types,
 	initialTypeVisibility,
+	canHideEveryType,
+	sleInitiallyVisible,
 }: UseChartVisibilityProps<T>) {
 	const percentileVisibility = usePercentileVisibility(percentiles);
-	const sleVisibility = useServiceLevelExpectationVisibility();
-	const typeVisibility = useTypesVisibility(types, initialTypeVisibility);
+	const sleVisibility =
+		useServiceLevelExpectationVisibility(sleInitiallyVisible);
+	const typeVisibility = useTypesVisibility(
+		types,
+		initialTypeVisibility,
+		canHideEveryType,
+	);
 
 	return {
 		...percentileVisibility,
