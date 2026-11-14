@@ -42,3 +42,24 @@ Rule or claim with no production line to break: row 2 and 4 claim "ran is empty"
 ## Touched paths
 
 Existing files changed: `ConnectionSaveServiceTest.cs`, `ConnectionDefaultsDtoTest.cs`, `SettingsOwnerDtoRoundTripTest.cs`; only rows were added, none changed. The craft also removed four members of `ConnectionDefaultsAcceptanceTest.cs` (the host classes' shared base) that no row called any more after the move; it is a supporting path of this slice. Their pre-existing rows still fail when they should: K2, K6, K7, K8 and K9 turn existing `Commit_*` rows red; K11 turns the existing `An_Estimation_default_left_out_of_the_save_is_not_sent` red; K13 turns `A_changed_old_field_beside_the_list_the_client_read_edits_the_field` red. s1 and s4 expected lists still pass (`s1_compare_ids.py` observed 280 expected 247, `s4_compare_ids.py` observed 223 expected 210, 0 differences).
+
+## Follow-up (2026-11-14): the rows kept above leave the host too
+
+The rows marked "stays on the host" in this table, and in the S4 and S5 tables, had no unit-level proof when their slice ran.
+The follow-up added that proof. Each row below is now proven by the named unit row, and the named deliberate break turns it
+red; `followup_breaks.py` holds the breaks and `followup-break-evidence.txt` records their run. This was done directly,
+without an nwdes review.
+
+| Host row removed | Rule | Now proven by | Break | Red rows |
+|---|---|---|---|---|
+| Slice08 `A_save_that_leaves_one_default_out_keeps_it` (Teams, Portfolios) | the controller applies only the defaults the save sends, so one left out is kept | WorkTrackingSystemConnectionControllerTest `UpdateWorkTrackingSystemConnection_ASaveThatLeavesTheTeamsDefaultOut_KeepsIt`, `..._ASaveThatLeavesThePortfoliosDefaultOut_KeepsIt` | F1 (the `.Where(defaults.Sends)` gate removed) | both rows |
+| Slice08 `A_field_added_in_the_same_save_can_be_the_Portfolios_default` | a default naming a field added in the same save points at the stored field once it is saved; the Teams' default stays empty | WorkTrackingSystemConnectionControllerTest `UpdateWorkTrackingSystemConnection_AFieldAddedInTheSameSave_CanBeThePortfoliosDefault` | F2 (the field is not remembered in `DefaultsAddedInThisSave`) | that row and the existing Teams row |
+| Slice08 `The_Teams_default_never_reaches_a_Portfolio` | a Portfolio's item hangs by the Portfolios' default, never the Teams' one | WhereAPortfoliosWorkItemHangsTest `A_Portfolio_that_follows_a_Portfolios_default_naming_nothing_...`, `A_Portfolio_that_follows_the_default_...` (the production parent choice) | F5 (a Portfolio reads the Teams' parent-sources default) | both rows |
+| Slice08 `A_Portfolio_with_its_own_field_is_unaffected` | an owner with its own list reads it, whatever the default names | WhereAPortfoliosWorkItemHangsTest `A_Portfolio_with_its_own_field_hangs_its_item_under_that_field_...` | F6 (the owner's own list is ignored) | that row |
+| Slice12 `Every_Team_without_an_estimation_shows_the_default_on_its_next_page_load_and_nothing_updates` | an Estimation default is not part of what an owner fetches, so changing it queues nothing (the page reading is proven by the existing EstimationBundle and settings-page rows) | ConnectionSaveServiceTest `Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsEstimationDefault,True,False,False)` | F3 (the Estimation default counted in the fetch fingerprint) | that row |
+| Slice12 `A_Team_moved_to_another_connection_with_an_Estimation_source_Lighthouse_does_not_know_is_refused_and_keeps_its_Work_Items` | a Team save is judged before its Work Items are thrown away for a move | TeamControllerTest `UpdateTeam_MovedToAnotherConnectionWithAnEstimationSourceThisVersionDoesNotKnow_IsRefusedAndKeepsItsWorkItems` | F4 (the refusal is skipped, so the move's purge runs) | that row and every other refusal row of the class |
+
+Slice08 now keeps only row 1, the Portfolio follower's end-to-end skeleton. Slice12 keeps the Team admin's page row and the
+single refusal TestCase. The S4 expected list lost the two Slice12 ids and gained the new matrix row; the S5 list lost the
+five Slice08 ids. Dead base members removed: `WhenAnOlderPageSavesTheConnectionWithout`,
+`WhenTheAdminAddsAFieldAndMakesItTheDefault`.

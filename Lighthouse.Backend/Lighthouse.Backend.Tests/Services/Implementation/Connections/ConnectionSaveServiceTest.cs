@@ -472,6 +472,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             ChangesTheTeamsDefault,
             AddsAField,
             RenamesTheConnection,
+            ChangesTheTeamsEstimationDefault,
         }
 
         [TestCase(TheTeamsParentOverride.Own, TheEdit.ChangesTheTeamsDefault, true, false, false)]
@@ -486,6 +487,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         [TestCase(TheTeamsParentOverride.FollowsTheDefault, TheEdit.ChangesTheTeamsDefault, false, false, false)]
         [TestCase(TheTeamsParentOverride.FollowsTheDefault, TheEdit.AddsAField, false, false, false)]
         [TestCase(TheTeamsParentOverride.FollowsTheDefault, TheEdit.RenamesTheConnection, false, false, false)]
+        [TestCase(TheTeamsParentOverride.FollowsTheDefault, TheEdit.ChangesTheTeamsEstimationDefault, true, false, false)]
         public async Task Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(TheTeamsParentOverride parentOverride, TheEdit edit, bool startUpdates, bool teamUpdates, bool portfolioUpdates)
         {
             var connection = GivenTheOwnedConnection();
@@ -911,6 +913,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
                     break;
                 case TheEdit.RenamesTheConnection:
                     handle.Connection.Name = "Renamed";
+                    break;
+                case TheEdit.ChangesTheTeamsEstimationDefault:
+                    handle.Connection.EstimationForTeams = new EstimationBundle(CausedById, "Points", false, []);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(edit), edit, "An edit this table does not know");

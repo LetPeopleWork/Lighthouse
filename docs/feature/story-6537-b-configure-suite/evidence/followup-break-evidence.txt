@@ -1,0 +1,60 @@
+=== F1 a default the save leaves out is applied as cleared
+Failed UpdateWorkTrackingSystemConnection_ASaveThatLeavesTheTeamsDefaultOut_KeepsIt [31 ms]
+Failed UpdateWorkTrackingSystemConnection_ASaveThatLeavesThePortfoliosDefaultOut_KeepsIt [2 ms]
+Failed!  - Failed:     2, Passed:   167, Skipped:     0, Total:   169, Duration: 485 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F2 a field added in the same save is not remembered as the default
+Failed UpdateWorkTrackingSystemConnection_AFieldAddedInTheSameSave_CanBeThePortfoliosDefault [31 ms]
+Failed UpdateWorkTrackingSystemConnection_TheTeamsDefaultNamesAFieldAddedInThisSave_StoresTheFieldFirstAndThenPointsTheDefaultAtIt [4 ms]
+Failed!  - Failed:     2, Passed:   167, Skipped:     0, Total:   169, Duration: 503 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F3 an Estimation default counts in what an owner fetches
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsEstimationDefault,True,False,False) [33 ms]
+Failed!  - Failed:     1, Passed:   168, Skipped:     0, Total:   169, Duration: 474 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F4 a Team save is judged only after its Work Items are thrown away
+Failed UpdateTeam_BaselineEndInFuture_ReturnsBadRequest [25 ms]
+Failed UpdateTeam_BaselineShorterThan14Days_ReturnsBadRequest [3 ms]
+Failed UpdateTeam_BlockedRuleSetFailsValidation_ReturnsBadRequest [4 ms]
+Failed UpdateTeam_ForecastFilterRuleSetFailsValidation_ReturnsBadRequest [3 ms]
+Failed UpdateTeam_InvalidStageRule_IsRefusedBeforeAnythingIsWritten(True,"'Ready when' rule is invalid") [16 ms]
+Failed UpdateTeam_InvalidStageRule_IsRefusedBeforeAnythingIsWritten(False,"'Being refined when' rule is invalid") [4 ms]
+Failed UpdateTeam_InvalidStateMappings_ReturnsBadRequest [11 ms]
+Failed UpdateTeam_MovedToAnotherConnectionWithAnEstimationSourceThisVersionDoesNotKnow_IsRefusedAndKeepsItsWorkItems [8 ms]
+Failed UpdateTeam_MovingToAnotherConnectionWhileOwningAFieldOfTheOldOne_IsRefused [5 ms]
+Failed UpdateTeam_MovingToAnotherConnectionWhileOwningAnEstimationFieldOfTheOldOne_IsRefused [3 ms]
+Failed UpdateTeam_NamingAParentOverrideSourceThisVersionDoesNotKnow_IsRefusedNamingTheSourcesItKnows [3 ms]
+Failed UpdateTeam_OneSettingOfAnOtherwiseValidSaveRefused_IsRefusedAndNothingIsSaved(Baseline) [3 ms]
+Failed UpdateTeam_OneSettingOfAnOtherwiseValidSaveRefused_IsRefusedAndNothingIsSaved(StateMappings) [4 ms]
+Failed UpdateTeam_OneSettingOfAnOtherwiseValidSaveRefused_IsRefusedAndNothingIsSaved(Refinement) [4 ms]
+Failed UpdateTeam_OneSettingOfAnOtherwiseValidSaveRefused_IsRefusedAndNothingIsSaved(StalenessThreshold) [2 ms]
+Failed UpdateTeam_OneSettingOfAnOtherwiseValidSaveRefused_IsRefusedAndNothingIsSaved(CycleTime) [4 ms]
+Failed UpdateTeam_OwningAParentOverrideFieldItsConnectionDoesNotHave_IsRefused [8 ms]
+Failed UpdateTeam_OwningAParentOverrideFieldItsConnectionDoesNotHave_IsRefusedInTheWordsThisInstanceUses [4 ms]
+Failed UpdateTeam_StoredThroughputHistoryZeroChangedToNegative_ReturnsBadRequestAndKeepsTeam [9 ms]
+Failed UpdateTeam_ThroughputHistoryNotPositiveWithoutFixedDates_ReturnsBadRequestAndKeepsTeam(0) [3 ms]
+Failed UpdateTeam_ThroughputHistoryNotPositiveWithoutFixedDates_ReturnsBadRequestAndKeepsTeam(-1) [2 ms]
+Failed!  - Failed:    21, Passed:   148, Skipped:     0, Total:   169, Duration: 496 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F5 a Portfolio reads the Teams' Parent override default
+Failed A_Portfolio_that_follows_a_Portfolios_default_naming_nothing_hangs_its_item_under_the_trackers_own_parent_whatever_the_Teams_default_names [32 ms]
+Failed A_Portfolio_that_follows_the_default_hangs_its_item_under_the_field_the_Portfolios_default_names [< 1 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [5 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_UpdatesTheFollowersAndNeitherTheOwnersNorThePortfolios [6 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(Own,ChangesTheTeamsDefault,True,False,False) [4 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsDefault,True,True,False) [1 ms]
+Failed!  - Failed:     7, Passed:   162, Skipped:     0, Total:   169, Duration: 461 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F6 an owner with its own list reads the connection's default
+Failed A_Portfolio_with_its_own_field_hangs_its_item_under_that_field_whatever_the_Portfolios_default_names [26 ms]
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [17 ms]
+Failed GetTeamSettings_TeamExists_ReturnsSettings [26 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [6 ms]
+Failed UpdateTeam_GivenNewTeamSettings_UpdatesTeamAsync [7 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [4 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [4 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [4 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_UpdatesTheFollowersAndNeitherTheOwnersNorThePortfolios [6 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [7 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(Own,ChangesTheTeamsDefault,True,False,False) [8 ms]
+Failed!  - Failed:    15, Passed:   154, Skipped:     0, Total:   169, Duration: 492 ms - Lighthouse.Backend.Tests.dll (net10.0)

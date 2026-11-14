@@ -679,6 +679,49 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        // A tab opened before a default existed, or an older client, sends only the defaults it knows. Leaving one
+        // out must not read as clearing it.
+        [TestCase(true, TestName = "UpdateWorkTrackingSystemConnection_ASaveThatLeavesTheTeamsDefaultOut_KeepsIt")]
+        [TestCase(false, TestName = "UpdateWorkTrackingSystemConnection_ASaveThatLeavesThePortfoliosDefaultOut_KeepsIt")]
+        public async Task UpdateWorkTrackingSystemConnection_ASaveThatLeavesADefaultOut_KeepsIt(bool teams)
+        {
+            var (subject, existingConnection, save) = AJiraConnectionSaving(new ConnectionDefaultsDto());
+            existingConnection.ParentOverrideForTeams = teams ? ACausedByField : null;
+            existingConnection.ParentOverrideForPortfolios = teams ? null : ACausedByField;
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, save);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(teams ? existingConnection.ParentOverrideForTeams : existingConnection.ParentOverrideForPortfolios, Is.EqualTo(ACausedByField));
+            }
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_AFieldAddedInTheSameSave_CanBeThePortfoliosDefault()
+        {
+            const int StoredAs = 41;
+            var (subject, existingConnection, save) = AJiraConnectionSaving(new ConnectionDefaultsDto { ParentOverrideForPortfolios = -2 });
+            save.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -2, DisplayName = "Epic Link", Reference = "customfield_10008" });
+            repositoryMock.Setup(x => x.Save()).Callback(() =>
+            {
+                foreach (var field in existingConnection.AdditionalFieldDefinitions.Where(field => field.Id <= 0))
+                {
+                    field.Id = StoredAs;
+                }
+            }).Returns(Task.CompletedTask);
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, save);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(existingConnection.ParentOverrideForPortfolios, Is.EqualTo(StoredAs));
+                Assert.That(existingConnection.ParentOverrideForTeams, Is.Null);
+            }
+        }
+
         private (WorkTrackingSystemConnectionController Subject, WorkTrackingSystemConnection Connection, WorkTrackingSystemConnectionDto Save) AJiraConnectionSaving(ConnectionDefaultsDto defaults)
         {
             var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira };

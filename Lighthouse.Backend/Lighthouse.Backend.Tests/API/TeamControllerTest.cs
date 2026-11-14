@@ -1085,6 +1085,34 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Verify(x => x.Save(), Times.Never);
         }
 
+        // Moving a Team to another connection throws its Work Items away, so a save refused only after that
+        // would lose them for nothing.
+        [Test]
+        public async Task UpdateTeam_MovedToAnotherConnectionWithAnEstimationSourceThisVersionDoesNotKnow_IsRefusedAndKeepsItsWorkItems()
+        {
+            var storedTeam = new Team { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(storedTeam);
+            var dto = AValidTeamSave();
+            dto.WorkTrackingSystemConnectionId = 2;
+            dto.EstimationSource = (SettingSource)99;
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdateTeam(1, dto);
+
+            var refusal = result.Result as ObjectResult;
+            var problem = refusal?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("team-setting-source-unknown"));
+                Assert.That(problem?.Title, Is.EqualTo("The Team names a source this version of Lighthouse does not know."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Estimation Field source must be one of: ConnectionDefault, Own. Nothing was saved."));
+                Assert.That(storedTeam.WorkTrackingSystemConnectionId, Is.EqualTo(1));
+            }
+
+            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(It.IsAny<int>()), Times.Never);
+            teamRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
         [Test]
         public async Task UpdateTeam_OwningAParentOverrideFieldItsConnectionDoesNotHave_IsRefused()
         {
