@@ -404,6 +404,7 @@ the maintainer). The refresh process itself is still called sync.
 |---|---|---|---|
 | Flow metric | Throughput, Cycle Time, Work Item Age, WIP and their percentiles, the same calculation at every level | `Modules/FlowMetrics` (namespace `Lighthouse.Backend.Modules.FlowMetrics.*`); the services are still named `*MetricsService` | No folder drift since Story 6358 (2026-11-09). The `*Service` role names are a later edit (see "Role names") |
 | Snapshot day | The day a history row is recorded for | `RecordedAt` in three tables, another name in the Delivery snapshot | **Drift**: three names for one key |
+| Outlier | A closed Work Item whose value on a chart is more than 5 times the median (the 50th percentile, with Lighthouse's own convention) of that chart's items; computed per chart on that chart's own value; not drawn on that chart, still counted in every number and listed in View Data. A frontend chart rule ([ADR-282](adr-282-outlier-is-a-per-chart-median-multiple.md)) | `findOutliers`, `OUTLIER_MEDIAN_MULTIPLE`, `fiftiethPercentile` (`utils/charts/outliers.ts`) | **Overloaded in prose**: "pace outlier" (Work Item Aging bands), a point beyond the limits of a Process Behaviour Chart, and this one are three different things. Qualify every use |
 
 ### Forecasting
 

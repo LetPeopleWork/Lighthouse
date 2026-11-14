@@ -27,9 +27,22 @@ If there are items that were closed on the same day with the same cycle time, th
 
 This visual allows you to see patterns or outliers. Hovering over a dot will give you additional information, and with a click you'll get a more detailed view about the item(s) represented by the specific dot.
 
-You can click on the percentiles on top in the legend to show/hide them. Additionally, if you have defined an SLE, you can show the line on your scatterplot as well.
+You can click on the percentiles on top in the legend to show/hide them. If you have defined an SLE, its line is drawn by default, and you can switch it off in the legend.
 
 The chart also distinguishes items by type, using different colors for each item type. The legend allows you to show or hide specific item types.
+
+## Outliers
+
+One very long Work Item would stretch the y-axis and squeeze every other dot into the bottom of the chart. So the chart does not draw outliers. An outlier is a closed Work Item whose Cycle Time is more than 5 times the median Cycle Time of the closed Work Items in the chart. The median is the same value as the 50% line. The rule is applied to the value the chart plots, so with a named Cycle Time selected it uses that Cycle Time.
+
+The y-axis then fits the rest of the Work Items. When there are outliers, a chip such as **(!) 2 outliers** appears in the widget header (on a phone it reads **(!) 2**). Select it to open a popover that tells you:
+
+- **Not drawn:** the Cycle Time above which a Work Item is left out, and how it follows from the median, for example "longer than 30 days (5 times the median, 6 days)".
+- **Still counted:** outliers stay in the percentiles, the SLE and **View Data**. Hiding them changes the picture only, never a number.
+- **Above the axis:** if a percentile or SLE line lies above the top of the axis, it is shown as a labelled marker at the top edge of the plot, for example "▲ 95%: 34 days", and the popover names it too.
+- **The outliers themselves:** up to 10 rows, longest first, followed by "and k more" when there are more. **Open in a list** opens all of them in the Work Items dialog.
+
+When every visible Work Item is an outlier, the plot says "All visible Work Items are outliers." When you have hidden all Work Item types in the legend, it says "All types are hidden." If there are no outliers, there is no chip and the chart looks as before.
 
 {: .note}
 If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, the corresponding date ranges are highlighted with a hatched overlay on this chart, helping you distinguish expected gaps from anomalies.

@@ -1,12 +1,11 @@
-# ADR-282 (draft): An outlier is a value above a fixed multiple of the median, computed in the frontend, per chart
+# ADR-282: An outlier is a value above a fixed multiple of the median, computed in the frontend, per chart
 
-Draft written in the DESIGN wave of Story 6502, revised after the first review round. It lives in the feature
-folder; moving it to `docs/product/architecture/` and adding the ADR-270 glossary row and the `ARCHITECTURE.md`
-section 4 line is a DELIVER step (the DESIGN run was not allowed to edit shared docs).
+**Feature**: `docs/feature/story-6502-hide-outliers/`
 
 ## Status
+**Date**: 2026-11-14
 
-Proposed (maintainer reviews on return from AFK).
+Accepted (decided and shipped 2026-11-14).
 
 ## Context
 
@@ -31,7 +30,7 @@ in `layerBoundaries.enforcement.test.ts` (`utils` imports no services, hooks or 
    `OUTLIER_MEDIAN_MULTIPLE = 5`, a function that takes a list and a value accessor and returns the median, the cut
    (N x median), the outliers (largest first) and the typical items, and a pure `axisTop` function. It imports only
    the sibling `chartAxisUtils`. A chart passes its own accessor; nothing in the module knows a Work Item.
-2. **"The median" is Lighthouse's own 50th percentile** (AFK-10), computed in the frontend by `fiftiethPercentile`
+2. **"The median" is Lighthouse's own 50th percentile**, computed in the frontend by `fiftiethPercentile`
    with exactly the backend's convention (`PercentileCalculator.cs`: sort ascending, index = `floor(p/100 x N) - 1`,
    clamped). It is therefore always one of the items' values and always the number behind the chart's "50%" line, so
    the popover and the line cannot disagree. This is the one rule for "median" in the product; there is no second
@@ -44,14 +43,14 @@ in `layerBoundaries.enforcement.test.ts` (`utils` imports no services, hooks or 
    axis top is `axisTop`: with outliers, `min(1.1 x max(typical values and the lines at or below the cut), cut)`;
    without outliers, exactly today's axis. So "not drawn" is exactly "above the axis". Stated properties: every
    typical value and every drawn line is at or below the top, every outlier is above it, and the top never exceeds
-   the cut. The x-axis keeps its domain from all items (AFK-13).
+   the cut. The x-axis keeps its domain from all items.
 5. Lines (percentiles, SLE) above the axis are drawn as labelled edge markers in a reserved top margin, by a small
    custom SVG layer built on `useDrawingArea` (already used in this repository at the installed range); they are not
    passed to `ChartsReferenceLine`. The marker group is `aria-hidden`; the popover names the same lines once.
 6. The chip is a separate component (not a mode of `LegendChip`); the list behind it reuses `WorkItemsDialog`.
-   The chip is disabled, and an open popover closes, whenever the widget status leaves "ready" (AFK-11). The page gives
+   The chip is disabled, and an open popover closes, whenever the widget status leaves "ready". The page gives
    the chart a plain boolean, `frameIsReady`, taken from `frameStateOf` for the `cycleScatter` key and passed through
-   the `buildWidgetNodes` context (AFK-16); it is not called `isCurrent`, which names an unrelated local in the same
+   the `buildWidgetNodes` context; it is not called `isCurrent`, which names an unrelated local in the same
    file. The `WidgetStatusReporterContext` channel was considered and rejected: it reports from a chart up to its
    frame, and this need runs from the frame down to the chart.
 7. The statistics, the SLE share, RAG, tiles and View Data are not given the outlier partition. Only the chart's own
@@ -59,7 +58,7 @@ in `layerBoundaries.enforcement.test.ts` (`utils` imports no services, hooks or 
    that runs the same reduction on both sides cannot fail): a mounted chart (MUI mocked) is given the full population
    and must hand the percentile, SLE and View Data inputs on unchanged, and the lines it draws plus the markers it
    shows must equal the lines it received.
-8. **Slices.** The cap at the cut and the edge markers ship in one slice (AFK-6). Shipping the cap without markers
+8. **Slices.** The cap at the cut and the edge markers ship in one slice. Shipping the cap without markers
    hides the 95% and SLE lines silently; shipping markers without the cap leaves "not drawn" outliers in plain
    sight. Neither half is honest alone.
 9. **Named percentiles** are stored with the definition id **and** the fetch callback's identity. A keyed TanStack
@@ -68,10 +67,10 @@ in `layerBoundaries.enforcement.test.ts` (`utils` imports no services, hooks or 
    a deviation from the project's keyed-query norm, accepted because scoped percentiles already live in component
    state elsewhere on the page and moving the fetch is outside this Story.
 
-## Spike and fallback
+## Edge markers: how they were checked, and the fallback
 
-MUI X behaviour for out-of-domain values and for a reserved top margin is unverified (the DESIGN worktree has no
-`node_modules`). DELIVER step 0 is a browser spike with these criteria, at 1280 px and 375 px, light and dark:
+How MUI X treats out-of-domain values and a reserved top margin was not known when this was decided, so the markers were checked
+in a browser, at 1280 px and 375 px, light and dark, against these criteria:
 (1) a marker `<text>` above the drawing area is fully inside the SVG; (2) the plot height does not change with the
 number of marker rows apart from the reserved margin, and no dot or line moves when a percentile chip is ticked; (3)
 no marker box intersects the plot or the legend row; (4) the longest label stays inside the SVG at 375 px or is
@@ -84,7 +83,7 @@ changes; the pure modules, the cap and their tests stay. Keeping the axis open f
 - **Backend flag on the DTO** (an `isOutlier` per item or a cut in the metrics response). Rejected: the maintainer
   wants it per chart on that chart's value; it would change API contracts and force a Lighthouse-Clients bump for a
   render-time concern; the frontend already holds the numbers.
-- **A textbook median in the frontend.** Rejected (AFK-10): two different "medians" on one screen, the chart's "50%"
+- **A textbook median in the frontend.** Rejected: two different "medians" on one screen, the chart's "50%"
   line and the popover's, would confuse every reader and need an explanatory sentence.
 - **Changing the backend percentile convention.** Rejected: it moves every percentile in the product.
 - **A `useOutliers` React hook as the home of the rule.** Rejected: the rule has no state or effect; a hook would
@@ -94,17 +93,17 @@ changes; the pure modules, the cap and their tests stay. Keeping the axis open f
 - **Clip the points instead of filtering them.** Rejected: MUI X scatter markers are not clipped by the axis, and
   each marker is also a focusable button and a tooltip target; an off-screen marker would be reachable by keyboard.
 - **Pass out-of-domain lines to `ChartsReferenceLine`.** Rejected: drawn above the plot, unclipped, over the legend.
-  To be proven in the DELIVER spike.
-- **Keep the axis open for every line** (the DISCUSS slice-01 rule). Rejected as the permanent rule: for a team
+  Checked in the browser before the markers shipped.
+- **Keep the axis open for every line** (the first plan). Rejected as the permanent rule: for a team
   whose 95% line or SLE lies above the cut, keeping the axis open for it undoes the point of the story for exactly
   that team. Such a line is rare on real-looking data (computed on Team Zenith, the 95% line is 15 days against a
   50% line of 6, 2.5 times, well under the cut of 30), so the markers are an honesty guard more than the usual look;
   an illustrative right-skewed lognormal (95% line near 5.2 times the median, not a measurement) is where they would
   show.
-- **`WidgetStatusReporterContext` as the source of the chip's "ready" flag.** Rejected (AFK-16): it carries status
+- **`WidgetStatusReporterContext` as the source of the chip's "ready" flag.** Rejected: it carries status
   from a chart to its frame, the opposite direction; a prop from `frameStateOf` is the smaller seam.
-- **Two slices (cap first, markers later).** Rejected (AFK-6), see decision 8.
-- **2 x P95 (DIVERGE) or Tukey fences.** Superseded by the maintainer's decision.
+- **Two slices (cap first, markers later).** Rejected, see decision 8.
+- **2 x P95 or Tukey fences.** Superseded by the maintainer's decision.
 
 ## Consequences
 
@@ -117,9 +116,9 @@ changes; the pure modules, the cap and their tests stay. Keeping the axis open f
 - Risk, with its probe: the spike above (manual, on a throwaway fixture, because the demo has no line above the cut
   and so shows no marker) and RTL and unit tests of the marker specs on a fixture; no E2E geometry check is kept.
   Demo data carries one outlier on Team Zenith (`TZ-301`, no Parent) so the chip is visible; its accepted effect on Zenith's
-  statistics is listed in the feature delta.
-- Glossary: "Outlier" enters the Flow metrics section of ADR-270 (row text in `feature-delta.md`, DISCUSS context
-  map). "Pace outlier" (Work Item Aging) and a Process Behaviour Chart point beyond its limits remain different
+  statistics is listed in the feature workspace.
+- Glossary: "Outlier" enters the Flow metrics section of ADR-270 in the same feature.
+  "Pace outlier" (Work Item Aging) and a Process Behaviour Chart point beyond its limits remain different
   things; every use is qualified.
 
 ## Enforcement
@@ -127,8 +126,8 @@ changes; the pure modules, the cap and their tests stay. Keeping the axis open f
 `utils/charts/outliers.ts` imports only the pure `chartAxisUtils`, so the existing fallow layer check already keeps
 it free of services, hooks and pages. A unit test asserts that the help sentence and the chip copy contain the value
 of `OUTLIER_MEDIAN_MULTIPLE`, so the constant cannot drift from the words. A table test pins `fiftiethPercentile` to
-the backend convention. Property tests (fast-check, a frontend dev dependency per AFK-7) cover the partition, the
-`axisTop` bounds, and the half-up rounding of the factor from 10 up (AFK-17). The wiring-point test above covers the
+the backend convention. Property tests (fast-check, a frontend dev dependency) cover the partition, the
+`axisTop` bounds, and the half-up rounding of the factor from 10 up. The wiring-point test above covers the
 statistics, and a second chart test pins the chart's 50% line to `fiftiethPercentile` of the same population, for the
 default and for a named Cycle Time, so the popover's median and the line cannot drift apart. Mutation testing (Stryker, 80%) covers the boundary (`>` against
 `>=` at the cut) through a test at exactly N x median.

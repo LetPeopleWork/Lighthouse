@@ -8999,3 +8999,17 @@ jobs:
       anxiety: "Can this role reach connections or delete a Team?"
       habit: Handing out System Admin because it is quick.
     opportunity_score: {importance: 3, current_satisfaction: 1, gap: 2, rationale: "Desk estimate; the maintainer included it beyond the customer's ask."}
+
+  - id: job-flow-coach-read-typical-work-know-the-exceptions
+    title: Read where typical closed work lands while knowing which items are exceptional
+    persona: flow-coach
+    feature_context: story-6502-hide-outliers
+    job_story: >
+      When I read the picture of my closed work in a flow review or in front of a stakeholder,
+      I want normal work to stay legible while every exceptional item stays known, reachable and explained,
+      so I can act on both and explain the picture without being asked "what is that dot?" or "what did you leave out?".
+    dimensions:
+      functional: Read where most closed Work Items land, know which did not and how far out they are.
+      emotional: Confident that nothing is hidden and nothing is drowned by one item.
+      social: Put the picture in front of a stakeholder and answer both questions.
+    related: [job-flow-coach-spot-pace-outliers]
