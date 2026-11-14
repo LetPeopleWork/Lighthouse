@@ -92,31 +92,3 @@ export function axisTop({
 		cut,
 	);
 }
-
-const TENTHS = 10;
-const WHOLE_NUMBERS_FROM_TENTHS = 100;
-
-/** How many times the median the value is, rounded up to a tenth below 10 and half-up to a whole number from 10. */
-export function timesTheMedian(value: number, median: number): number {
-	const tenths = Math.ceil((value * TENTHS) / median);
-	if (tenths < WHOLE_NUMBERS_FROM_TENTHS) return tenths / TENTHS;
-
-	return Math.floor((2 * value + median) / (2 * median));
-}
-
-export interface TimesTheMedianText {
-	/** "9.7x" */
-	readonly short: string;
-	/** "9.7 times the median" */
-	readonly spoken: string;
-}
-
-export function formatTimesTheMedian(
-	value: number,
-	median: number,
-): TimesTheMedianText {
-	const times = timesTheMedian(value, median);
-	const shown = times < TENTHS ? times.toFixed(1) : String(times);
-
-	return { short: `${shown}x`, spoken: `${shown} times the median` };
-}

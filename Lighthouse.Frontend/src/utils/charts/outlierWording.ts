@@ -6,7 +6,7 @@ export interface OutlierTerms {
 	readonly cycleTime: string;
 }
 
-/** A line that lies above the axis, as the popover names it. */
+/** A line that lies above the axis, as the chip's accessible name states it. */
 export type AboveAxisLine =
 	| {
 			readonly kind: "percentile";
@@ -32,7 +32,7 @@ export const outlierRuleSentence = ({
 const plural = (count: number): string =>
 	count === 1 ? "outlier" : "outliers";
 
-/** All the words the outlier chip, its popover and the empty plot use, with the configured terms put in. */
+/** All the words the outlier chip and the empty plot use, with the configured terms put in. */
 export function outlierWording(terms: OutlierTerms) {
 	const aboveAxisPhrase = (line: AboveAxisLine): string => {
 		const name = line.kind === "sle" ? terms.sle : `${line.percentile}%`;
@@ -43,27 +43,20 @@ export function outlierWording(terms: OutlierTerms) {
 		chipLabel: (count: number) => `${count} ${plural(count)}`,
 		// A count shown while the widget reloads would belong to the previous answer.
 		chipLabelWhileLoading: "Outliers",
-		chipAccessibleName: (count: number) =>
-			`${count} ${plural(count)} not drawn on the chart. Show details.`,
+		chipAccessibleName: (count: number, aboveTheAxisSentence: string | null) =>
+			[
+				`${count} ${plural(count)} not drawn on the chart.`,
+				aboveTheAxisSentence,
+				"Show the list.",
+			]
+				.filter((part) => part !== null)
+				.join(" "),
 		chipAccessibleNameWhileLoading: "Outliers, loading",
-		popoverTitle: (count: number) => `${count} ${plural(count)}`,
-		notDrawn: (cut: number, median: number) =>
-			`Not drawn: longer than ${cut} days (${OUTLIER_MEDIAN_MULTIPLE} times the median, ${median} days).`,
-		stillCounted: `Still counted in the percentiles, ${terms.sle} and View Data.`,
 		aboveTheAxis: (lines: readonly AboveAxisLine[]) =>
 			`Above the axis: ${lines.map(aboveAxisPhrase).join(", ")}.`,
-		openInAList: "Open in a list",
 		listTitle: `${terms.workItems} with a ${terms.cycleTime} more than ${OUTLIER_MEDIAN_MULTIPLE} times the median`,
-		moreRows: (count: number) => `and ${count} more`,
 		allVisibleAreOutliers: `All visible ${terms.workItems} are outliers.`,
 		allTypesHidden: "All types are hidden.",
-		columns: {
-			reference: "ID",
-			name: "Name",
-			closed: "Closed",
-			days: `${terms.cycleTime} (days)`,
-			times: "Times the median",
-		},
 	};
 }
 

@@ -380,13 +380,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		outlierHeaderChip({
 			wording,
 			outliers: visibleOutliers,
-			median: analysis.median,
-			cut: analysis.cut,
 			offScaleLines,
 			disabled: !frameIsReady,
-			onOpened: () =>
-				reportUsage({ name: UsageDataEventName.OutlierPopoverOpened }),
-			onOpenInList: () => {
+			onOpen: () => {
+				reportUsage({ name: UsageDataEventName.OutlierListOpened });
 				setDialogContent({
 					title: wording.listTitle,
 					items: [...visibleOutliers],

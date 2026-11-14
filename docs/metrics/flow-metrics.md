@@ -35,12 +35,9 @@ The chart also distinguishes items by type, using different colors for each item
 
 One very long Work Item would stretch the y-axis and squeeze every other dot into the bottom of the chart. So the chart does not draw outliers. An outlier is a closed Work Item whose Cycle Time is more than 5 times the median Cycle Time of the closed Work Items in the chart. The median is the same value as the 50% line. The rule is applied to the value the chart plots, so with a named Cycle Time selected it uses that Cycle Time.
 
-The y-axis then fits the rest of the Work Items. When there are outliers, a chip such as **(!) 2 outliers** appears in the widget header (on a phone it reads **(!) 2**). Select it to open a popover that tells you:
+The y-axis then fits the rest of the Work Items. When there are outliers, a chip such as **(!) 2 outliers** appears in the widget header (on a phone it reads **(!) 2**). The chip is amber. Select it to open the list of the outliers in the Work Items dialog, longest first. Hiding them changes the picture only, never a number: outliers stay in the percentiles, the SLE and **View Data**.
 
-- **Not drawn:** the Cycle Time above which a Work Item is left out, and how it follows from the median, for example "longer than 30 days (5 times the median, 6 days)".
-- **Still counted:** outliers stay in the percentiles, the SLE and **View Data**. Hiding them changes the picture only, never a number.
-- **Above the axis:** if a percentile or SLE line lies above the top of the axis, it is shown as a labelled marker at the top edge of the plot, for example "▲ 95%: 34 days", and the popover names it too.
-- **The outliers themselves:** up to 10 rows, longest first, followed by "and k more" when there are more. **Open in a list** opens all of them in the Work Items dialog.
+If a percentile or SLE line lies above the top of the axis, it is shown as a labelled marker at the top edge of the plot, for example "▲ 95%: 34 days". The chip's accessible name and its tooltip name that line too, for example "2 outliers not drawn on the chart. Above the axis: 95% at 34 days. Show the list."
 
 When every visible Work Item is an outlier, the plot says "All visible Work Items are outliers." When you have hidden all Work Item types in the legend, it says "All types are hidden." If there are no outliers, there is no chip and the chart looks as before.
 

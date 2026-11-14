@@ -14,7 +14,7 @@ into the bottom of the plot (computed example, Team Zenith's demo data over the 
 so the cut is 30 days; TZ-301 at 58 days stretches the axis to 1.1 x 58 = 63.8 days, about 2.1 times the cut, while
 the other items end at 20 days, where the axis would stop at 22 days; the figures shift by about a day with the
 weekday the demo is loaded). The maintainer decided (Story 6502, after
-DIVERGE): chip plus popover; an outlier is a value more than N times the median, N = 5 to start; no minimum sample;
+DIVERGE): a chip that opens the list; an outlier is a value more than N times the median, N = 5 to start; no minimum sample;
 the calculation is generic, in the frontend, and runs on each chart's own value, because an item can be normal on one
 chart and an outlier on another. Percentiles, the SLE share, RAG, tiles, forecasts and View Data keep including every
 item.
@@ -33,7 +33,7 @@ in `layerBoundaries.enforcement.test.ts` (`utils` imports no services, hooks or 
 2. **"The median" is Lighthouse's own 50th percentile**, computed in the frontend by `fiftiethPercentile`
    with exactly the backend's convention (`PercentileCalculator.cs`: sort ascending, index = `floor(p/100 x N) - 1`,
    clamped). It is therefore always one of the items' values and always the number behind the chart's "50%" line, so
-   the popover and the line cannot disagree. This is the one rule for "median" in the product; there is no second
+   the chart and its 50% line cannot disagree. This is the one rule for "median" in the product; there is no second
    definition to explain. The backend is not changed. The convention sits one rank below the textbook median when
    `p x N` is not whole (for example N = 5 picks the 2nd value); changing it would move every percentile in the
    product, so whether it is intended is a separate question, flagged to the maintainer as an observation. A table
@@ -46,9 +46,9 @@ in `layerBoundaries.enforcement.test.ts` (`utils` imports no services, hooks or 
    the cut. The x-axis keeps its domain from all items.
 5. Lines (percentiles, SLE) above the axis are drawn as labelled edge markers in a reserved top margin, by a small
    custom SVG layer built on `useDrawingArea` (already used in this repository at the installed range); they are not
-   passed to `ChartsReferenceLine`. The marker group is `aria-hidden`; the popover names the same lines once.
+   passed to `ChartsReferenceLine`. The marker group is `aria-hidden`; the chip's accessible name names the same lines once.
 6. The chip is a separate component (not a mode of `LegendChip`); the list behind it reuses `WorkItemsDialog`.
-   The chip is disabled, and an open popover closes, whenever the widget status leaves "ready". The page gives
+   The chip is amber and opens the list dialog directly, and it is disabled whenever the widget status leaves "ready". The page gives
    the chart a plain boolean, `frameIsReady`, taken from `frameStateOf` for the `cycleScatter` key and passed through
    the `buildWidgetNodes` context; it is not called `isCurrent`, which names an unrelated local in the same
    file. The `WidgetStatusReporterContext` channel was considered and rejected: it reports from a chart up to its
@@ -84,7 +84,7 @@ changes; the pure modules, the cap and their tests stay. Keeping the axis open f
   wants it per chart on that chart's value; it would change API contracts and force a Lighthouse-Clients bump for a
   render-time concern; the frontend already holds the numbers.
 - **A textbook median in the frontend.** Rejected: two different "medians" on one screen, the chart's "50%"
-  line and the popover's, would confuse every reader and need an explanatory sentence.
+  line and a second one, would confuse every reader and need an explanatory sentence.
 - **Changing the backend percentile convention.** Rejected: it moves every percentile in the product.
 - **A `useOutliers` React hook as the home of the rule.** Rejected: the rule has no state or effect; a hook would
   tie reuse and property tests to React for nothing. A hook can wrap the function later if a second chart wants it.
@@ -108,7 +108,7 @@ changes; the pure modules, the cap and their tests stay. Keeping the axis open f
 ## Consequences
 
 - Positive: changing N is a one-line change; copy that quotes N follows it; a second chart adopts the rule by
-  passing an accessor; the module is trivially property-testable; the popover's median always equals the "50%" line;
+  passing an accessor; the module is trivially property-testable; the median behind the cut always equals the "50%" line;
   no API, DTO, RBAC, migration or client change.
 - Negative: the lower-index convention means the "median" can sit one rank below the textbook value at small N (an
   existing product behaviour, now visible in one more place). A dot exactly at the cut touches the top edge when the
@@ -129,5 +129,5 @@ of `OUTLIER_MEDIAN_MULTIPLE`, so the constant cannot drift from the words. A tab
 the backend convention. Property tests (fast-check, a frontend dev dependency) cover the partition, the
 `axisTop` bounds, and the half-up rounding of the factor from 10 up. The wiring-point test above covers the
 statistics, and a second chart test pins the chart's 50% line to `fiftiethPercentile` of the same population, for the
-default and for a named Cycle Time, so the popover's median and the line cannot drift apart. Mutation testing (Stryker, 80%) covers the boundary (`>` against
+default and for a named Cycle Time, so the median behind the cut and the line cannot drift apart. Mutation testing (Stryker, 80%) covers the boundary (`>` against
 `>=` at the cut) through a test at exactly N x median.

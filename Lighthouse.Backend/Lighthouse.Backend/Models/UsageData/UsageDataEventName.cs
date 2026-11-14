@@ -100,6 +100,6 @@ namespace Lighthouse.Backend.Models.UsageData
         /// the closed Work Items too long to be drawn. It carries nothing: not which Team or Portfolio, not how many
         /// outliers, not which items.
         /// </summary>
-        OutlierPopoverOpened = 27,
+        OutlierListOpened = 27,
     }
 }

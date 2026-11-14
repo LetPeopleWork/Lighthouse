@@ -1,28 +1,19 @@
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlineOutlined";
-import { Chip, Popover, Tooltip, useMediaQuery } from "@mui/material";
+import { Chip, Tooltip, useMediaQuery } from "@mui/material";
 import type React from "react";
-import { useState } from "react";
 import type { OutlierWording } from "../../../utils/charts/outlierWording";
-import OutlierPopoverContent, {
-	type OutlierRow,
-} from "./OutlierPopoverContent";
 
 const PHONE_WIDTH_QUERY = "(max-width:599.95px)";
 
 interface OutlierChipProps {
 	readonly wording: OutlierWording;
 	readonly count: number;
-	readonly cut: number;
-	readonly median: number;
-	readonly rows: readonly OutlierRow[];
-	readonly moreCount: number;
+	/** The sentence naming the lines above the axis, or null when none is. */
 	readonly aboveTheAxis: string | null;
 	/** True while the widget has no current answer; the chip then names no count and cannot be opened. */
 	readonly disabled: boolean;
-	/** Called once each time the popover goes from closed to open. */
-	readonly onOpened: () => void;
-	/** Called when the reader asks for the outliers as a list; the popover has closed by then. */
-	readonly onOpenInList: () => void;
+	/** Called each time the reader asks for the list of outliers. */
+	readonly onOpen: () => void;
 	/** Lets the owner of the list hand focus back to the chip when the list closes. */
 	readonly chipRef: React.Ref<HTMLDivElement>;
 }
@@ -30,78 +21,38 @@ interface OutlierChipProps {
 const OutlierChip: React.FC<OutlierChipProps> = ({
 	wording,
 	count,
-	cut,
-	median,
-	rows,
-	moreCount,
 	aboveTheAxis,
 	disabled,
-	onOpened,
-	onOpenInList,
+	onOpen,
 	chipRef,
 }) => {
-	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 	const isPhone = useMediaQuery(PHONE_WIDTH_QUERY);
 
-	// A popover left open when the widget reloads must not reopen by itself afterwards.
-	if (disabled && anchor !== null) setAnchor(null);
-
-	const open = anchor !== null && !disabled;
 	const accessibleName = disabled
 		? wording.chipAccessibleNameWhileLoading
-		: wording.chipAccessibleName(count);
+		: wording.chipAccessibleName(count, aboveTheAxis);
 	const words = disabled
 		? wording.chipLabelWhileLoading
 		: wording.chipLabel(count);
 
-	const close = () => setAnchor(null);
-
 	return (
-		<>
-			<Tooltip title={disabled ? "" : accessibleName} arrow>
-				<span>
-					<Chip
-						size="small"
-						variant="outlined"
-						icon={<ErrorOutlineIcon fontSize="small" />}
-						label={isPhone && !disabled ? count : words}
-						disabled={disabled}
-						onClick={(event) => {
-							if (!open) onOpened();
-							setAnchor(event.currentTarget);
-						}}
-						aria-label={accessibleName}
-						aria-haspopup="dialog"
-						aria-expanded={open}
-						ref={chipRef}
-						data-testid="outlier-chip"
-						sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }}
-					/>
-				</span>
-			</Tooltip>
-			{open && (
-				<Popover
-					open
-					anchorEl={anchor}
-					onClose={close}
-					anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-				>
-					<OutlierPopoverContent
-						wording={wording}
-						count={count}
-						cut={cut}
-						median={median}
-						rows={rows}
-						moreCount={moreCount}
-						aboveTheAxis={aboveTheAxis}
-						onOpenInList={() => {
-							close();
-							onOpenInList();
-						}}
-					/>
-				</Popover>
-			)}
-		</>
+		<Tooltip title={disabled ? "" : accessibleName} arrow>
+			<span>
+				<Chip
+					size="small"
+					variant="outlined"
+					color="warning"
+					icon={<ErrorOutlineIcon fontSize="small" />}
+					label={isPhone && !disabled ? count : words}
+					disabled={disabled}
+					onClick={onOpen}
+					aria-label={accessibleName}
+					ref={chipRef}
+					data-testid="outlier-chip"
+					sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }}
+				/>
+			</span>
+		</Tooltip>
 	);
 };
 
