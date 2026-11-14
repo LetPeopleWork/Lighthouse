@@ -405,9 +405,8 @@ export interface WidgetInfoTerms {
 	readonly features: string;
 	readonly team: string;
 	readonly workItems: string;
-	/** Optional so a caller that never words a widget with them need not supply them. */
+	readonly cycleTime: string;
 	readonly workItem?: string;
-	readonly cycleTime?: string;
 }
 
 export interface WidgetInfoOwner {
@@ -442,10 +441,8 @@ const teamWordings: Record<string, (terms: WidgetInfoTerms) => TeamWording> = {
 
 // The outlier rule reads the same on a Team and on a Portfolio, so this widget is worded from terms for both.
 const alwaysWorded: Record<string, (terms: WidgetInfoTerms) => string> = {
-	cycleScatter: ({ workItem, workItems, cycleTime }) => {
-		const cycleTimeWord = cycleTime ?? "cycle time";
-		return `Scatter plot of completed ${workItems} showing ${cycleTimeWord} trends and outliers over time. ${outlierRuleSentence({ workItem: workItem ?? "item", workItems, cycleTime: cycleTimeWord })}`;
-	},
+	cycleScatter: ({ workItem, workItems, cycleTime }) =>
+		`Scatter plot of completed ${workItems} showing ${cycleTime} trends and outliers over time. ${outlierRuleSentence({ workItem: workItem ?? "item", workItems, cycleTime })}`,
 };
 
 export function getWidgetInfo(

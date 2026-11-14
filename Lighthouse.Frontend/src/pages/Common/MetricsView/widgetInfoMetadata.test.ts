@@ -102,6 +102,7 @@ describe("widgetInfoMetadata", () => {
 				features: "Bets",
 				team: "Squad",
 				workItems: "Tasks",
+				cycleTime: "Lead Time",
 			};
 
 			it("on a Team speaks of this Team's share in the Team's own words", () => {
