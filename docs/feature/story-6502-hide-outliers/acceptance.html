@@ -624,6 +624,238 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<pre><code>A reader clicks the amber chip on Team Zenith&#x27;s closed set (median 6 days, one 58-day item)
+</code></pre>
+
+<pre><code>The Work Items dialog opens at once, titled with the more-than-5-times-the-median wording, listing only TZ-301; no popover, no extra step; OutlierListOpened is sent once
+</code></pre>
+
+<pre><code>One click shows the outlier list
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx</p>
+
+<pre><code>A popover with an Open in a list button first, or an event with the old name, or an event sent twice
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A keyboard reader presses Enter on the chip, closes the list, and opens it again
+</code></pre>
+
+<pre><code>The list opens on Enter, focus returns to the chip on close, and each opening is reported once
+</code></pre>
+
+<pre><code>The keyboard reader reaches the list and keeps their place
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx</p>
+
+<pre><code>Focus lost to the page body after close, or Enter doing nothing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The chip is read ready, at phone width, and while loading
+</code></pre>
+
+<pre><code>Border, icon and text are amber (warning colour) in all three; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked
+</code></pre>
+
+<pre><code>The reader notices the amber chip at any width and never sees a stale count
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx</p>
+
+<pre><code>A plain grey chip at some width or while loading, or a click on the loading chip opening the list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The chip name and tooltip are read with no line above the axis, and with the 95% line and the SLE above it
+</code></pre>
+
+<pre><code>Name equals tooltip: n outlier(s) not drawn on the chart, then the Above the axis sentence only when a line is above, then Show the list
+</code></pre>
+
+<pre><code>A screen-reader user learns the count and the lines above the axis
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx</p>
+
+<pre><code>A name without the Above the axis sentence when a line is above, or with it when none is, or a tooltip that differs from the name
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The accessible-name wording is built for one outlier with no line above, three with the 95% line, one with the SLE, and two with both
+</code></pre>
+
+<pre><code>Each exact sentence, singular or plural, with the Above the axis phrase only when given
+</code></pre>
+
+<pre><code>Wording is right for every line-above shape
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.mutation.test.ts</p>
+
+<pre><code>Show details still ending the name, or the sentence always present
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The chip is clicked with a named Cycle Time chosen, after a date-range change, with a type hidden, with 11 outliers, and with renamed terms
+</code></pre>
+
+<pre><code>The dialog lists exactly the visible-type outliers of the current view, all eleven, titled in the reader&#x27;s terms, with focus back on the chip
+</code></pre>
+
+<pre><code>The list always matches the chip&#x27;s view
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx</p>
+
+<pre><code>A list of the ten popover rows only, drawn items, or a stale view
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Revised earlier chart scenarios: line above the axis, line exactly at the top, no lines, counts, usage event, error and loading frames
+</code></pre>
+
+<pre><code>Chip name carries the Above the axis sentence only when a line is above; the usage event is OutlierListOpened once per open; error and loading frames show no chip count
+</code></pre>
+
+<pre><code>The earlier behaviours still hold without the popover
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx</p>
+
+<pre><code>Old Show details name or old event name
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On Team Zenith demo data the reader clicks the header chip
+</code></pre>
+
+<pre><code>The Work Items dialog is visible straight after the click with row TZ-301
+</code></pre>
+
+<pre><code>One click from the header lists TZ-301
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/metrics/OutlierChip.spec.ts</p>
+
+<pre><code>A popover table that also has a TZ-301 row
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The usage event member is named
+</code></pre>
+
+<pre><code>OutlierListOpened keeps number 27 after the last named event and carries only its name
+</code></pre>
+
+<pre><code>Usage counts follow the new name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/OutlierListOpenedEventNameTests.cs</p>
+
+<pre><code>Old name kept
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

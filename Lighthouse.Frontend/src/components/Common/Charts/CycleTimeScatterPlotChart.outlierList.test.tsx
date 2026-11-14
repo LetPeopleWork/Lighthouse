@@ -147,10 +147,7 @@ const outlierChip = () =>
 		{ name: /outlier/i },
 	);
 
-const openInAList = () => {
-	fireEvent.click(outlierChip());
-	fireEvent.click(screen.getByRole("button", { name: "Open in a list" }));
-};
+const openTheList = () => fireEvent.click(outlierChip());
 
 const listedIds = (): string[] =>
 	within(screen.getByRole("list", { name: "Listed Work Items" }))
@@ -167,15 +164,12 @@ describe("Cycle Time scatterplot opens the outliers in the Work Items list", () 
 		terms.sle = "SLE";
 	});
 
-	it("lists every outlier, not only the ten the popover shows, and hands focus back to the chip afterwards", async () => {
+	it("lists every outlier straight from the chip and hands focus back to the chip afterwards", async () => {
 		showChart([...typicalItems(), ...elevenOutliers()]);
-		fireEvent.click(outlierChip());
-		expect(screen.getAllByRole("row", { name: /TZ-3\d\d/ })).toHaveLength(10);
 
-		fireEvent.click(screen.getByRole("button", { name: "Open in a list" }));
+		openTheList();
 
-		expect(screen.queryByText("Open in a list")).toBeNull();
-		expect(screen.queryByText("and 1 more")).toBeNull();
+		expect(screen.queryByText(/Open in a list|and 1 more/)).toBeNull();
 		expect(screen.queryByText(/Not drawn: longer than/)).toBeNull();
 		expect(
 			within(dialog()).getByText(
@@ -200,7 +194,7 @@ describe("Cycle Time scatterplot opens the outliers in the Work Items list", () 
 		terms.cycleTime = "Lead Time";
 		showChart([...typicalItems(), ...elevenOutliers().slice(0, 2)]);
 
-		openInAList();
+		openTheList();
 
 		expect(
 			within(dialog()).getByText(
@@ -221,7 +215,7 @@ describe("Cycle Time scatterplot opens the outliers in the Work Items list", () 
 			screen.getByRole("button", { name: "Story visibility toggle" }),
 		);
 
-		openInAList();
+		openTheList();
 
 		expect(listedIds()).toEqual(["TZ-301"]);
 	});

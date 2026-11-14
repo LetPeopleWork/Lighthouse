@@ -27,8 +27,16 @@ vi.mock("@mui/material", async () => {
 	return { ...actual, useTheme: () => testTheme };
 });
 
+// The dialog is replaced by the ids it was handed.
 vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
-	default: () => null,
+	default: ({ items, open }: { items: IWorkItem[]; open: boolean }) =>
+		open ? (
+			<ul aria-label="Listed Work Items">
+				{items.map((item) => (
+					<li key={item.id}>{item.referenceId}</li>
+				))}
+			</ul>
+		) : null,
 }));
 
 vi.mock("./TimeBlackoutOverlay", () => ({ default: () => null }));
@@ -175,6 +183,11 @@ const choose = async (name: string) => {
 	fireEvent.click(await screen.findByRole("option", { name }));
 };
 
+const listedIds = (): string[] =>
+	within(screen.getByRole("list", { name: "Listed Work Items" }))
+		.getAllByRole("listitem")
+		.map((row) => row.textContent ?? "");
+
 const toggle = (type: string) =>
 	fireEvent.click(
 		screen.getByRole("button", { name: `${type} visibility toggle` }),
@@ -201,14 +214,7 @@ describe("The outlier chip stays truthful while the reader changes the view", ()
 		expect(axisTop()).toBeCloseTo(7.7, 5);
 		expect(outlierChip()).toHaveTextContent("1 outlier");
 		fireEvent.click(outlierChip());
-		expect(
-			screen.getByText(
-				"Not drawn: longer than 20 days (5 times the median, 4 days).",
-			),
-		).toBeVisible();
-		const row = screen.getByRole("row", { name: /TZ-301/ });
-		expect(within(row).getByText("26")).toBeVisible();
-		expect(within(row).getByText("6.5x")).toBeInTheDocument();
+		expect(listedIds()).toEqual(["TZ-301"]);
 	});
 
 	it("shows no chip when the selected named Cycle Time makes the long Work Item ordinary", async () => {
@@ -275,11 +281,7 @@ describe("The outlier chip stays truthful while the reader changes the view", ()
 		expect(drawnHeights()).toEqual([1, 2, 2, 2, 3]);
 		expect(axisTop()).toBeCloseTo(3.3, 5);
 		fireEvent.click(outlierChip());
-		expect(
-			screen.getByText(
-				"Not drawn: longer than 10 days (5 times the median, 2 days).",
-			),
-		).toBeVisible();
+		expect(listedIds()).toEqual(["TZ-301"]);
 	});
 
 	it("shows no count of the previous range while the next range loads", () => {

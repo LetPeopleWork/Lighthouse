@@ -40,5 +40,6 @@ test("a delivery lead sees the one exceptionally long closed item named in the C
 
 	await scatter.openOutlierList();
 
+	await expect(scatter.outlierListDialog).toBeVisible();
 	await expect(scatter.outlierRow(THE_LONG_ITEM)).toBeVisible();
 });

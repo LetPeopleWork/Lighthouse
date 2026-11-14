@@ -286,19 +286,169 @@
 "stimulus": "F301",
 "user_result": "F303"
 }
+],
+"S4": [
+{
+"covers": [
+"P2",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F401",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx"
+},
+"expected": "F399",
+"stimulus": "F398",
+"user_result": "F400"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F405",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx"
+},
+"expected": "F403",
+"stimulus": "F402",
+"user_result": "F404"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F381"
+],
+"still_passes_if": "F409",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx"
+},
+"expected": "F407",
+"stimulus": "F406",
+"user_result": "F408"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F377",
+"L4/F380"
+],
+"still_passes_if": "F413",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx"
+},
+"expected": "F411",
+"stimulus": "F410",
+"user_result": "F412"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"L4/F378",
+"L4/F379"
+],
+"still_passes_if": "F417",
+"test": "Lighthouse.Frontend/src/utils/charts/outlierWording.mutation.test.ts"
+},
+"expected": "F415",
+"stimulus": "F414",
+"user_result": "F416"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F421",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx"
+},
+"expected": "F419",
+"stimulus": "F418",
+"user_result": "F420"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F425",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx"
+},
+"expected": "F423",
+"stimulus": "F422",
+"user_result": "F424"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F429",
+"test": "Lighthouse.EndToEndTests/tests/specs/metrics/OutlierChip.spec.ts"
+},
+"expected": "F427",
+"stimulus": "F426",
+"user_result": "F428"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F433",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/OutlierListOpenedEventNameTests.cs"
+},
+"expected": "F431",
+"stimulus": "F430",
+"user_result": "F432"
+}
 ]
 },
 "counters": {
 "B": 3,
-"C": 1,
-"D": 12,
+"C": 2,
+"D": 14,
 "E": 5,
-"F": 310,
+"F": 433,
 "K": 3,
-"L": 3,
+"L": 4,
 "P": 5,
-"S": 3,
-"Y": 4
+"S": 4,
+"Y": 5
 },
 "design": {
 "paradigm": "object_oriented",
@@ -424,6 +574,20 @@
 {
 "id": "D12",
 "text": "F239"
+},
+{
+"id": "D13",
+"slices": [
+"S4"
+],
+"text": "F319"
+},
+{
+"id": "D14",
+"slices": [
+"S4"
+],
+"text": "F320"
 }
 ],
 "equality": [
@@ -1118,6 +1282,405 @@
 "verification": [
 "pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx"
 ]
+},
+"S4": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx",
+"move": "F334",
+"preserved": "F335",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F332",
+"falsifier": "F333",
+"promises": [
+"P2",
+"P4"
+],
+"stimulus": "F331"
+},
+"records": {
+"agreement": [
+{
+"contract": "UsageDataEventName OutlierListOpened = 27",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103",
+"party": "Producer",
+"reason": "F366"
+},
+{
+"contract": "UsageDataEventName OutlierListOpened = 27",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52",
+"party": "Consumer",
+"reason": "F367"
+},
+{
+"contract": "UsageDataEventName OutlierListOpened = 27",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:388",
+"party": "Consumer",
+"reason": "F368"
+},
+{
+"contract": "UsageDataEventName OutlierListOpened = 27",
+"decision": "Migrated",
+"locator": "docs/settings/usagedata.md:71",
+"party": "Consumer",
+"reason": "F369"
+}
+],
+"boundaries": {
+"dependency_direction": "F375",
+"driven_ports": [
+"F373",
+"F374"
+],
+"driving_port": "F372"
+},
+"claims": [
+{
+"admitted_input": "F385",
+"bypass": "F387",
+"constructor": "OutlierChip onOpen callback built by CycleTimeScatterPlotChart",
+"consumer": "WorkItemsDialog and reportUsage",
+"harm": "F384",
+"id": "C2",
+"owner": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"proposition": "F383",
+"public_observation": "F386"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F389",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F388"
+},
+{
+"axis": "Inhabitation",
+"basis": "F390",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F388"
+},
+{
+"axis": "PublicReachability",
+"basis": "F391",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F388"
+},
+{
+"axis": "Liveness",
+"basis": "F392",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F388"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1",
+"reason": "F347"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1",
+"reason": "F348"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/outlierHeaderChip.tsx:1",
+"reason": "F349"
+},
+{
+"decision": "Changed",
+"kind": "helper",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/outlierPlot.ts:1",
+"reason": "F350"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:371",
+"reason": "F351"
+},
+{
+"decision": "Changed",
+"kind": "pure-module",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1",
+"reason": "F352"
+},
+{
+"decision": "Changed",
+"kind": "pure-module",
+"locator": "Lighthouse.Frontend/src/utils/charts/outliers.ts:114",
+"reason": "F353"
+},
+{
+"decision": "Changed",
+"kind": "export-list",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52",
+"reason": "F354"
+},
+{
+"decision": "Changed",
+"kind": "enum",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103",
+"reason": "F355"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/settings/usagedata.md:71",
+"reason": "F356"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "docs",
+"locator": "docs/product/architecture/adr-282-outlier-is-a-per-chart-median-multiple.md:17",
+"reason": "F357"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-support",
+"locator": "Lighthouse.EndToEndTests/tests/models/metrics/CycleTimeScatterPlotChart.ts:27",
+"reason": "F358"
+},
+{
+"decision": "Migrated",
+"kind": "existing-test",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx:1",
+"reason": "F359"
+},
+{
+"decision": "Migrated",
+"kind": "existing-test",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx:1",
+"reason": "F360"
+},
+{
+"decision": "Migrated",
+"kind": "existing-test",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx:1",
+"reason": "F361"
+},
+{
+"decision": "Migrated",
+"kind": "existing-test",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.mutation.test.tsx:1",
+"reason": "F362"
+},
+{
+"decision": "Migrated",
+"kind": "existing-test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/OutlierPopoverOpenedEventNameTests.cs:1",
+"reason": "F363"
+},
+{
+"decision": "Migrated",
+"kind": "existing-test",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.mutation.test.ts:14",
+"reason": "F364"
+},
+{
+"decision": "Migrated",
+"kind": "existing-test",
+"locator": "Lighthouse.Frontend/src/utils/charts/outliers.mutation.test.ts:22",
+"reason": "F365"
+}
+],
+"laws": [
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts",
+"statement": "F376",
+"treatment": {
+"cases": [
+"F377",
+"F378",
+"F379",
+"F380",
+"F381"
+],
+"kind": "Finite",
+"reason": "F382"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F370"
+},
+{
+"analysis": "contract_tests",
+"reason": "F371"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1",
+"reason": "F336",
+"symbol": "OutlierChip"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1",
+"reason": "F337",
+"symbol": "OutlierPopoverContent"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx:1",
+"reason": "F338",
+"symbol": "WorkItemsDialog"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1",
+"reason": "F339",
+"symbol": "outlierWording"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/outlierHeaderChip.tsx:1",
+"reason": "F340",
+"symbol": "outlierHeaderChip"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22",
+"reason": "F341",
+"symbol": "CycleTimeScatterPlotChart"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103",
+"reason": "F342",
+"symbol": "UsageDataEventName"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/outlierPlot.ts:113",
+"reason": "F343",
+"symbol": "buildOutlierRows"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Frontend/src/utils/charts/outliers.ts:114",
+"reason": "F344",
+"symbol": "formatTimesTheMedian"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52",
+"reason": "F345",
+"symbol": "UsageDataService"
+},
+{
+"decision": "Extend",
+"locator": "docs/settings/usagedata.md:71",
+"reason": "F346",
+"symbol": "outlier list was opened"
+}
+],
+"risks": [
+{
+"allowed": "F395",
+"forbidden": "F396",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts",
+"preserved": "F394",
+"residue": "F397",
+"source": "F393"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx",
+"Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx",
+"Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx",
+"Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.mutation.test.tsx",
+"Lighthouse.Frontend/src/utils/charts/outlierWording.mutation.test.ts",
+"Lighthouse.Frontend/src/utils/charts/outliers.mutation.test.ts",
+"Lighthouse.Frontend/src/utils/charts/outliers.test.ts",
+"Lighthouse.Frontend/src/components/Common/Charts/outlierPlot.mutation.test.ts",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/OutlierListOpenedEventNameTests.cs",
+"Lighthouse.EndToEndTests/tests/specs/metrics/OutlierChip.spec.ts",
+"Lighthouse.EndToEndTests/tests/models/metrics/CycleTimeScatterPlotChart.ts"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx",
+"reason": "F321"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx",
+"reason": "F322"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/outlierHeaderChip.tsx",
+"reason": "F323"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/outlierPlot.ts",
+"reason": "F324"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"reason": "F325"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts",
+"reason": "F326"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/utils/charts/outliers.ts",
+"reason": "F327"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts",
+"reason": "F328"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs",
+"reason": "F329"
+},
+{
+"change": "Extend",
+"path": "docs/settings/usagedata.md",
+"reason": "F330"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OutlierListOpenedEventNameTests"
+]
 }
 }
 },
@@ -1327,7 +1890,6 @@
 "F230": "The pure rule matches an independent oracle for every generated input",
 "F231": "The same cut and axis hold for any real data, not only the chosen examples",
 "F232": "Needs the property-test library fast-check and the new pure modules, neither installed or declared as a writable support; chart-level examples above cover the same laws for chosen inputs",
-"F233": "A chip in the widget header reads '1 outlier' or 'N outliers' (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists the outliers longest first, up to ten rows followed by 'and k more', each row with its closed date, its Cycle Time in days and how many times the median it is. While the widget loads the chip is disabled and shows no count; when the data cannot be loaded the could-not-load message replaces the plot and the chip; it never shows a count from a previous answer.",
 "F234": "frame has failed to load",
 "F235": "the widget could-not-load message replaces the plot and the chip; the chip is hidden, not disabled, and no popover or count remains",
 "F236": "Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set whose median is 6 days and one item of 58 days, plus percentiles and an SLE; click the chip in the header. Also render a set with 11 outliers, toggle Work Item type chips off and on, and render the frame loading and failed",
@@ -1387,16 +1949,139 @@
 "F309": "Non-probe gap: no declared public probe renders CycleTimeScatterPlotChart, clicks the chip, toggles Work Item types, throttles loading or failure, or activates Open in a list. Not observed by examiner: axis top value, top-edge marker placement, popover text and row values, and k more text, dialog contents, sort, export and tracker links, focus return, help text under configured terms, loading and failed visuals, numbers unchanged on a live view. Evidence-capture owner: the candidate's declared probe set (nwdes host registration); examiner cannot add a probe.",
 "F31": "WorkItemsDialog (props only), usage-event callback prop, useChartVisibility, MUI X drawing-area hooks",
 "F310": "Probe backend-tests Percentile: exit 0, 427 of 427 passed. Visible names are percentile, forecast write-back and percentile-history tests (ResolveForecastWriteBackForPortfolio, UpdateFeaturesForProject_UseCalculatedDefault, Migration_OnPostgres_PersistsPercentilesOverTimeSnapshotTable). No outlier-named backend test appeared in the captured output tail. Supports only that percentile and forecast computations pass their named tests. Not a capture of tiles, SLE share, RAG, View Data or forecast values with outliers included.",
+"F311": "An amber outlined chip in the widget header reads '1 outlier' or 'N outliers' ('(!) N' below 600 px; absent when there are none); its accessible name says the items are not drawn and names any percentile or SLE line above the axis; clicking it opens the outliers directly in the Work Items list dialog, with no popover in between.",
+"F312": "The chip opens every outlier of the visible types in the existing Work Items list dialog (sort, export, tracker links), titled in the reader's terms, with focus back on the chip when it closes; the widget's help explains the outlier rule in the reader's configured terms.",
+"F313": "D13 (maintainer guided review 2026-11-14): the outlier chip is amber outlined (MUI warning colour on border, icon and text) at every width and while loading.",
+"F314": "D14 (maintainer guided review 2026-11-14): the chip opens the outlier list dialog directly; the popover is removed, with no extra lines in the dialog; the rule stays in the (i) help.",
+"F315": "D15: the usage event keeps 27 and is renamed OutlierListOpened, sent when the chip opens the dialog; no release has carried OutlierPopoverOpened.",
+"F316": "D16: the chip's accessible name carries the lines above the axis ('{n} outlier(s) not drawn on the chart. Above the axis: 95% at {p95} days. Show the list.'), the middle sentence only when a line is above the axis.",
+"F317": "Slice 04: on Team Zenith's demo data the header chip '1 outlier' is amber outlined, and clicking it opens the Work Items dialog listing TZ-301 directly, with no popover; closing the dialog returns focus to the chip; the usage event OutlierListOpened (27) is sent on open.",
+"F318": "The reader notices the outliers and reaches the list in one click",
+"F319": "Slice 4 (maintainer guided review) supersedes every popover statement in the shared and slice 1 and 3 records: the outlier chip is a plain amber outlined disclosure button (MUI Chip color warning, variant outlined, at every width and while loading) that opens the existing Work Items dialog directly with exactly the visible-type outliers, longest first. No popover, no table, no extra dialog lines; the rule stays in the widget help. The chip has no open state: it is stateless apart from disabled while the frame is not ready. Usage event 27 is named OutlierListOpened, reported once per click that opens the dialog, name-only, through the chip single open callback. The chip accessible name and tooltip are one string built by outlierWording: \"{n} outlier(s) not drawn on the chart. [Above the axis: ... .] Show the list.\" with the Above the axis sentence only when a percentile or SLE line is above the axis. The partition rule, cut, axis, markers, filters, empty-plot copy, dialog title and the Quint model of the partition are unchanged; the model never modelled the popover, so no re-run is owed for it. Checker mapping for S4: Quint model for the unchanged partition claims; the S4 claims are finite example observations in Vitest and one Playwright skeleton; no new state machine exists (a state flag is removed), so no TLA+ or Agda claim is made and liveness is not applicable.",
 "F32": "components -> utils/charts (pure) ; pages/Common/MetricsView/WidgetShell provides header slot context consumed by components; utils import only chartAxisUtils; no component imports a page (fallow layer rule already enforced)",
+"F320": "Follow-up for docs, owned by the crafter of S4 at the finalize checklist, not a decision change: ADR-282 and the feature brief still say popover in several sentences (chip plus popover, the popover line naming the lines above the axis, the chip disabled and open popover closing); their rule (5 times the median, per-chart, backend convention) is unchanged. ADR-282 should read: the chip opens the list dialog, and the chip accessible name names the lines above the axis.",
+"F321": "Amber outlined chip (color warning), no Popover and no open state; props reduce to wording, count, aboveTheAxis, disabled, onOpen, chipRef; onClick calls onOpen; aria-label and Tooltip title are the one accessible name; keeps disabled Outliers look while loading, phone label (!) N",
+"F322": "Removed: the popover view and its OutlierRow type go; nothing else imports them",
+"F323": "Drops OUTLIER_POPOVER_ROWS, row building, median and cut inputs and the two callbacks; passes count, aboveTheAxis sentence, disabled, onOpen, chipRef; still returns null with no outlier of a visible type",
+"F324": "Removes buildOutlierRows and the OutlierRow import (popover only); formatClosedDate goes with it; the axis and marker helpers stay",
+"F325": "Chip handoff: onOpen reports OutlierListOpened and sets the dialog to {title: wording.listTitle, items: visible outliers}; stops passing median, cut, rows; chipRef focus return on dialog close stays",
+"F326": "chipAccessibleName(count, aboveTheAxis | null) builds the D16 sentence; removes popoverTitle, notDrawn, stillCounted, openInAList, moreRows, columns; keeps chipLabel, chipLabelWhileLoading, chipAccessibleNameWhileLoading, aboveTheAxis, listTitle, empty-plot strings, outlierRuleSentence",
+"F327": "Removes timesTheMedian, formatTimesTheMedian and their text type, which only the popover table used (dead code otherwise); the rule, cut and axisTop stay",
+"F328": "Rename the list entry OutlierPopoverOpened to OutlierListOpened (same position)",
+"F329": "Rename member OutlierPopoverOpened = 27 to OutlierListOpened = 27 and its summary; number unchanged",
+"F330": "Row text: the list opens when the chip is clicked; drop the closes-because-the-chart-reloads clause",
+"F331": "Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set (median 6 days, one 58-day item) and again with a line above the axis and with no line above it; read the chip, click it with the mouse and with the keyboard, close the dialog; render the frame loading; render a narrow viewport. Playwright walking skeleton on Team Zenith demo data: click the header chip",
+"F332": "The chip is amber outlined (warning colour on border, icon and text) loaded, loading and narrow; its accessible name is \"1 outlier not drawn on the chart. Above the axis: 95% at {p95} days, {SLE} at {sle} days. Show the list.\" with the Above the axis sentence only when a line is above the axis, and the tooltip shows the same text; one click opens the Work Items dialog titled \"{Work Items} with a {Cycle Time} more than 5 times the median\" listing exactly the visible-type outliers (TZ-301 on demo data), with no popover, no role=presentation popover paper and no extra lines; usage event OutlierListOpened is reported once per open and never while disabled; on close focus returns to the chip; loading shows a disabled amber \"Outliers\" chip with no count; E2E shows the dialog row TZ-301 straight after the click",
+"F333": "A chip that is not warning-coloured at any width or while loading, a click that opens a popover or any step before the dialog, an accessible name without the Above the axis sentence when a line is above the axis or with it when none is, a dialog with drawn items or all items, the old event name OutlierPopoverOpened reported, an event on a disabled click or twice per open, or focus lost to the body, fails",
+"F334": "L1: collapse the chip two callbacks (onOpened, onOpenInList) into one onOpen in the chart and chip before the popover is deleted, so the click opens the dialog and reports usage in one handler",
+"F335": "The dialog opened through the chip: same title, same items, same focus return on close",
+"F336": "Owns the chip view; the popover is deleted from it and the colour set to warning; no second chip component",
+"F337": "Removed; its only consumer is the chip and its table is not wanted; the existing WorkItemsDialog already lists, sorts and exports the outliers",
+"F338": "Opened directly with the unchanged {title, items} state the chart already owns; no change to the dialog",
+"F339": "Single owner of all outlier words; the accessible name gains the Above the axis sentence by reusing its aboveTheAxis phrase builder, so the sentence cannot drift from the markers",
+"F340": "Existing adapter between the chart and the chip; shrinks, no new carrier",
+"F341": "Owns the dialog state, usage reporting and focus return; one callback replaces two",
+"F342": "Rename in place, number 27 kept; no release has carried the old name",
+"F343": "Popover table rows only; removed, the file keeps its axis and marker helpers",
+"F344": "Only the popover table used it; removed as dead code, the rule in the same file is reused unchanged",
+"F345": "Existing event-name list; one entry renamed",
+"F346": "Existing row for the event; wording follows the direct open",
+"F347": "Popover and open state removed; amber; one callback",
+"F348": "File deleted; its only importers are OutlierChip and outlierPlot.ts",
+"F349": "Smaller props; callers: the chart only",
 "F35": "named Cycle Time answer for a superseded definition arrives",
+"F350": "buildOutlierRows removed; reservedMarkerRows and line helpers unchanged",
+"F351": "Chip handoff and usage event name",
+"F352": "Accessible name builder changes; popover strings removed; help sentence and list title unchanged",
+"F353": "formatTimesTheMedian and timesTheMedian removed as dead code; findOutliers and axisTop unchanged",
+"F354": "Entry renamed; the only reader is the chart",
+"F355": "Member renamed; no other C# reference besides the event-name test",
+"F356": "Row wording",
+"F357": "Rule unchanged; popover sentences are a docs follow-up for the finalize checklist, not a decision change",
+"F358": "outlierChip (button named /outlier/), openOutlierList (click) and outlierRow (row role) work when the click opens the dialog; the spec may assert the dialog, owned by the acceptance designer",
+"F359": "Popover-dependent scenarios revised by the acceptance designer to the direct-dialog behaviour; others kept",
 "F36": "answer ignored; cut and chip follow the selected definition",
+"F360": "Open in a list step becomes the chip click; focus-return and help scenarios kept",
+"F361": "Popover-dependent assertions revised; view-state regressions kept",
+"F362": "Popover content and row mutation tests go; chip tests follow the new props",
+"F363": "Renamed to the new member, class and file renamed to OutlierListOpenedEventNameTests; assertions kept",
+"F364": "Entries for removed strings go; accessible name entries follow D16",
+"F365": "formatTimesTheMedian cases go with the function, likewise in outliers.test.ts and outlierPlot.mutation.test.ts",
+"F366": "Member renamed, number kept; nothing released under the old name",
+"F367": "String name renamed to match; enums serialise as strings out",
+"F368": "The chart reports the new name on opening the list",
+"F369": "Documented row follows the rename",
 "F37": "Outlier partition of the full closed set: {drawn, outliers, median, cut}; chip count = outliers among visible types; axis top = 1.1 x max of drawn values, percentiles and SLE",
+"F370": "Covered by the shared record: the existing fallow layer check governs the files; S4 only removes a component and adds no dependency",
+"F371": "Covered by the shared record: the usage event name is a same-commit enum pair, no independently released consumer",
+"F372": "CycleTimeScatterPlotChart React props rendered through React Testing Library inside the WidgetShell header host; click on the header chip (role button, name matches outlier)",
+"F373": "WorkItemsDialog props only",
+"F374": "usage-event callback prop (reportUsage) called with UsageDataEventName.OutlierListOpened",
+"F375": "unchanged: chart (shell) -> OutlierChip (view, props in, one onOpen callback out) and outlierWording (pure); chip imports no service, no dialog and no popover",
+"F376": "The chip accessible name equals the tooltip text and equals \"{n} outlier(s) not drawn on the chart.\" + (\" Above the axis: ...\" only when a line is above the axis) + \" Show the list.\", with n = count of visible-type outliers",
+"F377": "one outlier, no line above",
+"F378": "three outliers, 95% above",
+"F379": "SLE above",
 "F38": "Which hidden-type items would have been outliers (only visible ones are counted); two items with equal Cycle Time and date",
+"F380": "percentile and SLE above",
+"F381": "loading",
+"F382": "Finite closed cases cover count singular/plural and each line-above shape; no broad input domain",
+"F383": "Activating the enabled chip opens the Work Items dialog with exactly the visible-type outliers and reports OutlierListOpened once; a disabled chip does nothing",
+"F384": "A reader reaches no list, a wrong list, or usage data counts opens that did not happen",
+"F385": "chip click or keyboard activation on the header chip",
+"F386": "dialog title and rows after the click; usage call count and name",
+"F387": "A future edit reintroducing a popover step or a second opener; guarded by the S4 oracle asserting no popover and one dialog",
+"F388": "chip click opens the outlier list directly",
+"F389": "The open flag and popover are removed, so no intermediate state exists; dialog items derive from the same visible-outlier value that gives the count; no checker run is claimed for the S4 claims, which are finite examples",
 "F39": "Equal iff same median, same cut and same drawn/outlier id sets; independent of input order and of which types are visible",
+"F390": "Team Zenith demo item TZ-301 -> findOutliers -> outlierHeaderChip -> OutlierChip onOpen -> WorkItemsDialog",
+"F391": "Input closed items -> chart partition -> header slot chip -> click -> dialog rows, through the chart public props and the WidgetShell header host; E2E reaches it through the page object",
+"F392": "Not applicable: a synchronous click handler with no eventual-progress claim and no temporal property",
+"F393": "Assumption: the chip click is the only route to the list; negated: a screen-reader or keyboard user cannot see the colour or tooltip",
+"F394": "The reader learns the count, the lines above the axis, and that activating lists them",
+"F395": "Tooltip not shown on keyboard focus-less touch",
+"F396": "Information only in colour or only in the removed popover",
+"F397": "The accessible name carries the full text; amber is not the only signal since the label and icon remain",
+"F398": "A reader clicks the amber chip on Team Zenith's closed set (median 6 days, one 58-day item)",
+"F399": "The Work Items dialog opens at once, titled with the more-than-5-times-the-median wording, listing only TZ-301; no popover, no extra step; OutlierListOpened is sent once",
 "F40": "For every closed set, the cut is 5 x the backend-convention 50th percentile of the full set, and an item is an outlier iff its Cycle Time is strictly above the cut; drawn and outliers partition the set, order kept",
+"F400": "One click shows the outlier list",
+"F401": "A popover with an Open in a list button first, or an event with the old name, or an event sent twice",
+"F402": "A keyboard reader presses Enter on the chip, closes the list, and opens it again",
+"F403": "The list opens on Enter, focus returns to the chip on close, and each opening is reported once",
+"F404": "The keyboard reader reaches the list and keeps their place",
+"F405": "Focus lost to the page body after close, or Enter doing nothing",
+"F406": "The chip is read ready, at phone width, and while loading",
+"F407": "Border, icon and text are amber (warning colour) in all three; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked",
+"F408": "The reader notices the amber chip at any width and never sees a stale count",
+"F409": "A plain grey chip at some width or while loading, or a click on the loading chip opening the list",
 "F41": "arrays of positive integers (Cycle Time days) with duplicates and with items placed exactly at, one below and one above the cut",
+"F410": "The chip name and tooltip are read with no line above the axis, and with the 95% line and the SLE above it",
+"F411": "Name equals tooltip: n outlier(s) not drawn on the chart, then the Above the axis sentence only when a line is above, then Show the list",
+"F412": "A screen-reader user learns the count and the lines above the axis",
+"F413": "A name without the Above the axis sentence when a line is above, or with it when none is, or a tooltip that differs from the name",
+"F414": "The accessible-name wording is built for one outlier with no line above, three with the 95% line, one with the SLE, and two with both",
+"F415": "Each exact sentence, singular or plural, with the Above the axis phrase only when given",
+"F416": "Wording is right for every line-above shape",
+"F417": "Show details still ending the name, or the sentence always present",
+"F418": "The chip is clicked with a named Cycle Time chosen, after a date-range change, with a type hidden, with 11 outliers, and with renamed terms",
+"F419": "The dialog lists exactly the visible-type outliers of the current view, all eleven, titled in the reader's terms, with focus back on the chip",
 "F42": "empty set",
+"F420": "The list always matches the chip's view",
+"F421": "A list of the ten popover rows only, drawn items, or a stale view",
+"F422": "Revised earlier chart scenarios: line above the axis, line exactly at the top, no lines, counts, usage event, error and loading frames",
+"F423": "Chip name carries the Above the axis sentence only when a line is above; the usage event is OutlierListOpened once per open; error and loading frames show no chip count",
+"F424": "The earlier behaviours still hold without the popover",
+"F425": "Old Show details name or old event name",
+"F426": "On Team Zenith demo data the reader clicks the header chip",
+"F427": "The Work Items dialog is visible straight after the click with row TZ-301",
+"F428": "One click from the header lists TZ-301",
+"F429": "A popover table that also has a TZ-301 row",
 "F43": "single item",
+"F430": "The usage event member is named",
+"F431": "OutlierListOpened keeps number 27 after the last named event and carries only its name",
+"F432": "Usage counts follow the new name",
+"F433": "Old name kept",
 "F44": "item exactly at the cut",
 "F45": "all items equal",
 "F46": "fast-check built-in array and integer shrinking",
@@ -1414,7 +2099,6 @@
 "F57": "fast-check built-in",
 "F58": "test recomputes the max and splits with a filter",
 "F59": "mutant that drops the SLE from the axis or splits on >= instead of > fails",
-"F6": "From the popover the reader opens the outliers in the existing Work Items list dialog (sort, export, tracker links), and the widget's help explains the outlier rule in the reader's configured terms.",
 "F60": "Cut computed on the visible-type subset keeps the chip truthful",
 "F61": "carrier: the subset changes the median, so toggling a type moves the cut and axis",
 "F62": "Types A (1..9 days) and B (50 days items): hiding B changes the median and re-labels A items as outliers; the cut is therefore taken from the full set",
@@ -1460,6 +2144,32 @@
 "F99": "second chart imports outliers.ts"
 },
 "product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F313"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F314"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F315"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F316"
+}
+],
 "promises": [
 {
 "id": "P1",
@@ -1469,7 +2179,7 @@
 {
 "id": "P2",
 "kind": "Outcome",
-"text": "F233"
+"text": "F311"
 },
 {
 "id": "P3",
@@ -1479,7 +2189,7 @@
 {
 "id": "P4",
 "kind": "Outcome",
-"text": "F6"
+"text": "F312"
 },
 {
 "id": "P5",
@@ -1517,6 +2227,22 @@
 "work": {
 "size": "S",
 "value": "F14"
+}
+},
+{
+"depends_on": [
+"S1",
+"S3"
+],
+"id": "S4",
+"observation": "F317",
+"promises": [
+"P2",
+"P4"
+],
+"work": {
+"size": "S",
+"value": "F318"
 }
 }
 ]

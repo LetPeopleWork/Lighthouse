@@ -33,7 +33,7 @@ On the Cycle Time scatterplot of a Team or a Portfolio, a closed Work Item whose
 Outcome
 
 ```text
-A chip in the widget header reads '1 outlier' or 'N outliers' (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists the outliers longest first, up to ten rows followed by 'and k more', each row with its closed date, its Cycle Time in days and how many times the median it is. While the widget loads the chip is disabled and shows no count; when the data cannot be loaded the could-not-load message replaces the plot and the chip; it never shows a count from a previous answer.
+An amber outlined chip in the widget header reads '1 outlier' or 'N outliers' ('(!) N' below 600 px; absent when there are none); its accessible name says the items are not drawn and names any percentile or SLE line above the axis; clicking it opens the outliers directly in the Work Items list dialog, with no popover in between.
 ```
 
 ### P3
@@ -49,7 +49,7 @@ The chip and its list stay truthful while the reader changes the view: they coun
 Outcome
 
 ```text
-From the popover the reader opens the outliers in the existing Work Items list dialog (sort, export, tracker links), and the widget's help explains the outlier rule in the reader's configured terms.
+The chip opens every outlier of the visible types in the existing Work Items list dialog (sort, export, tracker links), titled in the reader's terms, with focus back on the chip when it closes; the widget's help explains the outlier rule in the reader's configured terms.
 ```
 
 ### P5
@@ -70,7 +70,41 @@ Other charts (Estimation vs Cycle Time, Feature Size, Work Item Aging, process b
 
 ## Decisions
 
-None.
+```text
+D13 (maintainer guided review 2026-11-14): the outlier chip is amber outlined (MUI warning colour on border, icon and text) at every width and while loading.
+```
+
+#### Status
+
+Confirmed
+
+
+```text
+D14 (maintainer guided review 2026-11-14): the chip opens the outlier list dialog directly; the popover is removed, with no extra lines in the dialog; the rule stays in the (i) help.
+```
+
+#### Status
+
+Confirmed
+
+
+```text
+D15: the usage event keeps 27 and is renamed OutlierListOpened, sent when the chip opens the dialog; no release has carried OutlierPopoverOpened.
+```
+
+#### Status
+
+Confirmed
+
+
+```text
+D16: the chip's accessible name carries the lines above the axis ('{n} outlier(s) not drawn on the chart. Above the axis: 95% at {p95} days. Show the list.'), the middle sentence only when a line is above the axis.
+```
+
+#### Status
+
+Confirmed
+
 
 ## Journey
 
@@ -130,6 +164,36 @@ S
 
 ```text
 Sorting, export and the full list of outliers, and the rule explained in the help.
+```
+
+##### Rework
+
+None.
+
+### S4
+
+```text
+Slice 04: on Team Zenith's demo data the header chip '1 outlier' is amber outlined, and clicking it opens the Work Items dialog listing TZ-301 directly, with no popover; closing the dialog returns focus to the chip; the usage event OutlierListOpened (27) is sent on open.
+```
+
+#### Promises
+
+P2
+
+P4
+
+#### Depends on
+
+S1
+
+S3
+
+#### Slice work
+
+S
+
+```text
+The reader notices the outliers and reaches the list in one click
 ```
 
 ##### Rework

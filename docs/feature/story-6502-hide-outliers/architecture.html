@@ -212,6 +212,18 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Chip placement (maintainer S-3): OutlierChip renders in the WidgetShell header after the RAG chip, small outlined, (!) icon plus &#x27;1 outlier&#x27; / &#x27;{n} outliers&#x27;, words dropped below 600 px, accessible name keeps the full sentence, absent with no outliers. The chart hands the chip to the header through a header-slot context offered by WidgetShell and rendered by WidgetHeader; the same context carries frameIsReady (frame ready). While the widget loads the chip is disabled and never shows an earlier count and its popover closes; when the widget has failed, the could-not-load message replaces the plot and the chip (hidden, not disabled). Crafter may choose portal or context-held node; the oracle observes the header.
 </code></pre>
 
+<h4>D13</h4>
+
+<pre><code>Slice 4 (maintainer guided review) supersedes every popover statement in the shared and slice 1 and 3 records: the outlier chip is a plain amber outlined disclosure button (MUI Chip color warning, variant outlined, at every width and while loading) that opens the existing Work Items dialog directly with exactly the visible-type outliers, longest first. No popover, no table, no extra dialog lines; the rule stays in the widget help. The chip has no open state: it is stateless apart from disabled while the frame is not ready. Usage event 27 is named OutlierListOpened, reported once per click that opens the dialog, name-only, through the chip single open callback. The chip accessible name and tooltip are one string built by outlierWording: &quot;{n} outlier(s) not drawn on the chart. [Above the axis: ... .] Show the list.&quot; with the Above the axis sentence only when a percentile or SLE line is above the axis. The partition rule, cut, axis, markers, filters, empty-plot copy, dialog title and the Quint model of the partition are unchanged; the model never modelled the popover, so no re-run is owed for it. Checker mapping for S4: Quint model for the unchanged partition claims; the S4 claims are finite example observations in Vitest and one Playwright skeleton; no new state machine exists (a state flag is removed), so no TLA+ or Agda claim is made and liveness is not applicable.
+</code></pre>
+<p>Governed slices: S4</p>
+
+<h4>D14</h4>
+
+<pre><code>Follow-up for docs, owned by the crafter of S4 at the finalize checklist, not a decision change: ADR-282 and the feature brief still say popover in several sentences (chip plus popover, the popover line naming the lines above the axis, the chip disabled and open popover closing); their rule (5 times the median, per-chart, backend convention) is unchanged. ADR-282 should read: the chip opens the list dialog, and the chip accessible name names the lines above the axis.
+</code></pre>
+<p>Governed slices: S4</p>
+
 <h3>Constraints</h3>
 
 <h4>K2</h4>
@@ -1569,6 +1581,694 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h5>Risks</h5>
 
 <p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Amber outlined chip (color warning), no Popover and no open state; props reduce to wording, count, aboveTheAxis, disabled, onOpen, chipRef; onClick calls onOpen; aria-label and Tooltip title are the one accessible name; keeps disabled Outliers look while loading, phone label (!) N
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Removed: the popover view and its OutlierRow type go; nothing else imports them
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/outlierHeaderChip.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Drops OUTLIER_POPOVER_ROWS, row building, median and cut inputs and the two callbacks; passes count, aboveTheAxis sentence, disabled, onOpen, chipRef; still returns null with no outlier of a visible type
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/outlierPlot.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Removes buildOutlierRows and the OutlierRow import (popover only); formatClosedDate goes with it; the axis and marker helpers stay
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Chip handoff: onOpen reports OutlierListOpened and sets the dialog to {title: wording.listTitle, items: visible outliers}; stops passing median, cut, rows; chipRef focus return on dialog close stays
+</code></pre>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts</p>
+
+<p>Extend</p>
+
+<pre><code>chipAccessibleName(count, aboveTheAxis | null) builds the D16 sentence; removes popoverTitle, notDrawn, stillCounted, openInAList, moreRows, columns; keeps chipLabel, chipLabelWhileLoading, chipAccessibleNameWhileLoading, aboveTheAxis, listTitle, empty-plot strings, outlierRuleSentence
+</code></pre>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Removes timesTheMedian, formatTimesTheMedian and their text type, which only the popover table used (dead code otherwise); the rule, cut and axisTop stay
+</code></pre>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Rename the list entry OutlierPopoverOpened to OutlierListOpened (same position)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Rename member OutlierPopoverOpened = 27 to OutlierListOpened = 27 and its summary; number unchanged
+</code></pre>
+
+<p>docs/settings/usagedata.md</p>
+
+<p>Extend</p>
+
+<pre><code>Row text: the list opens when the chip is clicked; drop the closes-because-the-chart-reloads clause
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx
+pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OutlierListOpenedEventNameTests
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.mutation.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.mutation.test.ts</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.mutation.test.ts</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.test.ts</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/outlierPlot.mutation.test.ts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/OutlierListOpenedEventNameTests.cs</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/metrics/OutlierChip.spec.ts</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/metrics/CycleTimeScatterPlotChart.ts</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set (median 6 days, one 58-day item) and again with a line above the axis and with no line above it; read the chip, click it with the mouse and with the keyboard, close the dialog; render the frame loading; render a narrow viewport. Playwright walking skeleton on Team Zenith demo data: click the header chip
+</code></pre>
+
+<pre><code>The chip is amber outlined (warning colour on border, icon and text) loaded, loading and narrow; its accessible name is &quot;1 outlier not drawn on the chart. Above the axis: 95% at {p95} days, {SLE} at {sle} days. Show the list.&quot; with the Above the axis sentence only when a line is above the axis, and the tooltip shows the same text; one click opens the Work Items dialog titled &quot;{Work Items} with a {Cycle Time} more than 5 times the median&quot; listing exactly the visible-type outliers (TZ-301 on demo data), with no popover, no role=presentation popover paper and no extra lines; usage event OutlierListOpened is reported once per open and never while disabled; on close focus returns to the chip; loading shows a disabled amber &quot;Outliers&quot; chip with no count; E2E shows the dialog row TZ-301 straight after the click
+</code></pre>
+
+<pre><code>A chip that is not warning-coloured at any width or while loading, a click that opens a popover or any step before the dialog, an accessible name without the Above the axis sentence when a line is above the axis or with it when none is, a dialog with drawn items or all items, the old event name OutlierPopoverOpened reported, an event on a disabled click or twice per open, or focus lost to the body, fails
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L1: collapse the chip two callbacks (onOpened, onOpenInList) into one onOpen in the chart and chip before the popover is deleted, so the click opens the dialog and reports usage in one handler
+</code></pre>
+
+<pre><code>The dialog opened through the chip: same title, same items, same focus return on close
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>OutlierChip</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the chip view; the popover is deleted from it and the colour set to warning; no second chip component
+</code></pre>
+
+<p>OutlierPopoverContent</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1</p>
+
+<p>Replace</p>
+
+<pre><code>Removed; its only consumer is the chip and its table is not wanted; the existing WorkItemsDialog already lists, sorts and exports the outliers
+</code></pre>
+
+<p>WorkItemsDialog</p>
+
+<p>Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Opened directly with the unchanged {title, items} state the chart already owns; no change to the dialog
+</code></pre>
+
+<p>outlierWording</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Single owner of all outlier words; the accessible name gains the Above the axis sentence by reusing its aboveTheAxis phrase builder, so the sentence cannot drift from the markers
+</code></pre>
+
+<p>outlierHeaderChip</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/outlierHeaderChip.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing adapter between the chart and the chip; shrinks, no new carrier
+</code></pre>
+
+<p>CycleTimeScatterPlotChart</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the dialog state, usage reporting and focus return; one callback replaces two
+</code></pre>
+
+<p>UsageDataEventName</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103</p>
+
+<p>Extend</p>
+
+<pre><code>Rename in place, number 27 kept; no release has carried the old name
+</code></pre>
+
+<p>buildOutlierRows</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/outlierPlot.ts:113</p>
+
+<p>Replace</p>
+
+<pre><code>Popover table rows only; removed, the file keeps its axis and marker helpers
+</code></pre>
+
+<p>formatTimesTheMedian</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts:114</p>
+
+<p>Replace</p>
+
+<pre><code>Only the popover table used it; removed as dead code, the rule in the same file is reused unchanged
+</code></pre>
+
+<p>UsageDataService</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52</p>
+
+<p>Extend</p>
+
+<pre><code>Existing event-name list; one entry renamed
+</code></pre>
+
+<p>outlier list was opened</p>
+
+<p>docs/settings/usagedata.md:71</p>
+
+<p>Extend</p>
+
+<pre><code>Existing row for the event; wording follows the direct open
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Popover and open state removed; amber; one callback
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>File deleted; its only importers are OutlierChip and outlierPlot.ts
+</code></pre>
+
+<p>adapter</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/outlierHeaderChip.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Smaller props; callers: the chart only
+</code></pre>
+
+<p>helper</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/outlierPlot.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>buildOutlierRows removed; reservedMarkerRows and line helpers unchanged
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:371</p>
+
+<p>Changed</p>
+
+<pre><code>Chip handoff and usage event name
+</code></pre>
+
+<p>pure-module</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Accessible name builder changes; popover strings removed; help sentence and list title unchanged
+</code></pre>
+
+<p>pure-module</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts:114</p>
+
+<p>Changed</p>
+
+<pre><code>formatTimesTheMedian and timesTheMedian removed as dead code; findOutliers and axisTop unchanged
+</code></pre>
+
+<p>export-list</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52</p>
+
+<p>Changed</p>
+
+<pre><code>Entry renamed; the only reader is the chart
+</code></pre>
+
+<p>enum</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103</p>
+
+<p>Changed</p>
+
+<pre><code>Member renamed; no other C# reference besides the event-name test
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/settings/usagedata.md:71</p>
+
+<p>Changed</p>
+
+<pre><code>Row wording
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/product/architecture/adr-282-outlier-is-a-per-chart-median-multiple.md:17</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Rule unchanged; popover sentences are a docs follow-up for the finalize checklist, not a decision change
+</code></pre>
+
+<p>test-support</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/metrics/CycleTimeScatterPlotChart.ts:27</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>outlierChip (button named /outlier/), openOutlierList (click) and outlierRow (row role) work when the click opens the dialog; the spec may assert the dialog, owned by the acceptance designer
+</code></pre>
+
+<p>existing-test</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Popover-dependent scenarios revised by the acceptance designer to the direct-dialog behaviour; others kept
+</code></pre>
+
+<p>existing-test</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Open in a list step becomes the chip click; focus-return and help scenarios kept
+</code></pre>
+
+<p>existing-test</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Popover-dependent assertions revised; view-state regressions kept
+</code></pre>
+
+<p>existing-test</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.mutation.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Popover content and row mutation tests go; chip tests follow the new props
+</code></pre>
+
+<p>existing-test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/OutlierPopoverOpenedEventNameTests.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Renamed to the new member, class and file renamed to OutlierListOpenedEventNameTests; assertions kept
+</code></pre>
+
+<p>existing-test</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.mutation.test.ts:14</p>
+
+<p>Migrated</p>
+
+<pre><code>Entries for removed strings go; accessible name entries follow D16
+</code></pre>
+
+<p>existing-test</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.mutation.test.ts:22</p>
+
+<p>Migrated</p>
+
+<pre><code>formatTimesTheMedian cases go with the function, likewise in outliers.test.ts and outlierPlot.mutation.test.ts
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>UsageDataEventName OutlierListOpened = 27</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Member renamed, number kept; nothing released under the old name
+</code></pre>
+
+<p>UsageDataEventName OutlierListOpened = 27</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>String name renamed to match; enums serialise as strings out
+</code></pre>
+
+<p>UsageDataEventName OutlierListOpened = 27</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:388</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>The chart reports the new name on opening the list
+</code></pre>
+
+<p>UsageDataEventName OutlierListOpened = 27</p>
+
+<p>docs/settings/usagedata.md:71</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Documented row follows the rename
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>architectural_tests</p>
+
+<pre><code>Covered by the shared record: the existing fallow layer check governs the files; S4 only removes a component and adds no dependency
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Covered by the shared record: the usage event name is a same-commit enum pair, no independently released consumer
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>CycleTimeScatterPlotChart React props rendered through React Testing Library inside the WidgetShell header host; click on the header chip (role button, name matches outlier)
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>WorkItemsDialog props only
+</code></pre>
+
+<pre><code>usage-event callback prop (reportUsage) called with UsageDataEventName.OutlierListOpened
+</code></pre>
+
+<pre><code>unchanged: chart (shell) -&gt; OutlierChip (view, props in, one onOpen callback out) and outlierWording (pure); chip imports no service, no dialog and no popover
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L4</h6>
+
+<pre><code>The chip accessible name equals the tooltip text and equals &quot;{n} outlier(s) not drawn on the chart.&quot; + (&quot; Above the axis: ...&quot; only when a line is above the axis) + &quot; Show the list.&quot;, with n = count of visible-type outliers
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>one outlier, no line above
+</code></pre>
+
+<pre><code>three outliers, 95% above
+</code></pre>
+
+<pre><code>SLE above
+</code></pre>
+
+<pre><code>percentile and SLE above
+</code></pre>
+
+<pre><code>loading
+</code></pre>
+
+<pre><code>Finite closed cases cover count singular/plural and each line-above shape; no broad input domain
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<h6>C2</h6>
+
+<pre><code>Activating the enabled chip opens the Work Items dialog with exactly the visible-type outliers and reports OutlierListOpened once; a disabled chip does nothing
+</code></pre>
+
+<pre><code>A reader reaches no list, a wrong list, or usage data counts opens that did not happen
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<pre><code>chip click or keyboard activation on the header chip
+</code></pre>
+
+<p>OutlierChip onOpen callback built by CycleTimeScatterPlotChart</p>
+
+<p>WorkItemsDialog and reportUsage</p>
+
+<pre><code>dialog title and rows after the click; usage call count and name
+</code></pre>
+
+<pre><code>A future edit reintroducing a popover step or a second opener; guarded by the S4 oracle asserting no popover and one dialog
+</code></pre>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>chip click opens the outlier list directly
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>The open flag and popover are removed, so no intermediate state exists; dialog items derive from the same visible-outlier value that gives the count; no checker run is claimed for the S4 claims, which are finite examples
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>chip click opens the outlier list directly
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Team Zenith demo item TZ-301 -&gt; findOutliers -&gt; outlierHeaderChip -&gt; OutlierChip onOpen -&gt; WorkItemsDialog
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>chip click opens the outlier list directly
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Input closed items -&gt; chart partition -&gt; header slot chip -&gt; click -&gt; dialog rows, through the chart public props and the WidgetShell header host; E2E reaches it through the page object
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>chip click opens the outlier list directly
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: a synchronous click handler with no eventual-progress claim and no temporal property
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<h6>Y5</h6>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: the chip click is the only route to the list; negated: a screen-reader or keyboard user cannot see the colour or tooltip
+</code></pre>
+
+<pre><code>The reader learns the count, the lines above the axis, and that activating lists them
+</code></pre>
+
+<pre><code>Tooltip not shown on keyboard focus-less touch
+</code></pre>
+
+<pre><code>Information only in colour or only in the removed popover
+</code></pre>
+
+<pre><code>The accessible name carries the full text; amber is not the only signal since the label and icon remain
+</code></pre>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts</p>
 
 <h5>Architectural tests</h5>
 

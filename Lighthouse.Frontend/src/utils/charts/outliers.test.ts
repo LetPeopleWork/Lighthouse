@@ -4,9 +4,7 @@ import {
 	axisTop,
 	fiftiethPercentile,
 	findOutliers,
-	formatTimesTheMedian,
 	OUTLIER_MEDIAN_MULTIPLE,
-	timesTheMedian,
 } from "./outliers";
 
 const runs = { numRuns: 100 };
@@ -111,45 +109,6 @@ describe("axisTop", () => {
 					expect(outlier).toBeGreaterThan(top);
 				}
 			}),
-			runs,
-		);
-	});
-});
-
-describe("timesTheMedian", () => {
-	it.each([
-		[58, 6, "9.7x", "9.7 times the median"],
-		[40, 6, "6.7x", "6.7 times the median"],
-		[31, 6, "5.2x", "5.2 times the median"],
-		[51, 10, "5.1x", "5.1 times the median"],
-		[62, 6, "10x", "10 times the median"],
-		[63, 6, "11x", "11 times the median"],
-		[60, 6, "10x", "10 times the median"],
-	])(
-		"reads %s days against a median of %s as %s",
-		(value, median, short, spoken) => {
-			expect(formatTimesTheMedian(value, median)).toEqual({ short, spoken });
-		},
-	);
-
-	it("reads every outlier as more than the multiple, and never less for a longer item", () => {
-		fc.assert(
-			fc.property(
-				fc.integer({ min: 1, max: 60 }),
-				fc.integer({ min: 0, max: 3000 }),
-				fc.integer({ min: 0, max: 3000 }),
-				(median, a, b) => {
-					const cut = median * OUTLIER_MEDIAN_MULTIPLE;
-					const [shorter, longer] = [cut + 1 + a, cut + 1 + a + b];
-
-					expect(timesTheMedian(shorter, median)).toBeGreaterThan(
-						OUTLIER_MEDIAN_MULTIPLE,
-					);
-					expect(timesTheMedian(longer, median)).toBeGreaterThanOrEqual(
-						timesTheMedian(shorter, median),
-					);
-				},
-			),
 			runs,
 		);
 	});

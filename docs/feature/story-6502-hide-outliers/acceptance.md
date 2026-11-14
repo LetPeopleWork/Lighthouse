@@ -547,6 +547,274 @@ Help keeps default words or omits the 5 times the median rule for portfolios
 
 
 
+### S4
+
+##### Covers
+
+P2
+
+P4
+
+```text
+A reader clicks the amber chip on Team Zenith's closed set (median 6 days, one 58-day item)
+```
+
+```text
+The Work Items dialog opens at once, titled with the more-than-5-times-the-median wording, listing only TZ-301; no popover, no extra step; OutlierListOpened is sent once
+```
+
+```text
+One click shows the outlier list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierChip\.test\.tsx
+
+```text
+A popover with an Open in a list button first, or an event with the old name, or an event sent twice
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+A keyboard reader presses Enter on the chip, closes the list, and opens it again
+```
+
+```text
+The list opens on Enter, focus returns to the chip on close, and each opening is reported once
+```
+
+```text
+The keyboard reader reaches the list and keeps their place
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierChip\.test\.tsx
+
+```text
+Focus lost to the page body after close, or Enter doing nothing
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The chip is read ready, at phone width, and while loading
+```
+
+```text
+Border, icon and text are amber (warning colour) in all three; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked
+```
+
+```text
+The reader notices the amber chip at any width and never sees a stale count
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierChip\.test\.tsx
+
+```text
+A plain grey chip at some width or while loading, or a click on the loading chip opening the list
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The chip name and tooltip are read with no line above the axis, and with the 95% line and the SLE above it
+```
+
+```text
+Name equals tooltip: n outlier(s) not drawn on the chart, then the Above the axis sentence only when a line is above, then Show the list
+```
+
+```text
+A screen-reader user learns the count and the lines above the axis
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierChip\.test\.tsx
+
+```text
+A name without the Above the axis sentence when a line is above, or with it when none is, or a tooltip that differs from the name
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+The accessible-name wording is built for one outlier with no line above, three with the 95% line, one with the SLE, and two with both
+```
+
+```text
+Each exact sentence, singular or plural, with the Above the axis phrase only when given
+```
+
+```text
+Wording is right for every line-above shape
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/utils\/charts\/outlierWording\.mutation\.test\.ts
+
+```text
+Show details still ending the name, or the sentence always present
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P4
+
+```text
+The chip is clicked with a named Cycle Time chosen, after a date-range change, with a type hidden, with 11 outliers, and with renamed terms
+```
+
+```text
+The dialog lists exactly the visible-type outliers of the current view, all eleven, titled in the reader's terms, with focus back on the chip
+```
+
+```text
+The list always matches the chip's view
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierList\.test\.tsx
+
+```text
+A list of the ten popover rows only, drawn items, or a stale view
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Revised earlier chart scenarios: line above the axis, line exactly at the top, no lines, counts, usage event, error and loading frames
+```
+
+```text
+Chip name carries the Above the axis sentence only when a line is above; the usage event is OutlierListOpened once per open; error and loading frames show no chip count
+```
+
+```text
+The earlier behaviours still hold without the popover
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outliers\.test\.tsx
+
+```text
+Old Show details name or old event name
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+On Team Zenith demo data the reader clicks the header chip
+```
+
+```text
+The Work Items dialog is visible straight after the click with row TZ-301
+```
+
+```text
+One click from the header lists TZ-301
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.EndToEndTests\/tests\/specs\/metrics\/OutlierChip\.spec\.ts
+
+```text
+A popover table that also has a TZ-301 row
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The usage event member is named
+```
+
+```text
+OutlierListOpened keeps number 27 after the last named event and carries only its name
+```
+
+```text
+Usage counts follow the new name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Models\/UsageData\/OutlierListOpenedEventNameTests\.cs
+
+```text
+Old name kept
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

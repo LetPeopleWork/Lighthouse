@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	axisTop,
-	fiftiethPercentile,
-	findOutliers,
-	formatTimesTheMedian,
-} from "./outliers";
+import { axisTop, fiftiethPercentile, findOutliers } from "./outliers";
 
 describe("outliers edge cases", () => {
 	it("sorts the values before taking the median", () => {
@@ -16,12 +11,6 @@ describe("outliers edge cases", () => {
 		expect(result.outliers).toEqual([]);
 		expect(result.typical).toEqual([0, 0, 0]);
 		expect(result.median).toBeNull();
-	});
-
-	it("shows a whole number of tenths with one decimal below 10 times", () => {
-		expect(formatTimesTheMedian(30, 5).short).toBe("6.0x");
-		expect(formatTimesTheMedian(30, 5).spoken).toBe("6.0 times the median");
-		expect(formatTimesTheMedian(100, 5).short).toBe("20x");
 	});
 
 	it("ignores the cut when there are no outliers", () => {

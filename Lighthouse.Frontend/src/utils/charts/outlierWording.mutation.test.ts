@@ -7,56 +7,71 @@ const wording = outlierWording({
 	cycleTime: "Lead Time",
 });
 
+const percentileAbove = wording.aboveTheAxis([
+	{ kind: "percentile", percentile: 95, value: 33 },
+]);
+const sleAbove = wording.aboveTheAxis([{ kind: "sle", value: 40 }]);
+const bothAbove = wording.aboveTheAxis([
+	{ kind: "percentile", percentile: 95, value: 33 },
+	{ kind: "sle", value: 40 },
+]);
+
 describe("outlierWording", () => {
 	it("counts one outlier in the singular and the rest in the plural", () => {
 		expect(wording.chipLabel(1)).toBe("1 outlier");
 		expect(wording.chipLabel(2)).toBe("2 outliers");
-		expect(wording.popoverTitle(1)).toBe("1 outlier");
-		expect(wording.popoverTitle(3)).toBe("3 outliers");
-		expect(wording.chipAccessibleName(1)).toBe(
-			"1 outlier not drawn on the chart. Show details.",
-		);
-		expect(wording.chipAccessibleName(4)).toBe(
-			"4 outliers not drawn on the chart. Show details.",
-		);
 	});
+
+	it.each([
+		[
+			"one outlier, no line above the axis",
+			1,
+			null,
+			"1 outlier not drawn on the chart. Show the list.",
+		],
+		[
+			"three outliers, the 95% line above the axis",
+			3,
+			percentileAbove,
+			"3 outliers not drawn on the chart. Above the axis: 95% at 33 days. Show the list.",
+		],
+		[
+			"one outlier, the SLE above the axis",
+			1,
+			sleAbove,
+			"1 outlier not drawn on the chart. Above the axis: Target at 40 days. Show the list.",
+		],
+		[
+			"two outliers, the percentile and the SLE above the axis",
+			2,
+			bothAbove,
+			"2 outliers not drawn on the chart. Above the axis: 95% at 33 days, Target at 40 days. Show the list.",
+		],
+	])(
+		"builds the accessible name for %s",
+		(_case, count, aboveTheAxis, expected) => {
+			expect(wording.chipAccessibleName(count, aboveTheAxis)).toBe(expected);
+		},
+	);
 
 	it("names no count while the widget reloads", () => {
 		expect(wording.chipLabelWhileLoading).toBe("Outliers");
 		expect(wording.chipAccessibleNameWhileLoading).toBe("Outliers, loading");
 	});
 
-	it("puts the configured terms into the list title and the column heads", () => {
+	it("puts the configured terms into the list title and the empty-plot copy", () => {
 		expect(wording.listTitle).toBe(
 			"Stories with a Lead Time more than 5 times the median",
 		);
-		expect(wording.columns).toEqual({
-			reference: "ID",
-			name: "Name",
-			closed: "Closed",
-			days: "Lead Time (days)",
-			times: "Times the median",
-		});
 		expect(wording.allVisibleAreOutliers).toBe(
 			"All visible Stories are outliers.",
 		);
+		expect(wording.allTypesHidden).toBe("All types are hidden.");
 	});
 
-	it("states the cut, what stays counted and the lines above the axis", () => {
-		expect(wording.notDrawn(30, 6)).toBe(
-			"Not drawn: longer than 30 days (5 times the median, 6 days).",
+	it("names the lines above the axis", () => {
+		expect(bothAbove).toBe(
+			"Above the axis: 95% at 33 days, Target at 40 days.",
 		);
-		expect(wording.stillCounted).toBe(
-			"Still counted in the percentiles, Target and View Data.",
-		);
-		expect(
-			wording.aboveTheAxis([
-				{ kind: "percentile", percentile: 95, value: 33 },
-				{ kind: "sle", value: 40 },
-			]),
-		).toBe("Above the axis: 95% at 33 days, Target at 40 days.");
-		expect(wording.moreRows(7)).toBe("and 7 more");
-		expect(wording.openInAList).toBe("Open in a list");
-		expect(wording.allTypesHidden).toBe("All types are hidden.");
 	});
 });

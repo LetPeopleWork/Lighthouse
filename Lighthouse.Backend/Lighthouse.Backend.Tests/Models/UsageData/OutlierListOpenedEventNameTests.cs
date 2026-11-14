@@ -8,19 +8,19 @@ namespace Lighthouse.Backend.Tests.Models.UsageData
     /// </summary>
     [TestFixture]
     [Category("epic-5733-opt-in-usage-data")]
-    public class OutlierPopoverOpenedEventNameTests
+    public class OutlierListOpenedEventNameTests
     {
         [Test]
         public void The_event_is_appended_after_the_last_one_named_before_it()
         {
-            Assert.That((int)UsageDataEventName.OutlierPopoverOpened, Is.EqualTo((int)UsageDataEventName.SystemWideAccessGranted + 1));
+            Assert.That((int)UsageDataEventName.OutlierListOpened, Is.EqualTo((int)UsageDataEventName.SystemWideAccessGranted + 1));
         }
 
         [Test]
         public void The_event_carries_nothing_beside_its_name()
         {
             var plain = new UsageDataEventReported(
-                UsageDataEventName.OutlierPopoverOpened,
+                UsageDataEventName.OutlierListOpened,
                 Route: null,
                 WorkTrackingSystem: null,
                 OptionalFeature: null,

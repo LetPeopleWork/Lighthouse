@@ -178,7 +178,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Outcome</p>
 
-<pre><code>A chip in the widget header reads &#x27;1 outlier&#x27; or &#x27;N outliers&#x27; (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists the outliers longest first, up to ten rows followed by &#x27;and k more&#x27;, each row with its closed date, its Cycle Time in days and how many times the median it is. While the widget loads the chip is disabled and shows no count; when the data cannot be loaded the could-not-load message replaces the plot and the chip; it never shows a count from a previous answer.
+<pre><code>An amber outlined chip in the widget header reads &#x27;1 outlier&#x27; or &#x27;N outliers&#x27; (&#x27;(!) N&#x27; below 600 px; absent when there are none); its accessible name says the items are not drawn and names any percentile or SLE line above the axis; clicking it opens the outliers directly in the Work Items list dialog, with no popover in between.
 </code></pre>
 
 <h3>P3</h3>
@@ -192,7 +192,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Outcome</p>
 
-<pre><code>From the popover the reader opens the outliers in the existing Work Items list dialog (sort, export, tracker links), and the widget&#x27;s help explains the outlier rule in the reader&#x27;s configured terms.
+<pre><code>The chip opens every outlier of the visible types in the existing Work Items list dialog (sort, export, tracker links), titled in the reader&#x27;s terms, with focus back on the chip when it closes; the widget&#x27;s help explains the outlier rule in the reader&#x27;s configured terms.
 </code></pre>
 
 <h3>P5</h3>
@@ -211,7 +211,37 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Decisions</h2>
 
-<p>None.</p>
+<pre><code>D13 (maintainer guided review 2026-11-14): the outlier chip is amber outlined (MUI warning colour on border, icon and text) at every width and while loading.
+</code></pre>
+
+<h4>Status</h4>
+
+<p>Confirmed</p>
+
+
+<pre><code>D14 (maintainer guided review 2026-11-14): the chip opens the outlier list dialog directly; the popover is removed, with no extra lines in the dialog; the rule stays in the (i) help.
+</code></pre>
+
+<h4>Status</h4>
+
+<p>Confirmed</p>
+
+
+<pre><code>D15: the usage event keeps 27 and is renamed OutlierListOpened, sent when the chip opens the dialog; no release has carried OutlierPopoverOpened.
+</code></pre>
+
+<h4>Status</h4>
+
+<p>Confirmed</p>
+
+
+<pre><code>D16: the chip&#x27;s accessible name carries the lines above the axis (&#x27;{n} outlier(s) not drawn on the chart. Above the axis: 95% at {p95} days. Show the list.&#x27;), the middle sentence only when a line is above the axis.
+</code></pre>
+
+<h4>Status</h4>
+
+<p>Confirmed</p>
+
 
 <h2>Journey</h2>
 
@@ -267,6 +297,34 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>S</p>
 
 <pre><code>Sorting, export and the full list of outliers, and the rule explained in the help.
+</code></pre>
+
+<h5>Rework</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<pre><code>Slice 04: on Team Zenith&#x27;s demo data the header chip &#x27;1 outlier&#x27; is amber outlined, and clicking it opens the Work Items dialog listing TZ-301 directly, with no popover; closing the dialog returns focus to the chip; the usage event OutlierListOpened (27) is sent on open.
+</code></pre>
+
+<h4>Promises</h4>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<h4>Depends on</h4>
+
+<p>S1</p>
+
+<p>S3</p>
+
+<h4>Slice work</h4>
+
+<p>S</p>
+
+<pre><code>The reader notices the outliers and reaches the list in one click
 </code></pre>
 
 <h5>Rework</h5>

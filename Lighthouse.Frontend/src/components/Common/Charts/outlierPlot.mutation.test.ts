@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { IWorkItem } from "../../../models/WorkItem";
 import {
 	allLineValues,
-	buildOutlierRows,
 	buildPlotLines,
 	currentNamedPercentiles,
 	reservedMarkerRows,
@@ -72,22 +70,5 @@ describe("reservedMarkerRows", () => {
 
 	it("reserves nothing while no outlier shapes the axis", () => {
 		expect(reservedMarkerRows(percentiles, p(90, 30), 10, false)).toBe(0);
-	});
-});
-
-describe("buildOutlierRows", () => {
-	it("keys each row by id and reference and formats the closed date", () => {
-		const item = {
-			id: 7,
-			referenceId: "TZ-7",
-			name: "Long one",
-			cycleTime: 31,
-			closedDate: new Date(2026, 2, 2),
-		} as IWorkItem;
-		const [row] = buildOutlierRows([item], 6);
-		expect(row.key).toBe("7-TZ-7");
-		expect(row.closedDate).toBe("2 Mar 2026");
-		expect(row.timesShort).toBe("5.2x");
-		expect(row.days).toBe(31);
 	});
 });

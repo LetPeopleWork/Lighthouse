@@ -218,23 +218,7 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 
 		expect(outlierChip()).toHaveTextContent("1 outlier");
 		expect(isDisabled(outlierChip())).toBe(false);
-
-		fireEvent.click(outlierChip());
-
-		expect(
-			screen.getByText(
-				"Not drawn: longer than 30 days (5 times the median, 6 days).",
-			),
-		).toBeVisible();
-		expect(
-			screen.getByText("Still counted in the percentiles, SLE and View Data."),
-		).toBeVisible();
-		const row = screen.getByRole("row", { name: /TZ-301/ });
-		expect(row).toHaveTextContent("12 Mar 2026");
-		expect(within(row).getByText("58")).toBeVisible();
-		expect(within(row).getByText("9.7x")).toBeInTheDocument();
-		expect(within(row).getByText("9.7 times the median")).toBeInTheDocument();
-		expect(screen.queryByText(/Above the axis/)).toBeNull();
+		expect(outlierChip()).not.toHaveAccessibleName(/Above the axis/);
 	});
 
 	it("flags a Work Item one day over 5 times the median", () => {
@@ -258,12 +242,10 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 		// Each off-scale line is named in a labelled marker at the top edge.
 		expect(screen.getByText("95%: 33 days")).toBeInTheDocument();
 		expect(screen.getByText("SLE: 85% @ 35 days or less")).toBeInTheDocument();
-
-		fireEvent.click(outlierChip());
-
-		expect(
-			screen.getByText("Above the axis: 95% at 33 days, SLE at 35 days."),
-		).toBeVisible();
+		// A screen-reader user learns of the two markers from the chip's name.
+		expect(outlierChip()).toHaveAccessibleName(
+			"1 outlier not drawn on the chart. Above the axis: 95% at 33 days, SLE at 35 days. Show the list.",
+		);
 	});
 
 	it("keeps a line that sits exactly at the top of the axis in place", () => {
@@ -272,15 +254,7 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 
 		expect(axisTop()).toBeCloseTo(30, 5);
 		expect(lineValue("95%")).toBe(30);
-
-		fireEvent.click(outlierChip());
-
-		expect(
-			screen.getByText(
-				"Not drawn: longer than 30 days (5 times the median, 6 days).",
-			),
-		).toBeVisible();
-		expect(screen.queryByText(/Above the axis/)).toBeNull();
+		expect(outlierChip()).not.toHaveAccessibleName(/Above the axis/);
 	});
 
 	it("scales the axis to the typical items when there are no percentile or SLE lines", () => {
@@ -288,37 +262,19 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 
 		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
 		expect(axisTop()).toBeCloseTo(8.8, 5);
-
-		fireEvent.click(outlierChip());
-
-		expect(
-			screen.getByText(
-				"Not drawn: longer than 30 days (5 times the median, 6 days).",
-			),
-		).toBeVisible();
-		expect(screen.queryByText(/Above the axis/)).toBeNull();
+		expect(outlierChip()).not.toHaveAccessibleName(/Above the axis/);
 	});
 
-	it("lists two outliers longest first with closed date, days and multiple of the median", () => {
+	it("counts two outliers in the plural", () => {
 		showChart([...typicalItems(), ...longItems([58, 40])], null, null);
 
 		expect(outlierChip()).toHaveTextContent("2 outliers");
-
-		fireEvent.click(outlierChip());
-
-		const rows = screen.getAllByRole("row", { name: /TZ-30/ });
-		expect(rows).toHaveLength(2);
-		expect(rows[0]).toHaveTextContent("TZ-300");
-		expect(rows[0]).toHaveTextContent("12 Mar 2026");
-		expect(within(rows[0]).getByText("58")).toBeVisible();
-		expect(within(rows[0]).getByText("9.7x")).toBeInTheDocument();
-		expect(rows[1]).toHaveTextContent("TZ-301");
-		expect(rows[1]).toHaveTextContent("11 Mar 2026");
-		expect(within(rows[1]).getByText("40")).toBeVisible();
-		expect(within(rows[1]).getByText("6.7x")).toBeInTheDocument();
+		expect(outlierChip()).toHaveAccessibleName(
+			"2 outliers not drawn on the chart. Show the list.",
+		);
 	});
 
-	it("lists the ten longest of eleven outliers and says how many more there are", () => {
+	it("counts every one of eleven outliers", () => {
 		const typical = Array.from({ length: 25 }, (_, index) =>
 			closedItem(
 				`TZ-${200 + index}`,
@@ -334,19 +290,10 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 		showChart([...typical, ...eleven], null, null);
 
 		expect(outlierChip()).toHaveTextContent("11 outliers");
-
-		fireEvent.click(outlierChip());
-
-		const rows = screen.getAllByRole("row", { name: /TZ-3\d\d/ });
-		expect(rows).toHaveLength(10);
-		expect(rows[0]).toHaveTextContent("TZ-310");
-		expect(rows[9]).toHaveTextContent("TZ-301");
-		expect(screen.getByText("and 1 more")).toBeVisible();
 	});
 
 	it("replaces the plot and the chip with the could-not-load message when the data fails", () => {
 		const view = showChart(withLongItem(58), 15, 7);
-		fireEvent.click(outlierChip());
 
 		view.rerender(chartIn(withLongItem(58), 15, 7, "error"));
 
@@ -356,7 +303,6 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 			within(header()).queryByRole("button", { name: /outlier/i }),
 		).toBeNull();
 		expect(header()).not.toHaveTextContent(/\d/);
-		expect(screen.queryByText(/Not drawn: longer than/)).toBeNull();
 	});
 
 	it("shows no outlier count the first time the widget is loading", () => {
@@ -364,7 +310,6 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 
 		expect(header()).not.toHaveTextContent(/\d/);
 		expect(within(header()).queryByRole("button", { name: /\d/ })).toBeNull();
-		expect(screen.queryByText(/Not drawn: longer than/)).toBeNull();
 	});
 
 	it.each([
@@ -433,21 +378,19 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
 	});
 
-	it("reports one usage event per opening and shows no count while the widget reloads", () => {
+	it("reports one usage event per click that opens the list and shows no count while the widget reloads", () => {
 		const view = showChart(withLongItem(58), 15, 7);
 
 		fireEvent.click(outlierChip());
 
 		expect(reportUsage).toHaveBeenCalledTimes(1);
-		expect(reportUsage).toHaveBeenCalledWith({ name: "OutlierPopoverOpened" });
-		expect(screen.getByText(/Not drawn: longer than/)).toBeVisible();
+		expect(reportUsage).toHaveBeenCalledWith({ name: "OutlierListOpened" });
 
 		view.rerender(chartIn(withLongItem(58), 15, 7, "loading"));
 
 		expect(isDisabled(outlierChip())).toBe(true);
 		expect(outlierChip()).not.toHaveTextContent(/\d/);
 		expect(outlierChip()).not.toHaveAccessibleName(/\d/);
-		expect(screen.queryByText(/Not drawn: longer than/)).toBeNull();
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 });

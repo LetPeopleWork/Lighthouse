@@ -38,8 +38,14 @@ export class CycleTimeScatterPlotChart {
 		await this.outlierChip.click();
 	}
 
+	get outlierListDialog(): Locator {
+		return this.page.getByRole("dialog");
+	}
+
 	outlierRow(referenceId: string): Locator {
-		return this.page.getByRole("row", { name: new RegExp(referenceId) });
+		return this.outlierListDialog.getByRole("row", {
+			name: new RegExp(referenceId),
+		});
 	}
 
 	async countDots(): Promise<number> {

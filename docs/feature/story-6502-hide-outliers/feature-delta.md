@@ -1395,3 +1395,22 @@ free integer, **27** (`SystemWideAccessGranted = 26`), still appended, never ren
 **The spike (AFK-9) runs inside slice 01:** the crafter builds the top-margin markers; the orchestrator checks them in
 a real browser on a fixture before the slice commits, and takes the S-5 fallback if they fail.
 | S-8 SLE default | **The Cycle Time scatterplot draws its SLE line by default** (maintainer, 2026-11-14, after the S1 crafter raised it); the reader can still switch it off. Other charts keep SLE off by default. |
+
+## Maintainer guided review (2026-11-14, after finalize)
+
+Checked by hand on the "When Will This Be Done?" demo (Team Zenith, TZ-301), build `dda497b87`.
+
+- **Met:** the chip is in the header; the axis fits the rest; the SLE line is on at first load; Open in a list opens
+  the Work Items dialog with focus back on the chip; the (i) help states the rule; "All types are hidden."; TZ-301
+  still counts in View Data and the percentiles; the disabled "Outliers" chip while loading (Slow 3G); the short chip
+  at phone width; the Outliers section of `docs/metrics/flow-metrics.md`.
+- **Not run:** the top-edge markers, because Team Zenith puts no line above the axis; the oracle tests and the
+  browser spike of slice 01 cover them.
+- **Defects:** none. Two changed minds, built as slice S4 inside Story 6502 before it closes:
+
+| # | Decision |
+|---|---|
+| D13 chip colour | The chip is **amber outlined**: MUI `warning` colour on border, icon and text, at every width and while loading. Replaces the plain outlined look of S-3. |
+| D14 no popover | **The chip opens the outlier list dialog directly** (the Work Items dialog with title `{Work Items} with a {Cycle Time} more than 5 times the median`, every outlier of the visible types). No popover, and no extra lines in the dialog; the rule stays in the (i) help. Focus returns to the chip when the dialog closes. Replaces S-4 and the popover half of S3. |
+| D15 event (orchestrator) | The usage event keeps integer **27** and is renamed `OutlierListOpened`, sent when the chip opens the dialog. Safe because no release has carried `OutlierPopoverOpened` yet (last tag `v26.11.8.1`, before Story 6502). |
+| D16 screen readers (orchestrator) | The popover's "Above the axis: …" line was how a screen-reader user learnt of the top-edge markers (S-4). With the popover gone, the chip's accessible name carries it instead: `{n} outlier(s) not drawn on the chart. Above the axis: 95% at {p95} days. Show the list.`, the middle sentence only when a line is above the axis. |

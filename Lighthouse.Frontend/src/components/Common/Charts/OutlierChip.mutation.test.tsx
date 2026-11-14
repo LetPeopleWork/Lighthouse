@@ -2,8 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { outlierWording } from "../../../utils/charts/outlierWording";
 import OutlierChip from "./OutlierChip";
-import OutlierPopoverContent from "./OutlierPopoverContent";
-import { buildOutlierRows } from "./outlierPlot";
 
 const wording = outlierWording({
 	workItems: "Work Items",
@@ -11,28 +9,13 @@ const wording = outlierWording({
 	cycleTime: "Cycle Time",
 });
 
-const row = {
-	key: "1-A-1",
-	referenceId: "A-1",
-	name: "Long one",
-	closedDate: "2 Mar 2026",
-	days: 40,
-	timesShort: "6.7x",
-	timesSpoken: "6.7 times the median",
-};
-
 const chip = (over: Partial<Parameters<typeof OutlierChip>[0]> = {}) => (
 	<OutlierChip
 		wording={wording}
 		count={2}
-		cut={30}
-		median={6}
-		rows={[row]}
-		moreCount={0}
 		aboveTheAxis={null}
 		disabled={false}
-		onOpened={() => {}}
-		onOpenInList={() => {}}
+		onOpen={() => {}}
 		chipRef={null}
 		{...over}
 	/>
@@ -70,41 +53,45 @@ describe("OutlierChip", () => {
 		vi.unstubAllGlobals();
 	});
 
-	it("reports an opening once and closes the popover when it becomes disabled", () => {
-		phone(false);
-		const onOpened = vi.fn();
-		const { rerender } = render(chip({ onOpened }));
-		fireEvent.click(screen.getByTestId("outlier-chip"));
-		expect(onOpened).toHaveBeenCalledTimes(1);
-		expect(screen.getByText("2 outliers", { selector: "h3" })).toBeTruthy();
-
-		fireEvent.click(screen.getByTestId("outlier-chip"));
-		expect(onOpened).toHaveBeenCalledTimes(1);
-
-		rerender(chip({ onOpened, disabled: true }));
-		expect(screen.queryByText("2 outliers", { selector: "h3" })).toBeNull();
-		rerender(chip({ onOpened, disabled: false }));
-		expect(screen.queryByText("2 outliers", { selector: "h3" })).toBeNull();
-		vi.unstubAllGlobals();
-	});
-
-	it("does not reopen by itself once the widget has reloaded", () => {
+	it("is amber and outlined whether ready or disabled, on a phone or a wide screen", () => {
+		const amberOutlined = () =>
+			expect(screen.getByTestId("outlier-chip")).toHaveClass(
+				"MuiChip-outlined",
+				"MuiChip-colorWarning",
+			);
 		phone(false);
 		const { rerender } = render(chip());
-		fireEvent.click(screen.getByTestId("outlier-chip"));
-		expect(screen.getByText("2 outliers", { selector: "h3" })).toBeTruthy();
-
+		amberOutlined();
 		rerender(chip({ disabled: true }));
-		rerender(chip({ disabled: false }));
-
-		expect(screen.queryByText("2 outliers", { selector: "h3" })).toBeNull();
-		expect(
-			screen.getByTestId("outlier-chip").getAttribute("aria-expanded"),
-		).toBe("false");
+		amberOutlined();
+		phone(true);
+		rerender(chip());
+		amberOutlined();
 		vi.unstubAllGlobals();
 	});
 
-	it("gives the loading chip no tooltip and the ready chip its accessible name", async () => {
+	it("reports each click once, opens nothing of its own, and does nothing while disabled", () => {
+		phone(false);
+		const onOpen = vi.fn();
+		const { rerender } = render(chip({ onOpen }));
+		const button = screen.getByTestId("outlier-chip");
+		expect(button.getAttribute("aria-haspopup")).toBeNull();
+		expect(button.getAttribute("aria-expanded")).toBeNull();
+
+		fireEvent.click(button);
+		expect(onOpen).toHaveBeenCalledTimes(1);
+		expect(screen.queryByRole("presentation")).toBeNull();
+
+		fireEvent.click(button);
+		expect(onOpen).toHaveBeenCalledTimes(2);
+
+		rerender(chip({ onOpen, disabled: true }));
+		fireEvent.click(screen.getByTestId("outlier-chip"));
+		expect(onOpen).toHaveBeenCalledTimes(2);
+		vi.unstubAllGlobals();
+	});
+
+	it("gives the loading chip no tooltip and the ready chip its accessible name as the tooltip", async () => {
 		phone(false);
 		const { rerender } = render(chip({ disabled: true }));
 		fireEvent.mouseOver(screen.getByTestId("outlier-chip"));
@@ -112,65 +99,25 @@ describe("OutlierChip", () => {
 		rerender(chip());
 		fireEvent.mouseOver(screen.getByTestId("outlier-chip"));
 		expect((await screen.findByRole("tooltip")).textContent).toBe(
-			"2 outliers not drawn on the chart. Show details.",
+			"2 outliers not drawn on the chart. Show the list.",
 		);
 		vi.unstubAllGlobals();
 	});
-});
 
-describe("OutlierPopoverContent", () => {
-	const content = (
-		over: Partial<Parameters<typeof OutlierPopoverContent>[0]> = {},
-	) => (
-		<OutlierPopoverContent
-			wording={wording}
-			count={2}
-			cut={30}
-			median={6}
-			rows={[row]}
-			moreCount={0}
-			aboveTheAxis={null}
-			onOpenInList={() => {}}
-			{...over}
-		/>
-	);
-
-	it("names the lines above the axis only when there are some", () => {
-		const { rerender } = render(content());
-		expect(screen.queryByText(/Above the axis/)).toBeNull();
-		rerender(content({ aboveTheAxis: "Above the axis: 95% at 33 days." }));
-		expect(screen.getByText("Above the axis: 95% at 33 days.")).toBeTruthy();
-	});
-
-	it("shows the line above the axis only when one is given, and not when it is empty", () => {
-		const paragraphs = () => document.querySelectorAll("p");
-		const { rerender } = render(content({ aboveTheAxis: null }));
-		const withoutTheLine = paragraphs().length;
-		expect(screen.queryByText(/Above the axis/)).toBeNull();
-		rerender(content({ aboveTheAxis: "" }));
-		expect(paragraphs()).toHaveLength(withoutTheLine);
-		rerender(content({ aboveTheAxis: "Above the axis: 85% at 20 days." }));
-		expect(paragraphs()).toHaveLength(withoutTheLine + 1);
-		expect(screen.getByText("Above the axis: 85% at 20 days.").tagName).toBe(
-			"P",
+	it("names the lines above the axis in the accessible name only when it is given one", () => {
+		phone(false);
+		const { rerender } = render(chip());
+		expect(screen.getByTestId("outlier-chip").getAttribute("aria-label")).toBe(
+			"2 outliers not drawn on the chart. Show the list.",
 		);
-	});
-
-	it("mentions further rows only when more than none are left out", () => {
-		const { rerender } = render(content());
-		expect(screen.queryByText(/more$/)).toBeNull();
-		rerender(content({ moreCount: 1 }));
-		expect(screen.getByText("and 1 more")).toBeTruthy();
-	});
-
-	it("hides the spoken form visually without removing it", () => {
-		render(content());
-		const spoken = getComputedStyle(screen.getByText("6.7 times the median"));
-		expect(spoken.position).toBe("absolute");
-		expect(spoken.overflow).toBe("hidden");
-		expect(spoken.whiteSpace).toBe("nowrap");
-		expect(spoken.clip).toContain("rect(0");
-		expect(spoken.margin).toBe("-8px");
-		expect(buildOutlierRows([], 1)).toEqual([]);
+		rerender(chip({ aboveTheAxis: "Above the axis: 95% at 33 days." }));
+		expect(screen.getByTestId("outlier-chip").getAttribute("aria-label")).toBe(
+			"2 outliers not drawn on the chart. Above the axis: 95% at 33 days. Show the list.",
+		);
+		rerender(chip({ disabled: true, aboveTheAxis: "Above the axis: x." }));
+		expect(screen.getByTestId("outlier-chip").getAttribute("aria-label")).toBe(
+			"Outliers, loading",
+		);
+		vi.unstubAllGlobals();
 	});
 });
