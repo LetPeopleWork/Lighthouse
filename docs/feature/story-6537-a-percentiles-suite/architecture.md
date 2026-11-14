@@ -38,6 +38,28 @@ python3 docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py
 
 docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s1\-expected\-ids\.txt
 
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s1\_breaks\.py
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s1\-id\-table\.md
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s1\-break\-evidence\.txt
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/ProcessBehaviorSnapshotWriterTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/RetentionEdgeTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/TeamMetricsServiceTests\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/PortfolioMetricsServiceTests\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Adapters\/Background\/OverTimeHistoryFillerTest\.cs
+
 #### Public oracle
 
 ```text
@@ -94,7 +116,27 @@ python3 docs/feature/story-6537-a-percentiles-suite/evidence/s2_compare_ids.py
 
 #### Supports
 
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s1\-expected\-ids\.txt
+
 docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\_breaks\.py
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\-id\-table\.md
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\-break\-evidence\.txt
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/PercentileFamiliesTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/PercentileSnapshotWriterTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/TeamMetricsServiceTests\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Adapters\/Background\/OverTimeHistoryFillerTest\.cs
 
 #### Public oracle
 
@@ -152,7 +194,31 @@ python3 docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py
 
 #### Supports
 
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s1\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\-expected\-ids\.txt
+
 docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\_breaks\.py
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\-id\-table\.md
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\-break\-evidence\.txt
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/DatabaseMaintenanceGateTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Forecasting\/RealityCheckWireContractTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/ReconstructOverTimeHistoryAcceptanceTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/PercentileSnapshotWriterTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Adapters\/Background\/OverTimeHistoryFillerTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/PercentilesOverTime\/TwoCopiesFillingTheSameDayAtThePortTest\.cs
 
 #### Public oracle
 
@@ -222,7 +288,27 @@ python3 docs/feature/story-6537-a-percentiles-suite/evidence/s4_compare_ids.py
 
 #### Supports
 
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s1\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\-expected\-ids\.txt
+
 docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\-expected\-ids\.txt
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\_breaks\.py
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\-id\-table\.md
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s4\-break\-evidence\.txt
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/OverTimeFillTargetTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/ReconstructOverTimeHistoryAcceptanceTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Adapters\/Background\/OverTimeHistoryFillerTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/FlowMetrics\/Application\/ProcessBehaviorSnapshotWriterTest\.cs
 
 #### Public oracle
 
