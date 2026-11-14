@@ -567,3 +567,16 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 | A rules first | A1–A3 | `thorough` | opus | sonnet |
 | B the move | B1–B3 | `standard` | sonnet | haiku |
 | C cycle and rules | C1–C3 | `thorough` | opus | sonnet |
+
+## Wave: DELIVER / [REF] Notes from the feature B reviews (2026-11-14, AFK)
+
+- **D-9 wording:** feature B keeps every Forecasting unit test where it is and only adds `using` lines. The tests move to
+  `Tests/Modules/Forecasting` in feature C's slice C3, which also adds the placement test. Where D-9's prose reads "relocate as
+  a pure-move slice", C3 is that slice.
+- **Waiver: "improve the tests you touch" for using-only edits in feature B.** About 40 test classes in feature B change only
+  by a `using` line, because the types they cover moved namespace. Making each of them better is not part of a pure move,
+  and C3 moves them anyway, which is when they are touched for real. Recorded as an explicit waiver (host decision under
+  AFK; maintainer may revisit).
+- **Follow-up, out of scope:** `Architecture/IlDependencies` does not read catch-clause types, events or named attribute
+  arguments, so a reference used only there escapes every IL rule. No current code hits it. Candidate for a small
+  improvement item.
