@@ -1,0 +1,730 @@
+{
+"counters": {
+"D": 7,
+"E": 3,
+"F": 90,
+"K": 3,
+"P": 3,
+"S": 3,
+"Y": 3
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"closure": [
+{
+"axis": "Safety",
+"basis": "F37",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F36"
+},
+{
+"axis": "Inhabitation",
+"basis": "F38",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F36"
+},
+{
+"axis": "PublicReachability",
+"basis": "F40",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F39"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F23"
+},
+{
+"id": "K2",
+"slices": [
+"S2"
+],
+"text": "F24"
+},
+{
+"id": "K3",
+"slices": [
+"S3"
+],
+"text": "F25"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F16"
+},
+{
+"id": "D2",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F17"
+},
+{
+"id": "D3",
+"slices": [
+"S2"
+],
+"text": "F18"
+},
+{
+"id": "D4",
+"slices": [
+"S2"
+],
+"text": "F19"
+},
+{
+"id": "D5",
+"slices": [
+"S3"
+],
+"text": "F20"
+},
+{
+"id": "D6",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F21"
+},
+{
+"id": "D7",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F22"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F34"
+},
+{
+"analysis": "contract_tests",
+"reason": "F35"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:14",
+"reason": "F26",
+"symbol": "FlowMetricsModuleRules"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:157",
+"reason": "F27",
+"symbol": "ApplicationIsReachedFromOutsideOnlyBy"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:218",
+"reason": "F28",
+"symbol": "OutboundEdges"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:137",
+"reason": "F29",
+"symbol": "InboundVerdict"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/bin/metrics-answers-compare:1",
+"reason": "F30",
+"symbol": "metrics-answers-compare"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarness.cs:1",
+"reason": "F31",
+"symbol": "ServicePortHarness"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestDoubles/DrawsFromAPinnedStartingNumber.cs:1",
+"reason": "F32",
+"symbol": "DrawsFromAPinnedStartingNumber"
+},
+{
+"decision": "Extend",
+"locator": ".nwave/examine.json:1",
+"reason": "F33",
+"symbol": "metrics-answers-compare"
+}
+],
+"risks": [
+{
+"allowed": "F43",
+"forbidden": "F44",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "ForecastingRulesSeeTheModuleArchUnitTest",
+"preserved": "F42",
+"residue": "F45",
+"source": "F41"
+},
+{
+"allowed": "F43",
+"forbidden": "F48",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "SeededForecastsStayTheSameTest",
+"preserved": "F47",
+"residue": "F49",
+"source": "F46"
+},
+{
+"allowed": "F52",
+"forbidden": "F53",
+"id": "Y3",
+"kind": "SinglePointOfFailure",
+"owner": "maintainer",
+"preserved": "F51",
+"residue": "F54",
+"source": "F50"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs",
+"move": "F75",
+"preserved": "F76",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"public_oracle": {
+"expected": "F73",
+"falsifier": "F74",
+"promises": [
+"P1"
+],
+"stimulus": "F72"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:1",
+"reason": "F77"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:1",
+"reason": "F77"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:1",
+"reason": "F77"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs:1",
+"reason": "F77"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1",
+"reason": "F78"
+},
+{
+"decision": "Migrated",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:14",
+"reason": "F79"
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F68"
+},
+{
+"analysis": "reuse",
+"reason": "F80"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs",
+"reason": "F69"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs",
+"reason": "F70"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs",
+"reason": "F71"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs",
+"reason": "F71"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs",
+"reason": "F71"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"reason": "F71"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ModuleRulesCatchANewOffenderArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetrics"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F57",
+"falsifier": "F58",
+"promises": [
+"P2"
+],
+"stimulus": "F56"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:1",
+"reason": "F61"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SimulatedRunIsolationArchUnitTest.cs:1",
+"reason": "F61"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs:1",
+"reason": "F61"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs:1",
+"reason": "F61"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs:1",
+"reason": "F61"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:1",
+"reason": "F61"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12",
+"reason": "F62"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16",
+"reason": "F63"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UpdateHoldsAreForecastOnlyArchUnitTest.cs:32",
+"reason": "F64"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastFilterSeamArchUnitTest.cs:21",
+"reason": "F65"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:247",
+"reason": "F66"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F67"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F68"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:1",
+"reason": "F59",
+"symbol": "ModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SimulatedRunIsolationArchUnitTest.cs:1",
+"reason": "F59",
+"symbol": "SimulatedRunIsolationArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs:1",
+"reason": "F59",
+"symbol": "RealityCheckReadOnlyArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs:1",
+"reason": "F59",
+"symbol": "DependencyAwareForecastSeamArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs:1",
+"reason": "F59",
+"symbol": "FastWithManyFeaturesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:1",
+"reason": "F59",
+"symbol": "RefinementModuleArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs:20",
+"reason": "F60",
+"symbol": "ApplicationCore"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F55"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SimulatedRunIsolationArchUnitTest.cs",
+"reason": "F55"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs",
+"reason": "F55"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs",
+"reason": "F55"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs",
+"reason": "F55"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs",
+"reason": "F55"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ForecastingRulesSeeTheModuleArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs",
+"public_oracle": {
+"expected": "F84",
+"falsifier": "F85",
+"promises": [
+"P3"
+],
+"stimulus": "F83"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "examine-script",
+"locator": "Scripts/examine/bin/forecast-answers-compare:1",
+"reason": "F86"
+},
+{
+"decision": "Changed",
+"kind": "examine-config",
+"locator": ".nwave/examine.json:1",
+"reason": "F87"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F88"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F89"
+},
+{
+"analysis": "reuse",
+"reason": "F90"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Scripts/examine/bin/forecast-answers-compare",
+"reason": "F81"
+},
+{
+"change": "Extend",
+"path": ".nwave/examine.json",
+"reason": "F82"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~SeededForecastsStayTheSameTest",
+"bash Scripts/examine/bin/forecast-answers-compare HEAD"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F13"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F14"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F15"
+}
+]
+},
+"facts": {
+"F1": "Story #6361 S03c Package Forecasting, nwdes feature A of three (rules first). Before any Forecasting type moves into Modules/Forecasting, make the module rules shared and make every architecture rule that names Forecasting's namespaces, folders or files also see Modules/Forecasting, and add a safety net that shows forecasts and forecast answers do not change. Behaviour-free: routes, DTOs, responses and forecast results stay the same. Design: docs/feature/story-6361-s03c-package-forecasting/feature-delta.md (slices A1-A3, Ratchet design).",
+"F10": "Flow metrics' module rules run through one shared ModuleRules class and still fail on the same made-up offenders",
+"F11": "A made-up type under Modules/Forecasting is caught by every rule that names Forecasting today",
+"F12": "Seeded forecasts give the same percentiles, and forecast-answers-compare reports identical answers on demo data",
+"F13": "A module other than Flow metrics can use the same shared rules class, and Flow metrics' own architecture rules, run through it, still flag the same made-up offending types as before.",
+"F14": "For each architecture rule that names Forecasting's namespaces, folders or files, a made-up offending type placed under Modules/Forecasting is flagged by that rule; no such rule overlooks that location.",
+"F15": "With a pinned seed, forecasts give the same percentiles as before the move, and a public command captures the forecast answers on demo data before the move and compares them after, reporting match or difference.",
+"F16": "Behaviour-free, test-side and script-side only: no production type, route, DTO, response, schema or forecast result changes, and no Forecasting type moves. Every rule reads the compiled IL through IlDependencies or the ArchUnitNET production architecture as today; inline lists stay two-way (InlineBaseline) and no rule is loosened.",
+"F17": "Shared rules owner: FlowMetricsModuleRules is renamed to ModuleRules (Architecture/ModuleRules.cs), module namespaces stay parameters. The two private Application shapes move into it: ApplicationIsReachedFromOutsideOnlyBy (from FlowMetricsInboundApplicationArchUnitTest, returns InboundVerdict) and OutboundEdges with the OutboundVerdict record (from FlowMetricsApplicationOutboundArchUnitTest, made internal). Flow metrics tests call the lifted methods with their own constants; their made-up-offender tests keep their meaning. Rename is a move-only commit, the lift an edit commit. No second rules class.",
+"F18": "Made-up types that prove a widened Forecasting pattern live in the test assembly under namespaces the real widened pattern matches, i.e. below Lighthouse.Backend.Modules.Forecasting, with a last segment naming them as fixtures (for example Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastingFixtures). Deviation from the example namespace Lighthouse.Backend.Modules.ForecastingFixtures in the story design: the widened patterns end in (\\.|$), so a type in Modules.ForecastingFixtures lies outside them and would prove only a rule shape with a substituted pattern, not the real constant. Rule-shape cases that pass their namespaces as parameters may keep the Modules.ForecastingFixtures namespaces the S02 way.",
+"F19": "Widening per rule (Ratchet design, Rules first): ModuleBoundariesArchUnitTest.ForecastingPattern gains |^Lighthouse\\.Backend\\.Modules\\.Forecasting(\\.|$) and Flow metrics outbound rule keeps reading it; SimulatedRunIsolationArchUnitTest uses an old-or-module namespace pattern; RealityCheckReadOnlyArchUnitTest matches the two policies by typeof and forbids ApplicationCoreRules.ApplicationCore minus the two policies; DependencyAwareForecastSeamArchUnitTest subject is the update components or Modules.Forecasting.Adapters.Background, exemption by typeof(ForecastUpdater); FastWithManyFeaturesArchUnitTest locates ForecastService.cs and ForecastUpdater.cs by file name under the production source as it does for ForecastLane.cs; RefinementModuleArchUnitTest forbidden background set adds Modules.Forecasting.Adapters. UpdateHoldsAreForecastOnly, ForecastFilterSeam and DomainEventHandlerOrderPin already key on typeof or short names and are left unchanged. RecurringBlackoutEventsSeam and StalenessPolicyPurity: the crafter checks whether a Forecasting type is in their subject or target set and widens to ApplicationCore only if so. Flow metrics full-name strings for Forecasting types are not touched here (feature B rewrites them).",
+"F2": "The Forecasting move (features B and C) can start with every rule already watching the new place and a capture that proves nothing changed",
+"F20": "Safety net: a port-level seeded check under Tests/Acceptance/Forecasting runs ForecastSimulation and ForecastService (How Many and When) with DrawsFromAPinnedStartingNumber over ServicePortHarness and compares percentiles to literal values written in the test. A new Scripts/examine/bin/forecast-answers-compare, built like metrics-answers-compare (usage: forecast-answers-compare [base-revision [candidate-revision]]), captures the bodies of the GET forecast endpoints on seeded demo data with a fixed seed and diffs them; declared in .nwave/examine.json. The production-like database comparison is a maintainer-run step, not an EXAMINE expectation.",
+"F21": "Formal verification: no checker selected. No state, transition, protocol, concurrency or recovery behaviour changes. Rule claims are finite and decided exactly by the compiled IL with a made-up offender per rule as falsifier; the forecast-preservation claim compares code with itself, so a pinned seed with literal expected percentiles is the honest falsifier. Quint, TLA+/TLC and Agda would model nothing; no model written, no checker run or claimed. Liveness not applicable: synchronous rule evaluation and a one-shot capture have no progress property. Property-based testing not applicable: every law is a finite enumeration of rules, made-up types and named endpoints.",
+"F22": "Carriers, all test-side: rule verdicts are KernelRuleVerdict, InboundVerdict and OutboundVerdict owned by ModuleRules and KernelRules (Architecture folder); dependency facts are IlDependent from IlDependencies; per-fixture state is the lazily read Mono.Cecil ModuleDefinition disposed at one-time teardown; the seeded check holds ServicePortHarness per scenario; the compare script holds captured bodies in a temp directory. Layers: application rules only; no adapter, infrastructure or recovery layer changes.",
+"F23": "One oracle file per slice; a later slice never edits an earlier slice oracle or support files. No nWave scenario tags in code. Arch rule tests assert the rule failure names the offender, not counts. Comments carry no internal ids.",
+"F24": "Fixture types placed under Lighthouse.Backend.Modules in the test assembly must not reach the API, Data or EF Core, nor be domain-event handlers, because ApplicationCoreRulesReachModulesArchUnitTest runs the core rules over the test assembly with the Services-or-Modules pattern.",
+"F25": "Seeded check: FakeLighthouseClock, own database per scenario through ServicePortHarness, expected percentiles written out as literals; its mutation config names Tests.Acceptance.Forecasting.",
+"F26": "Renamed to ModuleRules (S1 target ModuleRules.cs); module namespaces already parameters; no second rules class",
+"F27": "Lifted unchanged into ModuleRules",
+"F28": "Lifted with OutboundVerdict into ModuleRules",
+"F29": "Verdict of the lifted inbound shape",
+"F3": "The module rules are one shared class that any module can use, and Flow metrics' rules still catch the same made-up offenders through it",
+"F30": "Template for forecast-answers-compare (S3 target, new: no forecast answer comparison exists)",
+"F31": "Port harness for the seeded check",
+"F32": "Pinned seed for the draws",
+"F33": "Gains a forecast-answers-compare entry beside the metrics one",
+"F34": "No shared contract changes: rules and the compare script only observe the production assembly and existing HTTP responses, in one deployable and one commit range.",
+"F35": "No parties change apart: no wire, DTO or route changes; the compare script observes existing endpoints only.",
+"F36": "Widened rules and shared ModuleRules",
+"F37": "Each widened rule has a made-up offender in the new place that must be named by the rule failure; host executes per slice",
+"F38": "Compliant made-up twins and the real production assembly must pass each rule",
+"F39": "Seeded forecast check and forecast-answers-compare",
+"F4": "Every architecture rule that names Forecasting's namespaces, folders or files also sees Modules/Forecasting: a made-up type placed there is caught by each rule",
+"F40": "Seeded check drives ForecastService at the application-service port; compare script calls the real GET forecast endpoints on demo data",
+"F41": "Assumption negated: a widened pattern also matches the fixture namespace",
+"F42": "Each widened rule sees the new place",
+"F43": "none",
+"F44": "A rule green because the fixture sits outside the pattern",
+"F45": "Fixtures under Modules.Forecasting with a compliant twin each",
+"F46": "Assumption negated: forecast draws are deterministic for a pinned seed",
+"F47": "Literal percentiles",
+"F48": "A comparison of the code with itself",
+"F49": "Literal expected values; compare script pins the seed",
+"F5": "A pinned-seed check shows forecasts give the same percentiles, and a public command captures and compares the forecast answers on demo data before and after a move",
+"F50": "Demo data only on the examiner host",
+"F51": "Answer equality on demo data",
+"F52": "Production-like comparison run by the maintainer",
+"F53": "Calling EXAMINE indeterminate for the missing DB_Backup",
+"F54": "Maintainer-run comparison on the production-like database",
+"F55": "Forecasting namespace, folder or file key widened to also see Modules/Forecasting",
+"F56": "Run each widened rule, with its real Forecasting pattern or key, over made-up types in the test assembly placed below Lighthouse.Backend.Modules.Forecasting, as subject and as target",
+"F57": "For each rule, the made-up offender in the new place is named in the rule failure and its compliant twin is not; for subject-exempt rules the made-up Forecasting type is treated as inside Forecasting",
+"F58": "Any listed rule keeps its old Services-only key, so the made-up type under Modules.Forecasting passes unseen or is wrongly flagged as an outsider",
+"F59": "Existing owner of the rule; widened in place, no second rule",
+"F6": "Lift the Flow metrics Application rule shapes into a shared ModuleRules class; widen every Forecasting-keyed rule to see Modules/Forecasting; a pinned-seed forecast check and a forecast-answers-compare command",
+"F60": "Already Services or Modules; forbidden target for RealityCheckReadOnly",
+"F61": "Test project only; examines at least the types it examined before",
+"F62": "Widened to ApplicationCore only if the crafter finds a Forecasting type in its subject or target set",
+"F63": "Same conditional check; Services pattern already covers sub-namespaces",
+"F64": "Keys on typeof; sees the type wherever it lives",
+"F65": "Keys on typeof",
+"F66": "Reads ForecastingPattern by reflection, so widened through it",
+"F67": "Widening edits each rule in place; S1 already made the shared owner",
+"F68": "The slice oracle is itself the architectural test over the compiled assembly",
+"F69": "Renamed from FlowMetricsModuleRules.cs plus the two lifted Application shapes",
+"F7": "Moving any Forecasting type (feature B)",
+"F70": "Removed by the rename",
+"F71": "Calls ModuleRules instead of its own private shape or FlowMetricsModuleRules",
+"F72": "Call ModuleRules.ApplicationIsReachedFromOutsideOnlyBy and ModuleRules outbound edges rule with a made-up module namespace other than Flow metrics over made-up types, and run the Flow metrics rule tests through ModuleRules",
+"F73": "The made-up newcomer, async-only caller and stale listed entry are each named in the failure; compliant made-up types pass; Flow metrics rules on the real assembly stay green",
+"F74": "ModuleRules does not exist or does not take the module namespaces as parameters, or a made-up offender in the other module passes",
+"F75": "Rename FlowMetricsModuleRules to ModuleRules (file and class), move-only commit, before lifting the two Application shapes; makes the lift and every later module rule land in one owner",
+"F76": "Every Architecture test stays green with the same examined types and offenders",
+"F77": "Test project only; same rule, same made-up offenders, called through ModuleRules",
+"F78": "New shared owner of the module rules",
+"F79": "Renamed to ModuleRules.cs; every consumer migrated in the same commit",
+"F8": "Removing the Flow metrics to Forecasting cycle and Forecasting's own module rules (feature C)",
+"F80": "Reuse is decided in the shared rows: ModuleRules.cs is FlowMetricsModuleRules renamed and extended with ApplicationIsReachedFromOutsideOnlyBy and OutboundEdges; the four Flow metrics rule tests are Extended to call it",
+"F81": "Built like metrics-answers-compare; no forecast comparison exists",
+"F82": "Declares forecast-answers-compare before the first EXAMINE",
+"F83": "Through ServicePortHarness with FakeLighthouseClock and DrawsFromAPinnedStartingNumber, ask ForecastService for a How Many and a When forecast and run ForecastSimulation over fixed inputs",
+"F84": "The returned percentiles equal literal values written in the test",
+"F85": "A changed draw, percentile or input (for example a percentile index shifted by one) and the test stays green",
+"F86": "New script; reads only",
+"F87": "One added entry",
+"F88": "Adds a test and a script; no existing code moves",
+"F89": "No dependency or owner law is reachable from a test and a read-only script",
+"F9": "Any behaviour, route, DTO, schema or response change",
+"F90": "Reuse is decided in the shared rows: forecast-answers-compare is new, shaped like metrics-answers-compare; examine.json is Extended; ServicePortHarness and DrawsFromAPinnedStartingNumber are Reused"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_in": [
+"F6"
+],
+"scope_out": [
+"F7",
+"F8",
+"F9"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F10",
+"promises": [
+"P1"
+]
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F11",
+"promises": [
+"P2"
+]
+},
+{
+"id": "S3",
+"observation": "F12",
+"promises": [
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6361-s03c-a-rules-first",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
