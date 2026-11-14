@@ -443,7 +443,7 @@
 "C": 2,
 "D": 14,
 "E": 5,
-"F": 437,
+"F": 438,
 "K": 3,
 "L": 4,
 "P": 5,
@@ -2082,6 +2082,7 @@
 "F435": "A popover with an Open in a list button first, extra dialog content, an event with the old name, or an event sent twice",
 "F436": "Border, icon and text use the app's amber warning colour in all three, each in its own scenario; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked",
 "F437": "A plain grey chip or default MUI orange at some width or while loading, or a click on the loading chip opening the list",
+"F438": "D17: the 'times the median' multiple lived only in the popover table and is dropped with it; the maintainer chose the Work Items dialog as it is, with its own columns and no extra lines (D14).",
 "F44": "item exactly at the cut",
 "F45": "all items equal",
 "F46": "fast-check built-in array and integer shrinking",
@@ -2168,6 +2169,12 @@
 "kind": "Confirmed"
 },
 "text": "F316"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F438"
 }
 ],
 "promises": [

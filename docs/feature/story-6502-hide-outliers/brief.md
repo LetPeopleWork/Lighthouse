@@ -106,6 +106,15 @@ D16: the chip's accessible name carries the lines above the axis ('{n} outlier(s
 Confirmed
 
 
+```text
+D17: the 'times the median' multiple lived only in the popover table and is dropped with it; the maintainer chose the Work Items dialog as it is, with its own columns and no extra lines (D14).
+```
+
+#### Status
+
+Confirmed
+
+
 ## Journey
 
 None.
