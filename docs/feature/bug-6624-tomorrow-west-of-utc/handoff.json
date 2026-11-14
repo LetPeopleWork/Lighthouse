@@ -31,7 +31,7 @@
 },
 "counters": {
 "E": 3,
-"F": 26,
+"F": 31,
 "P": 1,
 "S": 1
 },
@@ -68,30 +68,30 @@
 "E1": {
 "class": "observation_gap",
 "observations": [
-"F19",
-"F20",
-"F21",
-"F22"
+"F27",
+"F28",
+"F29",
+"F30"
 ],
 "verdict": "unmet"
 },
 "E2": {
 "class": "observation_gap",
 "observations": [
-"F19",
-"F20",
-"F21",
-"F22"
+"F27",
+"F28",
+"F29",
+"F30"
 ],
 "verdict": "unmet"
 },
 "E3": {
 "class": "observation_gap",
 "observations": [
-"F19",
-"F20",
-"F21",
-"F22"
+"F28",
+"F29",
+"F30",
+"F31"
 ],
 "verdict": "unmet"
 }
@@ -128,16 +128,17 @@
 "F16": "Tomorrow is accepted with no date error and Save is open; today, yesterday and a month ago are refused, and Save is blocked for today, with the message that the launch date must be in the future; a day with no such month is refused, never rolled into another year",
 "F17": "A user in the Americas can save a Delivery dated tomorrow; today and past dates stay blocked; a mistyped month cannot be saved",
 "F18": "A fix that accepts every future-looking date including today, only works at one time of day, fixes the field rule but not the Save gate, or accepts a month that rolls over is caught by the today and far-past rows, the two clock moments, the Save gate row and the impossible-month rows; an east-of-UTC run is caught by the offset check",
-"F19": "Probe frontend-tests deliveryFormRules: passing rows for the launch-date rule: no date, yesterday, today and tomorrow each judged by whether after today; yesterday, today and tomorrow each answered with the message that names its fix. No failing row in the output shown; output cut at 6000 bytes by my head filter.",
 "F2": "A team lead in any time zone can save a Delivery that launches tomorrow, and still cannot save one for today or the past.",
-"F20": "Probe frontend-tests westOfUtc: 1 file, 7 of 7 passed. Passing rows: clock-behind-UTC guard; tomorrow accepted and today and past refused in early morning and in late evening when UTC is already the next day; named launch dated tomorrow saved and today blocked; 2027-13-01 and 2027-00-10 refused as not on any calendar.",
-"F21": "Limit: no Delivery dialog in a browser was driven. Only Vitest rule-level rows under a faked west-of-UTC clock were observed. I did not capture the YYYY-MM-DD stimulus or its response myself, no time zone other than the faked clock, and no verbatim error text. Row names and pass marks are project test-suite output, not user-observed behavior.",
-"F22": "Non-probe: E1, E2 and E3 at dialog level (typed YYYY-MM-DD in the Delivery dialog, clock in America/New_York, tomorrow/today/yesterday) were not probed; no browser probe exists on the public surface. Only rule-level rows were observed.",
 "F23": "In a browser on a New York clock late in the evening, when the UTC calendar is already tomorrow, a user opens Add Launch, types a name, ticks a Deliverable and enters first tomorrow's date and then today's date",
 "F24": "Tomorrow shows no date message and Save is open; today shows the message 'Launch date must be in the future' and Save stays blocked",
 "F25": "The user can save a launch dated tomorrow and still cannot save one dated today",
 "F26": "A fix that clears the rule but leaves the dialog gate or message wrong would pass the rule rows and fail here; a dialog that accepts today along with tomorrow fails here",
+"F27": "Probe frontend-tests westOfUtc: 10 of 10 passed (deliveryFormRules.westOfUtc.test.ts, DeliveryCreateModal.westOfUtc.test.tsx). Rule rows: tomorrow accepted, today and past refused, early-morning and late-evening west clocks. Dialog rows: lets Save through for tomorrow with no date message; says 'Launch date must be in the future' and blocks Save for today. No dialog row for yesterday or any past date. Stimuli and assertions not visible.",
+"F28": "Probe frontend-tests deliveryFormRules: 33 of 33 passed. Default-zone rows: tomorrow, today, yesterday judged against today, plus message rows. West-of-UTC rows repeat the westOfUtc set. No row names a zone east of UTC or the America/New_York clock.",
+"F29": "Non-probe: no public surface drove the Delivery dialog with an America/New_York clock and YYYY-MM-DD input. Captured user-level stimulus and response for E1, E2, E3 absent.",
 "F3": "Tomorrow is accepted as a launch date in every time zone; today and the past stay refused",
+"F30": "Non-probe: no zone east of UTC and no zone-set clock beyond the suite west-of-UTC fixtures was captured. 'Every time zone' in E1 to E3 not established.",
+"F31": "Non-probe: dialog-level refusal of a past date (yesterday) and its message was not captured; only rule-level listing rows for yesterday exist.",
 "F4": "In a browser west of UTC, the Delivery dialog accepts tomorrow as a launch date and still refuses today and the past",
 "F5": "With the clock in America/New_York, the launch-date rule is asked about today, tomorrow and yesterday, each written as the YYYY-MM-DD string the date field holds",
 "F6": "Tomorrow is accepted with no date error; today and yesterday are refused with '<Delivery term> date must be in the future'",

@@ -111,19 +111,19 @@ unmet
 #### Observations
 
 ```text
-Probe frontend-tests deliveryFormRules: passing rows for the launch-date rule: no date, yesterday, today and tomorrow each judged by whether after today; yesterday, today and tomorrow each answered with the message that names its fix. No failing row in the output shown; output cut at 6000 bytes by my head filter.
+Probe frontend-tests westOfUtc: 10 of 10 passed (deliveryFormRules.westOfUtc.test.ts, DeliveryCreateModal.westOfUtc.test.tsx). Rule rows: tomorrow accepted, today and past refused, early-morning and late-evening west clocks. Dialog rows: lets Save through for tomorrow with no date message; says 'Launch date must be in the future' and blocks Save for today. No dialog row for yesterday or any past date. Stimuli and assertions not visible.
 ```
 
 ```text
-Probe frontend-tests westOfUtc: 1 file, 7 of 7 passed. Passing rows: clock-behind-UTC guard; tomorrow accepted and today and past refused in early morning and in late evening when UTC is already the next day; named launch dated tomorrow saved and today blocked; 2027-13-01 and 2027-00-10 refused as not on any calendar.
+Probe frontend-tests deliveryFormRules: 33 of 33 passed. Default-zone rows: tomorrow, today, yesterday judged against today, plus message rows. West-of-UTC rows repeat the westOfUtc set. No row names a zone east of UTC or the America/New_York clock.
 ```
 
 ```text
-Limit: no Delivery dialog in a browser was driven. Only Vitest rule-level rows under a faked west-of-UTC clock were observed. I did not capture the YYYY-MM-DD stimulus or its response myself, no time zone other than the faked clock, and no verbatim error text. Row names and pass marks are project test-suite output, not user-observed behavior.
+Non-probe: no public surface drove the Delivery dialog with an America/New_York clock and YYYY-MM-DD input. Captured user-level stimulus and response for E1, E2, E3 absent.
 ```
 
 ```text
-Non-probe: E1, E2 and E3 at dialog level (typed YYYY-MM-DD in the Delivery dialog, clock in America/New_York, tomorrow/today/yesterday) were not probed; no browser probe exists on the public surface. Only rule-level rows were observed.
+Non-probe: no zone east of UTC and no zone-set clock beyond the suite west-of-UTC fixtures was captured. 'Every time zone' in E1 to E3 not established.
 ```
 
 observation_gap
@@ -135,19 +135,19 @@ unmet
 #### Observations
 
 ```text
-Probe frontend-tests deliveryFormRules: passing rows for the launch-date rule: no date, yesterday, today and tomorrow each judged by whether after today; yesterday, today and tomorrow each answered with the message that names its fix. No failing row in the output shown; output cut at 6000 bytes by my head filter.
+Probe frontend-tests westOfUtc: 10 of 10 passed (deliveryFormRules.westOfUtc.test.ts, DeliveryCreateModal.westOfUtc.test.tsx). Rule rows: tomorrow accepted, today and past refused, early-morning and late-evening west clocks. Dialog rows: lets Save through for tomorrow with no date message; says 'Launch date must be in the future' and blocks Save for today. No dialog row for yesterday or any past date. Stimuli and assertions not visible.
 ```
 
 ```text
-Probe frontend-tests westOfUtc: 1 file, 7 of 7 passed. Passing rows: clock-behind-UTC guard; tomorrow accepted and today and past refused in early morning and in late evening when UTC is already the next day; named launch dated tomorrow saved and today blocked; 2027-13-01 and 2027-00-10 refused as not on any calendar.
+Probe frontend-tests deliveryFormRules: 33 of 33 passed. Default-zone rows: tomorrow, today, yesterday judged against today, plus message rows. West-of-UTC rows repeat the westOfUtc set. No row names a zone east of UTC or the America/New_York clock.
 ```
 
 ```text
-Limit: no Delivery dialog in a browser was driven. Only Vitest rule-level rows under a faked west-of-UTC clock were observed. I did not capture the YYYY-MM-DD stimulus or its response myself, no time zone other than the faked clock, and no verbatim error text. Row names and pass marks are project test-suite output, not user-observed behavior.
+Non-probe: no public surface drove the Delivery dialog with an America/New_York clock and YYYY-MM-DD input. Captured user-level stimulus and response for E1, E2, E3 absent.
 ```
 
 ```text
-Non-probe: E1, E2 and E3 at dialog level (typed YYYY-MM-DD in the Delivery dialog, clock in America/New_York, tomorrow/today/yesterday) were not probed; no browser probe exists on the public surface. Only rule-level rows were observed.
+Non-probe: no zone east of UTC and no zone-set clock beyond the suite west-of-UTC fixtures was captured. 'Every time zone' in E1 to E3 not established.
 ```
 
 observation_gap
@@ -159,19 +159,19 @@ unmet
 #### Observations
 
 ```text
-Probe frontend-tests deliveryFormRules: passing rows for the launch-date rule: no date, yesterday, today and tomorrow each judged by whether after today; yesterday, today and tomorrow each answered with the message that names its fix. No failing row in the output shown; output cut at 6000 bytes by my head filter.
+Probe frontend-tests deliveryFormRules: 33 of 33 passed. Default-zone rows: tomorrow, today, yesterday judged against today, plus message rows. West-of-UTC rows repeat the westOfUtc set. No row names a zone east of UTC or the America/New_York clock.
 ```
 
 ```text
-Probe frontend-tests westOfUtc: 1 file, 7 of 7 passed. Passing rows: clock-behind-UTC guard; tomorrow accepted and today and past refused in early morning and in late evening when UTC is already the next day; named launch dated tomorrow saved and today blocked; 2027-13-01 and 2027-00-10 refused as not on any calendar.
+Non-probe: no public surface drove the Delivery dialog with an America/New_York clock and YYYY-MM-DD input. Captured user-level stimulus and response for E1, E2, E3 absent.
 ```
 
 ```text
-Limit: no Delivery dialog in a browser was driven. Only Vitest rule-level rows under a faked west-of-UTC clock were observed. I did not capture the YYYY-MM-DD stimulus or its response myself, no time zone other than the faked clock, and no verbatim error text. Row names and pass marks are project test-suite output, not user-observed behavior.
+Non-probe: no zone east of UTC and no zone-set clock beyond the suite west-of-UTC fixtures was captured. 'Every time zone' in E1 to E3 not established.
 ```
 
 ```text
-Non-probe: E1, E2 and E3 at dialog level (typed YYYY-MM-DD in the Delivery dialog, clock in America/New_York, tomorrow/today/yesterday) were not probed; no browser probe exists on the public surface. Only rule-level rows were observed.
+Non-probe: dialog-level refusal of a past date (yesterday) and its message was not captured; only rule-level listing rows for yesterday exist.
 ```
 
 observation_gap
