@@ -106,6 +106,21 @@ describe("a date to launch on has to be a day still to come", () => {
 		).toBe(accepted);
 	});
 
+	// Each string carries tomorrow inside it, so only the rule's insistence on a bare day refuses it.
+	it.each([
+		["tomorrow with a time after it", `${dayOnThisBrowsersCalendar(1)}T00:00`],
+		["tomorrow with text before it", `x${dayOnThisBrowsersCalendar(1)}`],
+		["words instead of a day", "next Tuesday"],
+	])(
+		"%s is refused, because the field only ever holds a bare day",
+		(_case, date) => {
+			expect(
+				isValidFutureDate(date),
+				`${_case} (${date}) must be refused: the date field holds YYYY-MM-DD and nothing else; fix the rule so it accepts only the whole string as a day`,
+			).toBe(false);
+		},
+	);
+
 	it.each([
 		["no date at all", "", "Launch date is required"],
 		[
