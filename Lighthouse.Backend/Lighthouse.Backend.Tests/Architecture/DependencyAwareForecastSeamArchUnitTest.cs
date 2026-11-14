@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private const string TheUpdateComponents =
-            @"^Lighthouse\.Backend\.Services\.Implementation\.BackgroundServices\.Update$|^Lighthouse\.Backend\.Modules\.Forecasting\.Adapters\.Background(\.|$)";
+            @"^Lighthouse\.Backend\.Services\.Implementation\.BackgroundServices\.Update(\.|$)|^Lighthouse\.Backend\.Modules\.Forecasting\.Adapters\.Background(\.|$)";
 
         // Its async methods compile into nested types beside it, and those are the updater too.
         private static readonly string TheOnlyOneThatMayForecastAndItsNestedTypes =

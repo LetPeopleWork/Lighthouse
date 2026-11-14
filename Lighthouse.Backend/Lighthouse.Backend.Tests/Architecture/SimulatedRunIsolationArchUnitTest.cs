@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private const string TheForecastComponents =
-            @"^Lighthouse\.Backend\.Services\.Implementation\.Forecast$|^Lighthouse\.Backend\.Modules\.Forecasting(\.|$)";
+            @"^Lighthouse\.Backend\.Services\.Implementation\.Forecast(\.|$)|^Lighthouse\.Backend\.Modules\.Forecasting(\.|$)";
 
         [Test]
         public void WhatEverySimulatedRunReads_CannotBeWrittenTo()
