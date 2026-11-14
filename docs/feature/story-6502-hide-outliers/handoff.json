@@ -298,10 +298,10 @@
 "obligations": [
 "L1"
 ],
-"still_passes_if": "F401",
+"still_passes_if": "F435",
 "test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx"
 },
-"expected": "F399",
+"expected": "F434",
 "stimulus": "F398",
 "user_result": "F400"
 },
@@ -330,10 +330,10 @@
 "obligations": [
 "L4/F381"
 ],
-"still_passes_if": "F409",
+"still_passes_if": "F437",
 "test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx"
 },
-"expected": "F407",
+"expected": "F436",
 "stimulus": "F406",
 "user_result": "F408"
 },
@@ -443,7 +443,7 @@
 "C": 2,
 "D": 14,
 "E": 5,
-"F": 433,
+"F": 437,
 "K": 3,
 "L": 4,
 "P": 5,
@@ -2043,18 +2043,14 @@
 "F396": "Information only in colour or only in the removed popover",
 "F397": "The accessible name carries the full text; amber is not the only signal since the label and icon remain",
 "F398": "A reader clicks the amber chip on Team Zenith's closed set (median 6 days, one 58-day item)",
-"F399": "The Work Items dialog opens at once, titled with the more-than-5-times-the-median wording, listing only TZ-301; no popover, no extra step; OutlierListOpened is sent once",
 "F40": "For every closed set, the cut is 5 x the backend-convention 50th percentile of the full set, and an item is an outlier iff its Cycle Time is strictly above the cut; drawn and outliers partition the set, order kept",
 "F400": "One click shows the outlier list",
-"F401": "A popover with an Open in a list button first, or an event with the old name, or an event sent twice",
 "F402": "A keyboard reader presses Enter on the chip, closes the list, and opens it again",
 "F403": "The list opens on Enter, focus returns to the chip on close, and each opening is reported once",
 "F404": "The keyboard reader reaches the list and keeps their place",
 "F405": "Focus lost to the page body after close, or Enter doing nothing",
 "F406": "The chip is read ready, at phone width, and while loading",
-"F407": "Border, icon and text are amber (warning colour) in all three; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked",
 "F408": "The reader notices the amber chip at any width and never sees a stale count",
-"F409": "A plain grey chip at some width or while loading, or a click on the loading chip opening the list",
 "F41": "arrays of positive integers (Cycle Time days) with duplicates and with items placed exactly at, one below and one above the cut",
 "F410": "The chip name and tooltip are read with no line above the axis, and with the 95% line and the SLE above it",
 "F411": "Name equals tooltip: n outlier(s) not drawn on the chart, then the Above the axis sentence only when a line is above, then Show the list",
@@ -2082,6 +2078,10 @@
 "F431": "OutlierListOpened keeps number 27 after the last named event and carries only its name",
 "F432": "Usage counts follow the new name",
 "F433": "Old name kept",
+"F434": "The Work Items dialog opens at once, titled with the more-than-5-times-the-median wording, listing only TZ-301, receiving no props beyond its list, title and existing context; no popover, no extra step; OutlierListOpened is sent once",
+"F435": "A popover with an Open in a list button first, extra dialog content, an event with the old name, or an event sent twice",
+"F436": "Border, icon and text use the app's amber warning colour in all three, each in its own scenario; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked",
+"F437": "A plain grey chip or default MUI orange at some width or while loading, or a click on the loading chip opening the list",
 "F44": "item exactly at the cut",
 "F45": "all items equal",
 "F46": "fast-check built-in array and integer shrinking",

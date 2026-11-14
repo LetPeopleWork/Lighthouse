@@ -1,4 +1,4 @@
-import { createTheme } from "@mui/material";
+import { ThemeProvider } from "@mui/material/styles";
 import {
 	fireEvent,
 	render,
@@ -6,15 +6,21 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import WidgetShell from "../../../pages/Common/MetricsView/WidgetShell";
 import type { WidgetStatus } from "../../../pages/Common/MetricsView/widgetStatus";
 import { testTheme } from "../../../tests/testTheme";
+import { lightTheme } from "../../../utils/theme/appThemes";
+import { appColors } from "../../../utils/theme/colors";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 
-const { reportUsage } = vi.hoisted(() => ({ reportUsage: vi.fn() }));
+const { reportUsage, dialogProps } = vi.hoisted(() => ({
+	reportUsage: vi.fn(),
+	dialogProps: [] as Record<string, unknown>[],
+}));
 
 vi.mock("../../../services/UsageData/usageDataReporter", async (original) => ({
 	...(await original<
@@ -33,18 +39,15 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", async () => {
 	const { Dialog, DialogTitle } =
 		await vi.importActual<typeof import("@mui/material")>("@mui/material");
 	return {
-		default: ({
-			title,
-			items,
-			open,
-			onClose,
-		}: {
+		default: (props: {
 			title: string;
 			items: IWorkItem[];
 			open: boolean;
 			onClose: () => void;
-		}) =>
-			open ? (
+		}) => {
+			dialogProps.push(props);
+			const { title, items, open, onClose } = props;
+			return open ? (
 				<Dialog open onClose={onClose}>
 					<DialogTitle>{title}</DialogTitle>
 					<ul aria-label="Listed Work Items">
@@ -56,7 +59,8 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", async () => {
 						Close the list
 					</button>
 				</Dialog>
-			) : null,
+			) : null;
+		},
 	};
 });
 
@@ -79,7 +83,7 @@ vi.mock("@mui/x-charts", async () => {
 });
 
 const WIDGET_KEY = "cycleScatter";
-const AMBER = createTheme().palette.warning.main;
+const AMBER = appColors.status.warning;
 
 const closedItem = (
 	referenceId: string,
@@ -129,19 +133,21 @@ const chartIn = (
 	sleValue: number,
 	status: WidgetStatus,
 ) => (
-	<WidgetShell
-		widgetKey={WIDGET_KEY}
-		title="Cycle Time scatterplot"
-		status={status}
-		hasContentToDim
-	>
-		<CycleTimeScatterPlotChart
-			ownerKind="team"
-			percentileValues={percentiles(p95)}
-			cycleTimeDataPoints={items}
-			serviceLevelExpectation={{ percentile: 85, value: sleValue }}
-		/>
-	</WidgetShell>
+	<ThemeProvider theme={lightTheme}>
+		<WidgetShell
+			widgetKey={WIDGET_KEY}
+			title="Cycle Time scatterplot"
+			status={status}
+			hasContentToDim
+		>
+			<CycleTimeScatterPlotChart
+				ownerKind="team"
+				percentileValues={percentiles(p95)}
+				cycleTimeDataPoints={items}
+				serviceLevelExpectation={{ percentile: 85, value: sleValue }}
+			/>
+		</WidgetShell>
+	</ThemeProvider>
 );
 
 // Team Zenith's lines sit below the axis: the 95% line is at 15 days and the SLE at 7.
@@ -197,6 +203,7 @@ const viewportWidth = (isPhone: boolean) =>
 describe("The outlier chip is a plain amber button that lists the outliers", () => {
 	beforeEach(() => {
 		reportUsage.mockClear();
+		dialogProps.length = 0;
 		viewportWidth(false);
 	});
 
@@ -220,19 +227,28 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 			"One click on the chip must open the Work Items list; do not put a popover or a second button first.",
 		).toBeVisible();
 		expect(listedIds()).toEqual(["TZ-301"]);
+		// Nothing beyond the list and its title goes to the dialog.
+		expect(
+			Object.keys(dialogProps[dialogProps.length - 1] ?? {}).sort((a, b) =>
+				a.localeCompare(b),
+			),
+		).toEqual(["context", "items", "onClose", "open", "ownerKind", "title"]);
 		expect(screen.getAllByRole("dialog")).toHaveLength(1);
-		expect(screen.queryByRole("button", { name: "Open in a list" })).toBeNull();
-		expect(screen.queryByText(/Not drawn: longer than/)).toBeNull();
+		expect(
+			screen.queryAllByRole("button", { name: "Open in a list" }),
+		).toHaveLength(0);
+		expect(screen.queryAllByText(/Not drawn: longer than/)).toHaveLength(0);
 		expect(document.querySelector(".MuiPopover-root")).toBeNull();
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 		expect(reportUsage).toHaveBeenCalledWith({ name: "OutlierListOpened" });
 	});
 
 	it("opens the list from the keyboard and hands focus back to the chip when it closes, reporting every opening", async () => {
+		const user = userEvent.setup();
 		showChart();
 		outlierChip().focus();
 
-		fireEvent.keyDown(outlierChip(), { key: "Enter" });
+		await user.keyboard("{Enter}");
 
 		expect(listedIds()).toEqual(["TZ-301"]);
 		await waitFor(() =>
@@ -245,28 +261,32 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 		expect(screen.queryByRole("dialog")).toBeNull();
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 
-		fireEvent.click(outlierChip());
+		await user.click(outlierChip());
 
 		expect(listedIds()).toEqual(["TZ-301"]);
 		expect(reportUsage).toHaveBeenCalledTimes(2);
 	});
 
-	it("is amber outlined when ready, with the same text as its accessible name and its tooltip", async () => {
+	it("names the chip and its tooltip the same when no line is above the axis", async () => {
 		showChart();
 
-		expectAmberOutlined(outlierChip());
 		expect(outlierChip()).toHaveAccessibleName(
 			"1 outlier not drawn on the chart. Show the list.",
 		);
 		expect(await shownTooltip()).toBe(
 			"1 outlier not drawn on the chart. Show the list.",
 		);
+	});
+
+	it("is amber outlined when ready", () => {
+		showChart();
+
+		expectAmberOutlined(outlierChip());
 	});
 
 	it("names the lines above the axis in its accessible name and its tooltip only when there are some", async () => {
 		showChart(withSecondOutlier(), 33, 35);
 
-		expectAmberOutlined(outlierChip());
 		expect(outlierChip()).toHaveAccessibleName(
 			"2 outliers not drawn on the chart. Above the axis: 95% at 33 days, SLE at 35 days. Show the list.",
 		);
@@ -275,18 +295,31 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 		);
 	});
 
-	it("stays amber at phone width with the count beside the icon", () => {
+	it("shows only the count at phone width and keeps its accessible name", () => {
 		viewportWidth(true);
 		showChart();
 
-		expectAmberOutlined(outlierChip());
 		expect(outlierChip()).toHaveTextContent(/^1$/);
 		expect(outlierChip()).toHaveAccessibleName(
 			"1 outlier not drawn on the chart. Show the list.",
 		);
 	});
 
-	it("shows a disabled amber Outliers chip with no count while loading, and opens and reports nothing when clicked", () => {
+	it("stays amber outlined at phone width", () => {
+		viewportWidth(true);
+		showChart();
+
+		expectAmberOutlined(outlierChip());
+	});
+
+	it("shows a disabled amber Outliers chip while loading", () => {
+		const view = showChart();
+		view.rerender(chartIn(teamZenith(), 15, 7, "loading"));
+
+		expectAmberOutlined(outlierChip());
+	});
+
+	it("shows a disabled Outliers chip with no count while loading, and opens and reports nothing when clicked", () => {
 		const view = showChart();
 		view.rerender(chartIn(teamZenith(), 15, 7, "loading"));
 
@@ -294,7 +327,6 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 		expect(chip.matches(":disabled, [aria-disabled='true']")).toBe(true);
 		expect(chip).toHaveTextContent(/^Outliers$/);
 		expect(chip).not.toHaveAccessibleName(/\d/);
-		expectAmberOutlined(chip);
 
 		fireEvent.click(chip);
 

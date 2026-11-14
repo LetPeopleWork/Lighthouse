@@ -635,7 +635,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A reader clicks the amber chip on Team Zenith&#x27;s closed set (median 6 days, one 58-day item)
 </code></pre>
 
-<pre><code>The Work Items dialog opens at once, titled with the more-than-5-times-the-median wording, listing only TZ-301; no popover, no extra step; OutlierListOpened is sent once
+<pre><code>The Work Items dialog opens at once, titled with the more-than-5-times-the-median wording, listing only TZ-301, receiving no props beyond its list, title and existing context; no popover, no extra step; OutlierListOpened is sent once
 </code></pre>
 
 <pre><code>One click shows the outlier list
@@ -647,7 +647,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx</p>
 
-<pre><code>A popover with an Open in a list button first, or an event with the old name, or an event sent twice
+<pre><code>A popover with an Open in a list button first, extra dialog content, an event with the old name, or an event sent twice
 </code></pre>
 
 <h6>Obligations</h6>
@@ -685,7 +685,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The chip is read ready, at phone width, and while loading
 </code></pre>
 
-<pre><code>Border, icon and text are amber (warning colour) in all three; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked
+<pre><code>Border, icon and text use the app&#x27;s amber warning colour in all three, each in its own scenario; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked
 </code></pre>
 
 <pre><code>The reader notices the amber chip at any width and never sees a stale count
@@ -697,7 +697,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx</p>
 
-<pre><code>A plain grey chip at some width or while loading, or a click on the loading chip opening the list
+<pre><code>A plain grey chip or default MUI orange at some width or while loading, or a click on the loading chip opening the list
 </code></pre>
 
 <h6>Obligations</h6>

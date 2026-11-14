@@ -560,7 +560,7 @@ A reader clicks the amber chip on Team Zenith's closed set (median 6 days, one 5
 ```
 
 ```text
-The Work Items dialog opens at once, titled with the more-than-5-times-the-median wording, listing only TZ-301; no popover, no extra step; OutlierListOpened is sent once
+The Work Items dialog opens at once, titled with the more-than-5-times-the-median wording, listing only TZ-301, receiving no props beyond its list, title and existing context; no popover, no extra step; OutlierListOpened is sent once
 ```
 
 ```text
@@ -574,7 +574,7 @@ Tested
 Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierChip\.test\.tsx
 
 ```text
-A popover with an Open in a list button first, or an event with the old name, or an event sent twice
+A popover with an Open in a list button first, extra dialog content, an event with the old name, or an event sent twice
 ```
 
 ###### Obligations
@@ -618,7 +618,7 @@ The chip is read ready, at phone width, and while loading
 ```
 
 ```text
-Border, icon and text are amber (warning colour) in all three; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked
+Border, icon and text use the app's amber warning colour in all three, each in its own scenario; loading shows a disabled Outliers chip with no count that opens and reports nothing when clicked
 ```
 
 ```text
@@ -632,7 +632,7 @@ Tested
 Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierChip\.test\.tsx
 
 ```text
-A plain grey chip at some width or while loading, or a click on the loading chip opening the list
+A plain grey chip or default MUI orange at some width or while loading, or a click on the loading chip opening the list
 ```
 
 ###### Obligations

@@ -169,8 +169,8 @@ describe("Cycle Time scatterplot opens the outliers in the Work Items list", () 
 
 		openTheList();
 
-		expect(screen.queryByText(/Open in a list|and 1 more/)).toBeNull();
-		expect(screen.queryByText(/Not drawn: longer than/)).toBeNull();
+		expect(screen.queryAllByText(/Open in a list|and 1 more/)).toHaveLength(0);
+		expect(screen.queryAllByText(/Not drawn: longer than/)).toHaveLength(0);
 		expect(
 			within(dialog()).getByText(
 				"Work Items with a Cycle Time more than 5 times the median",

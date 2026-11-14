@@ -274,14 +274,19 @@ describe("The outlier chip stays truthful while the reader changes the view", ()
 		expect(drawnHeights()).toEqual([20, 22, 24, 24, 26, 58]);
 		expect(axisTop()).toBeCloseTo(63.8, 5);
 
-		// A faster range: 20 days is now long next to a median of 2, and the cut is 10 days.
-		view.rerender(chartOf(closedSet([1, 2, 2, 2, 3], 20, 4)));
+		// A faster range: the median is 2 and the cut is 10 days. 20 and 11 days are over it, 10 days is exactly on it and stays drawn.
+		view.rerender(
+			chartOf([
+				...closedSet([1, 2, 2, 2, 3], 20, 4),
+				closedItem("TZ-401", 10, new Date(2026, 4, 20)),
+				closedItem("TZ-402", 11, new Date(2026, 4, 21)),
+			]),
+		);
 
-		expect(outlierChip()).toHaveTextContent("1 outlier");
-		expect(drawnHeights()).toEqual([1, 2, 2, 2, 3]);
-		expect(axisTop()).toBeCloseTo(3.3, 5);
+		expect(outlierChip()).toHaveTextContent("2 outliers");
+		expect(drawnHeights()).toEqual([1, 2, 2, 2, 3, 10]);
 		fireEvent.click(outlierChip());
-		expect(listedIds()).toEqual(["TZ-301"]);
+		expect(listedIds()).toEqual(["TZ-301", "TZ-402"]);
 	});
 
 	it("shows no count of the previous range while the next range loads", () => {
