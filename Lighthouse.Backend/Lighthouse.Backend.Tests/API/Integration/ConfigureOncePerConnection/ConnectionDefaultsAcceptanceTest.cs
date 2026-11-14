@@ -311,25 +311,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             ThenTheSaveIsAccepted();
         }
 
-        protected async Task GivenTheTeamOwns(string team, string fieldName)
-        {
-            await WhenTheOwnersAdminSaves(team, OwnerSetting.ParentOverrideField, fieldName, Source.Own);
-            ThenTheOwnerSaveIsAccepted();
-        }
-
         /// <summary>Every Feature the tracker holds carries this size in the named field; any other field is empty.</summary>
         protected void GivenEveryFeatureHoldsTheSizeIn(string fieldName, int size) => theSizeEveryFeatureHoldsIn[fieldName] = size;
 
         /// <summary>Every Feature the tracker holds names this Team in the named field; any other field is empty.</summary>
         protected void GivenEveryFeatureNamesItsOwnerIn(string fieldName, string team) => theOwnerEveryFeatureNamesIn[fieldName] = team;
-
-        protected async Task GivenEveryTeamOwnsItsParentOverrideField()
-        {
-            foreach (var team in TheThreeFollowers)
-            {
-                await GivenTheTeamOwns(team, ParentLink);
-            }
-        }
 
         protected async Task GivenEveryTeamAndPortfolioHasBeenUpdatedOnce()
         {
@@ -477,10 +463,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 ? TheTrackersOwnParentSource
                 : TheFieldNamedIn(connectionRead, connection, entry["additionalFieldDefinitionId"]!.GetValue<int>())!)];
 
-        /// <summary>The default is sent as empty: the admin cleared it.</summary>
-        protected Task WhenTheAdminClearsTheDefault(ConnectionDefault theDefault)
-            => SaveTheConnection(read => DefaultsOf(read)[TheMember(theDefault)] = null, startUpdates: false);
-
         /// <summary>
         /// A page or script that does not know one default renames the connection: it sends the defaults it
         /// read, without that one.
@@ -536,18 +518,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         // --- When: an owner's admin, or a script, saves a Team's or Portfolio's settings ---
-
-        /// <summary>
-        /// The owner's settings page saves the setting with the source it shows. A null field is None; a null
-        /// source is a client that does not know about sources.
-        /// </summary>
-        protected async Task WhenTheOwnersAdminSaves(string owner, OwnerSetting setting, string? fieldName, Source? source)
-        {
-            await SetTheRestAside();
-            var settings = await TheSettingsOf(owner);
-            SetTheOwnersValue(settings, setting, fieldName is null ? null : await TheFieldId(JiraDcPayments, fieldName), source);
-            await PutTheOwner(owner, settings);
-        }
 
         /// <summary>An owner saved with a field of another connection as its own value.</summary>
         protected async Task WhenTheOwnersAdminSavesAFieldOf(string owner, string connection, string fieldName)
