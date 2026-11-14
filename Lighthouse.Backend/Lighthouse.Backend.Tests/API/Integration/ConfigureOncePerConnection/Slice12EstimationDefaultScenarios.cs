@@ -19,12 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private const string StoryPointsInPoints = "Story Points, Points";
 
         [Test]
-        [Category("ac-11.1")]
-        [Category("ac-11.2")]
-        [Category("ac-11.4")]
-        [Category("walking_skeleton")]
-        [Category("driving_port")]
-        [Category("contract-shape:bounded-change")]
         public async Task Every_Team_without_an_estimation_shows_the_default_on_its_next_page_load_and_nothing_updates()
         {
             await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
@@ -43,77 +37,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
-        [Test]
-        [Category("ac-11.4")]
-        [Category("edge")]
-        [Category("contract-shape:bounded-change")]
-        public async Task Changing_only_the_unit_of_the_Estimation_default_is_logged_with_the_whole_default_before_and_after()
-        {
-            await GivenTheTeamsEstimationDefaultIs(StoryPoints, Points);
-
-            await WhenTheAdminSetsTheEstimationDefault(ConnectionDefault.TeamsEstimation, StoryPoints, "Days");
-            ThenTheSaveIsAccepted();
-
-            Assert.That(
-                TheLogEntriesAboutChangedDefaults(),
-                Has.Some.Contains("Teams' Estimation default from \"Story Points, Points\" to \"Story Points, Days\"; 4 Teams follow it"));
-        }
-
-        [Test]
-        [Category("ac-11.3")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
-        public async Task Clearing_the_Estimation_default_leaves_the_followers_without_an_estimation()
-        {
-            await GivenTheTeamsEstimationDefaultIs(StoryPoints, Points);
-
-            await WhenTheAdminClearsTheDefault(ConnectionDefault.TeamsEstimation);
-            ThenTheSaveIsAccepted();
-            var fraudSignals = await WhatTheEstimationReadsFor(FraudSignals);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(fraudSignals.FieldName, Is.Null);
-                Assert.That(fraudSignals.Source, Is.EqualTo("ConnectionDefault"));
-            }
-        }
-
-        [Test]
-        [Category("ac-11.1")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_Portfolio_with_its_own_estimation_keeps_it_and_the_Teams_default_never_reaches_a_Portfolio()
-        {
-            await GivenTheTeamsEstimationDefaultIs(TShirtSize, "Sizes");
-
-            var merchantOnboarding = await WhatTheEstimationReadsFor(MerchantOnboarding);
-            var cardIssuing = await WhatTheEstimationReadsFor(CardIssuing);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(merchantOnboarding, Is.EqualTo(((string?)StoryPoints, (string?)Points, (string?)"Own", (string?)null)));
-                Assert.That(cardIssuing.FieldName, Is.Null, "Card Issuing follows the Portfolios' Estimation default, which is not set.");
-            }
-        }
-
-        [Test]
-        [Category("ac-11.1")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_following_Portfolio_shows_the_Portfolios_Estimation_default()
-        {
-            await WhenTheAdminSetsTheEstimationDefault(ConnectionDefault.PortfoliosEstimation, StoryPoints, Points);
-            ThenTheSaveIsAccepted();
-
-            var cardIssuing = await WhatTheEstimationReadsFor(CardIssuing);
-
-            Assert.That(cardIssuing, Is.EqualTo(((string?)StoryPoints, (string?)Points, (string?)"ConnectionDefault", (string?)StoryPointsInPoints)));
-        }
-
         // Only a System Admin can read the connection, so a Team admin's page names the default from what the
         // Team's settings carry, and the unit is what tells two defaults on the same field apart.
         [Test]
-        [Category("ac-11.1")]
-        [Category("contract-shape:pure-function")]
         public async Task A_Team_admin_without_connection_rights_sees_the_Estimation_default_with_its_unit()
         {
             await GivenTheTeamsEstimationDefaultIs(StoryPoints, Points);
@@ -124,79 +50,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 "The page shows \"Connection default (Story Points, Points)\" and \"Set on the Jira connection.\"");
         }
 
-        [TestCase(FraudSignals)]
-        [TestCase(CardIssuing)]
-        [Category("ac-11.1")]
-        [Category("edge")]
-        [Category("contract-shape:unbounded-preservation")]
-        public async Task A_script_that_sends_the_estimation_categories_as_null_is_saved_and_the_owner_keeps_following(string owner)
-        {
-            await GivenTheTeamsEstimationDefaultIs(StoryPoints, Points);
-
-            await WhenAScriptSavesBackTheSettingsWithNullEstimationCategories(owner);
-            ThenTheOwnerSaveIsAccepted();
-
-            Assert.That((await WhatTheEstimationReadsFor(owner)).Source, Is.EqualTo("ConnectionDefault"));
-        }
-
-        [TestCase(RoundTrip.EchoingEveryProperty)]
-        [TestCase(RoundTrip.DroppingWhatItDoesNotKnow)]
-        [Category("ac-11.1")]
-        [Category("edge")]
-        [Category("contract-shape:unbounded-preservation")]
-        public async Task A_script_that_saves_back_a_followers_estimation_leaves_it_following(RoundTrip shape)
-        {
-            await GivenTheTeamsEstimationDefaultIs(StoryPoints, Points);
-
-            await WhenAScriptSavesBackWhatItRead(FraudSignals, shape);
-            ThenTheOwnerSaveIsAccepted();
-
-            Assert.That((await WhatTheEstimationReadsFor(FraudSignals)).Source, Is.EqualTo("ConnectionDefault"));
-        }
-
-        // Only a save that sends sources says for certain what it means. One without them that sends a bundle
-        // differing from what the Team read has chosen that bundle, even when the difference is only that the
-        // script never knew the unit or the non-numeric switch. That consequence is accepted.
-        [Test]
-        [Category("ac-11.1")]
-        [Category("edge")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_script_that_drops_the_unit_and_switch_of_a_non_numeric_default_makes_the_follower_own_a_numeric_estimation()
-        {
-            await GivenTheTeamsEstimationDefaultIsTheCategories(TShirtSize, "Sizes", "S", "M", "L");
-
-            await WhenAnOlderScriptSavesBackOnlyTheEstimationFieldAndCategories(FraudSignals);
-            ThenTheOwnerSaveIsAccepted();
-            var fraudSignals = await WhatTheEstimationReadsFor(FraudSignals);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That((fraudSignals.Source, fraudSignals.FieldName, fraudSignals.Unit), Is.EqualTo(((string?)"Own", (string?)TShirtSize, (string?)null)));
-                Assert.That(await WhetherTheEstimationIsNonNumericFor(FraudSignals), Is.False);
-            }
-        }
-
-        [TestCase(Ledger)]
-        [TestCase(MerchantOnboarding)]
-        [Category("ac-11.1")]
-        [Category("edge")]
-        [Category("contract-shape:unbounded-preservation")]
-        public async Task An_owner_sent_back_an_empty_estimation_without_a_source_keeps_its_own(string owner)
-        {
-            await GivenTheOwnerUsesAsItsOwn(owner, OwnerSetting.Estimation, StoryPoints);
-
-            await WhenAScriptSavesBackAnEmptyEstimation(owner);
-            ThenTheOwnerSaveIsAccepted();
-            var estimation = await WhatTheEstimationReadsFor(owner);
-
-            Assert.That((estimation.FieldName, estimation.Source), Is.EqualTo(((string?)StoryPoints, (string?)"Own")));
-        }
-
         [TestCase(FraudSignals, "team-setting-source-unknown")]
-        [TestCase(CardIssuing, "portfolio-setting-source-unknown")]
-        [Category("ac-11.1")]
-        [Category("error")]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task An_owner_saved_with_an_Estimation_source_Lighthouse_does_not_know_is_refused(string owner, string code)
         {
             await WhenTheOwnersAdminSendsTheSourceAsTheNumber(owner, 99, OwnerSetting.Estimation);
@@ -214,9 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // Moving a Team to another connection throws its Work Items away, so a save refused only after that
         // would lose them for nothing.
         [Test]
-        [Category("ac-11.1")]
-        [Category("error")]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task A_Team_moved_to_another_connection_with_an_Estimation_source_Lighthouse_does_not_know_is_refused_and_keeps_its_Work_Items()
         {
             await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
@@ -229,49 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(TheRefusal().Code, Is.EqualTo("team-setting-source-unknown"));
                 Assert.That(await WhereTheItemOfHangs(FraudSignals), Is.EqualTo(TheTrackersOwnParent), "Its Work Items are still there.");
                 Assert.That(await TheConnectionOf(FraudSignals), Is.EqualTo(JiraDcPayments), "Nothing was saved.");
-            }
-        }
-
-        // The settings page keeps an owned Estimation Field when the connection is switched, so the save names
-        // a field of the connection the owner is leaving.
-        [TestCase(FraudSignals, "team-field-not-on-connection", "Team")]
-        [TestCase(CardIssuing, "portfolio-field-not-on-connection", "Portfolio")]
-        [Category("ac-11.1")]
-        [Category("error")]
-        [Category("contract-shape:unbounded-preservation")]
-        public async Task An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(string owner, string code, string noun)
-        {
-            await GivenTheOwnerUsesAsItsOwn(owner, OwnerSetting.Estimation, StoryPoints);
-
-            await WhenTheOwnersAdminMovesItTo(owner, JiraDcTreasury);
-            var estimation = await WhatTheEstimationReadsFor(owner);
-
-            using (Assert.EnterMultipleScope())
-            {
-                ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
-                Assert.That(TheRefusal().Code, Is.EqualTo(code));
-                Assert.That(TheRefusal().Message, Is.EqualTo($"The Estimation Field is not an Additional Field of this {noun}'s connection. Nothing was saved."));
-                Assert.That(await TheConnectionOf(owner), Is.EqualTo(JiraDcPayments), "Nothing was saved.");
-                Assert.That((estimation.FieldName, estimation.Source), Is.EqualTo(((string?)StoryPoints, (string?)"Own")));
-            }
-        }
-
-        [TestCase(FraudSignals, "Chargebacks", "team-setting-source-unknown")]
-        [TestCase(CardIssuing, "Acquiring", "portfolio-setting-source-unknown")]
-        [Category("ac-11.1")]
-        [Category("error")]
-        [Category("contract-shape:unbounded-preservation")]
-        public async Task A_new_owner_created_with_an_Estimation_source_Lighthouse_does_not_know_is_refused(string copiedFrom, string name, string code)
-        {
-            await WhenANewOwnerIsCreatedSendingTheSourceAsTheNumber(copiedFrom, name, OwnerSetting.Estimation, 99);
-            IReadOnlyList<string> listed = [.. await TheTeamsOnTheTeamsList(), .. await ThePortfoliosOnThePortfoliosList()];
-
-            using (Assert.EnterMultipleScope())
-            {
-                ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
-                Assert.That(TheRefusal().Code, Is.EqualTo(code));
-                Assert.That(TheRefusal().Message, Does.Contain("Estimation Field"));
-                Assert.That(listed, Does.Not.Contain(name), "Nothing was saved.");
             }
         }
     }

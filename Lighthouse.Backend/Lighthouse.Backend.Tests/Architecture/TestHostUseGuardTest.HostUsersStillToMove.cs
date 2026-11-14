@@ -47,7 +47,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice05bReferencedFieldsAndOlderPayloadsScenarios",
             "Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice06DefaultChangeUpdatesTheFollowersScenarios",
             "Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice08PortfoliosParentOverrideDefaultScenarios",
-            "Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice09PortfoliosDependencyFieldDefaultScenarios",
             "Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice10PortfoliosSizeEstimateFieldDefaultScenarios",
             "Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice11PortfoliosFeatureOwnerFieldDefaultScenarios",
             "Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice12EstimationDefaultScenarios",
