@@ -367,6 +367,86 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the four host classes and the unit classes, and compare their test ids with the expected lists
+</code></pre>
+
+<pre><code>Each host class holds only the rows the id table keeps as wire or end-to-end rows; the 27 removed rows are listed as extra until the craft removes them; every expected id is present and passes
+</code></pre>
+
+<pre><code>The backend Integration tier runs 27 fewer host rows, each rule now proven by a unit or save-service row
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6537-b-configure-suite/evidence/s4_compare_ids.py</p>
+
+<pre><code>A removed host row stays on the host, which the extra-id and guard-line lines of the oracle report
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Apply one deliberate break to the production line each removed row walked and run the unit classes
+</code></pre>
+
+<pre><code>Each removed host row maps in the id table to a named unit row, and each break turns that row red
+</code></pre>
+
+<pre><code>No rule loses its test when the host rows go
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6537-b-configure-suite/evidence/s4_breaks.py</p>
+
+<pre><code>A unit row that passes whatever the production line does; two halves have no break and are named residual risks: no update queued for an Estimation default, and Work Items kept on a refused move
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Check the diff against the merge base for production, time budget and guard-list changes
+</code></pre>
+
+<pre><code>No production or budget file changed, no guard-list line was added, only the Slice09 line is admitted to leave, and Slice12, Slice10 and Slice11 keep at least one host row each
+</code></pre>
+
+<pre><code>The wiring is still proven by a host row per route and nothing in production changed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6537-b-configure-suite/evidence/s4_compare_ids.py</p>
+
+<pre><code>A production file edited alongside the tests, which the oracle lists as CHANGED
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

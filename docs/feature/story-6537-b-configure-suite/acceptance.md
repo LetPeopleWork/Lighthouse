@@ -250,6 +250,98 @@ a production file is edited or a guard line is added
 
 None.
 
+### S4
+
+##### Covers
+
+P1
+
+```text
+Run the four host classes and the unit classes, and compare their test ids with the expected lists
+```
+
+```text
+Each host class holds only the rows the id table keeps as wire or end-to-end rows; the 27 removed rows are listed as extra until the craft removes them; every expected id is present and passes
+```
+
+```text
+The backend Integration tier runs 27 fewer host rows, each rule now proven by a unit or save-service row
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s4\_compare\_ids\.py
+
+```text
+A removed host row stays on the host, which the extra-id and guard-line lines of the oracle report
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Apply one deliberate break to the production line each removed row walked and run the unit classes
+```
+
+```text
+Each removed host row maps in the id table to a named unit row, and each break turns that row red
+```
+
+```text
+No rule loses its test when the host rows go
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s4\_breaks\.py
+
+```text
+A unit row that passes whatever the production line does; two halves have no break and are named residual risks: no update queued for an Estimation default, and Work Items kept on a refused move
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Check the diff against the merge base for production, time budget and guard-list changes
+```
+
+```text
+No production or budget file changed, no guard-list line was added, only the Slice09 line is admitted to leave, and Slice12, Slice10 and Slice11 keep at least one host row each
+```
+
+```text
+The wiring is still proven by a host row per route and nothing in production changed
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s4\_compare\_ids\.py
+
+```text
+A production file edited alongside the tests, which the oracle lists as CHANGED
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

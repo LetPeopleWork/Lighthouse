@@ -110,11 +110,52 @@
 "stimulus": "F57",
 "user_result": "F59"
 }
+],
+"S4": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F67",
+"test": "docs/feature/story-6537-b-configure-suite/evidence/s4_compare_ids.py"
+},
+"expected": "F65",
+"stimulus": "F64",
+"user_result": "F66"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F71",
+"test": "docs/feature/story-6537-b-configure-suite/evidence/s4_breaks.py"
+},
+"expected": "F69",
+"stimulus": "F68",
+"user_result": "F70"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F75",
+"test": "docs/feature/story-6537-b-configure-suite/evidence/s4_compare_ids.py"
+},
+"expected": "F73",
+"stimulus": "F72",
+"user_result": "F74"
+}
 ]
 },
 "counters": {
 "E": 3,
-"F": 63,
+"F": 75,
 "P": 3,
 "S": 5
 },
@@ -356,7 +397,19 @@
 "F61": "Break one production line on the path of each removed host row, including the once-per-refresh collapse and the refused connection check, then run the unit rows",
 "F62": "Each deliberate break turns at least one named unit or port row red, the id table names that row for every removed host row, a refused connection check reports not valid in its unit row, and an existing controller row pins the 400 answer",
 "F63": "a removed host row whose rule, loop, gate or branch no unit row turns red for, including one finding per refresh, one warning line, a refusal reported as valid, or a failed check answered with success",
+"F64": "Run the four host classes and the unit classes, and compare their test ids with the expected lists",
+"F65": "Each host class holds only the rows the id table keeps as wire or end-to-end rows; the 27 removed rows are listed as extra until the craft removes them; every expected id is present and passes",
+"F66": "The backend Integration tier runs 27 fewer host rows, each rule now proven by a unit or save-service row",
+"F67": "A removed host row stays on the host, which the extra-id and guard-line lines of the oracle report",
+"F68": "Apply one deliberate break to the production line each removed row walked and run the unit classes",
+"F69": "Each removed host row maps in the id table to a named unit row, and each break turns that row red",
 "F7": "The save-pipeline rules of Slice05bReferencedFieldsAndOlderPayloads and Slice05aTeamsParentOverrideDefault (referenced fields, older payloads, a team's parent override against the connection default) are proven by unit tests of the classes that compute them; their wire and concurrency rows stay",
+"F70": "No rule loses its test when the host rows go",
+"F71": "A unit row that passes whatever the production line does; two halves have no break and are named residual risks: no update queued for an Estimation default, and Work Items kept on a refused move",
+"F72": "Check the diff against the merge base for production, time budget and guard-list changes",
+"F73": "No production or budget file changed, no guard-list line was added, only the Slice09 line is admitted to leave, and Slice12, Slice10 and Slice11 keep at least one host row each",
+"F74": "The wiring is still proven by a host row per route and nothing in production changed",
+"F75": "A production file edited alongside the tests, which the oracle lists as CHANGED",
 "F8": "The Jira named-link and refresh-history rules of Slice02NamedLinkThatMatchedNothing and Slice01JiraDependenciesFromANamedLink are proven by unit tests of the Jira connector and the refresh log; their end-to-end rows stay",
 "F9": "The Azure DevOps relation rules of Slice04AzureDevOpsDependenciesFromANamedRelationEnd and Slice03AzureDevOpsRelationTypeAccepted, for a portfolio and for a team, are proven by unit tests of the Azure DevOps connector and the settings that accept a relation type; their wire rows stay"
 },
