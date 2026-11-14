@@ -94,6 +94,70 @@ A production file is edited to make a moved row pass, or a guard line is added f
 
 None.
 
+### S2
+
+##### Covers
+
+P1
+
+P2
+
+```text
+Run the two Jira named-link host classes and the unit classes of the S2 id table, compare their test ids with the expected list, then apply one deliberate break per moved rule
+```
+
+```text
+Every removed host row has an id-table row naming the unit row that proves its rule, every expected id is present and passes, and each break of a production line on a rule's path turns its named row red
+```
+
+```text
+The Jira named-link and refresh-history rules are still protected by tests, now at connector and service level, so the backend Integration tier runs less
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s2\_compare\_ids\.py
+
+```text
+A removed host row whose rule has no unit row that turns red when its production line is broken
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Compare the files changed since the slice base and the host-user guard list, and run the host rows that stay
+```
+
+```text
+No production or budget file changed, no guard line was added, and the end-to-end row of each class still passes through the route
+```
+
+```text
+The wiring of the refresh and the Refresh History and Dependencies routes is still proven by a host row, and nothing in the product changed
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s2\_compare\_ids\.py
+
+```text
+A production file edited alongside the test move, or a host row that proves the wiring removed with the rest
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows
