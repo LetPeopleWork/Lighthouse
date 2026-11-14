@@ -201,7 +201,7 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F163",
-"test": "Lighthouse\\.Backend\\.Tests\\.Architecture\\.DomainEventHandlerOrderPinTest"
+"test": "Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest"
 },
 "expected": "F161",
 "stimulus": "F160",
@@ -214,7 +214,7 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F165",
-"test": "Lighthouse\\.Backend\\.Tests\\.Architecture\\.SeededForecastsStayTheSameTest"
+"test": "Lighthouse.Backend.Tests.Acceptance.Forecasting.SeededForecastsStayTheSameTest"
 },
 "expected": "F157",
 "stimulus": "F164",
@@ -227,7 +227,7 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F169",
-"test": "Lighthouse\\.Backend\\.Tests\\.Services\\.Implementation\\.BackgroundServices\\.Update"
+"test": "Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update"
 },
 "expected": "F167",
 "stimulus": "F166",
@@ -240,7 +240,7 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F172",
-"test": "Lighthouse\\.Backend\\.Tests\\.Services\\.Implementation\\.Seeding\\.ForecastInputsForgottenAtStartSeederTests"
+"test": "Lighthouse.Backend.Tests.Services.Implementation.Seeding.ForecastInputsForgottenAtStartSeederTests"
 },
 "expected": "F167",
 "stimulus": "F170",

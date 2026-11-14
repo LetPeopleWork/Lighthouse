@@ -373,7 +373,7 @@ Handlers run in the same order, so forecasts refresh and retrigger as before
 
 Tested
 
-Lighthouse\\\.Backend\\\.Tests\\\.Architecture\\\.DomainEventHandlerOrderPinTest
+Lighthouse\.Backend\.Tests\.Architecture\.DomainEventHandlerOrderPinTest
 
 ```text
 A reordered or dropped registration fails the pin of its event, so only a change to a handler outside these five events passes
@@ -403,7 +403,7 @@ Forecast answers do not change
 
 Tested
 
-Lighthouse\\\.Backend\\\.Tests\\\.Architecture\\\.SeededForecastsStayTheSameTest
+Lighthouse\.Backend\.Tests\.Acceptance\.Forecasting\.SeededForecastsStayTheSameTest
 
 ```text
 A change outside the seeded cases; the base-against-HEAD compare in the next row covers that
@@ -433,7 +433,7 @@ Forecast refresh and retriggering behave as before
 
 Tested
 
-Lighthouse\\\.Backend\\\.Tests\\\.Services\\\.Implementation\\\.BackgroundServices\\\.Update
+Lighthouse\.Backend\.Tests\.Services\.Implementation\.BackgroundServices\.Update
 
 ```text
 A behaviour change in a path those suites do not exercise
@@ -463,7 +463,7 @@ Start-up forecast seeding behaves as before
 
 Tested
 
-Lighthouse\\\.Backend\\\.Tests\\\.Services\\\.Implementation\\\.Seeding\\\.ForecastInputsForgottenAtStartSeederTests
+Lighthouse\.Backend\.Tests\.Services\.Implementation\.Seeding\.ForecastInputsForgottenAtStartSeederTests
 
 ```text
 A behaviour change in a path that suite does not exercise
