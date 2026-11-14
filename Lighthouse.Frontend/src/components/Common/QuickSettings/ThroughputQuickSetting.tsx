@@ -11,6 +11,7 @@ import {
 	Tooltip,
 	useTheme,
 } from "@mui/material";
+import { differenceInCalendarDays } from "date-fns";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -51,10 +52,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 
 	const initialThroughputHistory =
 		initialStartDate && initialEndDate
-			? Math.floor(
-					(initialEndDate.getTime() - initialStartDate.getTime()) /
-						(1000 * 60 * 60 * 24),
-				) + 1
+			? differenceInCalendarDays(initialEndDate, initialStartDate) + 1
 			: 0;
 	const [throughputHistory, setThroughputHistory] = useState(
 		initialThroughputHistory,
@@ -160,9 +158,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 				return false;
 			}
 
-			const daysDiff = Math.floor(
-				(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-			);
+			const daysDiff = differenceInCalendarDays(end, start);
 			if (daysDiff < 10) {
 				setError("Start date must be at least 10 days before end date");
 				return false;

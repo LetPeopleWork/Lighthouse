@@ -42,6 +42,18 @@ describe("ThroughputQuickSetting", () => {
 		).toBeInTheDocument();
 	});
 
+	it("counts calendar days for a window that spans the spring clock change", () => {
+		const startDate = new Date(2026, 2, 1);
+		const endDate = new Date(2026, 2, 30);
+		render(
+			<ThroughputQuickSetting {...getMockProps({ startDate, endDate })} />,
+		);
+
+		expect(
+			screen.getByRole("button", { name: /Throughput: Rolling 30 days/i }),
+		).toBeInTheDocument();
+	});
+
 	it("should render tooltip showing fixed dates when using fixed dates", () => {
 		const startDate = new Date("2024-01-01");
 		const endDate = new Date("2024-01-31");
