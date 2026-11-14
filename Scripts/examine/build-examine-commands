@@ -130,6 +130,8 @@ cat > "$out/feature-proof" <<EOF
 #   breaks <N>         lists slice N's deliberate breaks (id and what each breaks)
 #   break <N> <id>...  applies each named break to the production line, runs the named tests, prints which went red, and
 #                      puts the line back (a break proves its rule only if at least one row goes red)
+#   summary <base>     everything in one call (about 3 minutes): diff, every oracle, and the first break of each
+#                      slice with the rows it turns red
 #   diff <base>        lists files changed since <base> under the production project, in the host-user guard list and in
 #                      the test time budget, with the guard list's added and removed lines
 # Example: feature-proof story-6537-a-percentiles-suite oracles
@@ -165,6 +167,15 @@ case "\$action" in
     echo "host-user guard list, lines added and removed:"
     git diff "\$base" HEAD -- Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs \\
       | grep -E '^[+-][^+-]' | sed 's/^/  /' || echo "  none" ;;
+  summary)
+    base="\${1:?base revision}"
+    echo "##### diff since \$base"; "\$0" "\$feature" diff "\$base"
+    echo "##### oracles"; "\$0" "\$feature" oracles
+    for b in \$(ls "\$ev" | grep -E '^s[0-9]+_breaks\.py\$' | sort -V); do
+      n="\${b#s}"; n="\${n%%_*}"
+      first="\$("\$0" "\$feature" breaks "\$n" | head -1 | cut -d' ' -f1)"
+      echo "##### slice \$n, break \$first"; "\$0" "\$feature" break "\$n" "\$first" | grep -E '^(===|Failed |Passed!|Failed!|NO SUMMARY|SKIPPED)' || true
+    done ;;
   *) echo "unknown action \$action (try --help)"; exit 2 ;;
 esac
 EOF
