@@ -1361,3 +1361,36 @@ Zenith's SLE is 85% within 7 days (`DemoDataFactory.cs:63-64`).
 
 **Leave the backend percentile convention as it is** (`PercentileCalculator.cs`, index floor(p/100 × N) − 1). No Bug is
 raised; this Story mirrors it (AFK-10).
+
+## Maintainer decisions at the start of DELIVER (2026-11-14, sketch walk-through, AFK entry)
+
+Binding for every slice; they replace the DESIGN sketches and the copy table where they differ.
+
+| # | Decision |
+|---|---|
+| S-1 rigor | **`standard` for all three slices**: crafter and acceptance designer `sonnet`, reviewers and the examiner `haiku`. |
+| S-2 AFK options | Slice wrap-up **refactor + review** (mutation once, at the end); **push each slice** with its gates green and watch CI in the background. |
+| S-3 chip place | **The outlier chip lives in the widget header** (`WidgetShell`'s header row: info, View Data, trend, RAG, then the chip), not in the legend row. Same size and style as the RAG chip (small, 20 px), outlined, `(!)` icon plus `1 outlier` / `{n} outliers`. Tooltip on hover and focus: `{n} outliers not drawn on the chart. Show details.` (singular for 1). Click, Enter or Space opens the popover below the chip. Below 600 px the words drop to `(!) {n}`; the accessible name keeps the full sentence. Absent when there are no outliers. The legend row keeps only the percentile and type chips. |
+| S-4 popover copy | **Shorter:** title `{n} outlier(s)`, line 1 `Not drawn: longer than {cut} days (5 times the median, {median} days).`, line 2 `Still counted in the percentiles, {SLE} and View Data.`, then the table and `Open in a list`. The full rule sentence moves to the widget's ⓘ help (slice 03) **in its long form** ("The help text (exact)"), not the short form. The conditional `Above the axis: 95% at {p95} days, {SLE} at {sle} days.` line stays (orchestrator: the markers are `aria-hidden`, so this line is how a screen-reader user learns of them). |
+| S-5 edge markers | **Top margin of the plot**, triangle in the line's colour plus text, as designed; the fallback (a text line under the legend row) is taken if the spike fails. |
+| S-6 empty copy | **Shorter:** every visible item an outlier: `All visible {Work Items} are outliers.`; all types off: `All types are hidden.` Legend row and axes stay; never "No data available". |
+| S-7 no outliers | Confirmed: no chip, today's axis, no markers. |
+
+**Design consequence of S-3 (orchestrator, engineering):** the count depends on the type chips (D5), whose state lives
+in the chart, but the header is drawn by `WidgetShell`. The chart therefore hands the chip to the header through a
+header slot that `WidgetShell` offers to its child (a small context, rendered by `WidgetHeader` after the RAG chip),
+rather than lifting the type-chip state out of the chart. The crafter of slice 01 may pick a portal or a
+context-held node; the oracle tests the result in the header, not the mechanism.
+
+## DELIVER refresh of the DESIGN anchors (2026-11-14, orchestrator)
+
+The metrics view was split after DESIGN (`refactor(metrics)` commits `6a32760c8`, `a63c924ec`, `a4e92f20d`,
+`5ee48a83b`). Current places: `buildWidgetNodes` and the `cycleScatter` node are in
+`pages/Common/MetricsView/widgetNodes.tsx` (the chart at about line 363); `frameStateOf` is in
+`pages/Common/MetricsView/dashboardFrame.ts` and is spread into each `WidgetShell` in `BaseMetricsView.tsx` (about line
+627). `BaseMetricsView.tsx:1492` (AFK-16) no longer names the clash. **AFK-16 is refined:** because the chip now lives
+in the shell's header (S-3), the shell's header-slot context also carries whether the frame is ready, so the chart
+reads `frameIsReady` from that context instead of a new `buildWidgetNodes` ctx field. The usage event takes the next
+free integer, **27** (`SystemWideAccessGranted = 26`), still appended, never renumbered. ADR-282 is still free.
+**The spike (AFK-9) runs inside slice 01:** the crafter builds the top-margin markers; the orchestrator checks them in
+a real browser on a fixture before the slice commits, and takes the S-5 fallback if they fail.

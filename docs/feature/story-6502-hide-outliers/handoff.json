@@ -1,0 +1,109 @@
+{
+"counters": {
+"F": 14,
+"P": 5,
+"S": 3
+},
+"facts": {
+"F1": "ADO Story 6502 Hide Outliers: on the Cycle Time scatterplot, hide exceptionally long closed Work Items so typical work stays readable, while the outliers stay known, one click away, and included in every statistic.",
+"F10": "Walking skeleton: typical work readable, outliers disclosed in the header chip and popover.",
+"F11": "Slice 02: the outlier chip follows the type chips, a named Cycle Time and the date range, the cut and axis stay put when a type is toggled, and an all-outlier or all-hidden view says so instead of 'No data available'.",
+"F12": "The chip stays truthful whatever the reader filters.",
+"F13": "Slice 03: 'Open in a list' in the popover opens the Work Items dialog with exactly the chip's outliers, focus returns to the chip, and the widget's help names the outlier rule in the configured terms.",
+"F14": "Sorting, export and the full list of outliers, and the rule explained in the help.",
+"F2": "A flow coach reads the picture of normal work on the Cycle Time scatterplot without one extreme item squashing it, and still knows which items were left out and why.",
+"F3": "On the Cycle Time scatterplot of a Team or a Portfolio, a closed Work Item whose Cycle Time is more than 5 times the chart's 50th percentile is not drawn; the y-axis scales to the remaining items, and every percentile and SLE line stays visible, either in place or as a labelled marker at the top edge of the plot. With no such item the chart is exactly as before.",
+"F4": "A chip in the widget header reads '1 outlier' or 'N outliers' (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists each outlier with its closed date, its Cycle Time in days and how many times the median it is; while the widget loads or has failed the chip is disabled and never shows a count from a previous answer.",
+"F5": "The chip and its list stay truthful while the reader changes the view: they count only outliers of visible Work Item types, follow a selected named Cycle Time and the date range, and the cut and axis do not move when a type is toggled; when every visible item is an outlier or every type is hidden the plot says so instead of 'No data available'.",
+"F6": "From the popover the reader opens the outliers in the existing Work Items list dialog (sort, export, tracker links), and the widget's help explains the outlier rule in the reader's configured terms.",
+"F7": "No number changes: the percentiles, the SLE share and RAG, the tiles, View Data and the forecasts still include the outliers.",
+"F8": "Other charts (Estimation vs Cycle Time, Feature Size, Work Item Aging, process behaviour charts, throughput), a change to View Data, a change to the backend percentile convention, and showing outliers in place on the chart.",
+"F9": "Slice 01: on Team Zenith's demo data the scatterplot leaves out TZ-301, scales its y-axis to the other items, shows lines above the axis as top-edge markers, and a header chip '1 outlier' opens a popover listing TZ-301 with 58 days and 9.7x the median; the statistics are unchanged."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+},
+{
+"id": "P5",
+"kind": "Outcome",
+"text": "F7"
+}
+],
+"scope_out": [
+"F8"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F9",
+"promises": [
+"P1",
+"P2",
+"P5"
+],
+"work": {
+"size": "M",
+"value": "F10"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F11",
+"promises": [
+"P3"
+],
+"work": {
+"size": "S",
+"value": "F12"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S3",
+"observation": "F13",
+"promises": [
+"P4"
+],
+"work": {
+"size": "S",
+"value": "F14"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6502-hide-outliers",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
