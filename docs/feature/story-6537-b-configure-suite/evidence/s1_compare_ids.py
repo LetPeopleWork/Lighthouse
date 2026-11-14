@@ -31,6 +31,9 @@ FILTER = (
     "|FullyQualifiedName~SettingsOwnerDtoRoundTripTest."
     "|FullyQualifiedName~WorkTrackingSystemConnectionUsageTest."
     "|FullyQualifiedName~AdditionalFieldInUseTest."
+    "|FullyQualifiedName~TeamExtensionsTest."
+    "|FullyQualifiedName~PortfolioExtensionsTest."
+    "|FullyQualifiedName~WorkTrackingSystemOptionsOwnerExtensionsParentSourcesTest."
 )
 SLICE_BASE = "3cc76466d"
 GUARD = "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs"

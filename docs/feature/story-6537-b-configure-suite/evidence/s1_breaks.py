@@ -18,8 +18,10 @@ DTO = B + "API/DTO/ConnectionDefaultsDto.cs"
 UNITS = "|".join("FullyQualifiedName~" + name for name in (
     "ConnectionSaveServiceTest.", "IncomingSettingTest.", "OwnerSettingRefusalsTest.", "EffectiveSettingTest.",
     "SupportedConnectionDefaultsTest.", "ConnectionDefaultsDtoTest.", "SettingsOwnerDtoRoundTripTest.",
-    "WorkTrackingSystemConnectionUsageTest.", "AdditionalFieldInUseTest.",
+    "WorkTrackingSystemConnectionUsageTest.", "AdditionalFieldInUseTest.", "TeamExtensionsTest.", "PortfolioExtensionsTest.",
+    "WorkTrackingSystemOptionsOwnerExtensionsParentSourcesTest.",
 ))
+EXT = B + "API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs"
 
 OWNED = ".Select(portfolio => new OwnerNamingFields(portfolio.Name, [\n                    .. portfolio.ParentSources?.AdditionalFieldIds() ?? [],\n"
 DEP = "                    portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,\n"
@@ -74,10 +76,18 @@ BREAKS = [
     ("E1 a save that changes no default still writes a log entry", SAVE, "if (changed.After.IsTheSameDefaultAs(changed.Before))", "if (changed.After.IsTheSameDefaultAs(changed.Before) && changed.Before.Description is null)"),
     ("E2 a default nobody follows says one Team follows it", SAVE, '0 => $"no {owners.One} follows it",', '0 => $"1 {owners.One} follows it",'),
     ("E3 a cleared default does not name the field it was", SAVE, "changed.Before.Description ?? NoField,", "NoField,"),
-    ("E4 a default naming a field added in the same save is not pointed at it", SAVE, "if (pending.Count == 0)", "if (true)"),
+    ("E4 a default naming a field added in the same save is not pointed at it", SAVE, "each.Default.PointAt(handle.Connection, each.Field.Id);", "_ = each.Field.Id;"),
     ("E5 a default left out of a save is cleared", DTO, "sent[fieldDefault.Setting] = fieldDefault.FirstFieldOn(connection);", "sent[fieldDefault.Setting] = null;"),
-    ("E6 a default left out of a save clears its list", DTO,
-     "lists[fieldDefault.Setting] = parentSourcesOn(connection) is { } list ? ParentSourceEntryDto.ListOf(list) : null;", "lists[fieldDefault.Setting] = null;"),
+    ("E6 a default left out of a save drops the entries of its list", DTO,
+     "? ParentSourceEntryDto.ListOf(list) : null;", "? ParentSourceEntryDto.ListOf(list).Take(0).ToList() : null;"),
+    ("F1 a list the save sends is not taken as the owner's own", EXT, "                owner.OwnParentSources(list);\n", ""),
+    ("F2 a list the save sends is never recognised", EXT, "?.List is { } list)", "?.List is { } list && list.Count > 99)"),
+    ("F3 a save that sends its own list also takes the old field", EXT, "                owner.OwnParentSources(list);\n                return;\n", "                owner.OwnParentSources(list);\n"),
+    ("F4 a save without its own list ignores the old field and source", EXT,
+     "owner.TakeParentOverrideAsSent(settings.ParentOverrideSource, owner.ParentOverrideFieldAsSent(settings));", "owner.TakeParentOverrideAsSent(null, null);"),
+    ("F5 the old field beside a list is never taken as the edit", EXT,
+     "=> settings.ParentOverrideFieldWasSent()\n                && ParentSourceEntryDto.TheOldFieldIsTheEdit(", "=> false\n                && ParentSourceEntryDto.TheOldFieldIsTheEdit("),
+    ("F6 a save that names no source always chooses to own", EXT, "== SettingSource.Own;\n\n        private static void TakeParentSourcesAsSent", "!= null;\n\n        private static void TakeParentSourcesAsSent"),
 ]
 
 only = sys.argv[1:]
