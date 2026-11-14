@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+using System.Text.Json.Nodes;
 using System.Reflection;
 using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
@@ -158,5 +160,82 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 definitions.Select(definition => new { definition.Id, definition.Name, definition.StartState, definition.EndState })),
             _ => JsonSerializer.Serialize(value),
         };
+
+        private const int TheDependencyDefault = 31;
+
+        private const int TheSizeDefault = 32;
+
+        private const int TheFeatureOwnerDefault = 33;
+
+        private const int TheOwnDependencyField = 41;
+
+        private const int TheOwnSizeField = 42;
+
+        private const int TheOwnFeatureOwnerField = 43;
+
+        private static Portfolio APortfolioOnAConnectionWithAFieldDefaultForEverySetting(bool owning)
+        {
+            var connection = new WorkTrackingSystemConnection
+            {
+                Id = 1,
+                ParentOverrideForPortfolios = 21,
+                DependencyFieldForPortfolios = TheDependencyDefault,
+                SizeEstimateFieldForPortfolios = TheSizeDefault,
+                FeatureOwnerFieldForPortfolios = TheFeatureOwnerDefault,
+            };
+            foreach (var (id, name) in new[] { (21, "Parent Link"), (TheDependencyDefault, "Release Train"), (TheSizeDefault, "Story Points"), (TheFeatureOwnerDefault, "Product Lead"),
+                                               (TheOwnDependencyField, "Blocked By"), (TheOwnSizeField, "T-Shirt Size"), (TheOwnFeatureOwnerField, "Product Owner") })
+            {
+                connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = id, DisplayName = name, Reference = $"customfield_{id}" });
+            }
+
+            var portfolio = new Portfolio { Name = "Card Issuing", WorkTrackingSystemConnection = connection, WorkTrackingSystemConnectionId = 1 };
+            if (owning)
+            {
+                portfolio.OwnDependencyField(TheOwnDependencyField);
+                portfolio.OwnSizeEstimateField(TheOwnSizeField);
+                portfolio.OwnFeatureOwnerField(TheOwnFeatureOwnerField);
+            }
+
+            return portfolio;
+        }
+
+        [TestCase(false, "dependencyField", "Release Train", TheDependencyDefault, "ConnectionDefault")]
+        [TestCase(true, "dependencyField", "Release Train", TheOwnDependencyField, "Own")]
+        [TestCase(false, "sizeEstimate", "Story Points", TheSizeDefault, "ConnectionDefault")]
+        [TestCase(true, "sizeEstimate", "Story Points", TheOwnSizeField, "Own")]
+        [TestCase(false, "featureOwner", "Product Lead", TheFeatureOwnerDefault, "ConnectionDefault")]
+        [TestCase(true, "featureOwner", "Product Lead", TheOwnFeatureOwnerField, "Own")]
+        public void A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(bool owning, string member, string defaultName, int reads, string source)
+        {
+            var page = JsonSerializer.SerializeToNode(new PortfolioSettingDto(APortfolioOnAConnectionWithAFieldDefaultForEverySetting(owning)), AsTheWireSendsIt)!.AsObject();
+            var effectiveId = member == "dependencyField" ? "dependencyOverrideAdditionalFieldDefinitionId" : $"{member}AdditionalFieldDefinitionId";
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(page[$"{member}Source"]?.ToString(), Is.EqualTo(source));
+                Assert.That(page[$"{member}DefaultName"]?.ToString(), Is.EqualTo(defaultName));
+                Assert.That(page[effectiveId]?.GetValue<int>(), Is.EqualTo(reads));
+            }
+        }
+
+        [Test]
+        public void A_connections_page_offers_the_Portfolios_field_defaults_by_name_and_never_Ignore_Dependencies()
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 1, Name = "Jira DC – Payments", WorkTrackingSystem = WorkTrackingSystems.Jira, DependencyFieldForPortfolios = TheDependencyDefault };
+            var page = JsonSerializer.SerializeToNode(new WorkTrackingSystemConnectionDto(connection), AsTheWireSendsIt)!.AsObject();
+            var offered = page["supportedDefaults"]!.AsArray().Select(name => name!.ToString()).ToList();
+            var defaults = page["defaults"]!.AsObject();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(offered, Does.Contain("dependencyFieldForPortfolios").And.Contain("sizeEstimateFieldForPortfolios").And.Contain("featureOwnerFieldForPortfolios"));
+                Assert.That(offered, Has.None.Contain("ignoreDependencies").And.None.Contain("owningTeam"));
+                Assert.That(defaults["dependencyFieldForPortfolios"]?.GetValue<int>(), Is.EqualTo(TheDependencyDefault));
+                Assert.That(defaults.ContainsKey("ignoreDependenciesForPortfolios"), Is.False);
+            }
+        }
+
+        private static readonly JsonSerializerOptions AsTheWireSendsIt = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
     }
 }

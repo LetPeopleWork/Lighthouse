@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             return (ProblemDetails)refusal!.Value!;
         }
 
-        private static ObjectResult? TheRefusalIfAny(SettingsOwnerDtoBase save, WorkTrackingSystemOptionsOwner owner, SettingsOwnerKind kind)
+        private static ObjectResult? TheRefusalIfAny(SettingsOwnerDtoBase save, WorkTrackingSystemOptionsOwner? owner, SettingsOwnerKind kind)
         {
             var connections = new Mock<IRepository<WorkTrackingSystemConnection>>();
             connections.Setup(repository => repository.GetById(TheOtherConnection))
@@ -164,6 +164,110 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Assert.That(problem.Title, Is.EqualTo("The Team names a source this version of Lighthouse does not know."));
                 Assert.That(problem.Detail, Does.StartWith("The source of the Parent sources must be one of: "));
             }
+        }
+
+        private const string TheEstimationSourceWords = "The Estimation Field source must be one of: ConnectionDefault, Own." + NothingWasSaved;
+
+        private static WorkTrackingSystemOptionsOwner AnOwnerOf(SettingsOwnerKind kind)
+            => kind == SettingsOwnerKind.Team
+                ? ATeam()
+                : new Portfolio { WorkTrackingSystemConnectionId = TheConnection, WorkTrackingSystemConnection = AConnection(TheConnection, (AFieldOfTheConnection, "Epic Link")) };
+
+        private static SettingsOwnerDtoBase AnEstimationSaveFor(SettingsOwnerKind kind, SettingSource? source, int? field = null)
+        {
+            SettingsOwnerDtoBase save = kind == SettingsOwnerKind.Team ? new TeamSettingDto() : new PortfolioSettingDto();
+            save.WorkTrackingSystemConnectionId = TheConnection;
+            save.EstimationSource = source;
+            save.EstimationAdditionalFieldDefinitionId = field;
+            return save;
+        }
+
+        private static TestCaseData[] BothKinds(string team, string portfolio) =>
+        [
+            new TestCaseData(SettingsOwnerKind.Team, team).SetArgDisplayNames("Team"),
+            new TestCaseData(SettingsOwnerKind.Portfolio, portfolio).SetArgDisplayNames("Portfolio"),
+        ];
+
+        private static TestCaseData[] TheKindsAndTheirCodesForAnUnknownSource() => BothKinds("team-setting-source-unknown", "portfolio-setting-source-unknown");
+
+        private static TestCaseData[] TheKindsAndTheirCodesForAMissingField() => BothKinds("team-field-not-on-connection", "portfolio-field-not-on-connection");
+
+        [TestCaseSource(nameof(TheKindsAndTheirCodesForAnUnknownSource))]
+        public void An_owner_saved_with_an_Estimation_source_this_version_does_not_know_is_refused_with_its_own_code_and_words(SettingsOwnerKind kind, string code)
+        {
+            var problem = RefusalOf(AnEstimationSaveFor(kind, (SettingSource)99), AnOwnerOf(kind), kind);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problem.Extensions["code"], Is.EqualTo(code));
+                Assert.That(problem.Title, Is.EqualTo($"The {(kind == SettingsOwnerKind.Team ? "Team" : "Portfolio")} names a source this version of Lighthouse does not know."));
+                Assert.That(problem.Detail, Is.EqualTo(TheEstimationSourceWords));
+            }
+        }
+
+        [Test]
+        public void A_Team_moved_to_another_connection_with_an_Estimation_source_this_version_does_not_know_is_refused()
+        {
+            var save = AnEstimationSaveFor(SettingsOwnerKind.Team, (SettingSource)99);
+            save.WorkTrackingSystemConnectionId = TheOtherConnection;
+
+            var problem = RefusalOf(save, ATeam(), SettingsOwnerKind.Team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problem.Extensions["code"], Is.EqualTo("team-setting-source-unknown"));
+                Assert.That(problem.Detail, Is.EqualTo(TheEstimationSourceWords));
+            }
+        }
+
+        [TestCaseSource(nameof(TheKindsAndTheirCodesForAnUnknownSource))]
+        public void A_new_owner_created_with_an_Estimation_source_this_version_does_not_know_is_refused(SettingsOwnerKind kind, string code)
+        {
+            var refusal = TheRefusalIfAny(AnEstimationSaveFor(kind, (SettingSource)99), null, kind);
+            Assert.That(refusal?.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+            var problem = (ProblemDetails)refusal!.Value!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problem.Extensions["code"], Is.EqualTo(code));
+                Assert.That(problem.Detail, Is.EqualTo(TheEstimationSourceWords));
+            }
+        }
+
+        [TestCaseSource(nameof(TheKindsAndTheirCodesForAMissingField))]
+        public void An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(SettingsOwnerKind kind, string code)
+        {
+            var owner = AnOwnerOf(kind);
+            owner.OwnEstimation(new EstimationBundle(AFieldOfTheConnection, "Points", false, []));
+            var save = AnEstimationSaveFor(kind, SettingSource.Own, AFieldOfTheConnection);
+            save.WorkTrackingSystemConnectionId = TheOtherConnection;
+
+            var problem = RefusalOf(save, owner, kind);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problem.Extensions["code"], Is.EqualTo(code));
+                Assert.That(problem.Title, Is.EqualTo($"The {(kind == SettingsOwnerKind.Team ? "Team" : "Portfolio")} names a field its connection does not have."));
+                Assert.That(problem.Detail, Is.EqualTo($"The Estimation Field is not an Additional Field of this {(kind == SettingsOwnerKind.Team ? "Team" : "Portfolio")}'s connection." + NothingWasSaved));
+            }
+        }
+
+        [Test]
+        public void An_owner_following_the_Estimation_default_that_still_names_a_field_of_the_old_connection_is_not_refused()
+        {
+            var save = AnEstimationSaveFor(SettingsOwnerKind.Team, SettingSource.ConnectionDefault, AFieldOfTheConnection);
+            save.WorkTrackingSystemConnectionId = TheOtherConnection;
+
+            Assert.That(TheRefusalIfAny(save, ATeam(), SettingsOwnerKind.Team), Is.Null, "A field sent along with following is not what the owner reads, so it is not judged.");
+        }
+
+        [Test]
+        public void An_owner_owning_an_Estimation_Field_the_connection_holds_is_not_refused()
+        {
+            var owner = ATeam();
+            owner.OwnEstimation(new EstimationBundle(AFieldOfTheConnection, "Points", false, []));
+
+            Assert.That(TheRefusalIfAny(AnEstimationSaveFor(SettingsOwnerKind.Team, SettingSource.Own, AFieldOfTheConnection), owner, SettingsOwnerKind.Team), Is.Null);
         }
 
         private sealed class AController : ControllerBase

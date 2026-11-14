@@ -105,7 +105,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_FieldAdded_PublishesTheTeamsAndPortfoliosOnThisConnectionOnly()
         {
             var subject = CreateSubjectForAConnectionWithOwnersHereAndElsewhere();
@@ -127,7 +126,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_FieldAddedButUpdatesLeftForLater_PublishesNothing()
         {
             var subject = CreateSubjectForAConnectionWithOwnersHereAndElsewhere();
@@ -141,7 +139,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_OnlyTheNameChanged_PublishesNothing()
         {
             var subject = CreateSubjectForAConnectionWithOwnersHereAndElsewhere();
@@ -155,7 +152,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_FieldAddedToAConnectionNoTeamOrPortfolioUses_PublishesNothing()
         {
             GivenTheOwnedConnection();
@@ -175,7 +171,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
         [TestCase(FailingStep.LookingUpTheTeamsAndPortfolios)]
         [TestCase(FailingStep.PublishingTheChange)]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_StartingUpdatesFailsAfterAStoredSave_ReportsSavedAndLogsOneError(FailingStep failingStep)
         {
             var connection = GivenTheOwnedConnection();
@@ -221,7 +216,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -280,7 +274,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task Commit_TheTeamsDefaultUnchanged_LogsNothing()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -294,7 +287,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -308,7 +300,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -322,7 +313,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -336,7 +326,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -351,7 +340,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task Commit_TheCopyIsStale_LetsTheConflictThroughAndLogsAndPublishesNothing()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -371,7 +359,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField()
         {
             const int StoredEpicLinkId = 77;
@@ -395,7 +382,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_PointingTheDefaultAtAFieldAddedInThisSaveFails_FailsTheSaveSayingWhichDefaultWasNotApplied()
         {
             const int StoredEpicLinkId = 77;
@@ -427,7 +413,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_PointingThePortfoliosDefaultAtAFieldAddedInThisSaveFails_SaysThePortfoliosDefaultWasNotApplied()
         {
             var subject = CreateSubjectForAConnectionWithNamedTeams(new RecordingLogger<ConnectionSaveService>());
@@ -445,7 +430,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_PointingBothDefaultsAtFieldsAddedInThisSaveFails_SaysNeitherDefaultWasApplied()
         {
             var subject = CreateSubjectForAConnectionWithNamedTeams(new RecordingLogger<ConnectionSaveService>());
@@ -500,7 +484,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         [TestCase(TheTeamsParentOverride.FollowsTheDefault, TheEdit.ChangesTheTeamsDefault, false, false, false)]
         [TestCase(TheTeamsParentOverride.FollowsTheDefault, TheEdit.AddsAField, false, false, false)]
         [TestCase(TheTeamsParentOverride.FollowsTheDefault, TheEdit.RenamesTheConnection, false, false, false)]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(TheTeamsParentOverride parentOverride, TheEdit edit, bool startUpdates, bool teamUpdates, bool portfolioUpdates)
         {
             var connection = GivenTheOwnedConnection();
@@ -535,7 +518,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -551,7 +533,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -567,7 +548,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -793,7 +773,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task Commit_RemovingAFieldBothDefaultsName_IsRefusedInTheWordsThisInstanceUses()
         {
             GivenThisInstanceCalls("Squad", "Squads", "Program", "Staff");
@@ -810,7 +789,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task Commit_RemovingTheFieldThePortfoliosDependencyDefaultNames_IsRefusedInTheWordsThisInstanceUses()
         {
             GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
@@ -826,7 +804,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task Commit_RemovingTheFieldThePortfoliosSizeEstimateDefaultNames_IsRefusedInTheWordsThisInstanceUses()
         {
             GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
@@ -842,7 +819,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task Commit_RemovingTheFieldThePortfoliosFeatureOwnerDefaultNames_IsRefusedInTheWordsThisInstanceUses()
         {
             GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs", feature: "Epic");
@@ -858,7 +834,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task Commit_RemovingTheFieldThePortfoliosEstimationDefaultNames_IsRefusedInTheWordsThisInstanceUses()
         {
             GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
@@ -874,7 +849,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
-        [Category("contract-shape:bounded-change")]
         public async Task Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories()
         {
             var log = new RecordingLogger<ConnectionSaveService>();
@@ -993,6 +967,74 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
                 .Returns((Expression<Func<Portfolio, bool>> predicate) => portfolios.AsQueryable().Where(predicate));
 
             return CreateSubject();
+        }
+
+        public enum APortfoliosFieldDefault
+        {
+            Dependency,
+            SizeEstimate,
+            FeatureOwner,
+        }
+
+        [TestCase(APortfoliosFieldDefault.Dependency, "Dependency Field")]
+        [TestCase(APortfoliosFieldDefault.SizeEstimate, "Size Estimate Field")]
+        [TestCase(APortfoliosFieldDefault.FeatureOwner, "Feature Owner Field")]
+        public async Task Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(APortfoliosFieldDefault which, string named)
+        {
+            var connection = GivenTheOwnedConnection();
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = CausedById, DisplayName = "Caused by", Reference = "customfield_10500" });
+            var follower = new Portfolio { Id = 7, Name = "Card Issuing", WorkTrackingSystemConnectionId = OwnedConnectionId, WorkTrackingSystemConnection = connection };
+            var owner = new Portfolio { Id = 8, Name = "Merchant Onboarding", WorkTrackingSystemConnectionId = OwnedConnectionId, WorkTrackingSystemConnection = connection };
+            switch (which)
+            {
+                case APortfoliosFieldDefault.Dependency:
+                    owner.OwnDependencyField(TheListedField);
+                    break;
+                case APortfoliosFieldDefault.SizeEstimate:
+                    owner.OwnSizeEstimateField(TheListedField);
+                    break;
+                case APortfoliosFieldDefault.FeatureOwner:
+                    owner.OwnFeatureOwnerField(TheListedField);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(which), which, null);
+            }
+
+            var portfolios = new List<Portfolio> { follower, owner };
+            portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
+                .Returns((Expression<Func<Portfolio, bool>> predicate) => portfolios.AsQueryable().Where(predicate));
+            teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>())).Returns(() => new List<Team>().AsQueryable());
+            var published = new List<ConnectionFetchShapeChanged>();
+            domainEventDispatcherMock.Setup(x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()))
+                .Callback<ConnectionFetchShapeChanged, CancellationToken>((change, _) => published.Add(change))
+                .Returns(Task.CompletedTask);
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = new ConnectionSaveService(connectionRepositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, domainEventDispatcherMock.Object, terminologyServiceMock.Object, log);
+            var handle = await OpenTheOwnedConnection(subject);
+            switch (which)
+            {
+                case APortfoliosFieldDefault.Dependency:
+                    handle.Connection.DependencyFieldForPortfolios = CausedById;
+                    break;
+                case APortfoliosFieldDefault.SizeEstimate:
+                    handle.Connection.SizeEstimateFieldForPortfolios = CausedById;
+                    break;
+                case APortfoliosFieldDefault.FeatureOwner:
+                    handle.Connection.FeatureOwnerFieldForPortfolios = CausedById;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(which), which, null);
+            }
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(published, Has.Count.EqualTo(1));
+                Assert.That(published.SelectMany(change => change.PortfolioIds), Is.EqualTo(new[] { follower.Id }), "Only the Portfolio that follows the default is updated.");
+                Assert.That(published.SelectMany(change => change.TeamIds), Is.Empty);
+                Assert.That(log.Written(LogLevel.Information), Has.Some.Contains($"Portfolios' {named} default").And.Some.Contains("1 Portfolio follows it: Card Issuing; 1 update queued"));
+            }
         }
 
         private static async Task<ConnectionSaveHandle> OpenTheOwnedConnection(ConnectionSaveService subject)

@@ -279,6 +279,21 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
         private static readonly JsonSerializerOptions AsTheApiWritesIt = new(JsonSerializerDefaults.Web);
 
+        [Test]
+        public void A_script_saving_back_the_settings_without_Ignore_Dependencies_leaves_a_Portfolio_that_ignores_them_ignoring_them()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            portfolio.IgnoreDependencies = true;
+
+            portfolio.SyncWithPortfolioSettings(new PortfolioSettingDto { WorkTrackingSystemConnectionId = 1, IgnoreDependencies = null }, Teams());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolio.IgnoreDependencies, Is.True, "The connection holds no Ignore Dependencies default to take it from.");
+                Assert.That(portfolio.DependencyFieldSource, Is.EqualTo(SettingSource.ConnectionDefault));
+            }
+        }
+
         private static Portfolio APortfolioFollowingTheDefault() => new()
         {
             WorkTrackingSystemConnectionId = 1,
