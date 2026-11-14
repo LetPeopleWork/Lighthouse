@@ -151,7 +151,270 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P5</p>
+
+<pre><code>A reader views a Cycle Time chart where no closed Work Item is longer than 5 times the median, including one exactly at 5 times
+</code></pre>
+
+<pre><code>Every item is drawn, the axis top is as before (1.1 times the largest value), and the header has no outlier chip
+</code></pre>
+
+<pre><code>A chart with no extreme item looks exactly as it did before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::leaves the chart as it was when no closed Work Item is longer than 5 times the median</p>
+
+<pre><code>A rule using at-least instead of more-than at 5 times would hide the 30-day item; that wrong rule is rejected here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P5</p>
+
+<pre><code>A reader opens a Team chart where one closed Work Item took 58 days against a median of 6, with percentile and SLE lines, then clicks the header chip
+</code></pre>
+
+<pre><code>The 58-day item is not drawn, the axis top is 1.1 times the largest drawn value or line, the header chip reads 1 outlier, the popover says &#x27;Not drawn: longer than 30 days (5 times the median, 6 days).&#x27; and &#x27;Still counted in the percentiles, SLE and View Data.&#x27;, lists the item with closed date, 58 and 9.7x (9.7 times the median), and the percentile lines stay
+</code></pre>
+
+<pre><code>Typical work is readable, the extreme item is disclosed one click away and no statistic changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::shows the one 58-day Work Item as an outlier in the header while the statistics stay the same</p>
+
+<pre><code>Median taken from drawn items only, chip left in the legend row, item missing from the popover, or 9.67 rounded down to 9.6 would each fail an assertion here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A closed Work Item one day over 5 times the median (31 days against 6)
+</code></pre>
+
+<pre><code>It is not drawn and the header chip reads 1 outlier
+</code></pre>
+
+<pre><code>The cut is exactly more than 5 times the median, not a looser multiple
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::flags a Work Item one day over 5 times the median</p>
+
+<pre><code>A rule using a multiple of 6 or more would accept the 31-day item as drawn; that is rejected here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>The 95% and SLE lines lie above the cut (33 and 35 days) while a 58-day item is left out; the reader opens the chip
+</code></pre>
+
+<pre><code>The axis top follows the typical items (1.1 times 8), the two lines are not drawn in place, and the popover says &#x27;Above the axis: 95% at 33 days, SLE at 35 days.&#x27;
+</code></pre>
+
+<pre><code>A line that no longer fits on the axis is still announced in words
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::tells the reader about a percentile and an SLE line that lie above the axis</p>
+
+<pre><code>An axis stretched to the 58-day item, or off-axis lines dropped without mention, fails here; marker geometry is not asserted in jsdom
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The 95% line lies exactly at the cut (30 days) while a 58-day item is left out
+</code></pre>
+
+<pre><code>The axis stops at 30, the line stays in place and no above-the-axis sentence appears
+</code></pre>
+
+<pre><code>A line that exactly reaches the top of the plot is still drawn, not turned into a marker
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::keeps a line that sits exactly at the top of the axis in place</p>
+
+<pre><code>A split that treats equal as above would move the line into the sentence; rejected here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A Team chart with an outlier and no percentile or SLE lines
+</code></pre>
+
+<pre><code>The axis is 1.1 times the largest typical item and no above-the-axis sentence appears
+</code></pre>
+
+<pre><code>A chart without lines scales to normal work
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::scales the axis to the typical items when there are no percentile or SLE lines</p>
+
+<pre><code>An axis that still includes the outlier or fails without lines is rejected
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A chart with a single closed Work Item, with items that all took the same time, or with no closed Work Items
+</code></pre>
+
+<pre><code>Everything is drawn and the header has no outlier chip (empty set reads &#x27;No data available&#x27;)
+</code></pre>
+
+<pre><code>Degenerate data never invents an outlier
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::shows no outlier chip for a single closed Work Item</p>
+
+<pre><code>A median taken as zero for one item, or a strict-above test failing on equal values, would flag an item and fail here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>The reader hides and shows Work Item types on a chart with one outlier Bug and typical Stories
+</code></pre>
+
+<pre><code>Hiding Stories leaves &#x27;All visible Work Items are outliers.&#x27; and the chip; hiding the Bug removes the chip with the axis unchanged; hiding every type reads &#x27;All types are hidden.&#x27; with no chip and a type can be shown again
+</code></pre>
+
+<pre><code>The chip and plot follow the visible types while the cut and axis do not move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::keeps the cut and the axis still while the reader hides and shows Work Item types</p>
+
+<pre><code>A cut computed from visible items only would move the axis or the chip on each toggle; rejected here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The reader opens the outlier popover, then the widget starts reloading
+</code></pre>
+
+<pre><code>Opening reports the outlier-popover usage event once; on reload the popover closes, the chip is disabled and neither its text nor its accessible name shows a count
+</code></pre>
+
+<pre><code>A loading widget never shows an outlier count from the previous answer
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::reports one usage event per opening and shows no count while the widget reloads</p>
+
+<pre><code>A chip that stays enabled or keeps the old count while loading, or a usage report on close or forced close, fails here
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Generated closed sets and line sets checked against the pure rule (median convention, strict cut, partition, axis top, line split)
+</code></pre>
+
+<pre><code>The pure rule matches an independent oracle for every generated input
+</code></pre>
+
+<pre><code>The same cut and axis hold for any real data, not only the chosen examples
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Needs the property-test library fast-check and the new pure modules, neither installed or declared as a writable support; chart-level examples above cover the same laws for chosen inputs
+</code></pre>
+
+<p>crafter</p>
 
 <h2>Expectations</h2>
 
