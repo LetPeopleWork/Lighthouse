@@ -84,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private const string ConnectionsRoute = "/api/latest/worktrackingsystemconnections";
         private const string TeamsRoute = "/api/latest/teams";
-        private const string PortfoliosRoute = "/api/latest/portfolios";
         private const string ConnectionIdMember = "workTrackingSystemConnectionId";
         private const string TaskListRoute = "/api/latest/update/tasks";
         private const string RefreshLogRoute = "/api/latest/systeminfo/refreshlog";
@@ -312,29 +311,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             ThenTheSaveIsAccepted();
         }
 
-        protected async Task GivenTheTeamsEstimationDefaultIsTheCategories(string fieldName, string unit, params string[] categories)
-        {
-            await SaveTheConnection(read => DefaultsOf(read)[TheMember(ConnectionDefault.TeamsEstimation)] = AnEstimationBundle(TheFieldIdIn(read, fieldName), unit, categories), startUpdates: false);
-            ThenTheSaveIsAccepted();
-        }
-
         protected async Task GivenTheTeamOwns(string team, string fieldName)
         {
             await WhenTheOwnersAdminSaves(team, OwnerSetting.ParentOverrideField, fieldName, Source.Own);
-            ThenTheOwnerSaveIsAccepted();
-        }
-
-        protected async Task GivenTheOwnerUsesAsItsOwn(string owner, OwnerSetting setting, string fieldName)
-        {
-            await WhenTheOwnersAdminSaves(owner, setting, fieldName, Source.Own);
-            ThenTheOwnerSaveIsAccepted();
-        }
-
-        protected async Task GivenThePortfolioIgnoresItsDependencies(string portfolio)
-        {
-            var settings = await TheSettingsOf(portfolio);
-            settings[IgnoreDependencies] = true;
-            await PutTheOwner(portfolio, settings);
             ThenTheOwnerSaveIsAccepted();
         }
 
@@ -597,74 +576,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await PutTheOwner(owner, settings);
         }
 
-        /// <summary>The owner's page moves it to another connection and saves everything else as it read it.</summary>
-        protected async Task WhenTheOwnersAdminMovesItTo(string owner, string connection)
-        {
-            await SetTheRestAside();
-            var settings = await TheSettingsOf(owner);
-            settings[ConnectionIdMember] = connectionIds[connection];
-            await PutTheOwner(owner, settings);
-        }
-
-        /// <summary>A script saves back, unchanged, the settings it read.</summary>
-        protected async Task WhenAScriptSavesBackWhatItRead(string owner, RoundTrip shape)
-        {
-            await SetTheRestAside();
-            var settings = await TheSettingsOf(owner);
-
-            if (shape == RoundTrip.DroppingWhatItDoesNotKnow)
-            {
-                DropEverySourceAndDefaultName(settings);
-            }
-
-            await PutTheOwner(owner, settings);
-        }
-
-        /// <summary>A script saves back the settings it read with the estimation categories sent as an explicit null.</summary>
-        protected async Task WhenAScriptSavesBackTheSettingsWithNullEstimationCategories(string owner)
-        {
-            await SetTheRestAside();
-            var settings = await TheSettingsOf(owner);
-            settings["estimationCategoryValues"] = null;
-            await PutTheOwner(owner, settings);
-        }
-
-        /// <summary>
-        /// A script that knows no sources, nor the Estimation unit and non-numeric switch, saves back the settings it
-        /// read: the Estimation Field and categories as read, and nothing of the rest.
-        /// </summary>
-        protected async Task WhenAnOlderScriptSavesBackOnlyTheEstimationFieldAndCategories(string owner)
-        {
-            await SetTheRestAside();
-            var settings = await TheSettingsOf(owner);
-            DropEverySourceAndDefaultName(settings);
-            settings.Remove("estimationUnit");
-            settings.Remove(NonNumericEstimation);
-            await PutTheOwner(owner, settings);
-        }
-
-        /// <summary>A script that knows no sources saves back the settings it read with every part of the Estimation emptied.</summary>
-        protected async Task WhenAScriptSavesBackAnEmptyEstimation(string owner)
-        {
-            await SetTheRestAside();
-            var settings = await TheSettingsOf(owner);
-            DropEverySourceAndDefaultName(settings);
-            settings["estimationAdditionalFieldDefinitionId"] = null;
-            settings["estimationUnit"] = null;
-            settings[NonNumericEstimation] = false;
-            settings["estimationCategoryValues"] = new JsonArray();
-            await PutTheOwner(owner, settings);
-        }
-
-        /// <summary>A script that does not know Ignore Dependencies saves back the settings it read, without it.</summary>
-        protected async Task WhenAScriptSavesBackTheSettingsWithoutIgnoreDependencies(string portfolio)
-        {
-            await SetTheRestAside();
-            var settings = await TheSettingsOf(portfolio);
-            settings.Remove(IgnoreDependencies);
-            await PutTheOwner(portfolio, settings);
-        }
-
         /// <summary>A new Team on the connection, created with a body copied from a Team that names nothing.</summary>
         protected async Task WhenANewTeamIsCreated(string name)
         {
@@ -676,22 +587,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
             teamIds[name] = JsonNode.Parse(body)!["id"]!.GetValue<int>();
-        }
-
-        /// <summary>
-        /// A new Team or Portfolio, created with a body copied from an existing one of its kind, with one setting's
-        /// source sent as a number no version of Lighthouse defines.
-        /// </summary>
-        protected async Task WhenANewOwnerIsCreatedSendingTheSourceAsTheNumber(string copiedFrom, string name, OwnerSetting setting, int source)
-        {
-            var settings = await ANewOwnerCopiedFrom(copiedFrom, name);
-            settings[$"{TheOwnerMember(setting)}Source"] = source;
-
-            using var content = AsJson(settings);
-            using var response = await Client.PostAsync(new Uri(teamIds.ContainsKey(copiedFrom) ? TeamsRoute : PortfoliosRoute, UriKind.Relative), content);
-
-            SaveAnswer = response.StatusCode;
-            SaveAnswerBody = await response.Content.ReadAsStringAsync();
         }
 
         private Task<JsonObject> ANewTeamCopiedFromFraudSignals(string name) => ANewOwnerCopiedFrom(FraudSignals, name);
@@ -775,9 +670,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 settings["estimationDefaultName"]?.ToString());
         }
 
-        protected async Task<bool?> WhetherTheEstimationIsNonNumericFor(string owner)
-            => (await TheSettingsOf(owner))[NonNumericEstimation]?.GetValue<bool?>();
-
         /// <summary>The field the tracker was last asked to read for this setting of this owner; null when none.</summary>
         protected string? WhatTheTrackerWasAskedToReadFor(string owner, OwnerSetting setting)
             => whatTheTrackerWasAskedToRead.TryGetValue((owner, setting), out var field) ? field : "<never asked>";
@@ -829,9 +721,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// <summary>The connection's defaults and who follows them, as the connection page reads them.</summary>
         protected async Task<JsonObject> WhatTheConnectionPageReads(string connection) => await TheConnectionAsThePageReadsIt(connection);
 
-        protected async Task<bool?> WhetherThePortfolioIgnoresItsDependencies(string portfolio)
-            => (await TheSettingsOf(portfolio))[IgnoreDependencies]?.GetValue<bool?>();
-
         protected async Task<string?> TheDefaultNamedOnTheConnection(ConnectionDefault theDefault)
         {
             var read = await TheConnectionAsThePageReadsIt(JiraDcPayments);
@@ -846,16 +735,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             return read["usedBy"]?["followers"]?[TheMember(theDefault)]?.GetValue<int?>();
         }
 
-        /// <summary>
-        /// The defaults the connection says it offers. Null when it says nothing about them at all, which a
-        /// connection offering none must not do: it says so with an empty list.
-        /// </summary>
-        protected async Task<IReadOnlyList<string>?> WhatTheConnectionOffersAsDefaults(string connection)
-        {
-            var read = await TheConnectionAsThePageReadsIt(connection);
-            return read["supportedDefaults"] is JsonArray offered ? [.. offered.Select(member => member?.ToString() ?? string.Empty)] : null;
-        }
-
         protected async Task<IReadOnlyList<string>> TheFieldsOfTheConnection(string connection)
         {
             var read = await TheConnectionAsThePageReadsIt(connection);
@@ -867,19 +746,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         {
             var connectionId = (await TheSettingsOf(owner))[ConnectionIdMember]?.GetValue<int>();
             return connectionIds.FirstOrDefault(connection => connection.Value == connectionId).Key ?? $"<connection {connectionId}>";
-        }
-
-        protected Task<IReadOnlyList<string>> TheTeamsOnTheTeamsList() => TheNamesListedAt(TeamsRoute);
-
-        protected Task<IReadOnlyList<string>> ThePortfoliosOnThePortfoliosList() => TheNamesListedAt(PortfoliosRoute);
-
-        private async Task<IReadOnlyList<string>> TheNamesListedAt(string route)
-        {
-            using var response = await Client.GetAsync(new Uri(route, UriKind.Relative));
-            var body = await response.Content.ReadAsStringAsync();
-
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-            return [.. JsonNode.Parse(body)!.AsArray().Select(owner => owner?["name"]?.ToString() ?? string.Empty)];
         }
 
         /// <summary>Every Information entry about a changed default the saves since the scenario's start wrote.</summary>
@@ -1249,14 +1115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             else
             {
                 settings[$"{TheOwnerMember(setting)}Source"] = source.Value.ToString();
-            }
-        }
-
-        private static void DropEverySourceAndDefaultName(JsonObject settings)
-        {
-            foreach (var member in settings.Select(pair => pair.Key).Where(key => key.EndsWith("Source", StringComparison.Ordinal) || key.EndsWith("DefaultName", StringComparison.Ordinal)).ToList())
-            {
-                settings.Remove(member);
             }
         }
 

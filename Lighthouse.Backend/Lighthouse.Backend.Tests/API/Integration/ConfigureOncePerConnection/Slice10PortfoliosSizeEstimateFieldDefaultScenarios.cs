@@ -12,8 +12,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     [Category("us-09")]
     public class Slice10PortfoliosSizeEstimateFieldDefaultScenarios : ConnectionDefaultsAcceptanceTest
     {
-        private static readonly string[] CardIssuingDownloadsEverything = [$"{CardIssuing} Full"];
-
         // A Portfolio's default size, as a new Portfolio is created with it.
         private const int ThePortfoliosDefaultSize = 25;
 

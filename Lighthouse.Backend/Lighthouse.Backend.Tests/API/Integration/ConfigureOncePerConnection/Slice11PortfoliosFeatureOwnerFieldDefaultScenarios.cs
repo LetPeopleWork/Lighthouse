@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     {
         private const string Settlements = "Settlements";
 
-        private static readonly string[] CardIssuingDownloadsEverything = [$"{CardIssuing} Full"];
-
         [Test]
         public async Task A_following_Feature_is_owned_by_the_Team_the_default_field_names()
         {
