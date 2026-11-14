@@ -1,0 +1,97 @@
+{
+"counters": {
+"F": 13,
+"P": 4,
+"S": 3
+},
+"facts": {
+"F1": "Story #6361 S03c Package Forecasting, nwdes feature B of three (the move). Move the 31 Forecasting files out of Services into Modules/Forecasting: the simulation, draw streams, run plan and the two forecast policies into Domain; the forecast, reality-check and filter-rule services, their ports, ForecastLane and IForecastUpdater into Application; the forecast updater and the start-up seeder into Adapters/Background; the four forecast triggers into Application/Policies. Pure moves in their own commits, namespace edits apart. The Flow metrics rule lists name the moved types in their new place. Behaviour-free: routes, DTOs, responses, forecast results, handler order and the schema stay the same. Design: docs/feature/story-6361-s03c-package-forecasting/feature-delta.md (slices B1-B3, Component decomposition, D-4, D-8).",
+"F10": "Any behaviour, route, DTO, schema, handler-order or response change",
+"F11": "No Domain-layer Forecasting type remains in Services; Modules/Forecasting/Domain reaches only the kernel and the BCL",
+"F12": "The forecast services and their ports live in Modules/Forecasting/Application and the Flow metrics lists name them there",
+"F13": "The forecast updater and seeder live in Adapters/Background and the four triggers in Application/Policies; handler order unchanged",
+"F2": "Forecasting lives in its own module folder, so feature C can give it its own rules and break the cycle with Flow metrics",
+"F3": "The simulation, draw streams, run plan and the two forecast policies live in Modules/Forecasting/Domain, which reaches only the shared kernel",
+"F4": "The forecast, reality-check and filter-rule services and their ports live in Modules/Forecasting/Application, and the Flow metrics rule lists name them in their new place",
+"F5": "The forecast updater and the start-up seeder live in Modules/Forecasting/Adapters/Background and the four forecast triggers in Application/Policies, with domain-event handler order unchanged",
+"F6": "Forecasts and forecast answers are identical before and after the move",
+"F7": "Pure move and namespace-edit commits of the 31 Forecasting files; Program.cs using lines; Flow metrics list strings; Stryker config path",
+"F8": "Entities and DTOs in Models and API/DTO, controllers, Delivery forecast publishing, WhatTheForecastWaitsFor (later Stories)",
+"F9": "Removing the Flow metrics to Forecasting cycle and Forecasting's own module rules (feature C)"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+}
+],
+"scope_in": [
+"F7"
+],
+"scope_out": [
+"F8",
+"F9",
+"F10"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F11",
+"promises": [
+"P1",
+"P4"
+]
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F12",
+"promises": [
+"P2",
+"P4"
+]
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F13",
+"promises": [
+"P3",
+"P4"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6361-s03c-b-move",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

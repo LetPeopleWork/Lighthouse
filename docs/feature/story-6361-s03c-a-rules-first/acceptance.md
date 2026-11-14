@@ -674,4 +674,36 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules: 671 tests, 671 passed. Includes TheFlowMetricsRuleTests_CallTheSharedModuleRules_AndKeepNoRulesClassOrApplicationRuleOfTheirOwn, UnderModules-parameterised rules, Forecasting edge newcomer/stale/async-only tests (AListedForecastingEdgeThatIsGone..., ATypeReachingForecastingOnlyInsideAnAsyncMethod...). Names only; made-up-type stimuli not independently read.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules: 671 tests, 671 passed. Includes TheFlowMetricsRuleTests_CallTheSharedModuleRules_AndKeepNoRulesClassOrApplicationRuleOfTheirOwn, UnderModules-parameterised rules, Forecasting edge newcomer/stale/async-only tests (AListedForecastingEdgeThatIsGone..., ATypeReachingForecastingOnlyInsideAnAsyncMethod...). Names only; made-up-type stimuli not independently read.
+```
+
+```text
+Probe architecture-rules: tests named ATypeReachingForecastingUnderTheModule_IsCaughtAsReachingForecastingByTheModuleMap, AForecastingTypeUnderTheModule_StaysOutOfReachOfTheStalenessRule, ARunsWorkingStateHeldUnderTheModule_IsInsideTheForecast_WhileAnOutsiderHoldingItIsNamed, ABackgroundComponentUnderTheModuleReachingForTheForecastService_IsNamed, TheForecastRoundFiles_AreFoundByTheirNameWhereverTheyLive all passed. I did not enumerate every Forecasting-naming rule or place my own made-up type; coverage of 'every rule' rests on rule-test names.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Probe forecast-answers-compare (base 39a7f598f vs candidate ae3a35a7b): captured 128 answers over 9 demo-data scenarios, all 9 scenarios 0 different; VERDICT: IDENTICAL, all 128 forecast answers match. Non-probe: I did not run the pinned-seed percentile tests with literal values separately (backend-tests not run, time budget); the compare covers the same-answers claim on demo data.
+```
