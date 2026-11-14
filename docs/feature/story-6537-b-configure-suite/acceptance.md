@@ -158,6 +158,98 @@ A production file edited alongside the test move, or a host row that proves the 
 
 None.
 
+### S3
+
+##### Covers
+
+P1
+
+```text
+Run the two Azure DevOps host classes and the connector unit rows, compare the sorted test ids with the expected list
+```
+
+```text
+Each host class holds only the rows kept as wire or end-to-end rows; every expected unit id is present and passes; each removed host row maps in the id table to a named unit row
+```
+
+```text
+The backend Integration tier takes less time and the Azure DevOps relation rules are still checked
+```
+
+##### Disposition
+
+Tested
+
+python3 docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s3\_compare\_ids\.py
+
+```text
+a host row is removed whose rule no unit row covers, or an id is missing or extra
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Break one production line on the path of each removed host row, then run the unit rows
+```
+
+```text
+Each deliberate break turns at least one named unit or port row red, and the id table names that row for every removed host row
+```
+
+```text
+No Azure DevOps relation rule loses its test when the host rows leave
+```
+
+##### Disposition
+
+Tested
+
+python3 docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s3\_breaks\.py
+
+```text
+a removed host row whose rule, loop, gate or branch no unit row turns red for
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Check that no production or budget file changed since the merge base and that the host-user guard list gained no line
+```
+
+```text
+The comparison reports no changed production file, no added guard line, and the three wire or end-to-end host rows still present
+```
+
+```text
+Behaviour is unchanged, the test-host guard does not grow and each route keeps one host row for the wiring
+```
+
+##### Disposition
+
+Tested
+
+python3 docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s3\_compare\_ids\.py
+
+```text
+a production file is edited or a guard line is added
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows
