@@ -925,3 +925,23 @@ No defect was observed. `--outcome accepted` closes the record; nwdes derives th
 
 **Lessons.** `nwdes examine abort` deletes the examine workspace. An examiner on a 3-probe budget needs one command that shows the
 whole proof (`feature-proof <feature> summary <base>`), and an expectation it can observe now (not a CI timing).
+
+## Wave: DELIVER / [REF] Suite 2 delivered and EXAMINE closed (2026-11-14, AFK)
+
+Suite 2 (`story-6537-b-configure-suite`, `ConfigureOncePerConnection`) is pushed: S1 `bac2135c1` (Slice05b, 05a; 41 host rows
+moved), S2 `d7326c838` (Slice02, 01; 16), S3 `9eccd3123` (Slice04, 03; 40), S4 `4b4991176` (Slice12, 09, 10, 11; 25; Slice09
+left the host), S5 `f2a2dd345` (Slice06, 08; 6). 128 host rows moved, no production change, every CI run green. Kept against the
+screen after the oracle reviews: Slice12 rows 1 and 16; Slice08 rows 2, 4, 5-6 and 7 (no unit row proves the controller's save
+gate or where a Portfolio's item hangs).
+
+**Whole-candidate review: accepted after one revision.** After a push, a slice oracle's scope check compares HEAD with
+itself; `evidence/suite_scope_check.py` checks the suite's own commits instead, and `feature-proof scope` runs it.
+
+**EXAMINE: maintainer decision (a), close the record as it stands.** The examiner judged E1-E3 unmet on observation gaps only
+(first break per slice seen, all red; own-commit scope clean; no defect). Its one scope run that saw the Jira connector changed
+overlapped a temporary break of its own summary run. nwdes publishes the feature as rejected on those rows, as for suite 1.
+
+**Follow-ups:** controller unit rows for the save gate and `DefaultsAddedInThisSave`; a Portfolio hang unit test; the Estimation
+"queues nothing" proof; the refused-move ordering; the class-level `epic-6303` categories left on Slice05a/05b/10/11.
+
+**Next: step 5, stop and ask (5.1).** Both suites are done, so T10 halts with the note to the maintainer.

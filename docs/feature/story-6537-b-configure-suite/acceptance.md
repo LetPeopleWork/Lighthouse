@@ -478,4 +478,50 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+unmet
+
+#### Observations
+
+```text
+Probe feature-proof story-6537-b-configure-suite summary 3cc76466d completed (exit 0, background task bz59at0r1, after the examination wall budget). Diff part 'since 3cc76466d (includes other work merged meanwhile)': production files changed 2 (Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv; Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs); time budget files changed 0; host-user guard list: one line removed (Slice09PortfoliosDependencyFieldDefaultScenarios), no line added. Scope part (feature's own commits): suite commits=72 findings=0 (exit 0). This contradicts observation O2 (scope run earlier in this examination: exit 1, one uncommitted change to JiraWorkTrackingConnector.cs); the O2 finding did not reproduce in this scope run and its cause is not established.
+```
+
+```text
+Probe feature-proof summary oracles and first breaks (same run as O5). Oracles, exit 0 each: s1_compare_ids observed=280 expected=247 differences=0; s2 observed=84 expected=84 differences=0; s3 observed=58 expected=58 differences=0; s4 observed=223 expected=210 differences=0; s5 observed=176 expected=176 differences=0. Note: s1 and s4 report observed differing from expected counts while differences=0; not explained by the public output. First breaks (one per slice, only the first break of each slice was run): slice1 A1 (save removing a field in use not refused) -> Failed 15, Passed 256 of 271; slice2 H1 (per-Feature finding object) -> Failed 1 of 80; slice3 A1 (naming one end reads both ends) -> Failed 1 of 56; slice4 E1 (Team reads Portfolios Estimation default) -> Failed 10 of 214; slice5 K1 (save without Save and update still queues updates) -> Failed 10 of 168. Table command, the remaining breaks per slice, and the layer (unit vs host) of the named rows were not captured.
+```
+
+observation_gap
+
+### E2
+
+unmet
+
+#### Observations
+
+```text
+Probe feature-proof story-6537-b-configure-suite summary 3cc76466d completed (exit 0, background task bz59at0r1, after the examination wall budget). Diff part 'since 3cc76466d (includes other work merged meanwhile)': production files changed 2 (Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv; Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs); time budget files changed 0; host-user guard list: one line removed (Slice09PortfoliosDependencyFieldDefaultScenarios), no line added. Scope part (feature's own commits): suite commits=72 findings=0 (exit 0). This contradicts observation O2 (scope run earlier in this examination: exit 1, one uncommitted change to JiraWorkTrackingConnector.cs); the O2 finding did not reproduce in this scope run and its cause is not established.
+```
+
+```text
+Probe feature-proof summary oracles and first breaks (same run as O5). Oracles, exit 0 each: s1_compare_ids observed=280 expected=247 differences=0; s2 observed=84 expected=84 differences=0; s3 observed=58 expected=58 differences=0; s4 observed=223 expected=210 differences=0; s5 observed=176 expected=176 differences=0. Note: s1 and s4 report observed differing from expected counts while differences=0; not explained by the public output. First breaks (one per slice, only the first break of each slice was run): slice1 A1 (save removing a field in use not refused) -> Failed 15, Passed 256 of 271; slice2 H1 (per-Feature finding object) -> Failed 1 of 80; slice3 A1 (naming one end reads both ends) -> Failed 1 of 56; slice4 E1 (Team reads Portfolios Estimation default) -> Failed 10 of 214; slice5 K1 (save without Save and update still queues updates) -> Failed 10 of 168. Table command, the remaining breaks per slice, and the layer (unit vs host) of the named rows were not captured.
+```
+
+observation_gap
+
+### E3
+
+unmet
+
+#### Observations
+
+```text
+Probe feature-proof story-6537-b-configure-suite scope: output 'SCOPE uncommitted change to Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs', 'suite commits=72 findings=1', exit 1. Scope check reports one production-file finding for this feature (uncommitted change, Jira connector). Result is a finding against E3 (no production file changes); its scope is the candidate worktree state seen by the check.
+```
+
+```text
+Probe feature-proof story-6537-b-configure-suite summary 3cc76466d completed (exit 0, background task bz59at0r1, after the examination wall budget). Diff part 'since 3cc76466d (includes other work merged meanwhile)': production files changed 2 (Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv; Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs); time budget files changed 0; host-user guard list: one line removed (Slice09PortfoliosDependencyFieldDefaultScenarios), no line added. Scope part (feature's own commits): suite commits=72 findings=0 (exit 0). This contradicts observation O2 (scope run earlier in this examination: exit 1, one uncommitted change to JiraWorkTrackingConnector.cs); the O2 finding did not reproduce in this scope run and its cause is not established.
+```
+
+observation_gap
