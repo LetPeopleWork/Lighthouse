@@ -76,3 +76,25 @@ Failed!  - Failed:     2, Passed:    79, Skipped:     0, Total:    81, Duration:
 === D1 the window a day reads starts a day early
 Failed ADayWithoutRows_IsWorkedOutAtEveryHorizon_OverAWindowEndingOnThatDay [22 ms]
 Failed!  - Failed:     1, Passed:    80, Skipped:     0, Total:    81, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== E1 the span of a team's limits window is one day too long
+Failed TeamDataRefreshed_ReadsTheSameAsOfTodayWindowTheWidgetUses [958 ms]
+Failed!  - Failed:     1, Passed:    90, Skipped:     0, Total:    91, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== E2 the window a limits day reads starts a day early
+Failed TeamDataRefreshed_ReadsTheSameAsOfTodayWindowTheWidgetUses [900 ms]
+Failed ADayWithoutLimits_IsReadOverTheSpanEndingOnThatDay_AsOfThatDay [19 ms]
+Failed!  - Failed:     2, Passed:    89, Skipped:     0, Total:    91, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== E3 a team's last refresh is read as a UTC day and not an instance day
+Failed ATeamLastSeenInTheEveningWestOfUtc_WasLastObservedOnThatEveningsDay [27 ms]
+Failed ATeamsLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [13 ms]
+Failed ATeamsPercentileFamilies_ReadNothingForAWindowReachingPastWhatItKeeps_AndReadAWindowStartingOnTheEdge [5 ms]
+Failed ATeamThatKeepsWorkForThirtyDays_HasNoHistoryBeforeTheEdge [3 ms]
+Failed!  - Failed:     4, Passed:    87, Skipped:     0, Total:    91, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== E4 a pass may work out only one day
+Failed APassWorksOutNinetyDaysAtMost [19 ms]
+Failed DaysBeforeTheFirstFinishedItem_DoNotSpendThePassAllowance [6 ms]
+Failed DaysThatCannotBeWritten_AreReportedOnceWithTheCauseAndOnceAsATally [23 ms]
+Failed EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfAPortfolio [13 ms]
+Failed EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfATeam [9 ms]
+Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [4 ms]
+Failed TwoDaysThatCannotBeWritten_AreTalliedOnceTheCauseHasBeenReported [5 ms]
+Failed!  - Failed:     7, Passed:    84, Skipped:     0, Total:    91, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)

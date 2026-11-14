@@ -26,6 +26,7 @@ FILTER = (
     "|FullyQualifiedName~FlowMetrics.Application.GapAskingSeriesQueryTest."
     "|FullyQualifiedName~FlowMetrics.Application.OverTimeGapReconcilerTest."
     "|FullyQualifiedName~FlowMetrics.Application.ReconstructionMemoTest."
+    "|FullyQualifiedName~FlowMetrics.Application.ProcessBehaviorSnapshotWriterTest."
     "|FullyQualifiedName~ProcessBehaviorRecordingHandlerTests.TeamDataRefreshed_ReadsTheSameAsOfTodayWindowTheWidgetUses"
     "|FullyQualifiedName~Adapters.Background.OverTimeHistoryFillerTest."
 )

@@ -9,12 +9,14 @@ F = FM + "Adapters/Background/OverTimeHistoryFiller.cs"
 T = FM + "Application/OverTimeFillTarget.cs"
 E = FM + "Application/RetentionEdge.cs"
 W = FM + "Application/PercentileSnapshotWriter.cs"
+P = FM + "Application/ProcessBehaviorSnapshotWriter.cs"
 
 UNITS = (
     "FullyQualifiedName~FlowMetrics.Application.OverTimeFillTargetTest."
     "|FullyQualifiedName~FlowMetrics.Application.RetentionEdgeTest."
     "|FullyQualifiedName~FlowMetrics.Application.PercentileSnapshotWriterTest."
     "|FullyQualifiedName~FlowMetrics.Application.ReconstructionMemoTest."
+    "|FullyQualifiedName~FlowMetrics.Application.ProcessBehaviorSnapshotWriterTest."
     "|FullyQualifiedName~ProcessBehaviorRecordingHandlerTests.TeamDataRefreshed_ReadsTheSameAsOfTodayWindowTheWidgetUses"
     "|FullyQualifiedName~Adapters.Background.OverTimeHistoryFillerTest."
 )
@@ -64,6 +66,15 @@ BREAKS = [
      "owner.DoneItemsCutoffDays > 0 ?", "owner.DoneItemsCutoffDays >= 0 ?"),
     ("C7 an owner with nothing finished gets a first day", E,
      "if (earliestFinishedDay is null || oldestDayStillKept is null)", "if (oldestDayStillKept is null)"),
+    ("E1 the span of a team's limits window is one day too long", P,
+     "return team.ThroughputHistory - 1;", "return team.ThroughputHistory - 2;"),
+    ("E2 the window a limits day reads starts a day early", P,
+     "family.ReadChart(windowEnd.AddDays(-family.LookbackDays), windowEnd, asOf)",
+     "family.ReadChart(windowEnd.AddDays(-family.LookbackDays - 1), windowEnd, asOf)"),
+    ("E3 a team's last refresh is read as a UTC day and not an instance day", T,
+     "clock.ToInstanceDay(team.UpdateTime)", "DateOnly.FromDateTime(team.UpdateTime)"),
+    ("E4 a pass may work out only one day", F,
+     "private const int MostDaysOnePassWorksOut = 90;", "private const int MostDaysOnePassWorksOut = 1;"),
     ("D1 the window a day reads starts a day early", W,
      "readPercentiles(windowEnd.AddDays(-horizon), windowEnd)", "readPercentiles(windowEnd.AddDays(-horizon - 1), windowEnd)"),
 ]
