@@ -151,6 +151,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var team = AFollowingTeam();
             team.WorkTrackingSystemConnection.EstimationForTeams = EstimationBundle.None;
+            team.WorkTrackingSystemConnection.EstimationForPortfolios = TheDefault;
 
             using (Assert.EnterMultipleScope())
             {

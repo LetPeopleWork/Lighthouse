@@ -1,0 +1,260 @@
+=== E1 a Team reads the Portfolios' Estimation default
+Failed A_bundle_equal_to_what_the_Team_reads_leaves_it_following [64 ms]
+Failed A_bundle_without_a_field_leaves_the_Team_following [1 ms]
+Failed A_save_sending_the_estimation_categories_as_null_leaves_a_following_Team_following [1 ms]
+Failed A_script_saving_back_what_a_following_Team_read_leaves_it_following_whether_or_not_it_echoes_every_property(True) [65 ms]
+Failed A_script_saving_back_what_a_following_Team_read_leaves_it_following_whether_or_not_it_echoes_every_property(False) [1 ms]
+Failed Following_the_default_empties_the_Teams_own_bundle [1 ms]
+Failed The_default_is_named_by_its_field_and_its_unit("Points","Story Points, Points") [< 1 ms]
+Failed The_default_is_named_by_its_field_and_its_unit(null,"Story Points") [< 1 ms]
+Failed The_default_is_named_by_its_field_and_its_unit("","Story Points") [< 1 ms]
+Failed!  - Failed:     9, Passed:   192, Skipped:     0, Total:   201, Duration: 463 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E2 a Portfolio reads the Teams' Estimation default
+Failed A_following_Portfolio_names_the_Portfolios_default_by_its_field_and_unit [36 ms]
+Failed A_following_Portfolio_reads_the_Portfolios_default_and_not_the_Teams [2 ms]
+Failed!  - Failed:     2, Passed:   199, Skipped:     0, Total:   201, Duration: 405 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E3 a default is named without its unit
+/storage/repos/Lighthouse/.claude/worktrees/warm-yawning-kahn/Lighthouse.Backend/Lighthouse.Backend/Models/EstimationBundle.cs(32,23): error S2325: Make 'NamedWith' a static method. [/storage/repos/Li
+NO SUMMARY (the edit did not compile)
+=== E4 two bundles that differ only in unit count as equal
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(unit) [30 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(unit in another case) [< 1 ms]
+Failed!  - Failed:     2, Passed:   199, Skipped:     0, Total:   201, Duration: 367 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E5 a null category list is read as a list with a category
+Failed A_save_sending_the_estimation_categories_as_null_leaves_a_following_Team_following [44 ms]
+Failed!  - Failed:     1, Passed:   200, Skipped:     0, Total:   201, Duration: 386 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E6 an owner that sends nothing about its estimation starts following
+Failed A_bundle_without_a_field_leaves_an_owning_Team_its_own_bundle [25 ms]
+Failed!  - Failed:     1, Passed:   200, Skipped:     0, Total:   201, Duration: 364 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== E7 a bundle without a field counts as set
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(field) [46 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(unit) [< 1 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(unit in another case) [< 1 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(non-numeric flag) [< 1 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(categories) [< 1 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(categories reordered) [< 1 ms]
+Failed A_bundle_without_a_field_leaves_an_owning_Team_its_own_bundle [1 ms]
+Failed A_bundle_without_a_field_leaves_the_Team_following [< 1 ms]
+Failed An_older_script_dropping_the_unit_and_switch_of_a_non_numeric_default_makes_the_follower_own_a_numeric_estimation [1 ms]
+Failed!  - Failed:     9, Passed:   192, Skipped:     0, Total:   201, Duration: 365 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== R1 a source this version does not know is accepted
+Failed An empty list [108 ms]
+Failed An entry naming no field [< 1 ms]
+Failed Six entries [< 1 ms]
+Failed The own parent twice [< 1 ms]
+Failed A field twice [< 1 ms]
+Failed A field nobody holds twice [< 1 ms]
+Failed A_list_whose_every_field_the_connection_holds_is_not_refused [1 ms]
+Failed A_new_owner_created_with_an_Estimation_source_this_version_does_not_know_is_refused(Team) [< 1 ms]
+Failed A_new_owner_created_with_an_Estimation_source_this_version_does_not_know_is_refused(Portfolio) [< 1 ms]
+Failed A_portfolios_refusal_carries_its_own_code_and_noun [< 1 ms]
+Failed A_repeated_field_is_named_as_the_connection_the_save_moves_to_calls_it [< 1 ms]
+Failed A_source_this_version_does_not_know_is_refused_as_the_source_of_the_list [6 ms]
+Failed A_Team_moved_to_another_connection_with_an_Estimation_source_this_version_does_not_know_is_refused [1 ms]
+Failed An_owner_following_the_Estimation_default_that_still_names_a_field_of_the_old_connection_is_not_refused [< 1 ms]
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Team) [6 ms]
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Portfolio) [< 1 ms]
+Failed An_owner_owning_an_Estimation_Field_the_connection_holds_is_not_refused [< 1 ms]
+Failed An_owner_saved_with_an_Estimation_source_this_version_does_not_know_is_refused_with_its_own_code_and_words(Team) [< 1 ms]
+Failed An_owner_saved_with_an_Estimation_source_this_version_does_not_know_is_refused_with_its_own_code_and_words(Portfolio) [< 1 ms]
+Failed One_field_the_connection_lacks_refuses_a_list_whose_other_fields_it_holds [< 1 ms]
+Failed!  - Failed:    20, Passed:   181, Skipped:     0, Total:   201, Duration: 377 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== R2 the unknown source refusal carries another code
+Failed A_new_owner_created_with_an_Estimation_source_this_version_does_not_know_is_refused(Team) [22 ms]
+Failed A_new_owner_created_with_an_Estimation_source_this_version_does_not_know_is_refused(Portfolio) [< 1 ms]
+Failed A_source_this_version_does_not_know_is_refused_as_the_source_of_the_list [< 1 ms]
+Failed A_Team_moved_to_another_connection_with_an_Estimation_source_this_version_does_not_know_is_refused [< 1 ms]
+Failed An_owner_saved_with_an_Estimation_source_this_version_does_not_know_is_refused_with_its_own_code_and_words(Team) [< 1 ms]
+Failed An_owner_saved_with_an_Estimation_source_this_version_does_not_know_is_refused_with_its_own_code_and_words(Portfolio) [< 1 ms]
+Failed!  - Failed:     6, Passed:   195, Skipped:     0, Total:   201, Duration: 363 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== R3 the Estimation Field is not judged by its source
+Failed An_owner_following_the_Estimation_default_that_still_names_a_field_of_the_old_connection_is_not_refused [22 ms]
+Failed!  - Failed:     1, Passed:   200, Skipped:     0, Total:   201, Duration: 373 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== R4 a field the connection lacks is accepted
+Failed A_list_whose_every_field_the_connection_holds_is_not_refused [24 ms]
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Team) [1 ms]
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Portfolio) [1 ms]
+Failed An_owner_owning_an_Estimation_Field_the_connection_holds_is_not_refused [< 1 ms]
+Failed!  - Failed:     4, Passed:   197, Skipped:     0, Total:   201, Duration: 364 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== R5 the missing field refusal carries another code
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Team) [23 ms]
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Portfolio) [< 1 ms]
+Failed One_field_the_connection_lacks_refuses_a_list_whose_other_fields_it_holds [< 1 ms]
+Failed!  - Failed:     3, Passed:   198, Skipped:     0, Total:   201, Duration: 364 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== R6 the connection the save leaves the owner on is always the old one
+Failed A field twice [25 ms]
+Failed A_repeated_field_is_named_as_the_connection_the_save_moves_to_calls_it [< 1 ms]
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Team) [1 ms]
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Portfolio) [1 ms]
+Failed One_field_the_connection_lacks_refuses_a_list_whose_other_fields_it_holds [< 1 ms]
+Failed!  - Failed:     5, Passed:   196, Skipped:     0, Total:   201, Duration: 361 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== R7 the refusal for an Estimation source names no setting
+Failed A_new_owner_created_with_an_Estimation_source_this_version_does_not_know_is_refused(Team) [27 ms]
+Failed A_new_owner_created_with_an_Estimation_source_this_version_does_not_know_is_refused(Portfolio) [< 1 ms]
+Failed A_Team_moved_to_another_connection_with_an_Estimation_source_this_version_does_not_know_is_refused [< 1 ms]
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Team) [< 1 ms]
+Failed An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(Portfolio) [< 1 ms]
+Failed An_owner_saved_with_an_Estimation_source_this_version_does_not_know_is_refused_with_its_own_code_and_words(Team) [< 1 ms]
+Failed An_owner_saved_with_an_Estimation_source_this_version_does_not_know_is_refused_with_its_own_code_and_words(Portfolio) [< 1 ms]
+Failed!  - Failed:     7, Passed:   194, Skipped:     0, Total:   201, Duration: 420 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== C1 a follower reads its own field
+Failed A_bundle_equal_to_what_the_Team_reads_leaves_it_following [13 ms]
+Failed A_new_Portfolio_follows_the_connections_Dependency_Field_default [29 ms]
+Failed A_new_Portfolio_follows_the_connections_Feature_Owner_Field_default [< 1 ms]
+Failed A_bundle_without_a_field_leaves_the_Team_following [< 1 ms]
+Failed A_new_Portfolio_follows_the_connections_Portfolio_default [< 1 ms]
+Failed A_new_Portfolio_follows_the_connections_Size_Estimate_Field_default [< 1 ms]
+Failed A_following_Portfolio_reads_the_Portfolios_default_and_not_the_Teams [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_save_sending_the_estimation_categories_as_null_leaves_a_following_Team_following [1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Dependency_Field_owner_sent_as_following_drops_its_own_field [2 ms]
+Failed A_Feature_Owner_Field_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed A_follower_saved_back_without_its_source_echoing_the_default_keeps_following [< 1 ms]
+Failed A_follower_saved_back_without_its_source_or_a_field_keeps_following [< 1 ms]
+Failed A_save_following_the_Feature_Owner_Field_default_keeps_the_Portfolios_own_Owning_Team [5 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"dependencyField","Release Train",31,"ConnectionDefault") [11 ms]
+Failed A_Size_Estimate_Field_owner_sent_as_following_drops_its_own_field [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"sizeEstimate","Story Points",32,"ConnectionDefault") [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"featureOwner","Product Lead",33,"ConnectionDefault") [< 1 ms]
+Failed A_script_saving_back_what_a_following_Team_read_leaves_it_following_whether_or_not_it_echoes_every_property(True) [73 ms]
+Failed A_script_saving_back_what_a_following_Team_read_leaves_it_following_whether_or_not_it_echoes_every_property(False) [< 1 ms]
+Failed Following_the_default_empties_the_Teams_own_bundle [< 1 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [9 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [5 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [3 ms]
+Failed!  - Failed:    33, Passed:   168, Skipped:     0, Total:   201, Duration: 410 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== C2 an owner reads the connection's default
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(Own,null,9,null) [28 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(field) [42 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(unit) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(unit in another case) [< 1 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(non-numeric flag) [< 1 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(categories) [< 1 ms]
+Failed A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(categories reordered) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_bundle_without_a_field_leaves_an_owning_Team_its_own_bundle [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Portfolio_owning_an_estimation_keeps_it_whatever_the_Teams_default_is [12 ms]
+Failed A_Dependency_Field_follower_sent_None_as_its_own_chooses_None [93 ms]
+Failed A_Feature_Owner_Field_follower_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed A_Size_Estimate_Field_follower_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"dependencyField","Release Train",41,"Own") [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"sizeEstimate","Story Points",42,"Own") [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"featureOwner","Product Lead",43,"Own") [< 1 ms]
+Failed An_owner_sent_None_as_its_own_chooses_None [< 1 ms]
+Failed An_older_script_dropping_the_unit_and_switch_of_a_non_numeric_default_makes_the_follower_own_a_numeric_estimation [1 ms]
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [33 ms]
+Failed EverySettingOfATeamSurvivesBeingSavedAndReadBack [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [8 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [3 ms]
+Failed!  - Failed:    36, Passed:   165, Skipped:     0, Total:   201, Duration: 448 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P1 a Portfolio never follows the Dependency Field default
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [21 ms]
+Failed!  - Failed:     1, Passed:   200, Skipped:     0, Total:   201, Duration: 404 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P2 a Portfolio never follows the Size Estimate Field default
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [19 ms]
+Failed!  - Failed:     1, Passed:   200, Skipped:     0, Total:   201, Duration: 397 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P3 a Portfolio never follows the Feature Owner Field default
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [19 ms]
+Failed!  - Failed:     1, Passed:   200, Skipped:     0, Total:   201, Duration: 383 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P4 the Dependency Field default is read from the Parent default
+Failed A_new_Portfolio_follows_the_connections_Dependency_Field_default [22 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,null,null) [1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,null,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"dependencyField","Release Train",31,"ConnectionDefault") [13 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"dependencyField","Release Train",41,"Own") [< 1 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [8 ms]
+Failed!  - Failed:     8, Passed:   193, Skipped:     0, Total:   201, Duration: 349 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P5 the Size Estimate Field default is read from the Dependency default
+Failed A_new_Portfolio_follows_the_connections_Size_Estimate_Field_default [31 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,null,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,null,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"sizeEstimate","Story Points",32,"ConnectionDefault") [2 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"sizeEstimate","Story Points",42,"Own") [< 1 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [10 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [5 ms]
+Failed!  - Failed:     9, Passed:   192, Skipped:     0, Total:   201, Duration: 383 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P6 the Feature Owner Field default is read from the Size default
+Failed A_new_Portfolio_follows_the_connections_Feature_Owner_Field_default [23 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,null,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,null,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"featureOwner","Product Lead",33,"ConnectionDefault") [3 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"featureOwner","Product Lead",43,"Own") [< 1 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [6 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [4 ms]
+Failed!  - Failed:     9, Passed:   192, Skipped:     0, Total:   201, Duration: 368 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P7 the page names no Dependency Field default
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"dependencyField","Release Train",31,"ConnectionDefault") [28 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"dependencyField","Release Train",41,"Own") [< 1 ms]
+Failed!  - Failed:     2, Passed:   199, Skipped:     0, Total:   201, Duration: 346 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P8 the page names no Size Estimate Field default
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"sizeEstimate","Story Points",32,"ConnectionDefault") [23 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"sizeEstimate","Story Points",42,"Own") [< 1 ms]
+Failed!  - Failed:     2, Passed:   199, Skipped:     0, Total:   201, Duration: 361 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P9 the page names no Feature Owner Field default
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"featureOwner","Product Lead",33,"ConnectionDefault") [20 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"featureOwner","Product Lead",43,"Own") [< 1 ms]
+Failed!  - Failed:     2, Passed:   199, Skipped:     0, Total:   201, Duration: 365 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P10 the page names the Parent default for the Dependency Field
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"dependencyField","Release Train",31,"ConnectionDefault") [36 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"dependencyField","Release Train",41,"Own") [1 ms]
+Failed!  - Failed:     2, Passed:   199, Skipped:     0, Total:   201, Duration: 387 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P11 a save without Ignore Dependencies clears it
+Failed A_script_saving_back_the_settings_without_Ignore_Dependencies_leaves_a_Portfolio_that_ignores_them_ignoring_them [22 ms]
+Failed!  - Failed:     1, Passed:   200, Skipped:     0, Total:   201, Duration: 390 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== P12 a connection page offers its defaults under another name
+Failed A_connections_page_offers_the_Portfolios_field_defaults_by_name_and_never_Ignore_Dependencies [106 ms]
+Failed!  - Failed:     1, Passed:   200, Skipped:     0, Total:   201, Duration: 363 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== S1 an owner is judged a follower when it is not
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [31 ms]
+Failed Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter [5 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [4 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [6 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [4 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [4 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [4 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories [3 ms]
+Failed!  - Failed:    14, Passed:   187, Skipped:     0, Total:   201, Duration: 411 ms - Lighthouse.Backend.Tests.dll (net10.0)
+--- E3 above did not compile (the first edit made a member static-able); the corrected edit, rerun alone:
+=== E3 a default is named without its unit
+Failed A_following_Portfolio_names_the_Portfolios_default_by_its_field_and_unit [21 ms]
+Failed The_default_is_named_by_its_field_and_its_unit("Points","Story Points, Points") [< 1 ms]
+Failed Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter [13 ms]
+Failed Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories [3 ms]
+Failed!  - Failed:     4, Passed:   197, Skipped:     0, Total:   201, Duration: 370 ms - Lighthouse.Backend.Tests.dll (net10.0)
+--- E1 rerun after the row Clearing_the_default_... also set a Portfolios default (the row now turns red under E1):
+=== E1 (rerun) Failed Clearing_the_default_leaves_a_following_Team_without_an_estimation; Failed: 10, Passed: 191, Total: 201

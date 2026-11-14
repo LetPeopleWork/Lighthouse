@@ -23,7 +23,7 @@ UNITS = "|".join("FullyQualifiedName~" + name for name in (
 BREAKS = [
     ("E1 a Team reads the Portfolios' Estimation default", TEAM, "WorkTrackingSystemConnection?.EstimationForTeams ?? EstimationBundle.None;", "WorkTrackingSystemConnection?.EstimationForPortfolios ?? EstimationBundle.None;"),
     ("E2 a Portfolio reads the Teams' Estimation default", PORTFOLIO, "WorkTrackingSystemConnection?.EstimationForPortfolios ?? EstimationBundle.None;", "WorkTrackingSystemConnection?.EstimationForTeams ?? EstimationBundle.None;"),
-    ("E3 a default is named without its unit", BUNDLE, "string.IsNullOrEmpty(Unit) ? fieldName : $\"{fieldName}, {Unit}\";", "fieldName;"),
+    ("E3 a default is named without its unit", BUNDLE, "string.IsNullOrEmpty(Unit) ? fieldName : $\"{fieldName}, {Unit}\";", "string.IsNullOrEmpty(Unit) ? fieldName : $\"{fieldName}\";"),
     ("E4 two bundles that differ only in unit count as equal", BUNDLE, "               && string.Equals(Unit, other.Unit, StringComparison.Ordinal)\n", ""),
     ("E5 a null category list is read as a list with a category", BASE, "EstimationCategoryValues ?? []", "EstimationCategoryValues ?? [\"x\"]"),
     ("E6 an owner that sends nothing about its estimation starts following", BUNDLE, "                null => this,", "                null => FollowingTheDefault,"),
