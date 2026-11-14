@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
-namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
+namespace Lighthouse.Backend.Modules.Forecasting.Application.Policies
 {
     public class TeamDeletedForecastRetriggerHandler(IPortfolioUpdater portfolioUpdater) : IDomainEventHandler<TeamDeleted>
     {

@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
-namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
+namespace Lighthouse.Backend.Modules.Forecasting.Application.Policies
 {
     /// <summary>
     /// The simulation draws each day's throughput from the first few Features in order, so changing who

@@ -11,7 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Diagnostics;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
+namespace Lighthouse.Backend.Modules.Forecasting.Adapters.Background
 {
     public class ForecastUpdater(
         ILogger<ForecastUpdater> logger,
