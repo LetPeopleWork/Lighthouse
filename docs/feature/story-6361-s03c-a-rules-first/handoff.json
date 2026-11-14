@@ -283,7 +283,7 @@
 "counters": {
 "D": 7,
 "E": 3,
-"F": 180,
+"F": 182,
 "K": 3,
 "P": 3,
 "S": 3,
@@ -794,7 +794,8 @@
 },
 "records": {
 "decisions": [
-"F179"
+"F181",
+"F182"
 ],
 "impact": [
 {
@@ -839,7 +840,7 @@
 ],
 "verification": [
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~SeededForecastsStayTheSameTest",
-"bash Scripts/examine/bin/forecast-answers-compare HEAD"
+"bash Scripts/examine/bin/forecast-answers-compare"
 ]
 }
 }
@@ -958,9 +959,10 @@
 "F176": "The S2 oracle reads two rule members by name: StalenessPolicyPurityArchUnitTest.ServicesPattern (its widened target pattern) and a new member RefinementModuleArchUnitTest.BackgroundUpdatesPattern (the background-updates key that rule widens). Both stay members of their owning rule class with those exact names.",
 "F177": "Test project only; ServicesPattern widened so the forbidden set examines at least the types it examined before plus Modules/Forecasting",
 "F178": "Committed generator: writes Scripts/examine/bin/forecast-answers-compare and its C# driver forecast-answers-capture.cs beside metrics-answers-compare",
-"F179": "Scripts/examine/bin/ is git-ignored and generated: the committed target is Scripts/examine/build-examine-commands, which writes forecast-answers-compare and its C# driver forecast-answers-capture.cs. The verification command still runs the generated bash Scripts/examine/bin/forecast-answers-compare HEAD after the generator has run.",
 "F18": "Made-up types that prove a widened Forecasting pattern live in the test assembly under namespaces the real widened pattern matches, i.e. below Lighthouse.Backend.Modules.Forecasting, with a last segment naming them as fixtures (for example Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastingFixtures). Deviation from the example namespace Lighthouse.Backend.Modules.ForecastingFixtures in the story design: the widened patterns end in (\\.|$), so a type in Modules.ForecastingFixtures lies outside them and would prove only a rule shape with a substituted pattern, not the real constant. Rule-shape cases that pass their namespaces as parameters may keep the Modules.ForecastingFixtures namespaces the S02 way.",
 "F180": "Generator gains forecast-answers-compare and forecast-answers-capture.cs; existing generated commands unchanged; generated scripts read only",
+"F181": "Scripts/examine/bin/ is git-ignored and generated: the committed target is Scripts/examine/build-examine-commands, which writes forecast-answers-compare and its C# driver forecast-answers-capture.cs. The verification command still runs the generated bash Scripts/examine/bin/forecast-answers-compare after the generator has run.",
+"F182": "forecast-answers-compare takes [base-revision [candidate-revision]]: one argument means the base, and the candidate defaults to HEAD. The examiner before/after check is the no-argument form, which compares base 39a7f598f with candidate HEAD. The command fails when no answer was compared or when any captured answer is not a 2xx; the crafter adds these two guards.",
 "F19": "Widening per rule (Ratchet design, Rules first): ModuleBoundariesArchUnitTest.ForecastingPattern gains |^Lighthouse\\.Backend\\.Modules\\.Forecasting(\\.|$) and Flow metrics outbound rule keeps reading it; SimulatedRunIsolationArchUnitTest uses an old-or-module namespace pattern; RealityCheckReadOnlyArchUnitTest matches the two policies by typeof and forbids ApplicationCoreRules.ApplicationCore minus the two policies; DependencyAwareForecastSeamArchUnitTest subject is the update components or Modules.Forecasting.Adapters.Background, exemption by typeof(ForecastUpdater); FastWithManyFeaturesArchUnitTest locates ForecastService.cs and ForecastUpdater.cs by file name under the production source as it does for ForecastLane.cs; RefinementModuleArchUnitTest forbidden background set adds Modules.Forecasting.Adapters. UpdateHoldsAreForecastOnly, ForecastFilterSeam and DomainEventHandlerOrderPin already key on typeof or short names and are left unchanged. RecurringBlackoutEventsSeam and StalenessPolicyPurity: the crafter checks whether a Forecasting type is in their subject or target set and widens to ApplicationCore only if so. Flow metrics full-name strings for Forecasting types are not touched here (feature B rewrites them).",
 "F2": "The Forecasting move (features B and C) can start with every rule already watching the new place and a capture that proves nothing changed",
 "F20": "Safety net: a port-level seeded check under Tests/Acceptance/Forecasting runs ForecastSimulation and ForecastService (How Many and When) with DrawsFromAPinnedStartingNumber over ServicePortHarness and compares percentiles to literal values written in the test. A new Scripts/examine/bin/forecast-answers-compare, built like metrics-answers-compare (usage: forecast-answers-compare [base-revision [candidate-revision]]), captures the bodies of the GET forecast endpoints on seeded demo data with a fixed seed and diffs them; declared in .nwave/examine.json. The production-like database comparison is a maintainer-run step, not an EXAMINE expectation.",

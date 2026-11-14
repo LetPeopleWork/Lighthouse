@@ -1061,7 +1061,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 <h4>Verification</h4>
 
 <pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~SeededForecastsStayTheSameTest
-bash Scripts/examine/bin/forecast-answers-compare HEAD
+bash Scripts/examine/bin/forecast-answers-compare
 </code></pre>
 
 <h4>Supports</h4>
@@ -1091,7 +1091,10 @@ bash Scripts/examine/bin/forecast-answers-compare HEAD
 
 <h5>Decisions</h5>
 
-<pre><code>Scripts/examine/bin/ is git-ignored and generated: the committed target is Scripts/examine/build-examine-commands, which writes forecast-answers-compare and its C# driver forecast-answers-capture.cs. The verification command still runs the generated bash Scripts/examine/bin/forecast-answers-compare HEAD after the generator has run.
+<pre><code>Scripts/examine/bin/ is git-ignored and generated: the committed target is Scripts/examine/build-examine-commands, which writes forecast-answers-compare and its C# driver forecast-answers-capture.cs. The verification command still runs the generated bash Scripts/examine/bin/forecast-answers-compare after the generator has run.
+</code></pre>
+
+<pre><code>forecast-answers-compare takes [base-revision [candidate-revision]]: one argument means the base, and the candidate defaults to HEAD. The examiner before/after check is the no-argument form, which compares base 39a7f598f with candidate HEAD. The command fails when no answer was compared or when any captured answer is not a 2xx; the crafter adds these two guards.
 </code></pre>
 
 <h5>Constraints</h5>
