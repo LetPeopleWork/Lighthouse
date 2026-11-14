@@ -62,8 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         protected const string RetailRollout = "Retail Rollout";
 
-        protected const string NorthernStores = "Northern Stores";
-
         protected const string ContosoOrganisation = "https://dev.azure.com/contoso";
 
         protected const string FabrikamOrganisation = "https://dev.azure.com/fabrikam";
@@ -101,8 +99,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private const int TheDependencyFieldId = 4801;
 
         private const int TheParentOverrideFieldId = 4802;
-
-        private const int AFieldNoSettingNamesId = 14801;
 
         private const string FeatureType = "Epic";
 
@@ -428,9 +424,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected void NamesAsItsDependencyField(string adoPortfolio, string reference)
             => NameTheDependencyField(adoPortfolios[adoPortfolio], reference);
 
-        protected void NamesAsItsParentOverrideField(string adoPortfolio, string reference)
-            => NamesIn(adoPortfolio, ASettingThatReadsAField.ParentOverrideField, reference);
-
         /// <summary>The Portfolio names <paramref name="reference"/> in one of its settings that read a field.</summary>
         protected void NamesIn(string adoPortfolio, ASettingThatReadsAField setting, string reference)
         {
@@ -530,62 +523,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected void ThePortfolioListsTheParentSources(string adoPortfolio, params ParentSourceEntry[] sources)
             => adoPortfolios[adoPortfolio].OwnParentSources(ParentSources.Of(sources).List ?? throw new AssertionException("The scenario describes a list the rules refuse."));
 
-        /// <summary>The Team names <paramref name="reference"/> as its only parent source.</summary>
-        protected void TheTeamNamesAsItsParentOverrideField(string adoTeam, string reference)
-        {
-            var team = adoTeams[adoTeam];
-            var fieldId = TheParentOverrideFieldId + team.Id;
-
-            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
-            {
-                Id = fieldId,
-                DisplayName = reference,
-                Reference = reference,
-            });
-
-            team.OwnParentOverride(fieldId);
-        }
-
-        /// <summary>The Team's connection carries an Additional Field for <paramref name="reference"/> that no setting of the Team names.</summary>
-        protected void TheConnectionOfTheTeamAlsoRegisters(string adoTeam, string reference)
-        {
-            var connection = adoTeams[adoTeam].WorkTrackingSystemConnection;
-
-            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
-            {
-                Id = AFieldNoSettingNamesId + connection.Id + connection.AdditionalFieldDefinitions.Count,
-                DisplayName = reference,
-                Reference = reference,
-            });
-        }
-
         protected Task TheTeamRefreshes(string adoTeam)
             => TheRefreshOf(services => services.GetRequiredService<ITeamUpdater>().TriggerUpdate(adoTeams[adoTeam].Id));
-
-        /// <summary>
-        /// Refreshes the Team until one refresh downloads only what moved, and answers with when the last
-        /// refresh that downloaded everything ran and with what Refresh History shows after the cheap one.
-        /// </summary>
-        protected async Task<(string LastFullDownloadAt, WhatRefreshHistoryShows AfterACheapRefresh)> TheTeamRefreshesUntilARefreshDownloadsOnlyWhatMoved(string adoTeam)
-        {
-            var lastFullDownloadAt = string.Empty;
-
-            for (var refresh = 0; refresh < 4; refresh++)
-            {
-                await TheTeamRefreshes(adoTeam);
-                var shown = await WhatRefreshHistoryShowsForTheTeam(adoTeam);
-
-                if (shown.NewestRunMode == "Delta" && lastFullDownloadAt.Length > 0)
-                {
-                    return (lastFullDownloadAt, shown);
-                }
-
-                lastFullDownloadAt = shown.NewestRunAt;
-            }
-
-            Assert.Fail("Four refreshes of an unchanged Team in a row all downloaded everything, so no cheap refresh could be observed.");
-            return (lastFullDownloadAt, null!);
-        }
 
         /// <summary>The parent the Team's work in progress names for an Azure DevOps work item.</summary>
         protected async Task<string> TheParentTheTeamShowsFor(string adoTeam, int workItemId)
@@ -607,14 +546,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         /// <summary>The stored Feature for an Azure DevOps work item, keyed by its id as Azure DevOps names it.</summary>
         protected Task<IReadOnlyList<string>> WhatTheWorkItemWaitsOn(int workItemId) => WhatTheFeatureWaitsOn($"{workItemId}");
-
-        /// <summary>The parent the Feature's page names for an Azure DevOps work item.</summary>
-        protected async Task<string> TheParentShownFor(int workItemId)
-        {
-            var feature = await TheFeatureAsListed($"{workItemId}");
-
-            return feature is null ? $"<{workItemId} was never stored>" : feature["parentWorkItemReference"]?.GetValue<string>() ?? string.Empty;
-        }
 
         /// <summary>
         /// An Azure DevOps connection as the administrator would press Validate on it, with the Additional
@@ -1070,8 +1001,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             /// <summary>The request for the relation types is answered, but with no list in the answer at all.</summary>
             public bool AnswersTheListingWithoutAList { get; set; }
-
-            public int RelationTypeListings => Requests.Count(request => request == "relation types");
 
             // The identity sweep reads the change stamp alone, which is not a download of the work items.
             private static string WhatTheReadIsFor(IEnumerable<string>? fields, WorkItemExpand? expand)

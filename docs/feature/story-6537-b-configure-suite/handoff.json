@@ -69,11 +69,52 @@
 "stimulus": "F45",
 "user_result": "F47"
 }
+],
+"S3": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F52",
+"test": "python3 docs/feature/story-6537-b-configure-suite/evidence/s3_compare_ids.py"
+},
+"expected": "F50",
+"stimulus": "F49",
+"user_result": "F51"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F63",
+"test": "python3 docs/feature/story-6537-b-configure-suite/evidence/s3_breaks.py"
+},
+"expected": "F62",
+"stimulus": "F61",
+"user_result": "F55"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F60",
+"test": "python3 docs/feature/story-6537-b-configure-suite/evidence/s3_compare_ids.py"
+},
+"expected": "F58",
+"stimulus": "F57",
+"user_result": "F59"
+}
 ]
 },
 "counters": {
 "E": 3,
-"F": 48,
+"F": 63,
 "P": 3,
 "S": 5
 },
@@ -301,8 +342,20 @@
 "F46": "No production or budget file changed, no guard line was added, and the end-to-end row of each class still passes through the route",
 "F47": "The wiring of the refresh and the Refresh History and Dependencies routes is still proven by a host row, and nothing in the product changed",
 "F48": "A production file edited alongside the test move, or a host row that proves the wiring removed with the rest",
+"F49": "Run the two Azure DevOps host classes and the connector unit rows, compare the sorted test ids with the expected list",
 "F5": "No production file changes, the test-host guard lists do not grow, and at least one host row per route still proves the wiring",
+"F50": "Each host class holds only the rows kept as wire or end-to-end rows; every expected unit id is present and passes; each removed host row maps in the id table to a named unit row",
+"F51": "The backend Integration tier takes less time and the Azure DevOps relation rules are still checked",
+"F52": "a host row is removed whose rule no unit row covers, or an id is missing or extra",
+"F55": "No Azure DevOps relation rule loses its test when the host rows leave",
+"F57": "Check that no production or budget file changed since the merge base and that the host-user guard list gained no line",
+"F58": "The comparison reports no changed production file, no added guard line, and the three wire or end-to-end host rows still present",
+"F59": "Behaviour is unchanged, the test-host guard does not grow and each route keeps one host row for the wiring",
 "F6": "The 28 host rows the screen keeps (wire, real-store concurrency, end-to-end, or a rule whose owner was not located), ClockIsolationScenarios, live connector tests, and any production change",
+"F60": "a production file is edited or a guard line is added",
+"F61": "Break one production line on the path of each removed host row, including the once-per-refresh collapse and the refused connection check, then run the unit rows",
+"F62": "Each deliberate break turns at least one named unit or port row red, the id table names that row for every removed host row, a refused connection check reports not valid in its unit row, and an existing controller row pins the 400 answer",
+"F63": "a removed host row whose rule, loop, gate or branch no unit row turns red for, including one finding per refresh, one warning line, a refusal reported as valid, or a failed check answered with success",
 "F7": "The save-pipeline rules of Slice05bReferencedFieldsAndOlderPayloads and Slice05aTeamsParentOverrideDefault (referenced fields, older payloads, a team's parent override against the connection default) are proven by unit tests of the classes that compute them; their wire and concurrency rows stay",
 "F8": "The Jira named-link and refresh-history rules of Slice02NamedLinkThatMatchedNothing and Slice01JiraDependenciesFromANamedLink are proven by unit tests of the Jira connector and the refresh log; their end-to-end rows stay",
 "F9": "The Azure DevOps relation rules of Slice04AzureDevOpsDependenciesFromANamedRelationEnd and Slice03AzureDevOpsRelationTypeAccepted, for a portfolio and for a team, are proven by unit tests of the Azure DevOps connector and the settings that accept a relation type; their wire rows stay"

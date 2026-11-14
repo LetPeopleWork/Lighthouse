@@ -287,6 +287,86 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the two Azure DevOps host classes and the connector unit rows, compare the sorted test ids with the expected list
+</code></pre>
+
+<pre><code>Each host class holds only the rows kept as wire or end-to-end rows; every expected unit id is present and passes; each removed host row maps in the id table to a named unit row
+</code></pre>
+
+<pre><code>The backend Integration tier takes less time and the Azure DevOps relation rules are still checked
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>python3 docs/feature/story-6537-b-configure-suite/evidence/s3_compare_ids.py</p>
+
+<pre><code>a host row is removed whose rule no unit row covers, or an id is missing or extra
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Break one production line on the path of each removed host row, including the once-per-refresh collapse and the refused connection check, then run the unit rows
+</code></pre>
+
+<pre><code>Each deliberate break turns at least one named unit or port row red, the id table names that row for every removed host row, a refused connection check reports not valid in its unit row, and an existing controller row pins the 400 answer
+</code></pre>
+
+<pre><code>No Azure DevOps relation rule loses its test when the host rows leave
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>python3 docs/feature/story-6537-b-configure-suite/evidence/s3_breaks.py</p>
+
+<pre><code>a removed host row whose rule, loop, gate or branch no unit row turns red for, including one finding per refresh, one warning line, a refusal reported as valid, or a failed check answered with success
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Check that no production or budget file changed since the merge base and that the host-user guard list gained no line
+</code></pre>
+
+<pre><code>The comparison reports no changed production file, no added guard line, and the three wire or end-to-end host rows still present
+</code></pre>
+
+<pre><code>Behaviour is unchanged, the test-host guard does not grow and each route keeps one host row for the wiring
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>python3 docs/feature/story-6537-b-configure-suite/evidence/s3_compare_ids.py</p>
+
+<pre><code>a production file is edited or a guard line is added
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
