@@ -9,6 +9,7 @@ gitignores them). The incremental file lives in `reports/mutation/` and is not c
 | Run | Score | Killed | Survived | Notes |
 |---|---|---|---|---|
 | 1 (plain, 295 mutants, ~12 min) | 74.58 % | 220 | 74 (+1 no coverage) | below gate |
+| 3 (S4, incremental, frozen at `6d6346a66`, 6.5 min, 202 mutants) | **96.53 %** | 195 | 7 | gate met. `OutlierChip.tsx` 55.56 % (4 survivors): the phone-query mutant is killed afterwards by "drops the words only below the phone breakpoint"; the two `sx` mutants are styling only; the disabled-tooltip text mutant is not observable because MUI shows no tooltip on a disabled child. `outliers.ts` keeps its 3 known equivalent mutants. Every other file 100 %. |
 | 2 (incremental, after one round of new tests) | **88.47 %** | 261 | 34 | gate met; stopped here |
 
 ## Per file (run 1 -> run 2)

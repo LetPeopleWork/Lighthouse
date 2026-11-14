@@ -33,10 +33,11 @@ One very long closed Work Item stretched the y-axis of the Cycle Time scatterplo
 | Clients (CLI, MCP) | N/A, because no API or DTO changed. |
 | Context map, `ARCHITECTURE.md` | Done. ADR-282 moved to `docs/product/architecture/` (Accepted); ADR-270 glossary has the Outlier row under Flow metrics; `ARCHITECTURE.md` §12 has one line and the ADR index has the row; `brief.md` has a paragraph; `docs/product/jobs.yaml` has the new job. No context, edge or domain event is added. |
 | Usage-data event | Done. `OutlierListOpened = 27` (named `OutlierPopoverOpened` before S4), listed in `docs/settings/usagedata.md`. |
-| Mutation | Done. Frontend 88.47 % (gate 80 %), backend N/A because nothing there is mutable; see `docs/feature/story-6502-hide-outliers/mutation/README.md`. |
+| Mutation | Done. Frontend 88.47 % (gate 80 %), and 96.53 % after S4, backend N/A because nothing there is mutable; see `docs/feature/story-6502-hide-outliers/mutation/README.md`. |
 | Release notes | N/A; written at /release. |
 
 ## Known open
 
 - EXAMINE rejected the feature on observation gaps only, not on a defect in behaviour.
-- Three files stay under 80 % mutation: `outlierWording.ts` (76.74 %), `OutlierChip.tsx` (77.78 %) and `OutlierPopoverContent.tsx` (52.63 %). The overall score meets the gate. These scores are from before the follow-ups, which added tests and were not re-measured.
+- After S4, only `OutlierChip.tsx` stays under 80 % mutation (55.56 %, five mutants in all): its survivors are styling, a tooltip text MUI never shows on a disabled chip, and one killed afterwards by a new test. The overall score is 96.53 %.
+- The source-blind EXAMINE ran before S4 and was not repeated for it; the maintainer's own check of S4 in the running app took its place.
