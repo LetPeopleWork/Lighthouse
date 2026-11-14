@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { OutlierWording } from "../../../utils/charts/outlierWording";
 import OutlierChip from "./OutlierChip";
@@ -15,6 +15,8 @@ interface OutlierHeaderChipInput {
 	readonly offScaleLines: readonly IPlotLine[];
 	readonly disabled: boolean;
 	readonly onOpened: () => void;
+	readonly onOpenInList: () => void;
+	readonly chipRef: Ref<HTMLDivElement>;
 }
 
 /** The chip for the widget header, or nothing when no outlier of a visible type is left out of the plot. */
@@ -26,6 +28,8 @@ export function outlierHeaderChip({
 	offScaleLines,
 	disabled,
 	onOpened,
+	onOpenInList,
+	chipRef,
 }: OutlierHeaderChipInput): ReactNode {
 	if (outliers.length === 0 || median === null || cut === null) return null;
 
@@ -44,6 +48,8 @@ export function outlierHeaderChip({
 			}
 			disabled={disabled}
 			onOpened={onOpened}
+			onOpenInList={onOpenInList}
+			chipRef={chipRef}
 		/>
 	);
 }

@@ -15,6 +15,20 @@ export type AboveAxisLine =
 	  }
 	| { readonly kind: "sle"; readonly value: number };
 
+export interface OutlierRuleTerms {
+	readonly workItem: string;
+	readonly workItems: string;
+	readonly cycleTime: string;
+}
+
+/** The rule as the widget's help states it. */
+export const outlierRuleSentence = ({
+	workItem,
+	workItems,
+	cycleTime,
+}: OutlierRuleTerms): string =>
+	`An outlier is a closed ${workItem} whose ${cycleTime} is more than ${OUTLIER_MEDIAN_MULTIPLE} times the median ${cycleTime} of all closed ${workItems} in this date range.`;
+
 const plural = (count: number): string =>
 	count === 1 ? "outlier" : "outliers";
 
@@ -38,6 +52,8 @@ export function outlierWording(terms: OutlierTerms) {
 		stillCounted: `Still counted in the percentiles, ${terms.sle} and View Data.`,
 		aboveTheAxis: (lines: readonly AboveAxisLine[]) =>
 			`Above the axis: ${lines.map(aboveAxisPhrase).join(", ")}.`,
+		openInAList: "Open in a list",
+		listTitle: `${terms.workItems} with a ${terms.cycleTime} more than ${OUTLIER_MEDIAN_MULTIPLE} times the median`,
 		moreRows: (count: number) => `and ${count} more`,
 		allVisibleAreOutliers: `All visible ${terms.workItems} are outliers.`,
 		allTypesHidden: "All types are hidden.",

@@ -19,7 +19,7 @@ import {
 	ScatterPlot,
 } from "@mui/x-charts";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
@@ -283,6 +283,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		sleInitiallyVisible: true,
 	});
 
+	const chipRef = useRef<HTMLDivElement>(null);
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [dialogContent, setDialogContent] = useState<{
 		title: string;
@@ -385,6 +386,14 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 			disabled: !frameIsReady,
 			onOpened: () =>
 				reportUsage({ name: UsageDataEventName.OutlierPopoverOpened }),
+			onOpenInList: () => {
+				setDialogContent({
+					title: wording.listTitle,
+					items: [...visibleOutliers],
+				});
+				setDialogOpen(true);
+			},
+			chipRef,
 		}),
 	);
 
@@ -659,7 +668,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				title={dialogContent.title}
 				items={dialogContent.items}
 				open={dialogOpen}
-				onClose={() => setDialogOpen(false)}
+				onClose={() => {
+					setDialogOpen(false);
+					chipRef.current?.focus();
+				}}
 				context="closedItems"
 				ownerKind={ownerKind}
 			/>

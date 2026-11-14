@@ -1,5 +1,6 @@
 import {
 	Box,
+	Button,
 	Table,
 	TableBody,
 	TableCell,
@@ -42,6 +43,7 @@ interface OutlierPopoverContentProps {
 	readonly moreCount: number;
 	/** Set when a percentile or SLE line lies above the axis. */
 	readonly aboveTheAxis: string | null;
+	readonly onOpenInList: () => void;
 }
 
 const OutlierPopoverContent: React.FC<OutlierPopoverContentProps> = ({
@@ -52,6 +54,7 @@ const OutlierPopoverContent: React.FC<OutlierPopoverContentProps> = ({
 	rows,
 	moreCount,
 	aboveTheAxis,
+	onOpenInList,
 }) => (
 	<Box sx={{ p: 2, maxWidth: 520 }}>
 		<Typography variant="subtitle2" component="h3">
@@ -92,6 +95,9 @@ const OutlierPopoverContent: React.FC<OutlierPopoverContentProps> = ({
 				{wording.moreRows(moreCount)}
 			</Typography>
 		)}
+		<Button size="small" onClick={onOpenInList}>
+			{wording.openInAList}
+		</Button>
 	</Box>
 );
 

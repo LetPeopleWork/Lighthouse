@@ -1,5 +1,7 @@
 // The widget documentation is split across one page per dashboard category, so
 // each entry links to the page its widget actually lives on.
+import { outlierRuleSentence } from "../../../utils/charts/outlierWording";
+
 const DOCS_BASE = "https://docs.lighthouse.letpeople.work/metrics";
 const FLOW_OVERVIEW = `${DOCS_BASE}/flow-overview.html`;
 const FLOW_METRICS = `${DOCS_BASE}/flow-metrics.html`;
@@ -403,6 +405,9 @@ export interface WidgetInfoTerms {
 	readonly features: string;
 	readonly team: string;
 	readonly workItems: string;
+	/** Optional so a caller that never words a widget with them need not supply them. */
+	readonly workItem?: string;
+	readonly cycleTime?: string;
 }
 
 export interface WidgetInfoOwner {
@@ -435,11 +440,26 @@ const teamWordings: Record<string, (terms: WidgetInfoTerms) => TeamWording> = {
 	}),
 };
 
+// The outlier rule reads the same on a Team and on a Portfolio, so this widget is worded from terms for both.
+const alwaysWorded: Record<string, (terms: WidgetInfoTerms) => string> = {
+	cycleScatter: ({ workItem, workItems, cycleTime }) => {
+		const cycleTimeWord = cycleTime ?? "cycle time";
+		return `Scatter plot of completed ${workItems} showing ${cycleTimeWord} trends and outliers over time. ${outlierRuleSentence({ workItem: workItem ?? "item", workItems, cycleTime: cycleTimeWord })}`;
+	},
+};
+
 export function getWidgetInfo(
 	widgetKey: string,
 	owner?: WidgetInfoOwner,
 ): WidgetInfoEntry | undefined {
 	const entry = widgetInfoMetadata[widgetKey];
+	const describeAlways = alwaysWorded[widgetKey];
+	if (owner && entry && describeAlways) {
+		const reworded = { ...entry, description: describeAlways(owner.terms) };
+		return owner.kind === "team" && teamWordings[widgetKey]
+			? { ...reworded, ...teamWordings[widgetKey](owner.terms) }
+			: reworded;
+	}
 	if (owner?.kind !== "team") {
 		return entry;
 	}

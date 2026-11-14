@@ -21,6 +21,10 @@ interface OutlierChipProps {
 	readonly disabled: boolean;
 	/** Called once each time the popover goes from closed to open. */
 	readonly onOpened: () => void;
+	/** Called when the reader asks for the outliers as a list; the popover has closed by then. */
+	readonly onOpenInList: () => void;
+	/** Lets the owner of the list hand focus back to the chip when the list closes. */
+	readonly chipRef: React.Ref<HTMLDivElement>;
 }
 
 const OutlierChip: React.FC<OutlierChipProps> = ({
@@ -33,6 +37,8 @@ const OutlierChip: React.FC<OutlierChipProps> = ({
 	aboveTheAxis,
 	disabled,
 	onOpened,
+	onOpenInList,
+	chipRef,
 }) => {
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 	const isPhone = useMediaQuery(PHONE_WIDTH_QUERY);
@@ -68,6 +74,7 @@ const OutlierChip: React.FC<OutlierChipProps> = ({
 						aria-label={accessibleName}
 						aria-haspopup="dialog"
 						aria-expanded={open}
+						ref={chipRef}
 						data-testid="outlier-chip"
 						sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }}
 					/>
@@ -88,6 +95,10 @@ const OutlierChip: React.FC<OutlierChipProps> = ({
 						rows={rows}
 						moreCount={moreCount}
 						aboveTheAxis={aboveTheAxis}
+						onOpenInList={() => {
+							close();
+							onOpenInList();
+						}}
 					/>
 				</Popover>
 			)}

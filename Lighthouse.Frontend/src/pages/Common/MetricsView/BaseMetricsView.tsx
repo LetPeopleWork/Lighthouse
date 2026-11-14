@@ -606,6 +606,8 @@ export const BaseMetricsView = <
 			features: featuresTerm,
 			team: getTerm(TERMINOLOGY_KEYS.TEAM),
 			workItems: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+			workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
+			cycleTime: getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
 		},
 	};
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
