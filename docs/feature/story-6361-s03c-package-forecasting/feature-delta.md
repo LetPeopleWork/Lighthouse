@@ -555,3 +555,15 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 - **Rollback:** revert the commit range; no data to undo.
 - **Usage-data event: N/A, because the Story is behaviour-free.** It adds nothing a user can use, so there is nothing
   to count. No `UsageDataEventName` entry, no `docs/settings/usagedata.md` line.
+
+## Wave: DELIVER / [REF] Start of DELIVER (maintainer, 2026-11-14)
+
+- **UI sketches: N/A, because nothing a user sees changes** (behaviour-free; routes, DTOs and pixels unchanged).
+- **Architecture review owed: none**; DESIGN was reviewed by the maintainer at hold 1.
+- **Rigor profile:**
+
+| nwdes feature | Slices | Profile | Crafter, acceptance designer | Reviewers, EXAMINE |
+|---|---|---|---|---|
+| A rules first | A1–A3 | `thorough` | opus | sonnet |
+| B the move | B1–B3 | `standard` | sonnet | haiku |
+| C cycle and rules | C1–C3 | `thorough` | opus | sonnet |
