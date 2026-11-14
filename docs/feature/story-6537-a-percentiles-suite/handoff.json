@@ -106,8 +106,8 @@
 "still_passes_if": "F62",
 "test": "docs/feature/story-6537-a-percentiles-suite/evidence/s3_breaks.py"
 },
-"expected": "F60",
-"stimulus": "F59",
+"expected": "F72",
+"stimulus": "F71",
 "user_result": "F61"
 },
 {
@@ -117,7 +117,7 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F66",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/TwoCopiesFillingTheSameDayAtThePortTest.cs"
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/PercentilesOverTime/TwoCopiesFillingTheSameDayAtThePortTest.cs"
 },
 "expected": "F64",
 "stimulus": "F63",
@@ -140,7 +140,7 @@
 },
 "counters": {
 "E": 3,
-"F": 70,
+"F": 72,
 "P": 3,
 "S": 3
 },
@@ -306,9 +306,7 @@
 "F56": "Slice05ReconstructCycleTimeHistoryTest holds three rows after the craft (the read route, the read-fill-read loop, a refresh landing mid-fill); every other id equals the expected list and passes; the sixteen removed host rows are not in the oracle's observed list",
 "F57": "The backend Integration tier no longer runs sixteen host rows whose rules a unit or port row proves",
 "F58": "A removed host row stays in the class (the oracle lists it as EXTRA), or a unit id is renamed or dropped (MISSING)",
-"F59": "Apply one deliberate break to each production line a removed host row walked (the walk of every asked day, the 90-day cap, the time budget, the last-observed and first-supported day bounds, the held-day ask, the blank quiet day on fill and daily recording, no rewrite of a written day, the afterwards window, the restore gate and stand-down, the unique-day absorb, the failing-day continue) and run the unit and port classes",
 "F6": "Pilot: the rules of Slice07WhereTheLimitsActuallyMovedTest (which limit families a team and a portfolio fill, the not-ready and zero-band gates, the retention edge as of a day, a refilled day reading as the watched day) are proven by unit tests of ProcessBehaviorSnapshotWriter and RetentionEdge; one host row stays for the limits route",
-"F60": "Every break (S1 to S16 incl. S5r, S9r, S16r in the break evidence) turns at least one named unit or port row red, and each removed host row has an id-table row naming them",
 "F61": "No rule the removed host rows proved loses its test",
 "F62": "A loop, cap, budget, gate or unique-day line is broken and every unit and port row stays green (the break evidence shows a red row for all of them)",
 "F63": "Two copies of the application fill the same day against a real database with no web host",
@@ -320,6 +318,8 @@
 "F69": "The wiring of the trend route stays proven by host rows while no product behaviour changes",
 "F7": "Run Slice07WhereTheLimitsActuallyMovedTest, ProcessBehaviorSnapshotWriterTest and RetentionEdgeTest (Debug, tokens removed), compare their sorted test ids with the expected id list, then apply one deliberate break per moved or rewritten rule in the working tree and run the named unit row",
 "F70": "A production or guard-list file is changed (the oracle prints CHANGED)",
+"F71": "Apply one deliberate break to each production line a removed host row walked (the walk of every asked day, the 90-day cap, the time budget, the asking again of an owner whose pass is over, the last-observed and first-supported day bounds, the held-day ask, the blank quiet day on fill and daily recording, no rewrite of a written day, the memory of a day written in full, the afterwards window, the restore gate and stand-down, the unique-day absorb, the failing-day continue) and run the unit and port classes",
+"F72": "Every break (S1 to S19 in the break evidence) turns at least one named unit or port row red, and each removed host row has an id-table row naming only rows a break turns red",
 "F8": "Slice07WhereTheLimitsActuallyMovedTest holds exactly one row, Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing, and it passes; every other id of the three classes equals the expected list and passes; each of the nine removed host rows maps in the id table to a named unit row; each deliberate break (a family line removed from FamiliesFor, the zero-band gate removed, the retention edge anchored on today instead of the last observed day, FillDayIfAbsent passing asOf null) turns its named unit row red",
 "F9": "A removed host row with no unit row that turns red for its rule's production line; an id missing or extra beyond the nine removed and the added unit rows; Slice07 holding more or fewer than the one route row; a production file in the diff"
 },

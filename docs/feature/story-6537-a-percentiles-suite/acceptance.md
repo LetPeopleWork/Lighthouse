@@ -225,11 +225,11 @@ None.
 P2
 
 ```text
-Apply one deliberate break to each production line a removed host row walked (the walk of every asked day, the 90-day cap, the time budget, the last-observed and first-supported day bounds, the held-day ask, the blank quiet day on fill and daily recording, no rewrite of a written day, the afterwards window, the restore gate and stand-down, the unique-day absorb, the failing-day continue) and run the unit and port classes
+Apply one deliberate break to each production line a removed host row walked (the walk of every asked day, the 90-day cap, the time budget, the asking again of an owner whose pass is over, the last-observed and first-supported day bounds, the held-day ask, the blank quiet day on fill and daily recording, no rewrite of a written day, the memory of a day written in full, the afterwards window, the restore gate and stand-down, the unique-day absorb, the failing-day continue) and run the unit and port classes
 ```
 
 ```text
-Every break (S1 to S16 incl. S5r, S9r, S16r in the break evidence) turns at least one named unit or port row red, and each removed host row has an id-table row naming them
+Every break (S1 to S19 in the break evidence) turns at least one named unit or port row red, and each removed host row has an id-table row naming only rows a break turns red
 ```
 
 ```text
@@ -270,7 +270,7 @@ A chart never shows two points for one day when two copies of the application ru
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/TwoCopiesFillingTheSameDayAtThePortTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/PercentilesOverTime\/TwoCopiesFillingTheSameDayAtThePortTest\.cs
 
 ```text
 The writer has no backstop for a duplicate day (S15 turns the port row and the writer row red)
