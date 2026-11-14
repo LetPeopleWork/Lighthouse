@@ -16,6 +16,20 @@ const LIMIT_FACTOR = 3;
 // The first test of a file pays for the cold first render and module warm-up inside the test, so it gets extra time.
 const FIRST_TEST_ALLOWANCE_SECONDS = 0.31;
 
+const ignoredPaths = [
+	"**/node_modules/**",
+	"**/dist/**",
+	// Trailing wildcard: every stryker config here uses a per-feature suffixed temp dir, so a
+	// bare ".stryker-tmp" matched none of them and a run in progress polluted `pnpm test`.
+	"**/.stryker-tmp*/**",
+	"**/StrykerOutput/**",
+];
+
+// A time zone is process-wide. The default project runs in worker threads pinned to one zone by the
+// test scripts, so tests that need another zone run in a project of their own, in forked processes.
+const WEST_OF_UTC_TESTS = "**/*.westOfUtc.test.ts";
+const WEST_OF_UTC_ZONE = "America/New_York";
+
 const workers = resolveTestWorkers(process.env, availableParallelism());
 const budgetSwitches = resolveTimeBudgetOptions(process.env, process.argv);
 
@@ -36,13 +50,28 @@ export default defineConfig({
 		coverage: {
 			reporter: ["text", "lcov"],
 		},
-		exclude: [
-			"**/node_modules/**",
-			"**/dist/**",
-			// Trailing wildcard: every stryker config here uses a per-feature suffixed temp dir, so a
-			// bare ".stryker-tmp" matched none of them and a run in progress polluted `pnpm test`.
-			"**/.stryker-tmp*/**",
-			"**/StrykerOutput/**",
+		exclude: ignoredPaths,
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: "default",
+					exclude: [...ignoredPaths, WEST_OF_UTC_TESTS],
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: "west-of-utc",
+					include: [WEST_OF_UTC_TESTS],
+					exclude: ignoredPaths,
+					pool: "forks",
+					env: {
+						VITE_API_SERVICE_TYPE: "DEMO",
+						TZ: WEST_OF_UTC_ZONE,
+					},
+				},
+			},
 		],
 		reporters: [
 			"default",
