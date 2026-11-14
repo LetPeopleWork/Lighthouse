@@ -301,19 +301,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             return portfolio.Id;
         }
 
-        protected void PinTheTeamsBaselineTo(int teamId, DateOnly from, DateOnly to)
-        {
-            using var scope = Factory.Services.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
-            var team = repository.GetById(teamId)!;
-
-            team.ProcessBehaviourChartBaselineStartDate = from.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-            team.ProcessBehaviourChartBaselineEndDate = to.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-
-            repository.Update(team);
-            repository.Save().GetAwaiter().GetResult();
-        }
-
         /// <summary>
         /// One item this team finished. Dates are anchored at UTC midnight because every persisted
         /// instant goes through the UTC converter, and a local midnight would land on the previous day
@@ -552,38 +539,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         {
             using var scope = Factory.Services.CreateScope();
             return scope.ServiceProvider.GetRequiredService<IPercentilesOverTimeSnapshotRepository>().GetAll().Count();
-        }
-
-        protected int TotalLimitDaysHeld()
-        {
-            using var scope = Factory.Services.CreateScope();
-            return scope.ServiceProvider.GetRequiredService<IProcessBehaviorSnapshotRepository>().GetAll().Count();
-        }
-
-        // --- What a day reads when worked out some other way ---
-
-        /// <summary>
-        /// What the throughput limits read when worked out over the stretch from <paramref name="firstDay"/>
-        /// to <paramref name="lastDay"/>, judged as of <paramref name="judgedAsOf"/>. It asks the product's
-        /// own calculation directly rather than going through a chart load, because a scenario that claims
-        /// to catch a wrong way of working a day out first has to know that the wrong way gives a different
-        /// answer. A stretch judged unusable reads as all zeros, which no written day ever carries.
-        ///
-        /// The team's metrics cache is emptied afterwards. Otherwise the reading asked for here would be
-        /// served straight back to the reconstruction pass that follows, and the scenario would be holding
-        /// the recorder up against this helper rather than against reconstruction.
-        /// </summary>
-        protected (int Unpl, int Average, int Lnpl) ThroughputLimitsWorkedOutOver(int teamId, DateOnly firstDay, DateOnly lastDay, DateOnly judgedAsOf)
-        {
-            using var scope = Factory.Services.CreateScope();
-            var team = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(teamId)!;
-            var metrics = scope.ServiceProvider.GetRequiredService<ITeamMetricsService>();
-
-            var chart = metrics.GetThroughputProcessBehaviourChart(
-                team, InstanceCalendar.AsUtcMidnight(firstDay), InstanceCalendar.AsUtcMidnight(lastDay), judgedAsOf);
-            metrics.InvalidateTeamMetrics(team);
-
-            return (chart.UpperNaturalProcessLimit, chart.Average, chart.LowerNaturalProcessLimit);
         }
 
         // --- Reading a series response ---
