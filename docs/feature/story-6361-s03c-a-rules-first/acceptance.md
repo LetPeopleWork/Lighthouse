@@ -304,6 +304,244 @@ A crafter edit that changes a Flow metrics rule's failure wording while keeping 
 
 None.
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+The module map's own Forecasting pattern, read from the module map, runs over a made-up outsider reaching a made-up Forecasting type below Modules.Forecasting, and over its twin reaching a namesake in Modules.ForecastingFixtures
+```
+
+```text
+The outsider reaching the module is named as reaching Forecasting; the twin reaching the namesake is not
+```
+
+```text
+The module map and the Flow metrics rule that reads its pattern keep treating Forecasting as Forecasting after it moves to Modules/Forecasting
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingRulesSeeTheModuleArchUnitTest\.cs\:\:ATypeReachingForecastingUnderTheModule\_IsCaughtAsReachingForecastingByTheModuleMap
+
+```text
+A pattern that matches the new place but is used by the module map only in some of its rules; the module map's own rules on the real code are what show each rule uses the pattern
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+The simulated-run isolation rule's own forecast-components key runs over a made-up step below Modules.Forecasting and an outsider in Modules.ForecastingFixtures, both holding one run's working state
+```
+
+```text
+The outsider is named; the made-up step in the module is treated as inside the forecast and not named
+```
+
+```text
+Moving the simulation into Modules/Forecasting neither turns the isolation rule red nor lets an outsider hold a run's working state unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingRulesSeeTheModuleArchUnitTest\.cs\:\:ARunsWorkingStateHeldUnderTheModule\_IsInsideTheForecast\_WhileAnOutsiderHoldingItIsNamed
+
+```text
+A key widened correctly while the rule still matches it as an exact namespace; the rule on the real code then flags the simulation itself and turns red
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+The reality check's own key for the services its verdict rules may not reach runs over a made-up verdict rule reaching a made-up service below Modules.Forecasting.Application, and a twin reading only plain values
+```
+
+```text
+The verdict rule reaching the made-up forecast service is named; the twin is not
+```
+
+```text
+The reality check's verdict stays decided from values alone after the forecast services move to Modules/Forecasting
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingRulesSeeTheModuleArchUnitTest\.cs\:\:AServiceUnderTheModule\_StaysOutOfReachOfTheRealityCheckVerdictRules
+
+```text
+Exempting the two policies by their old full names instead of by type; that is not observable before they move, and the first reality check rule fails loudly when they leave their old names
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+The dependency-aware forecast rule's own update-components key runs over a made-up background job below Modules.Forecasting.Adapters.Background reaching the forecast service, a job there that does not, and an outsider that asks for a forecast
+```
+
+```text
+The background job reaching the forecast service is named; the other job and the outsider are not
+```
+
+```text
+After the forecast updater moves, no second background component in its new place can start a forecast behind the admission check
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingRulesSeeTheModuleArchUnitTest\.cs\:\:ABackgroundComponentUnderTheModuleReachingForTheForecastService\_IsNamed
+
+```text
+Exempting the forecast updater by a name fragment instead of by type; no made-up type can be placed to tell the two apart before the move
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+The fast-with-many-Features rules' own keys for the forecast service file and the forecast updater file are read and compared with the production source file names
+```
+
+```text
+Each key is a bare file name, and exactly one production source file carries that name
+```
+
+```text
+The round rules keep reading the forecast service and the updater wherever their files move, as they already do for the forecast threads' file
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingRulesSeeTheModuleArchUnitTest\.cs\:\:TheForecastRoundFiles\_AreFoundByTheirNameWhereverTheyLive
+
+```text
+Keys reduced to file names while the rules still join them to the old folder; the rules on the real code then fail to open the file and turn red
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Refinement's own key for the background updates it may not reach runs over a made-up Refinement read starting a made-up forecast round below Modules.Forecasting.Adapters.Background, and a twin asking a made-up forecast service below Modules.Forecasting.Application
+```
+
+```text
+The read starting a round is named; the read asking for a forecast is not
+```
+
+```text
+Refinement still cannot start a background forecast round after the updater leaves BackgroundServices, and may still read forecast answers
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingRulesSeeTheModuleArchUnitTest\.cs\:\:ABackgroundUpdateUnderTheModule\_StaysOutOfReachOfRefinement\_WhileTheForecastAnswersStayOpen
+
+```text
+A widened key the Refinement rule declares but does not pass to its forbidden set; the rule on the real code cannot show that, because no Refinement type reaches an updater
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+The staleness rule's own services key runs over a made-up staleness rule reaching a made-up Forecasting calculation below Modules.Forecasting.Domain, and a twin reading only plain values
+```
+
+```text
+The rule reaching the made-up Forecasting calculation is named; the twin is not
+```
+
+```text
+The staleness rule stays free of Forecasting after Forecasting leaves Services
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingRulesSeeTheModuleArchUnitTest\.cs\:\:AForecastingTypeUnderTheModule\_StaysOutOfReachOfTheStalenessRule
+
+```text
+A key widened to Services and Modules while the rule keeps an inline Services-only pattern beside it; no real staleness type reaches a service to show it
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+The recurring blackout rule and the rules keyed on Forecasting types by type or short name (update holds, forecast filter seam, domain-event handler order)
+```
+
+```text
+No change: no Forecasting type sits in the recurring blackout rule's subject or target set, and a type key sees the type wherever it lives
+```
+
+```text
+These rules keep guarding what they guard today when Forecasting moves
+```
+
+##### Disposition
+
+NotTested
+
+```text
+No Forecasting namespace, folder or file key to widen: the recurring blackout rule's subject is a Models entity and API metrics controllers and its targets are the exact Services.Implementation namespace, the blackout service port and repository contracts, none of which holds a Forecasting type; the other three key on the types themselves, which no made-up type can stand in for
+```
+
+none declared
+
 ### S3
 
 ##### Covers

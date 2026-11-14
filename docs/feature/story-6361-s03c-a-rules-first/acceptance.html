@@ -413,6 +413,212 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The module map&#x27;s own Forecasting pattern, read from the module map, runs over a made-up outsider reaching a made-up Forecasting type below Modules.Forecasting, and over its twin reaching a namesake in Modules.ForecastingFixtures
+</code></pre>
+
+<pre><code>The outsider reaching the module is named as reaching Forecasting; the twin reaching the namesake is not
+</code></pre>
+
+<pre><code>The module map and the Flow metrics rule that reads its pattern keep treating Forecasting as Forecasting after it moves to Modules/Forecasting
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::ATypeReachingForecastingUnderTheModule_IsCaughtAsReachingForecastingByTheModuleMap</p>
+
+<pre><code>A pattern that matches the new place but is used by the module map only in some of its rules; the module map&#x27;s own rules on the real code are what show each rule uses the pattern
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The simulated-run isolation rule&#x27;s own forecast-components key runs over a made-up step below Modules.Forecasting and an outsider in Modules.ForecastingFixtures, both holding one run&#x27;s working state
+</code></pre>
+
+<pre><code>The outsider is named; the made-up step in the module is treated as inside the forecast and not named
+</code></pre>
+
+<pre><code>Moving the simulation into Modules/Forecasting neither turns the isolation rule red nor lets an outsider hold a run&#x27;s working state unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::ARunsWorkingStateHeldUnderTheModule_IsInsideTheForecast_WhileAnOutsiderHoldingItIsNamed</p>
+
+<pre><code>A key widened correctly while the rule still matches it as an exact namespace; the rule on the real code then flags the simulation itself and turns red
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The reality check&#x27;s own key for the services its verdict rules may not reach runs over a made-up verdict rule reaching a made-up service below Modules.Forecasting.Application, and a twin reading only plain values
+</code></pre>
+
+<pre><code>The verdict rule reaching the made-up forecast service is named; the twin is not
+</code></pre>
+
+<pre><code>The reality check&#x27;s verdict stays decided from values alone after the forecast services move to Modules/Forecasting
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::AServiceUnderTheModule_StaysOutOfReachOfTheRealityCheckVerdictRules</p>
+
+<pre><code>Exempting the two policies by their old full names instead of by type; that is not observable before they move, and the first reality check rule fails loudly when they leave their old names
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The dependency-aware forecast rule&#x27;s own update-components key runs over a made-up background job below Modules.Forecasting.Adapters.Background reaching the forecast service, a job there that does not, and an outsider that asks for a forecast
+</code></pre>
+
+<pre><code>The background job reaching the forecast service is named; the other job and the outsider are not
+</code></pre>
+
+<pre><code>After the forecast updater moves, no second background component in its new place can start a forecast behind the admission check
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::ABackgroundComponentUnderTheModuleReachingForTheForecastService_IsNamed</p>
+
+<pre><code>Exempting the forecast updater by a name fragment instead of by type; no made-up type can be placed to tell the two apart before the move
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The fast-with-many-Features rules&#x27; own keys for the forecast service file and the forecast updater file are read and compared with the production source file names
+</code></pre>
+
+<pre><code>Each key is a bare file name, and exactly one production source file carries that name
+</code></pre>
+
+<pre><code>The round rules keep reading the forecast service and the updater wherever their files move, as they already do for the forecast threads&#x27; file
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::TheForecastRoundFiles_AreFoundByTheirNameWhereverTheyLive</p>
+
+<pre><code>Keys reduced to file names while the rules still join them to the old folder; the rules on the real code then fail to open the file and turn red
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Refinement&#x27;s own key for the background updates it may not reach runs over a made-up Refinement read starting a made-up forecast round below Modules.Forecasting.Adapters.Background, and a twin asking a made-up forecast service below Modules.Forecasting.Application
+</code></pre>
+
+<pre><code>The read starting a round is named; the read asking for a forecast is not
+</code></pre>
+
+<pre><code>Refinement still cannot start a background forecast round after the updater leaves BackgroundServices, and may still read forecast answers
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::ABackgroundUpdateUnderTheModule_StaysOutOfReachOfRefinement_WhileTheForecastAnswersStayOpen</p>
+
+<pre><code>A widened key the Refinement rule declares but does not pass to its forbidden set; the rule on the real code cannot show that, because no Refinement type reaches an updater
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The staleness rule&#x27;s own services key runs over a made-up staleness rule reaching a made-up Forecasting calculation below Modules.Forecasting.Domain, and a twin reading only plain values
+</code></pre>
+
+<pre><code>The rule reaching the made-up Forecasting calculation is named; the twin is not
+</code></pre>
+
+<pre><code>The staleness rule stays free of Forecasting after Forecasting leaves Services
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::AForecastingTypeUnderTheModule_StaysOutOfReachOfTheStalenessRule</p>
+
+<pre><code>A key widened to Services and Modules while the rule keeps an inline Services-only pattern beside it; no real staleness type reaches a service to show it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The recurring blackout rule and the rules keyed on Forecasting types by type or short name (update holds, forecast filter seam, domain-event handler order)
+</code></pre>
+
+<pre><code>No change: no Forecasting type sits in the recurring blackout rule&#x27;s subject or target set, and a type key sees the type wherever it lives
+</code></pre>
+
+<pre><code>These rules keep guarding what they guard today when Forecasting moves
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>No Forecasting namespace, folder or file key to widen: the recurring blackout rule&#x27;s subject is a Models entity and API metrics controllers and its targets are the exact Services.Implementation namespace, the blackout service port and repository contracts, none of which holds a Forecasting type; the other three key on the types themselves, which no made-up type can stand in for
+</code></pre>
+
+<p>none declared</p>
+
 <h3>S3</h3>
 
 <h5>Covers</h5>

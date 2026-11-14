@@ -132,6 +132,112 @@
 "user_result": "F129"
 }
 ],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F146",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::ATypeReachingForecastingUnderTheModule_IsCaughtAsReachingForecastingByTheModuleMap"
+},
+"expected": "F144",
+"stimulus": "F143",
+"user_result": "F145"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F150",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::ARunsWorkingStateHeldUnderTheModule_IsInsideTheForecast_WhileAnOutsiderHoldingItIsNamed"
+},
+"expected": "F148",
+"stimulus": "F147",
+"user_result": "F149"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F154",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::AServiceUnderTheModule_StaysOutOfReachOfTheRealityCheckVerdictRules"
+},
+"expected": "F152",
+"stimulus": "F151",
+"user_result": "F153"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F158",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::ABackgroundComponentUnderTheModuleReachingForTheForecastService_IsNamed"
+},
+"expected": "F156",
+"stimulus": "F155",
+"user_result": "F157"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F162",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::TheForecastRoundFiles_AreFoundByTheirNameWhereverTheyLive"
+},
+"expected": "F160",
+"stimulus": "F159",
+"user_result": "F161"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F166",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::ABackgroundUpdateUnderTheModule_StaysOutOfReachOfRefinement_WhileTheForecastAnswersStayOpen"
+},
+"expected": "F164",
+"stimulus": "F163",
+"user_result": "F165"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F170",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs::AForecastingTypeUnderTheModule_StaysOutOfReachOfTheStalenessRule"
+},
+"expected": "F168",
+"stimulus": "F167",
+"user_result": "F169"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "none declared",
+"reason": "F174"
+},
+"expected": "F172",
+"stimulus": "F171",
+"user_result": "F173"
+}
+],
 "S3": [
 {
 "covers": [
@@ -177,7 +283,7 @@
 "counters": {
 "D": 7,
 "E": 3,
-"F": 142,
+"F": 174,
 "K": 3,
 "P": 3,
 "S": 3,
@@ -796,9 +902,41 @@
 "F140": "The command captures the forecast answers on both revisions with a fixed seed and reports them identical with exit 0, or names each difference and exits non-zero",
 "F141": "The maintainer and the examiner can see that the forecast answers on demo data did not change across the move",
 "F142": "A capture that leaves out one of the forecast endpoints, so a change there is never compared",
+"F143": "The module map's own Forecasting pattern, read from the module map, runs over a made-up outsider reaching a made-up Forecasting type below Modules.Forecasting, and over its twin reaching a namesake in Modules.ForecastingFixtures",
+"F144": "The outsider reaching the module is named as reaching Forecasting; the twin reaching the namesake is not",
+"F145": "The module map and the Flow metrics rule that reads its pattern keep treating Forecasting as Forecasting after it moves to Modules/Forecasting",
+"F146": "A pattern that matches the new place but is used by the module map only in some of its rules; the module map's own rules on the real code are what show each rule uses the pattern",
+"F147": "The simulated-run isolation rule's own forecast-components key runs over a made-up step below Modules.Forecasting and an outsider in Modules.ForecastingFixtures, both holding one run's working state",
+"F148": "The outsider is named; the made-up step in the module is treated as inside the forecast and not named",
+"F149": "Moving the simulation into Modules/Forecasting neither turns the isolation rule red nor lets an outsider hold a run's working state unseen",
 "F15": "With a pinned seed, forecasts give the same percentiles as before the move, and a public command captures the forecast answers on demo data before the move and compares them after, reporting match or difference.",
+"F150": "A key widened correctly while the rule still matches it as an exact namespace; the rule on the real code then flags the simulation itself and turns red",
+"F151": "The reality check's own key for the services its verdict rules may not reach runs over a made-up verdict rule reaching a made-up service below Modules.Forecasting.Application, and a twin reading only plain values",
+"F152": "The verdict rule reaching the made-up forecast service is named; the twin is not",
+"F153": "The reality check's verdict stays decided from values alone after the forecast services move to Modules/Forecasting",
+"F154": "Exempting the two policies by their old full names instead of by type; that is not observable before they move, and the first reality check rule fails loudly when they leave their old names",
+"F155": "The dependency-aware forecast rule's own update-components key runs over a made-up background job below Modules.Forecasting.Adapters.Background reaching the forecast service, a job there that does not, and an outsider that asks for a forecast",
+"F156": "The background job reaching the forecast service is named; the other job and the outsider are not",
+"F157": "After the forecast updater moves, no second background component in its new place can start a forecast behind the admission check",
+"F158": "Exempting the forecast updater by a name fragment instead of by type; no made-up type can be placed to tell the two apart before the move",
+"F159": "The fast-with-many-Features rules' own keys for the forecast service file and the forecast updater file are read and compared with the production source file names",
 "F16": "Behaviour-free, test-side and script-side only: no production type, route, DTO, response, schema or forecast result changes, and no Forecasting type moves. Every rule reads the compiled IL through IlDependencies or the ArchUnitNET production architecture as today; inline lists stay two-way (InlineBaseline) and no rule is loosened.",
+"F160": "Each key is a bare file name, and exactly one production source file carries that name",
+"F161": "The round rules keep reading the forecast service and the updater wherever their files move, as they already do for the forecast threads' file",
+"F162": "Keys reduced to file names while the rules still join them to the old folder; the rules on the real code then fail to open the file and turn red",
+"F163": "Refinement's own key for the background updates it may not reach runs over a made-up Refinement read starting a made-up forecast round below Modules.Forecasting.Adapters.Background, and a twin asking a made-up forecast service below Modules.Forecasting.Application",
+"F164": "The read starting a round is named; the read asking for a forecast is not",
+"F165": "Refinement still cannot start a background forecast round after the updater leaves BackgroundServices, and may still read forecast answers",
+"F166": "A widened key the Refinement rule declares but does not pass to its forbidden set; the rule on the real code cannot show that, because no Refinement type reaches an updater",
+"F167": "The staleness rule's own services key runs over a made-up staleness rule reaching a made-up Forecasting calculation below Modules.Forecasting.Domain, and a twin reading only plain values",
+"F168": "The rule reaching the made-up Forecasting calculation is named; the twin is not",
+"F169": "The staleness rule stays free of Forecasting after Forecasting leaves Services",
 "F17": "Shared rules owner: FlowMetricsModuleRules is renamed to ModuleRules (Architecture/ModuleRules.cs), module namespaces stay parameters. The two private Application shapes move into it: ApplicationIsReachedFromOutsideOnlyBy (from FlowMetricsInboundApplicationArchUnitTest, returns InboundVerdict) and OutboundEdges with the OutboundVerdict record (from FlowMetricsApplicationOutboundArchUnitTest, made internal). Flow metrics tests call the lifted methods with their own constants; their made-up-offender tests keep their meaning. Rename is a move-only commit, the lift an edit commit. No second rules class.",
+"F170": "A key widened to Services and Modules while the rule keeps an inline Services-only pattern beside it; no real staleness type reaches a service to show it",
+"F171": "The recurring blackout rule and the rules keyed on Forecasting types by type or short name (update holds, forecast filter seam, domain-event handler order)",
+"F172": "No change: no Forecasting type sits in the recurring blackout rule's subject or target set, and a type key sees the type wherever it lives",
+"F173": "These rules keep guarding what they guard today when Forecasting moves",
+"F174": "No Forecasting namespace, folder or file key to widen: the recurring blackout rule's subject is a Models entity and API metrics controllers and its targets are the exact Services.Implementation namespace, the blackout service port and repository contracts, none of which holds a Forecasting type; the other three key on the types themselves, which no made-up type can stand in for",
 "F18": "Made-up types that prove a widened Forecasting pattern live in the test assembly under namespaces the real widened pattern matches, i.e. below Lighthouse.Backend.Modules.Forecasting, with a last segment naming them as fixtures (for example Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastingFixtures). Deviation from the example namespace Lighthouse.Backend.Modules.ForecastingFixtures in the story design: the widened patterns end in (\\.|$), so a type in Modules.ForecastingFixtures lies outside them and would prove only a rule shape with a substituted pattern, not the real constant. Rule-shape cases that pass their namespaces as parameters may keep the Modules.ForecastingFixtures namespaces the S02 way.",
 "F19": "Widening per rule (Ratchet design, Rules first): ModuleBoundariesArchUnitTest.ForecastingPattern gains |^Lighthouse\\.Backend\\.Modules\\.Forecasting(\\.|$) and Flow metrics outbound rule keeps reading it; SimulatedRunIsolationArchUnitTest uses an old-or-module namespace pattern; RealityCheckReadOnlyArchUnitTest matches the two policies by typeof and forbids ApplicationCoreRules.ApplicationCore minus the two policies; DependencyAwareForecastSeamArchUnitTest subject is the update components or Modules.Forecasting.Adapters.Background, exemption by typeof(ForecastUpdater); FastWithManyFeaturesArchUnitTest locates ForecastService.cs and ForecastUpdater.cs by file name under the production source as it does for ForecastLane.cs; RefinementModuleArchUnitTest forbidden background set adds Modules.Forecasting.Adapters. UpdateHoldsAreForecastOnly, ForecastFilterSeam and DomainEventHandlerOrderPin already key on typeof or short names and are left unchanged. RecurringBlackoutEventsSeam and StalenessPolicyPurity: the crafter checks whether a Forecasting type is in their subject or target set and widens to ApplicationCore only if so. Flow metrics full-name strings for Forecasting types are not touched here (feature B rewrites them).",
 "F2": "The Forecasting move (features B and C) can start with every rule already watching the new place and a capture that proves nothing changed",
