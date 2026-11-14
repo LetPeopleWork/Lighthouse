@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Lighthouse.Backend.FlowMetricsApplicationInboundFixtures.AsyncOnlyCaller;
 using Lighthouse.Backend.FlowMetricsApplicationInboundFixtures.CompositionRoot;
 using Lighthouse.Backend.FlowMetricsApplicationInboundFixtures.FormerCallers;
@@ -47,8 +46,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string AsyncOnlyCaller = "AsyncOnlyCaller";
 
-        private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
-
         // The API, Reports and Refinement call the module's Application by design.
         private static readonly string TheLegalCallerNamespaces =
             $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleBoundariesArchUnitTest.ReportsPattern})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})";
@@ -92,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheModuleApplication_IsReachedFromOutsideOnlyByTheApiTheCompositionRootReportsRefinementAndTheListedTypes()
         {
-            ApplicationIsReachedFromOutsideOnlyBy(
+            ModuleRules.ApplicationIsReachedFromOutsideOnlyBy(
                 ProductionModule.Value,
                 OtherOutsideTypesReachingTheApplication,
                 ModuleRules.FlowMetricsModule,
@@ -150,41 +147,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             ThenTheRuleFailsNamingTheNewcomerAndTheStaleEntry(verdict, typeof(ANewcomerReachingThePolicies).FullName!, FormerCaller);
         }
 
-        /// <summary>
-        /// The outside types that reach the Application are exactly the listed ones, once the module's own types,
-        /// the types in the legal callers' namespaces and the composition root, nested types included, are set aside.
-        /// </summary>
-        private static InboundVerdict ApplicationIsReachedFromOutsideOnlyBy(
-            ModuleDefinition module,
-            IReadOnlyCollection<string> listed,
-            string moduleNamespaces,
-            string application,
-            string legalCallerNamespaces,
-            string compositionRoot,
-            string outside)
-        {
-            var notOutside = IlDependencies.TypesIn(module, moduleNamespaces)
-                .Concat(IlDependencies.TypesIn(module, legalCallerNamespaces))
-                .ToHashSet(StringComparer.Ordinal);
-
-            var dependents = IlDependencies.DependentsIn(module, outside, type => IlDependencies.ResidesInNamespaceMatching(type, application))
-                .Where(dependent => !notOutside.Contains(dependent.TypeName))
-                .Where(dependent => !Regex.IsMatch(dependent.TypeName, compositionRoot, RegexOptions.None, PatternTimeout))
-                .ToList();
-
-            return new InboundVerdict(
-                dependents,
-                listed,
-                $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{application}\" only " +
-                $"from namespaces matching \"{legalCallerNamespaces}\", from the composition root matching \"{compositionRoot}\", or from " +
-                "the types on the list, because the Application is the module's front door for the API and for the Reports and " +
-                "Refinement modules, and every other caller ties more code to how the module answers today, so its contract can " +
-                "no longer change on its own. Let the code react to a domain event the module publishes, or ask the API, Reports " +
-                "or Refinement for the answer, instead of calling the Application directly; the list only shrinks.");
-        }
-
         private static InboundVerdict TheRuleOverMadeUpTypes(IReadOnlyCollection<string> outsideNamespaces, IReadOnlyCollection<string> listed)
-            => ApplicationIsReachedFromOutsideOnlyBy(
+            => ModuleRules.ApplicationIsReachedFromOutsideOnlyBy(
                 FixtureModule.Value,
                 listed,
                 FixtureModuleNamespaces,

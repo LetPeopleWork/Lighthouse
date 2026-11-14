@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// wrong namespace cannot pass unseen.
         /// </summary>
         private static OutboundVerdict ApplicationReachesNothingBelowIt(ModuleDefinition module, string application, IReadOnlyCollection<string> listed)
-            => OutboundEdges(
+            => ModuleRules.OutboundEdges(
                 module,
                 application,
                 TheLayersBelowTheApplication,
@@ -205,7 +205,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// to a new Forecasting type, fails and is named, and a listed edge that is gone fails until it is deleted.
         /// </summary>
         private static OutboundVerdict ApplicationReachesForecastingOnlyThrough(ModuleDefinition module, string application, IReadOnlyCollection<string> listed)
-            => OutboundEdges(
+            => ModuleRules.OutboundEdges(
                 module,
                 application,
                 TheForecastingModule.Value,
@@ -214,15 +214,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "through the edges on the list, because Forecasting builds on the module's answers, and every further edge back " +
                 "into Forecasting ties the two modules tighter, until neither can change on its own. Take what the module needs " +
                 "from Forecasting as a value its caller hands in, or react to a domain event Forecasting publishes; the list only shrinks.");
-
-        private static OutboundVerdict OutboundEdges(ModuleDefinition module, string application, string target, IReadOnlyCollection<string> listed, string rule)
-            => new(
-                IlDependencies.TypesIn(module, application),
-                [.. IlDependencies.DependentsIn(module, application, type => IlDependencies.ResidesInNamespaceMatching(type, target))
-                    .SelectMany(dependent => dependent.Targets.Select(reached => $"{dependent.TypeName} -> {reached}"))],
-                listed,
-                rule,
-                application);
 
         private static OutboundVerdict TheRuleBelowOverMadeUpTypes(Type application, IReadOnlyCollection<string> listed)
             => ApplicationReachesNothingBelowIt(TestModule.Value, ApplicationOf(application), listed);
@@ -371,27 +362,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                     $"Expected the two name rules of the metrics services, [{string.Join(", ", MetricsNameRulesThatStay)}], to stay as tests, " +
                     $"found [{string.Join(", ", nameRulesLeft)}]. Why it matters: they guard the shared per-state helper, which no " +
                     "namespace rule checks. How to fix: delete only the scanner, not the name rules.");
-            }
-        }
-
-        /// <summary>
-        /// The edges a rule found from an Application into the namespaces it is about, as "Dependent -> Target",
-        /// and the list of the allowed ones. <see cref="Check"/> fails when the Application holds no type, and
-        /// otherwise compares the two both ways.
-        /// </summary>
-        private sealed record OutboundVerdict(IReadOnlyList<string> Examined, IReadOnlyList<string> Edges, IReadOnlyCollection<string> Listed, string Rule, string Application)
-        {
-            public void Check()
-            {
-                if (Examined.Count == 0)
-                {
-                    Assert.Fail(
-                        $"{Rule}{Environment.NewLine}No type lives in a namespace matching \"{Application}\", so the rule checked nothing. " +
-                        "A namespace that was renamed or emptied leaves the rule green while it guards nothing. Point the rule at " +
-                        "the namespace where the module's Application lives now.");
-                }
-
-                InlineBaseline.AssertMatches(Edges, Listed, Rule);
             }
         }
     }

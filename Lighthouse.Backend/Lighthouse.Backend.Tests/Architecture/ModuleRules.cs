@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -27,6 +28,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string AnyNamespace = "^";
 
+        private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
+
         /// <summary>
         /// The types outside the module that reach its Domain are exactly the listed ones: a new one fails and is
         /// named, and a listed one that no longer reaches the Domain fails until it is deleted from the list.
@@ -54,6 +57,52 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "in the background: the composition root registers them and everything else reaches the module through its " +
                 "Application. An outside type that uses an adapter directly bypasses the module and depends on how it stores " +
                 "its data. Depend on the module's Application contract instead.");
+
+        /// <summary>
+        /// The outside types that reach the Application are exactly the listed ones, once the module's own types,
+        /// the types in the legal callers' namespaces and the composition root, nested types included, are set aside.
+        /// </summary>
+        public static InboundVerdict ApplicationIsReachedFromOutsideOnlyBy(
+            ModuleDefinition module,
+            IReadOnlyCollection<string> listed,
+            string moduleNamespaces,
+            string application,
+            string legalCallerNamespaces,
+            string compositionRoot,
+            string outside)
+        {
+            var notOutside = IlDependencies.TypesIn(module, moduleNamespaces)
+                .Concat(IlDependencies.TypesIn(module, legalCallerNamespaces))
+                .ToHashSet(StringComparer.Ordinal);
+
+            var dependents = IlDependencies.DependentsIn(module, outside, type => IlDependencies.ResidesInNamespaceMatching(type, application))
+                .Where(dependent => !notOutside.Contains(dependent.TypeName))
+                .Where(dependent => !Regex.IsMatch(dependent.TypeName, compositionRoot, RegexOptions.None, PatternTimeout))
+                .ToList();
+
+            return new InboundVerdict(
+                dependents,
+                listed,
+                $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{application}\" only " +
+                $"from namespaces matching \"{legalCallerNamespaces}\", from the composition root matching \"{compositionRoot}\", or from " +
+                "the types on the list, because the Application is the module's front door for the API and for the Reports and " +
+                "Refinement modules, and every other caller ties more code to how the module answers today, so its contract can " +
+                "no longer change on its own. Let the code react to a domain event the module publishes, or ask the API, Reports " +
+                "or Refinement for the answer, instead of calling the Application directly; the list only shrinks.");
+        }
+
+        /// <summary>
+        /// Every edge from a type in the Application to a type in the target namespaces, as "Dependent -> Target",
+        /// for the verdict to compare with the listed edges both ways.
+        /// </summary>
+        public static OutboundVerdict OutboundEdges(ModuleDefinition module, string application, string target, IReadOnlyCollection<string> listed, string rule)
+            => new(
+                IlDependencies.TypesIn(module, application),
+                [.. IlDependencies.DependentsIn(module, application, type => IlDependencies.ResidesInNamespaceMatching(type, target))
+                    .SelectMany(dependent => dependent.Targets.Select(reached => $"{dependent.TypeName} -> {reached}"))],
+                listed,
+                rule,
+                application);
 
         private static List<IlDependent> OutsideDependents(ModuleDefinition module, string moduleNamespaces, string target, string outside)
         {
@@ -146,6 +195,27 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Dependents.Select(dependent => dependent.TypeName),
                 Listed,
                 $"{Rule}{Environment.NewLine}{string.Join(Environment.NewLine, reachedByNewcomers)}");
+        }
+    }
+
+    /// <summary>
+    /// The edges a rule found from an Application into the namespaces it is about, as "Dependent -> Target",
+    /// and the list of the allowed ones. <see cref="Check"/> fails when the Application holds no type, and
+    /// otherwise compares the two both ways.
+    /// </summary>
+    internal sealed record OutboundVerdict(IReadOnlyList<string> Examined, IReadOnlyList<string> Edges, IReadOnlyCollection<string> Listed, string Rule, string Application)
+    {
+        public void Check()
+        {
+            if (Examined.Count == 0)
+            {
+                Assert.Fail(
+                    $"{Rule}{Environment.NewLine}No type lives in a namespace matching \"{Application}\", so the rule checked nothing. " +
+                    "A namespace that was renamed or emptied leaves the rule green while it guards nothing. Point the rule at " +
+                    "the namespace where the module's Application lives now.");
+            }
+
+            InlineBaseline.AssertMatches(Edges, Listed, Rule);
         }
     }
 }
