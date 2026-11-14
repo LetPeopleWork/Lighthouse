@@ -46,6 +46,22 @@ describe("OutlierChip", () => {
 		vi.unstubAllGlobals();
 	});
 
+	it("drops the words only below the phone breakpoint", () => {
+		vi.stubGlobal("matchMedia", (query: string) => ({
+			matches: query.replaceAll(" ", "") === "(max-width:599.95px)",
+			media: query,
+			addEventListener: () => {},
+			removeEventListener: () => {},
+			addListener: () => {},
+			removeListener: () => {},
+			onchange: null,
+			dispatchEvent: () => false,
+		}));
+		render(chip());
+		expect(screen.getByTestId("outlier-chip").textContent).toBe("2");
+		vi.unstubAllGlobals();
+	});
+
 	it("shows the words on a wide screen", () => {
 		phone(false);
 		render(chip());
