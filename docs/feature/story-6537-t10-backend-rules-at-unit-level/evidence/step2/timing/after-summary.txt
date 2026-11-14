@@ -1,0 +1,31 @@
+after-slice07-r1.csv: rows 27 summed 7.26 s
+after-slice07-r2.csv: rows 27 summed 7.72 s
+after-slice07-r3.csv: rows 27 summed 7.65 s
+per-test median s:
+    3.51  Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing
+    2.09  AFlowMetricsUnitTestFile_SitsOnlyInItsModuleLayerFolder_AndItsClassesLiveInThatLayer(ProcessBehaviorSnapshotWriterTest, Application)
+    1.68  ADayFilledInAfterwards_ReadsTheSameAsWhenItWasWatched
+    0.13  GetThroughputProcessBehaviourChart_PinnedBaseline_GivesTheSameLimitsForEveryDisplayedPeriodHoweverThePeriodsThroughputMoves
+    0.06  ADayWhoseLimitsAreNotReady_GetsNoRow_EvenWhenTheChartCarriesABand
+    0.01  ARowRefusedBecauseAnotherCopyStoredThatDayFirst_IsAbsorbed
+    0.01  AnOwnerThatKeepsFinishedWorkForEver_HasNoEdge_SoTheWalkMayReachBackToItsFirstFinishedItem
+    0.01  APortfolio_ReportsExactlyThroughputWorkItemAgeWipCycleTimeArrivalsAndFeatureSize
+    0.01  ADayThatAlreadyCarriesLimits_KeepsWhatWasObserved
+    0.01  ARowRefusedWhileOnlyAnotherFamilyOfThatDayIsStored_IsThrownOn
+    0.00  ADayWithoutLimits_IsReadOverTheSpanEndingOnThatDay_AsOfThatDay
+    0.00  APercentileWindowReachingPastTheEdge_ComesBackEmpty_WithoutBeingRead
+    0.00  HowBigDeliveriesAreGetting_IsAFamilyOfAPortfolioAndNeverOfATeam
+    0.00  APinnedStretchInReachOnTheLastRefresh_IsOutOfReachOfAnEdgeDrawnOnALaterDay
+    0.00  ADayWhoseReadyLimitsAreAFlatZeroBand_GetsNoRow
+    0.00  APercentileWindowOfAnOwnerThatKeepsEverything_IsReadHoweverFarBackItReaches
+    0.00  ATeam_ReportsExactlyThroughputWorkItemAgeWipCycleTimeAndArrivals
+    0.00  APortfoliosPinnedStretchOutOfReachToday_IsReadWhenTheEdgeIsDrawnFromItsLastRefresh
+    0.00  AFlowMetricsUnitTestFile_SitsOnlyInItsModuleLayerFolder_AndItsClassesLiveInThatLayer(RetentionEdgeTest, Application)
+    0.00  FinishedWorkOlderThanWhatIsKept_MovesTheFirstDayTheWalkMayWorkOutUpToTheEdge
+    0.00  LimitsWhoseWindowLiesInsideWhatIsKept_AreReadAsOfTheDayAsked
+    0.00  ATeamsPinnedStretchOutOfReachToday_IsReadWhenTheEdgeIsDrawnFromItsLastRefresh
+    0.00  LimitsDrawnFromAPinnedStretchThatBeginsBeforeTheEdge_ComeBackNotReady_EvenForAWindowInsideWhatIsKept
+    0.00  AnOwnerWithNothingFinished_StillHasNoFirstDay_WhateverItKeeps
+    0.00  APercentileWindowStartingOnTheEdge_IsRead
+    0.00  FinishedWorkThatBeganInsideWhatIsKept_LeavesTheFirstDayWhereTheWorkBegan
+    0.00  LimitsWhoseOwnWindowReachesPastTheEdge_ComeBackNotReady

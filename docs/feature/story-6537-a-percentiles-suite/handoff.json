@@ -1,0 +1,315 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F16",
+"test": "python3 docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py"
+},
+"expected": "F14",
+"stimulus": "F13",
+"user_result": "F15"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F28",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s1-id-table.md with s1-break-evidence.txt"
+},
+"expected": "F26",
+"stimulus": "F25",
+"user_result": "F27"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F32",
+"test": "python3 docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py"
+},
+"expected": "F30",
+"stimulus": "F29",
+"user_result": "F31"
+}
+],
+"S2": [
+{
+"covers": [
+"P1",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F40",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s2_compare_ids.py"
+},
+"expected": "F38",
+"stimulus": "F37",
+"user_result": "F39"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F50",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s2_breaks.py"
+},
+"expected": "F42",
+"stimulus": "F49",
+"user_result": "F43"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F48",
+"test": "Slice06EveryPercentileTabSpansTheSamePeriodTest.Every_tab_covers_the_same_period_once_the_chart_has_filled_in"
+},
+"expected": "F46",
+"stimulus": "F45",
+"user_result": "F47"
+}
+]
+},
+"counters": {
+"E": 3,
+"F": 54,
+"P": 3,
+"S": 3
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py",
+"public_oracle": {
+"expected": "F8",
+"falsifier": "F9",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F7"
+},
+"supports": [
+"docs/feature/story-6537-a-percentiles-suite/evidence/s1-expected-ids.txt"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice07WhereTheLimitsActuallyMovedScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice07WhereTheLimitsActuallyMovedSpecifications.cs"
+}
+],
+"verification": [
+"python3 docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py"
+]
+},
+"S2": {
+"oracle": "docs/feature/story-6537-a-percentiles-suite/evidence/s2_compare_ids.py",
+"public_oracle": {
+"expected": "F35",
+"falsifier": "F36",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F34"
+},
+"supports": [
+"docs/feature/story-6537-a-percentiles-suite/evidence/s2-expected-ids.txt"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice06EveryPercentileTabSpansTheSamePeriodSpecifications.cs"
+}
+],
+"verification": [
+"python3 docs/feature/story-6537-a-percentiles-suite/evidence/s2_compare_ids.py"
+]
+},
+"S3": {
+"oracle": "docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py",
+"public_oracle": {
+"expected": "F53",
+"falsifier": "F54",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F52"
+},
+"supports": [
+"docs/feature/story-6537-a-percentiles-suite/evidence/s3-expected-ids.txt"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistorySpecifications.cs"
+}
+],
+"verification": [
+"python3 docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F10"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F11"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F12"
+}
+]
+},
+"facts": {
+"F1": "Story 6537 (T10), suite 1: the PercentilesOverTime family. Move each rule its host tests prove to the lowest layer that can prove it (a unit test of the computing class, else the service port), or rewrite it there on a smaller input where the host row is slow in its history fill (the maintainer said yes to rewrites on 2026-11-13). Start with the pilot class Slice07WhereTheLimitsActuallyMovedTest. Behaviour-free: no production file changes.",
+"F10": "A user running the backend Integration tier sees that each PercentilesOverTime rule is now proven by the lowest-layer test that can prove it (a unit test of the computing class, else a service-port test), and the tier takes less time than before.",
+"F11": "Every removed PercentilesOverTime host test has a row in the id table naming the lower-layer test that now proves its rule, and breaking that rule's production line in a deliberate probe turns that lower-layer test red, so no rule loses its proof.",
+"F12": "Across the change, no production file differs, the test-host guard lists do not grow, and at least one host test per route remains to prove the wiring end to end.",
+"F13": "Compare the ids of the host class and the unit classes with the expected list",
+"F14": "The host class holds only the one limits-route row; every other id equals the expected list and passes",
+"F15": "The backend Integration tier no longer fills 200 days of history nine times to prove rules a unit test proves",
+"F16": "A host row is removed but its rule has no unit row, or an extra row stays at the host",
+"F2": "The backend Integration tier spends far less time re-proving percentile-history rules through a web host, and every rule still has a test that goes red when its production line breaks",
+"F25": "Apply one deliberate break to the production line of each moved or rewritten rule (a family line removed from the families a team or portfolio reports, the history fill cut to one family per day, the zero-band gate removed, the retention edge drawn from today instead of the last observed day, the filled day reading as of nothing, the pinned baseline replaced by the displayed period) and run the unit row the id table names",
+"F26": "Every removed host row has an id-table row naming the unit test that now proves its rule, including the fill of every family on each past day and the steady limits of a pinned baseline for a team and for a portfolio, and its break turns that row red, with the assertion that carries the rule failing",
+"F27": "A rule that used to be proven through the web host is still proven, and a change to its production line is caught by a fast unit test",
+"F28": "A unit row that goes red only on a precondition, a fill loop that reaches one family only, or a steady-limits row that covers the team and not the portfolio would still be accepted",
+"F29": "Compare the working tree and HEAD with the slice base for any file under the production project, the test-host guard list or the time budget list, and run the host class",
+"F3": "Each rule a PercentilesOverTime host test proves is proven by a test at the lowest layer that can prove it (a unit test of the computing class, else the service port), so the backend Integration tier takes less time",
+"F30": "The oracle prints no changed production, guard-list or budget-list path, and Slice07 holds the one limits-route row, which passes",
+"F31": "The test speed-up changes no production behaviour, the guard lists do not grow and the limits route is still proven through the host",
+"F32": "A production file edited in the working tree and not committed, or a guard list that grew, would still be accepted by an id comparison alone",
+"F33": "The rules of Slice06EveryPercentileTabSpansTheSamePeriodTest (every day of the period filled, a longer look-back carrying an older slow stretch, an item counted at the age it had that day, a refilled age day matching the watched day, a portfolio filling cycle time and age, tabs not refilled on a switch, the age tab stopping at the last refresh, a blank day with nothing in flight) are proven by unit tests of the classes that compute them; one host row stays for the tab route",
+"F34": "Run Slice06EveryPercentileTabSpansTheSamePeriodTest and the unit classes named in the S2 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production, guard-list or budget file changed since the slice base, then apply one deliberate break per moved or rewritten rule and run its named unit row",
+"F35": "Slice06EveryPercentileTabSpansTheSamePeriodTest holds exactly one row, Every_tab_covers_the_same_period_once_the_chart_has_filled_in, and it passes; every other id equals the expected list and passes; each of the ten removed host rows maps in the id table to a named unit row, and each deliberate break of that rule's production line turns that row red",
+"F36": "A removed host row whose rule no unit row turns red for, including a loop in the filler or the writer (days, horizons, families) that only the host rows walked; an id missing or extra; Slice06 holding more or fewer than the one tab-route row; a production, guard-list or budget file in the diff",
+"F37": "Run the tab-period host class and the unit classes of the id table, compare their sorted ids with the expected list, and check no production, guard-list or budget file changed",
+"F38": "The host class holds exactly its one tab-route row and passes; every other id equals the expected list and passes; no production, guard-list or budget file is in the diff",
+"F39": "The backend Integration tier spends no time on the ten moved rules, and the tab route is still proven by one host row",
+"F4": "No rule loses its test: every removed host row has an id-table row naming the test that now proves its rule, and one deliberate break of that rule's production line turns that test red",
+"F40": "A host row left behind next to the unit rows, or a production file edited to make a unit row pass, would show as an extra id or a changed path; a unit row that only passes on today's code is caught by the breaks, not by this comparison",
+"F42": "Every break turns at least one named unit row of the id table red, and the break is put back",
+"F43": "No rule loses its test: a regression in the percentile history fill still turns a fast test red",
+"F45": "A flow coach opens the four percentile tabs of a team that has filled in",
+"F46": "Every tab covers the same period, through the real route",
+"F47": "The tab route still has one host row proving the wiring",
+"F48": "A route that returned the stored days of one tab for every tab would be caught only if the tabs held different days; the unit rows pin the family set",
+"F49": "For each of the ten removed host rows, apply one deliberate break to each production rule its path depends on (days walked, families looped, horizons, windows including the team's cycle time window, age as of the day, stored-day kept, held days, last observation, blank day) and run the unit rows",
+"F5": "No production file changes, the test-host guard lists do not grow, and at least one host row per route still proves the wiring",
+"F50": "A unit row that exercises the rule on a sample where the broken line makes no difference would stay green; the cut windows of S5 and S5b first began on the same day, and a team window fixed to 30 days stayed green under every earlier row until the 60-day item row was added, which is why they were rerun",
+"F51": "The rules of Slice05ReconstructCycleTimeHistoryTest (the filler walks every asked day within what the stored items support, caps a pass at 90 days and at its time budget, leaves quiet days blank on fill and on the daily recording, never rewrites a watched or backdated day, asks for nothing when the period is held, stands down for a restore and blocks a restore while it runs, and two copies filling one day leave one row) are proven by unit tests and one service-port scenario; three host rows stay for the read route, the read-fill-read loop and a refresh landing mid-fill",
+"F52": "Run Slice05ReconstructCycleTimeHistoryTest and the unit and port classes named in the S3 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production, guard-list or budget file changed since the slice base, then apply one deliberate break per moved or rewritten rule and run its named row",
+"F53": "Slice05ReconstructCycleTimeHistoryTest holds exactly three rows (Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits, The_days_the_first_visit_could_not_show_are_there_on_the_next_one, A_refresh_landing_mid_fill_neither_loses_its_day_nor_duplicates_one) and they pass; every other id equals the expected list and passes; each of the sixteen removed host rows maps in the id table to a named unit or port row, and each deliberate break of a production line on its path turns that row red",
+"F54": "A removed host row whose rule, or a loop, cap, budget, gate or unique-day path it walked, no unit or port row turns red for; an id missing or extra; Slice05 holding other than the three staying rows; a production, guard-list or budget file in the diff",
+"F6": "Pilot: the rules of Slice07WhereTheLimitsActuallyMovedTest (which limit families a team and a portfolio fill, the not-ready and zero-band gates, the retention edge as of a day, a refilled day reading as the watched day) are proven by unit tests of ProcessBehaviorSnapshotWriter and RetentionEdge; one host row stays for the limits route",
+"F7": "Run Slice07WhereTheLimitsActuallyMovedTest, ProcessBehaviorSnapshotWriterTest and RetentionEdgeTest (Debug, tokens removed), compare their sorted test ids with the expected id list, then apply one deliberate break per moved or rewritten rule in the working tree and run the named unit row",
+"F8": "Slice07WhereTheLimitsActuallyMovedTest holds exactly one row, Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing, and it passes; every other id of the three classes equals the expected list and passes; each of the nine removed host rows maps in the id table to a named unit row; each deliberate break (a family line removed from FamiliesFor, the zero-band gate removed, the retention edge anchored on today instead of the last observed day, FillDayIfAbsent passing asOf null) turns its named unit row red",
+"F9": "A removed host row with no unit row that turns red for its rule's production line; an id missing or extra beyond the nine removed and the added unit rows; Slice07 holding more or fewer than the one route row; a production file in the diff"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F6",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+},
+{
+"id": "S2",
+"observation": "F33",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+},
+{
+"id": "S3",
+"observation": "F51",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6537-a-percentiles-suite",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

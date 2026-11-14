@@ -1,0 +1,21 @@
+tier sums [1506.8, 1927.9, 1926.6, 2267.6, 1803.6, 1403.2, 2195.5, 2153.6, 2135.5, 2250.0] median 2031.7 spread 1.62 1%-line 20.3s
+  469.8 s  23.1%  classes  40 rows  147  Integration.Containers
+  282.1 s  13.9%  classes  12 rows  111  API.Integration.PercentilesOverTime
+  211.4 s  10.4%  classes  86 rows  668  API.Integration
+  164.4 s   8.1%  classes  13 rows  163  API.Integration.ConfigureOncePerConnection
+   74.0 s   3.6%  classes   6 rows   88  API.Integration.FasterUpdates
+   73.7 s   3.6%  classes  15 rows  222  API.Integration.Refinement
+   69.9 s   3.4%  classes  16 rows  172  API.Integration.Reports
+   61.6 s   3.0%  classes   6 rows   37  API.Integration.SkipUnchangedForecasts
+   54.0 s   2.7%  classes   3 rows   32  API.Integration.ConnectionFieldChange
+   52.9 s   2.6%  classes   8 rows   60  API.Integration.FastWithManyFeatures
+   41.8 s   2.1%  classes  11 rows  108  API.Integration.TaskManager
+   41.1 s   2.0%  classes  19 rows  165  API.Security
+   37.0 s   1.8%  classes   5 rows   52  API.Integration.DeliverySources
+   36.2 s   1.8%  classes  12 rows   79  API.Integration.BlockedItems
+   36.0 s   1.8%  classes   3 rows   34  API.Integration.OnlyFeaturesAsParentCandidates
+   31.0 s   1.5%  classes   3 rows   38  API.Integration.BehaviourSettings
+   29.8 s   1.5%  classes  21 rows  341  Integration.UsageData
+   29.5 s   1.5%  classes   4 rows   45  API.Integration.OrderedParentSources
+   29.1 s   1.4%  classes   4 rows   53  API.Integration.Dependencies
+   28.4 s   1.4%  classes   4 rows   54  API.Integration.TeamFeatureSize

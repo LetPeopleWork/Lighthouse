@@ -112,6 +112,70 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             Assert.That(StoredRows(), Is.Empty);
         }
 
+        [Test]
+        public async Task AWorkItemAgeDay_IsOneRowUnderNoHorizon_ReadAsOfThatDayAlone()
+        {
+            var windowsRead = new List<(DateTime Start, DateTime End)>();
+
+            subject.FillDayIfAbsent(OwnerId, OwnerType.Team, MetricType.WorkItemAge, Day, (start, end) =>
+            {
+                windowsRead.Add((start, end));
+                return Percentiles(1, 2, 3, 4);
+            });
+            await repository.Save();
+
+            var rows = StoredRows();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(windowsRead, Has.Count.EqualTo(1));
+                Assert.That(windowsRead[0].End, Is.EqualTo(DayAtMidnight));
+                Assert.That(rows.Select(row => row.Horizon), Is.EqualTo(new int?[] { PercentilesOverTimeSnapshot.NoHorizon }));
+                Assert.That(rows[0].RecordedAt, Is.EqualTo(Day));
+            }
+        }
+
+        [Test]
+        public async Task AnAgeDayWithNothingInFlight_GetsNoRow_WhileTheNextDayWithWorkInFlightDoes()
+        {
+            var nextDay = Day.AddDays(1);
+
+            subject.FillDayIfAbsent(OwnerId, OwnerType.Team, MetricType.WorkItemAge, Day, (_, _) => Percentiles(0, 0, 0, 0));
+            subject.FillDayIfAbsent(OwnerId, OwnerType.Team, MetricType.WorkItemAge, nextDay, (_, _) => Percentiles(3, 3, 3, 3));
+            await repository.Save();
+
+            Assert.That(StoredRows().Select(row => row.RecordedAt), Is.EqualTo(new[] { nextDay }));
+        }
+
+        /// <summary>
+        /// The reader answers from the end of the window it is handed, as the age reader does, so a day
+        /// filled in afterwards can only read the same as the day recorded live if it is read as of
+        /// that day and not as of today.
+        /// </summary>
+        [Test]
+        public async Task AnAgeDayFilledInAfterwards_ReadsTheSameAsWhenItWasRecordedOnTheDay()
+        {
+            static List<PercentileValue> AgesAsOf(DateTime end) => Percentiles(end.Day, end.Day + 1, end.Day + 2, end.Day + 3);
+            var recordedOnTheDay = new PercentileSnapshotWriter(repository, new FakeLighthouseClock(new DateTimeOffset(2026, 7, 15, 9, 0, 0, TimeSpan.Zero)));
+            recordedOnTheDay.RecordToday(OwnerId, OwnerType.Team, MetricType.WorkItemAge, (_, end) => AgesAsOf(end));
+            await repository.Save();
+            var asRecorded = StoredRows().Single();
+            context.PercentilesOverTimeSnapshots.Remove(context.PercentilesOverTimeSnapshots.Single());
+            await context.SaveChangesAsync();
+
+            subject.FillDayIfAbsent(OwnerId, OwnerType.Team, MetricType.WorkItemAge, Day, (_, end) => AgesAsOf(end));
+            await repository.Save();
+
+            var filledAfterwards = StoredRows().Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(filledAfterwards.RecordedAt, Is.EqualTo(asRecorded.RecordedAt));
+                Assert.That(filledAfterwards.Horizon, Is.EqualTo(asRecorded.Horizon));
+                Assert.That(
+                    new[] { filledAfterwards.P50, filledAfterwards.P70, filledAfterwards.P85, filledAfterwards.P95 },
+                    Is.EqualTo(new[] { asRecorded.P50, asRecorded.P70, asRecorded.P85, asRecorded.P95 }));
+            }
+        }
+
         [TestCase(5, 0, 0, 0)]
         [TestCase(0, 5, 0, 0)]
         [TestCase(0, 0, 5, 0)]

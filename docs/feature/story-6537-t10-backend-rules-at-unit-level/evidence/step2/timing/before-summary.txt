@@ -1,0 +1,14 @@
+before-slice07-r1.csv: rows 10 summed 33.21 s
+before-slice07-r2.csv: rows 10 summed 33.17 s
+before-slice07-r3.csv: rows 10 summed 33.20 s
+per-test median s:
+   10.20  A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too
+    8.40  A_portfolio_fills_in_every_behaviour_it_reports_and_not_one_fewer
+    5.96  How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team
+    2.20  A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history
+    2.19  A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart
+    1.09  A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer
+    0.98  Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing
+    0.84  A_stretch_pinned_further_back_than_the_team_keeps_work_reports_no_limits
+    0.80  Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched
+    0.49  A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one

@@ -13,7 +13,15 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
     {
         private const int KeepsThirtyDays = 30;
 
+        private const int KeepsTwoHundredAndTwentyDays = 220;
+
+        private const int DaysSinceTheLastRefresh = 25;
+
         private static readonly DateOnly LastObservedOn = new(2026, 6, 30);
+
+        // 240 days before the day the pinned stretch is judged on: inside what was kept on the last
+        // refresh (220 days), outside what an edge drawn 25 days later keeps.
+        private static readonly DateOnly PinnedStretchStart = LastObservedOn.AddDays(DaysSinceTheLastRefresh - 240);
 
         private static readonly DateOnly OldestDayStillKept = new(2026, 5, 31);
 
@@ -138,6 +146,51 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             var guarded = RetentionEdge.For(LastObservedOn, team).Guard(LimitsReadAsOf(_ => { }));
 
             var chart = guarded.ReadChart(AtMidnight(OldestDayStillKept.AddDays(5)), AtMidnight(LastObservedOn), LastObservedOn);
+
+            Assert.That(chart.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
+        }
+
+        [Test]
+        public void ATeamsPinnedStretchOutOfReachToday_IsReadWhenTheEdgeIsDrawnFromItsLastRefresh()
+        {
+            var team = new Team
+            {
+                DoneItemsCutoffDays = KeepsTwoHundredAndTwentyDays,
+                ProcessBehaviourChartBaselineStartDate = AtMidnight(PinnedStretchStart),
+            };
+            var guarded = RetentionEdge.For(LastObservedOn, team).Guard(LimitsReadAsOf(_ => { }));
+
+            var chart = guarded.ReadChart(AtMidnight(LastObservedOn.AddDays(-30)), AtMidnight(LastObservedOn), LastObservedOn);
+
+            Assert.That(chart, Is.SameAs(ReadyLimits));
+        }
+
+        [Test]
+        public void APortfoliosPinnedStretchOutOfReachToday_IsReadWhenTheEdgeIsDrawnFromItsLastRefresh()
+        {
+            var portfolio = new Portfolio
+            {
+                DoneItemsCutoffDays = KeepsTwoHundredAndTwentyDays,
+                ProcessBehaviourChartBaselineStartDate = AtMidnight(PinnedStretchStart),
+            };
+            var guarded = RetentionEdge.For(LastObservedOn, portfolio).Guard(LimitsReadAsOf(_ => { }));
+
+            var chart = guarded.ReadChart(AtMidnight(LastObservedOn.AddDays(-30)), AtMidnight(LastObservedOn), LastObservedOn);
+
+            Assert.That(chart, Is.SameAs(ReadyLimits));
+        }
+
+        [Test]
+        public void APinnedStretchInReachOnTheLastRefresh_IsOutOfReachOfAnEdgeDrawnOnALaterDay()
+        {
+            var team = new Team
+            {
+                DoneItemsCutoffDays = KeepsTwoHundredAndTwentyDays,
+                ProcessBehaviourChartBaselineStartDate = AtMidnight(PinnedStretchStart),
+            };
+            var guarded = RetentionEdge.For(LastObservedOn.AddDays(DaysSinceTheLastRefresh), team).Guard(LimitsReadAsOf(_ => { }));
+
+            var chart = guarded.ReadChart(AtMidnight(LastObservedOn.AddDays(-30)), AtMidnight(LastObservedOn), LastObservedOn);
 
             Assert.That(chart.Status, Is.EqualTo(BaselineStatus.BaselineInvalid));
         }

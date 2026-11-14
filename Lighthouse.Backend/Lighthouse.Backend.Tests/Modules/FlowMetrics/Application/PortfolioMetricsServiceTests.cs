@@ -828,6 +828,59 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         }
 
         [Test]
+        public void GetThroughputProcessBehaviourChart_PinnedBaseline_GivesTheSameLimitsForEveryDisplayedPeriodHoweverThePeriodsThroughputMoves()
+        {
+            var today = TestToday.AmbientAsUtcMidnight;
+            var baselineStart = today.AddDays(-60);
+            portfolio.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            portfolio.ProcessBehaviourChartBaselineEndDate = today.AddDays(-46);
+            features.Clear();
+
+            for (var day = 0; day < 15; day++)
+            {
+                CloseFeaturesOn(baselineStart.AddDays(day), 1 + (day % 3));
+            }
+
+            var earlierPeriodStart = today.AddDays(-30);
+            var laterPeriodStart = today.AddDays(-15);
+            for (var day = 0; day < 15; day++)
+            {
+                CloseFeaturesOn(earlierPeriodStart.AddDays(day), 1);
+                CloseFeaturesOn(laterPeriodStart.AddDays(day), 6);
+            }
+
+            var earlier = subject.GetThroughputProcessBehaviourChart(portfolio, earlierPeriodStart, earlierPeriodStart.AddDays(14));
+            var later = subject.GetThroughputProcessBehaviourChart(portfolio, laterPeriodStart, laterPeriodStart.AddDays(14));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(earlier.Status, Is.EqualTo(BaselineStatus.Ready), "Both periods are long enough to read, so the limits are there to compare.");
+                Assert.That(earlier.Average, Is.GreaterThan(0), "The pinned stretch has finished work, so there is a band to compare.");
+                Assert.That(later.Average, Is.EqualTo(earlier.Average), "Limits drawn from a pinned stretch must not follow the displayed period.");
+                Assert.That(later.UpperNaturalProcessLimit, Is.EqualTo(earlier.UpperNaturalProcessLimit));
+                Assert.That(later.LowerNaturalProcessLimit, Is.EqualTo(earlier.LowerNaturalProcessLimit));
+            }
+        }
+
+        private void CloseFeaturesOn(DateTime day, int count)
+        {
+            for (var index = 0; index < count; index++)
+            {
+                var feature = new Feature
+                {
+                    Id = features.Count + 100,
+                    Name = $"Feature {features.Count + 100}",
+                    ReferenceId = $"F{features.Count + 100}",
+                    StartedDate = day.AddDays(-2),
+                    ClosedDate = day,
+                    StateCategory = StateCategories.Done,
+                };
+                feature.Portfolios.Add(portfolio);
+                features.Add(feature);
+            }
+        }
+
+        [Test]
         public void GetWipProcessBehaviourChart_BaselineDatesNotSet_ShortRange_ReturnsBaselineInvalid()
         {
             portfolio.ProcessBehaviourChartBaselineStartDate = null;

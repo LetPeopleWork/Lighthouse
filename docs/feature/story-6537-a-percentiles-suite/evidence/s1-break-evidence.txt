@@ -1,0 +1,64 @@
+=== B1 team family line removed (Arrivals)
+Failed ATeam_ReportsExactlyThroughputWorkItemAgeWipCycleTimeAndArrivals [27 ms]
+Failed!  - Failed:     1, Passed:     9, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B1b portfolio family line removed (FeatureSize)
+Failed APortfolio_ReportsExactlyThroughputWorkItemAgeWipCycleTimeArrivalsAndFeatureSize [34 ms]
+Failed HowBigDeliveriesAreGetting_IsAFamilyOfAPortfolioAndNeverOfATeam [3 ms]
+Failed!  - Failed:     2, Passed:     8, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B2 zero-band gate removed
+NO SUMMARY
+SUMMARY NOTE: first edit did not compile; the corrected run is the second B2 block below.
+=== B2b not-ready gate removed
+NO SUMMARY
+SUMMARY NOTE: first edit did not compile; the corrected run is the second B2b block below.
+=== B3 retention edge anchored on today
+NO SUMMARY
+SUMMARY NOTE: first edit did not compile; the corrected run is the second B3 block below.
+=== B4 FillDayIfAbsent passes asOf null
+Failed ADayFilledInAfterwards_ReadsTheSameAsWhenItWasWatched [1 s]
+Failed ADayWithoutLimits_IsReadOverTheSpanEndingOnThatDay_AsOfThatDay [9 ms]
+Failed!  - Failed:     2, Passed:     8, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B4b FillDayIfAbsent window ends today
+Failed ADayFilledInAfterwards_ReadsTheSameAsWhenItWasWatched [1 s]
+Failed ADayWithoutLimits_IsReadOverTheSpanEndingOnThatDay_AsOfThatDay [9 ms]
+Failed!  - Failed:     2, Passed:     8, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B5 pinned stretch ignored by the edge guard
+NO SUMMARY
+SUMMARY NOTE: first edit did not compile; the corrected run is the second B5 block below.
+=== B6 pinned baseline ignored (display window used)
+Failed GetThroughputProcessBehaviourChart_PinnedBaseline_GivesTheSameLimitsForEveryDisplayedPeriodHoweverThePeriodsThroughputMoves [134 ms]
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 134 ms - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B2 zero-band gate removed
+Failed ADayWhoseReadyLimitsAreAFlatZeroBand_GetsNoRow [31 ms]
+Failed!  - Failed:     1, Passed:     9, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B2b not-ready gate removed
+Failed ADayWhoseLimitsAreNotReady_GetsNoRow_EvenWhenTheChartCarriesABand [74 ms]
+Failed!  - Failed:     1, Passed:     9, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B3 retention edge anchored 25 days later (today) instead of the last refresh
+Failed APercentileWindowStartingOnTheEdge_IsRead [30 ms]
+Failed APortfoliosPinnedStretchOutOfReachToday_IsReadWhenTheEdgeIsDrawnFromItsLastRefresh [2 ms]
+Failed ATeamsPinnedStretchOutOfReachToday_IsReadWhenTheEdgeIsDrawnFromItsLastRefresh [< 1 ms]
+Failed FinishedWorkOlderThanWhatIsKept_MovesTheFirstDayTheWalkMayWorkOutUpToTheEdge [1 ms]
+Failed FinishedWorkThatBeganInsideWhatIsKept_LeavesTheFirstDayWhereTheWorkBegan [< 1 ms]
+Failed LimitsWhoseWindowLiesInsideWhatIsKept_AreReadAsOfTheDayAsked [1 ms]
+Failed!  - Failed:     6, Passed:     7, Skipped:     0, Total:    13, Duration: 62 ms - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B5 pinned stretch ignored by the edge guard
+Failed APinnedStretchInReachOnTheLastRefresh_IsOutOfReachOfAnEdgeDrawnOnALaterDay [33 ms]
+Failed LimitsDrawnFromAPinnedStretchThatBeginsBeforeTheEdge_ComeBackNotReady_EvenForAWindowInsideWhatIsKept [< 1 ms]
+Failed!  - Failed:     2, Passed:    11, Skipped:     0, Total:    13, Duration: 64 ms - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B6 pinned baseline ignored (display window used): reruns on the team row and the new portfolio row, both with a ready band
+Failed (each row): Limits drawn from a pinned stretch must not follow the displayed period. Expected: 1 But was: 6 (also the upper and lower limit lines)
+Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2 (supersedes the first B6 block, which failed only on the Average > 0 precondition)
+=== B7 history fill loop reaches one family only (foreach over ProcessBehaviorFamilies.Take(1))
+Failed ADayWorkedOut_IsWorkedOutForEveryOneOfTheOwnersLimitFamilies: the WorkItemAge limits of the day were never worked out
+Failed!  - Failed:     1, Passed:     1, Skipped:     0, Total:     2
+Each break reverted: git status shows no file under Lighthouse.Backend/Lighthouse.Backend/ changed.

@@ -719,3 +719,144 @@ The maintainer decided on 2026-11-08 to close T9 #6536 with its backend ledger e
 - **T9's criterion 7, the first eligible run with connector tests,** is read from those runs.
 
 T5 #6469 also closed, at its slice E checkpoint. The remaining host-to-port moves of the Refinement and report-window classes are in **Story 6602**. If T10's ranking puts a Refinement or report-window suite in its top two, settle with the maintainer which Story takes it before either starts, so the same class is not moved twice.
+
+## Wave: DELIVER / [REF] Maintainer decisions before DELIVER (2026-11-13)
+
+- **Question 0, the stop line: (a), the line applies to the pair.** T10 stops at step 2 only if the two chosen suites **together**
+  are predicted under the 1 % line. Each suite's own saving is still reported beside it, and a suite under the line alone is named
+  in the note, not stopped on. This settles scenarios 2.4 and 5.1 and the stop rule in D-6537-6 in the pair reading; scenario 5.3
+  (a stop at step 2) now applies only when the pair is under the line. The pilot still runs first, and the measured target `P` is
+  still ratified by the maintainer before suite 2 starts (scenario 2.3).
+- **Story 6602's last move push has landed:** `b8c425ce6` on `main`, 2026-11-13 08:55 +01:00. The before set counts eligible runs
+  whose head is after it. Story 6602 moved more Refinement and report-window classes, so the leftovers behind the 91 and 96 rows in
+  "The success number" are probably smaller now (not counted); the ranking in step 1 decides the suites, not those estimates.
+- **Open question 1, rewrite as well as move: YES** (maintainer, 2026-11-13, on entering AFK mode). Scenarios R1 and R2 are live. A rewrite is
+  its own commit, after the moves of its suite, with its own deliberate break and an id row per removed row; body-bound classes are now
+  candidates in stage 3 (their saving is the removed row's seconds less the new row's).
+- **Rigor profile: `standard` for every step** (crafter and acceptance designer `sonnet`, reviewers and EXAMINE `haiku`).
+- **AFK options:** slice wrap-up refactor + review (mutation once, at the end); nothing is pushed. So the run reaches at most the ranking,
+  the screen and the pilot class, then holds: the after set and the data commit need pushed runs, and the measured `P` needs the
+  maintainer's ratification before suite 2 (scenario 2.3).
+- Still open, not blocking step 1: questions 2 to 5 in DISTILL's "For the maintainer". Question 3 (top two by stage-3 saving) is taken as
+  DESIGN recommends, to be confirmed.
+
+## Wave: DELIVER / [REF] Step 1 — the ranking and its source runs (2026-11-13, AFK)
+
+**Source runs.** 38 `main` runs of `ci.yml` since 2026-11-09 whose `Verify Backend` job passed were downloaded. A run is eligible when its CSV
+has no `Failed` row and it is not force-full. Force-full is read from the CSV itself: a force-full run holds the live connector classes
+(`JiraWorkTrackingConnectorTest` and its siblings, +265 to +272 rows), a plain run does not. 23 are eligible, 15 are force-full; none had a
+`Failed` row. Full table, with run id, commit, rows, `Integration` count, sum and mean: `evidence/step1/runs-and-class-ranking.txt`, made by
+`evidence/step1/rank.py`.
+
+**The ranking** uses the 10 newest eligible runs (`61cda4e8e` back to `7e4b6506d`, 2026-11-12 17:53 to 2026-11-13 08:12), all after T5's last
+move push and T6's slice F, as D-6537-1 asks. A class is ranked only if it is `Integration` in the newest run, so the classes Story 6602
+moved to the port are out. Per class: median over the runs of its summed seconds.
+
+**Before set: 2 of 5.** The before set must start after Story 6602's last move push (`b8c425ce6`). Since then only `b8c425ce6` and
+`61cda4e8e` are eligible; `6df820432` was force-full and four pushes ran no backend tests. **The first move push waits for 3 more** (scenario
+1.1). Nothing is pushed in this AFK run, so local work goes on.
+
+**Runner noise is larger than DESIGN assumed.** Over the 10 ranking runs the summed `Integration` seconds run from 1,403 s to 2,268 s: a
+spread of 1.62, not the 1.13 of T4. The by-class fall, not the tier median, is what can show a saving.
+
+**The 1 % line, provisional:** 1 % of the 10 runs' median summed `Integration` seconds, 2,031.7 s, is **20.3 s**. It is re-based on the
+before set's median once that set has 5 runs.
+
+**Top classes** (median s, rows, spread), left-out classes struck by reason:
+
+| # | Class | s | rows | spread | In or out |
+|---|---|---|---|---|---|
+| 1 | `PercentilesOverTime.Slice05ReconstructCycleTimeHistoryTest` | 89.7 | 19 | 1.87 | in |
+| 2 | `PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest` | 88.3 | 10 | 1.91 | in |
+| 3 | `Integration.Containers.CategoryListNormalisationSeederOnBothProvidersTests` | 69.0 | 18 | 1.84 | out: container |
+| 4 | `PercentilesOverTime.Slice06EveryPercentileTabSpansTheSamePeriodTest` | 48.6 | 11 | 1.88 | in |
+| 5 | `ConnectionFieldChange.Slice01FieldChangeUpdatesItsOwnersTest` | 40.8 | 13 | 1.74 | in |
+| 6 | `FasterUpdates.Slice05FetchFingerprintTest` | 39.5 | 47 | 1.71 | in |
+| 7 | `Integration.Containers.ConnectionDefaultsUpgradeMigrationTests` | 37.3 | 14 | 1.71 | out: container |
+
+**By family** (`evidence/step1/family-ranking.txt`): containers 469.8 s (out); **`PercentilesOverTime` 282.1 s, 13.9 % of the tier, 12
+classes, 111 rows**; the flat `API.Integration` namespace 211.4 s (86 unrelated classes, not a family); **`ConfigureOncePerConnection` 164.4 s,
+8.1 %, 13 classes, 163 rows**; then `FasterUpdates` 74.0 s, `Refinement` 73.7 s, `Reports` 69.9 s, each about 3.5 %.
+
+**What this changes against DESIGN's estimate.** DESIGN expected the Refinement and Reports leftovers to rank top, at about 0.6 to 0.7 % each.
+They do not: after Story 6602 they are about 3.5 % each in total, and the two largest families are `PercentilesOverTime`, slow in its history
+fill and reachable only by a rewrite (now allowed), and `ConfigureOncePerConnection`. The top five classes go to the screen (step 2).
+
+## Wave: DELIVER / [REF] Step 2 — the screen, the pilot and its measurement (2026-11-13, AFK)
+
+**Screen.** `evidence/step2/screen.md`, the top five non-container classes. Counts (move + rewrite + stays = rows): `Slice05Reconstruct…`
+14 + 2 + 3 = 19; `Slice07WhereTheLimits…` 6 + 3 + 1 = 10; `Slice06EveryPercentileTab…` 9 + 1 + 1 = 11; `ConnectionFieldChange.Slice01…`
+0 + 4 + 9 = 13 (update queue and Task Manager, mostly stays); `FasterUpdates.Slice05FetchFingerprint…` 42 + 0 + 5 = 47 (short rows; a saving
+only of host and queue overhead, and it needs two `WorkItemService` unit rows and one `Contracts` row first).
+
+**Suite 1 = the `PercentilesOverTime` family.** Its three slowest classes are slow in their history fill, and the rewrite the maintainer
+allowed reaches them. **Pilot = `Slice07WhereTheLimitsActuallyMovedTest`**, nwdes feature `story-6537-a-percentiles-suite`, slice S1:
+oracle `5f57ae64e` (10 unit rows, each red under its own deliberate break; RED = 9 host rows still present), oracle approved `c240f1e3c`,
+GREEN `37922dfdb` (9 host rows and their steps removed, the limits-route row stays). No production file changed.
+
+**Pilot measurement** (Release, 3 rounds each, quiet machine, `evidence/step2/timing/`):
+
+| | Before | After |
+|---|---|---|
+| `Slice07…` class, summed | 33.2 s (33.21, 33.17, 33.20), 10 rows | 3.5 s, 1 row |
+| New unit rows, summed | — | about 1.9 s, 10 rows; 1.7 s of it is the first EF in-memory model build in `ProcessBehaviorSnapshotWriterTest`, paid by whichever row touches the store first |
+| Host set-up per row, `u` | 125 ms (1,251 / 10) | 606 ms for the one row left: the first row of a fixture carries the warm-up the others shared |
+| Set-up per row at the lower layer, `c` | | about 0: plain unit rows, no fixture |
+| `hop` | | **Not separable here.** Every moved row also lost its 200- to 250-day fill, so the residual is body, not HTTP. Reported as such, not as a number |
+
+**By-class saving, local:** 33.2 s → about 5.4 s, so **about 27.8 s, 84 %**. CI runs this class 2.66 times slower than this machine
+(88.3 s median against 33.2 s), so the predicted CI saving is **about 74 s, 3.6 % of the tier** (2,031.7 s), on the pilot alone. That is
+above the 1 % line (20.3 s) by itself, so the stop rule (pair reading, question 0) does not fire.
+
+**Stage 3, suite 1, projected from the pilot** (class median × share of rows leaving × the pilot's 84 %; a projection, not a measurement):
+`Slice05` 89.7 × 16/19 × 0.84 ≈ 63 s; `Slice06` 48.6 × 10/11 × 0.84 ≈ 37 s; with the pilot ≈ 174 s. The other fill-base classes
+(`Slice08`, `Slice09`, `Slice10`, `Story6084`) are not screened yet. **Suite 2 is not chosen:** `ConfigureOncePerConnection` (164 s) ranks
+second by family but none of its classes was in the top five, so it has no screen. The next candidates by the screen
+(`FasterUpdates`, `ConnectionFieldChange`) save little.
+
+**Proposed measured target `P` = 5.0 %** of the baseline, for the maintainer to ratify before suite 2 starts (scenario 2.3). It is suite 1's
+projected saving (about 174 s, 8.6 %) less a margin for the projection, rounded down, and it does not count on suite 2. It is above the 1 % line.
+The baseline it divides is the 10 ranking runs' median, 2,031.7 s, until the before set has its 5 runs.
+
+**Budget entry:** `Slice07…`'s allowlist entry (229 s) stays until five CI runs show its largest time × 2.1 at or under 34 s (scenario 3.3).
+Its guard line stays: the class still starts a host.
+
+- **Target `P` = 5.0 %, ratified** by the maintainer on 2026-11-13 (scenario 2.3). Baseline: the before set median once it has 5 runs; until then the 10 ranking runs (2,031.7 s).
+- **After suite 1, hold** (maintainer, 2026-11-13): AFK finishes suite 1 and its final gates, then holds. Suite 2 starts with the maintainer.
+
+## Wave: DELIVER / [REF] Resume here (written 2026-11-13 17:2x, end of the AFK session)
+
+**State.** Suite 1 (`PercentilesOverTime`) is nwdes feature `docs/feature/story-6537-a-percentiles-suite/` (handoff.json there).
+- **S1** `Slice07WhereTheLimitsActuallyMovedTest`: done, slice review accepted. 9 of 10 host rows moved to unit rows; 1 route row stays.
+- **S2** `Slice06EveryPercentileTabSpansTheSamePeriodTest`: done, slice review accepted. 10 of 11 moved; 1 tab-route row stays.
+- **S3** `Slice05ReconstructCycleTimeHistoryTest`: recorded in nwdes; its oracle was mid-way when the session ended. The
+  unfinished work (new unit rows, a service-port scenario `TwoCopiesFillingTheSameDayAtThePortTest`, the oracle script and the
+  break script with about 10 breaks still to run) is parked as `docs/feature/story-6537-a-percentiles-suite/wip/s3-oracle-wip.patch`.
+  Resume: `git apply` it, re-read `s3-break-evidence.txt`, finish the breaks, close the acceptance record (none recorded yet), then
+  oracle review → craft → slice review, as S1 and S2 did. Not reviewed by anyone yet.
+- **S4** (the other fill-base classes `Slice08`, `Slice09`, `Slice10`, `Story6084`): not started; screen them first.
+- Then the suite-1 final gates: whole-candidate review (`--subject candidate`), EXAMINE, and mutation is N/A (no production change).
+- After suite 1: **hold** (maintainer). Suite 2 (likely `ConfigureOncePerConnection`, not screened) starts with the maintainer.
+
+**Pushed on 2026-11-13** (maintainer's decision, so the next session can start from a fresh worktree): S1, S2 and all workspace
+records, rebased onto `main`. That push is T10's **first move push**, so it closes the before-set window with **2 of 5** runs.
+**Decision (maintainer, by choosing to push now): rebuild the before set** from the 2 clean runs (`b8c425ce6`, `61cda4e8e`) plus the
+latest older plain runs, with the classes Story 6602 moved removed from their sums by id (the id-table method). Record it in the
+step 1 table as a deviation. The by-class fall (the main proof) is unaffected.
+
+**Measured so far (local, Release, quiet machine):** pilot `Slice07` 33.2 s → about 5.4 s (−27.8 s, 84 %), about −74 s predicted on
+CI. S2 and S3 timing **not taken**: the machine was loaded by other sessions. Pre-craft Release builds were snapshotted in the old
+session's scratchpad and are gone with it, so for S2 and S3 take the "before" from a checkout of the commit before each slice's
+GREEN commit, or read the class seconds from CI CSVs (before: the ranking runs; after: runs after the push).
+
+**Decisions in force:** stop line on the pair (question 0); rewrites allowed; rigor `standard`; `P` = 5.0 % ratified; hold after
+suite 1. Still open for the maintainer: DESIGN questions 2, 4, 5 (ceiling the formula cannot lower; waits without a limit; a revert
+of the data commit).
+
+**Lessons for the next dispatches** (both caught by the adversarial reviews, each once per slice so far): a removed host row proves
+every loop and gate its path walks, not only what its title says, so each needs a red break; and subagents must use ABSOLUTE paths
+for every `ctx_patch`, because a relative one wrote into the main checkout once.
+
+**Follow-ups to draft at T10's close:** a backend Story for the next families by the ranking (`FasterUpdates`, `Refinement`,
+`Reports`, `FetchFingerprint`), and a frontend Story to move rule rows from `.test.tsx` down to `.test.ts` (maintainer:
+separate topic).

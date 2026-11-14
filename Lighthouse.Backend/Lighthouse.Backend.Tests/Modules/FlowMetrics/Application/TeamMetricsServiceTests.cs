@@ -704,6 +704,30 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         }
 
         [Test]
+        public void GetCycleTimePercentilesForTeam_ItemClosedSixtyDaysAgo_IsCountedOverNinetyDaysAndNotOverThirty()
+        {
+            var today = DateTime.UtcNow;
+            var recent = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            recent.ClosedDate = today.AddDays(-5);
+            recent.StartedDate = recent.ClosedDate?.AddDays(-1);
+            for (var count = 0; count < 3; count++)
+            {
+                var older = AddWorkItem(StateCategories.Done, 1, string.Empty);
+                older.ClosedDate = today.AddDays(-60);
+                older.StartedDate = older.ClosedDate?.AddDays(-20);
+            }
+
+            var overNinetyDays = subject.GetCycleTimePercentilesForTeam(testTeam, today.AddDays(-90), today).ToList();
+            var overThirtyDays = subject.GetCycleTimePercentilesForTeam(testTeam, today.AddDays(-30), today).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(overNinetyDays[0].Value, Is.EqualTo(21), "the 90-day window must reach back to the items closed 60 days ago, so the slow stretch shows in the longer look-back");
+                Assert.That(overThirtyDays[0].Value, Is.EqualTo(2), "the 30-day window must leave the items closed 60 days ago out");
+            }
+        }
+
+        [Test]
         public void GetCycleTimePercentilesForTeam_NoClosedItems_ReturnsZeros()
         {
             var cycleTimePercentiles = subject.GetCycleTimePercentilesForTeam(testTeam, DateTime.UtcNow.AddDays(-10), DateTime.UtcNow).ToList();
@@ -1395,6 +1419,48 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Assert.That(result.Average, Is.GreaterThan(0));
                 Assert.That(result.UpperNaturalProcessLimit, Is.GreaterThanOrEqualTo(result.Average));
                 Assert.That(result.LowerNaturalProcessLimit, Is.GreaterThanOrEqualTo(0));
+            }
+        }
+
+        [Test]
+        public void GetThroughputProcessBehaviourChart_PinnedBaseline_GivesTheSameLimitsForEveryDisplayedPeriodHoweverThePeriodsThroughputMoves()
+        {
+            var today = TestToday.AmbientAsUtcMidnight;
+            var baselineStart = today.AddDays(-60);
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = today.AddDays(-46);
+
+            for (var day = 0; day < 15; day++)
+            {
+                FinishItemsOn(baselineStart.AddDays(day), 1 + (day % 3));
+            }
+
+            var earlierPeriodStart = today.AddDays(-30);
+            var laterPeriodStart = today.AddDays(-15);
+            for (var day = 0; day < 15; day++)
+            {
+                FinishItemsOn(earlierPeriodStart.AddDays(day), 1);
+                FinishItemsOn(laterPeriodStart.AddDays(day), 6);
+            }
+
+            var earlier = subject.GetThroughputProcessBehaviourChart(testTeam, earlierPeriodStart, earlierPeriodStart.AddDays(14));
+            var later = subject.GetThroughputProcessBehaviourChart(testTeam, laterPeriodStart, laterPeriodStart.AddDays(14));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(earlier.Status, Is.EqualTo(BaselineStatus.Ready), "Both periods are long enough to read, so the limits are there to compare.");
+                Assert.That(earlier.Average, Is.GreaterThan(0), "The pinned stretch has finished work, so there is a band to compare.");
+                Assert.That(later.Average, Is.EqualTo(earlier.Average), "Limits drawn from a pinned stretch must not follow the displayed period.");
+                Assert.That(later.UpperNaturalProcessLimit, Is.EqualTo(earlier.UpperNaturalProcessLimit));
+                Assert.That(later.LowerNaturalProcessLimit, Is.EqualTo(earlier.LowerNaturalProcessLimit));
+            }
+        }
+
+        private void FinishItemsOn(DateTime day, int count)
+        {
+            for (var item = 0; item < count; item++)
+            {
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = day;
             }
         }
 
