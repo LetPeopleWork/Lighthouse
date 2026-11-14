@@ -128,12 +128,110 @@
 "stimulus": "F135",
 "user_result": "F6"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F141",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingAdaptersAndPoliciesLayoutArchUnitTest.TheForecastUpdaterAndTheStartUpSeeder_LiveInTheModuleBackgroundAdapters_AndNoneIsLeftUnderServices"
+},
+"expected": "F139",
+"stimulus": "F138",
+"user_result": "F140"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingAdaptersAndPoliciesLayoutArchUnitTest.TheForecastUpdaterAndTheStartUpSeederFiles_SitInTheModuleBackgroundFolder_AndNowhereElse"
+},
+"expected": "F143",
+"stimulus": "F142",
+"user_result": "F144"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F149",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingAdaptersAndPoliciesLayoutArchUnitTest.TheFourForecastTriggers_LiveInTheModulePolicies_AndNoneIsLeftUnderServices"
+},
+"expected": "F147",
+"stimulus": "F146",
+"user_result": "F148"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingAdaptersAndPoliciesLayoutArchUnitTest.TheFourForecastTriggerFiles_SitInTheModulePoliciesFolder_AndNowhereElse"
+},
+"expected": "F151",
+"stimulus": "F150",
+"user_result": "F144"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F155",
+"test": "Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest"
+},
+"expected": "F153",
+"stimulus": "F152",
+"user_result": "F154"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F159",
+"test": "Lighthouse.Backend.Tests.Architecture.SeededForecastsStayTheSameTest"
+},
+"expected": "F157",
+"stimulus": "F156",
+"user_result": "F158"
+}
 ]
 },
 "counters": {
 "D": 4,
 "E": 4,
-"F": 137,
+"F": 159,
 "K": 3,
 "P": 4,
 "S": 3,
@@ -708,8 +806,30 @@
 "F135": "Run the architecture rules and the seeded forecasts check after the move",
 "F136": "Layout and list checks pass with no behaviour change; the seeded forecast answers stay the same",
 "F137": "Seeded forecasts check and forecast answers comparison already exist from feature A and run as declared commands; this oracle adds no new observation of them",
+"F138": "Read the compiled production assembly and check where the forecast updater and the start-up seeder live",
+"F139": "Both live in the Forecasting module's background adapters and none is left under Services; a missing or misplaced one is named",
 "F14": "Pure moves only: 31 Forecasting files git-mv from Services into Modules/Forecasting, type and file names unchanged, namespace = folder (Lighthouse.Backend.Modules.Forecasting.{Domain,Application,Application.Policies,Adapters.Background}). Each slice is a pure-move commit, then a separate edit commit for using lines, Flow metrics list strings and the Stryker path. Layers per D-4: Domain = 16 types reaching only kernel and BCL; Application = services, ports, ForecastLane, IForecastUpdater; Policies = four triggers; Adapters/Background = ForecastUpdater and ForecastInputsForgottenAtStartSeeder.",
+"F140": "Forecast refresh and start-up seeding behave as before",
+"F141": "A file moved to the right folder that keeps a stale namespace only passes the file check; this namespace check catches it",
+"F142": "List the production source files and look for the updater and seeder files",
+"F143": "Each file sits only in the module's background adapters folder",
+"F144": "No visible change",
+"F145": "A stale namespace in the right folder; the namespace check catches that",
+"F146": "Read the compiled production assembly and check where the four forecast triggers live",
+"F147": "All four live in the module's Application policies and none is left in the old update namespace; a trigger left behind is named",
+"F148": "Forecasts retrigger exactly as before",
+"F149": "A changed handler registration order; the order pin owns that",
 "F15": "Checker mapping: no state machine or temporal claim exists (behaviour-free relocation), so Quint, TLA+/TLC and Agda are not applicable; liveness is not applicable (no new progress claim, no scheduling change). The dependency-direction and placement claims are checked by the IL-reading ArchUnit rules in the three slice oracles; behaviour preservation is checked by SeededForecastsStayTheSameTest and bash Scripts/examine/bin/forecast-answers-compare (base 39a7f598f vs HEAD). No property-based law: the finite relocation has no broad input domain.",
+"F150": "List the production source files and look for the four trigger files",
+"F151": "Each file sits only in the module's policies folder",
+"F152": "Run the domain event handler order pin after the move",
+"F153": "The pin stays green unmodified",
+"F154": "Handlers run in the same order, so forecasts refresh as before",
+"F155": "A handler dropped from registration if the pin does not list it; it lists the trigger",
+"F156": "Compare seeded forecasts and forecast answers before and after the move",
+"F157": "Identical",
+"F158": "Forecast answers do not change",
+"F159": "A change outside the seeded cases; the compare script covers base against HEAD",
 "F16": "Paradigm object_oriented: owners are unchanged; every moved type keeps its owner and responsibility. No domain decision moves into a service, no new class is created, no type is split or merged. Carriers: decisions stay in Domain policies and ForecastSimulation; effects stay in ForecastUpdater, ForecastLane and the seeder; per-process state stays in ForecastLane.",
 "F17": "Handler order and registrations stay: Program.cs lines are untouched apart from using lines (DomainEventHandlerOrderPinTest stays green and unmodified). Tests covering moved types stay where they are; only their using lines change. Stryker file path in stryker.6094.backend.json follows ForecastRealityCheckService in B2.",
 "F18": "Behaviour-free: routes, DTOs, serialized responses, forecast results, schema, handler order unchanged. Existing API, E2E and response tests stay green and unmodified apart from using lines. No bound on stored or validated inputs changes.",

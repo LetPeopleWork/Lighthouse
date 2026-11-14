@@ -235,6 +235,182 @@ Seeded forecasts check and forecast answers comparison already exist from featur
 
 crafter
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Read the compiled production assembly and check where the forecast updater and the start-up seeder live
+```
+
+```text
+Both live in the Forecasting module's background adapters and none is left under Services; a missing or misplaced one is named
+```
+
+```text
+Forecast refresh and start-up seeding behave as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingAdaptersAndPoliciesLayoutArchUnitTest\.TheForecastUpdaterAndTheStartUpSeeder\_LiveInTheModuleBackgroundAdapters\_AndNoneIsLeftUnderServices
+
+```text
+A file moved to the right folder that keeps a stale namespace only passes the file check; this namespace check catches it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+List the production source files and look for the updater and seeder files
+```
+
+```text
+Each file sits only in the module's background adapters folder
+```
+
+```text
+No visible change
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingAdaptersAndPoliciesLayoutArchUnitTest\.TheForecastUpdaterAndTheStartUpSeederFiles\_SitInTheModuleBackgroundFolder\_AndNowhereElse
+
+```text
+A stale namespace in the right folder; the namespace check catches that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Read the compiled production assembly and check where the four forecast triggers live
+```
+
+```text
+All four live in the module's Application policies and none is left in the old update namespace; a trigger left behind is named
+```
+
+```text
+Forecasts retrigger exactly as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingAdaptersAndPoliciesLayoutArchUnitTest\.TheFourForecastTriggers\_LiveInTheModulePolicies\_AndNoneIsLeftUnderServices
+
+```text
+A changed handler registration order; the order pin owns that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+List the production source files and look for the four trigger files
+```
+
+```text
+Each file sits only in the module's policies folder
+```
+
+```text
+No visible change
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingAdaptersAndPoliciesLayoutArchUnitTest\.TheFourForecastTriggerFiles\_SitInTheModulePoliciesFolder\_AndNowhereElse
+
+```text
+A stale namespace in the right folder; the namespace check catches that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the domain event handler order pin after the move
+```
+
+```text
+The pin stays green unmodified
+```
+
+```text
+Handlers run in the same order, so forecasts refresh as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.DomainEventHandlerOrderPinTest
+
+```text
+A handler dropped from registration if the pin does not list it; it lists the trigger
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Compare seeded forecasts and forecast answers before and after the move
+```
+
+```text
+Identical
+```
+
+```text
+Forecast answers do not change
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.SeededForecastsStayTheSameTest
+
+```text
+A change outside the seeded cases; the compare script covers base against HEAD
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
