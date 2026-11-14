@@ -7,18 +7,18 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F14",
+"still_passes_if": "F18",
 "test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.westOfUtc.test.ts"
 },
-"expected": "F12",
-"stimulus": "F11",
-"user_result": "F13"
+"expected": "F16",
+"stimulus": "F15",
+"user_result": "F17"
 }
 ]
 },
 "counters": {
 "E": 3,
-"F": 14,
+"F": 18,
 "P": 1,
 "S": 1
 },
@@ -78,10 +78,10 @@
 "facts": {
 "F1": "Bug #6624: in a browser whose time zone is west of UTC (for example anywhere in the Americas), the Delivery dialog refuses tomorrow as a launch date and says the date must be in the future. Only the day after tomorrow is accepted. Repro: set the browser or OS time zone to e.g. America/New_York, open a Portfolio, create a Delivery, pick tomorrow's date: Save stays blocked with the future-date message. Expected: tomorrow is accepted in every time zone; today stays refused.",
 "F10": "Choosing a past date as a launch date is refused in every time zone.",
-"F11": "With the browser clock in New York, early in the morning and late in the evening when the UTC date is already the next day, the launch-date rule is asked about today, tomorrow and yesterday written as the day strings the date field holds",
-"F12": "Tomorrow is accepted with no date error; today and yesterday are refused with the message that the launch date must be in the future",
-"F13": "A user in the Americas can save a Delivery dated tomorrow; today and past dates stay blocked",
-"F14": "A fix that accepts every future-looking date including today, or that only works at one time of day, is caught by the today row and the two clock moments; a run on an east-of-UTC clock is caught by the offset check",
+"F15": "With the browser clock in New York, early in the morning and late in the evening when the UTC date is already the next day, the launch-date rule and the Save gate (a named launch with a feature picked) are asked about today, tomorrow, yesterday and a month ago, written as the day strings the date field holds; two days that are not on any calendar (month 13 and month 00) are asked about too",
+"F16": "Tomorrow is accepted with no date error and Save is open; today, yesterday and a month ago are refused, and Save is blocked for today, with the message that the launch date must be in the future; a day with no such month is refused, never rolled into another year",
+"F17": "A user in the Americas can save a Delivery dated tomorrow; today and past dates stay blocked; a mistyped month cannot be saved",
+"F18": "A fix that accepts every future-looking date including today, only works at one time of day, fixes the field rule but not the Save gate, or accepts a month that rolls over is caught by the today and far-past rows, the two clock moments, the Save gate row and the impossible-month rows; an east-of-UTC run is caught by the offset check",
 "F2": "A team lead in any time zone can save a Delivery that launches tomorrow, and still cannot save one for today or the past.",
 "F3": "Tomorrow is accepted as a launch date in every time zone; today and the past stay refused",
 "F4": "In a browser west of UTC, the Delivery dialog accepts tomorrow as a launch date and still refuses today and the past",
