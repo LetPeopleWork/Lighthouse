@@ -582,6 +582,20 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 - **B2 review F2 (wording only):** B2's stimulus says nine Application types, while the oracle lists ten names in nine
   files, because `ForecastInputs` shares a file with `ForecastInputFingerprint`. The `TypesLiveInTheirLayer` advice text
   reads like a list fix when the fix is a move; C2 makes that wording a parameter anyway.
+- **B3 review F1 (fixed in its own commit):** the perf harness raised `ForecastUpdater`'s old log category to Debug, so the
+  forecast round split would have dropped silently. A namespace move also renames every `ILogger<T>` category: feature C's
+  moves grep for full type names in strings, not only in `using` lines.
+- **Order pins added in B3:** `DomainEventHandlerOrderPinTest` now also pins the feature ordering policy, feature rank and
+  team deletion handlers, each proven to fail on a swapped or dropped registration.
+- **Feature C owes (design, B3 review F4):** `ForecastUpdater` in `Adapters/Background` still builds on `UpdateServiceBase`
+  and `UpdateKey` under `Services.Implementation.BackgroundServices.Update`.
+- **Candidate re-review note, not acted on:** it says no S3 row names `forecast-answers-compare`; row 9 does (acceptance.md
+  line 496, Markdown-escaped). A misread.
+- **EXAMINE left open at the hold (2026-11-14):** E1, E2 and E4 met (forecast answers 128/128 and Flow metrics answers
+  366/366 identical; filtered forecasts identical). E3 stays an observation gap: the order pins pass with both runners, but
+  no public command shows the updater, seeder and triggers firing for a user. nwdes refuses every close but `accepted`
+  (`RoleNotAccepted`), so the draft stays in `.nwdes-drafts/`. Maintainer to decide: accept the gap, or give the examiner a
+  public trigger capture before closing.
 - **Follow-up, out of scope:** `Architecture/IlDependencies` does not read catch-clause types, events or named attribute
   arguments, so a reference used only there escapes every IL rule. No current code hits it. Candidate for a small
   improvement item.
