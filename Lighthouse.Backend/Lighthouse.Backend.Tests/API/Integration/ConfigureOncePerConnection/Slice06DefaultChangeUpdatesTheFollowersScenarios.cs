@@ -9,10 +9,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-6303-configure-once-per-connection")]
-    [Category("story-6304")]
-    [Category("slice-06")]
-    [Category("us-05")]
     public class Slice06DefaultChangeUpdatesTheFollowersScenarios : ConnectionDefaultsAcceptanceTest
     {
         private const string TheApprovedLogEntry =

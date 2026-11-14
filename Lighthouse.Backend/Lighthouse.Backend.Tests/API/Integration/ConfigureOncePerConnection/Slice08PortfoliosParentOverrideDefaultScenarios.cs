@@ -6,10 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-6303-configure-once-per-connection")]
-    [Category("story-6313")]
-    [Category("slice-08")]
-    [Category("us-07")]
     public class Slice08PortfoliosParentOverrideDefaultScenarios : ConnectionDefaultsAcceptanceTest
     {
         private static readonly string[] CardIssuingDownloadsEverything = [$"{CardIssuing} Full"];
