@@ -2,6 +2,96 @@
 
 ## Slices
 
+### S1
+
+##### Covers
+
+P1
+
+```text
+Run the two host classes and the unit classes that now prove their rules, compare sorted test ids with the expected list
+```
+
+```text
+Each host class holds only its wire, concurrency and skeleton rows; every moved rule has a unit row that passes; the host rows the move removes are listed as extra until the craft removes them
+```
+
+```text
+The backend Integration tier runs 41 fewer host rows, so it takes less time
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s1\_compare\_ids\.py
+
+```text
+A host row is removed while its unit twin is missing or renamed, or a unit row stays on the host
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Apply one deliberate break per rule and per loop, gate or branch a removed host row walks, and run the unit classes
+```
+
+```text
+Every break turns at least one named unit row red, and the file is restored after each
+```
+
+```text
+No rule loses its test: each removed host row maps in the id table to a unit row that fails when the production line is broken
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s1\_breaks\.py
+
+```text
+A unit row only restates the production result so that a break on its path leaves it green
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Compare the working tree with the slice base for production files, the time budget list and the host-user guard list
+```
+
+```text
+No production or budget file differs, no guard line is added, and the rows that stay still prove the wiring of each route
+```
+
+```text
+Nothing the product does changes; the wiring rows of each route still run on the host
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s1\_compare\_ids\.py
+
+```text
+A production file is edited to make a moved row pass, or a guard line is added for a new host user
+```
+
+###### Obligations
+
 None.
 
 ## Expectations
