@@ -13,12 +13,25 @@
 "expected": "F16",
 "stimulus": "F15",
 "user_result": "F17"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F26",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.westOfUtc.test.tsx"
+},
+"expected": "F24",
+"stimulus": "F23",
+"user_result": "F25"
 }
 ]
 },
 "counters": {
 "E": 3,
-"F": 22,
+"F": 26,
 "P": 1,
 "S": 1
 },
@@ -36,7 +49,8 @@
 "stimulus": "F5"
 },
 "supports": [
-"Lighthouse.Frontend/vitest.config.ts"
+"Lighthouse.Frontend/vitest.config.ts",
+"Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.westOfUtc.test.tsx"
 ],
 "targets": [
 {
@@ -119,6 +133,10 @@
 "F20": "Probe frontend-tests westOfUtc: 1 file, 7 of 7 passed. Passing rows: clock-behind-UTC guard; tomorrow accepted and today and past refused in early morning and in late evening when UTC is already the next day; named launch dated tomorrow saved and today blocked; 2027-13-01 and 2027-00-10 refused as not on any calendar.",
 "F21": "Limit: no Delivery dialog in a browser was driven. Only Vitest rule-level rows under a faked west-of-UTC clock were observed. I did not capture the YYYY-MM-DD stimulus or its response myself, no time zone other than the faked clock, and no verbatim error text. Row names and pass marks are project test-suite output, not user-observed behavior.",
 "F22": "Non-probe: E1, E2 and E3 at dialog level (typed YYYY-MM-DD in the Delivery dialog, clock in America/New_York, tomorrow/today/yesterday) were not probed; no browser probe exists on the public surface. Only rule-level rows were observed.",
+"F23": "In a browser on a New York clock late in the evening, when the UTC calendar is already tomorrow, a user opens Add Launch, types a name, ticks a Deliverable and enters first tomorrow's date and then today's date",
+"F24": "Tomorrow shows no date message and Save is open; today shows the message 'Launch date must be in the future' and Save stays blocked",
+"F25": "The user can save a launch dated tomorrow and still cannot save one dated today",
+"F26": "A fix that clears the rule but leaves the dialog gate or message wrong would pass the rule rows and fail here; a dialog that accepts today along with tomorrow fails here",
 "F3": "Tomorrow is accepted as a launch date in every time zone; today and the past stay refused",
 "F4": "In a browser west of UTC, the Delivery dialog accepts tomorrow as a launch date and still refuses today and the past",
 "F5": "With the clock in America/New_York, the launch-date rule is asked about today, tomorrow and yesterday, each written as the YYYY-MM-DD string the date field holds",

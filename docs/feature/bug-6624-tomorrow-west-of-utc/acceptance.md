@@ -34,6 +34,36 @@ A fix that accepts every future-looking date including today, only works at one 
 
 None.
 
+##### Covers
+
+P1
+
+```text
+In a browser on a New York clock late in the evening, when the UTC calendar is already tomorrow, a user opens Add Launch, types a name, ticks a Deliverable and enters first tomorrow's date and then today's date
+```
+
+```text
+Tomorrow shows no date message and Save is open; today shows the message 'Launch date must be in the future' and Save stays blocked
+```
+
+```text
+The user can save a launch dated tomorrow and still cannot save one dated today
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliveryCreateModal\.westOfUtc\.test\.tsx
+
+```text
+A fix that clears the rule but leaves the dialog gate or message wrong would pass the rule rows and fail here; a dialog that accepts today along with tomorrow fails here
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

@@ -32,6 +32,8 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Portfolios/Detail/Compo
 
 Lighthouse\.Frontend\/vitest\.config\.ts
 
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliveryCreateModal\.westOfUtc\.test\.tsx
+
 #### Public oracle
 
 ```text

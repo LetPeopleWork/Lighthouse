@@ -179,6 +179,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>In a browser on a New York clock late in the evening, when the UTC calendar is already tomorrow, a user opens Add Launch, types a name, ticks a Deliverable and enters first tomorrow&#x27;s date and then today&#x27;s date
+</code></pre>
+
+<pre><code>Tomorrow shows no date message and Save is open; today shows the message &#x27;Launch date must be in the future&#x27; and Save stays blocked
+</code></pre>
+
+<pre><code>The user can save a launch dated tomorrow and still cannot save one dated today
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.westOfUtc.test.tsx</p>
+
+<pre><code>A fix that clears the rule but leaves the dialog gate or message wrong would pass the rule rows and fail here; a dialog that accepts today along with tomorrow fails here
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

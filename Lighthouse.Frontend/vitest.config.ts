@@ -3,7 +3,10 @@ import { defineConfig } from "vitest/config";
 import { EXPECTED_TEST_FAILURE } from "./src/tests/ExpectedTestFailure.ts";
 import { resolveTestWorkers } from "./src/tests/testWorkers.ts";
 import { slowTests } from "./src/tests/timeBudget/slowTests.ts";
-import { isCiRun, resolveTimeBudgetOptions } from "./src/tests/timeBudget/timeBudgetOptions.ts";
+import {
+	isCiRun,
+	resolveTimeBudgetOptions,
+} from "./src/tests/timeBudget/timeBudgetOptions.ts";
 import { TimeBudgetReporter } from "./src/tests/timeBudget/timeBudgetReporter.ts";
 
 // Per-test budget in seconds on a quiet machine, for a test in a .test.tsx file.
@@ -27,7 +30,7 @@ const ignoredPaths = [
 
 // A time zone is process-wide. The default project runs in worker threads pinned to one zone by the
 // test scripts, so tests that need another zone run in a project of their own, in forked processes.
-const WEST_OF_UTC_TESTS = "**/*.westOfUtc.test.ts";
+const WEST_OF_UTC_TESTS = "**/*.westOfUtc.test.{ts,tsx}";
 const WEST_OF_UTC_ZONE = "America/New_York";
 
 const workers = resolveTestWorkers(process.env, availableParallelism());
