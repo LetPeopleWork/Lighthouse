@@ -824,7 +824,7 @@ Its guard line stays: the class still starts a host.
 - **Target `P` = 5.0 %, ratified** by the maintainer on 2026-11-13 (scenario 2.3). Baseline: the before set median once it has 5 runs; until then the 10 ranking runs (2,031.7 s).
 - **After suite 1, hold** (maintainer, 2026-11-13): AFK finishes suite 1 and its final gates, then holds. Suite 2 starts with the maintainer.
 
-## Wave: DELIVER / [REF] Resume here (written 2026-11-13 17:2x, end of the AFK session)
+## Wave: DELIVER / [REF] Resume point of 2026-11-13 (superseded by the one at the end)
 
 **State.** Suite 1 (`PercentilesOverTime`) is nwdes feature `docs/feature/story-6537-a-percentiles-suite/` (handoff.json there).
 - **S1** `Slice07WhereTheLimitsActuallyMovedTest`: done, slice review accepted. 9 of 10 host rows moved to unit rows; 1 route row stays.
@@ -860,3 +860,68 @@ for every `ctx_patch`, because a relative one wrote into the main checkout once.
 **Follow-ups to draft at T10's close:** a backend Story for the next families by the ranking (`FasterUpdates`, `Refinement`,
 `Reports`, `FetchFingerprint`), and a frontend Story to move rule rows from `.test.tsx` down to `.test.ts` (maintainer:
 separate topic).
+
+## Wave: DELIVER / [REF] Suite 1 delivered (2026-11-14, AFK)
+
+**Slices.** All four slices of nwdes feature `story-6537-a-percentiles-suite` are GREEN, reviewed and pushed.
+
+| Slice | Class | Host rows moved | Stay | Pushed |
+|---|---|---|---|---|
+| S1 | `Slice07WhereTheLimitsActuallyMovedTest` | 9 | 1 (limits route) | 2026-11-13 |
+| S2 | `Slice06EveryPercentileTabSpansTheSamePeriodTest` | 10 | 1 (tab route) | 2026-11-13 |
+| S3 | `Slice05ReconstructCycleTimeHistoryTest` | 16 (one to a service-port scenario under `Tests/Acceptance/PercentilesOverTime/`) | 3 (read route, read-fill-read loop, refresh mid-fill) | `828103c05`, CI run 43569495173 green |
+| S4 | `Slice10OnlyWhatTheTeamStillKeepsTest`, `Slice08NothingToShowTest` | 9 (both classes deleted, both guard-list lines removed) | 0 | `20c21647a`, CI run 43573888234 green |
+
+**S4's choice (the screen, section 6 of `evidence/step2/screen.md`).** Slice10 and Slice08 move; `Slice09TheFillShipsOptIn` (no fill, one row
+must stay on the host) and `Story6084TheFillRunsEverywhere` (both rows stay) are left out of suite 1. The screen also found an unpinned
+step: the fill target applies the team's retention guard and edge, and no unit row checked it. S4 added those rows, each red under its break.
+
+**Gates.** Full backend gate before each push: S3 13,438 passed, S4 13,437 passed, 0 failed, `dotnet build` 0 warnings. Path classifier
+before each push: every connector `false`, no `ci*.yml` edit (the S3 push was checked after the fact; noted below).
+
+**Final gates.** Whole-candidate review: rejected once (the earlier slices' oracles no longer agreed with HEAD once later slices
+added unit rows to shared classes and S4 shrank the guard list; S1's break script pointed at a gone worktree; changed shared fixtures
+had no proof their old rows still fail). Revised (`191e3d903`, `b010bc03b`, `92fa09bb7`, supports `14bfcb948`), oracles S1-S4
+re-approved (`fcaa38528`), then **accepted** (`53c1a9dbe`). The reviewer's finding 6 (the port scenario listed in the Forecasting wire
+contract) was resolved as by design: `RealityCheckWireContractTest` is the one host-parity check over every port fixture and lists the
+Refinement and Reports fixtures the same way. Mutation: N/A, no production change.
+
+**EXAMINE: not closed.** The examiner probed Slice07, `ProcessBehaviorSnapshotWriterTest` and `RetentionEdgeTest` (all green) and
+judged E1-E3 "unmet, observation_gap": E1's "the tier takes less time" can only be read from the after set; E2 and E3 need the id
+tables, break scripts and guard/diff checks, which are not in its public workspace or command list. `indeterminate` was refused
+by nwdes (RoleNotAccepted); the draft stays open. **Maintainer decision needed** (see "Resume here").
+
+**Measured locally (Release, quiet machine, 3 rounds, summed row seconds).** `Slice05`: 24.6 s (25.4, 24.6, 24.3) → 7.2 s (7.2, 7.3, 7.0),
+about −17.4 s, 71 %. At CI's 2.66× this predicts about −46 s on CI for this class. S2 and S4 were not timed locally; their after
+seconds come from the CI CSVs.
+
+**Deviations from DESIGN, recorded.**
+- D-6537-9 says at most three pushes (suite 1, suite 2, the data commit). With the maintainer's per-slice push choice, suite 1 took
+  three pushes (S1+S2, S3, S4). Each is a plain test-only push, so the after set is unaffected; the count is over the design.
+- The path classifier was run after the S3 push instead of before it (all `false`).
+- The maintainer allowed a rebase when trunk moved (2026-11-14); both pushes were rebased onto docs/frontend-only trunk moves.
+
+## Wave: DELIVER / [REF] Resume here (written 2026-11-14, end of the AFK run)
+
+Suite 1 is pushed and its whole-candidate review is accepted. Open, in order:
+1. **EXAMINE for suite 1: closed** (see "EXAMINE of suite 1, closed" below; published as rejected on observation gaps, no defect).
+2. **Suite 2** starts with the maintainer: screen `ConfigureOncePerConnection` (164 s family) first.
+3. The before set rebuild (deviation already decided on 2026-11-13), the after set, the success reading, DESIGN questions 2, 4, 5, then
+   the data commit.
+4. Follow-ups at T10's close as listed above; add `Slice09TheFillShipsOptIn` and `Story6084TheFillRunsEverywhere` (smaller Given only) to
+   the backend follow-up.
+
+## Wave: DELIVER / [REF] EXAMINE of suite 1, closed (2026-11-14)
+
+**Maintainer decisions:** option (a), public proof for the examiner (`feature-proof` examine command, `b658dd612`, `408a0f0e1`);
+then (b), E1 keeps its rule half (`78c80f9c4`; the timing half is read at step 6 against `P` = 5.0 %); then (1), close the record as
+it stands.
+
+**Result: nwdes publishes EXAMINE as rejected, on observation gaps only.** The examiner ran `feature-proof … summary`: no production or
+budget change, the guard list only shrank (Slice08, Slice10), all four oracles exit 0, one sampled break per slice turned its rows
+red. It judged E1-E3 "unmet, observation_gap": 4 of about 60 breaks observed within its 3-probe budget, and no host row seen for
+Slice08's and Slice10's route (they have none of their own; they read the percentiles route Slice05 and Slice06 still prove).
+No defect was observed. `--outcome accepted` closes the record; nwdes derives the feature verdict from the unmet rows.
+
+**Lessons.** `nwdes examine abort` deletes the examine workspace. An examiner on a 3-probe budget needs one command that shows the
+whole proof (`feature-proof <feature> summary <base>`), and an expectation it can observe now (not a CI timing).

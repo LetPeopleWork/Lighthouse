@@ -366,6 +366,53 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
             }
         }
 
+        /// <summary>
+        /// A team that has never finished anything supports no history at all, so no day is written
+        /// however many are asked for.
+        /// </summary>
+        [Test]
+        public async Task AnOwnerThatHasNeverFinishedAnything_HasNoDayWorkedOut()
+        {
+            GivenATeamLastObservedOn(Today);
+
+            subject.AskFor(RequestFor(TeamId, Today.AddDays(-3), Today.AddDays(-2), Today.AddDays(-1)));
+            await subject.DrainAsync(CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                percentileWriterMock.Verify(writer => writer.FillDayIfAbsent(
+                    It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<MetricType>(), It.IsAny<DateOnly>(),
+                    It.IsAny<Func<DateTime, DateTime, IEnumerable<PercentileValue>>>()), Times.Never,
+                    "A day was worked out for a team that has never finished anything.");
+            }
+        }
+
+        /// <summary>
+        /// A period reaching further back than the team does still gets the part it covers: the days
+        /// before the first finished item are stepped over for free, and do not use up the days one
+        /// pass may work out.
+        /// </summary>
+        [Test]
+        public async Task DaysBeforeTheFirstFinishedItem_DoNotSpendThePassAllowance()
+        {
+            const int daysBeforeTheFirstFinishedItem = 100;
+            GivenATeamLastObservedOn(Today);
+            GivenTheTeamFinishedAnItemOn(Today.AddDays(-5));
+            var before = DaysUpTo(Today.AddDays(-6), daysBeforeTheFirstFinishedItem);
+            var covered = DaysUpTo(Today.AddDays(-1), 5);
+
+            subject.AskFor(RequestFor(TeamId, [.. before, .. covered]));
+            await subject.DrainAsync(CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var day in covered)
+                {
+                    VerifyCycleTimeWorkedOutOn(day, Times.Once());
+                }
+            }
+        }
+
         [Test]
         public async Task EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfATeam()
         {

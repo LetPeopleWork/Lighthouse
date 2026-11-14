@@ -1,5 +1,5 @@
 import subprocess, sys, re, os
-R = "/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda"
+R = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."))
 A = "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/"
 W = A + "ProcessBehaviorSnapshotWriter.cs"
 E = A + "RetentionEdge.cs"
@@ -23,6 +23,12 @@ BREAKS = [
  ("B7 history fill loop reaches one family only", F, "foreach (var family in target.ProcessBehaviorFamilies)", "foreach (var family in target.ProcessBehaviorFamilies.Take(1))", UF),
  ("B6 pinned baseline ignored (display window used)", M, "return new ResolvedBaseline(configuredStart, configuredEnd, true, validation);", "return new ResolvedBaseline(displayStart, displayEnd, true, validation);", UT),
 ]
+BREAKS.append(("B8 a day that already carries limits is read again", W,
+  "if (StoredRow(ownerId, ownerType, family.MetricType, day) != null)", "if (StoredRow(ownerId, ownerType, family.MetricType, day) == null)", UW))
+BREAKS.append(("B9 a refused row is taken as stored when any family of that day is stored", W,
+  "snapshot.MetricType == metricType &&", "(snapshot.MetricType == metricType || snapshot.MetricType == ProcessBehaviorMetricType.Wip) &&", UW))
+BREAKS.append(("B10 a refused row is thrown on even when another copy stored it", W,
+  "StoredRow(row.OwnerId, row.OwnerType, row.MetricType, row.RecordedAt) != null;", "StoredRow(row.OwnerId, row.OwnerType, row.MetricType, row.RecordedAt) == null;", UW))
 only = sys.argv[1:] 
 for name, path, old, new, flt in BREAKS:
     if only and name.split()[0] not in only: continue

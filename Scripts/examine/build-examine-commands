@@ -116,3 +116,67 @@ if [ \$# -gt 1 ] && [ -n "\$2" ]; then args+=(-t "\$2"); fi
 pnpm exec vitest "\${args[@]}" 2>&1 | grep -E "^ +(✓|×|↓) |^ +(Test Files|Tests) |FAIL " || true
 EOF
 chmod +x "$out/frontend-tests"
+
+cat > "$out/feature-proof" <<EOF
+#!/usr/bin/env bash
+# Shows the proof a test-only feature keeps in its evidence folder, docs/feature/<feature>/evidence/:
+# the id oracles (s<N>_compare_ids.py), the id tables (s<N>-id-table.md) and the deliberate breaks (s<N>_breaks.py).
+# Usage: feature-proof <feature> <action> [arguments]
+#   list               names the oracles, id tables and break scripts the feature has
+#   oracles            runs every id oracle; per slice prints its EXTRA/MISSING/GUARD/CHANGED lines, its last line and its exit code
+#                      (exit 0 = the observed test ids equal the expected ones and no guarded file changed)
+#   table <N>          prints slice N's id table: each removed host test, what it walked, the test that now proves it,
+#                      the break and the rows that went red
+#   breaks <N>         lists slice N's deliberate breaks (id and what each breaks)
+#   break <N> <id>...  applies each named break to the production line, runs the named tests, prints which went red, and
+#                      puts the line back (a break proves its rule only if at least one row goes red)
+#   summary <base>     everything in one call (about 3 minutes): diff, every oracle, and the first break of each
+#                      slice with the rows it turns red
+#   diff <base>        lists files changed since <base> under the production project, in the host-user guard list and in
+#                      the test time budget, with the guard list's added and removed lines
+# Example: feature-proof story-6537-a-percentiles-suite oracles
+set -euo pipefail
+if [ "\${1:-}" = "--help" ] || [ "\${1:-}" = "-h" ] || [ \$# -lt 2 ]; then
+  sed -n '2,/^set -euo/p' "\$0" | grep '^#' | sed 's/^# \{0,1\}//'
+  exit 0
+fi
+# The examiner runs commands in a bare environment; the .NET SDK lives under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+feature="\$1"; action="\$2"; shift 2
+case "\$feature" in */*|.*) echo "feature must be a folder name under docs/feature"; exit 2;; esac
+ev="$repo/docs/feature/\$feature/evidence"
+[ -d "\$ev" ] || { echo "no evidence folder for \$feature"; exit 2; }
+cd "$repo"
+case "\$action" in
+  list) ls "\$ev" | grep -E '^s[0-9]+(_compare_ids\.py|-id-table\.md|_breaks\.py)\$' ;;
+  oracles)
+    for o in \$(ls "\$ev" | grep -E '^s[0-9]+_compare_ids\.py\$' | sort -V); do
+      set +e; out="\$(python3 "\$ev/\$o" 2>&1)"; code=\$?; set -e
+      echo "== \$o (exit \$code)"
+      printf '%s\n' "\$out" | grep -E '^(EXTRA|MISSING|GUARD|CHANGED|OUTCOME)' || true
+      printf '%s\n' "\$out" | tail -1
+    done ;;
+  table) cat "\$ev/s\${1:?slice number}-id-table.md" ;;
+  breaks) grep -oE '^\s+\("[A-Z][A-Za-z0-9]* [^"]*"' "\$ev/s\${1:?slice number}_breaks.py" | sed -E 's/^\s+\("//; s/"\$//' ;;
+  break) n="\${1:?slice number}"; shift; python3 "\$ev/s\${n}_breaks.py" "\$@" 2>&1 ;;
+  diff)
+    base="\${1:?base revision}"
+    echo "production files changed: \$(git diff --name-only "\$base" HEAD -- Lighthouse.Backend/Lighthouse.Backend/ | wc -l)"
+    git diff --name-only "\$base" HEAD -- Lighthouse.Backend/Lighthouse.Backend/ | sed 's/^/  /'
+    echo "time budget files changed: \$(git diff --name-only "\$base" HEAD -- Scripts/test-timings/test-time-budget.json | wc -l)"
+    echo "host-user guard list, lines added and removed:"
+    git diff "\$base" HEAD -- Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs \\
+      | grep -E '^[+-][^+-]' | sed 's/^/  /' || echo "  none" ;;
+  summary)
+    base="\${1:?base revision}"
+    echo "##### diff since \$base"; "\$0" "\$feature" diff "\$base"
+    echo "##### oracles"; "\$0" "\$feature" oracles
+    for b in \$(ls "\$ev" | grep -E '^s[0-9]+_breaks\.py\$' | sort -V); do
+      n="\${b#s}"; n="\${n%%_*}"
+      first="\$("\$0" "\$feature" breaks "\$n" | head -1 | cut -d' ' -f1)"
+      echo "##### slice \$n, break \$first"; "\$0" "\$feature" break "\$n" "\$first" | grep -E '^(===|Failed |Passed!|Failed!|NO SUMMARY|SKIPPED)' || true
+    done ;;
+  *) echo "unknown action \$action (try --help)"; exit 2 ;;
+esac
+EOF
+chmod +x "$out/feature-proof"

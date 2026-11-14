@@ -62,3 +62,34 @@ Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2 (supersede
 Failed ADayWorkedOut_IsWorkedOutForEveryOneOfTheOwnersLimitFamilies: the WorkItemAge limits of the day were never worked out
 Failed!  - Failed:     1, Passed:     1, Skipped:     0, Total:     2
 Each break reverted: git status shows no file under Lighthouse.Backend/Lighthouse.Backend/ changed.
+
+################ CURRENT RUN (this checkout, s1_breaks.py B1 B4 B4b B8 B9 B10). The blocks above are the earlier run made from another checkout.
+=== B1 team family line removed (Arrivals)
+Failed ATeam_ReportsExactlyThroughputWorkItemAgeWipCycleTimeAndArrivals [26 ms]
+Failed!  - Failed:     1, Passed:     9, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B4 FillDayIfAbsent passes asOf null
+Failed ADayFilledInAfterwards_ReadsTheSameAsWhenItWasWatched [1 s]
+Failed ADayWithoutLimits_IsReadOverTheSpanEndingOnThatDay_AsOfThatDay [9 ms]
+Failed!  - Failed:     2, Passed:     8, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B4b FillDayIfAbsent window ends today
+Failed ADayFilledInAfterwards_ReadsTheSameAsWhenItWasWatched [996 ms]
+Failed ADayWithoutLimits_IsReadOverTheSpanEndingOnThatDay_AsOfThatDay [9 ms]
+Failed!  - Failed:     2, Passed:     8, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B8 a day that already carries limits is read again
+Failed ADayFilledInAfterwards_ReadsTheSameAsWhenItWasWatched [1 s]
+Failed ADayThatAlreadyCarriesLimits_KeepsWhatWasObserved [28 ms]
+Failed ADayWithoutLimits_IsReadOverTheSpanEndingOnThatDay_AsOfThatDay [5 ms]
+Failed!  - Failed:     3, Passed:     7, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B9 a refused row is taken as stored when any family of that day is stored
+Failed ARowRefusedWhileOnlyAnotherFamilyOfThatDayIsStored_IsThrownOn [20 ms]
+Failed!  - Failed:     1, Passed:     9, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!
+=== B10 a refused row is thrown on even when another copy stored it
+Failed ARowRefusedBecauseAnotherCopyStoredThatDayFirst_IsAbsorbed [45 ms]
+Failed ARowRefusedWhileOnlyAnotherFamilyOfThatDayIsStored_IsThrownOn [5 ms]
+Failed!  - Failed:     2, Passed:     8, Skipped:     0, Total:    10, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+Failed!

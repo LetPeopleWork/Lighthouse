@@ -19,6 +19,10 @@
     {
       "name": "frontend-tests",
       "path": "Scripts/examine/bin/frontend-tests"
+    },
+    {
+      "name": "feature-proof",
+      "path": "Scripts/examine/bin/feature-proof"
     }
   ],
   "build": "Scripts/examine/build-examine-commands"
