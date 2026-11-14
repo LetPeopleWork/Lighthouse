@@ -1708,3 +1708,19 @@ New decisions from the review:
 - **D17**: the Team and Feature refresh settings themselves (which are needed at all) are to be rethought. Out of
   scope here; after the Epic, propose an ADO item (Ideas) describing what each refresh setting does today, created
   only on the maintainer's yes.
+
+## Wave: DELIVER / [REF] Maintainer guided review (2026-11-14)
+
+S1 and S2 were tried by hand earlier during DELIVER. S3–S5 were checked by the maintainer on `main` at `6b75c26d1`:
+12 checks, all OK, no mismatches, no new wishes.
+
+- S3: License tab content and buttons; "View license options" from a connection form lands on System → License
+  (Bug #6498); an import updates the tab and the header icon; System Info, Logs and Refresh History are separate tabs and
+  the Task Manager's log link opens Logs.
+- S4: the Connections tab lists the connections with Edit and Delete under its title and connect button, no filter; the
+  Overview has no connections section; delete names the connection; slow load shows a lone spinner and a blocked load the
+  could-not-load message.
+- S5: the connect-first line and the stepper action on an empty instance; the back link and every return path land on
+  Connections; old `/connections/…` addresses redirect; the Task Manager's link, wording and Edit.
+
+No new decisions.
