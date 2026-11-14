@@ -1,5 +1,5 @@
 import subprocess, sys, re, os
-R = "/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda"
+R = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."))
 A = "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/"
 W = A + "ProcessBehaviorSnapshotWriter.cs"
 E = A + "RetentionEdge.cs"

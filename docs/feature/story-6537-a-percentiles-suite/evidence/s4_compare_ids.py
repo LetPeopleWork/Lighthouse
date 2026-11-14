@@ -36,6 +36,7 @@ LEFT_THE_HOST = [
     "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice08NothingToShowTest",
     "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice10OnlyWhatTheTeamStillKeepsTest",
 ]
+ALL_EXPECTED = ["s1-expected-ids.txt", "s2-expected-ids.txt", "s3-expected-ids.txt", "s4-expected-ids.txt"]
 UNTOUCHED = [
     "Lighthouse.Backend/Lighthouse.Backend/",
     "Scripts/test-timings/test-time-budget.json",
@@ -62,6 +63,16 @@ def guard_problems():
         if f'"{name}"' in text:
             problems.append(f"GUARD    {name} no longer starts a host but is still on the guard list")
     return problems
+
+
+def other_slices_ids():
+    """Every test id any slice of this suite lists. A row in a shared unit class that another slice owns is not EXTRA here."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    ids = set()
+    for name in ALL_EXPECTED:
+        with open(os.path.join(here, name), encoding="utf-8") as handle:
+            ids.update(line.split("\t")[0] for line in handle if line.strip())
+    return ids
 
 
 def touched_paths():
@@ -109,6 +120,7 @@ def main():
     with open(EXPECTED, encoding="utf-8") as handle:
         expected = dict(line.rstrip("\n").split("\t") for line in handle if line.strip())
     observed = run_ids()
+    listed_by_any_slice = other_slices_ids()
     failed = 0
     for path in touched_paths():
         print(f"CHANGED  {path} (no production file or budget list may change)")
@@ -118,6 +130,8 @@ def main():
         failed += 1
     for test_id in sorted(set(expected) | set(observed)):
         want, got = expected.get(test_id), observed.get(test_id)
+        if want is None and test_id in listed_by_any_slice:
+            continue
         if want is None:
             print(f"EXTRA    {test_id} ({got})")
             failed += 1

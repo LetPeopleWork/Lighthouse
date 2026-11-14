@@ -29,14 +29,47 @@ FILTER = (
 SLICE_BASE = "c95a6d02f"
 UNTOUCHED = [
     "Lighthouse.Backend/Lighthouse.Backend/",
-    "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",
     "Scripts/test-timings/test-time-budget.json",
 ]
+GUARD = "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs"
+# The two classes a later slice of this suite takes off the host-user guard list. Their lines may go; nothing else may change.
+LEFT_THE_HOST_LATER = [
+    "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice08NothingToShowTest",
+    "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice10OnlyWhatTheTeamStillKeepsTest",
+]
+ALL_EXPECTED = ["s1-expected-ids.txt", "s2-expected-ids.txt", "s3-expected-ids.txt", "s4-expected-ids.txt"]
+
+
+def guard_problems():
+    """The guard list may not grow, and may only lose the lines of the classes that later slices of this suite move off the host."""
+    problems = []
+    done = subprocess.run(["git", "diff", "-U0", SLICE_BASE, "--", GUARD], cwd=ROOT, capture_output=True, text=True)
+    if done.returncode != 0:
+        print("BROKEN: git failed: " + done.stderr.strip())
+        sys.exit(2)
+    for line in done.stdout.splitlines():
+        if line.startswith(("+++", "---", "@@", "diff", "index")):
+            continue
+        if line.startswith("+"):
+            problems.append(f"GUARD    a line was added to the host-user guard list: {line[1:].strip()}")
+        elif line.startswith("-") and not any(f'"{name}"' in line for name in LEFT_THE_HOST_LATER):
+            problems.append(f"GUARD    a line other than a later slice's class left the host-user guard list: {line[1:].strip()}")
+    return problems
+
+
+def other_slices_ids():
+    """Every test id any slice of this suite lists. A row in a shared unit class that another slice owns is not EXTRA here."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    ids = set()
+    for name in ALL_EXPECTED:
+        with open(os.path.join(here, name), encoding="utf-8") as handle:
+            ids.update(line.split("\t")[0] for line in handle if line.strip())
+    return ids
 
 
 def touched_paths():
-    """Production files and the test-host guard and budget lists that differ from the slice base,
-    committed or in the working tree. The guard lists must not change in this slice."""
+    """Production files and the time budget list that differ from the slice base,
+    committed or in the working tree."""
     paths = set()
     for args in (["git", "diff", "--name-only", SLICE_BASE, "HEAD", "--"] + UNTOUCHED,
                  ["git", "diff", "--name-only", "HEAD", "--"] + UNTOUCHED,
@@ -79,12 +112,18 @@ def main():
     with open(EXPECTED, encoding="utf-8") as handle:
         expected = dict(line.rstrip("\n").split("\t") for line in handle if line.strip())
     observed = run_ids()
+    listed_by_any_slice = other_slices_ids()
     failed = 0
     for path in touched_paths():
-        print(f"CHANGED  {path} (no production file, guard list or budget list may change)")
+        print(f"CHANGED  {path} (no production file or budget list may change)")
+        failed += 1
+    for problem in guard_problems():
+        print(problem)
         failed += 1
     for test_id in sorted(set(expected) | set(observed)):
         want, got = expected.get(test_id), observed.get(test_id)
+        if want is None and test_id in listed_by_any_slice:
+            continue
         if want is None:
             print(f"EXTRA    {test_id} ({got})")
             failed += 1
