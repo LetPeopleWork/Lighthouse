@@ -1707,7 +1707,7 @@ New decisions from the review:
   the Task Manager "the full log" link open Logs. Built inside slice 03 (S3 grows from S to M).
 - **D17**: the Team and Feature refresh settings themselves (which are needed at all) are to be rethought. Out of
   scope here; after the Epic, propose an ADO item (Ideas) describing what each refresh setting does today, created
-  only on the maintainer's yes.
+  only on the maintainer's yes. **Created 2026-11-14 as Story #6627** "Rethink the periodic refresh settings", New, top of the backlog.
 
 ## Wave: DELIVER / [REF] Maintainer guided review (2026-11-14)
 
@@ -1724,3 +1724,9 @@ S1 and S2 were tried by hand earlier during DELIVER. S3–S5 were checked by the
   Connections; old `/connections/…` addresses redirect; the Task Manager's link, wording and Edit.
 
 No new decisions.
+
+Correction, same day: after the 12 checks the maintainer found one defect on the new-connection page. The "Back to
+{Work Tracking Systems}" link sat in its own left column and pushed the wizard into the right half (D14 asked for a
+link at the top). Cause: the app's main area is a flex row and the page returned two sibling blocks. Fixed by wrapping
+the link and the page body in one block on every branch (new, edit, could-not-load), with a test that fails on two
+blocks.

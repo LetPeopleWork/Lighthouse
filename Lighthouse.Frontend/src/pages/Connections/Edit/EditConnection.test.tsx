@@ -257,6 +257,24 @@ describe("EditConnectionPage", () => {
 			).toHaveAttribute("href", "/settings/system/connections");
 		});
 
+		it.each([
+			["a new connection", undefined],
+			["an existing connection", "42"],
+		])(
+			"keeps the back link above %s in one block, because the app lays the page's blocks out side by side",
+			async (_, id) => {
+				mockParamsId = id;
+				const { container } = renderWithContext();
+
+				expect(
+					await screen.findByRole("link", {
+						name: "Back to Work Tracking Systems",
+					}),
+				).toBeVisible();
+				expect(container.childElementCount).toBe(1);
+			},
+		);
+
 		it("renders the ReconnectBanner inline when the loaded connection requiresReconnect", async () => {
 			const staleConnection = new WorkTrackingSystemConnection({
 				id: 42,

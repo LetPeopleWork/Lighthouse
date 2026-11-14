@@ -1,4 +1,4 @@
-import { Alert, Button, Container, Link, Typography } from "@mui/material";
+import { Alert, Box, Button, Container, Link, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useCallback, useContext } from "react";
@@ -37,14 +37,19 @@ const savedADefaultWithSeveralParentSources = (
 		nowListsSeveralSources(saved?.[name] ?? [], loaded?.[name] ?? []),
 	);
 
-const BackToConnections: React.FC<{ connectionsTerm: string }> = ({
-	connectionsTerm,
-}) => (
-	<Container maxWidth={false} sx={{ mb: 1 }}>
-		<Link component={RouterLink} to={connectionsTabPath()}>
-			{`Back to ${connectionsTerm}`}
-		</Link>
-	</Container>
+// One block for the whole page: the app's main area is a flex row and would put the link beside the page.
+const UnderBackToConnections: React.FC<{
+	connectionsTerm: string;
+	children: React.ReactNode;
+}> = ({ connectionsTerm, children }) => (
+	<Box sx={{ width: "100%" }}>
+		<Container maxWidth={false} sx={{ mb: 1 }}>
+			<Link component={RouterLink} to={connectionsTabPath()}>
+				{`Back to ${connectionsTerm}`}
+			</Link>
+		</Container>
+		{children}
+	</Box>
 );
 
 const EditConnectionPage: React.FC = () => {
@@ -190,19 +195,20 @@ const EditConnectionPage: React.FC = () => {
 	if (isNewConnection) {
 		return (
 			<SnackbarErrorHandler>
-				<BackToConnections connectionsTerm={connectionsTerm} />
-				<Container maxWidth={false}>
-					<Typography variant="h4" sx={{ mb: 2 }}>
-						{pageTitle}
-					</Typography>
-					<CreateConnectionWizard
-						getSupportedSystems={getSupportedSystems}
-						validateConnection={validateConnectionSettings}
-						saveConnection={saveConnectionSettings}
-						onCancel={returnToConnections}
-						onComplete={returnToConnections}
-					/>
-				</Container>
+				<UnderBackToConnections connectionsTerm={connectionsTerm}>
+					<Container maxWidth={false}>
+						<Typography variant="h4" sx={{ mb: 2 }}>
+							{pageTitle}
+						</Typography>
+						<CreateConnectionWizard
+							getSupportedSystems={getSupportedSystems}
+							validateConnection={validateConnectionSettings}
+							saveConnection={saveConnectionSettings}
+							onCancel={returnToConnections}
+							onComplete={returnToConnections}
+						/>
+					</Container>
+				</UnderBackToConnections>
 			</SnackbarErrorHandler>
 		);
 	}
@@ -217,39 +223,41 @@ const EditConnectionPage: React.FC = () => {
 
 	if (connectionQuery.isLoadingError) {
 		return (
-			<Container maxWidth={false}>
-				<BackToConnections connectionsTerm={connectionsTerm} />
-				<Alert
-					severity="error"
-					action={
-						<Button
-							color="inherit"
-							size="small"
-							onClick={() => {
-								refetch().catch(() => undefined);
-							}}
-						>
-							Try again
-						</Button>
-					}
-				>
-					Could not load this connection.
-				</Alert>
-			</Container>
+			<UnderBackToConnections connectionsTerm={connectionsTerm}>
+				<Container maxWidth={false}>
+					<Alert
+						severity="error"
+						action={
+							<Button
+								color="inherit"
+								size="small"
+								onClick={() => {
+									refetch().catch(() => undefined);
+								}}
+							>
+								Try again
+							</Button>
+						}
+					>
+						Could not load this connection.
+					</Alert>
+				</Container>
+			</UnderBackToConnections>
 		);
 	}
 
 	return (
 		<SnackbarErrorHandler>
-			<BackToConnections connectionsTerm={connectionsTerm} />
-			<ModifyConnectionSettings
-				key={connectionId}
-				title={pageTitle}
-				getSupportedSystems={getSupportedSystems}
-				getConnectionSettings={getConnectionSettings}
-				saveConnectionSettings={saveAndNavigate}
-				validateConnectionSettings={validateConnectionSettings}
-			/>
+			<UnderBackToConnections connectionsTerm={connectionsTerm}>
+				<ModifyConnectionSettings
+					key={connectionId}
+					title={pageTitle}
+					getSupportedSystems={getSupportedSystems}
+					getConnectionSettings={getConnectionSettings}
+					saveConnectionSettings={saveAndNavigate}
+					validateConnectionSettings={validateConnectionSettings}
+				/>
+			</UnderBackToConnections>
 		</SnackbarErrorHandler>
 	);
 };
