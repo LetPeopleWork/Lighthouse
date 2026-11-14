@@ -451,6 +451,102 @@ View Data and the dot dialog are built outside the chart's outlier filter (the d
 
 examiner
 
+### S3
+
+##### Covers
+
+P4
+
+```text
+Reader opens the outlier popover of a chart with eleven outliers and activates Open in a list, then closes the list
+```
+
+```text
+The popover closes, the Work Items list opens titled with the reader's Work Items and Cycle Time terms and holds all eleven outliers, focus moves into the list and returns to the outlier chip on close
+```
+
+```text
+The reader sees every outlier in the sortable, exportable list and keyboard focus is not lost
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierList\.test\.tsx
+
+```text
+The list holds only the ten shown rows, or all items, or focus falls to the page body after closing
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P4
+
+```text
+Reader renames Work Items and Cycle Time, or hides a Work Item type, then opens the outliers in a list
+```
+
+```text
+The list title uses the renamed terms and holds only the outliers of the types still shown
+```
+
+```text
+The list matches what the chip counts, in the reader's words
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierList\.test\.tsx
+
+```text
+The title keeps the default words or the list includes outliers of hidden types
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P4
+
+```text
+Read the Cycle Time scatterplot help for a Team and a Portfolio with renamed terms
+```
+
+```text
+The help states that an outlier is a closed item whose Cycle Time is more than 5 times the median of all closed items in the date range, in the configured terms, with outlier fixed and no default Work Item or Cycle Time words
+```
+
+```text
+The reader learns the rule in their own vocabulary
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierList\.test\.tsx
+
+```text
+Help keeps default words or omits the 5 times the median rule for portfolios
+```
+
+###### Obligations
+
+
+
+
+
 ## Expectations
 
 ### Rows

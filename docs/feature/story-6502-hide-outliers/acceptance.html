@@ -540,6 +540,90 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>examiner</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Reader opens the outlier popover of a chart with eleven outliers and activates Open in a list, then closes the list
+</code></pre>
+
+<pre><code>The popover closes, the Work Items list opens titled with the reader&#x27;s Work Items and Cycle Time terms and holds all eleven outliers, focus moves into the list and returns to the outlier chip on close
+</code></pre>
+
+<pre><code>The reader sees every outlier in the sortable, exportable list and keyboard focus is not lost
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx</p>
+
+<pre><code>The list holds only the ten shown rows, or all items, or focus falls to the page body after closing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Reader renames Work Items and Cycle Time, or hides a Work Item type, then opens the outliers in a list
+</code></pre>
+
+<pre><code>The list title uses the renamed terms and holds only the outliers of the types still shown
+</code></pre>
+
+<pre><code>The list matches what the chip counts, in the reader&#x27;s words
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx</p>
+
+<pre><code>The title keeps the default words or the list includes outliers of hidden types
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the Cycle Time scatterplot help for a Team and a Portfolio with renamed terms
+</code></pre>
+
+<pre><code>The help states that an outlier is a closed item whose Cycle Time is more than 5 times the median of all closed items in the date range, in the configured terms, with outlier fixed and no default Work Item or Cycle Time words
+</code></pre>
+
+<pre><code>The reader learns the rule in their own vocabulary
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx</p>
+
+<pre><code>Help keeps default words or omits the 5 times the median rule for portfolios
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

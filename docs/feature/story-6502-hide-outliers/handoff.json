@@ -229,6 +229,63 @@
 "stimulus": "F265",
 "user_result": "F267"
 }
+],
+"S3": [
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L1/F42",
+"L1/F43"
+],
+"still_passes_if": "F296",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx"
+},
+"expected": "F294",
+"stimulus": "F293",
+"user_result": "F295"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F44",
+"L1/F45",
+"L2/F50"
+],
+"still_passes_if": "F300",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx"
+},
+"expected": "F298",
+"stimulus": "F297",
+"user_result": "F299"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F51",
+"L3",
+"L3/F55",
+"L3/F56"
+],
+"still_passes_if": "F304",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx"
+},
+"expected": "F302",
+"stimulus": "F301",
+"user_result": "F303"
+}
 ]
 },
 "counters": {
@@ -236,7 +293,7 @@
 "C": 1,
 "D": 12,
 "E": 5,
-"F": 292,
+"F": 304,
 "K": 3,
 "L": 3,
 "P": 5,
@@ -1270,8 +1327,20 @@
 "F27": "Scope out: other charts (Estimation vs Cycle Time, Feature Size, Aging, process behaviour, throughput), View Data, backend percentile convention (mirrored, table test against PercentileCalculator index for N = 1 to 6, 10, 11), showing outliers in place. Deviation: none from the authority.",
 "F28": "No external service, wire format or independently released consumer changes; the usage event name is a same-commit enum pair covered by the slice 1 oracle and existing backend tests.",
 "F29": "The existing fallow layer check (layerBoundaries.enforcement.test.ts) already forbids utils importing services, hooks and pages and components importing pages, and it governs the new modules by directory; the design adds no new dependency law.",
+"F293": "Reader opens the outlier popover of a chart with eleven outliers and activates Open in a list, then closes the list",
+"F294": "The popover closes, the Work Items list opens titled with the reader's Work Items and Cycle Time terms and holds all eleven outliers, focus moves into the list and returns to the outlier chip on close",
+"F295": "The reader sees every outlier in the sortable, exportable list and keyboard focus is not lost",
+"F296": "The list holds only the ten shown rows, or all items, or focus falls to the page body after closing",
+"F297": "Reader renames Work Items and Cycle Time, or hides a Work Item type, then opens the outliers in a list",
+"F298": "The list title uses the renamed terms and holds only the outliers of the types still shown",
+"F299": "The list matches what the chip counts, in the reader's words",
 "F3": "On the Cycle Time scatterplot of a Team or a Portfolio, a closed Work Item whose Cycle Time is more than 5 times the chart's 50th percentile is not drawn; the y-axis scales to the remaining items, and every percentile and SLE line stays visible, either in place or as a labelled marker at the top edge of the plot. With no such item the chart is exactly as before.",
 "F30": "CycleTimeScatterPlotChart React props (closed work items, percentiles, SLE, owner kind, frameIsReady) rendered through React Testing Library; pure functions in utils/charts/outliers.ts",
+"F300": "The title keeps the default words or the list includes outliers of hidden types",
+"F301": "Read the Cycle Time scatterplot help for a Team and a Portfolio with renamed terms",
+"F302": "The help states that an outlier is a closed item whose Cycle Time is more than 5 times the median of all closed items in the date range, in the configured terms, with outlier fixed and no default Work Item or Cycle Time words",
+"F303": "The reader learns the rule in their own vocabulary",
+"F304": "Help keeps default words or omits the 5 times the median rule for portfolios",
 "F31": "WorkItemsDialog (props only), usage-event callback prop, useChartVisibility, MUI X drawing-area hooks",
 "F32": "components -> utils/charts (pure) ; pages/Common/MetricsView/WidgetShell provides header slot context consumed by components; utils import only chartAxisUtils; no component imports a page (fallow layer rule already enforced)",
 "F35": "named Cycle Time answer for a superseded definition arrives",
