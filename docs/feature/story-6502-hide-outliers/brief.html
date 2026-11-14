@@ -178,7 +178,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Outcome</p>
 
-<pre><code>A chip in the widget header reads &#x27;1 outlier&#x27; or &#x27;N outliers&#x27; (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists each outlier with its closed date, its Cycle Time in days and how many times the median it is; while the widget loads or has failed the chip is disabled and never shows a count from a previous answer.
+<pre><code>A chip in the widget header reads &#x27;1 outlier&#x27; or &#x27;N outliers&#x27; (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists the outliers longest first, up to ten rows followed by &#x27;and k more&#x27;, each row with its closed date, its Cycle Time in days and how many times the median it is. While the widget loads the chip is disabled and shows no count; when the data cannot be loaded the could-not-load message replaces the plot and the chip; it never shows a count from a previous answer.
 </code></pre>
 
 <h3>P3</h3>
@@ -229,6 +229,8 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>P1</p>
 
 <p>P2</p>
+
+<p>P3</p>
 
 <p>P5</p>
 

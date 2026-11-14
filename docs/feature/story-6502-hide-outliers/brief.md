@@ -33,7 +33,7 @@ On the Cycle Time scatterplot of a Team or a Portfolio, a closed Work Item whose
 Outcome
 
 ```text
-A chip in the widget header reads '1 outlier' or 'N outliers' (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists each outlier with its closed date, its Cycle Time in days and how many times the median it is; while the widget loads or has failed the chip is disabled and never shows a count from a previous answer.
+A chip in the widget header reads '1 outlier' or 'N outliers' (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists the outliers longest first, up to ten rows followed by 'and k more', each row with its closed date, its Cycle Time in days and how many times the median it is. While the widget loads the chip is disabled and shows no count; when the data cannot be loaded the could-not-load message replaces the plot and the chip; it never shows a count from a previous answer.
 ```
 
 ### P3
@@ -89,6 +89,8 @@ Slice 01: on Team Zenith's demo data the scatterplot leaves out TZ-301, scales i
 P1
 
 P2
+
+P3
 
 P5
 

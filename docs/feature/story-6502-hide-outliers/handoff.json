@@ -168,12 +168,12 @@
 ]
 },
 "counters": {
-"B": 2,
+"B": 3,
 "C": 1,
-"D": 11,
+"D": 12,
 "E": 5,
-"F": 232,
-"K": 2,
+"F": 241,
+"K": 3,
 "L": 3,
 "P": 5,
 "S": 3,
@@ -190,15 +190,15 @@
 "driving_port": "F30",
 "failures": [
 {
-"condition": "F33",
-"id": "B1",
-"observation": "F34",
-"outcome": "Refusal"
-},
-{
 "condition": "F35",
 "id": "B2",
 "observation": "F36",
+"outcome": "Refusal"
+},
+{
+"condition": "F234",
+"id": "B3",
+"observation": "F235",
 "outcome": "Refusal"
 }
 ]
@@ -251,12 +251,12 @@
 ],
 "constraints": [
 {
-"id": "K1",
-"text": "F26"
-},
-{
 "id": "K2",
 "text": "F27"
+},
+{
+"id": "K3",
+"text": "F240"
 }
 ],
 "decisions": [
@@ -271,10 +271,6 @@
 {
 "id": "D3",
 "text": "F17"
-},
-{
-"id": "D4",
-"text": "F18"
 },
 {
 "id": "D5",
@@ -303,6 +299,10 @@
 {
 "id": "D11",
 "text": "F25"
+},
+{
+"id": "D12",
+"text": "F239"
 }
 ],
 "equality": [
@@ -537,14 +537,15 @@
 ]
 },
 "public_oracle": {
-"expected": "F126",
-"falsifier": "F127",
+"expected": "F237",
+"falsifier": "F238",
 "promises": [
 "P1",
 "P2",
+"P3",
 "P5"
 ],
-"stimulus": "F125"
+"stimulus": "F236"
 },
 "records": {
 "agreement": [
@@ -1086,7 +1087,7 @@
 "promises": [
 "P2"
 ],
-"text": "F189"
+"text": "F241"
 },
 {
 "id": "E3",
@@ -1141,9 +1142,6 @@
 "F122": "Append OutlierPopoverOpened = 27",
 "F123": "Add closed item TZ-301 above 5 x Zenith's 50th percentile",
 "F124": "Row for OutlierPopoverOpened",
-"F125": "Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set whose median is 6 days and one item of 58 days, plus percentiles and an SLE; click the chip in the header",
-"F126": "The 58-day item is not drawn and the axis top is 1.1 x the largest drawn value, percentile and SLE; the header shows chip '1 outlier'; the popover says 'Not drawn: longer than 30 days (5 times the median, 6 days).', lists the item with closed date, 58 and 9.7x; a line above the axis appears as a top-edge marker and in the 'Above the axis' line; percentile legend values, SLE, dialog items are those of the unpartitioned data; with no item above the cut there is no chip and the axis is as before; frame not ready shows the chip disabled with no count",
-"F127": "A chart that drops the item from statistics, uses >= or another multiple, computes the median from drawn items, shows no chip or a stale count while not ready, or draws the item, fails",
 "F128": "L2 extract: turn the axis and grouped-dots useEffect+setState derivations of CycleTimeScatterPlotChart into useMemo values, before any outlier behaviour; makes the partition and chip count derive in one render",
 "F129": "Chart output for sets without outliers, dialog items, legend and axis values",
 "F13": "Slice 03: 'Open in a list' in the popover opens the Work Items dialog with exactly the chip's outliers, focus returns to the chip, and the widget's help names the outlier rule in the configured terms.",
@@ -1201,7 +1199,6 @@
 "F177": "File is created in slice 1 and does not exist yet; this slice adds the Open in a list button to it",
 "F178": "File is created in slice 1 and does not exist yet; this slice adds focus return to it",
 "F179": "File is created in slice 1 and does not exist yet; this slice adds the help and dialog title strings to it",
-"F18": "Chip placement (maintainer S-3): OutlierChip renders in the WidgetShell header after the RAG chip, small outlined, (!) icon plus '1 outlier' / '{n} outliers', words dropped below 600 px, accessible name keeps the full sentence, absent with no outliers. The chart hands the chip to the header through a header-slot context offered by WidgetShell and rendered by WidgetHeader; the same context carries frameIsReady (frame ready), so the chip is disabled while loading or failed and never shows an earlier count; it closes its popover when disabled turns true. Crafter may choose portal or context-held node; the oracle observes the header.",
 "F180": "Existing expectations hold for other widgets; cycleScatter wording changes but is checked by the slice oracle",
 "F181": "Single dialog gets a title",
 "F182": "New button and effect port",
@@ -1211,7 +1208,6 @@
 "F186": "New term field",
 "F187": "Passes the configured Cycle Time term",
 "F188": "Cycle Time scatterplot of a Team or Portfolio does not draw a closed Work Item whose Cycle Time exceeds 5 times the 50th percentile; the y-axis rescales to the remaining items; percentile and SLE lines stay visible in place or as labelled markers at the top edge; with no such item the chart is unchanged.",
-"F189": "Widget header chip reads 1 outlier or N outliers and is absent when there are none; it opens a popover saying the items are not drawn, stating the cut and the median in days, and listing each outlier with closed date, Cycle Time in days and multiple of the median; while loading or failed the chip is disabled and never shows a count from a previous answer.",
 "F19": "Copy (maintainer S-4, S-6): popover title '{n} outlier(s)', line 1 'Not drawn: longer than {cut} days (5 times the median, {median} days).', line 2 'Still counted in the percentiles, {SLE} and View Data.', conditional line 'Above the axis: 95% at {p95} days, {SLE} at {sle} days.', then a table (closed date, Cycle Time days, times the median; factor rounding from 10 up is half-up) capped at 10 rows, then 'Open in a list' (slice 3). Empty plot: 'All visible {Work Items} are outliers.' or 'All types are hidden.' Work Item, Cycle Time and SLE render in the configured terms; 'outlier' is a fixed word.",
 "F190": "Chip and list count only outliers of visible Work Item types and follow the selected named Cycle Time and date range; toggling a type does not move the cut or the axis; when every visible item is an outlier or every type is hidden the plot says so instead of No data available.",
 "F191": "From the popover the reader opens the outliers in the existing Work Items list dialog with sort, export and tracker links working; the widget help explains the outlier rule in the reader's configured terminology.",
@@ -1261,9 +1257,17 @@
 "F230": "The pure rule matches an independent oracle for every generated input",
 "F231": "The same cut and axis hold for any real data, not only the chosen examples",
 "F232": "Needs the property-test library fast-check and the new pure modules, neither installed or declared as a writable support; chart-level examples above cover the same laws for chosen inputs",
+"F233": "A chip in the widget header reads '1 outlier' or 'N outliers' (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists the outliers longest first, up to ten rows followed by 'and k more', each row with its closed date, its Cycle Time in days and how many times the median it is. While the widget loads the chip is disabled and shows no count; when the data cannot be loaded the could-not-load message replaces the plot and the chip; it never shows a count from a previous answer.",
+"F234": "frame has failed to load",
+"F235": "the widget could-not-load message replaces the plot and the chip; the chip is hidden, not disabled, and no popover or count remains",
+"F236": "Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set whose median is 6 days and one item of 58 days, plus percentiles and an SLE; click the chip in the header. Also render a set with 11 outliers, toggle Work Item type chips off and on, and render the frame loading and failed",
+"F237": "The 58-day item is not drawn and the axis top is 1.1 x the largest drawn value, percentile and SLE; the header shows chip '1 outlier'; the popover says 'Not drawn: longer than 30 days (5 times the median, 6 days).', lists the item with closed date, 58 and 9.7x; with 11 outliers the popover lists the 10 longest first and then 'and 1 more'; a line above the axis appears as a top-edge marker and in the 'Above the axis' line; percentile legend values, SLE, dialog items are those of the unpartitioned data; with no item above the cut there is no chip and the axis is as before; toggling types keeps the cut and axis still and the chip counts only visible-type outliers; while loading the chip is disabled with no count; when failed the could-not-load message replaces plot and chip (chip hidden)",
+"F238": "A chart that drops the item from statistics, uses >= or another multiple, computes the median from drawn items, moves the cut or axis on a type toggle, lists more than 10 rows or not longest first, shows a chip or a stale count after failure or while loading, or draws the item, fails",
+"F239": "Chip placement (maintainer S-3): OutlierChip renders in the WidgetShell header after the RAG chip, small outlined, (!) icon plus '1 outlier' / '{n} outliers', words dropped below 600 px, accessible name keeps the full sentence, absent with no outliers. The chart hands the chip to the header through a header-slot context offered by WidgetShell and rendered by WidgetHeader; the same context carries frameIsReady (frame ready). While the widget loads the chip is disabled and never shows an earlier count and its popover closes; when the widget has failed, the could-not-load message replaces the plot and the chip (hidden, not disabled). Crafter may choose portal or context-held node; the oracle observes the header.",
 "F24": "Paradigm object_oriented project, functional-leaning React; no anemic-entity concern since no domain entity is added: the new rule is a cohesive pure module (outliers.ts) owning the median, cut and partition decisions, and the chart component owns only view state. nw-code-design-oo smell classes apply only to the chart component (keep it free of the median and cut decision).",
+"F240": "Input bounds: Cycle Time is a whole number of days >= 1 (inclusive calendar days); closed Work Item count N is unbounded (0, 1 and 2 items give a median but, for 1 item, the item cannot exceed 5 times itself so no outlier). Multiple 5 and the exclusive comparison (value > 5 x median; value == cut is drawn) are fixed, not configurable. Popover lists outliers longest first, up to 10 rows, then 'and k more' for the rest; no bound on outlier count.",
+"F241": "Widget header chip reads 1 outlier or N outliers and is absent when there are none; it opens a popover saying the items are not drawn, stating the cut and the median in days, and listing the outliers longest first, up to ten rows followed by and k more, each row with closed date, Cycle Time in days and multiple of the median. While the widget loads the chip is disabled and shows no count; when the data cannot be loaded the could-not-load message replaces the plot and the chip; the chip never shows a count from a previous answer.",
 "F25": "Test substrate: Vitest + React Testing Library with the existing MUI mocks; one oracle file per slice under Lighthouse.Frontend/src/components/Common/Charts; command is pnpm --dir Lighthouse.Frontend exec vitest run <oracle path relative to Lighthouse.Frontend>. Per-test default budget applies, no derogation requested. No nWave scenario tags in code. The backend demo row (TZ-301) and enum member are pinned by existing backend test conventions at the application-service port, owned by the crafter and acceptance designer of slice 1; E2E page object for CycleTimeScatterPlotChart is extended with chip and popover and waits for data-widget-status=ready.",
-"F26": "Input bounds: Cycle Time is a whole number of days >= 1 (inclusive calendar days); closed Work Item count N is unbounded (0, 1 and 2 items give a median but, for 1 item, the item cannot exceed 5 times itself so no outlier). Multiple 5 and the exclusive comparison (value > 5 x median; value == cut is drawn) are fixed, not configurable. Popover list capped at 10 rows, longest first, remainder reachable via Open in a list. No bound on outlier count.",
 "F27": "Scope out: other charts (Estimation vs Cycle Time, Feature Size, Aging, process behaviour, throughput), View Data, backend percentile convention (mirrored, table test against PercentileCalculator index for N = 1 to 6, 10, 11), showing outliers in place. Deviation: none from the authority.",
 "F28": "No external service, wire format or independently released consumer changes; the usage event name is a same-commit enum pair covered by the slice 1 oracle and existing backend tests.",
 "F29": "The existing fallow layer check (layerBoundaries.enforcement.test.ts) already forbids utils importing services, hooks and pages and components importing pages, and it governs the new modules by directory; the design adds no new dependency law.",
@@ -1271,14 +1275,11 @@
 "F30": "CycleTimeScatterPlotChart React props (closed work items, percentiles, SLE, owner kind, frameIsReady) rendered through React Testing Library; pure functions in utils/charts/outliers.ts",
 "F31": "WorkItemsDialog (props only), usage-event callback prop, useChartVisibility, MUI X drawing-area hooks",
 "F32": "components -> utils/charts (pure) ; pages/Common/MetricsView/WidgetShell provides header slot context consumed by components; utils import only chartAxisUtils; no component imports a page (fallow layer rule already enforced)",
-"F33": "frame is loading or failed",
-"F34": "chip disabled, no count shown, popover closed",
 "F35": "named Cycle Time answer for a superseded definition arrives",
 "F36": "answer ignored; cut and chip follow the selected definition",
 "F37": "Outlier partition of the full closed set: {drawn, outliers, median, cut}; chip count = outliers among visible types; axis top = 1.1 x max of drawn values, percentiles and SLE",
 "F38": "Which hidden-type items would have been outliers (only visible ones are counted); two items with equal Cycle Time and date",
 "F39": "Equal iff same median, same cut and same drawn/outlier id sets; independent of input order and of which types are visible",
-"F4": "A chip in the widget header reads '1 outlier' or 'N outliers' (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists each outlier with its closed date, its Cycle Time in days and how many times the median it is; while the widget loads or has failed the chip is disabled and never shows a count from a previous answer.",
 "F40": "For every closed set, the cut is 5 x the backend-convention 50th percentile of the full set, and an item is an outlier iff its Cycle Time is strictly above the cut; drawn and outliers partition the set, order kept",
 "F41": "arrays of positive integers (Cycle Time days) with duplicates and with items placed exactly at, one below and one above the cut",
 "F42": "empty set",
@@ -1355,7 +1356,7 @@
 {
 "id": "P2",
 "kind": "Outcome",
-"text": "F4"
+"text": "F233"
 },
 {
 "id": "P3",
@@ -1383,6 +1384,7 @@
 "promises": [
 "P1",
 "P2",
+"P3",
 "P5"
 ],
 "work": {

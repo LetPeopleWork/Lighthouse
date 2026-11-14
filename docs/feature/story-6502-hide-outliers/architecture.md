@@ -26,12 +26,6 @@ Hexagonal view (frontend only): driving UI = BaseMetricsView/widgetNodes (unchan
 Statistics stay untouched: percentiles, SLE share and RAG, tiles, View Data, forecasts and the dialog still receive the unpartitioned arrays; only the chart drawing and the chip receive the partition. Props are never mutated (tests pass deep-frozen props). With no outliers the chart renders exactly as before (no chip, today's axis, no markers).
 ```
 
-#### D4
-
-```text
-Chip placement (maintainer S-3): OutlierChip renders in the WidgetShell header after the RAG chip, small outlined, (!) icon plus '1 outlier' / '{n} outliers', words dropped below 600 px, accessible name keeps the full sentence, absent with no outliers. The chart hands the chip to the header through a header-slot context offered by WidgetShell and rendered by WidgetHeader; the same context carries frameIsReady (frame ready), so the chip is disabled while loading or failed and never shows an earlier count; it closes its popover when disabled turns true. Crafter may choose portal or context-held node; the oracle observes the header.
-```
-
 #### D5
 
 ```text
@@ -74,18 +68,24 @@ Paradigm object_oriented project, functional-leaning React; no anemic-entity con
 Test substrate: Vitest + React Testing Library with the existing MUI mocks; one oracle file per slice under Lighthouse.Frontend/src/components/Common/Charts; command is pnpm --dir Lighthouse.Frontend exec vitest run <oracle path relative to Lighthouse.Frontend>. Per-test default budget applies, no derogation requested. No nWave scenario tags in code. The backend demo row (TZ-301) and enum member are pinned by existing backend test conventions at the application-service port, owned by the crafter and acceptance designer of slice 1; E2E page object for CycleTimeScatterPlotChart is extended with chip and popover and waits for data-widget-status=ready.
 ```
 
-### Constraints
-
-#### K1
+#### D12
 
 ```text
-Input bounds: Cycle Time is a whole number of days >= 1 (inclusive calendar days); closed Work Item count N is unbounded (0, 1 and 2 items give a median but, for 1 item, the item cannot exceed 5 times itself so no outlier). Multiple 5 and the exclusive comparison (value > 5 x median; value == cut is drawn) are fixed, not configurable. Popover list capped at 10 rows, longest first, remainder reachable via Open in a list. No bound on outlier count.
+Chip placement (maintainer S-3): OutlierChip renders in the WidgetShell header after the RAG chip, small outlined, (!) icon plus '1 outlier' / '{n} outliers', words dropped below 600 px, accessible name keeps the full sentence, absent with no outliers. The chart hands the chip to the header through a header-slot context offered by WidgetShell and rendered by WidgetHeader; the same context carries frameIsReady (frame ready). While the widget loads the chip is disabled and never shows an earlier count and its popover closes; when the widget has failed, the could-not-load message replaces the plot and the chip (hidden, not disabled). Crafter may choose portal or context-held node; the oracle observes the header.
 ```
+
+### Constraints
 
 #### K2
 
 ```text
 Scope out: other charts (Estimation vs Cycle Time, Feature Size, Aging, process behaviour, throughput), View Data, backend percentile convention (mirrored, table test against PercentileCalculator index for N = 1 to 6, 10, 11), showing outliers in place. Deviation: none from the authority.
+```
+
+#### K3
+
+```text
+Input bounds: Cycle Time is a whole number of days >= 1 (inclusive calendar days); closed Work Item count N is unbounded (0, 1 and 2 items give a median but, for 1 item, the item cannot exceed 5 times itself so no outlier). Multiple 5 and the exclusive comparison (value > 5 x median; value == cut is drawn) are fixed, not configurable. Popover lists outliers longest first, up to 10 rows, then 'and k more' for the rest; no bound on outlier count.
 ```
 
 ### Reuse
@@ -132,18 +132,6 @@ components -> utils/charts (pure) ; pages/Common/MetricsView/WidgetShell provide
 
 #### Failures
 
-##### B1
-
-```text
-frame is loading or failed
-```
-
-Refusal
-
-```text
-chip disabled, no count shown, popover closed
-```
-
 ##### B2
 
 ```text
@@ -154,6 +142,18 @@ Refusal
 
 ```text
 answer ignored; cut and chip follow the selected definition
+```
+
+##### B3
+
+```text
+frame has failed to load
+```
+
+Refusal
+
+```text
+the widget could-not-load message replaces the plot and the chip; the chip is hidden, not disabled, and no popover or count remains
 ```
 
 ### Observations
@@ -805,15 +805,15 @@ None.
 #### Public oracle
 
 ```text
-Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set whose median is 6 days and one item of 58 days, plus percentiles and an SLE; click the chip in the header
+Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set whose median is 6 days and one item of 58 days, plus percentiles and an SLE; click the chip in the header. Also render a set with 11 outliers, toggle Work Item type chips off and on, and render the frame loading and failed
 ```
 
 ```text
-The 58-day item is not drawn and the axis top is 1.1 x the largest drawn value, percentile and SLE; the header shows chip '1 outlier'; the popover says 'Not drawn: longer than 30 days (5 times the median, 6 days).', lists the item with closed date, 58 and 9.7x; a line above the axis appears as a top-edge marker and in the 'Above the axis' line; percentile legend values, SLE, dialog items are those of the unpartitioned data; with no item above the cut there is no chip and the axis is as before; frame not ready shows the chip disabled with no count
+The 58-day item is not drawn and the axis top is 1.1 x the largest drawn value, percentile and SLE; the header shows chip '1 outlier'; the popover says 'Not drawn: longer than 30 days (5 times the median, 6 days).', lists the item with closed date, 58 and 9.7x; with 11 outliers the popover lists the 10 longest first and then 'and 1 more'; a line above the axis appears as a top-edge marker and in the 'Above the axis' line; percentile legend values, SLE, dialog items are those of the unpartitioned data; with no item above the cut there is no chip and the axis is as before; toggling types keeps the cut and axis still and the chip counts only visible-type outliers; while loading the chip is disabled with no count; when failed the could-not-load message replaces plot and chip (chip hidden)
 ```
 
 ```text
-A chart that drops the item from statistics, uses >= or another multiple, computes the median from drawn items, shows no chip or a stale count while not ready, or draws the item, fails
+A chart that drops the item from statistics, uses >= or another multiple, computes the median from drawn items, moves the cut or axis on a type toggle, lists more than 10 rows or not longest first, shows a chip or a stale count after failure or while loading, or draws the item, fails
 ```
 
 ##### Promises
@@ -821,6 +821,8 @@ A chart that drops the item from statistics, uses >= or another multiple, comput
 P1
 
 P2
+
+P3
 
 P5
 

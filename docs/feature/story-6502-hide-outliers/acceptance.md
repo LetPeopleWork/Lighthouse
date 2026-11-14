@@ -328,7 +328,7 @@ Cycle Time scatterplot of a Team or Portfolio does not draw a closed Work Item w
 P2
 
 ```text
-Widget header chip reads 1 outlier or N outliers and is absent when there are none; it opens a popover saying the items are not drawn, stating the cut and the median in days, and listing each outlier with closed date, Cycle Time in days and multiple of the median; while loading or failed the chip is disabled and never shows a count from a previous answer.
+Widget header chip reads 1 outlier or N outliers and is absent when there are none; it opens a popover saying the items are not drawn, stating the cut and the median in days, and listing the outliers longest first, up to ten rows followed by and k more, each row with closed date, Cycle Time in days and multiple of the median. While the widget loads the chip is disabled and shows no count; when the data cannot be loaded the could-not-load message replaces the plot and the chip; the chip never shows a count from a previous answer.
 ```
 
 #### E3

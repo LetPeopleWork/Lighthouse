@@ -172,11 +172,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Statistics stay untouched: percentiles, SLE share and RAG, tiles, View Data, forecasts and the dialog still receive the unpartitioned arrays; only the chart drawing and the chip receive the partition. Props are never mutated (tests pass deep-frozen props). With no outliers the chart renders exactly as before (no chip, today&#x27;s axis, no markers).
 </code></pre>
 
-<h4>D4</h4>
-
-<pre><code>Chip placement (maintainer S-3): OutlierChip renders in the WidgetShell header after the RAG chip, small outlined, (!) icon plus &#x27;1 outlier&#x27; / &#x27;{n} outliers&#x27;, words dropped below 600 px, accessible name keeps the full sentence, absent with no outliers. The chart hands the chip to the header through a header-slot context offered by WidgetShell and rendered by WidgetHeader; the same context carries frameIsReady (frame ready), so the chip is disabled while loading or failed and never shows an earlier count; it closes its popover when disabled turns true. Crafter may choose portal or context-held node; the oracle observes the header.
-</code></pre>
-
 <h4>D5</h4>
 
 <pre><code>Copy (maintainer S-4, S-6): popover title &#x27;{n} outlier(s)&#x27;, line 1 &#x27;Not drawn: longer than {cut} days (5 times the median, {median} days).&#x27;, line 2 &#x27;Still counted in the percentiles, {SLE} and View Data.&#x27;, conditional line &#x27;Above the axis: 95% at {p95} days, {SLE} at {sle} days.&#x27;, then a table (closed date, Cycle Time days, times the median; factor rounding from 10 up is half-up) capped at 10 rows, then &#x27;Open in a list&#x27; (slice 3). Empty plot: &#x27;All visible {Work Items} are outliers.&#x27; or &#x27;All types are hidden.&#x27; Work Item, Cycle Time and SLE render in the configured terms; &#x27;outlier&#x27; is a fixed word.
@@ -212,16 +207,21 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Test substrate: Vitest + React Testing Library with the existing MUI mocks; one oracle file per slice under Lighthouse.Frontend/src/components/Common/Charts; command is pnpm --dir Lighthouse.Frontend exec vitest run &lt;oracle path relative to Lighthouse.Frontend&gt;. Per-test default budget applies, no derogation requested. No nWave scenario tags in code. The backend demo row (TZ-301) and enum member are pinned by existing backend test conventions at the application-service port, owned by the crafter and acceptance designer of slice 1; E2E page object for CycleTimeScatterPlotChart is extended with chip and popover and waits for data-widget-status=ready.
 </code></pre>
 
-<h3>Constraints</h3>
+<h4>D12</h4>
 
-<h4>K1</h4>
-
-<pre><code>Input bounds: Cycle Time is a whole number of days &gt;= 1 (inclusive calendar days); closed Work Item count N is unbounded (0, 1 and 2 items give a median but, for 1 item, the item cannot exceed 5 times itself so no outlier). Multiple 5 and the exclusive comparison (value &gt; 5 x median; value == cut is drawn) are fixed, not configurable. Popover list capped at 10 rows, longest first, remainder reachable via Open in a list. No bound on outlier count.
+<pre><code>Chip placement (maintainer S-3): OutlierChip renders in the WidgetShell header after the RAG chip, small outlined, (!) icon plus &#x27;1 outlier&#x27; / &#x27;{n} outliers&#x27;, words dropped below 600 px, accessible name keeps the full sentence, absent with no outliers. The chart hands the chip to the header through a header-slot context offered by WidgetShell and rendered by WidgetHeader; the same context carries frameIsReady (frame ready). While the widget loads the chip is disabled and never shows an earlier count and its popover closes; when the widget has failed, the could-not-load message replaces the plot and the chip (hidden, not disabled). Crafter may choose portal or context-held node; the oracle observes the header.
 </code></pre>
+
+<h3>Constraints</h3>
 
 <h4>K2</h4>
 
 <pre><code>Scope out: other charts (Estimation vs Cycle Time, Feature Size, Aging, process behaviour, throughput), View Data, backend percentile convention (mirrored, table test against PercentileCalculator index for N = 1 to 6, 10, 11), showing outliers in place. Deviation: none from the authority.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>Input bounds: Cycle Time is a whole number of days &gt;= 1 (inclusive calendar days); closed Work Item count N is unbounded (0, 1 and 2 items give a median but, for 1 item, the item cannot exceed 5 times itself so no outlier). Multiple 5 and the exclusive comparison (value &gt; 5 x median; value == cut is drawn) are fixed, not configurable. Popover lists outliers longest first, up to 10 rows, then &#x27;and k more&#x27; for the rest; no bound on outlier count.
 </code></pre>
 
 <h3>Reuse</h3>
@@ -263,16 +263,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>Failures</h4>
 
-<h5>B1</h5>
-
-<pre><code>frame is loading or failed
-</code></pre>
-
-<p>Refusal</p>
-
-<pre><code>chip disabled, no count shown, popover closed
-</code></pre>
-
 <h5>B2</h5>
 
 <pre><code>named Cycle Time answer for a superseded definition arrives
@@ -281,6 +271,16 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Refusal</p>
 
 <pre><code>answer ignored; cut and chip follow the selected definition
+</code></pre>
+
+<h5>B3</h5>
+
+<pre><code>frame has failed to load
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>the widget could-not-load message replaces the plot and the chip; the chip is hidden, not disabled, and no popover or count remains
 </code></pre>
 
 <h3>Observations</h3>
@@ -851,13 +851,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>Public oracle</h4>
 
-<pre><code>Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set whose median is 6 days and one item of 58 days, plus percentiles and an SLE; click the chip in the header
+<pre><code>Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set whose median is 6 days and one item of 58 days, plus percentiles and an SLE; click the chip in the header. Also render a set with 11 outliers, toggle Work Item type chips off and on, and render the frame loading and failed
 </code></pre>
 
-<pre><code>The 58-day item is not drawn and the axis top is 1.1 x the largest drawn value, percentile and SLE; the header shows chip &#x27;1 outlier&#x27;; the popover says &#x27;Not drawn: longer than 30 days (5 times the median, 6 days).&#x27;, lists the item with closed date, 58 and 9.7x; a line above the axis appears as a top-edge marker and in the &#x27;Above the axis&#x27; line; percentile legend values, SLE, dialog items are those of the unpartitioned data; with no item above the cut there is no chip and the axis is as before; frame not ready shows the chip disabled with no count
+<pre><code>The 58-day item is not drawn and the axis top is 1.1 x the largest drawn value, percentile and SLE; the header shows chip &#x27;1 outlier&#x27;; the popover says &#x27;Not drawn: longer than 30 days (5 times the median, 6 days).&#x27;, lists the item with closed date, 58 and 9.7x; with 11 outliers the popover lists the 10 longest first and then &#x27;and 1 more&#x27;; a line above the axis appears as a top-edge marker and in the &#x27;Above the axis&#x27; line; percentile legend values, SLE, dialog items are those of the unpartitioned data; with no item above the cut there is no chip and the axis is as before; toggling types keeps the cut and axis still and the chip counts only visible-type outliers; while loading the chip is disabled with no count; when failed the could-not-load message replaces plot and chip (chip hidden)
 </code></pre>
 
-<pre><code>A chart that drops the item from statistics, uses &gt;= or another multiple, computes the median from drawn items, shows no chip or a stale count while not ready, or draws the item, fails
+<pre><code>A chart that drops the item from statistics, uses &gt;= or another multiple, computes the median from drawn items, moves the cut or axis on a type toggle, lists more than 10 rows or not longest first, shows a chip or a stale count after failure or while loading, or draws the item, fails
 </code></pre>
 
 <h5>Promises</h5>
@@ -865,6 +865,8 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>P1</p>
 
 <p>P2</p>
+
+<p>P3</p>
 
 <p>P5</p>
 
