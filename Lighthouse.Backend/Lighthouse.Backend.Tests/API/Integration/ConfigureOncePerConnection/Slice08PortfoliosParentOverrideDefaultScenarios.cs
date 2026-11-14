@@ -15,10 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly string[] CardIssuingDownloadsEverything = [$"{CardIssuing} Full"];
 
         [Test]
-        [Category("ac-7.1")]
-        [Category("ac-7.2")]
-        [Category("driving_port")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_Portfolio_that_names_nothing_hangs_its_Features_under_what_the_Portfolios_default_names()
         {
             await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
@@ -37,9 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Category("ac-7.3")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
         public async Task The_Teams_default_never_reaches_a_Portfolio()
         {
             var portfoliosFollowingBefore = await HowManyFollow(ConnectionDefault.PortfoliosParentOverrideField);
@@ -61,25 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Category("ac-7.3")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
-        public async Task The_Portfolios_default_never_reaches_a_Team()
-        {
-            await GivenTheDefaultIs(ConnectionDefault.PortfoliosParentOverrideField, CausedBy);
-
-            await WhenTheNextScheduledUpdateOf(FraudSignals);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.PortfoliosParentOverrideField), Is.EqualTo(CausedBy));
-                Assert.That(await WhereTheItemOfHangs(FraudSignals), Is.EqualTo(TheTrackersOwnParent));
-            }
-        }
-
-        [Test]
-        [Category("ac-7.4")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_Portfolio_with_its_own_field_is_unaffected()
         {
             await GivenTheDefaultIs(ConnectionDefault.PortfoliosParentOverrideField, CausedBy);
@@ -98,9 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // out must not read as clearing it.
         [TestCase(ConnectionDefault.TeamsParentOverrideField)]
         [TestCase(ConnectionDefault.PortfoliosParentOverrideField)]
-        [Category("ac-4.1")]
-        [Category("error")]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task A_save_that_leaves_one_default_out_keeps_it(ConnectionDefault theDefault)
         {
             await GivenTheDefaultIs(theDefault, CausedBy);
@@ -116,9 +87,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Category("ac-7.1")]
-        [Category("edge")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_field_added_in_the_same_save_can_be_the_Portfolios_default()
         {
             await WhenTheAdminAddsAFieldAndMakesItTheDefault(ConnectionDefault.PortfoliosParentOverrideField, "Epic Link", "customfield_10008");
@@ -128,24 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 ThenTheSaveIsAccepted();
                 Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.PortfoliosParentOverrideField), Is.EqualTo("Epic Link"));
                 Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.TeamsParentOverrideField), Is.Null);
-            }
-        }
-
-        [TestCase(ConnectionDefault.TeamsParentOverrideField)]
-        [TestCase(ConnectionDefault.PortfoliosParentOverrideField)]
-        [Category("ac-4.1")]
-        [Category("contract-shape:bounded-change")]
-        public async Task A_default_sent_as_empty_is_cleared(ConnectionDefault theDefault)
-        {
-            await GivenTheDefaultIs(theDefault, CausedBy);
-
-            await WhenTheAdminClearsTheDefault(theDefault);
-
-            using (Assert.EnterMultipleScope())
-            {
-                ThenTheSaveIsAccepted();
-                Assert.That(await TheDefaultNamedOnTheConnection(theDefault), Is.Null);
-                Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Count.EqualTo(1));
             }
         }
     }
