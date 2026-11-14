@@ -191,7 +191,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A reader opens a Team chart where one closed Work Item took 58 days against a median of 6, with percentile and SLE lines, then clicks the header chip
 </code></pre>
 
-<pre><code>The 58-day item is not drawn, the axis top is 1.1 times the largest drawn value or line, the header chip reads 1 outlier, the popover says &#x27;Not drawn: longer than 30 days (5 times the median, 6 days).&#x27; and &#x27;Still counted in the percentiles, SLE and View Data.&#x27;, lists the item with closed date, 58 and 9.7x (9.7 times the median), and the percentile lines stay
+<pre><code>The 58-day item is not drawn, the axis top is 1.1 times the largest drawn value or line, the 50%, 85%, 95% and SLE lines keep their given values 6, 8, 15 and 7, the header chip reads 1 outlier, the popover says &#x27;Not drawn: longer than 30 days (5 times the median, 6 days).&#x27; and &#x27;Still counted in the percentiles, SLE and View Data.&#x27;, and lists the item with closed date, 58 and 9.7x (9.7 times the median)
 </code></pre>
 
 <pre><code>Typical work is readable, the extreme item is disclosed one click away and no statistic changes
@@ -203,7 +203,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::shows the one 58-day Work Item as an outlier in the header while the statistics stay the same</p>
 
-<pre><code>Median taken from drawn items only, chip left in the legend row, item missing from the popover, or 9.67 rounded down to 9.6 would each fail an assertion here
+<pre><code>Percentile values recomputed from drawn items, median taken from drawn items only, chip left in the legend row, item missing from the popover, or 9.67 rounded down would each fail an assertion
 </code></pre>
 
 <h6>Obligations</h6>
@@ -240,13 +240,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>The 95% and SLE lines lie above the cut (33 and 35 days) while a 58-day item is left out; the reader opens the chip
+<pre><code>The 95% and SLE lines lie above the cut (33 and 35 days) while a 58-day item is left out; the reader looks at the chart and opens the chip
 </code></pre>
 
-<pre><code>The axis top follows the typical items (1.1 times 8), the two lines are not drawn in place, and the popover says &#x27;Above the axis: 95% at 33 days, SLE at 35 days.&#x27;
+<pre><code>The axis top follows the typical items (1.1 times 8), the two lines are not drawn in place, each appears as a labelled marker (&#x27;95%: 33 days&#x27;, &#x27;SLE: 85% @ 35 days or less&#x27;), and the popover says &#x27;Above the axis: 95% at 33 days, SLE at 35 days.&#x27;
 </code></pre>
 
-<pre><code>A line that no longer fits on the axis is still announced in words
+<pre><code>A line that no longer fits on the axis is still shown at the top edge and announced in words
 </code></pre>
 
 <h5>Disposition</h5>
@@ -255,7 +255,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::tells the reader about a percentile and an SLE line that lie above the axis</p>
 
-<pre><code>An axis stretched to the 58-day item, or off-axis lines dropped without mention, fails here; marker geometry is not asserted in jsdom
+<pre><code>Removing the markers, an axis stretched to the 58-day item, or off-axis lines dropped without mention fails; marker geometry is not asserted in jsdom
 </code></pre>
 
 <h6>Obligations</h6>
@@ -415,6 +415,110 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 </code></pre>
 
 <p>crafter</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A Team chart has two outliers, 58 and 40 days against a median of 6; the reader opens the chip
+</code></pre>
+
+<pre><code>The chip reads 2 outliers and the popover lists the 58-day item (12 Mar 2026, 58, 9.7x) then the 40-day item (11 Mar 2026, 40, 6.7x)
+</code></pre>
+
+<pre><code>Every outlier is listed, longest first, with date, days and multiple
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::lists two outliers longest first with closed date, days and multiple of the median</p>
+
+<pre><code>A chip fixed at 1 outlier or a popover listing only the first outlier fails
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A Team chart has eleven outliers (31 to 41 days); the reader opens the chip
+</code></pre>
+
+<pre><code>The chip reads 11 outliers; the popover lists the ten longest first and then &#x27;and 1 more&#x27;
+</code></pre>
+
+<pre><code>A long list stays short and says how many are not shown
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::lists the ten longest of eleven outliers and says how many more there are</p>
+
+<pre><code>A list of all eleven, ten shortest, or no overflow line fails
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The widget fails to load after the reader opened the chip
+</code></pre>
+
+<pre><code>The could-not-load message is shown, the chip is absent from the header, no digit shows in the header and the popover is gone
+</code></pre>
+
+<pre><code>A failed widget never keeps an outlier chip or count
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::replaces the plot and the chip with the could-not-load message when the data fails</p>
+
+<pre><code>A chip that stays or keeps its count after failure fails
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The widget is loading for the first time with nothing on screen
+</code></pre>
+
+<pre><code>No outlier count and no popover appear in the header
+</code></pre>
+
+<pre><code>A first load never shows an outlier count
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::shows no outlier count the first time the widget is loading</p>
+
+<pre><code>A count shown before any answer exists fails; this case already holds today
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 

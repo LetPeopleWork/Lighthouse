@@ -29,10 +29,10 @@
 "obligations": [
 "L1"
 ],
-"still_passes_if": "F200",
+"still_passes_if": "F243",
 "test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::shows the one 58-day Work Item as an outlier in the header while the statistics stay the same"
 },
-"expected": "F198",
+"expected": "F242",
 "stimulus": "F197",
 "user_result": "F199"
 },
@@ -62,12 +62,12 @@
 "obligations": [
 "L3"
 ],
-"still_passes_if": "F208",
+"still_passes_if": "F247",
 "test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::tells the reader about a percentile and an SLE line that lie above the axis"
 },
-"expected": "F206",
-"stimulus": "F205",
-"user_result": "F207"
+"expected": "F245",
+"stimulus": "F244",
+"user_result": "F246"
 },
 {
 "covers": [
@@ -164,6 +164,58 @@
 "expected": "F230",
 "stimulus": "F229",
 "user_result": "F231"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F251",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::lists two outliers longest first with closed date, days and multiple of the median"
+},
+"expected": "F249",
+"stimulus": "F248",
+"user_result": "F250"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F255",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::lists the ten longest of eleven outliers and says how many more there are"
+},
+"expected": "F253",
+"stimulus": "F252",
+"user_result": "F254"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F259",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::replaces the plot and the chip with the could-not-load message when the data fails"
+},
+"expected": "F257",
+"stimulus": "F256",
+"user_result": "F258"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F263",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx::shows no outlier count the first time the widget is loading"
+},
+"expected": "F261",
+"stimulus": "F260",
+"user_result": "F262"
 }
 ]
 },
@@ -172,7 +224,7 @@
 "C": 1,
 "D": 12,
 "E": 5,
-"F": 241,
+"F": 263,
 "K": 3,
 "L": 3,
 "P": 5,
@@ -1217,19 +1269,13 @@
 "F195": "A chart with no extreme item looks exactly as it did before",
 "F196": "A rule using at-least instead of more-than at 5 times would hide the 30-day item; that wrong rule is rejected here",
 "F197": "A reader opens a Team chart where one closed Work Item took 58 days against a median of 6, with percentile and SLE lines, then clicks the header chip",
-"F198": "The 58-day item is not drawn, the axis top is 1.1 times the largest drawn value or line, the header chip reads 1 outlier, the popover says 'Not drawn: longer than 30 days (5 times the median, 6 days).' and 'Still counted in the percentiles, SLE and View Data.', lists the item with closed date, 58 and 9.7x (9.7 times the median), and the percentile lines stay",
 "F199": "Typical work is readable, the extreme item is disclosed one click away and no statistic changes",
 "F2": "A flow coach reads the picture of normal work on the Cycle Time scatterplot without one extreme item squashing it, and still knows which items were left out and why.",
 "F20": "Edge markers (maintainer S-5): a percentile or SLE line above the new axis top is drawn as a labelled triangle marker in the plot's top margin via OffScaleLineMarkers (aria-hidden, reads only useDrawingArea); fallback if the browser spike fails is a text line under the legend row. The Zenith demo has no line above the cut, so markers are proven by RTL and unit tests on fixtures, not E2E geometry.",
-"F200": "Median taken from drawn items only, chip left in the legend row, item missing from the popover, or 9.67 rounded down to 9.6 would each fail an assertion here",
 "F201": "A closed Work Item one day over 5 times the median (31 days against 6)",
 "F202": "It is not drawn and the header chip reads 1 outlier",
 "F203": "The cut is exactly more than 5 times the median, not a looser multiple",
 "F204": "A rule using a multiple of 6 or more would accept the 31-day item as drawn; that is rejected here",
-"F205": "The 95% and SLE lines lie above the cut (33 and 35 days) while a 58-day item is left out; the reader opens the chip",
-"F206": "The axis top follows the typical items (1.1 times 8), the two lines are not drawn in place, and the popover says 'Above the axis: 95% at 33 days, SLE at 35 days.'",
-"F207": "A line that no longer fits on the axis is still announced in words",
-"F208": "An axis stretched to the 58-day item, or off-axis lines dropped without mention, fails here; marker geometry is not asserted in jsdom",
 "F209": "The 95% line lies exactly at the cut (30 days) while a 58-day item is left out",
 "F21": "Usage data: name-only event OutlierPopoverOpened = 27 (next integer after SystemWideAccessGranted = 26, appended, never renumbered) in UsageDataEventName.cs and UsageDataService.ts, row in docs/settings/usagedata.md; reported once per closed-to-open change through the chip's usage-event callback prop (the chip imports no service). Emitted in slice 1, the slice that first makes the chip usable.",
 "F210": "The axis stops at 30, the line stays in place and no above-the-axis sentence appears",
@@ -1267,7 +1313,29 @@
 "F24": "Paradigm object_oriented project, functional-leaning React; no anemic-entity concern since no domain entity is added: the new rule is a cohesive pure module (outliers.ts) owning the median, cut and partition decisions, and the chart component owns only view state. nw-code-design-oo smell classes apply only to the chart component (keep it free of the median and cut decision).",
 "F240": "Input bounds: Cycle Time is a whole number of days >= 1 (inclusive calendar days); closed Work Item count N is unbounded (0, 1 and 2 items give a median but, for 1 item, the item cannot exceed 5 times itself so no outlier). Multiple 5 and the exclusive comparison (value > 5 x median; value == cut is drawn) are fixed, not configurable. Popover lists outliers longest first, up to 10 rows, then 'and k more' for the rest; no bound on outlier count.",
 "F241": "Widget header chip reads 1 outlier or N outliers and is absent when there are none; it opens a popover saying the items are not drawn, stating the cut and the median in days, and listing the outliers longest first, up to ten rows followed by and k more, each row with closed date, Cycle Time in days and multiple of the median. While the widget loads the chip is disabled and shows no count; when the data cannot be loaded the could-not-load message replaces the plot and the chip; the chip never shows a count from a previous answer.",
+"F242": "The 58-day item is not drawn, the axis top is 1.1 times the largest drawn value or line, the 50%, 85%, 95% and SLE lines keep their given values 6, 8, 15 and 7, the header chip reads 1 outlier, the popover says 'Not drawn: longer than 30 days (5 times the median, 6 days).' and 'Still counted in the percentiles, SLE and View Data.', and lists the item with closed date, 58 and 9.7x (9.7 times the median)",
+"F243": "Percentile values recomputed from drawn items, median taken from drawn items only, chip left in the legend row, item missing from the popover, or 9.67 rounded down would each fail an assertion",
+"F244": "The 95% and SLE lines lie above the cut (33 and 35 days) while a 58-day item is left out; the reader looks at the chart and opens the chip",
+"F245": "The axis top follows the typical items (1.1 times 8), the two lines are not drawn in place, each appears as a labelled marker ('95%: 33 days', 'SLE: 85% @ 35 days or less'), and the popover says 'Above the axis: 95% at 33 days, SLE at 35 days.'",
+"F246": "A line that no longer fits on the axis is still shown at the top edge and announced in words",
+"F247": "Removing the markers, an axis stretched to the 58-day item, or off-axis lines dropped without mention fails; marker geometry is not asserted in jsdom",
+"F248": "A Team chart has two outliers, 58 and 40 days against a median of 6; the reader opens the chip",
+"F249": "The chip reads 2 outliers and the popover lists the 58-day item (12 Mar 2026, 58, 9.7x) then the 40-day item (11 Mar 2026, 40, 6.7x)",
 "F25": "Test substrate: Vitest + React Testing Library with the existing MUI mocks; one oracle file per slice under Lighthouse.Frontend/src/components/Common/Charts; command is pnpm --dir Lighthouse.Frontend exec vitest run <oracle path relative to Lighthouse.Frontend>. Per-test default budget applies, no derogation requested. No nWave scenario tags in code. The backend demo row (TZ-301) and enum member are pinned by existing backend test conventions at the application-service port, owned by the crafter and acceptance designer of slice 1; E2E page object for CycleTimeScatterPlotChart is extended with chip and popover and waits for data-widget-status=ready.",
+"F250": "Every outlier is listed, longest first, with date, days and multiple",
+"F251": "A chip fixed at 1 outlier or a popover listing only the first outlier fails",
+"F252": "A Team chart has eleven outliers (31 to 41 days); the reader opens the chip",
+"F253": "The chip reads 11 outliers; the popover lists the ten longest first and then 'and 1 more'",
+"F254": "A long list stays short and says how many are not shown",
+"F255": "A list of all eleven, ten shortest, or no overflow line fails",
+"F256": "The widget fails to load after the reader opened the chip",
+"F257": "The could-not-load message is shown, the chip is absent from the header, no digit shows in the header and the popover is gone",
+"F258": "A failed widget never keeps an outlier chip or count",
+"F259": "A chip that stays or keeps its count after failure fails",
+"F260": "The widget is loading for the first time with nothing on screen",
+"F261": "No outlier count and no popover appear in the header",
+"F262": "A first load never shows an outlier count",
+"F263": "A count shown before any answer exists fails; this case already holds today",
 "F27": "Scope out: other charts (Estimation vs Cycle Time, Feature Size, Aging, process behaviour, throughput), View Data, backend percentile convention (mirrored, table test against PercentileCalculator index for N = 1 to 6, 10, 11), showing outliers in place. Deviation: none from the authority.",
 "F28": "No external service, wire format or independently released consumer changes; the usage event name is a same-commit enum pair covered by the slice 1 oracle and existing backend tests.",
 "F29": "The existing fallow layer check (layerBoundaries.enforcement.test.ts) already forbids utils importing services, hooks and pages and components importing pages, and it governs the new modules by directory; the design adds no new dependency law.",

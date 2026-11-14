@@ -2,7 +2,9 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
-import WidgetShell from "../../../pages/Common/MetricsView/WidgetShell";
+import WidgetShell, {
+	COULD_NOT_LOAD_MESSAGE,
+} from "../../../pages/Common/MetricsView/WidgetShell";
 import type { WidgetStatus } from "../../../pages/Common/MetricsView/widgetStatus";
 import { testTheme } from "../../../tests/testTheme";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
@@ -53,8 +55,11 @@ vi.mock("@mui/x-charts", async () => {
 		ChartsXAxis: () => null,
 		ChartsYAxis: () => null,
 		ChartsTooltip: () => null,
-		ChartsReferenceLine: ({ label }: { label: string }) => (
-			<div data-testid={`reference-line-${label}`}>{label}</div>
+		useDrawingArea: () => ({ left: 0, top: 0, width: 400, height: 200 }),
+		ChartsReferenceLine: ({ label, y }: { label: string; y: number }) => (
+			<div data-testid={`reference-line-${label}`} data-y={y}>
+				{label}
+			</div>
 		),
 	};
 });
@@ -130,12 +135,13 @@ const chartIn = (
 	p95: number | null,
 	sleValue: number | null,
 	status: WidgetStatus,
+	hasContentToDim = true,
 ) => (
 	<WidgetShell
 		widgetKey={WIDGET_KEY}
 		title="Cycle Time scatterplot"
 		status={status}
-		hasContentToDim
+		hasContentToDim={hasContentToDim}
 	>
 		<CycleTimeScatterPlotChart
 			ownerKind="team"
@@ -151,7 +157,21 @@ const showChart = (
 	p95: number | null,
 	sleValue: number | null,
 	status: WidgetStatus = "ready",
-) => render(chartIn(items, p95, sleValue, status));
+	hasContentToDim = true,
+) => render(chartIn(items, p95, sleValue, status, hasContentToDim));
+
+const lineValue = (label: string): number =>
+	Number(screen.getByTestId(`reference-line-${label}`).dataset.y);
+
+const longItems = (cycleTimes: number[]): IWorkItem[] =>
+	cycleTimes.map((days, index) =>
+		closedItem(
+			`TZ-${300 + index}`,
+			`Long ${days}`,
+			days,
+			new Date(2026, 2, 12 - index),
+		),
+	);
 
 const header = () => screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`);
 
@@ -191,9 +211,10 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 
 		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
 		expect(axisTop()).toBeCloseTo(16.5, 5);
-		for (const label of ["50%", "85%", "95%"]) {
-			expect(screen.getByTestId(`reference-line-${label}`)).toBeVisible();
-		}
+		expect(lineValue("50%")).toBe(6);
+		expect(lineValue("85%")).toBe(8);
+		expect(lineValue("95%")).toBe(15);
+		expect(lineValue("SLE: 85% @ 7 days or less")).toBe(7);
 
 		expect(outlierChip()).toHaveTextContent("1 outlier");
 		expect(isDisabled(outlierChip())).toBe(false);
@@ -234,6 +255,9 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 		expect(
 			screen.queryByTestId("reference-line-SLE: 85% @ 35 days or less"),
 		).toBeNull();
+		// Each off-scale line is named in a labelled marker at the top edge.
+		expect(screen.getByText("95%: 33 days")).toBeInTheDocument();
+		expect(screen.getByText("SLE: 85% @ 35 days or less")).toBeInTheDocument();
 
 		fireEvent.click(outlierChip());
 
@@ -247,10 +271,15 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 		showChart(withLongItem(58), 30, 7);
 
 		expect(axisTop()).toBeCloseTo(30, 5);
-		expect(screen.getByTestId("reference-line-95%")).toBeVisible();
+		expect(lineValue("95%")).toBe(30);
 
 		fireEvent.click(outlierChip());
 
+		expect(
+			screen.getByText(
+				"Not drawn: longer than 30 days (5 times the median, 6 days).",
+			),
+		).toBeVisible();
 		expect(screen.queryByText(/Above the axis/)).toBeNull();
 	});
 
@@ -262,7 +291,80 @@ describe("Cycle Time scatterplot hides exceptionally long closed Work Items", ()
 
 		fireEvent.click(outlierChip());
 
+		expect(
+			screen.getByText(
+				"Not drawn: longer than 30 days (5 times the median, 6 days).",
+			),
+		).toBeVisible();
 		expect(screen.queryByText(/Above the axis/)).toBeNull();
+	});
+
+	it("lists two outliers longest first with closed date, days and multiple of the median", () => {
+		showChart([...typicalItems(), ...longItems([58, 40])], null, null);
+
+		expect(outlierChip()).toHaveTextContent("2 outliers");
+
+		fireEvent.click(outlierChip());
+
+		const rows = screen.getAllByRole("row", { name: /TZ-30/ });
+		expect(rows).toHaveLength(2);
+		expect(rows[0]).toHaveTextContent("TZ-300");
+		expect(rows[0]).toHaveTextContent("12 Mar 2026");
+		expect(within(rows[0]).getByText("58")).toBeVisible();
+		expect(within(rows[0]).getByText("9.7x")).toBeInTheDocument();
+		expect(rows[1]).toHaveTextContent("TZ-301");
+		expect(rows[1]).toHaveTextContent("11 Mar 2026");
+		expect(within(rows[1]).getByText("40")).toBeVisible();
+		expect(within(rows[1]).getByText("6.7x")).toBeInTheDocument();
+	});
+
+	it("lists the ten longest of eleven outliers and says how many more there are", () => {
+		const typical = Array.from({ length: 25 }, (_, index) =>
+			closedItem(
+				`TZ-${200 + index}`,
+				"Typical",
+				6,
+				new Date(2026, 3, 1 + index),
+			),
+		);
+		// 31 to 41 days, listed by reference as TZ-300 (31 days) to TZ-310 (41 days).
+		const eleven = longItems(
+			Array.from({ length: 11 }, (_, index) => 31 + index),
+		);
+		showChart([...typical, ...eleven], null, null);
+
+		expect(outlierChip()).toHaveTextContent("11 outliers");
+
+		fireEvent.click(outlierChip());
+
+		const rows = screen.getAllByRole("row", { name: /TZ-3\d\d/ });
+		expect(rows).toHaveLength(10);
+		expect(rows[0]).toHaveTextContent("TZ-310");
+		expect(rows[9]).toHaveTextContent("TZ-301");
+		expect(screen.getByText("and 1 more")).toBeVisible();
+	});
+
+	it("replaces the plot and the chip with the could-not-load message when the data fails", () => {
+		const view = showChart(withLongItem(58), 15, 7);
+		fireEvent.click(outlierChip());
+
+		view.rerender(chartIn(withLongItem(58), 15, 7, "error"));
+
+		expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeVisible();
+		expect(within(header()).queryByText(/outlier/i)).toBeNull();
+		expect(
+			within(header()).queryByRole("button", { name: /outlier/i }),
+		).toBeNull();
+		expect(header()).not.toHaveTextContent(/\d/);
+		expect(screen.queryByText(/Not drawn: longer than/)).toBeNull();
+	});
+
+	it("shows no outlier count the first time the widget is loading", () => {
+		showChart(withLongItem(58), 15, 7, "loading", false);
+
+		expect(header()).not.toHaveTextContent(/\d/);
+		expect(within(header()).queryByRole("button", { name: /\d/ })).toBeNull();
+		expect(screen.queryByText(/Not drawn: longer than/)).toBeNull();
 	});
 
 	it.each([
