@@ -78,7 +78,7 @@ export const harnessLogTemplate =
 export const harnessLogLevels: Record<string, string> = {
 	"Microsoft.AspNetCore.Hosting.Diagnostics": "Information",
 	"Microsoft.EntityFrameworkCore.Database.Command": "Information",
-	"Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.ForecastUpdater":
+	"Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater":
 		"Debug",
 };
 
