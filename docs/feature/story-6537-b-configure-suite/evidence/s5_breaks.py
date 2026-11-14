@@ -39,6 +39,7 @@ BREAKS = [
     ("K18 a Team reads its parent list from the Portfolios' default", TEAM, "protected override ParentSources? ParentSourcesConnectionDefault => WorkTrackingSystemConnection?.ParentSourcesForTeams;", "protected override ParentSources? ParentSourcesConnectionDefault => WorkTrackingSystemConnection?.ParentSourcesForPortfolios;"),
     ("K19 a Portfolio reads its parent list from the Teams' default", PORTFOLIO, "protected override ParentSources? ParentSourcesConnectionDefault => WorkTrackingSystemConnection?.ParentSourcesForPortfolios;", "protected override ParentSources? ParentSourcesConnectionDefault => WorkTrackingSystemConnection?.ParentSourcesForTeams;"),
     ("K20 the entry of a Teams' default is worded for the Portfolios", SAVE, "heldFor == DefaultHeldFor.Teams ? TeamWords : PortfolioWords;", "heldFor == DefaultHeldFor.Teams ? PortfolioWords : TeamWords;"),
+    ("K21 a cleared Teams' default stays", FIELDS, "connection.ParentOverrideForTeams = field,", "connection.ParentOverrideForTeams = field ?? connection.ParentOverrideForTeams,"),
 ]
 
 only = sys.argv[1:]

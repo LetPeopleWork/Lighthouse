@@ -266,3 +266,6 @@ Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFol
 Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [3 ms]
 Failed Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories [3 ms]
 Failed!  - Failed:    22, Passed:   146, Skipped:     0, Total:   168, Duration: 413 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K21 a cleared Teams' default stays
+Failed A_single_default_cleared_removes_the_default_list(The Teams' default) [32 ms]
+Failed!  - Failed:     1, Passed:   167, Skipped:     0, Total:   168, Duration: 399 ms - Lighthouse.Backend.Tests.dll (net10.0)
