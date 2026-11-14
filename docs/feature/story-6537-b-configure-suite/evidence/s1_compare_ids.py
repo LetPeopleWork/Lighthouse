@@ -37,6 +37,19 @@ FILTER = (
     "|FullyQualifiedName~WorkTrackingSystemOptionsOwnerExtensionsParentSourcesTest."
 )
 SLICE_BASE = "3cc76466d"
+
+
+def compare_base():
+    """The commit the production and guard checks compare with: where HEAD leaves origin/main.
+
+    A rebase rewrites the slice base and slides trunk commits under it, so a diff from the fixed sha would charge other
+    people's production changes to this slice. The point where HEAD leaves origin/main covers exactly the commits not yet
+    pushed. A pushed slice was checked before its push; run after the push, this check covers only what is still local.
+    Without an origin/main ref it falls back to the recorded slice base."""
+    done = subprocess.run(["git", "merge-base", "origin/main", "HEAD"], cwd=ROOT, capture_output=True, text=True)
+    if done.returncode != 0 or not done.stdout.strip():
+        return SLICE_BASE
+    return done.stdout.strip()
 GUARD = "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs"
 LEFT_THE_HOST = []
 UNTOUCHED = [
@@ -48,7 +61,7 @@ UNTOUCHED = [
 def guard_problems():
     """The guard list may only lose lines of classes that left the host; an added line fails."""
     problems = []
-    done = subprocess.run(["git", "diff", "-U0", SLICE_BASE, "--", GUARD], cwd=ROOT, capture_output=True, text=True)
+    done = subprocess.run(["git", "diff", "-U0", compare_base(), "--", GUARD], cwd=ROOT, capture_output=True, text=True)
     if done.returncode != 0:
         print("BROKEN: git failed: " + done.stderr.strip())
         sys.exit(2)
@@ -73,9 +86,9 @@ def listed_by_any_slice():
 
 
 def touched_paths():
-    """Production files and the time budget list that differ from the slice base, committed or in the working tree."""
+    """Production files and the time budget list that differ from the compare base, committed or in the working tree."""
     paths = set()
-    for args in (["git", "diff", "--name-only", SLICE_BASE, "HEAD", "--"] + UNTOUCHED,
+    for args in (["git", "diff", "--name-only", compare_base(), "HEAD", "--"] + UNTOUCHED,
                  ["git", "diff", "--name-only", "HEAD", "--"] + UNTOUCHED,
                  ["git", "ls-files", "--others", "--exclude-standard", "--", UNTOUCHED[0]]):
         done = subprocess.run(args, cwd=ROOT, capture_output=True, text=True)
