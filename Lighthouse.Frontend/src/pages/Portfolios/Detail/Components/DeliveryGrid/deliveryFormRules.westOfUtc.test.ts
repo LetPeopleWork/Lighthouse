@@ -41,28 +41,31 @@ describe("a browser west of UTC", () => {
 			"late evening, when UTC is already the next day",
 			LATE_EVENING_IN_NEW_YORK,
 		],
-	])("accepts tomorrow and refuses today and the past in the %s", (moment, now) => {
-		vi.setSystemTime(new Date(now));
+	])(
+		"accepts tomorrow and refuses today and the past in the %s",
+		(moment, now) => {
+			vi.setSystemTime(new Date(now));
 
-		const tomorrow = dayOnThisBrowsersCalendar(1);
-		const today = dayOnThisBrowsersCalendar(0);
-		const yesterday = dayOnThisBrowsersCalendar(-1);
+			const tomorrow = dayOnThisBrowsersCalendar(1);
+			const today = dayOnThisBrowsersCalendar(0);
+			const yesterday = dayOnThisBrowsersCalendar(-1);
 
-		expect(
-			[
-				isValidFutureDate(tomorrow),
-				isValidFutureDate(today),
-				isValidFutureDate(yesterday),
-			],
-			`${moment}: tomorrow (${tomorrow}) must be accepted and today (${today}) and yesterday (${yesterday}) refused on a browser's own calendar; read the day the field holds as a local calendar day, not as UTC midnight`,
-		).toEqual([true, false, false]);
-		expect(
-			[
-				dateErrorOf(tomorrow, DELIVERY_TERM),
-				dateErrorOf(today, DELIVERY_TERM),
-				dateErrorOf(yesterday, DELIVERY_TERM),
-			],
-			`${moment}: the reader must hear no date error for tomorrow and the future-date message for today and yesterday; fix the date rule so the message follows the same local-day comparison`,
-		).toEqual([undefined, MUST_BE_IN_THE_FUTURE, MUST_BE_IN_THE_FUTURE]);
-	});
+			expect(
+				[
+					isValidFutureDate(tomorrow),
+					isValidFutureDate(today),
+					isValidFutureDate(yesterday),
+				],
+				`${moment}: tomorrow (${tomorrow}) must be accepted and today (${today}) and yesterday (${yesterday}) refused on a browser's own calendar; read the day the field holds as a local calendar day, not as UTC midnight`,
+			).toEqual([true, false, false]);
+			expect(
+				[
+					dateErrorOf(tomorrow, DELIVERY_TERM),
+					dateErrorOf(today, DELIVERY_TERM),
+					dateErrorOf(yesterday, DELIVERY_TERM),
+				],
+				`${moment}: the reader must hear no date error for tomorrow and the future-date message for today and yesterday; fix the date rule so the message follows the same local-day comparison`,
+			).toEqual([undefined, MUST_BE_IN_THE_FUTURE, MUST_BE_IN_THE_FUTURE]);
+		},
+	);
 });
