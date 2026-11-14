@@ -73,8 +73,19 @@ export const isValidFutureDate = (date: string): boolean => {
 
 	// The field holds a calendar day. Parsing the string directly reads it as UTC midnight, which
 	// west of UTC is still the evening before, so tomorrow would count as today.
-	const [, year, month, day] = dayParts;
-	const selectedDate = new Date(Number(year), Number(month) - 1, Number(day));
+	const [, year, month, day] = dayParts.map(Number);
+	const selectedDate = new Date(year, month - 1, day);
+
+	// The Date constructor rolls a day the calendar lacks (month 13, 30 February) over into the
+	// next month or year, so a date that came back as another day was never a real one.
+	const isOnTheCalendar =
+		selectedDate.getFullYear() === year &&
+		selectedDate.getMonth() === month - 1 &&
+		selectedDate.getDate() === day;
+	if (!isOnTheCalendar) {
+		return false;
+	}
+
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 
