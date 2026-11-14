@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// <summary>The horizon this slice works in. The other two arrive with slice 06.</summary>
         private const int ThirtyDays = 30;
 
-
         // --- Given ---
 
         private int GivenATeamStillBeingRefreshed() => SeedTeamObservedUntil(TodayDay);
