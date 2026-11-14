@@ -64,8 +64,8 @@ Linked, not copied. The catalogue is the single source of truth.
    inbound and outbound rules into a module-neutral class first (ADR-270 gate change 3).
 4. **Feature WIP and the throughput window.** The brief's 2026-11-01 update says they move into a Forecasting table
    keyed by unit id (a schema change). Epic #6474's plan says its slice 07 makes that move into a finished
-   `Modules/Forecasting`. A schema move is not behaviour-free packaging. Recommendation to confirm: S03c leaves it to
-   6474 slice 07 and fixes the brief.
+   `Modules/Forecasting`. A schema move is not behaviour-free packaging. **Decided (maintainer, 2026-11-14): 6474
+   slice 07 makes the move; S03c changes no schema.** The brief's 2026-11-01 update is corrected at close-out.
 5. **6474 conditions**: read the 6474 delta, ADR-274 and the "[SUPER] Epic" feedback; fix no shape that 6474 reverses.
    Name the Forecasting seam slice 07 will write into (the leaf capacity inputs keyed by unit id).
 6. **Size and split**: M or L; more than 5 slices means more than one nwdes feature, one oracle file each.
