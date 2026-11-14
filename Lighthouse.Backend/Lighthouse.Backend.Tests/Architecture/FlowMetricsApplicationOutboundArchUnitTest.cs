@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         private static readonly string TheLayersBelowTheApplication =
-            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{FlowMetricsModuleRules.FlowMetricsAdapters})|(?:{ApplicationCoreRules.TheApi})";
+            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ModuleRules.FlowMetricsAdapters})|(?:{ApplicationCoreRules.TheApi})";
 
         // Every edge from the module's Application into Forecasting when the module was cut out. The list only shrinks.
         private static readonly string[] ForecastingEdgesOfTheApplication =

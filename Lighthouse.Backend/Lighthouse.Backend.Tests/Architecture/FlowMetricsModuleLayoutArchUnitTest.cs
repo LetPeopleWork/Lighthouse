@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ThePureFlowMetricsCalculations_LiveInTheModuleDomain_AndNoneIsLeftUnderServices()
         {
-            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, FlowMetricsModuleRules.FlowMetricsDomainNamespace, PureCalculations).Check();
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleRules.FlowMetricsDomainNamespace, PureCalculations).Check();
         }
 
         [Test]
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheFlowMetricsContract_LivesInTheModuleApplication_AndNoneOfItIsLeftUnderServices()
         {
-            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleApplicationNamespace, ContractTypes).Check();
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleApplicationNamespace, ContractTypes).Check();
         }
 
         [Test]
@@ -200,7 +200,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheFlowMetricsImplementations_LiveInTheModuleApplication_AndNoneIsLeftUnderServices()
         {
-            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleApplicationNamespace, Implementations).Check();
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleApplicationNamespace, Implementations).Check();
         }
 
         [Test]
@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheFlowMetricsEventHandlers_LiveInTheModulePolicies_AndNoneIsLeftUnderServices()
         {
-            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModulePoliciesNamespace, Policies).Check();
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModulePoliciesNamespace, Policies).Check();
         }
 
         [Test]
@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheFlowMetricsHistoryFiller_LivesInTheModuleBackgroundAdapters_AndIsNotLeftUnderServices()
         {
-            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleBackgroundNamespace, BackgroundAdapters).Check();
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleBackgroundNamespace, BackgroundAdapters).Check();
         }
 
         [Test]
@@ -236,7 +236,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheFlowMetricsSnapshotRepositories_LiveInTheModulePersistenceAdapters_AndNoneIsLeftUnderServices()
         {
-            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModulePersistenceNamespace, SnapshotRepositories).Check();
+            ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModulePersistenceNamespace, SnapshotRepositories).Check();
         }
 
         [Test]
@@ -309,7 +309,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheModuleDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary()
         {
-            FlowMetricsModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary(ProductionModule.Value).Check();
+            ModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary(ProductionModule.Value).Check();
         }
 
         [TestCase(ForbiddenReach.Services)]
@@ -323,7 +323,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var (domain, offender, forbiddenTarget) = MadeUpDomainReaching(reach);
 
-            var verdict = FlowMetricsModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary(FixtureModule.Value, domain);
+            var verdict = ModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary(FixtureModule.Value, domain);
 
             ThenTheRuleReportsOnlyTheOffender(verdict, offender, forbiddenTarget, reach);
         }
@@ -331,7 +331,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ADomainThatHoldsNoType_FailsTheRuleInsteadOfPassingUnseen()
         {
-            var verdict = FlowMetricsModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary(FixtureModule.Value, ADomainThatHoldsNothing);
+            var verdict = ModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary(FixtureModule.Value, ADomainThatHoldsNothing);
 
             var failure = Assert.Throws<AssertionException>(
                 verdict.Check,

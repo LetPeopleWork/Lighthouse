@@ -73,13 +73,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheModuleDomain_IsReachedFromOutsideOnlyByTheListedTypes()
         {
-            FlowMetricsModuleRules.DomainIsReachedFromOutsideOnlyBy(ProductionModule.Value, OutsideTypesReachingTheDomain).Check();
+            ModuleRules.DomainIsReachedFromOutsideOnlyBy(ProductionModule.Value, OutsideTypesReachingTheDomain).Check();
         }
 
         [Test]
         public void TheModuleAdapters_AreReachedFromOutsideOnlyByTheCompositionRoot()
         {
-            FlowMetricsModuleRules.AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(ProductionModule.Value).Check();
+            ModuleRules.AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(ProductionModule.Value).Check();
         }
 
         [TestCase(ReachedLayer.Domain)]
@@ -120,8 +120,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static InboundVerdict TheRuleOverMadeUpTypes(ReachedLayer layer, IReadOnlyCollection<string> outsideNamespaces, string allowed) => layer switch
         {
-            ReachedLayer.Domain => FlowMetricsModuleRules.DomainIsReachedFromOutsideOnlyBy(FixtureModule.Value, [allowed], FixtureModuleNamespaces, FixtureDomain, OutsideFixtures(outsideNamespaces)),
-            ReachedLayer.Adapters => FlowMetricsModuleRules.AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(FixtureModule.Value, allowed, FixtureModuleNamespaces, FixtureAdapters, OutsideFixtures(outsideNamespaces)),
+            ReachedLayer.Domain => ModuleRules.DomainIsReachedFromOutsideOnlyBy(FixtureModule.Value, [allowed], FixtureModuleNamespaces, FixtureDomain, OutsideFixtures(outsideNamespaces)),
+            ReachedLayer.Adapters => ModuleRules.AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(FixtureModule.Value, allowed, FixtureModuleNamespaces, FixtureAdapters, OutsideFixtures(outsideNamespaces)),
             _ => throw new ArgumentOutOfRangeException(nameof(layer)),
         };
 
@@ -129,13 +129,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         // root named is one that registers nothing any more, while the real one is left out of the outside types.
         private static InboundVerdict TheRuleOverMadeUpTypesListingAFormerCaller(ReachedLayer layer) => layer switch
         {
-            ReachedLayer.Domain => FlowMetricsModuleRules.DomainIsReachedFromOutsideOnlyBy(
+            ReachedLayer.Domain => ModuleRules.DomainIsReachedFromOutsideOnlyBy(
                 FixtureModule.Value,
                 [typeof(AListedDomainCaller).FullName!, typeof(AFormerCaller).FullName!],
                 FixtureModuleNamespaces,
                 FixtureDomain,
                 OutsideFixtures([.. AllowedOutside, FormerCallers])),
-            ReachedLayer.Adapters => FlowMetricsModuleRules.AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(
+            ReachedLayer.Adapters => ModuleRules.AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(
                 FixtureModule.Value,
                 typeof(AFormerCaller).FullName!,
                 FixtureModuleNamespaces,

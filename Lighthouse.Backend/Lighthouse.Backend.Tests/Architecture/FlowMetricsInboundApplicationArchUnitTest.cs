@@ -95,11 +95,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             ApplicationIsReachedFromOutsideOnlyBy(
                 ProductionModule.Value,
                 OtherOutsideTypesReachingTheApplication,
-                FlowMetricsModuleRules.FlowMetricsModule,
+                ModuleRules.FlowMetricsModule,
                 FlowMetricsApplication,
                 TheLegalCallerNamespaces,
                 TheCompositionRoot,
-                FlowMetricsModuleRules.AnyNamespace).Check();
+                ModuleRules.AnyNamespace).Check();
         }
 
         [Test]

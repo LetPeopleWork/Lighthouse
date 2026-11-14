@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// The rules read the compiled IL rather than ArchUnitNET's dependency graph, because in a Release build,
     /// which is what CI tests, that graph drops what an async method uses.
     /// </remarks>
-    internal static class FlowMetricsModuleRules
+    internal static class ModuleRules
     {
         public const string FlowMetricsDomainNamespace = "Lighthouse.Backend.Modules.FlowMetrics.Domain";
 
