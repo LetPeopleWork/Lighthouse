@@ -151,13 +151,1007 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>object_oriented</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Pure moves only: 31 Forecasting files git-mv from Services into Modules/Forecasting, type and file names unchanged, namespace = folder (Lighthouse.Backend.Modules.Forecasting.{Domain,Application,Application.Policies,Adapters.Background}). Each slice is a pure-move commit, then a separate edit commit for using lines, Flow metrics list strings and the Stryker path. Layers per D-4: Domain = 16 types reaching only kernel and BCL; Application = services, ports, ForecastLane, IForecastUpdater; Policies = four triggers; Adapters/Background = ForecastUpdater and ForecastInputsForgottenAtStartSeeder.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Checker mapping: no state machine or temporal claim exists (behaviour-free relocation), so Quint, TLA+/TLC and Agda are not applicable; liveness is not applicable (no new progress claim, no scheduling change). The dependency-direction and placement claims are checked by the IL-reading ArchUnit rules in the three slice oracles; behaviour preservation is checked by SeededForecastsStayTheSameTest and bash Scripts/examine/bin/forecast-answers-compare (base 39a7f598f vs HEAD). No property-based law: the finite relocation has no broad input domain.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Paradigm object_oriented: owners are unchanged; every moved type keeps its owner and responsibility. No domain decision moves into a service, no new class is created, no type is split or merged. Carriers: decisions stay in Domain policies and ForecastSimulation; effects stay in ForecastUpdater, ForecastLane and the seeder; per-process state stays in ForecastLane.
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>Handler order and registrations stay: Program.cs lines are untouched apart from using lines (DomainEventHandlerOrderPinTest stays green and unmodified). Tests covering moved types stay where they are; only their using lines change. Stryker file path in stryker.6094.backend.json follows ForecastRealityCheckService in B2.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Behaviour-free: routes, DTOs, serialized responses, forecast results, schema, handler order unchanged. Existing API, E2E and response tests stay green and unmodified apart from using lines. No bound on stored or validated inputs changes.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>One oracle file per slice; earlier slices&#x27; oracle files are never edited. Rules are never loosened; Flow metrics list strings are rewritten to the new full names, both directions still compared. Made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.ForecastingFixtures.*. Per-test and property budgets are the defaults; no derogation.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>Every dotnet command runs under flock -o on the shared lock file. Code-fact tool not consulted: file lists come from directory listing of the old folders (stated limit).
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>ForecastSimulation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastSimulation.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>The 16 Domain types keep their one owner each; the move changes only folder and namespace. CreateNew would duplicate the simulation rules.
+</code></pre>
+
+<p>ForecastService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Application services and ports (ForecastService, ForecastRealityCheckService, ForecastFilterRuleService, ForecastLane, ForecastInputFingerprint, IForecastUpdater and ports) move unchanged into Modules/Forecasting/Application.
+</code></pre>
+
+<p>ForecastUpdater</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>ForecastUpdater and the start-up seeder move unchanged into Adapters/Background, like the history filler of the earlier module; the four triggers move into Application/Policies.
+</code></pre>
+
+<p>ForecastingRulesSeeTheModuleArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Existing module map and rules already see Modules/Forecasting; the layout oracles reuse the IL helpers and inline-list style.
+</code></pre>
+
+<h3>Impact</h3>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Files move by git mv; all consumers (controllers, PortfolioUpdater, Flow metrics services, DI in Program.cs, tests) only gain using lines.
+</code></pre>
+
+<p>arch-rule-list</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:58</p>
+
+<p>Changed</p>
+
+<pre><code>Inbound list strings name moved types by full name; rewritten to the new namespaces in B2, still compared in both directions.
+</code></pre>
+
+<p>arch-rule-list</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:56</p>
+
+<p>Changed</p>
+
+<pre><code>Outbound edge strings and typeof usings name moved types; rewritten to the new namespaces in B2.
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker.6094.backend.json:7</p>
+
+<p>Changed</p>
+
+<pre><code>Mutate path of ForecastRealityCheckService.cs follows the file to Modules/Forecasting/Application in B2.
+</code></pre>
+
+<p>composition-root</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Using lines only; registrations and order stay.
+</code></pre>
+
+<p>test-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Unit tests of moved types stay in place; only using lines change.
+</code></pre>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>agreement</p>
+
+<pre><code>No wire, schema or persisted contract is touched: DTOs, routes, entities and the database schema stay; the move changes only CLR namespaces inside one deployable that change in one commit.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Producer and consumer are in one deployable and change in the same commit; SeededForecastsStayTheSameTest and forecast-answers-compare observe unchanged answers.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<p>None.</p>
+
+<h3>Equality</h3>
+
+<p>None.</p>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<p>None.</p>
+
+<h3>States</h3>
+
+<p>None.</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>Relocation of 31 Forecasting files
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>IL-reading layout rules in each slice oracle exclude a Forecasting type left in Services and a Domain type reaching beyond the kernel
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Relocation of 31 Forecasting files
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Each type has an existing source file and a named destination folder
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Relocation of 31 Forecasting files
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Public observation is the compiled assembly read by ArchUnit plus the unchanged forecast answers through SeededForecastsStayTheSameTest and forecast-answers-compare
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Relocation of 31 Forecasting files
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: no progress or scheduling behaviour is added or changed; ForecastLane and the updater are moved byte for byte
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Bypass</p>
+
+<pre><code>A file moves but its namespace or a DI using line is missed
+</code></pre>
+
+<pre><code>Forecast answers and handler order
+</code></pre>
+
+<pre><code>Build errors until usings are fixed
+</code></pre>
+
+<pre><code>Silent change in forecast results or handler order
+</code></pre>
+
+<pre><code>Reflection or string-named type lookups of moved types
+</code></pre>
+
+<p>crafter; DomainEventHandlerOrderPinTest and SeededForecastsStayTheSameTest</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: stryker, rule lists and tests name no other moved path
+</code></pre>
+
+<pre><code>Mutation run and rule lists compare both ways
+</code></pre>
+
+<pre><code>Stale string fails a rule or test loudly
+</code></pre>
+
+<pre><code>Loosened rule or silently stale list
+</code></pre>
+
+<pre><code>None known beyond the one stryker path
+</code></pre>
+
+<p>crafter and reviewer</p>
+
+<h3>Architectural tests</h3>
+
+<h4>T1</h4>
+
+<pre><code>Forecasting types sit in their layer folders and namespaces; Domain reaches only the kernel and the BCL; Flow metrics lists name the moved types
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingDomainLayoutArchUnitTest.cs</p>
+
+<pre><code>flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+</code></pre>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/AddressableDrawStream.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/AddressableDrawStream.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/DayCounts.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/DayCounts.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/DrawStreamFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/DrawStreamFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastDataSufficiencyPolicy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastDataSufficiencyPolicy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastRunPlan.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastRunPlan.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastSimulation.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastSimulation.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/HowTheRunEnded.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/HowTheRunEnded.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/OneWorkersShareOfTheRuns.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/OneWorkersShareOfTheRuns.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictPolicy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/RealityCheckVerdictPolicy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/SimulatedRun.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/SimulatedRun.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/TrialRecordings.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/TrialRecordings.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/TrialState.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/TrialState.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WhatTheRunsCouldNotFinish.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/WhatTheRunsCouldNotFinish.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/IDrawStream.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IDrawStream.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/IDrawStreamFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IDrawStreamFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastRunOutcome.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/ForecastRunOutcome.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingDomainLayoutArchUnitTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>slice oracle, written by the acceptance designer
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingDomainLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ForecastingDomainLayoutArchUnitTest
+flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Read the compiled production assembly and apply the layout rule: every type named in the Domain list lives in Lighthouse.Backend.Modules.Forecasting.Domain, none remains in Services, and the Domain namespace reaches only the kernel and the BCL
+</code></pre>
+
+<pre><code>The rule passes; a made-up offender in the fixture namespace Lighthouse.Backend.Modules.ForecastingFixtures reaching an Application type fails the rule and is named
+</code></pre>
+
+<pre><code>A Domain type left under Services.Implementation.Forecast or a Domain type referencing an Application or adapter type fails and names the type
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L1 pure move: git mv the 16 Domain files, only the namespace line changes as far as the move requires; then a separate edit commit for using lines
+</code></pre>
+
+<pre><code>Forecast results, handler order, routes and DTOs; compile state restored by the edit commit
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>reuse</p>
+
+<pre><code>Pure move of existing files: each type keeps its one owner and only folder and namespace change; reuse owners are recorded in the shared reuse rows (the destination files do not exist yet).
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Consumer and test impact for every moved file is recorded once in the shared impact rows: consumers only gain using lines, tests stay in place, Program.cs gets using lines only.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastFilterRuleService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastFilterRuleService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastInputFingerprint.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastInputFingerprint.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastLane.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastLane.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastRealityCheckService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastRealityCheckService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/IForecastFilterRuleService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastFilterRuleService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/IForecastRealityCheckService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastRealityCheckService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/IForecastService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/IForecastUpdater.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Update/IForecastUpdater.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>inbound list strings renamed to the new full names
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>outbound edge strings and usings renamed to the new full names
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker.6094.backend.json</p>
+
+<p>Extend</p>
+
+<pre><code>mutate path of ForecastRealityCheckService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>slice oracle, written by the acceptance designer
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ForecastingApplicationLayoutArchUnitTest
+flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Read the compiled production assembly and apply the layout rule plus the two Flow metrics rule lists: the nine Application types live in Lighthouse.Backend.Modules.Forecasting.Application and the lists name them by their new full names
+</code></pre>
+
+<pre><code>The layout rule passes and both Flow metrics rules pass with the rewritten lists compared in both directions
+</code></pre>
+
+<pre><code>An Application type left under Services, or a list string still naming a Services namespace, fails and names the type or edge
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L1 pure move: git mv the nine Application files; then a separate edit commit for using lines, Flow metrics list strings and the Stryker path
+</code></pre>
+
+<pre><code>Forecast answers, DI registrations and handler order
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>reuse</p>
+
+<pre><code>Pure move of existing files: each type keeps its one owner and only folder and namespace change; reuse owners are recorded in the shared reuse rows (the destination files do not exist yet).
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Consumer and test impact for every moved file is recorded once in the shared impact rows: consumers only gain using lines, tests stay in place, Program.cs gets using lines only.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamDataRefreshedForecastTriggerHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamDeletedForecastRetriggerHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastInputsForgottenAtStartSeeder.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/ForecastInputsForgottenAtStartSeeder.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines only; registration order unchanged
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingAdaptersAndPoliciesLayoutArchUnitTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>slice oracle, written by the acceptance designer
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingAdaptersAndPoliciesLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ForecastingAdaptersAndPoliciesLayoutArchUnitTest
+flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest
+flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DomainEventHandlerOrderPinTest
+bash Scripts/examine/bin/forecast-answers-compare
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Read the compiled production assembly and apply the layout rule, then run DomainEventHandlerOrderPinTest: ForecastUpdater and ForecastInputsForgottenAtStartSeeder live in Modules.Forecasting.Adapters.Background and the four trigger handlers in Modules.Forecasting.Application.Policies
+</code></pre>
+
+<pre><code>The layout rule passes and the handler order pin stays green unmodified
+</code></pre>
+
+<pre><code>A trigger left in BackgroundServices.Update or the updater outside Adapters.Background fails and names the type; a reordered registration fails the order pin
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L1 pure move: git mv the six files; then a separate edit commit for using lines
+</code></pre>
+
+<pre><code>Handler order, hosted-service and seeder registration order, forecast answers
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DomainEventHandlerOrderPinTest
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>reuse</p>
+
+<pre><code>Pure move of existing files: each type keeps its one owner and only folder and namespace change; reuse owners are recorded in the shared reuse rows (the destination files do not exist yet).
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Consumer and test impact for every moved file is recorded once in the shared impact rows: consumers only gain using lines, tests stay in place, Program.cs gets using lines only.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
 
 <p>None.</p>
 

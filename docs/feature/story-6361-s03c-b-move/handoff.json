@@ -1,23 +1,608 @@
 {
 "counters": {
-"F": 13,
+"D": 4,
+"F": 102,
+"K": 3,
 "P": 4,
-"S": 3
+"S": 3,
+"T": 1,
+"Y": 2
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"architectural_tests": [
+{
+"command": "flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"id": "T1",
+"obligation": "F48",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingDomainLayoutArchUnitTest.cs"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F34",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F33"
+},
+{
+"axis": "Inhabitation",
+"basis": "F35",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F33"
+},
+{
+"axis": "PublicReachability",
+"basis": "F36",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F33"
+},
+{
+"axis": "Liveness",
+"basis": "F37",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F33"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F18"
+},
+{
+"id": "K2",
+"text": "F19"
+},
+{
+"id": "K3",
+"text": "F20"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F14"
+},
+{
+"id": "D2",
+"text": "F15"
+},
+{
+"id": "D3",
+"text": "F16"
+},
+{
+"id": "D4",
+"text": "F17"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "source-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs:1",
+"reason": "F25"
+},
+{
+"decision": "Changed",
+"kind": "arch-rule-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:58",
+"reason": "F26"
+},
+{
+"decision": "Changed",
+"kind": "arch-rule-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs:56",
+"reason": "F27"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker.6094.backend.json:7",
+"reason": "F28"
+},
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs:1",
+"reason": "F30"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F31"
+},
+{
+"analysis": "contract_tests",
+"reason": "F32"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastSimulation.cs:1",
+"reason": "F21",
+"symbol": "ForecastSimulation"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs:1",
+"reason": "F22",
+"symbol": "ForecastService"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs:1",
+"reason": "F23",
+"symbol": "ForecastUpdater"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs:1",
+"reason": "F24",
+"symbol": "ForecastingRulesSeeTheModuleArchUnitTest"
+}
+],
+"risks": [
+{
+"allowed": "F40",
+"forbidden": "F41",
+"id": "Y1",
+"kind": "Bypass",
+"owner": "crafter; DomainEventHandlerOrderPinTest and SeededForecastsStayTheSameTest",
+"preserved": "F39",
+"residue": "F42",
+"source": "F38"
+},
+{
+"allowed": "F45",
+"forbidden": "F46",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "crafter and reviewer",
+"preserved": "F44",
+"residue": "F47",
+"source": "F43"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingDomainLayoutArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs",
+"move": "F70",
+"preserved": "F71",
+"verification": [
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest"
+]
+},
+"public_oracle": {
+"expected": "F68",
+"falsifier": "F69",
+"promises": [
+"P1",
+"P4"
+],
+"stimulus": "F67"
+},
+"records": {
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F72"
+},
+{
+"analysis": "impact",
+"reason": "F73"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/AddressableDrawStream.cs",
+"reason": "F49"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/DayCounts.cs",
+"reason": "F50"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/DrawStreamFactory.cs",
+"reason": "F51"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastDataSufficiencyPolicy.cs",
+"reason": "F52"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastRunPlan.cs",
+"reason": "F53"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastSimulation.cs",
+"reason": "F54"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/HowTheRunEnded.cs",
+"reason": "F55"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/OneWorkersShareOfTheRuns.cs",
+"reason": "F56"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/RealityCheckVerdictPolicy.cs",
+"reason": "F57"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/SimulatedRun.cs",
+"reason": "F58"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/TrialRecordings.cs",
+"reason": "F59"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/TrialState.cs",
+"reason": "F60"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/WhatTheRunsCouldNotFinish.cs",
+"reason": "F61"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/IDrawStream.cs",
+"reason": "F62"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/IDrawStreamFactory.cs",
+"reason": "F63"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Domain/ForecastRunOutcome.cs",
+"reason": "F64"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F65"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingDomainLayoutArchUnitTest.cs",
+"reason": "F66"
+}
+],
+"verification": [
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ForecastingDomainLayoutArchUnitTest",
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs",
+"move": "F89",
+"preserved": "F90",
+"verification": [
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest"
+]
+},
+"public_oracle": {
+"expected": "F87",
+"falsifier": "F88",
+"promises": [
+"P2",
+"P4"
+],
+"stimulus": "F86"
+},
+"records": {
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F72"
+},
+{
+"analysis": "impact",
+"reason": "F73"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastFilterRuleService.cs",
+"reason": "F74"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastInputFingerprint.cs",
+"reason": "F75"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastLane.cs",
+"reason": "F76"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastRealityCheckService.cs",
+"reason": "F77"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastService.cs",
+"reason": "F78"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/IForecastFilterRuleService.cs",
+"reason": "F79"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/IForecastRealityCheckService.cs",
+"reason": "F80"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/IForecastService.cs",
+"reason": "F81"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/IForecastUpdater.cs",
+"reason": "F82"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs",
+"reason": "F83"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker.6094.backend.json",
+"reason": "F85"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F65"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs",
+"reason": "F66"
+}
+],
+"verification": [
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ForecastingApplicationLayoutArchUnitTest",
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingAdaptersAndPoliciesLayoutArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs",
+"move": "F101",
+"preserved": "F102",
+"verification": [
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DomainEventHandlerOrderPinTest"
+]
+},
+"public_oracle": {
+"expected": "F99",
+"falsifier": "F100",
+"promises": [
+"P3",
+"P4"
+],
+"stimulus": "F98"
+},
+"records": {
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F72"
+},
+{
+"analysis": "impact",
+"reason": "F73"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDataRefreshedForecastTriggerHandler.cs",
+"reason": "F91"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/TeamDeletedForecastRetriggerHandler.cs",
+"reason": "F92"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandler.cs",
+"reason": "F93"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandler.cs",
+"reason": "F94"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs",
+"reason": "F95"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastInputsForgottenAtStartSeeder.cs",
+"reason": "F96"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F97"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingAdaptersAndPoliciesLayoutArchUnitTest.cs",
+"reason": "F66"
+}
+],
+"verification": [
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ForecastingAdaptersAndPoliciesLayoutArchUnitTest",
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SeededForecastsStayTheSameTest",
+"flock -o /tmp/claude-1000/-storage-repos-Lighthouse/d78ed3b3-d5ed-4805-8941-b20488c04f2f/scratchpad/dotnet.lock dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DomainEventHandlerOrderPinTest",
+"bash Scripts/examine/bin/forecast-answers-compare"
+]
+}
+}
 },
 "facts": {
 "F1": "Story #6361 S03c Package Forecasting, nwdes feature B of three (the move). Move the 31 Forecasting files out of Services into Modules/Forecasting: the simulation, draw streams, run plan and the two forecast policies into Domain; the forecast, reality-check and filter-rule services, their ports, ForecastLane and IForecastUpdater into Application; the forecast updater and the start-up seeder into Adapters/Background; the four forecast triggers into Application/Policies. Pure moves in their own commits, namespace edits apart. The Flow metrics rule lists name the moved types in their new place. Behaviour-free: routes, DTOs, responses, forecast results, handler order and the schema stay the same. Design: docs/feature/story-6361-s03c-package-forecasting/feature-delta.md (slices B1-B3, Component decomposition, D-4, D-8).",
 "F10": "Any behaviour, route, DTO, schema, handler-order or response change",
+"F100": "A trigger left in BackgroundServices.Update or the updater outside Adapters.Background fails and names the type; a reordered registration fails the order pin",
+"F101": "L1 pure move: git mv the six files; then a separate edit commit for using lines",
+"F102": "Handler order, hosted-service and seeder registration order, forecast answers",
 "F11": "No Domain-layer Forecasting type remains in Services; Modules/Forecasting/Domain reaches only the kernel and the BCL",
 "F12": "The forecast services and their ports live in Modules/Forecasting/Application and the Flow metrics lists name them there",
 "F13": "The forecast updater and seeder live in Adapters/Background and the four triggers in Application/Policies; handler order unchanged",
+"F14": "Pure moves only: 31 Forecasting files git-mv from Services into Modules/Forecasting, type and file names unchanged, namespace = folder (Lighthouse.Backend.Modules.Forecasting.{Domain,Application,Application.Policies,Adapters.Background}). Each slice is a pure-move commit, then a separate edit commit for using lines, Flow metrics list strings and the Stryker path. Layers per D-4: Domain = 16 types reaching only kernel and BCL; Application = services, ports, ForecastLane, IForecastUpdater; Policies = four triggers; Adapters/Background = ForecastUpdater and ForecastInputsForgottenAtStartSeeder.",
+"F15": "Checker mapping: no state machine or temporal claim exists (behaviour-free relocation), so Quint, TLA+/TLC and Agda are not applicable; liveness is not applicable (no new progress claim, no scheduling change). The dependency-direction and placement claims are checked by the IL-reading ArchUnit rules in the three slice oracles; behaviour preservation is checked by SeededForecastsStayTheSameTest and bash Scripts/examine/bin/forecast-answers-compare (base 39a7f598f vs HEAD). No property-based law: the finite relocation has no broad input domain.",
+"F16": "Paradigm object_oriented: owners are unchanged; every moved type keeps its owner and responsibility. No domain decision moves into a service, no new class is created, no type is split or merged. Carriers: decisions stay in Domain policies and ForecastSimulation; effects stay in ForecastUpdater, ForecastLane and the seeder; per-process state stays in ForecastLane.",
+"F17": "Handler order and registrations stay: Program.cs lines are untouched apart from using lines (DomainEventHandlerOrderPinTest stays green and unmodified). Tests covering moved types stay where they are; only their using lines change. Stryker file path in stryker.6094.backend.json follows ForecastRealityCheckService in B2.",
+"F18": "Behaviour-free: routes, DTOs, serialized responses, forecast results, schema, handler order unchanged. Existing API, E2E and response tests stay green and unmodified apart from using lines. No bound on stored or validated inputs changes.",
+"F19": "One oracle file per slice; earlier slices' oracle files are never edited. Rules are never loosened; Flow metrics list strings are rewritten to the new full names, both directions still compared. Made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.ForecastingFixtures.*. Per-test and property budgets are the defaults; no derogation.",
 "F2": "Forecasting lives in its own module folder, so feature C can give it its own rules and break the cycle with Flow metrics",
+"F20": "Every dotnet command runs under flock -o on the shared lock file. Code-fact tool not consulted: file lists come from directory listing of the old folders (stated limit).",
+"F21": "The 16 Domain types keep their one owner each; the move changes only folder and namespace. CreateNew would duplicate the simulation rules.",
+"F22": "Application services and ports (ForecastService, ForecastRealityCheckService, ForecastFilterRuleService, ForecastLane, ForecastInputFingerprint, IForecastUpdater and ports) move unchanged into Modules/Forecasting/Application.",
+"F23": "ForecastUpdater and the start-up seeder move unchanged into Adapters/Background, like the history filler of the earlier module; the four triggers move into Application/Policies.",
+"F24": "Existing module map and rules already see Modules/Forecasting; the layout oracles reuse the IL helpers and inline-list style.",
+"F25": "Files move by git mv; all consumers (controllers, PortfolioUpdater, Flow metrics services, DI in Program.cs, tests) only gain using lines.",
+"F26": "Inbound list strings name moved types by full name; rewritten to the new namespaces in B2, still compared in both directions.",
+"F27": "Outbound edge strings and typeof usings name moved types; rewritten to the new namespaces in B2.",
+"F28": "Mutate path of ForecastRealityCheckService.cs follows the file to Modules/Forecasting/Application in B2.",
+"F29": "Using lines only; registrations and order stay.",
 "F3": "The simulation, draw streams, run plan and the two forecast policies live in Modules/Forecasting/Domain, which reaches only the shared kernel",
+"F30": "Unit tests of moved types stay in place; only using lines change.",
+"F31": "No wire, schema or persisted contract is touched: DTOs, routes, entities and the database schema stay; the move changes only CLR namespaces inside one deployable that change in one commit.",
+"F32": "Producer and consumer are in one deployable and change in the same commit; SeededForecastsStayTheSameTest and forecast-answers-compare observe unchanged answers.",
+"F33": "Relocation of 31 Forecasting files",
+"F34": "IL-reading layout rules in each slice oracle exclude a Forecasting type left in Services and a Domain type reaching beyond the kernel",
+"F35": "Each type has an existing source file and a named destination folder",
+"F36": "Public observation is the compiled assembly read by ArchUnit plus the unchanged forecast answers through SeededForecastsStayTheSameTest and forecast-answers-compare",
+"F37": "Not applicable: no progress or scheduling behaviour is added or changed; ForecastLane and the updater are moved byte for byte",
+"F38": "A file moves but its namespace or a DI using line is missed",
+"F39": "Forecast answers and handler order",
 "F4": "The forecast, reality-check and filter-rule services and their ports live in Modules/Forecasting/Application, and the Flow metrics rule lists name them in their new place",
+"F40": "Build errors until usings are fixed",
+"F41": "Silent change in forecast results or handler order",
+"F42": "Reflection or string-named type lookups of moved types",
+"F43": "Assumption: stryker, rule lists and tests name no other moved path",
+"F44": "Mutation run and rule lists compare both ways",
+"F45": "Stale string fails a rule or test loudly",
+"F46": "Loosened rule or silently stale list",
+"F47": "None known beyond the one stryker path",
+"F48": "Forecasting types sit in their layer folders and namespaces; Domain reaches only the kernel and the BCL; Flow metrics lists name the moved types",
+"F49": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/AddressableDrawStream.cs",
 "F5": "The forecast updater and the start-up seeder live in Modules/Forecasting/Adapters/Background and the four forecast triggers in Application/Policies, with domain-event handler order unchanged",
+"F50": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/DayCounts.cs",
+"F51": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/DrawStreamFactory.cs",
+"F52": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastDataSufficiencyPolicy.cs",
+"F53": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastRunPlan.cs",
+"F54": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastSimulation.cs",
+"F55": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/HowTheRunEnded.cs",
+"F56": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/OneWorkersShareOfTheRuns.cs",
+"F57": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/RealityCheckVerdictPolicy.cs",
+"F58": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/SimulatedRun.cs",
+"F59": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/TrialRecordings.cs",
 "F6": "Forecasts and forecast answers are identical before and after the move",
+"F60": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/TrialState.cs",
+"F61": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/WhatTheRunsCouldNotFinish.cs",
+"F62": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IDrawStream.cs",
+"F63": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IDrawStreamFactory.cs",
+"F64": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/ForecastRunOutcome.cs",
+"F65": "using lines only",
+"F66": "slice oracle, written by the acceptance designer",
+"F67": "Read the compiled production assembly and apply the layout rule: every type named in the Domain list lives in Lighthouse.Backend.Modules.Forecasting.Domain, none remains in Services, and the Domain namespace reaches only the kernel and the BCL",
+"F68": "The rule passes; a made-up offender in the fixture namespace Lighthouse.Backend.Modules.ForecastingFixtures reaching an Application type fails the rule and is named",
+"F69": "A Domain type left under Services.Implementation.Forecast or a Domain type referencing an Application or adapter type fails and names the type",
 "F7": "Pure move and namespace-edit commits of the 31 Forecasting files; Program.cs using lines; Flow metrics list strings; Stryker config path",
+"F70": "L1 pure move: git mv the 16 Domain files, only the namespace line changes as far as the move requires; then a separate edit commit for using lines",
+"F71": "Forecast results, handler order, routes and DTOs; compile state restored by the edit commit",
+"F72": "Pure move of existing files: each type keeps its one owner and only folder and namespace change; reuse owners are recorded in the shared reuse rows (the destination files do not exist yet).",
+"F73": "Consumer and test impact for every moved file is recorded once in the shared impact rows: consumers only gain using lines, tests stay in place, Program.cs gets using lines only.",
+"F74": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastFilterRuleService.cs",
+"F75": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastInputFingerprint.cs",
+"F76": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastLane.cs",
+"F77": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastRealityCheckService.cs",
+"F78": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs",
+"F79": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastFilterRuleService.cs",
 "F8": "Entities and DTOs in Models and API/DTO, controllers, Delivery forecast publishing, WhatTheForecastWaitsFor (later Stories)",
-"F9": "Removing the Flow metrics to Forecasting cycle and Forecasting's own module rules (feature C)"
+"F80": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastRealityCheckService.cs",
+"F81": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastService.cs",
+"F82": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Update/IForecastUpdater.cs",
+"F83": "inbound list strings renamed to the new full names",
+"F84": "outbound edge strings and usings renamed to the new full names",
+"F85": "mutate path of ForecastRealityCheckService.cs",
+"F86": "Read the compiled production assembly and apply the layout rule plus the two Flow metrics rule lists: the nine Application types live in Lighthouse.Backend.Modules.Forecasting.Application and the lists name them by their new full names",
+"F87": "The layout rule passes and both Flow metrics rules pass with the rewritten lists compared in both directions",
+"F88": "An Application type left under Services, or a list string still naming a Services namespace, fails and names the type or edge",
+"F89": "L1 pure move: git mv the nine Application files; then a separate edit commit for using lines, Flow metrics list strings and the Stryker path",
+"F9": "Removing the Flow metrics to Forecasting cycle and Forecasting's own module rules (feature C)",
+"F90": "Forecast answers, DI registrations and handler order",
+"F91": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamDataRefreshedForecastTriggerHandler.cs",
+"F92": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamDeletedForecastRetriggerHandler.cs",
+"F93": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandler.cs",
+"F94": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandler.cs",
+"F95": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+"F96": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/ForecastInputsForgottenAtStartSeeder.cs",
+"F97": "using lines only; registration order unchanged",
+"F98": "Read the compiled production assembly and apply the layout rule, then run DomainEventHandlerOrderPinTest: ForecastUpdater and ForecastInputsForgottenAtStartSeeder live in Modules.Forecasting.Adapters.Background and the four trigger handlers in Modules.Forecasting.Application.Policies",
+"F99": "The layout rule passes and the handler order pin stays green unmodified"
 },
 "product": {
 "promises": [
