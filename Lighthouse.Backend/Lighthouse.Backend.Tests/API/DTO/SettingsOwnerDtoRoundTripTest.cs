@@ -219,6 +219,37 @@ namespace Lighthouse.Backend.Tests.API.DTO
             }
         }
 
+        private const int TheTeamsParentDefault = 51;
+
+        private const int TheOwnParentField = 52;
+
+        // The connection's Teams' default names Caused by and its Portfolios' default names nothing.
+        [TestCase(false, "ConnectionDefault", null, null)]
+        [TestCase(true, "Own", null, TheOwnParentField)]
+        public void A_Portfolios_settings_page_names_the_Portfolios_Parent_default_and_never_the_Teams(bool owning, string source, string? defaultName, int? reads)
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 1, ParentOverrideForTeams = TheTeamsParentDefault };
+            foreach (var (id, name) in new[] { (TheTeamsParentDefault, "Caused by"), (TheOwnParentField, "Parent Link") })
+            {
+                connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = id, DisplayName = name, Reference = $"customfield_{id}" });
+            }
+
+            var portfolio = new Portfolio { Name = "Card Issuing", WorkTrackingSystemConnection = connection, WorkTrackingSystemConnectionId = 1 };
+            if (owning)
+            {
+                portfolio.OwnParentOverride(TheOwnParentField);
+            }
+
+            var page = JsonSerializer.SerializeToNode(new PortfolioSettingDto(portfolio), AsTheWireSendsIt)!.AsObject();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(page["parentOverrideSource"]?.ToString(), Is.EqualTo(source));
+                Assert.That(page["parentOverrideDefaultName"]?.ToString(), Is.EqualTo(defaultName));
+                Assert.That(page["parentOverrideAdditionalFieldDefinitionId"]?.GetValue<int?>(), Is.EqualTo(reads));
+            }
+        }
+
         [Test]
         public void A_connections_page_offers_the_Portfolios_field_defaults_by_name_and_never_Ignore_Dependencies()
         {

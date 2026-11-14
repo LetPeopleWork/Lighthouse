@@ -134,6 +134,52 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(defaults.FieldOf(ConnectionDefaultSetting.ParentOverrideForTeams), Is.EqualTo(5), "A save that names no Parent default must not clear the one the connection holds.");
         }
 
+        [TestCase(ConnectionDefaultSetting.ParentOverrideForTeams)]
+        [TestCase(ConnectionDefaultSetting.ParentOverrideForPortfolios)]
+        public void A_save_naming_neither_the_field_nor_the_list_of_a_Parent_default_does_not_send_it(ConnectionDefaultSetting setting)
+        {
+            var defaults = JsonSerializer.Deserialize<ConnectionDefaultsDto>("""{"dependencyFieldForPortfolios":5}""", AsTheWireSendsIt)!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(defaults.Sends(setting), Is.False, "A save that leaves a default out must not clear it.");
+                Assert.That(defaults.FieldOf(setting), Is.Null);
+                Assert.That(defaults.ParentSourcesChoiceFor(setting, AListOfTwoFields), Is.Null);
+            }
+        }
+
+        [TestCase(ConnectionDefaultSetting.ParentOverrideForTeams, "parentSourcesForTeams")]
+        [TestCase(ConnectionDefaultSetting.ParentOverrideForPortfolios, "parentSourcesForPortfolios")]
+        public void A_save_sending_the_list_the_page_read_without_its_old_field_keeps_that_list(ConnectionDefaultSetting setting, string listMember)
+        {
+            var defaults = JsonSerializer.Deserialize<ConnectionDefaultsDto>(
+                $$"""{"{{listMember}}":[{"kind":"AdditionalField","additionalFieldDefinitionId":1},{"kind":"TrackerParent"},{"kind":"AdditionalField","additionalFieldDefinitionId":2}]}""", AsTheWireSendsIt)!;
+
+            var choice = defaults.ParentSourcesChoiceFor(setting, AListOfTwoFields);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(defaults.Sends(setting), Is.True);
+                Assert.That(choice?.Outcome?.List?.ToStoredText(), Is.EqualTo(AListOfTwoFields.ToStoredText()), "The list the page read is the list the connection keeps.");
+            }
+        }
+
+        [TestCase(ConnectionDefaultSetting.ParentOverrideForTeams, "parentOverrideForTeams", "parentSourcesForTeams")]
+        [TestCase(ConnectionDefaultSetting.ParentOverrideForPortfolios, "parentOverrideForPortfolios", "parentSourcesForPortfolios")]
+        public void An_old_field_sent_as_empty_beside_the_list_the_page_read_clears_the_default(ConnectionDefaultSetting setting, string fieldMember, string listMember)
+        {
+            var defaults = JsonSerializer.Deserialize<ConnectionDefaultsDto>(
+                $$"""{"{{fieldMember}}":null,"{{listMember}}":[{"kind":"AdditionalField","additionalFieldDefinitionId":1},{"kind":"TrackerParent"},{"kind":"AdditionalField","additionalFieldDefinitionId":2}]}""", AsTheWireSendsIt)!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(defaults.Sends(setting), Is.True, "An explicit null is a choice to clear.");
+                Assert.That(defaults.ParentSourcesChoiceFor(setting, AListOfTwoFields), Is.Null, "The emptied old field, not the list the page read, is the edit.");
+                Assert.That(defaults.FieldOf(setting), Is.Null);
+                Assert.That(defaults.FieldsOf(setting, AListOfTwoFields), Is.Empty);
+            }
+        }
+
         [Test]
         public void An_Estimation_default_left_out_of_the_save_is_not_sent()
         {

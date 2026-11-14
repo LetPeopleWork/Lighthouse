@@ -29,6 +29,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
         private static readonly int[] PortfoliosOnTheOwnedConnection = [7];
 
+        private static readonly int[] TheTwoFollowingTeams = [2, 5];
+
         private static readonly string[] TokenThenSave = ["token", "save"];
 
         private static readonly string[] TeamsOwningCausedByInCreationOrder = ["Yankee", "Zulu"];
@@ -1034,6 +1036,111 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
                 Assert.That(published.SelectMany(change => change.PortfolioIds), Is.EqualTo(new[] { follower.Id }), "Only the Portfolio that follows the default is updated.");
                 Assert.That(published.SelectMany(change => change.TeamIds), Is.Empty);
                 Assert.That(log.Written(LogLevel.Information), Has.Some.Contains($"Portfolios' {named} default").And.Some.Contains("1 Portfolio follows it: Card Issuing; 1 update queued"));
+            }
+        }
+
+        // Alpha and Bravo follow the Teams' default, Chose None owns an empty one; Card Issuing follows the
+        // Portfolios' default and Merchant Onboarding owns its own.
+        private (ConnectionSaveService Subject, RecordingLogger<ConnectionSaveService> Log, List<ConnectionFetchShapeChanged> Published) AConnectionWithFollowingAndOwningTeamsAndPortfolios()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var connection = connectionRepositoryMock.Object.GetById(OwnedConnectionId)!;
+            var owningPortfolio = new Portfolio { Id = 8, Name = "Merchant Onboarding", WorkTrackingSystemConnectionId = OwnedConnectionId, WorkTrackingSystemConnection = connection };
+            owningPortfolio.OwnParentOverride(ParentLinkId);
+            var portfolios = new List<Portfolio>
+            {
+                new() { Id = 7, Name = "Card Issuing", WorkTrackingSystemConnectionId = OwnedConnectionId, WorkTrackingSystemConnection = connection },
+                owningPortfolio,
+            };
+            portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
+                .Returns(() => portfolios.AsQueryable());
+            var published = new List<ConnectionFetchShapeChanged>();
+            domainEventDispatcherMock.Setup(x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()))
+                .Callback<ConnectionFetchShapeChanged, CancellationToken>((change, _) => published.Add(change))
+                .Returns(Task.CompletedTask);
+            return (subject, log, published);
+        }
+
+        [Test]
+        public async Task Commit_TheTeamsDefaultChangedWithUpdates_UpdatesTheFollowersAndNeitherTheOwnersNorThePortfolios()
+        {
+            var (subject, _, published) = AConnectionWithFollowingAndOwningTeamsAndPortfolios();
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(published, Has.Count.EqualTo(1), "One change carries every follower to update.");
+                Assert.That(published.SelectMany(change => change.TeamIds), Is.EquivalentTo(TheTwoFollowingTeams), "Alpha and Bravo follow the default; Chose None owns its field.");
+                Assert.That(published.SelectMany(change => change.PortfolioIds), Is.Empty, "The Portfolios hold a default of their own.");
+            }
+        }
+
+        [Test]
+        public async Task Commit_TheTeamsDefaultChangedWithUpdates_NamesNoPortfolioInItsLogEntry()
+        {
+            var (subject, log, _) = AConnectionWithFollowingAndOwningTeamsAndPortfolios();
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
+
+            var written = log.Written(LogLevel.Information);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(written, Has.Count.EqualTo(1));
+                Assert.That(written.Single(), Does.Not.Contain("Portfolio").And.Not.Contain("Card Issuing").And.Not.Contain("Merchant Onboarding"));
+            }
+        }
+
+        [Test]
+        public async Task Commit_ThePortfoliosDefaultLeftAsItWas_LogsNothingAndPublishesNothing()
+        {
+            var (subject, log, _) = AConnectionWithFollowingAndOwningTeamsAndPortfolios();
+            connectionRepositoryMock.Object.GetById(OwnedConnectionId)!.ParentOverrideForPortfolios = CausedById;
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.Name = "Renamed";
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
+
+            Assert.That(log.Everything, Is.Empty);
+            VerifyNothingWasPublished();
+        }
+
+        [Test]
+        public async Task Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas()
+        {
+            var (subject, log, _) = AConnectionWithFollowingAndOwningTeamsAndPortfolios();
+            connectionRepositoryMock.Object.GetById(OwnedConnectionId)!.ParentOverrideForPortfolios = CausedById;
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForPortfolios = null;
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Portfolios' Parent sources default from Caused by to none; 1 Portfolio follows it: Card Issuing; no update queued; parent sources moved 1 Portfolio."));
+        }
+
+        [Test]
+        public async Task Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField()
+        {
+            const int StoredEpicLinkId = 77;
+            var (subject, log, _) = AConnectionWithFollowingAndOwningTeamsAndPortfolios();
+            var handle = await OpenTheOwnedConnection(subject);
+            var epicLink = new AdditionalFieldDefinition { DisplayName = "Epic Link", Reference = "customfield_10008" };
+            handle.Connection.AdditionalFieldDefinitions.Add(epicLink);
+            handle.DefaultsAddedInThisSave[ConnectionDefaultSetting.ParentOverrideForPortfolios] = epicLink;
+            connectionRepositoryMock.Setup(x => x.Save()).Callback(() => epicLink.Id = StoredEpicLinkId).Returns(Task.CompletedTask);
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(handle.Connection.ParentOverrideForPortfolios, Is.EqualTo(StoredEpicLinkId));
+                Assert.That(handle.Connection.ParentOverrideForTeams, Is.Null, "The Teams' default is a default of its own.");
+                Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Portfolios' Parent sources default from none to Epic Link; 1 Portfolio follows it: Card Issuing; no update queued; parent sources moved 1 Portfolio."));
             }
         }
 
