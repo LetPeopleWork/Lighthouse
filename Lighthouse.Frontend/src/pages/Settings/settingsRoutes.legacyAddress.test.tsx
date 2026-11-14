@@ -12,7 +12,9 @@ import { settingsRoutes } from "./settingsRoutes";
 // The routes load this page lazily; importing it here keeps that load out of the timed tests.
 import "./SettingsAreaPage";
 
-const WhereWeAre = () => <div data-testid="where">{useLocation().pathname}</div>;
+const WhereWeAre = () => (
+	<div data-testid="where">{useLocation().pathname}</div>
+);
 
 const whenTheyOpen = (
 	address: string,

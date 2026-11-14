@@ -15,9 +15,7 @@ const stateWhenTheListAnswers = (answer: () => Promise<unknown>) => {
 	const workTrackingSystemService = createMockWorkTrackingSystemService();
 	vi.mocked(
 		workTrackingSystemService.getConfiguredWorkTrackingSystems,
-	).mockImplementation(
-		answer as () => Promise<WorkTrackingSystemConnection[]>,
-	);
+	).mockImplementation(answer as () => Promise<WorkTrackingSystemConnection[]>);
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});

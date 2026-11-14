@@ -42,9 +42,9 @@ describe("resolveSettingsLocation", () => {
 	});
 
 	it("moves an old ?tab= key on to its tab, whatever its case", () => {
-		expect(
-			resolveSettingsLocation({ legacyKey: "RBAC" }, systemAdmin),
-		).toEqual({ kind: "redirect", path: "/settings/access/system-wide" });
+		expect(resolveSettingsLocation({ legacyKey: "RBAC" }, systemAdmin)).toEqual(
+			{ kind: "redirect", path: "/settings/access/system-wide" },
+		);
 	});
 
 	it("moves an old ?tab= key the person may not open to the nearest tab of the same area", () => {

@@ -31,7 +31,9 @@ const northwind = () =>
 const renderSettings = (service: IWorkTrackingSystemService) =>
 	render(
 		<QueryClientProvider
-			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+			client={
+				new QueryClient({ defaultOptions: { queries: { retry: false } } })
+			}
 		>
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({

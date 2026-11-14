@@ -8,7 +8,9 @@ import {
 } from "../../../tests/MockApiServiceProvider";
 import { SettingsMenu } from "./SettingsMenu";
 
-const WhereWeAre = () => <div data-testid="where">{useLocation().pathname}</div>;
+const WhereWeAre = () => (
+	<div data-testid="where">{useLocation().pathname}</div>
+);
 
 const renderMenuAt = (address: string) => {
 	const rbacService = createMockRbacService();

@@ -368,7 +368,9 @@ describe("OverviewDashboard", () => {
 			screen.queryByRole("button", { name: /Add Work Tracking System/i }),
 		).not.toBeInTheDocument();
 		expect(
-			screen.queryByText("Work Tracking Systems", { selector: "h1,h2,h3,h4,h5,h6" }),
+			screen.queryByText("Work Tracking Systems", {
+				selector: "h1,h2,h3,h4,h5,h6",
+			}),
 		).not.toBeInTheDocument();
 	});
 
