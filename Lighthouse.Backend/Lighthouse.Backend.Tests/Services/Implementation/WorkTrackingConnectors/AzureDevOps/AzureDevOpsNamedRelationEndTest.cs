@@ -3,7 +3,9 @@ using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -42,6 +44,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string AttachedFile = "AttachedFile";
 
         private const string ARealField = "Custom.Size";
+
+        private const string ARemoteParentField = "Custom.RemoteParent";
+
+        private const string FabrikamNeedsForward = "Fabrikam.Needs-Forward";
+
+        private const string FabrikamUrl = "https://dev.azure.com/fabrikam";
 
         private const string NotAnythingAtAll = "Contoso.Missing";
 
@@ -456,6 +464,384 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(theReadings, Is.EqualTo(new[] { ParentReading.CannotBeRead, ParentReading.NoValue }));
         }
 
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheReverseEndIsNamed_ReadsTheOtherDirection()
+        {
+            var organisation = new Organisation(relations: new()
+            {
+                [TheFeature] = [ARelation(DependsOnForward, TheOtherFeature)],
+                [TheOtherFeature] = [ARelation(DependsOnReverse, TheFeature)],
+            });
+
+            var features = await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnReverse), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheFeatureWaitsOn(features, TheOtherFeature), Is.EqualTo(new[] { $"{TheFeature}" }));
+                Assert.That(WhatTheFeatureWaitsOn(features, TheFeature), Is.Empty, "Reading both ends would make the one link wait both ways.");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenAParentOverrideFieldIsAlsoSet_StillReadsTheNamedRelationEnd()
+        {
+            var organisation = new Organisation(
+                fieldsItDefines: [ARemoteParentField],
+                fieldValues: new() { [TheFeature] = new() { [ARemoteParentField] = $"{TheItemItsPredecessorLinkPointsAt}" } },
+                relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
+            var portfolio = APortfolioWhoseDependencyFieldNames(DependsOnForward);
+            portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Remote", Reference = ARemoteParentField });
+            portfolio.OwnParentOverride(10);
+
+            var features = await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheFeatureWaitsOn(features, TheFeature), Is.EqualTo(TheOneItemItWaitsOn),
+                    "A Parent Override Field must not stop the relations being downloaded for the Dependency Field.");
+                Assert.That(features.Single(feature => feature.ReferenceId == $"{TheFeature}").ParentReferenceId, Is.EqualTo($"{TheItemItsPredecessorLinkPointsAt}"),
+                    "The Parent Override still places the Feature.");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheFeaturesCarryOnlyTheirHierarchy_SaysNothingAboutTheNamedEnd()
+        {
+            var organisation = new Organisation(relations: new()
+            {
+                [TheFeature] = [ARelation(HierarchyReverse, TheItemItWaitsOn)],
+                [TheOtherFeature] = [ARelation(HierarchyForward, TheFeature)],
+            });
+
+            var features = await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
+
+            Assert.That(features.SelectMany(feature => feature.RefreshFindings), Is.Empty, "Having no dependencies is the ordinary case.");
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenARelationEndIsNamed_CostsOneRelationTypeListingAndNothingPerWorkItem()
+        {
+            var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
+
+            await organisation.Connector.GetFeaturesForProject(APortfolio(), CancellationToken.None);
+            var namingNothing = organisation.Client.Invocations.Count;
+            await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
+            var namingTheEnd = organisation.Client.Invocations.Count - namingNothing;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(namingTheEnd, Is.EqualTo(namingNothing + 1), "The one extra request is the listing of the relation types.");
+                organisation.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_TwoOrganisationsOnOneSharedConnector_EachAnswerWithTheirOwnRelationTypes()
+        {
+            var contoso = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
+            var fabrikam = AFabrikamOrganisation();
+            var connector = new SharedConnector(contoso, fabrikam);
+
+            var contosoFeatures = await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward, contoso), CancellationToken.None);
+            var fabrikamFeatures = await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(FabrikamNeedsForward, fabrikam), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheFeatureWaitsOn(contosoFeatures, TheFeature), Is.EqualTo(TheOneItemItWaitsOn));
+                Assert.That(WhatTheFeatureWaitsOn(fabrikamFeatures, TheFeature), Is.EqualTo(new[] { $"{TheOtherFeature}" }));
+                contoso.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
+                fabrikam.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_RefreshingTheFirstOrganisationAgain_ListsItsRelationTypesAgain()
+        {
+            var contoso = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
+            var fabrikam = AFabrikamOrganisation();
+            var connector = new SharedConnector(contoso, fabrikam);
+
+            await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward, contoso), CancellationToken.None);
+            await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(FabrikamNeedsForward, fabrikam), CancellationToken.None);
+            var again = await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward, contoso), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                contoso.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+                fabrikam.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
+                Assert.That(WhatTheFeatureWaitsOn(again, TheFeature), Is.EqualTo(TheOneItemItWaitsOn));
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_ASharedConnectorKeepsNoRelationTypeListingBetweenCalls()
+        {
+            var contoso = new Organisation();
+            var fabrikam = AFabrikamOrganisation();
+            var connector = new SharedConnector(contoso, fabrikam);
+
+            var onContoso = await connector.ValidateConnection(AConnectionNaming(contoso, DependsOnForward));
+            var onFabrikam = await connector.ValidateConnection(AConnectionNaming(fabrikam, DependsOnForward));
+            var onContosoAgain = await connector.ValidateConnection(AConnectionNaming(contoso, DependsOnForward));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(onContoso.IsValid, Is.True);
+                Assert.That(onFabrikam.IsValid, Is.False, "Fabrikam lists no such relation type; answering with Contoso's listing would accept it.");
+                Assert.That(onContosoAgain.IsValid, Is.True);
+                contoso.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_WhenTheOrganisationAnswersTheListingWithoutAList_SaysItListedNone()
+        {
+            var organisation = new Organisation(answersTheListingWithoutAList: true);
+
+            var verdict = await organisation.Connector.ValidateConnection(AConnectionNaming(NotAnythingAtAll));
+
+            Assert.That(verdict.Message, Does.EndWith("It listed no relation types at all to check them against."));
+        }
+
+        [TestCase(typeof(TimeoutException))]
+        [TestCase(typeof(HttpRequestException))]
+        public async Task ValidateConnection_WhenListingTheRelationTypesFailsOnTheWay_ReadsItAsUnreadable(Type failure)
+        {
+            var organisation = new Organisation(listingFailure: (Exception)Activator.CreateInstance(failure, "The request to list the relation types did not complete.")!);
+
+            var verdict = await organisation.Connector.ValidateConnection(AConnectionNaming(DependsOnForward));
+
+            Assert.That(verdict.Code, Is.EqualTo("relation_types_unreadable"),
+                "A listing that never reached Azure DevOps says no more about the reference than a refusal does.");
+        }
+
+        [Test]
+        public async Task ValidateConnection_WhenSeveralReferencesNameRelationTypes_ListsThemOnce()
+        {
+            var organisation = new Organisation();
+
+            var verdict = await organisation.Connector.ValidateConnection(AConnectionNaming(DependsOnForward, DependsOnReverse, Related));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.True, verdict.Message);
+                organisation.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once,
+                    "Three relation-type references, one listing.");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheDependencyFieldNamesARelationEnd_DoesNotSayAFieldIsMissing()
+        {
+            var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
+
+            var features = await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(organisation.Log.Warnings, Has.None.Contain("No field in this Azure DevOps organisation is called"),
+                    "A relation type is not a field nobody could find, and saying so on every refresh teaches the admin to ignore the log.");
+                Assert.That(features.SelectMany(feature => feature.RefreshFindings), Is.Empty,
+                    "A relation end the Dependency Field reads is not a misconfiguration.");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheParentOverrideFieldNamesARelationEnd_KeepsTheTrackersParentAndSaysWhy()
+        {
+            var organisation = new Organisation(relations: new() { [TheFeature] = [AParentRelation(TheItemItWaitsOn)] });
+            var portfolio = APortfolio();
+            portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Parent", Reference = DependsOnForward });
+            portfolio.OwnParentOverride(10);
+
+            var feature = (await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.ParentReferenceId, Is.EqualTo($"{TheItemItWaitsOn}"), "The native parent stands.");
+                Assert.That(feature.RefreshFindings.Select(finding => (finding.Kind, finding.Setting, finding.Named)), Is.EqualTo(new[]
+                {
+                    (RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField, DependsOnForward),
+                }));
+            }
+        }
+
+        [TestCase(RefreshFindingSetting.SizeEstimateField)]
+        [TestCase(RefreshFindingSetting.FeatureOwnerField)]
+        [TestCase(RefreshFindingSetting.EstimationField)]
+        public async Task GetFeaturesForProject_WhenOnlyAnotherSettingNamesARelationType_ReadsNothingNamedAndSaysWhy(RefreshFindingSetting setting)
+        {
+            var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
+            var portfolio = APortfolio();
+            portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Named", Reference = DependsOnForward });
+            switch (setting)
+            {
+                case RefreshFindingSetting.SizeEstimateField:
+                    portfolio.OwnSizeEstimateField(10);
+                    break;
+                case RefreshFindingSetting.FeatureOwnerField:
+                    portfolio.OwnFeatureOwnerField(10);
+                    break;
+                default:
+                    portfolio.OwningEstimationField(10);
+                    break;
+            }
+
+            var features = await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+
+            var feature = features.Single(f => f.ReferenceId == $"{TheFeature}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.DependsOnReferences, Is.Empty, "The refresh still stores the Feature, and reads nothing from the relation.");
+                Assert.That(feature.RefreshFindings.Select(finding => (finding.Kind, finding.Setting, finding.Named)), Is.EqualTo(new[]
+                {
+                    (RefreshFindingKind.RelationTypeCannotBeReadHere, setting, DependsOnForward),
+                }));
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_WhenOnlyAStaleDefinitionNamesNoField_ReadsTheParentFromTheFieldAndListsNoRelationTypes()
+        {
+            var organisation = new Organisation(
+                fieldsItDefines: [ARemoteParentField],
+                fieldValues: new() { [TheFeature] = new() { [ARemoteParentField] = $"{TheItemItWaitsOn}" } });
+            var team = ATeamNamingAsItsParentOverride(ARemoteParentField);
+            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 11, DisplayName = "Retired", Reference = "Custom.RetiredLongAgo" });
+
+            var items = await organisation.Connector.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(items.Single(item => item.ReferenceId == $"{TheFeature}").ParentReferenceId, Is.EqualTo($"{TheItemItWaitsOn}"), "The parent is read from the field.");
+                organisation.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never,
+                    "Nothing this Team names missed the field list.");
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_WhenAFieldIsCalledLikeARelationTypeEnd_ReadsTheFieldAndSaysNothing()
+        {
+            var organisation = new Organisation(
+                fieldsItDefines: [DependsOnForward],
+                fieldValues: new() { [TheFeature] = new() { [DependsOnForward] = $"{TheItemItWaitsOn}" } });
+
+            var items = await organisation.Connector.GetWorkItemsForTeam(ATeamNamingAsItsParentOverride(DependsOnForward), CancellationToken.None);
+
+            var item = items.Single(candidate => candidate.ReferenceId == $"{TheFeature}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(item.ParentReferenceId, Is.EqualTo($"{TheItemItWaitsOn}"), "The field list is asked first and wins.");
+                Assert.That(item.RefreshFindings, Is.Empty, "Nothing about a field that reads is worth a warning.");
+                organisation.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_WhenARelationTypeIsNamedAsTheParentOverrideField_KeepsTheTrackersParentAndSaysWhy()
+        {
+            var organisation = new Organisation(relations: new()
+            {
+                [TheFeature] = [AParentRelation(TheItemItWaitsOn), ARelation(DependsOnForward, TheItemItWaitsOn)],
+            });
+
+            var items = await organisation.Connector.GetWorkItemsForTeam(ATeamNamingAsItsParentOverride(DependsOnForward), CancellationToken.None);
+
+            var item = items.Single(candidate => candidate.ReferenceId == $"{TheFeature}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(item.ParentReferenceId, Is.EqualTo($"{TheItemItWaitsOn}"), "The native parent stands.");
+                Assert.That(item.RefreshFindings.Select(finding => (finding.Kind, finding.Setting, finding.Named)), Is.EqualTo(new[]
+                {
+                    (RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField, DependsOnForward),
+                }));
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_WhenTheRelationTypesCannotBeListed_KeepsTheTrackersParent()
+        {
+            var organisation = new Organisation(
+                listingFailure: new VssServiceException(ARefusal),
+                relations: new() { [TheFeature] = [AParentRelation(TheItemItWaitsOn)] });
+
+            var items = await organisation.Connector.GetWorkItemsForTeam(ATeamNamingAsItsParentOverride(DependsOnForward), CancellationToken.None);
+
+            Assert.That(items.Single(item => item.ReferenceId == $"{TheFeature}").ParentReferenceId, Is.EqualTo($"{TheItemItWaitsOn}"),
+                "A refused listing says nothing about whether the reference names a relation type, so the parent the tracker reports stands.");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_WhenTheParentSourceNamesNothingTheOrganisationDefines_ReadsNoParentAndWarns()
+        {
+            var organisation = new Organisation(relations: new() { [TheFeature] = [AParentRelation(TheItemItWaitsOn)] });
+
+            var items = await organisation.Connector.GetWorkItemsForTeam(ATeamNamingAsItsParentOverride("Custom.NoSuchParent", asTheOnlySourceOfItsList: true), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(items.Single(item => item.ReferenceId == $"{TheFeature}").ParentReferenceId, Is.Empty);
+                Assert.That(organisation.Log.Warnings, Has.Some.Contain("No field in this Azure DevOps organisation is called Custom.NoSuchParent"));
+            }
+        }
+
+        private static string[] WhatTheFeatureWaitsOn(IEnumerable<Feature> features, int feature)
+            => [.. features.Single(candidate => candidate.ReferenceId == $"{feature}").DependsOnReferences.Select(reference => reference.ReferenceId)];
+
+        private static Organisation AFabrikamOrganisation()
+            => new(
+                url: FabrikamUrl,
+                relationTypes: [ARelationType(FabrikamNeedsForward, ("directional", true)), ARelationType("Fabrikam.Needs-Reverse", ("directional", true))],
+                relations: new() { [TheFeature] = [ARelation(FabrikamNeedsForward, TheOtherFeature)] });
+
+        private static Portfolio APortfolioWhoseDependencyFieldNames(string reference, Organisation organisation)
+        {
+            var portfolio = APortfolioWhoseDependencyFieldNames(reference);
+            portfolio.WorkTrackingSystemConnection.Options.Single(option => option.Key == AzureDevOpsWorkTrackingOptionNames.Url).Value = organisation.Url;
+
+            return portfolio;
+        }
+
+        private static WorkTrackingSystemConnection AConnectionNaming(Organisation organisation, params string[] references)
+        {
+            var connection = AConnectionNaming(references);
+            connection.Options.Single(option => option.Key == AzureDevOpsWorkTrackingOptionNames.Url).Value = organisation.Url;
+
+            return connection;
+        }
+
+        private static Team ATeamNamingAsItsParentOverride(string reference, bool asTheOnlySourceOfItsList = false)
+        {
+            var connection = AConnection();
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Parent", Reference = reference });
+            var team = new Team
+            {
+                Id = 1,
+                Name = "TestTeam",
+                DataRetrievalValue = "[System.TeamProject] = 'TestProject'",
+                WorkTrackingSystemConnectionId = 1,
+                WorkTrackingSystemConnection = connection,
+            };
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.Add("Feature");
+            team.ToDoStates.Clear();
+            team.ToDoStates.Add("New");
+            team.DoingStates.Clear();
+            team.DoingStates.Add("Active");
+            team.DoneStates.Clear();
+            team.DoneStates.Add("Closed");
+            if (asTheOnlySourceOfItsList)
+            {
+                team.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(10)]).List!);
+            }
+            else
+            {
+                team.OwnParentOverride(10);
+            }
+
+            return team;
+        }
+
         private static Portfolio APortfolioWhoseDependencyFieldNames(string reference)
         {
             var portfolio = APortfolio();
@@ -563,8 +949,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             public Organisation(
                 WorkItemRelationType[]? relationTypes = null,
                 Exception? listingFailure = null,
-                Dictionary<int, List<WorkItemRelation>>? relations = null)
+                Dictionary<int, List<WorkItemRelation>>? relations = null,
+                string? url = null,
+                string[]? fieldsItDefines = null,
+                Dictionary<int, Dictionary<string, object>>? fieldValues = null,
+                bool answersTheListingWithoutAList = false)
             {
+                Url = url ?? "https://dev.azure.com/lighthouse-test";
                 var relationsOf = relations ?? [];
                 Client = new Mock<WorkItemTrackingHttpClient>(new Uri("https://dev.azure.com/lighthouse-test"), new VssCredentials());
 
@@ -574,7 +965,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 Client
                     .Setup(client => client.GetWorkItemFieldsAsync(It.IsAny<GetFieldsExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync([new WorkItemField2 { Name = "Size", ReferenceName = ARealField }]);
+                    .ReturnsAsync([new WorkItemField2 { Name = "Size", ReferenceName = ARealField }, .. (fieldsItDefines ?? []).Select(reference => new WorkItemField2 { Name = reference, ReferenceName = reference })]);
 
                 Client
                     .Setup(client => client.GetWorkItemsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<DateTime?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<WorkItemErrorPolicy?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
@@ -586,7 +977,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                         return Task.FromResult<List<AdoWorkItem>>(
                             [.. askedFor.Select(id => expand == WorkItemExpand.Relations
                                 ? new AdoWorkItem { Id = id, Relations = relationsOf.TryGetValue(id, out var carried) ? carried : null }
-                                : ThePayloadOf(id))]);
+                                : WithItsValues(ThePayloadOf(id), fieldValues))]);
                     });
 
                 Client
@@ -596,21 +987,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 var listing = Client.Setup(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()));
                 if (listingFailure is null)
                 {
-                    listing.ReturnsAsync(new List<WorkItemRelationType>(relationTypes ?? TheListedTypes));
+                    listing.ReturnsAsync(answersTheListingWithoutAList ? null! : new List<WorkItemRelationType>(relationTypes ?? TheListedTypes));
                 }
                 else
                 {
                     listing.ThrowsAsync(listingFailure);
                 }
 
-                Connector = new RecordedAzureDevOpsConnector(Client.Object);
+                Connector = new RecordedAzureDevOpsConnector(Client.Object, Log);
             }
+
+            public string Url { get; }
+
+            public RecordingLogger<AzureDevOpsWorkTrackingConnector> Log { get; } = new();
 
             public Mock<WorkItemTrackingHttpClient> Client { get; }
 
             public RecordedAzureDevOpsConnector Connector { get; }
 
             public List<PayloadRead> PayloadReads { get; } = [];
+
+            private static AdoWorkItem WithItsValues(AdoWorkItem item, Dictionary<int, Dictionary<string, object>>? fieldValues)
+            {
+                if (fieldValues is not null && fieldValues.TryGetValue(item.Id ?? -1, out var values))
+                {
+                    foreach (var (reference, value) in values)
+                    {
+                        item.Fields[reference] = value;
+                    }
+                }
+
+                return item;
+            }
 
             private static AdoWorkItem ThePayloadOf(int id)
             {
@@ -632,6 +1040,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 item.Links.AddLink(AzureDevOpsFieldNames.UrlPropertyName, $"https://dev.azure.com/lighthouse-test/_workitems/edit/{id}");
 
                 return item;
+            }
+        }
+
+        /// <summary>
+        /// One connector instance for every connection of the tracker, as the factory hands it out; each connection
+        /// reaches the organisation its URL names.
+        /// </summary>
+        private sealed class SharedConnector : AzureDevOpsWorkTrackingConnector
+        {
+            private readonly Organisation[] organisations;
+
+            public SharedConnector(Organisation first, Organisation second)
+                : base(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), Mock.Of<IWorkTrackingAuthStrategyFactory>(), TimeProvider.System)
+            {
+                organisations = [first, second];
+            }
+
+            internal override Task<WorkItemTrackingHttpClient> GetWorkItemTrackingHttpClientAsync(WorkTrackingSystemConnection workTrackingSystemConnection)
+            {
+                var url = workTrackingSystemConnection.FindWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
+
+                return Task.FromResult(organisations.Single(organisation => organisation.Url == url).Client.Object);
             }
         }
     }
