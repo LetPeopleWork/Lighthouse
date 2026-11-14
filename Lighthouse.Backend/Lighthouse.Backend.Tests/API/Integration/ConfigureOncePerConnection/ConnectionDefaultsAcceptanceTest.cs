@@ -463,28 +463,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 ? TheTrackersOwnParentSource
                 : TheFieldNamedIn(connectionRead, connection, entry["additionalFieldDefinitionId"]!.GetValue<int>())!)];
 
-        /// <summary>
-        /// A page or script that does not know one default renames the connection: it sends the defaults it
-        /// read, without that one.
-        /// </summary>
-        protected Task WhenAnOlderPageSavesTheConnectionWithout(ConnectionDefault theDefault)
-            => SaveTheConnection(read =>
-            {
-                DefaultsOf(read).Remove(TheMember(theDefault));
-                read["name"] = $"{JiraDcPayments} (renamed)";
-            }, startUpdates: false);
-
-        /// <summary>
-        /// The admin adds an Additional Field and, in the same save, names it as the default, the way the page
-        /// sends a field that has no id yet.
-        /// </summary>
-        protected Task WhenTheAdminAddsAFieldAndMakesItTheDefault(ConnectionDefault theDefault, string displayName, string reference)
-            => SaveTheConnection(read =>
-            {
-                FieldsOf(read).Add(new JsonObject { ["id"] = -1, [DisplayName] = displayName, ["reference"] = reference, ["isPredefined"] = false });
-                DefaultsOf(read)[TheMember(theDefault)] = -1;
-            }, startUpdates: false);
-
         protected Task WhenTheAdminRemovesTheField(string fieldName)
             => SaveTheConnection(read => FieldsOf(read).Remove(TheField(FieldsOf(read), fieldName)), startUpdates: false);
 
