@@ -904,12 +904,24 @@ seconds come from the CI CSVs.
 ## Wave: DELIVER / [REF] Resume here (written 2026-11-14, end of the AFK run)
 
 Suite 1 is pushed and its whole-candidate review is accepted. Open, in order:
-1. **EXAMINE for suite 1** (maintainer's call): (a) add public examine commands that run the four `sN_compare_ids.py` oracles and
-   one named break, and publish the id tables to the examine workspace, then re-examine (E2, E3 can then be met; E1 stays a gap
-   until the after set); (b) revise E1 so its timing half is read at step 6, then re-examine; or (c) accept EXAMINE as
-   observation_gap for this test-only suite and record it.
+1. **EXAMINE for suite 1: closed** (see "EXAMINE of suite 1, closed" below; published as rejected on observation gaps, no defect).
 2. **Suite 2** starts with the maintainer: screen `ConfigureOncePerConnection` (164 s family) first.
 3. The before set rebuild (deviation already decided on 2026-11-13), the after set, the success reading, DESIGN questions 2, 4, 5, then
    the data commit.
 4. Follow-ups at T10's close as listed above; add `Slice09TheFillShipsOptIn` and `Story6084TheFillRunsEverywhere` (smaller Given only) to
    the backend follow-up.
+
+## Wave: DELIVER / [REF] EXAMINE of suite 1, closed (2026-11-14)
+
+**Maintainer decisions:** option (a), public proof for the examiner (`feature-proof` examine command, `b658dd612`, `408a0f0e1`);
+then (b), E1 keeps its rule half (`78c80f9c4`; the timing half is read at step 6 against `P` = 5.0 %); then (1), close the record as
+it stands.
+
+**Result: nwdes publishes EXAMINE as rejected, on observation gaps only.** The examiner ran `feature-proof … summary`: no production or
+budget change, the guard list only shrank (Slice08, Slice10), all four oracles exit 0, one sampled break per slice turned its rows
+red. It judged E1-E3 "unmet, observation_gap": 4 of about 60 breaks observed within its 3-probe budget, and no host row seen for
+Slice08's and Slice10's route (they have none of their own; they read the percentiles route Slice05 and Slice06 still prove).
+No defect was observed. `--outcome accepted` closes the record; nwdes derives the feature verdict from the unmet rows.
+
+**Lessons.** `nwdes examine abort` deletes the examine workspace. An examiner on a 3-probe budget needs one command that shows the
+whole proof (`feature-proof <feature> summary <base>`), and an expectation it can observe now (not a CI timing).

@@ -416,4 +416,86 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+unmet
+
+#### Observations
+
+```text
+Probe feature-proof summary (candidate diff since dca46351a~1), exit 0: production files changed 0; time-budget files changed 0; host-user guard list: 2 lines removed (Slice08NothingToShowTest, Slice10OnlyWhatTheTeamStillKeepsTest), 0 lines added.
+```
+
+```text
+Oracle s1 (Slice07WhereTheLimitsActuallyMovedTest, ProcessBehaviorSnapshotWriterTest, RetentionEdgeTest) exit 0: observed=28 expected=28 differences=0.
+```
+
+```text
+Oracle s3 (Slice05 plus S3 unit and port classes) exit 0: observed=95 expected=87 differences=0. The 8-id count gap is not itemised by the probe; extras not checked against the added unit-row list.
+```
+
+```text
+Oracle s4 (S4 unit classes) exit 0: observed=98 expected=98 differences=0.
+```
+
+```text
+Deliberate break B1 slice1 (team family line removed, Arrivals): ATeam_ReportsExactlyThroughputWorkItemAgeWipCycleTimeAndArrivals fails; run 10 total, 1 failed, 9 passed. Slice1 breaks for zero-band gate, retention edge and FillDayIfAbsent asOf null were NOT probed.
+```
+
+```text
+Deliberate break A1 slice4 (filler works out days before first supported day): 1 of 91 fails, TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot. This is a filler break, not the S4 retention guard or edge for team and portfolio, which was NOT probed.
+```
+
+```text
+Non-probe record: S2 tab-route rule breaks (ten removed rows), S3 breaks other than the filler walk (fifteen of sixteen removed rows), S4 retention guard and edge for team and portfolio, and the per-row id-table mapping of removed host rows were NOT probed or inspected. Probe output shows no Debug or token-removed configuration.
+```
+
+```text
+Host-route coverage: after the change Slice05 keeps 3 host rows, Slice06 1, Slice07 1, and Slice08 and Slice10 keep 0 host rows (their guard-list lines removed). No observation shows another host row proving the Slice08 or Slice10 route.
+```
+
+observation_gap
+
+### E2
+
+unmet
+
+#### Observations
+
+```text
+Deliberate break B1 slice1 (team family line removed, Arrivals): ATeam_ReportsExactlyThroughputWorkItemAgeWipCycleTimeAndArrivals fails; run 10 total, 1 failed, 9 passed. Slice1 breaks for zero-band gate, retention edge and FillDayIfAbsent asOf null were NOT probed.
+```
+
+```text
+Deliberate break S1 slice2 (filler walks only first asked day): 7 of 74 fail: APassWorksOutNinetyDaysAtMost, DaysBeforeTheFirstFinishedItem_DoNotSpendThePassAllowance, DaysThatCannotBeWritten_AreReportedOnceWithTheCauseAndOnceAsATally, EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfAPortfolio, EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfATeam, TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot, TwoDaysThatCannotBeWritten_AreTalliedOnceTheCauseHasBeenReported.
+```
+
+```text
+Deliberate break S1 slice3 (filler walks only first asked day), run over 92 tests: the same 7 named rows fail (7 failed, 85 passed).
+```
+
+```text
+Deliberate break A1 slice4 (filler works out days before first supported day): 1 of 91 fails, TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot. This is a filler break, not the S4 retention guard or edge for team and portfolio, which was NOT probed.
+```
+
+```text
+Non-probe record: S2 tab-route rule breaks (ten removed rows), S3 breaks other than the filler walk (fifteen of sixteen removed rows), S4 retention guard and edge for team and portfolio, and the per-row id-table mapping of removed host rows were NOT probed or inspected. Probe output shows no Debug or token-removed configuration.
+```
+
+observation_gap
+
+### E3
+
+unmet
+
+#### Observations
+
+```text
+Probe feature-proof summary (candidate diff since dca46351a~1), exit 0: production files changed 0; time-budget files changed 0; host-user guard list: 2 lines removed (Slice08NothingToShowTest, Slice10OnlyWhatTheTeamStillKeepsTest), 0 lines added.
+```
+
+```text
+Host-route coverage: after the change Slice05 keeps 3 host rows, Slice06 1, Slice07 1, and Slice08 and Slice10 keep 0 host rows (their guard-list lines removed). No observation shows another host row proving the Slice08 or Slice10 route.
+```
+
+observation_gap

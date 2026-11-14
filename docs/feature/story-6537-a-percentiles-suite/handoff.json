@@ -170,7 +170,7 @@
 },
 "counters": {
 "E": 3,
-"F": 88,
+"F": 98,
 "P": 3,
 "S": 4
 },
@@ -346,6 +346,41 @@
 }
 }
 },
+"examination": {
+"E1": {
+"class": "observation_gap",
+"observations": [
+"F89",
+"F90",
+"F91",
+"F92",
+"F93",
+"F94",
+"F95",
+"F96"
+],
+"verdict": "unmet"
+},
+"E2": {
+"class": "observation_gap",
+"observations": [
+"F93",
+"F97",
+"F98",
+"F94",
+"F95"
+],
+"verdict": "unmet"
+},
+"E3": {
+"class": "observation_gap",
+"observations": [
+"F89",
+"F96"
+],
+"verdict": "unmet"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -443,7 +478,17 @@
 "F86": "Every expected id is present and passes; an id that no slice of the suite lists is the only kind of extra id; neither class holds a host row and both leave the host-user guard list; no production or budget file changed",
 "F87": "The retention and nothing-to-show rules of the percentiles fill are proven by fast unit tests that start no web host, and no rule loses its test; how much time the Integration tier saves is read from CI runs, not observed by this check",
 "F88": "A user running the backend Integration tier sees that each PercentilesOverTime rule is now proven by the lowest-layer test that can prove it (a unit test of the computing class, else a service-port test), and that the PercentilesOverTime host classes keep only the rows that prove a route.",
-"F9": "A removed host row with no unit row that turns red for its rule's production line; an id missing or extra beyond the nine removed and the added unit rows; Slice07 holding more or fewer than the one route row; a production file in the diff"
+"F89": "Probe feature-proof summary (candidate diff since dca46351a~1), exit 0: production files changed 0; time-budget files changed 0; host-user guard list: 2 lines removed (Slice08NothingToShowTest, Slice10OnlyWhatTheTeamStillKeepsTest), 0 lines added.",
+"F9": "A removed host row with no unit row that turns red for its rule's production line; an id missing or extra beyond the nine removed and the added unit rows; Slice07 holding more or fewer than the one route row; a production file in the diff",
+"F90": "Oracle s1 (Slice07WhereTheLimitsActuallyMovedTest, ProcessBehaviorSnapshotWriterTest, RetentionEdgeTest) exit 0: observed=28 expected=28 differences=0.",
+"F91": "Oracle s3 (Slice05 plus S3 unit and port classes) exit 0: observed=95 expected=87 differences=0. The 8-id count gap is not itemised by the probe; extras not checked against the added unit-row list.",
+"F92": "Oracle s4 (S4 unit classes) exit 0: observed=98 expected=98 differences=0.",
+"F93": "Deliberate break B1 slice1 (team family line removed, Arrivals): ATeam_ReportsExactlyThroughputWorkItemAgeWipCycleTimeAndArrivals fails; run 10 total, 1 failed, 9 passed. Slice1 breaks for zero-band gate, retention edge and FillDayIfAbsent asOf null were NOT probed.",
+"F94": "Deliberate break A1 slice4 (filler works out days before first supported day): 1 of 91 fails, TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot. This is a filler break, not the S4 retention guard or edge for team and portfolio, which was NOT probed.",
+"F95": "Non-probe record: S2 tab-route rule breaks (ten removed rows), S3 breaks other than the filler walk (fifteen of sixteen removed rows), S4 retention guard and edge for team and portfolio, and the per-row id-table mapping of removed host rows were NOT probed or inspected. Probe output shows no Debug or token-removed configuration.",
+"F96": "Host-route coverage: after the change Slice05 keeps 3 host rows, Slice06 1, Slice07 1, and Slice08 and Slice10 keep 0 host rows (their guard-list lines removed). No observation shows another host row proving the Slice08 or Slice10 route.",
+"F97": "Deliberate break S1 slice2 (filler walks only first asked day): 7 of 74 fail: APassWorksOutNinetyDaysAtMost, DaysBeforeTheFirstFinishedItem_DoNotSpendThePassAllowance, DaysThatCannotBeWritten_AreReportedOnceWithTheCauseAndOnceAsATally, EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfAPortfolio, EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfATeam, TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot, TwoDaysThatCannotBeWritten_AreTalliedOnceTheCauseHasBeenReported.",
+"F98": "Deliberate break S1 slice3 (filler walks only first asked day), run over 92 tests: the same 7 named rows fail (7 failed, 85 passed)."
 },
 "product": {
 "promises": [
