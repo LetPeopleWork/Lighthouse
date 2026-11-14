@@ -528,3 +528,13 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 - Entity and DTO relocation: **deferred** (S12c, S04b, S13); migration snapshots carry entity names.
 - DI extension `AddForecasting`: **deferred** (S09a); handler order is behaviour.
 - Not needed: outbox, unit of work, value objects, optimistic concurrency, strategy (no data or variation changes).
+
+## Wave: DESIGN / [REF] Maintainer decisions at hold 1 (2026-11-14)
+
+- **Cycle:** remove it (option a). Flow metrics asks through `IThroughputFilter`, `IForecastDataSufficiency` and
+  `IHowManyForecaster`; feature C stays as designed.
+- **Mutation bar for a move:** "no survivor or no-coverage mutant added" in the moved code. Confirms the S05f proposal;
+  record it in the catalogue at close-out.
+- **EXAMINE data:** answer comparisons on demo data; the maintainer runs one comparison on the production-like
+  database by hand.
+- **Size:** L, all 9 slices kept. The catalogue is corrected at close-out.
