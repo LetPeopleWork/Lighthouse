@@ -37,7 +37,17 @@ when you sign.
 - A free USB port for the YubiKey. The key holds the code signing certificate and its private key.
 - Network access to `ghcr.io`. The image is public, so `docker pull` needs no login.
 - [watchtower](https://containrrr.dev/watchtower/), run regularly, so that a newly published image reaches
-  the machine between reboots.
+  the machine between reboots. One run, limited to the runner container, is:
+
+  ```bash
+  docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once lighthouse-codesign-runner-1
+  ```
+
+  Run it from a systemd timer or cron job, or keep watchtower running as its own container without
+  `--run-once`. `lighthouse-codesign-runner-1` is the name Docker Compose gives the runner container
+  (`docker compose ps` in `/opt/lighthouse-codesign` shows it).
+- Optional: the GitHub CLI `gh` (to remove the old host runner's registration, see the switch-over below)
+  and `ykman` from YubiKey Manager (to read or unblock the PIN, see signing day).
 - A GitHub token that may register runners on `LetPeopleWork/Lighthouse` (a fine-grained token with the
   repository permission "Administration: read and write", or a classic token with the `repo` scope).
 
@@ -73,8 +83,11 @@ your token file inside the register container.
    ```
 
    The runner registers as `codesign-runner-linux` with the labels `linux` and `codesign`. Registering
-   replaces a runner of the same name, so for a second machine or a test run give it another name:
-   `docker compose --profile register run --rm -e CODESIGN_RUNNER_NAME=codesign-runner-test register`.
+   replaces a runner of the same name, so on a second machine give it another name:
+   `docker compose --profile register run --rm -e CODESIGN_RUNNER_NAME=codesign-runner-2 register`.
+   On one machine there is only one registration: the volume `codesign-runner-state` holds it, so a test
+   registration under another name replaces this machine's real one. After such a test, run the register
+   command above again without `CODESIGN_RUNNER_NAME`, and remove the test runner in GitHub.
    You can delete the token file after this step; you need a token again only to register again.
 
 4. Resolve the host conflicts in the next section.
@@ -126,7 +139,9 @@ Before the container runner, the runner ran directly on the host, installed by a
    Then delete the folder. If GitHub no longer lists the old runner, skip `config.sh remove`.
 2. Remove the wrapper with `rm ~/.local/bin/osslsigncode`. If you added `~/.local/bin` to your PATH only for
    the wrapper, remove that line too.
-3. Remove the old image: `docker image rm local/osslsigncode-ossl3:trixie`.
+3. Remove the old image. `docker images local/osslsigncode-ossl3` (or `check-host.sh`) shows its tag, which
+   is usually `trixie`; remove each one it shows, for example
+   `docker image rm local/osslsigncode-ossl3:trixie`.
 4. Resolve the host conflicts above.
 5. Run `bash tools/codesign/check-host.sh`. It prints one line per leftover, each with what to do, and
    exits 1; repeat until it says `host is clean` and exits 0. It only looks and never changes anything. If

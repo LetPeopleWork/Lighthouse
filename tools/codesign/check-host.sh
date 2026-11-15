@@ -32,7 +32,7 @@ check_host_runner() {
   while read -r unit state _preset; do
     if [ -z "$unit" ]; then continue; fi
     found "the host actions runner service $unit ($state) is still installed; it is a second runner with the codesign label that signs outside the container." \
-      "in its runner folder run sudo ./svc.sh stop, sudo ./svc.sh uninstall and ./config.sh remove, then delete that folder."
+      "in its runner folder run sudo ./svc.sh stop, sudo ./svc.sh uninstall and ./config.sh remove --token <a remove token>, then delete that folder; tools/codesign/README.md, section Switching over from the old host runner, shows how to get the token."
   done <<< "$listing"
 }
 
@@ -76,10 +76,30 @@ check_scdaemon() {
   local gnupg_home config running=""
   gnupg_home="$(gpgconf --list-dirs homedir 2>/dev/null || true)"
   config="${gnupg_home:-$HOME/.gnupg}/scdaemon.conf"
-  if [ -f "$config" ] && grep -Eq '^[[:space:]]*disable-ccid([[:space:]]|$)' "$config"; then return; fi
-  if pgrep -x scdaemon > /dev/null 2>&1; then running=", then restart the running scdaemon with gpgconf --kill scdaemon"; fi
+  if [ -f "$config" ] && grep -Eq '^[[:space:]]*disable-ccid([[:space:]]|$)' "$config"; then
+    check_scdaemon_started_before "$config"
+    return
+  fi
+  if pgrep -x scdaemon > /dev/null 2>&1; then running="; then restart the running scdaemon with: gpgconf --kill scdaemon"; fi
   found "$config has no disable-ccid line, so GnuPG's scdaemon may claim the YubiKey's USB interface." \
-    "echo disable-ccid >> $config$running."
+    "add the line with: echo disable-ccid >> $config$running"
+}
+
+# An scdaemon started before disable-ccid was added still holds the USB interface until it restarts.
+check_scdaemon_started_before() {
+  local config=$1 pids pid running_for config_age
+  pids="$(pgrep -x scdaemon 2>/dev/null || true)"
+  if [ -z "$pids" ]; then return; fi
+  config_age=$(( $(date +%s) - $(stat -c %Y "$config") ))
+  while read -r pid; do
+    running_for="$(ps -o etimes= -p "$pid" 2>/dev/null || true)"
+    running_for="${running_for//[[:space:]]/}"
+    if [ -n "$running_for" ] && [ "$running_for" -gt "$config_age" ]; then
+      found "scdaemon (pid $pid) started before disable-ccid was added to $config, so it may still claim the YubiKey's USB interface." \
+        "restart it with: gpgconf --kill scdaemon"
+      return
+    fi
+  done <<< "$pids"
 }
 
 check_host_runner
