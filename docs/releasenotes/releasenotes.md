@@ -4,6 +4,54 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Access to All Teams and Portfolios in One Rule
+
+Giving a whole organization read access meant granting it Team by Team and Portfolio by Portfolio, and doing it again for every new one. Some made people System Admins just so they could see the data.
+
+A System Admin can now map an SSO group to **Viewer on all** or **Admin on all** Teams and Portfolios, including ones created later, or let **everyone signed in** view everything. Both are off until you turn them on. Each Team's and Portfolio's Access tab shows which of these rules also reach it, and a limited API key still never reaches further than its owner.
+
+![Rules for all Teams and Portfolios on a Team's Access tab](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/rbac_systemwiderules_notice.png)
+
+Full detail: [System-wide rules](https://docs.lighthouse.letpeople.work/settings/rbac.html#system-wide-rules).
+
+## Settings, Sorted by Who Decides
+
+System Settings had grown into one long row of tabs, mixing how your organization works with who may do what and what it takes to run the server.
+
+The header now has one **Settings** menu with three areas: **Organization** (Terminology, Calendar, Refresh & ordering), **Access** (system-wide access and API Keys) and **System** (Connections, Database, Encryption, Demo Data, Usage Data, System Info, Logs, Refresh History, License). You only see the areas you may open. Connections moved off the Overview into System, and old bookmarks still open the right tab.
+
+![The Settings menu](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/settingsmenu.png)
+
+Full detail: [Settings](https://docs.lighthouse.letpeople.work/settings/settings.html).
+
+## Cycle Time Scatterplot Without the Squash
+
+One Work Item that took half a year stretched the scatterplot's y-axis and squeezed every other dot against the bottom of the chart.
+
+The Cycle Time Scatterplot now leaves out values far above the rest (more than five times the median) and names them instead: an amber chip in the header says how many there are and opens them in a list. Percentiles and every other statistic still count them.
+
+![Cycle Time Scatterplot](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleScatter.png)
+
+Full detail: [Outliers](https://docs.lighthouse.letpeople.work/metrics/flow-metrics.html#outliers).
+
+## Bugfixes and Improvements
+
+- **The `latest` Docker image runs on ARM again.** It was published for amd64 only, so on ARM hosts it ran emulated and could crash at start-up. It now carries both architectures, like the version tags.
+- **Tomorrow is a valid launch date in every time zone.** West of UTC, the Delivery dialog refused tomorrow and only accepted the day after.
+- **The throughput quick setting shows the days you picked.** West of UTC its dates showed one day early, and east of UTC today was refused as the end date.
+- **A 30-day throughput window reads as 30 days** also when it spans a clock change.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+- [James Hattersley-Dykes](https://www.linkedin.com/in/jameshd/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.11.8.1...HEAD)
+
 # Lighthouse v26.11.8.1
 
 ## Parents From More Than One Place
