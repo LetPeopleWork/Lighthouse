@@ -1701,6 +1701,58 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The maintainer runs the host check on a retired machine where no old runner unit is installed and systemd answers the runner unit query with nothing and exit status 1, as recent systemd does.
+</code></pre>
+
+<pre><code>Exit 0 and the line host is clean, with no finding and no line saying something could not be checked.
+</code></pre>
+
+<pre><code>The maintainer sees host is clean on a retired machine running current systemd.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-host-check.sh :: a retired host where systemd answers the old runner query with no match and exit status 1, as recent systemd does, says host is clean and exits 0</p>
+
+<pre><code>the check reads every empty answer with exit status 1 as no match, also one where systemd failed without printing a message
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The maintainer runs the host check while systemd cannot be reached and every query fails with an error message.
+</code></pre>
+
+<pre><code>Exit 1, a line saying systemd could not be asked, and no claim that the host is clean.
+</code></pre>
+
+<pre><code>The maintainer is not told the host is clean when the check could not ask systemd.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-host-check.sh :: when systemd cannot be asked, the check says so, does not call the host clean, and exits 1</p>
+
+<pre><code>the check says systemd could not be asked but gives no step to make it reachable
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

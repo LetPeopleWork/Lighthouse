@@ -92,6 +92,10 @@ cat > "$standins_dir/systemctl" <<'STANDIN'
 #!/usr/bin/env bash
 fixture="$(cd "$(dirname "$0")/.." && pwd)"
 printf '%s\n' "$*" >> "$fixture/log/systemctl"
+if [ -f "$fixture/state/systemd_down" ]; then
+  echo "Failed to connect to bus: No such file or directory" >&2
+  exit 1
+fi
 units="$fixture/state/units"
 sub="" all=0 quiet=0 legend=1 state_filter="" patterns=()
 for arg in "$@"; do
@@ -149,11 +153,15 @@ case "$sub" in
     exit 0 ;;
   list-unit-files)
     if [ "$legend" -eq 1 ]; then echo "UNIT FILE STATE PRESET"; fi
+    listed=0
     while read -r unit enabled _active _description; do
       matches "$unit" || continue
       if [ -n "$state_filter" ]; then [[ ",$state_filter," == *",$enabled,"* ]] || continue; fi
       echo "$unit $enabled disabled"
+      listed=$((listed + 1))
     done < "$units"
+    # Recent systemd prints nothing and exits 1 when no unit file matches the pattern.
+    if [ "$listed" -eq 0 ] && [ -f "$fixture/state/systemctl_no_match_fails" ]; then exit 1; fi
     exit 0 ;;
   status|show|cat)
     code=0
@@ -356,6 +364,8 @@ new_fixture() {
       scdaemon-no-file) rm "$home/.gnupg/scdaemon.conf"; scdaemon_running=1 ;;
       scdaemon-commented) printf 'card-timeout 5\n# disable-ccid\n' > "$home/.gnupg/scdaemon.conf"; scdaemon_running=1 ;;
       docker-down) : > "$fixture/state/docker_down" ;;
+      systemd-no-match-fails) : > "$fixture/state/systemctl_no_match_fails" ;;
+      systemd-down) : > "$fixture/state/systemd_down" ;;
     esac
   done
   {
@@ -549,6 +559,40 @@ else
     "exit $blind_code with Docker unreachable and the local osslsigncode image present; output: $(output_of "$blind" | head -c 800)" \
     "a check that could not look at the images cannot know the old image is gone; calling that clean hides a leftover" \
     "when a docker query fails, print that Docker could not be asked and how to start it, and exit 1"
+fi
+
+# A line that says the check could not look at something.
+could_not_look_line="^[[:space:]]*UNKNOWN|$unreachable_words"
+no_match="$(new_fixture systemd-no-match systemd-no-match-fails)"
+run_check "$no_match"
+no_match_code="$(exit_of "$no_match")"
+found=""
+for leftover in "${all_leftovers[@]}"; do
+  if [ -n "$(lines_naming "$no_match" "$leftover")" ]; then found="$found ${leftover_words[$leftover]};"; fi
+done
+not_looked="$(grep -Ei -- "$could_not_look_line" "$no_match/output" || true)"
+name="a retired host where systemd answers the old runner query with no match and exit status 1, as recent systemd does, says host is clean and exits 0"
+if [ "$no_match_code" = 0 ] && says_host_is_clean "$no_match" && [ -z "$found" ] && [ -z "$not_looked" ] && grep -q 'list-unit-files' "$no_match/log/systemctl" 2>/dev/null; then
+  pass "$name"
+else
+  fail "$name" \
+    "exit $no_match_code; findings:${found:- none}; could-not-look lines: ${not_looked:-none}; output: $(output_of "$no_match" | head -c 1200)" \
+    "systemd 262 lists no unit file and exits 1 when no old runner unit is installed; reading that as systemd being unreachable means a retired host never reads host is clean" \
+    "in tools/codesign/check-host.sh, treat an empty answer with exit status 1 from systemctl list-unit-files as no old runner unit, and keep a failure with an error message as could not ask"
+fi
+
+systemd_unreachable="(systemd|systemctl).*($unreachable_words)|($unreachable_words).*(systemd|systemctl)"
+systemd_down="$(new_fixture systemd-unreachable systemd-down)"
+run_check "$systemd_down"
+systemd_down_code="$(exit_of "$systemd_down")"
+name="when systemd cannot be asked, the check says so, does not call the host clean, and exits 1"
+if [ "$systemd_down_code" = 1 ] && grep -Eiq -- "$systemd_unreachable" "$systemd_down/output" && ! says_host_is_clean "$systemd_down"; then
+  pass "$name"
+else
+  fail "$name" \
+    "exit $systemd_down_code with every systemctl call failing to connect to the bus; output: $(output_of "$systemd_down" | head -c 800)" \
+    "a check that could not ask systemd cannot know the old runner service and host pcscd are gone; calling that clean hides a leftover" \
+    "when a systemctl query fails with an error, print that systemd could not be asked and how to fix it, and exit 1"
 fi
 
 name="the image workflow runs the host check oracle in verify"

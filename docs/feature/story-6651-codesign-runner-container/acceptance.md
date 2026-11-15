@@ -1796,6 +1796,66 @@ the new step is skipped by a condition on the event rather than the actor
 ###### Obligations
 
 
+##### Covers
+
+P5
+
+```text
+The maintainer runs the host check on a retired machine where no old runner unit is installed and systemd answers the runner unit query with nothing and exit status 1, as recent systemd does.
+```
+
+```text
+Exit 0 and the line host is clean, with no finding and no line saying something could not be checked.
+```
+
+```text
+The maintainer sees host is clean on a retired machine running current systemd.
+```
+
+##### Disposition
+
+Tested
+
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: a retired host where systemd answers the old runner query with no match and exit status 1\, as recent systemd does\, says host is clean and exits 0
+
+```text
+the check reads every empty answer with exit status 1 as no match, also one where systemd failed without printing a message
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The maintainer runs the host check while systemd cannot be reached and every query fails with an error message.
+```
+
+```text
+Exit 1, a line saying systemd could not be asked, and no claim that the host is clean.
+```
+
+```text
+The maintainer is not told the host is clean when the check could not ask systemd.
+```
+
+##### Disposition
+
+Tested
+
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: when systemd cannot be asked\, the check says so\, does not call the host clean\, and exits 1
+
+```text
+the check says systemd could not be asked but gives no step to make it reachable
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

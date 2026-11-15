@@ -878,6 +878,32 @@
 "expected": "F564",
 "stimulus": "F560",
 "user_result": "F565"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F577",
+"test": "tools/codesign/tests/test-host-check.sh :: a retired host where systemd answers the old runner query with no match and exit status 1, as recent systemd does, says host is clean and exits 0"
+},
+"expected": "F575",
+"stimulus": "F574",
+"user_result": "F576"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F581",
+"test": "tools/codesign/tests/test-host-check.sh :: when systemd cannot be asked, the check says so, does not call the host clean, and exits 1"
+},
+"expected": "F579",
+"stimulus": "F578",
+"user_result": "F580"
 }
 ]
 },
@@ -886,7 +912,7 @@
 "C": 1,
 "D": 18,
 "E": 6,
-"F": 573,
+"F": 581,
 "K": 10,
 "L": 5,
 "N": 5,
@@ -2583,6 +2609,14 @@
 "F571": "It runs only on Linux runners, calls tools/codesign/sign-windows.sh with an environment variable as its version argument, sets that variable in the step environment to exactly the workflow's inputs.version expression, holds no workflow expression anywhere in its run, keeps YUBI_PIN from the secret in its environment, holds no inline osslsigncode, engine, password argument or PIN reference, and Verify signing coverage still runs after it",
 "F572": "A release run signs through the script, a crafted version cannot run commands on the signing machine, and the coverage check still judges the signed files",
 "F573": "A run that passes the version through the environment variable but then evaluates it as code (eval, or a sign script that runs the version as a command)",
+"F574": "The maintainer runs the host check on a retired machine where no old runner unit is installed and systemd answers the runner unit query with nothing and exit status 1, as recent systemd does.",
+"F575": "Exit 0 and the line host is clean, with no finding and no line saying something could not be checked.",
+"F576": "The maintainer sees host is clean on a retired machine running current systemd.",
+"F577": "the check reads every empty answer with exit status 1 as no match, also one where systemd failed without printing a message",
+"F578": "The maintainer runs the host check while systemd cannot be reached and every query fails with an error message.",
+"F579": "Exit 1, a line saying systemd could not be asked, and no claim that the host is clean.",
+"F580": "The maintainer is not told the host is clean when the check could not ask systemd.",
+"F581": "the check says systemd could not be asked but gives no step to make it reachable",
 "F6": "The runner image is built in GitHub Actions from a digest-pinned base, published to GHCR, and rebuilt on changes under tools/codesign/** and on a schedule; Renovate bumps the base digest and the runner version.",
 "F61": "One signing machine and one YubiKey",
 "F62": "Unchanged from today",
