@@ -16,8 +16,9 @@ What already runs, so you know what you can leave to it:
 - **Frontend**: `pnpm build` runs `biome check --write ./src` (prebuild), then `tsc -b`.
   `Lighthouse.Frontend/biome.json` turns on, at `error`, every Biome rule that matches a rule in the
   Sonar TS profile, and its GritQL plugins in `biome-plugins/` cover Sonar rules Biome lacks (S7761,
-  S7770, S7727 for reducers, S4624, S3358 in templates, S6754 setter prefix, MUI `Select` labels, local
-  day keys in production code, and day counts made by dividing milliseconds by 24 hours, in tests too). Vitest pins the zone and checks `NULLABLE_FIELDS` and the E2E test ids.
+  S7770, S7727 for reducers, S4624, S3358 in templates, S6754 setter prefix, MUI `Select` labels, UTC
+  day keys from `toISOString()` and day counts made by dividing milliseconds by 24 hours, both in tests
+  too, and `new Date("YYYY-MM-DD")` in production code). Vitest pins the zone and checks `NULLABLE_FIELDS` and the E2E test ids.
   `Lighthouse.EndToEndTests/` has its own `biome.json` and plugins (`pnpm run lint`, `pnpm run
   typecheck`, run in CI). Biome does **not** run on pre-push: it belongs to the refactor gate.
 - **Backend**: `Directory.Build.props` adds SonarAnalyzer.CSharp to every non-migration project, with
@@ -163,9 +164,13 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
   Otherwise a server-side refresh never reaches an open view. A spec that is green on SQLite and red on
   Postgres is a timing hint, not a flake. Not automated because: what changes an entity is domain
   knowledge.
-- **Dates crossing a boundary in tests use `src/utils/date/localDate.ts`** too: plugins ban
-  `toISOString().split("T")` and `new Date("YYYY-MM-DD")` in production code only. Not automated
-  because: test files use these forms on purpose in hundreds of places, so the ban would be noise there.
+- **Dates crossing a boundary in tests use `src/utils/date/localDate.ts`** too. A plugin bans
+  `toISOString()` day keys (`.split("T")`, `.slice(0, 10)`) everywhere, tests included: an expected
+  value built in UTC against a component that uses the local day fails every night between 23:00 and
+  midnight UTC, because the suite runs in Europe/Zurich. Use `formatLocalDate`, or `formatUtcDate`
+  where the code under test really works in UTC. `new Date("YYYY-MM-DD")` is banned in production code
+  only. Not automated in tests because: test files use it on purpose as fixture data in hundreds of
+  places, so the ban would be noise there.
 
 ### E2E (Playwright page objects)
 

@@ -10,6 +10,7 @@ import {
 	createMockApiServiceContext,
 	createMockRbacService,
 } from "../../../tests/MockApiServiceProvider";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import LicenseStatusPopover from "./LicenseStatusPopover";
 
 describe("LicenseStatusPopover", () => {
@@ -646,9 +647,7 @@ describe("LicenseStatusPopover", () => {
 			// Calculate expected validFrom (day after expiry)
 			const expectedValidFrom = new Date(expiryDate);
 			expectedValidFrom.setDate(expectedValidFrom.getDate() + 1);
-			const expectedValidFromString = expectedValidFrom
-				.toISOString()
-				.split("T")[0];
+			const expectedValidFromString = formatLocalDate(expectedValidFrom);
 
 			expect(callUrl).toContain(`validFrom=${expectedValidFromString}`);
 			expect(callUrl).toContain("#lighthouse-license");
@@ -657,7 +656,7 @@ describe("LicenseStatusPopover", () => {
 		it("opens renewal URL with today's date for expired license", async () => {
 			const user = userEvent.setup();
 			const today = new Date();
-			const todayString = today.toISOString().split("T")[0];
+			const todayString = formatLocalDate(today);
 
 			const expiryDate = new Date();
 			expiryDate.setDate(expiryDate.getDate() - 10); // 10 days ago
@@ -724,9 +723,7 @@ describe("LicenseStatusPopover", () => {
 			// Calculate expected validFrom (day after expiry)
 			const expectedValidFrom = new Date(expiryDate);
 			expectedValidFrom.setDate(expectedValidFrom.getDate() + 1);
-			const expectedValidFromString = expectedValidFrom
-				.toISOString()
-				.split("T")[0];
+			const expectedValidFromString = formatLocalDate(expectedValidFrom);
 
 			expect(callUrl).toContain(`validFrom=${expectedValidFromString}`);
 			expect(callUrl).toContain("#lighthouse-license");

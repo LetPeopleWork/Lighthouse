@@ -1,4 +1,8 @@
-`$date.toISOString().split($sep)` where {
-    $sep <: r"[\"'`]T[\"'`]",
-    register_diagnostic(span=$sep, message="toISOString() goes through UTC and shifts the calendar day for anyone east or west of Greenwich. Turn a date into a day key with the helpers in src/utils/date/localDate.ts.", severity="error")
+or {
+    `$date.toISOString().split($sep)` where { $sep <: r"[\"'`]T[\"'`]" },
+    `$date?.toISOString().split($sep)` where { $sep <: r"[\"'`]T[\"'`]" },
+    `$date.toISOString().$cut(0, 10)` where { $cut <: or { `slice`, `substring`, `substr` } },
+    `$date?.toISOString().$cut(0, 10)` where { $cut <: or { `slice`, `substring`, `substr` } }
+} as $dayKey where {
+    register_diagnostic(span=$dayKey, message="toISOString() goes through UTC and shifts the calendar day for anyone east or west of Greenwich (tests run in Europe/Zurich, so a test doing this fails every night between 23:00 and midnight UTC). Turn a date into a day key with the helpers in src/utils/date/localDate.ts.", severity="error")
 }

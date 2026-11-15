@@ -30,6 +30,7 @@ import {
 } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { formatUtcDate } from "../../../utils/date/localDate";
 import { fireAndForget } from "../../../utils/fireAndForget";
 
 const PREMIUM_DOCS_HREF = "/docs/premium-features#forecast-filter";
@@ -214,14 +215,14 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 						slotProps={{
 							inputLabel: { shrink: true },
 							htmlInput: {
-								max: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
-									.toISOString()
-									.slice(0, 10),
+								max: formatUtcDate(
+									new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+								),
 							},
 						}}
-						defaultValue={teamSettings.throughputHistoryStartDate
-							.toISOString()
-							.slice(0, 10)}
+						defaultValue={formatUtcDate(
+							teamSettings.throughputHistoryStartDate,
+						)}
 						onChange={(e) =>
 							handleDateChange("throughputHistoryStartDate", e.target.value)
 						}
@@ -232,18 +233,16 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 						slotProps={{
 							inputLabel: { shrink: true },
 							htmlInput: {
-								min: new Date(
-									teamSettings.throughputHistoryStartDate.getTime() +
-										10 * 24 * 60 * 60 * 1000,
-								)
-									.toISOString()
-									.slice(0, 10),
-								max: new Date().toISOString().slice(0, 10),
+								min: formatUtcDate(
+									new Date(
+										teamSettings.throughputHistoryStartDate.getTime() +
+											10 * 24 * 60 * 60 * 1000,
+									),
+								),
+								max: formatUtcDate(new Date()),
 							},
 						}}
-						defaultValue={teamSettings.throughputHistoryEndDate
-							.toISOString()
-							.slice(0, 10)}
+						defaultValue={formatUtcDate(teamSettings.throughputHistoryEndDate)}
 						onChange={(e) =>
 							handleDateChange("throughputHistoryEndDate", e.target.value)
 						}

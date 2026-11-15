@@ -2,6 +2,7 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it } from "vitest";
+import { formatUtcDate } from "../../../utils/date/localDate";
 import { appColors } from "../../../utils/theme/colors";
 import LoadBalanceMatrixChart from "./LoadBalanceMatrixChart";
 
@@ -38,7 +39,7 @@ function createPoints(input: {
 		return {
 			date: pointDate,
 			dayOffset,
-			dateLabel: pointDate.toISOString().slice(0, 10),
+			dateLabel: formatUtcDate(pointDate),
 			wip: input.wip,
 			totalWorkItemAge: input.startAge + input.dailyAgeIncrease * dayOffset,
 			opacity: Math.max(0.25, 1 - dayOffset * 0.15),
