@@ -99,6 +99,23 @@ expect_output_has() {
   fi
 }
 
+expect_failure_block() {
+  local label=$1 line label_name found=0
+  for label_name in WHAT WHY HOW; do
+    found=0
+    while IFS= read -r line; do
+      if [[ $line == "$label_name:"* ]]; then found=1; fi
+    done <<< "$check_output"
+    if [ "$found" -eq 1 ]; then
+      pass "$label: carries a $label_name line"
+    else
+      fail "$label" "the output has no line starting with $label_name:. Output: $(shown_output)" \
+        "a refusal without WHAT, WHY and HOW does not tell the maintainer what to do" \
+        "write the failure as a WHAT, a WHY and a HOW line"
+    fi
+  done
+}
+
 expect_output_lacks() {
   local label=$1 unwanted=$2 why=$3 how=$4
   if ! has_text "WHAT" "$check_output"; then
@@ -202,6 +219,30 @@ if [ "$setup_failed" -eq 0 ]; then
     setup_failure "could not start $floor_image"
   elif ! docker exec "$check_container" bash /work/stage-layouts.sh >"$work_dir/stage.log" 2>&1; then
     setup_failure "could not stage libraries in $floor_image: $(tail -n 5 "$work_dir/stage.log")"
+  fi
+fi
+
+# The cases rely on what each fixture needs from glibc, so read it back with readelf -V before trusting them.
+fixture_glibc_needs() {
+  docker exec "$check_container" bash -c 'readelf -V "$1" 2>/dev/null | grep -o "Name: GLIBC_[0-9][0-9.]*" | sort -u | tr "\n" " "' _ "$1"
+}
+self_check_fixture() {
+  local name=$1 path=$2 wanted=$3 seen
+  seen="$(fixture_glibc_needs "$path")"
+  if [ "$seen" != "$wanted" ]; then
+    setup_failure "fixture $name should need '$wanted' by readelf -V but needs '$seen'"
+  fi
+}
+if [ "$setup_failed" -eq 0 ]; then
+  for tag in 2_9 2_39 2_40 2_100; do
+    self_check_fixture "needs_$tag" "/work/fx/needs_$tag" "Name: GLIBC_${tag//_/.} "
+  done
+  if ! docker exec "$check_container" bash -c 'readelf -V /work/fx/offender | grep -q "Name: GLIBC_2.42"'; then
+    setup_failure "fixture offender does not need GLIBC_2.42 by readelf -V"
+  fi
+  self_check_fixture "no-version-needs" /work/fx/no-version-needs ""
+  if ! docker exec "$check_container" bash -c 'readelf -d /work/fx/no-version-needs | grep -q "libc.so.6"'; then
+    setup_failure "fixture no-version-needs does not link libc.so.6 by readelf -d"
   fi
 fi
 
@@ -346,10 +387,18 @@ run_check /layouts/no-elf
 expect_exit "a directory with no ELF file is not a pass" 2 \
   "a check that looked at nothing cannot say the AppImage is within the floor" \
   "exit 2 when no ELF file was scanned"
+expect_output_has "a directory with no ELF file is not a pass" "/layouts/no-elf" \
+  "the maintainer must see which directory held nothing to check" \
+  "name the directory in the message"
+expect_failure_block "a directory with no ELF file is not a pass"
 run_check /layouts/does-not-exist
 expect_exit "a missing directory is not a pass" 2 \
   "an extraction that failed must not read as a clean AppImage" \
   "exit 2 and name the directory that could not be read"
+expect_output_has "a missing directory is not a pass" "/layouts/does-not-exist" \
+  "the maintainer must see which directory could not be read" \
+  "name the directory in the message"
+expect_failure_block "a missing directory is not a pass"
 check_output="$(docker exec "$check_container" env PATH=/shadow/bin /usr/bin/bash /tools/check-glibc-floor.sh /layouts/real 2>&1)"
 check_exit=$?
 expect_exit "a runner without readelf is not a pass" 2 \
@@ -461,6 +510,7 @@ package_steps_report() {
       if (index(text, "check-glibc-floor.sh")) {
         floor_steps[step] = 1
         argument = substr(text, index(text, "check-glibc-floor.sh") + 20)
+        sub(/[;&|].*/, "", argument)
         if (argument ~ /(^|[^A-Za-z0-9_.-])squashfs-root($|[^A-Za-z0-9_.-])/) { scans_extracted[step] = 1 }
         continued = (text ~ /\\[[:space:]]*$/)
       } else if (continued) {
