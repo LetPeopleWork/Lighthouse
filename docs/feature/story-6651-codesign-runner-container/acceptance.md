@@ -1474,6 +1474,328 @@ A config that sets the quirk but does not include the system config; only the re
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P5
+
+```text
+The maintainer runs the host check on the real signing machine after the switch-over steps.
+```
+
+```text
+host is clean and exit 0; the YubiKey is free for the container runner.
+```
+
+```text
+The maintainer sees the real host retired.
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Real host state (systemd, gpg, pcscd, the real key) is never driven by an oracle; the design reserves this for the maintainer.
+```
+
+maintainer at EXAMINE
+
+##### Covers
+
+P6
+
+```text
+The maintainer sets up a fresh Linux signing machine from tools/codesign/README.md.
+```
+
+```text
+The README covers the container runner setup with the one-time register run and watchtower, the retire steps, why disable-ccid and no host pcscd, rollback by pinning CODESIGN_RUNNER_TAG, what to check when the sign job waits for a runner, re-register after a revoked registration, and recognising a locked PIN; Windows sections stay.
+```
+
+```text
+The maintainer can set up and recover the signing machine from the README alone.
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Prose: the design makes the README review and EXAMINE only; no test pins its wording.
+```
+
+whole\-candidate review and EXAMINE
+
+##### Covers
+
+P5
+
+```text
+The maintainer looks at the code signing tools after the switch to the container runner.
+```
+
+```text
+The old Linux runner start script is gone and nothing in the tools or workflows still points at it.
+```
+
+```text
+The maintainer cannot start the retired host runner by following an old step.
+```
+
+##### Disposition
+
+Tested
+
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: the old Linux runner script is gone\; nothing in tools or the workflows still points at the old Linux runner script
+
+```text
+the script is renamed or copied to another folder outside tools and the workflows
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The maintainer runs the host check on a machine that still has the whole old setup: the host runner service, the osslsigncode wrapper, the local osslsigncode image, host pcscd on, and scdaemon without disable-ccid.
+```
+
+```text
+Exit 1 and a finding for each of the five leftovers, each saying what to do; no claim that the host is clean.
+```
+
+```text
+The maintainer gets one list of everything still to retire, with the step for each.
+```
+
+##### Disposition
+
+Tested
+
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: a host with the whole old setup gets a finding for each of the five leftovers\, each with what to do\, and exit 1
+
+```text
+one line names two leftovers and only one of them carries a usable step; caught only by the one-leftover cases
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The maintainer runs the host check on a machine where exactly one leftover remains, once for each leftover, including pcscd only enabled or only active and scdaemon.conf missing or with disable-ccid commented out.
+```
+
+```text
+Exit 1, one finding naming that leftover with what to do, and no finding for anything that is not there.
+```
+
+```text
+The maintainer sees exactly what is left and is not sent after leftovers that are already gone.
+```
+
+##### Disposition
+
+Tested
+
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: a host whose only leftover is \.\.\. gets one finding for it\, with what to do\, and exit 1 \(eight cases\)
+
+```text
+the step it prints names the right action but a wrong command or path, for example docker image rm of the wrong tag
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The maintainer runs the host check on a retired machine where the container runner and watchtower run and the container's runner process is visible on the host.
+```
+
+```text
+Exit 0 and the line host is clean, after the check asked systemd and Docker; no finding.
+```
+
+```text
+The maintainer knows the retirement is done and the new setup is not mistaken for a leftover.
+```
+
+##### Disposition
+
+Tested
+
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: a retired host\, with the container runner running\, says host is clean after asking systemd and Docker\, and exits 0
+
+```text
+the check asks systemd and Docker about something unrelated and never looks for the leftovers; caught by the old-setup and one-leftover cases
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The maintainer runs the host check while Docker cannot be reached and the old local osslsigncode image is still there.
+```
+
+```text
+Exit 1, a line about Docker, and no claim that the host is clean.
+```
+
+```text
+The maintainer is not told the host is clean when the check could not look at the images.
+```
+
+##### Disposition
+
+Tested
+
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: when Docker cannot be asked\, the check says so\, does not call the host clean\, and exits 1
+
+```text
+the line mentions Docker but gives no step to make Docker reachable
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The maintainer runs the host check on a machine with the whole old setup.
+```
+
+```text
+The check only asks: no systemctl stop, disable or kill, no docker image removal, no gpgconf kill, no sudo, and the home directory is unchanged.
+```
+
+```text
+The maintainer can run the check at any time, also during a release, without it stopping or deleting anything.
+```
+
+##### Disposition
+
+Tested
+
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: the check changes nothing on the host it reports on
+
+```text
+the check changes the host through a tool with no stand-in, for example a call by absolute path such as /usr/bin/systemctl or writing outside the home directory
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+A change to the host check is pushed.
+```
+
+```text
+The verify job of the codesign runner image workflow runs the host check oracle.
+```
+
+```text
+A broken host check cannot reach main unseen through the required codesign check.
+```
+
+##### Disposition
+
+Tested
+
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: the image workflow runs the host check oracle in verify
+
+```text
+the step is present but skipped by a step-level condition
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The image workflow gains the step that runs the host check oracle.
+```
+
+```text
+Every action the workflows use stays pinned to a full commit with its release named.
+```
+
+```text
+Renovate keeps the codesign workflow current and no unpinned action runs.
+```
+
+##### Disposition
+
+Tested
+
+node \-\-test \.github\/scripts\/action\-pins\.test\.mjs
+
+```text
+the new step runs a script that downloads an unpinned tool at run time
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+The image workflow gains the step that runs the host check oracle.
+```
+
+```text
+No workflow condition decides on the actor, so a Renovate PR runs the same verify check as a person.
+```
+
+```text
+A dependency update cannot skip the host check oracle.
+```
+
+##### Disposition
+
+Tested
+
+node \-\-test \.github\/scripts\/dependency\-bot\.test\.mjs
+
+```text
+the new step is skipped by a condition on the event rather than the actor
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
