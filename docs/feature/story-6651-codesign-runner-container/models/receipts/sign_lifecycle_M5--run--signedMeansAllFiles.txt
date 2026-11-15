@@ -1,0 +1,106 @@
+checker: quint 0.33.1
+argv: quint run --max-samples=20000 --max-steps=14 --seed=6651 --invariant=signedMeansAllFiles sign_lifecycle_M5.qnt
+cwd: outside-repo copy
+model: sign_lifecycle_M5 sha256=586cbbaf111844ad435cf7eff4c4c7ef531e21a407736301a8b734b6cbcf25ac
+exit: 1
+--- stdout
+An example execution:
+
+[State 0]
+{
+  keyPresent: false,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 1]
+{
+  keyPresent: true,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 2]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 1,
+  waited: 0
+}
+
+[State 3]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 0,
+  steps: 2,
+  waited: 0
+}
+
+[State 4]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 1,
+  steps: 3,
+  waited: 0
+}
+
+[State 5]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 1,
+  steps: 3,
+  waited: 0
+}
+
+[State 6]
+{
+  keyPresent: false,
+  pcscd: false,
+  phase: Signed,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 1,
+  steps: 4,
+  waited: 0
+}
+
+[violation] Found an issue (20ms at 2650 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x33c7 --backend=rust to reproduce.
+
+--- stderr
+error: Invariant violated
+

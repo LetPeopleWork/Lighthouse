@@ -1,0 +1,197 @@
+checker: quint 0.33.1
+argv: quint run --max-samples=20000 --max-steps=14 --seed=6651 --invariant=witnessNeverSigned sign_lifecycle.qnt
+cwd: outside-repo copy
+model: sign_lifecycle sha256=dfad53a9c2a8278d2bf706f882a2c665437fc1d508c43664f77b9547d33ac9ba
+exit: 1
+--- stdout
+An example execution:
+
+[State 0]
+{
+  keyPresent: false,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 1]
+{
+  keyPresent: true,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 2]
+{
+  keyPresent: false,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 3]
+{
+  keyPresent: true,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 4]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 1,
+  waited: 0
+}
+
+[State 5]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 0,
+  steps: 2,
+  waited: 0
+}
+
+[State 6]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 1,
+  steps: 3,
+  waited: 0
+}
+
+[State 7]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 2,
+  steps: 4,
+  waited: 0
+}
+
+[State 8]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 2,
+  steps: 4,
+  waited: 0
+}
+
+[State 9]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 2,
+  steps: 4,
+  waited: 0
+}
+
+[State 10]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 3,
+  steps: 5,
+  waited: 0
+}
+
+[State 11]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 3,
+  steps: 5,
+  waited: 0
+}
+
+[State 12]
+{
+  keyPresent: true,
+  pcscd: true,
+  phase: ReaderFound,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 3,
+  steps: 5,
+  waited: 0
+}
+
+[State 13]
+{
+  keyPresent: true,
+  pcscd: false,
+  phase: Signed,
+  pinSent: true,
+  plugInMessage: false,
+  readerSeen: true,
+  signedCount: 3,
+  steps: 6,
+  waited: 0
+}
+
+[violation] Found an issue (38ms at 3711 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x5f6f --backend=rust to reproduce.
+
+--- stderr
+error: Invariant violated
+

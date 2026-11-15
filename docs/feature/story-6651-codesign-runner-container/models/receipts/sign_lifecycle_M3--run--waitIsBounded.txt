@@ -1,0 +1,93 @@
+checker: quint 0.33.1
+argv: quint run --max-samples=20000 --max-steps=14 --seed=6651 --invariant=waitIsBounded sign_lifecycle_M3.qnt
+cwd: outside-repo copy
+model: sign_lifecycle_M3 sha256=15a91cf764648d0ab063e665f45520cb84f87404e3130f0027b93615a44ae441
+exit: 1
+--- stdout
+An example execution:
+
+[State 0]
+{
+  keyPresent: false,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 1]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 1,
+  waited: 0
+}
+
+[State 2]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 2,
+  waited: 1
+}
+
+[State 3]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 3,
+  waited: 2
+}
+
+[State 4]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 4,
+  waited: 3
+}
+
+[State 5]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 5,
+  waited: 4
+}
+
+[violation] Found an issue (18ms at 1056 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x22e9 --backend=rust to reproduce.
+
+--- stderr
+error: Invariant violated
+

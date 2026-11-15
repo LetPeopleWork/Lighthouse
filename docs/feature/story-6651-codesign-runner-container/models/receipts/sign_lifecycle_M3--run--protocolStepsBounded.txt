@@ -1,0 +1,184 @@
+checker: quint 0.33.1
+argv: quint run --max-samples=20000 --max-steps=14 --seed=6651 --invariant=protocolStepsBounded sign_lifecycle_M3.qnt
+cwd: outside-repo copy
+model: sign_lifecycle_M3 sha256=15a91cf764648d0ab063e665f45520cb84f87404e3130f0027b93615a44ae441
+exit: 1
+--- stdout
+An example execution:
+
+[State 0]
+{
+  keyPresent: false,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 1]
+{
+  keyPresent: true,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 2]
+{
+  keyPresent: false,
+  pcscd: false,
+  phase: Idle,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 0,
+  waited: 0
+}
+
+[State 3]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 1,
+  waited: 0
+}
+
+[State 4]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 2,
+  waited: 1
+}
+
+[State 5]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 3,
+  waited: 2
+}
+
+[State 6]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 4,
+  waited: 3
+}
+
+[State 7]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 5,
+  waited: 4
+}
+
+[State 8]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 6,
+  waited: 5
+}
+
+[State 9]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 7,
+  waited: 6
+}
+
+[State 10]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 8,
+  waited: 7
+}
+
+[State 11]
+{
+  keyPresent: false,
+  pcscd: true,
+  phase: DaemonStarted,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 9,
+  waited: 8
+}
+
+[State 12]
+{
+  keyPresent: false,
+  pcscd: false,
+  phase: Failed,
+  pinSent: false,
+  plugInMessage: false,
+  readerSeen: false,
+  signedCount: 0,
+  steps: 10,
+  waited: 8
+}
+
+[violation] Found an issue (71ms at 7296 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x11a76 --backend=rust to reproduce.
+
+--- stderr
+error: Invariant violated
+

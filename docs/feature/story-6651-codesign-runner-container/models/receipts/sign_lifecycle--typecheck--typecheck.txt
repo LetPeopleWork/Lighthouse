@@ -1,0 +1,9 @@
+checker: quint 0.33.1
+argv: quint typecheck sign_lifecycle.qnt
+cwd: outside-repo copy
+model: sign_lifecycle sha256=dfad53a9c2a8278d2bf706f882a2c665437fc1d508c43664f77b9547d33ac9ba
+exit: 0
+--- stdout
+
+--- stderr
+
