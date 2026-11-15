@@ -40,11 +40,11 @@ P2
 P3
 
 ```text
-The maintainer runs the break script: each listed production line is broken in turn, the named direct tests run, and the line is put back.
+The maintainer runs the break script: each listed production line is broken in turn, the named tests run, and the line is put back. The list holds one break per moved rule, seventeen lines in all.
 ```
 
 ```text
-Every listed break turns its named direct test red, every production file is restored, and the gate line shows no surviving break.
+Every listed break turns its named test red, including the two that name a kept page test (Cancel at the confirmation, Done clearing the picks), every production file is restored, and the gate line shows no surviving break.
 ```
 
 ```text
@@ -58,7 +58,7 @@ Tested
 docs\/feature\/story\-6648\-frontend\-clean\-as\-we\-go\/measurement\/deliberate\-breaks\.sh
 
 ```text
-A moved test that asserts a value computed by the code under test; it would stay green after the break.
+A moved test that asserts a value computed by the code under test, or a kept page test rewritten without its Cancel click or its cleared-picks assertion; the break lines turn those red.
 ```
 
 ###### Obligations
@@ -165,11 +165,11 @@ A hook that forgets every picked report or the report at the same position; the 
 P2
 
 ```text
-The toolbar Remove button is shown for picks on owners she only reads, for failed and for loading permissions, then pressed when enabled and when disabled.
+The toolbar Remove button is shown for picks on owners she only reads (one of three, then two of three), for failed and for loading permissions, then pressed when enabled and when disabled.
 ```
 
 ```text
-It is disabled with the exact reason for one or several owners she only reads, disabled for failed permissions and while loading; an enabled press opens the confirmation and a disabled press opens none.
+It is disabled with the exact reason where the count of owners she only reads differs from the count she can edit, disabled for failed permissions and while loading; an enabled press opens the confirmation and a disabled press opens none.
 ```
 
 ```text
@@ -183,7 +183,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Reports\/useSelectionActions\.test\.tsx
 
 ```text
-A button that counts owners she can edit as not Admin or enables itself while a reason holds it back; the reason and press tests turn red.
+A button that counts owners she can edit as not Admin or enables itself while a reason holds it back; both reason tests now turn red under the inverted count.
 ```
 
 ###### Obligations

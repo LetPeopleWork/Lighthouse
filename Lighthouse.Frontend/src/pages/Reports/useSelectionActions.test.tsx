@@ -118,14 +118,15 @@ const theReasonOnHover = async (
 
 describe("Removing the picked reports from the toolbar", () => {
 	it("with one picked report on an owner she only reads, Remove is disabled and says why", async () => {
-		const user = renderTheToolbar([zenithsQuarter, pulsarsQuarter], {
-			adminOf: [ZENITH],
-		});
+		const user = renderTheToolbar(
+			[zenithsQuarter, gravitysQuarter, pulsarsQuarter],
+			{ adminOf: [ZENITH, GRAVITY] },
+		);
 
-		const remove = removeButtonFor(2);
+		const remove = removeButtonFor(3);
 		expect(remove).toBeDisabled();
 		expect(await theReasonOnHover(user, remove)).toHaveTextContent(
-			new RegExp(`^${notAdminOfSome(1, 2).replaceAll(".", "\\.")}$`),
+			new RegExp(`^${notAdminOfSome(1, 3).replaceAll(".", "\\.")}$`),
 		);
 	});
 

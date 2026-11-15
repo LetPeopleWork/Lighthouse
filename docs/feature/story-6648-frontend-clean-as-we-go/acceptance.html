@@ -184,10 +184,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P3</p>
 
-<pre><code>The maintainer runs the break script: each listed production line is broken in turn, the named direct tests run, and the line is put back.
+<pre><code>The maintainer runs the break script: each listed production line is broken in turn, the named tests run, and the line is put back. The list holds one break per moved rule, seventeen lines in all.
 </code></pre>
 
-<pre><code>Every listed break turns its named direct test red, every production file is restored, and the gate line shows no surviving break.
+<pre><code>Every listed break turns its named test red, including the two that name a kept page test (Cancel at the confirmation, Done clearing the picks), every production file is restored, and the gate line shows no surviving break.
 </code></pre>
 
 <pre><code>Every moved rule is shown to fail when its production line is broken, and no production behaviour is left changed.
@@ -199,7 +199,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>docs/feature/story-6648-frontend-clean-as-we-go/measurement/deliberate-breaks.sh</p>
 
-<pre><code>A moved test that asserts a value computed by the code under test; it would stay green after the break.
+<pre><code>A moved test that asserts a value computed by the code under test, or a kept page test rewritten without its Cancel click or its cleared-picks assertion; the break lines turn those red.
 </code></pre>
 
 <h6>Obligations</h6>
@@ -293,10 +293,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>The toolbar Remove button is shown for picks on owners she only reads, for failed and for loading permissions, then pressed when enabled and when disabled.
+<pre><code>The toolbar Remove button is shown for picks on owners she only reads (one of three, then two of three), for failed and for loading permissions, then pressed when enabled and when disabled.
 </code></pre>
 
-<pre><code>It is disabled with the exact reason for one or several owners she only reads, disabled for failed permissions and while loading; an enabled press opens the confirmation and a disabled press opens none.
+<pre><code>It is disabled with the exact reason where the count of owners she only reads differs from the count she can edit, disabled for failed permissions and while loading; an enabled press opens the confirmation and a disabled press opens none.
 </code></pre>
 
 <pre><code>Remove is offered only where she may remove, and says why when not.
@@ -308,7 +308,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Reports/useSelectionActions.test.tsx</p>
 
-<pre><code>A button that counts owners she can edit as not Admin or enables itself while a reason holds it back; the reason and press tests turn red.
+<pre><code>A button that counts owners she can edit as not Admin or enables itself while a reason holds it back; both reason tests now turn red under the inverted count.
 </code></pre>
 
 <h6>Obligations</h6>

@@ -65,3 +65,25 @@ tests that now prove its rule, separated by `;;`.
 - src/pages/Reports/useSelectionActions.test.tsx :: Removing the picked reports from the toolbar while her permissions are loading, Remove is disabled
 - src/pages/Reports/useSelectionActions.test.tsx :: Removing the picked reports from the toolbar pressing an enabled Remove opens the confirmation listing the picked reports
 - src/pages/Reports/useSelectionActions.test.tsx :: Removing the picked reports from the toolbar pressing a disabled Remove asks nothing
+
+## Assertions the kept page tests must carry
+
+The page file after the rewrite holds exactly the six kept tests. Three of them absorb assertions of removed tests; the
+crafter adds exactly these, and the completion review reads them in the file because the scripts check names only.
+
+- "a coach removes three trial reports on two Teams and a Portfolio, and they leave the list": after pressing Done on
+  the result, the selected count reads 0 (`selectedCount(0)`), as well as the existing list and removal-call assertions.
+- "Escape at the confirmation closes it, removes nothing and keeps what was picked": it also presses Cancel on the
+  confirmation (a Cancel click, not only the Escape key) and, after it, the removal service was not called, the
+  names listed are `[MONTH, QUARTER, QUARTER]` (Portfolios before Teams) and the selected count still reads 3.
+- "when her permissions could not be loaded, Remove is disabled and says to reload": it also presses Remove with
+  three picked reports and asserts that no dialog opens and the removal service is not called.
+
+## Deliberate breaks that name a kept page test
+
+Two break lines name a kept page test, not a direct test: Cancel at the confirmation (`Cancel removes nothing|Escape at the
+confirmation`) and Done clearing the picks (`a coach removes three|Escape on the result`). Both go red on today's
+page file, through the old tests that the rewrite merges, so they stay in the list and must keep going red after the
+rewrite: through the kept Escape test with its Cancel click and its picks-still-3 assertion, and through the kept coach
+test with its selectedCount(0) assertion. If a rewrite leaves either break green, the rule lost its test. Every other
+break names a direct test and goes red today.
