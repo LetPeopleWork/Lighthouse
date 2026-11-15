@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
     /// Code outside the Flow metrics module reaches the module's Application only from the API, the composition root,
-    /// Reports, Refinement and the listed types, read from the compiled production assembly and compared with the list
+    /// Reports, Refinement, Forecasting and the listed types, read from the compiled production assembly and compared with the list
     /// in both directions. The same rule runs on made-up types: an outside type that is not on the list, one that
     /// reaches the Application only inside an async method, and a listed type that no longer reaches it must each fail
     /// and be named, and a set where only allowed callers reach the Application must pass.
@@ -46,22 +46,15 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string AsyncOnlyCaller = "AsyncOnlyCaller";
 
-        // The API, Reports and Refinement call the module's Application by design.
+        // The API, Reports, Refinement and Forecasting call the module's Application by design.
         private static readonly string TheLegalCallerNamespaces =
-            $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleBoundariesArchUnitTest.ReportsPattern})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})";
+            $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleBoundariesArchUnitTest.ReportsPattern})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})|(?:{ModuleRules.ForecastingModule})";
 
         // Every other outside type that reached the module's Application when the module was cut out. The list only shrinks.
         private static readonly string[] OtherOutsideTypesReachingTheApplication =
         [
             "Lighthouse.Backend.Services.Implementation.DatabaseManagement.DatabaseMaintenanceGate",
             "Lighthouse.Backend.Services.Implementation.FeatureListActiveWork",
-            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService",
-            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastingAnswersToFlowMetrics",
-            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastInputFingerprint",
-            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastInputs",
-            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastRealityCheckService",
-            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastService",
-            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastService+GatheredInputs",
             "Lighthouse.Backend.Services.Implementation.TeamData.TeamDataService",
             "Lighthouse.Backend.Services.Implementation.WorkItems.WorkItemService",
             "Lighthouse.Backend.Services.Implementation.WriteBackTriggerService",

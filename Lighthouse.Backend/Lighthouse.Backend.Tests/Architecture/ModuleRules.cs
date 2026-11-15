@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string FlowMetricsModule = @"^Lighthouse\.Backend\.Modules\.FlowMetrics(\.|$)";
 
+        public const string ForecastingModule = @"^Lighthouse\.Backend\.Modules\.Forecasting(\.|$)";
+
         public const string FlowMetricsAdapters = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Adapters(\.|$)";
 
         public const string TheCompositionRoot = "Lighthouse.Backend.Program";
@@ -78,7 +80,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Concat(IlDependencies.TypesIn(module, legalCallerNamespaces))
                 .ToHashSet(StringComparer.Ordinal);
 
-            var dependents = IlDependencies.DependentsIn(module, outside, type => IlDependencies.ResidesInNamespaceMatching(type, application))
+            var dependents = IlDependencies.DependentsIn(module, outside, type => IsATypeIn(type, application))
                 .Where(dependent => !notOutside.Contains(dependent.TypeName))
                 .Where(dependent => !Regex.IsMatch(dependent.TypeName, compositionRoot, RegexOptions.None, PatternTimeout))
                 .ToList();
@@ -101,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public static OutboundVerdict OutboundEdges(ModuleDefinition module, string application, string target, IReadOnlyCollection<string> listed, string rule)
             => new(
                 IlDependencies.TypesIn(module, application),
-                [.. IlDependencies.DependentsIn(module, application, type => IlDependencies.ResidesInNamespaceMatching(type, target))
+                [.. IlDependencies.DependentsIn(module, application, type => IsATypeIn(type, target))
                     .SelectMany(dependent => dependent.Targets.Select(reached => $"{dependent.TypeName} -> {reached}"))],
                 listed,
                 rule,
@@ -113,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var insideTheModule = IlDependencies.TypesIn(module, moduleNamespaces).ToHashSet(StringComparer.Ordinal);
 
-            return IlDependencies.DependentsIn(module, outside, type => IlDependencies.ResidesInNamespaceMatching(type, target))
+            return IlDependencies.DependentsIn(module, outside, type => IsATypeIn(type, target))
                 .Where(dependent => !insideTheModule.Contains(dependent.TypeName))
                 .ToList();
         }
@@ -177,6 +179,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         // hand-written type can have.
         private static bool IsCompilerMade(TypeReference type)
             => type is GenericParameter || (IlDependencies.NamespaceOf(type).Length == 0 && OutermostOf(type).Name.StartsWith('<'));
+
+        // A generic parameter takes the namespace of the type that declares it, so a type built on a generic base would
+        // otherwise count its own type parameter as a second type of the base's namespace.
+        private static bool IsATypeIn(TypeReference type, string namespacePattern)
+            => !IsCompilerMade(type) && IlDependencies.ResidesInNamespaceMatching(type, namespacePattern);
 
         private static TypeReference OutermostOf(TypeReference type)
             => type.DeclaringType is null ? type : OutermostOf(type.DeclaringType);
