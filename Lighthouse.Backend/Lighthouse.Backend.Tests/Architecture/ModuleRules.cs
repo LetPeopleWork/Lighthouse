@@ -34,12 +34,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// The types outside the module that reach its Domain are exactly the listed ones: a new one fails and is
         /// named, and a listed one that no longer reaches the Domain fails until it is deleted from the list.
         /// </summary>
-        public static InboundVerdict DomainIsReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces = FlowMetricsModule, string domain = FlowMetricsDomain, string outside = AnyNamespace)
+        public static InboundVerdict DomainIsReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces = FlowMetricsModule, string domain = FlowMetricsDomain, string outside = AnyNamespace, ModuleWording? wording = null)
             => new(
                 OutsideDependents(module, moduleNamespaces, domain, outside),
                 listed,
                 $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{domain}\" only " +
-                "from the types on the list, because the Domain holds the module's own calculations and the module answers the " +
+                $"from the types on the list, because {WordsFor(wording).Of("Domain")} holds the module's own calculations and the module answers the " +
                 "rest of the code through its Application. Every outside type that reaches the Domain directly ties that code to " +
                 "how the module calculates, so the module can no longer change its calculations on its own. Call the module's " +
                 "Application instead; the list only shrinks.");
@@ -48,12 +48,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// Nothing outside the module reaches its Adapters except the composition root, which registers them. The
         /// composition root is compared both ways too, so a root that stops reaching the Adapters fails as well.
         /// </summary>
-        public static InboundVerdict AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(ModuleDefinition module, string compositionRoot = TheCompositionRoot, string moduleNamespaces = FlowMetricsModule, string adapters = FlowMetricsAdapters, string outside = AnyNamespace)
+        public static InboundVerdict AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(ModuleDefinition module, string compositionRoot = TheCompositionRoot, string moduleNamespaces = FlowMetricsModule, string adapters = FlowMetricsAdapters, string outside = AnyNamespace, ModuleWording? wording = null)
             => new(
                 OutsideDependents(module, moduleNamespaces, adapters, outside),
                 [compositionRoot],
                 $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{adapters}\" only " +
-                $"from the composition root {compositionRoot}, because the Adapters are how the module talks to storage and runs " +
+                $"from the composition root {compositionRoot}, because {WordsFor(wording).Of("Adapters")} are how the module talks to storage and runs " +
                 "in the background: the composition root registers them and everything else reaches the module through its " +
                 "Application. An outside type that uses an adapter directly bypasses the module and depends on how it stores " +
                 "its data. Depend on the module's Application contract instead.");
@@ -69,8 +69,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             string application,
             string legalCallerNamespaces,
             string compositionRoot,
-            string outside)
+            string outside,
+            ModuleWording? wording = null)
         {
+            var words = WordsFor(wording);
+
             var notOutside = IlDependencies.TypesIn(module, moduleNamespaces)
                 .Concat(IlDependencies.TypesIn(module, legalCallerNamespaces))
                 .ToHashSet(StringComparer.Ordinal);
@@ -85,10 +88,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                 listed,
                 $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{application}\" only " +
                 $"from namespaces matching \"{legalCallerNamespaces}\", from the composition root matching \"{compositionRoot}\", or from " +
-                "the types on the list, because the Application is the module's front door for the API and for the Reports and " +
-                "Refinement modules, and every other caller ties more code to how the module answers today, so its contract can " +
-                "no longer change on its own. Let the code react to a domain event the module publishes, or ask the API, Reports " +
-                "or Refinement for the answer, instead of calling the Application directly; the list only shrinks.");
+                $"the types on the list, because {words.Of("Application")} is the module's front door for {words.LegalCallers}, " +
+                "and every other caller ties more code to how the module answers today, so its contract can no longer change on " +
+                $"its own. Let the code react to a domain event the module publishes, or ask {words.LegalCallers} for the answer, " +
+                "instead of calling the Application directly; the list only shrinks.");
         }
 
         /// <summary>
@@ -103,6 +106,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 listed,
                 rule,
                 application);
+
+        private static ModuleWording WordsFor(ModuleWording? wording) => wording ?? ModuleWording.FlowMetrics;
 
         private static List<IlDependent> OutsideDependents(ModuleDefinition module, string moduleNamespaces, string target, string outside)
         {
