@@ -1,5 +1,5 @@
+using Lighthouse.Backend.Modules.WorkItems.Application.Policies;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.Extensions.Logging;
 using Moq;

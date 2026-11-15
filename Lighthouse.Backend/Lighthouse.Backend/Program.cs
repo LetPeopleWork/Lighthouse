@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Configuration;
+using Lighthouse.Backend.Modules.WorkItems.Application.Policies;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Health;

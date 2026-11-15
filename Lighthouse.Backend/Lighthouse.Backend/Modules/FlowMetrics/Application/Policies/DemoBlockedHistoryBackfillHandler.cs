@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.WorkItems.Application.Policies;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;

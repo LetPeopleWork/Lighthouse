@@ -1,10 +1,10 @@
+using Lighthouse.Backend.Modules.WorkItems.Application.Policies;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>
         /// Blocked-transition interval endpoint -
-        /// <c>DomainEvents/WorkItemBlockedTransitionCaptureHandler.cs:29</c>. This one is an interval
+        /// <c>Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureHandler.cs:29</c>. This one is an interval
         /// endpoint: shifting it would change every blocked-duration the portfolio reports.
         /// </summary>
         [Test]
