@@ -100,6 +100,25 @@ const readsHeldBack = () => {
 	return { getReport, release: () => release() };
 };
 
+/** Every report read as eachReportReads would, except the one with the id `gated`, which waits for `release`, and those in `whichNeverAnswer`, which are never answered. */
+const readsWithOneGated = (
+	gated: number,
+	whichNeverAnswer: readonly number[] = [],
+) => {
+	let release: () => void = () => undefined;
+	const released = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const answers = eachReportReads();
+	const getReport = vi.fn((owner: IReportOwner, reportId: number) => {
+		if (whichNeverAnswer.includes(reportId)) return neverAnswered();
+		if (reportId === gated)
+			return released.then(() => answers(owner, reportId));
+		return answers(owner, reportId);
+	});
+	return { getReport, release: () => release() };
+};
+
 const theRowsPdfIcon = (reportName: string, owner: typeof ZENITH) =>
 	within(rowOf(reportName, owner)).getByRole("button", {
 		name: `Export ${reportName} as PDF`,
@@ -182,18 +201,10 @@ describe("One PDF of several reports", () => {
 
 	it("nothing prints while one of the reports is still on its way, and the PDF holds both once it arrives", async () => {
 		const frames = aPrintFrameBrowser();
-		let answerGravity: () => void = () => undefined;
-		const gravityAnswers = new Promise<void>((resolve) => {
-			answerGravity = resolve;
-		});
-		const answers = eachReportReads();
-		const getReport = vi.fn(async (owner: IReportOwner, reportId: number) => {
-			if (reportId === gravitysMonth.id) await gravityAnswers;
-			return answers(owner, reportId);
-		});
+		const gravity = readsWithOneGated(gravitysMonth.id);
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
-				getReport,
+				gravity.getReport,
 				zenithsQuarter,
 				gravitysMonth,
 			),
@@ -207,7 +218,7 @@ describe("One PDF of several reports", () => {
 		await aMomentLater();
 		expect(frames.timesAFramePrinted()).toBe(0);
 
-		answerGravity();
+		gravity.release();
 
 		await theFramesHavePrinted(frames, 1);
 		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
@@ -248,17 +259,8 @@ describe("One PDF of several reports", () => {
 
 	it("while a PDF of several is prepared, a row's PDF icon is held back and starts no second", async () => {
 		const frames = aPrintFrameBrowser();
-		let openGravity: () => void = () => undefined;
-		const gravityIsOpen = new Promise<void>((resolve) => {
-			openGravity = resolve;
-		});
-		const answers = eachReportReads();
-		const getReport = vi.fn((owner: IReportOwner, reportId: number) => {
-			if (reportId === voyagersQuarter.id) return neverAnswered();
-			if (reportId === gravitysMonth.id)
-				return gravityIsOpen.then(() => answers(owner, reportId));
-			return answers(owner, reportId);
-		});
+		const gravity = readsWithOneGated(gravitysMonth.id, [voyagersQuarter.id]);
+		const { getReport } = gravity;
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
 				getReport,
@@ -282,7 +284,7 @@ describe("One PDF of several reports", () => {
 		expect(frames.timesAFramePrinted()).toBe(0);
 		expect(voyagersIcon).toHaveAttribute("aria-disabled", "true");
 
-		openGravity();
+		gravity.release();
 		await theFramesHavePrinted(frames, 1);
 		frames.closeTheDialog();
 		await everyPrintFrameIsGone();
