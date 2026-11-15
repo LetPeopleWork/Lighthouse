@@ -98,6 +98,10 @@ jobs:
     needs: verify
     # Only main may move latest, which the signing machine pulls; a branch dispatch must never overwrite it.
     if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.verify.result == 'success' }}
+    # Two publishes running at once could finish out of order and leave latest on the older image.
+    concurrency:
+      group: codesign-runner-publish
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

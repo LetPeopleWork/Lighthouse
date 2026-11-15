@@ -23,8 +23,11 @@ unknown() {
 }
 
 check_host_runner() {
-  local listing unit state _preset
-  if ! listing="$(systemctl list-unit-files --no-legend --no-pager 'actions.runner.*' 2>&1)"; then
+  local listing status=0 unit state _preset
+  listing="$(systemctl list-unit-files --no-legend --no-pager 'actions.runner.*' 2>&1)" || status=$?
+  # Recent systemd answers a pattern that matches no unit with no output and exit status 1; only a
+  # failure that says something means systemd could not be asked.
+  if [ "$status" -ne 0 ] && [ -n "$listing" ]; then
     unknown "systemd could not be asked for an old host actions runner service ($listing)." \
       "run this check on the signing machine as your own user, with systemd running."
     return

@@ -36,8 +36,10 @@ when you sign.
 - A Linux machine with systemd, Docker and the Docker Compose plugin (`docker compose`).
 - A free USB port for the YubiKey. The key holds the code signing certificate and its private key.
 - Network access to `ghcr.io`. The image is public, so `docker pull` needs no login.
-- [watchtower](https://containrrr.dev/watchtower/), run regularly, so that a newly published image reaches
-  the machine between reboots. One run, limited to the runner container, is:
+- Optional: [watchtower](https://containrrr.dev/watchtower/). Nothing in this setup installs or runs it.
+  The unit pulls the image on every boot; between reboots a newly published image reaches the machine
+  only if you run watchtower yourself, for example from a regular update script. Without it, a new image
+  arrives at the next boot. One run, limited to the runner container, is:
 
   ```bash
   docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once lighthouse-codesign-runner-1
@@ -64,6 +66,9 @@ your token file inside the register container.
    sudo cp tools/codesign/lighthouse-codesign-runner.service /etc/systemd/system/
    sudo systemctl daemon-reload
    ```
+
+   Another folder works too (for example `/storage/docker-tools/lighthouse-codesign`), if you change
+   `WorkingDirectory=` in the unit to match; use that folder wherever these steps say `/opt/lighthouse-codesign`.
 
 2. Write the GitHub token to a file only you can read. It stays outside the repository and outside the
    always-on runner: only the one-time register service mounts it.
@@ -103,7 +108,7 @@ your token file inside the register container.
 
 After a reboot nothing is manual: the unit pulls the image and starts the runner. When GHCR cannot be
 reached, it starts the cached image and `journalctl -u lighthouse-codesign-runner` shows the failed pull as
-a warning. Between reboots, watchtower pulls a newer image and recreates the container.
+a warning. Between reboots, a newer image arrives only when you run watchtower (see Prerequisites).
 
 ## Host conflicts, and why
 
