@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         internal const string WorkTrackingIntegrationPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.WorkTrackingConnectors($|\..*)|^Lighthouse\.Backend\.Factories($|\..*)";
         private const string WorkItemsSyncPattern =
-            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(WorkItems|TeamData|WorkItemRules)($|\..*)";
+            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(WorkItems|TeamData|WorkItemRules)($|\..*)|^Lighthouse\.Backend\.Modules\.WorkItems(\.|$)";
         internal const string ForecastingPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Forecast($|\..*)|^Lighthouse\.Backend\.Modules\.Forecasting(\.|$)";
         internal const string PortfolioDeliveryPattern =

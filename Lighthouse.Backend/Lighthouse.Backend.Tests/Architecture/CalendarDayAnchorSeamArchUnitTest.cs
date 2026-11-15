@@ -149,11 +149,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly TrackerHistoryCutoff[] TrackerHistoryCutoffs =
         [
             new(
-                "Services/Implementation/WorkItems/WorkItemService.cs",
+                "WorkItemService.cs",
                 "var endDate = clock.Now.UtcDateTime;",
                 "percentile history window end"),
             new(
-                "Services/Implementation/WorkItems/WorkItemService.cs",
+                "WorkItemService.cs",
                 "var startDate = endDate.AddDays(",
                 "percentile history window start"),
             new(
@@ -628,11 +628,32 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .ToList();
         }
 
+        /// <summary>
+        /// An entry naming only a file finds it by that name anywhere in the production project, so it keeps
+        /// reading the file after the file moves to another folder. A name two files share would read the
+        /// wrong one, so that fails rather than picking either.
+        /// </summary>
         private static string? ProductionSourceOf(string relativePath)
         {
-            var file = Path.Combine(RepositoryRoot(), ProductionProjectDirectory, relativePath);
+            var productionRoot = Path.Combine(RepositoryRoot(), ProductionProjectDirectory);
+            var file = relativePath.Contains('/', StringComparison.Ordinal)
+                ? Path.Combine(productionRoot, relativePath)
+                : TheOnlyProductionFileNamed(productionRoot, relativePath);
 
-            return File.Exists(file) ? File.ReadAllText(file) : null;
+            return file is not null && File.Exists(file) ? File.ReadAllText(file) : null;
+        }
+
+        private static string? TheOnlyProductionFileNamed(string productionRoot, string fileName)
+        {
+            var found = Directory.EnumerateFiles(productionRoot, fileName, SearchOption.AllDirectories)
+                .Where(file => !IsExcluded(Path.GetRelativePath(productionRoot, file).Replace('\\', '/')))
+                .ToList();
+
+            Assert.That(found, Has.Count.LessThanOrEqualTo(1),
+                $"The history cutoffs find {fileName} by its name alone, so the production project must hold at most one "
+                + "file of that name, or a cutoff would read the wrong one. Found: " + string.Join(", ", found));
+
+            return found.Count == 1 ? found[0] : null;
         }
 
         private static List<string> TrackerCutoffViolations(TrackerHistoryCutoff[] cutoffs, Func<string, string?> sourceOf)

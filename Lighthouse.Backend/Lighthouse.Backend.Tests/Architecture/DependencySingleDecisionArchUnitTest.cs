@@ -37,11 +37,18 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TheSeam = "ReplaceDependsOnReferences";
 
-        private const string TheOnlyFileThatMayChangeIt =
-            "Lighthouse.Backend/Services/Implementation/Dependencies/DependencyReconciler.cs";
+        // The one-decision files are named without their folder and found by that name, so the rules keep
+        // reading them when they move from Services into the Work Items module.
+        private const string TheOnlyFileThatMayChangeIt = "DependencyReconciler.cs";
 
-        private const string TheOnlyPlaceThatMayRecordTheSource =
-            "Lighthouse.Backend/Services/Implementation/Dependencies/";
+        // Only the Dependencies sub-folders of the module, never a whole layer: the Work Item service lands in
+        // the same layers and must stay under the one-place rule.
+        private static readonly string[] TheOnlyPlaceThatMayRecordTheSource =
+        [
+            "Lighthouse.Backend/Services/Implementation/Dependencies/",
+            "Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/",
+            "Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/",
+        ];
 
         private const string TheFileThatChoosesTheSource =
             "Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs";
@@ -79,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Every type this epic introduced sits in a namespace ending in this word, so a rule written against
         // it keeps covering whatever the next slice adds without anyone remembering to widen a list.
         private const string TheNamespaceThisEpicOwns =
-            @"^Lighthouse\.Backend\.(Models|Services\.(Implementation|Interfaces))\.Dependencies($|\..*)";
+            @"^Lighthouse\.Backend\.(Models|Services\.(Implementation|Interfaces))\.Dependencies($|\..*)|^Lighthouse\.Backend\.Modules\.WorkItems(\.|$)";
 
         private const string TheFileThatHandsOutTheCount = "Lighthouse.Backend/API/FeaturesController.cs";
 
@@ -96,11 +103,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         // the dot that tells them apart.
         private const string TheLicenceFlagOnlyTheDecisionMayRead = "HasPremiumLicence";
 
-        private const string TheOnlyFileThatMayReadTheLicenceFlag =
-            "Lighthouse.Backend/Services/Implementation/Dependencies/DependencyHonourPolicy.cs";
+        private const string TheOnlyFileThatMayReadTheLicenceFlag = "DependencyHonourPolicy.cs";
 
-        private const string TheOnlyFileThatMayAskWhetherTheInstanceHasPaid =
-            "Lighthouse.Backend/Services/Implementation/Dependencies/DependencyDecision.cs";
+        private const string TheOnlyFileThatMayAskWhetherTheInstanceHasPaid = "DependencyDecision.cs";
 
         private static readonly string[] TheWordsThatWouldMeanAPriceWasAsked =
             ["CanUsePremiumFeatures", "LicenseGuard", "ILicenseService", "useLicenseRestrictions"];
@@ -115,12 +120,23 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly int[] ThePercentilesLighthouseShows = [50, 70, 85, 95];
 
-        private static readonly string[] WhatThisEpicAddedToTheBackend =
+        private static readonly string[] TheFoldersThisEpicStartedIn =
         [
             "Models/Dependencies/",
             "Services/Implementation/Dependencies/",
             "Services/Interfaces/Dependencies/",
         ];
+
+        // Only the Dependencies sub-folders of the module, never a whole layer: the Work Item service lands in
+        // the same layers and must not be scanned for this epic's words.
+        private static readonly string[] TheModulesDependencyFolders =
+        [
+            "Modules/WorkItems/Domain/Dependencies/",
+            "Modules/WorkItems/Application/Dependencies/",
+        ];
+
+        private static readonly string[] WhatThisEpicAddedToTheBackend =
+            [.. TheFoldersThisEpicStartedIn, .. TheModulesDependencyFolders];
 
         private const string TheConnectors = ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern;
 
@@ -238,9 +254,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static List<SourceFile> TheBackendSourceOutsideTheReconciler()
         {
             var backendSource = TheWholeBackendSource();
+            var theReconciler = TheOnlyBackendFileNamed(TheOnlyFileThatMayChangeIt);
 
             var theReconcilersOwnCall = backendSource
-                .Where(file => file.RelativePath == TheOnlyFileThatMayChangeIt)
+                .Where(file => file.RelativePath == theReconciler)
                 .SelectMany(file => LinesMatching(file, ACallToTheSeam))
                 .ToList();
 
@@ -249,7 +266,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "this scan is looking for a name nothing in the code uses and would stay green whatever the rest " +
                 "of the source did. Point it at whatever the single writer and its seam are called now.");
 
-            return backendSource.Where(file => file.RelativePath != TheOnlyFileThatMayChangeIt).ToList();
+            return backendSource.Where(file => file.RelativePath != theReconciler).ToList();
         }
 
         /// <summary>
@@ -342,13 +359,15 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void NothingButTheOneDecision_ReadsTheLicenceFlagItWasHanded()
         {
+            var theHonourPolicy = TheOnlyBackendFileNamed(TheOnlyFileThatMayReadTheLicenceFlag);
+
             var theDecisionsOwnRead = TheSourceThisEpicAdded()
-                .Where(file => file.RelativePath == TheOnlyFileThatMayReadTheLicenceFlag)
+                .Where(file => file.RelativePath == theHonourPolicy)
                 .SelectMany(file => LinesMatching(file, ReadsTheLicenceFlag))
                 .ToList();
 
             var readsElsewhere = TheSourceThisEpicAdded()
-                .Where(file => file.RelativePath != TheOnlyFileThatMayReadTheLicenceFlag)
+                .Where(file => file.RelativePath != theHonourPolicy)
                 .SelectMany(file => LinesMatching(file, ReadsTheLicenceFlag))
                 .ToList();
 
@@ -490,7 +509,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "green whatever the trackers did. Point it at whatever the single selector is called now.");
 
             return backendSource
-                .Where(file => !file.RelativePath.StartsWith(TheOnlyPlaceThatMayRecordTheSource, StringComparison.Ordinal))
+                .Where(file => !TheOnlyPlaceThatMayRecordTheSource.Any(folder => file.RelativePath.StartsWith(folder, StringComparison.Ordinal)))
                 .ToList();
         }
 
@@ -724,13 +743,15 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void NothingButTheOnePlace_AsksWhetherTheInstanceHasPaid()
         {
+            var theDecision = TheOnlyBackendFileNamed(TheOnlyFileThatMayAskWhetherTheInstanceHasPaid);
+
             var theOnePlacesOwnAsk = TheSourceThisEpicAdded()
-                .Where(file => file.RelativePath == TheOnlyFileThatMayAskWhetherTheInstanceHasPaid)
+                .Where(file => file.RelativePath == theDecision)
                 .SelectMany(file => LinesMatching(file, AsksThePrice))
                 .ToList();
 
             var licenceWords = TheSourceThisEpicAdded()
-                .Where(file => file.RelativePath != TheOnlyFileThatMayAskWhetherTheInstanceHasPaid)
+                .Where(file => file.RelativePath != theDecision)
                 .SelectMany(file => LinesMatching(file, AsksThePrice))
                 .ToList();
 
@@ -971,14 +992,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             var backendRoot = Path.Combine(solutionRoot, BackendProjectDirectory);
 
             var files = WhatThisEpicAddedToTheBackend
-                .Select(folder => Path.Combine(backendRoot, folder.Replace('/', Path.DirectorySeparatorChar)))
-                .SelectMany(folder =>
-                {
-                    Assert.That(Directory.Exists(folder), Is.True,
-                        $"{folder} was moved or deleted, so the rule it carries is no longer being enforced.");
-
-                    return Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories);
-                })
+                .Where(folder => TheFolderIsThereToRead(backendRoot, folder))
+                .SelectMany(folder => Directory.EnumerateFiles(PathUnder(backendRoot, folder), "*.cs", SearchOption.AllDirectories))
                 .Select(file => new SourceFile(
                     Path.GetRelativePath(solutionRoot, file).Replace('\\', '/'),
                     File.ReadAllText(file),
@@ -988,6 +1003,48 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(files, Is.Not.Empty, "Found no backend sources to scan; the scan is anchored at the wrong directory.");
 
             return files;
+        }
+
+        /// <summary>
+        /// A Dependencies folder of the Work Items module is read once it exists. A folder the epic started in may
+        /// only be gone once the module holds a Dependencies folder to take its files; before that, a missing
+        /// folder means the rules it carries read nothing.
+        /// </summary>
+        private static bool TheFolderIsThereToRead(string backendRoot, string folder)
+        {
+            var isThere = Directory.Exists(PathUnder(backendRoot, folder));
+            var mayBeMissing = TheModulesDependencyFolders.Contains(folder)
+                || TheModulesDependencyFolders.Any(moduleFolder => Directory.Exists(PathUnder(backendRoot, moduleFolder)));
+
+            Assert.That(isThere || mayBeMissing, Is.True,
+                $"{folder} was moved or deleted, and no Dependencies folder of the Work Items module holds its files, " +
+                "so the rule it carries is no longer being enforced.");
+
+            return isThere;
+        }
+
+        private static string PathUnder(string backendRoot, string folder)
+        {
+            return Path.Combine(backendRoot, folder.Replace('/', Path.DirectorySeparatorChar));
+        }
+
+        /// <summary>
+        /// The one backend file of this name, found wherever it lives, as a path from the solution root. Two files
+        /// sharing the name would leave the rule reading the wrong one, so that fails rather than picking either.
+        /// </summary>
+        private static string TheOnlyBackendFileNamed(string fileName)
+        {
+            var solutionRoot = SolutionRoot();
+            var found = Directory.EnumerateFiles(Path.Combine(solutionRoot, BackendProjectDirectory), fileName, SearchOption.AllDirectories)
+                .Select(file => Path.GetRelativePath(solutionRoot, file).Replace('\\', '/'))
+                .Where(relativePath => !TheBuildWroteIt(relativePath))
+                .ToList();
+
+            Assert.That(found, Has.Count.EqualTo(1),
+                $"The one-decision rules find {fileName} by its name alone, so the backend must hold exactly one file of that " +
+                "name, or the rule would read the wrong file or none. Found: " + string.Join(", ", found));
+
+            return found.Count == 1 ? found[0] : fileName;
         }
 
         /// <summary>
