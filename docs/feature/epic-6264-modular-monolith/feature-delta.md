@@ -877,6 +877,16 @@ item changes the plan for the others.
   - Follow-up candidate, not filed: `IlDependencies` does not read catch-clause types, events or named attribute arguments; no current code relies on it.
   - Later, not this Story: `ForecastSimulationLimits` and `ForecastHorizon` to the module (S04b); the licence reads of `ForecastUpdater` and `ForecastFilterRuleService` (ratchet candidate 2).
 
+### 2026-11-15 — #6648 Clean as we go: slowest frontend page and dialog tests — Done
+- Commits: `439d282ef` (pick-up) `..` finalize on `main` · workspace: `docs/feature/story-6648-frontend-clean-as-we-go/` · archive: `docs/evolution/story-6648-frontend-clean-as-we-go/evolution.md`
+- Ratchet: the frontend per-file budget (54 s) unchanged until the post-push medians allow it; no `slowTests.ts` entry added. T13's slice B (both Reports page files) is delivered; slice C (`OverviewDashboard`, `BaseMetricsView.loading`) is not.
+- KPIs re-measured: `ReportsPage.removal` 21 → 6 tests, `RefinementView.comments` 24 → 7, `ReportsPage.combinedPdf` 18 → 13; local per-test ratios 0.375, 0.362, 0.790 (S2 short of its 0.75). First CI runs: removal 8.0 / 6.7 s and comments 9.4 / 5.8 s against medians of about 14.5 and 13.3 s.
+- Changes the plan:
+  - Follow-up #6652 takes the next three: `BaseMetricsView.loading` (15.0 s), `ReportsTab.createWizard` (14.3 s), `ReportsTab.test` (14.3 s), re-counted over 5 main runs.
+  - Lesson: oracle scripts that name a before commit by SHA break on the first rebase; name it by commit subject.
+  - Lesson for EXAMINE: a test-only story needs its mapping notes and breaks reachable through a public examine command (`feature-proof` only knows the `s<N>_compare_ids.py` layout), otherwise every expectation ends as an observation gap.
+  - Lesson: StrykerJS's initial run can time out a page test under heavy machine load; rerun with lower `--concurrency` before suspecting the test.
+
 ## Wave: DISCUSS / [REF] Split into improvement Epics (2026-11-03)
 
 Epic 6264 grew to 46 Stories with five separate goals, so the maintainer split it. ADO #6264 is Closed with no
