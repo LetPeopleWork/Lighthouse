@@ -375,6 +375,35 @@ an unpick of only the first failed report (two failures are picked); a no-op Can
 
 
 
+##### Covers
+
+P2
+
+```text
+On the Reports page every picked report cannot be read
+```
+
+```text
+The dialog named No PDF was made shows exactly Cancel and Retry, no Leave it out, and nothing is printed
+```
+
+```text
+A reader whose every report failed is not offered a Leave it out that would print nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Reports\/ReportsPage\.combinedPdf\.test\.tsx\:1
+
+```text
+Leave it out wired to always show (a break removes the undefined case) and only the first report printed (a break prints one report)
+```
+
+###### Obligations
+
+
 ### S3
 
 ##### Covers

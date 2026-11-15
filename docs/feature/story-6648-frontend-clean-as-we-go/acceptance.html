@@ -476,6 +476,31 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On the Reports page every picked report cannot be read
+</code></pre>
+
+<pre><code>The dialog named No PDF was made shows exactly Cancel and Retry, no Leave it out, and nothing is printed
+</code></pre>
+
+<pre><code>A reader whose every report failed is not offered a Leave it out that would print nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/ReportsPage.combinedPdf.test.tsx:1</p>
+
+<pre><code>Leave it out wired to always show (a break removes the undefined case) and only the first report printed (a break prints one report)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h3>S3</h3>
 
 <h5>Covers</h5>
