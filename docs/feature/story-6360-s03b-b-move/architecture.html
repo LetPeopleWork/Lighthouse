@@ -1,0 +1,2511 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: story-6360-s03b-b-move</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Pure relocation of 43 Work Items types by git mv from Services into Lighthouse.Backend/Modules/WorkItems, namespace = folder (Lighthouse.Backend.Modules.WorkItems.{Domain,Domain.Dependencies,Application,Application.Dependencies,Application.Policies}), type and file names unchanged, the move list is the Moves list of WorkItemsMembershipArchUnitTest. Stays: DependencySourceSelector, DependencyFieldReferences, ParentSourceSelector, OrphanedFeatureCleanupService, IOrphanedFeatureCleanupService. Each slice is a pure-move commit (host commits after a move-ready message), then a separate edit commit for using lines, rule-list strings, scripts and Stryker paths.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Layer placement. Domain: SyncModeResolver, FetchFingerprint; Domain/Dependencies: DependencyHonourPolicy with IDependencyHonourPolicy, DependencyHonourInput and FeatureDependencyFacts (declared in the interface file), DependencyCycleDetector with DependencyLoops and DependencyLoop, DependencyFacts; RuleEvaluator&lt;T&gt; with IRuleEvaluator&lt;T&gt; in Domain, because a Domain type cannot reach an Application port and the port reaches only the kernel (deviation from D-1, which listed the port under Application). Final Domain membership is what the IL-reading Domain rule admits: a candidate that reaches anything beyond Models and the BCL goes to Application, recorded in the oracle list. Application: WorkItemService, IWorkItemService, BlockedItemService, IBlockedItemService, TeamDataService, ITeamDataService, IRuleFieldProvider, WorkItemFieldProvider, FeatureFieldProvider, ParentPlacementReport with RecordPlacement, RefreshLogService, IRefreshLogService; Application/Dependencies: DependencyDecision, DependencyReconciler, DependencyRefreshReporter, FeatureDependencyRendering with DependenciesAsRead, WhatTheForecastWaitsFor and IDependencyDecision, IDependencyReconciler, IDependencyRefreshReporter, IWhatTheForecastWaitsFor. Application/Policies: WorkItemBlockedTransitionCaptureHandler, WorkItemBlockedTransitionCloseHandler, FeatureBlockedTransitionCaptureHandler, FeatureBlockedTransitionCloseHandler, TeamDeletedRefreshLogCleanupHandler, ConnectionFetchShapeChangedUpdateTriggerHandler. Dependency types never sit flat in a layer: the sub-folders are the ones DependencySingleDecisionArchUnitTest&#x27;s folder keys name.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Checker mapping: no state machine, temporal or fairness claim exists (behaviour-free relocation), so Quint, TLA+/TLC and Agda are not applicable and liveness is not applicable (no progress or scheduling change). Dependency-direction and placement claims are checked by IL-reading ArchUnit rules (ModuleRules.TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary) in the three slice oracles; behaviour preservation by RefreshesStayTheSameTest and bash Scripts/examine/bin/refresh-answers-compare (base 8a785450c vs HEAD), plus metrics-answers-compare, forecast-answers-compare, ef-model-unchanged and architecture-rules. No property-based law: the finite relocation has no broad input domain.
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>Paradigm object_oriented, smell catalogue nw-code-design-oo: every moved type keeps its owner and responsibility; no domain decision moves into a service, no class is created, split or merged. Carriers unchanged: decisions in DependencyHonourPolicy, DependencyCycleDetector, RuleEvaluator, SyncModeResolver; effects in WorkItemService, TeamDataService, RefreshLogService and the handlers; no per-process state is added.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>Program.cs registrations and order stay; only using lines change, DomainEventHandlerOrderPinTest stays green and unmodified. Unit tests of moved types stay in place and gain using lines only; they move in feature C. Feature A&#x27;s oracle files may take a using-line edit forced by the move, recorded as a target, never a semantic change. TheNamespaceThisEpicOwns already covers Modules.WorkItems; if WorkItemService&#x27;s move makes it reach the forecast, the crafter returns that to the architect and never loosens the rule.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Behaviour-free: routes, DTOs, serialized responses, refresh results, metrics answers, forecasts, DI lifetimes, handler order and the schema stay the same. No bound on stored or validated inputs changes. Existing API, E2E and response tests stay green and unmodified apart from using lines.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>One oracle file per slice; approved oracle and support files of this feature are never edited. Rules are never loosened: full-name rule lists are rewritten to the new names and still compared in both directions. Made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.WorkItemsFixtures. Slice dependencies: S2 after S1, S3 after S2. Per-test and property budgets are the defaults; no derogation.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>Every dotnet command runs under flock -o on the shared lock file; declared commands omit the prefix. Code-fact was not consulted: file lists come from the directory listing and the IL membership test (stated limit). Rule strings, ILogger categories, perf harness, Stryker configs and test-selection scripts are grepped for moved full type names, not only using lines. Jev unauthorized: typesafe unavailable by refusal.
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>ModuleRules</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Layout oracles reuse TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary as the Forecasting layout oracles do; CreateNew would duplicate the layer rules.
+</code></pre>
+
+<p>WorkItemsMembershipArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Its Moves and Stays lists are the move list; it compares by short name and stays green through the move.
+</code></pre>
+
+<p>WorkItemService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Existing owners of every moved responsibility keep their code; only folder and namespace change. CreateNew would duplicate refresh, blocked, dependency and rule decisions.
+</code></pre>
+
+<p>ForecastingDomainLayoutArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingDomainLayoutArchUnitTest.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Model for the three layout oracles: types named as strings, read from the compiled assembly, with made-up offenders in a fixture namespace.
+</code></pre>
+
+<p>ForecastingDomainLayoutArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingDomainLayoutArchUnitTest.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>Slice layout oracle for Work Items; the model oracle is Forecasting&#x27;s, ModuleRules supplies the rules, no existing test owns this list.
+</code></pre>
+
+<p>SyncModeResolver</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>FetchFingerprint</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>RuleEvaluator</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/RuleEvaluator.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IRuleEvaluator</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleEvaluator.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>DependencyHonourPolicy</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyHonourPolicy.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IDependencyHonourPolicy</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyHonourPolicy.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>DependencyCycleDetector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyCycleDetector.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>DependencyFacts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyFacts.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>JIRA_REGEX</p>
+
+<p>Scripts/test-selection/path-classifier.sh:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>FetchFingerprint</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>Program</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>RuleEvaluatorPurityTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RuleEvaluatorPurityTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>FetchShapingPropertyGuardTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>ConnectionSaveArchitectureTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionSaveArchitectureTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>DependencySingleDecisionArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>BlockedItemSinglePathArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/BlockedItemSinglePathArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>mutate</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5687-slice-05.json:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>mutate</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-4365-slice-02.json:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>mutate</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>WorkItemsMembershipArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>WorkItemService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IWorkItemService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItems/IWorkItemService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>BlockedItemService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/BlockedItemService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IBlockedItemService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItems/IBlockedItemService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>TeamDataService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamData/TeamDataService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>ITeamDataService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/TeamData/ITeamDataService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IRuleFieldProvider</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleFieldProvider.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>WorkItemFieldProvider</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/WorkItemFieldProvider.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>FeatureFieldProvider</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/FeatureFieldProvider.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>ParentPlacementReport</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentPlacementReport.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>RefreshLogService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RefreshLogService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IRefreshLogService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IRefreshLogService.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>DependencyDecision</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyDecision.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>DependencyReconciler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyReconciler.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>DependencyRefreshReporter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyRefreshReporter.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>FeatureDependencyRendering</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/FeatureDependencyRendering.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>WhatTheForecastWaitsFor</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/WhatTheForecastWaitsFor.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IDependencyDecision</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyDecision.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IDependencyReconciler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyReconciler.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IDependencyRefreshReporter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyRefreshReporter.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>IWhatTheForecastWaitsFor</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IWhatTheForecastWaitsFor.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>FlowMetricsInboundApplicationArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>FlowMetricsInboundDomainAndAdaptersArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>RepositoryLeakRatchetArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>HostUsersStillToMove</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>TimeInStateSeamArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TimeInStateSeamArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>CalendarDayAnchorSeamArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>WorkItemsRulesSeeTheModuleArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>ForecastingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>ForecastingRulesSeeTheModuleArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>ForecastingAdaptersAndPoliciesLayoutArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingAdaptersAndPoliciesLayoutArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>ForecastingUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the string, using line or path; extended in place.
+</code></pre>
+
+<p>WorkItemBlockedTransitionCaptureHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCaptureHandler.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>WorkItemBlockedTransitionCloseHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCloseHandler.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>FeatureBlockedTransitionCaptureHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCaptureHandler.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>FeatureBlockedTransitionCloseHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCloseHandler.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>TeamDeletedRefreshLogCleanupHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/TeamDeletedRefreshLogCleanupHandler.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>ConnectionFetchShapeChangedUpdateTriggerHandler</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandler.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<h3>Impact</h3>
+
+<p>test-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Membership lists stay; the new oracle only adds layout checks.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/RuleEvaluator.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleEvaluator.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyHonourPolicy.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyHonourPolicy.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyCycleDetector.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyFacts.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Scripts/test-selection/path-classifier.sh:1</p>
+
+<p>Changed</p>
+
+<pre><code>Line 13: the FetchFingerprint path follows the file to Modules/WorkItems/Domain, or the Jira tests stop being selected
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lines 135-146 pin the FetchFingerprint path; follow the file
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Using lines only
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RuleEvaluatorPurityTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings follow RuleEvaluator and IRuleEvaluator
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings follow FetchFingerprint
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionSaveArchitectureTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings follow FetchFingerprint
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Folder keys and full names follow the Domain/Dependencies types; the rule&#x27;s folder list stays exact
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/BlockedItemSinglePathArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings follow RuleEvaluator
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5687-slice-05.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>Mutate paths of FetchFingerprint and SyncModeResolver follow the files
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-4365-slice-02.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>Mutate paths of DependencyHonourPolicy, DependencyCycleDetector, DependencyFacts follow the files
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>Mutate path of DependencyHonourPolicy follows the file
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Only a using or fixture edit if the move forces it; the lists stay
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItems/IWorkItemService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/BlockedItemService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItems/IBlockedItemService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamData/TeamDataService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/TeamData/ITeamDataService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleFieldProvider.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/WorkItemFieldProvider.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/FeatureFieldProvider.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentPlacementReport.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RefreshLogService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IRefreshLogService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyDecision.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyReconciler.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyRefreshReporter.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/FeatureDependencyRendering.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/WhatTheForecastWaitsFor.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyDecision.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyReconciler.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyRefreshReporter.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IWhatTheForecastWaitsFor.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TimeInStateSeamArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/BlockedItemSinglePathArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingAdaptersAndPoliciesLayoutArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5687-slice-05.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>Mutate path of WorkItemService follows the file
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-4365-slice-02.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>Mutate path of DependencyRefreshReporter follows the file
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>Mutate path of DependencyRefreshReporter follows the file
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCaptureHandler.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCloseHandler.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCaptureHandler.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCloseHandler.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/TeamDeletedRefreshLogCleanupHandler.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>source-file</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandler.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Moves by git mv, namespace line only; consumers gain using lines.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Using lines only; registration order stays
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full-name strings naming a moved handler follow it; no change if none
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Full names naming a moved handler&#x27;s tests follow it; no change if none
+</code></pre>
+
+<h3>Agreement</h3>
+
+<p>Lighthouse CLR namespaces of Work Items types</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>DI registrations gain using lines only; order and lifetimes stay.
+</code></pre>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Producers and consumers are in one deployable and change in one commit; RefreshesStayTheSameTest and the examine answer-compare scripts observe unchanged answers.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<p>None.</p>
+
+<h3>Equality</h3>
+
+<p>None.</p>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<p>None.</p>
+
+<h3>States</h3>
+
+<p>None.</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>Relocation of 43 Work Items types
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>IL-reading layout rules in each slice oracle exclude a Work Items type left in Services and a Domain type reaching beyond the kernel and the BCL
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Relocation of 43 Work Items types
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Each type has an existing source file and a named destination folder
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Relocation of 43 Work Items types
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Observation is the compiled assembly read by ArchUnit plus unchanged refresh and metrics answers through RefreshesStayTheSameTest and the examine compare scripts
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Relocation of 43 Work Items types
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: no progress or scheduling behaviour is added or changed; files move byte for byte apart from the namespace line
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Bypass</p>
+
+<pre><code>A file moves but a namespace, using line or string-named type (logger category, perf harness, Stryker path, reflection, test-selection script) is missed
+</code></pre>
+
+<pre><code>Refresh answers, metrics answers, forecasts and handler order
+</code></pre>
+
+<pre><code>Build errors until usings are fixed
+</code></pre>
+
+<pre><code>Silent change in results, logger categories or handler order; Jira tests no longer selected
+</code></pre>
+
+<pre><code>Reflection or string lookups of moved types not found by grep
+</code></pre>
+
+<p>crafter; DomainEventHandlerOrderPinTest and RefreshesStayTheSameTest</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: rule lists, scripts and Stryker configs name no other moved path
+</code></pre>
+
+<pre><code>Rule lists compare both ways
+</code></pre>
+
+<pre><code>A stale string fails a rule or test loudly
+</code></pre>
+
+<pre><code>Loosened rule or silently stale list or script
+</code></pre>
+
+<pre><code>Stryker configs of old features that name moved files
+</code></pre>
+
+<p>crafter and reviewer</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second walk: a Domain candidate turns out to reach Application, or WorkItemService&#x27;s move makes the forecast-isolation rule reach the forecast
+</code></pre>
+
+<pre><code>Rules unloosened
+</code></pre>
+
+<pre><code>Candidate goes to Application, recorded in the oracle list; forecast reach returns to the architect
+</code></pre>
+
+<pre><code>Rule weakened or a Domain type reaching Application
+</code></pre>
+
+<pre><code>None known; the Domain rule names the offender
+</code></pre>
+
+<p>crafter, architect</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Oracle: Domain list, layout and kernel-only reach
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncModeResolver.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/FetchFingerprint.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleEvaluator.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/RuleEvaluator.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/IRuleEvaluator.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleEvaluator.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyHonourPolicy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyHonourPolicy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/IDependencyHonourPolicy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyHonourPolicy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyCycleDetector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyCycleDetector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyFacts.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyFacts.cs
+</code></pre>
+
+<p>Scripts/test-selection/path-classifier.sh</p>
+
+<p>Extend</p>
+
+<pre><code>Line 13: the FetchFingerprint path follows the file to Modules/WorkItems/Domain, or the Jira tests stop being selected
+</code></pre>
+
+<p>Scripts/test-selection/test-path-classifier.sh</p>
+
+<p>Extend</p>
+
+<pre><code>Lines 135-146 pin the FetchFingerprint path; follow the file
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Using lines only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RuleEvaluatorPurityTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings follow RuleEvaluator and IRuleEvaluator
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings follow FetchFingerprint
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionSaveArchitectureTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings follow FetchFingerprint
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Folder keys and full names follow the Domain/Dependencies types; the rule&#x27;s folder list stays exact
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/BlockedItemSinglePathArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings follow RuleEvaluator
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5687-slice-05.json</p>
+
+<p>Extend</p>
+
+<pre><code>Mutate paths of FetchFingerprint and SyncModeResolver follow the files
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-4365-slice-02.json</p>
+
+<p>Extend</p>
+
+<pre><code>Mutate paths of DependencyHonourPolicy, DependencyCycleDetector, DependencyFacts follow the files
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json</p>
+
+<p>Extend</p>
+
+<pre><code>Mutate path of DependencyHonourPolicy follows the file
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Only a using or fixture edit if the move forces it; the lists stay
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkItemsDomainLayoutArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefreshesStayTheSameTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Read the compiled production assembly and apply the layout rule: every type on the Domain list lives in Lighthouse.Backend.Modules.WorkItems.Domain (Dependencies types in Domain.Dependencies), none remains in Services, and the Domain namespace reaches only the kernel and the BCL; any candidate the rule rejects is on the recorded Application list instead
+</code></pre>
+
+<pre><code>The rule passes on the real assembly; a made-up offender in Lighthouse.Backend.Modules.WorkItemsFixtures reaching an Application type fails the Domain rule and is named, and its compliant twin is not
+</code></pre>
+
+<pre><code>A Domain candidate left under Services.Implementation, a dependency type placed flat in a layer, or a Domain type referencing an Application or adapter type fails and names the type; FetchFingerprint&#x27;s path in the test-selection scripts pointing at the old file fails test-path-classifier.sh
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L1 pure move: git mv the Domain files, changing only the namespace line the move requires; the host commits it, then a separate edit commit for using lines, rule strings, the two test-selection scripts and Stryker paths. Makes the Application move in the next slice and feature C&#x27;s module rules possible
+</code></pre>
+
+<pre><code>Refresh answers, metrics answers, forecasts, routes, DTOs and handler order; compile state restored by the edit commit
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefreshesStayTheSameTest
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>No wire, schema or persisted contract is touched; CLR namespaces change inside one deployable in one commit.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>Pure move of existing files and one new layout oracle: each moved type keeps its one owner and only folder and namespace change; reuse owners are recorded in the shared reuse rows (the destination files do not exist yet).
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Consumer and test impact for every target is recorded once in the shared impact rows: consumers only gain using lines, tests stay in place, Program.cs gets using lines only.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>Domain types sit in Modules/WorkItems/Domain(/Dependencies), reach only the kernel and the BCL, none remains in Services; a made-up offender is named
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkItemsDomainLayoutArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Oracle: Application list and layout, full-name lists name the new places
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IWorkItemService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItems/IWorkItemService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/BlockedItemService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/BlockedItemService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IBlockedItemService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItems/IBlockedItemService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamData/TeamDataService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/ITeamDataService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/TeamData/ITeamDataService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IRuleFieldProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleFieldProvider.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemFieldProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/WorkItemFieldProvider.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/FeatureFieldProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/FeatureFieldProvider.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/ParentPlacementReport.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentPlacementReport.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/RefreshLogService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RefreshLogService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IRefreshLogService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IRefreshLogService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/DependencyDecision.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyDecision.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/DependencyReconciler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyReconciler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/DependencyRefreshReporter.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyRefreshReporter.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/FeatureDependencyRendering.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/FeatureDependencyRendering.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/WhatTheForecastWaitsFor.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/WhatTheForecastWaitsFor.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/IDependencyDecision.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyDecision.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/IDependencyReconciler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyReconciler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/IDependencyRefreshReporter.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyRefreshReporter.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/IWhatTheForecastWaitsFor.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IWhatTheForecastWaitsFor.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Using lines only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TimeInStateSeamArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/BlockedItemSinglePathArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingAdaptersAndPoliciesLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5687-slice-05.json</p>
+
+<p>Extend</p>
+
+<pre><code>Mutate path of WorkItemService follows the file
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-4365-slice-02.json</p>
+
+<p>Extend</p>
+
+<pre><code>Mutate path of DependencyRefreshReporter follows the file
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json</p>
+
+<p>Extend</p>
+
+<pre><code>Mutate path of DependencyRefreshReporter follows the file
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkItemsApplicationLayoutArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefreshesStayTheSameTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Read the compiled production assembly and apply the layout rule: every type on the Application list lives in Lighthouse.Backend.Modules.WorkItems.Application (dependency services and ports in Application.Dependencies), none remains in Services, and every rule list that names a moved type by full name names it in its new place and is still compared in both directions
+</code></pre>
+
+<pre><code>The layout rule passes on the real assembly; the forecast-isolation rule over Modules.WorkItems still passes with WorkItemService inside it; a made-up Application type left under Services.Implementation.WorkItems in the fixture namespace fails and is named
+</code></pre>
+
+<pre><code>A Work Items service or port left under Services, a dependency type placed flat in Application, a full-name list string naming the old namespace, or a loosened rule fails and names the offender; RefreshesStayTheSameTest or refresh-answers-compare answers differently from base
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L1 pure move: git mv the Application files, changing only the namespace line; the host commits it, then a separate edit commit for using lines, full-name rule strings and Stryker paths. Makes feature C&#x27;s Work Items module rules and the metrics reaction possible
+</code></pre>
+
+<pre><code>Refresh answers, metrics answers, forecasts, DI lifetimes and handler order; compile state restored by the edit commit
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefreshesStayTheSameTest
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>No wire, schema or persisted contract is touched; CLR namespaces change inside one deployable in one commit.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>Pure move of existing files and one new layout oracle: each moved type keeps its one owner and only folder and namespace change; reuse owners are recorded in the shared reuse rows (the destination files do not exist yet).
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Consumer and test impact for every target is recorded once in the shared impact rows: consumers only gain using lines, tests stay in place, Program.cs gets using lines only.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T2</h6>
+
+<pre><code>Application types sit in Modules/WorkItems/Application(/Dependencies), none remains in Services, full-name rule lists name the new places, forecast isolation holds over Modules.WorkItems
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkItemsApplicationLayoutArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>Oracle: Policies list and layout, handler order unchanged
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCaptureHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCaptureHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/WorkItemBlockedTransitionCloseHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCloseHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCaptureHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCaptureHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/FeatureBlockedTransitionCloseHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCloseHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/TeamDeletedRefreshLogCleanupHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/ConnectionFetchShapeChangedUpdateTriggerHandler.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandler.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Using lines only; registration order stays
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full-name strings naming a moved handler follow it; no change if none
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Full names naming a moved handler&#x27;s tests follow it; no change if none
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkItemsPoliciesLayoutArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefreshesStayTheSameTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Read the compiled production assembly and apply the layout rule: the six handlers live in Lighthouse.Backend.Modules.WorkItems.Application.Policies and none remains in Services; run DomainEventHandlerOrderPinTest unmodified
+</code></pre>
+
+<pre><code>The layout rule passes and the order pin stays green, so the handlers still run in the registered order; a made-up handler left under Services in the fixture namespace fails and is named
+</code></pre>
+
+<pre><code>A handler left under Services.Implementation.DomainEvents or BackgroundServices.Update fails and is named; reordering a registration in Program.cs fails DomainEventHandlerOrderPinTest
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L1 pure move: git mv the six handlers, changing only the namespace line; the host commits it, then a separate edit commit for using lines. Registration lines in Program.cs are not touched. Makes feature C&#x27;s reaction to TeamDataRefreshed a Work Items policy
+</code></pre>
+
+<pre><code>Handler order, refresh log clean-up, blocked-transition capture and close, update trigger on fetch-shape change
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DomainEventHandlerOrderPinTest
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>No wire, schema or persisted contract is touched; CLR namespaces change inside one deployable in one commit.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>Pure move of existing files and one new layout oracle: each moved type keeps its one owner and only folder and namespace change; reuse owners are recorded in the shared reuse rows (the destination files do not exist yet).
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Consumer and test impact for every target is recorded once in the shared impact rows: consumers only gain using lines, tests stay in place, Program.cs gets using lines only.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T3</h6>
+
+<pre><code>The six handlers sit in Modules/WorkItems/Application/Policies, none remains in Services; handler order pin unchanged
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkItemsPoliciesLayoutArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>
