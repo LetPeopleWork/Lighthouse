@@ -311,11 +311,11 @@ The maintainer reads the Linux packaging workflow, its runner label, its build c
 ```
 
 ```text
-The job runs on ubuntu-latest, no job names a versioned Ubuntu runner, the build container is an Ubuntu image by digest whose release matches the written floor (a tag only, or a digest of another release, is refused), there is no .NET setup, no exact WebKitGTK pin, the installed WebKitGTK version is printed, the bundler runs without FUSE, packages install as root first, and the libssl rejection stays after the build
+The job runs on ubuntu-latest, no job names a versioned Ubuntu runner, the build container is an Ubuntu image by digest whose release matches the written floor (a tag only, or a digest of another release, is refused), there is no .NET setup, no exact WebKitGTK pin, the install step prints the installed WebKitGTK version after the install, the bundler runs without FUSE, packages install as root first, and the libssl rejection and the glibc floor check both run after the build and before the upload
 ```
 
 ```text
-A GitHub runner image retirement cannot change the glibc of the Linux AppImage or block the release
+A GitHub runner image retirement cannot change the glibc of the Linux AppImage or block the release, and an AppImage over the floor is never uploaded
 ```
 
 ##### Disposition
@@ -325,7 +325,7 @@ Tested
 tools\/linux\-appimage\/tests\/test\-build\-environment\.sh
 
 ```text
-a container image given by tag only that happens to say 24.04, or a runner label ubuntu-latest with the old sudo install that fails in a bare container
+a container image given by tag only that happens to say 24.04, a runner label ubuntu-latest with the old sudo install that fails in a bare container, or a workflow with the floor step deleted
 ```
 
 ###### Obligations
@@ -401,7 +401,7 @@ The loader job of the workflow is read, and the loader check runs on stand-in Ap
 ```
 
 ```text
-The loader job waits for the packaging job and runs both digests; a missing AppImage or one without ELF files exits 2; a missing library or a glibc version the system lacks exits 1 and names it; a fully resolving AppImage exits 0, and the real AppImage resolves on both distributions
+The loader check script exists; the loader job waits for the packaging job and runs both digests; a missing AppImage or one without ELF files exits 2; a missing library or a glibc version the system lacks exits 1 and names it; a fully resolving AppImage exits 0, and the real AppImage resolves on both distributions
 ```
 
 ```text

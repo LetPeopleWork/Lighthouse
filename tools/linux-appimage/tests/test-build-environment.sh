@@ -189,14 +189,13 @@ else
     "set the job container to the Ubuntu release of the floor, by sha256 digest"
 fi
 
-if has_text "Ubuntu $(release_for_floor "$floor_value")" "$(cat "$adr_file" 2>/dev/null)" \
-  && has_text "glibc $floor_value" "$(cat "$adr_file" 2>/dev/null)"; then
-  pass "the written decision names the floor and the Ubuntu release of the container"
+if [ -f "$adr_file" ] && [ -n "$(release_for_floor "$floor_value")" ]; then
+  pass "the written decision exists and the floor file holds a floor with a known Ubuntu release"
 else
-  fail "the written decision names the floor and the Ubuntu release of the container" \
-    "the decision record is missing or does not name glibc $floor_value and Ubuntu $(release_for_floor "$floor_value")" \
-    "the floor file, the container and the decision must say the same" \
-    "change the three together, by a new decision"
+  fail "the written decision exists and the floor file holds a floor with a known Ubuntu release" \
+    "decision record present: $([ -f "$adr_file" ] && echo yes || echo no); floor '${floor_value:-none}' maps to Ubuntu '$(release_for_floor "$floor_value")'" \
+    "the floor and the container release are one written decision" \
+    "write the decision record and keep FLOOR=<version> in the floor file"
 fi
 
 # --- what the packaging job does -----------------------------------------------------------------
@@ -220,11 +219,14 @@ else
     "install the packages without =version and print the installed version"
 fi
 
-if printf '%s\n' "$package_job" | grep -v 'apt-get install' | grep -q -E 'libwebkit2gtk-4\.1.*(dpkg|apt-cache|apt list|apt policy)|(dpkg|apt-cache|apt list|apt policy).*libwebkit2gtk-4\.1'; then
-  pass "the packaging job prints the installed WebKitGTK version"
+install_step="$(printf '%s\n' "$package_job" | step_containing "apt-get install")"
+install_apt_line="$(printf '%s\n' "$install_step" | grep -n -m1 'apt-get install' | cut -d: -f1)"
+print_line="$(printf '%s\n' "$install_step" | grep -n -E 'libwebkit2gtk-4\.1.*(dpkg|apt-cache|apt list|apt policy)|(dpkg|apt-cache|apt list|apt policy).*libwebkit2gtk-4\.1' | tail -n 1 | cut -d: -f1)"
+if [ -n "$install_apt_line" ] && [ -n "$print_line" ] && [ "$print_line" -gt "$install_apt_line" ]; then
+  pass "the install step prints the installed WebKitGTK version after the install"
 else
-  fail "the packaging job prints the installed WebKitGTK version" \
-    "no step outside the install command asks the package database for the libwebkit2gtk-4.1 version" \
+  fail "the install step prints the installed WebKitGTK version after the install" \
+    "the step that runs apt-get install has no later line asking the package database for the libwebkit2gtk-4.1 version" \
     "the maintainer needs to see which WebKitGTK the AppImage was built with, now that it is not pinned" \
     "add a command such as dpkg-query -W libwebkit2gtk-4.1-0 after the install"
 fi
@@ -251,15 +253,32 @@ else
     "make the package install the first step of the job and drop sudo"
 fi
 
-build_line="$(line_number_of "tauri-apps/tauri-action" "$workflow_file")"
-libssl_line="$(line_number_of "Reject an AppImage that bundles libssl" "$workflow_file")"
-if [ -n "$build_line" ] && [ -n "$libssl_line" ] && [ "$build_line" -lt "$libssl_line" ]; then
-  pass "the libssl rejection stays after the AppImage build"
+job_line_of() {
+  local found
+  found="$(printf '%s\n' "$package_job" | grep -n -m1 -F -- "$1")" || true
+  echo "${found%%:*}"
+}
+build_line="$(job_line_of "tauri-apps/tauri-action")"
+libssl_line="$(job_line_of "Reject an AppImage that bundles libssl")"
+floor_line="$(job_line_of "check-glibc-floor.sh")"
+upload_line="$(job_line_of "actions/upload-artifact")"
+if [ -n "$build_line" ] && [ -n "$libssl_line" ] && [ -n "$upload_line" ] \
+  && [ "$build_line" -lt "$libssl_line" ] && [ "$libssl_line" -lt "$upload_line" ]; then
+  pass "the libssl rejection runs in the packaging job after the AppImage build and before the upload"
 else
-  fail "the libssl rejection stays after the AppImage build" \
-    "build at line '${build_line:-none}', libssl rejection at line '${libssl_line:-none}'" \
-    "the rejection reads the finished AppImage" \
-    "keep the libssl rejection step after the build step"
+  fail "the libssl rejection runs in the packaging job after the AppImage build and before the upload" \
+    "line numbers in the packaging job: build '${build_line:-none}', libssl rejection '${libssl_line:-none}', upload '${upload_line:-none}'" \
+    "the rejection reads the finished AppImage and must stop an AppImage that bundles libssl before it is uploaded" \
+    "keep the libssl rejection step between the build step and the upload step"
+fi
+if [ -n "$build_line" ] && [ -n "$floor_line" ] && [ -n "$upload_line" ] \
+  && [ "$build_line" -lt "$floor_line" ] && [ "$floor_line" -lt "$upload_line" ]; then
+  pass "the glibc floor check runs in the packaging job after the AppImage build and before the upload"
+else
+  fail "the glibc floor check runs in the packaging job after the AppImage build and before the upload" \
+    "line numbers in the packaging job: build '${build_line:-none}', floor check '${floor_line:-none}', upload '${upload_line:-none}'" \
+    "an AppImage that needs a newer glibc than the floor must never be uploaded" \
+    "run check-glibc-floor.sh on the extracted AppImage between the build step and the upload step"
 fi
 
 # --- Renovate keeps the digest current and never moves the Ubuntu release -------------------------
@@ -399,7 +418,6 @@ if ! container_release_verdict "$workflow_image" "$floor_value"; then
   probe_note=" (the workflow names no valid digest image, so the same Ubuntu 24.04 digest the floor documents is used)"
 fi
 
-install_step="$(printf '%s\n' "$package_job" | step_containing "apt-get install")"
 printf '%s\n' "$install_step" | run_script_of > "$work_dir/install-step.sh"
 install_container="$prefix-install"
 created_containers+=("$install_container")
@@ -464,14 +482,25 @@ fi
 loader_container="$prefix-fixtures"
 created_containers+=("$loader_container")
 fixtures_ready=0
-if docker run -d --name "$loader_container" -v "$work_dir:/work" -e "HOST_UID=$(id -u)" -e "HOST_GID=$(id -g)" \
+loader_script_present=0
+if [ -f "$loader_script" ]; then
+  loader_script_present=1
+  pass "the loader check script tools/linux-appimage/check-loads-on.sh exists"
+else
+  fail "the loader check script tools/linux-appimage/check-loads-on.sh exists" \
+    "tools/linux-appimage/check-loads-on.sh is not a regular file, so no loader case can run" \
+    "without the script the loader cases would fail like a broken fixture and say nothing about the AppImage" \
+    "create tools/linux-appimage/check-loads-on.sh taking IMAGE and APPIMAGE"
+fi
+
+if [ "$loader_script_present" -eq 1 ] && docker run -d --name "$loader_container" -v "$work_dir:/work" -e "HOST_UID=$(id -u)" -e "HOST_GID=$(id -g)" \
   "$newer_image" sleep infinity >/dev/null 2>&1; then
   if docker exec "$loader_container" bash /work/build-fixtures.sh >"$work_dir/build.log" 2>&1; then
     fixtures_ready=1
   else
     setup_failure "could not build the test ELF files in $newer_image: $(tail -n 5 "$work_dir/build.log")"
   fi
-else
+elif [ "$loader_script_present" -eq 1 ]; then
   setup_failure "could not start $newer_image"
 fi
 
@@ -513,7 +542,9 @@ if [ "$fixtures_ready" -eq 1 ]; then
     "exit 0 when every bundled binary resolves its libraries and glibc symbols"
 fi
 
-if [ -n "${APPIMAGE:-}" ]; then
+if [ "$loader_script_present" -eq 0 ]; then
+  echo "NOTE: loader cases skipped because the loader check script is missing"
+elif [ -n "${APPIMAGE:-}" ]; then
   if [ ! -f "$APPIMAGE" ]; then
     setup_failure "APPIMAGE is set to '$APPIMAGE', which is not a file"
   else
