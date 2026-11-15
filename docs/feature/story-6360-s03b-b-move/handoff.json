@@ -1,8 +1,92 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F137",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs"
+},
+"expected": "F135",
+"stimulus": "F134",
+"user_result": "F136"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F141",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs"
+},
+"expected": "F139",
+"stimulus": "F138",
+"user_result": "F140"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs"
+},
+"expected": "F143",
+"stimulus": "F142",
+"user_result": "F144"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F149",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs"
+},
+"expected": "F147",
+"stimulus": "F146",
+"user_result": "F148"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F153",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs"
+},
+"expected": "F151",
+"stimulus": "F150",
+"user_result": "F152"
+}
+]
+},
 "counters": {
 "D": 5,
 "E": 4,
-"F": 133,
+"F": 153,
 "K": 3,
 "P": 4,
 "S": 3,
@@ -1487,8 +1571,28 @@
 "F131": "E3 (P3, handler order): when a Work Items domain event fires, the six Work Items event handlers run in the same order as before the move, so the user sees the same resulting state (for example the same item, team or refresh-log update) after the event. The Policies folder location is an architectural claim referred to candidate review.",
 "F132": "E4 (P4, user-observable): refresh answers, metrics answers and forecasts a user reads are identical before and after the move for the same data and the same request.",
 "F133": "E1 (P1): after the move, the sync mode, fetch fingerprint, rule evaluation and dependency decisions give the same visible results a user or operator sees (refresh answers, metrics answers and forecasts) as before the move, for the same data and the same request. The layer placement that P1 describes (a type the Domain architecture rule rejects is moved to Application and recorded) is an architectural claim referred to candidate review, not judged here.",
+"F134": "Read the compiled assembly and ask where sync mode, the fetch fingerprint, the rule evaluator, the dependency policies and their plain values live",
+"F135": "Each sits in the Work Items module Domain (dependency ones in its Dependencies folder, never flat) and none is left under Services",
+"F136": "The pure Work Items calculations sit in their module Domain, nothing is left in the old Services folders",
+"F137": "Types moved to the module Domain root instead of Domain/Dependencies, or a copy left under Services with a second one in the module, are refused by the second rule case",
+"F138": "Read the compiled Work Items Domain and list what each of its types reaches",
+"F139": "Only the Domain itself, the shared Models kernel and the base library are reached; an empty Domain fails",
 "F14": "Pure relocation of 43 Work Items types by git mv from Services into Lighthouse.Backend/Modules/WorkItems, namespace = folder (Lighthouse.Backend.Modules.WorkItems.{Domain,Domain.Dependencies,Application,Application.Dependencies,Application.Policies}), type and file names unchanged, the move list is the Moves list of WorkItemsMembershipArchUnitTest. Stays: DependencySourceSelector, DependencyFieldReferences, ParentSourceSelector, OrphanedFeatureCleanupService, IOrphanedFeatureCleanupService. Each slice is a pure-move commit (host commits after a move-ready message), then a separate edit commit for using lines, rule-list strings, scripts and Stryker paths.",
+"F140": "Work Items calculations cannot read a database, setting or logger",
+"F141": "A Domain that is silently empty or a type reaching Services is caught; a rejected type belongs on the Application list, which the design owner records",
+"F142": "Run the same Domain rule on made-up Domain types reaching Services, the module Application and the module Adapters, next to a compliant twin",
+"F143": "Exactly the offender is reported and named with what it reached; the twin is not; the failure message names both",
+"F144": "A Domain type that leaks to Application or an adapter is named so it can be undone",
+"F145": "A rule that flags the twin or misses an async or Application reach would be accepted by a count-only check, which this does not do",
+"F146": "Look at the files of the Domain types on disk",
+"F147": "The files sit in Modules/WorkItems/Domain and Domain/Dependencies and nowhere else",
+"F148": "The module layout shows in folders as in namespaces",
+"F149": "A namespace edit without git mv is refused",
 "F15": "Layer placement. Domain: SyncModeResolver, FetchFingerprint; Domain/Dependencies: DependencyHonourPolicy with IDependencyHonourPolicy, DependencyHonourInput and FeatureDependencyFacts (declared in the interface file), DependencyCycleDetector with DependencyLoops and DependencyLoop, DependencyFacts; RuleEvaluator<T> with IRuleEvaluator<T> in Domain, because a Domain type cannot reach an Application port and the port reaches only the kernel (deviation from D-1, which listed the port under Application). Final Domain membership is what the IL-reading Domain rule admits: a candidate that reaches anything beyond Models and the BCL goes to Application, recorded in the oracle list. Application: WorkItemService, IWorkItemService, BlockedItemService, IBlockedItemService, TeamDataService, ITeamDataService, IRuleFieldProvider, WorkItemFieldProvider, FeatureFieldProvider, ParentPlacementReport with RecordPlacement, RefreshLogService, IRefreshLogService; Application/Dependencies: DependencyDecision, DependencyReconciler, DependencyRefreshReporter, FeatureDependencyRendering with DependenciesAsRead, WhatTheForecastWaitsFor and IDependencyDecision, IDependencyReconciler, IDependencyRefreshReporter, IWhatTheForecastWaitsFor. Application/Policies: WorkItemBlockedTransitionCaptureHandler, WorkItemBlockedTransitionCloseHandler, FeatureBlockedTransitionCaptureHandler, FeatureBlockedTransitionCloseHandler, TeamDeletedRefreshLogCleanupHandler, ConnectionFetchShapeChangedUpdateTriggerHandler. Dependency types never sit flat in a layer: the sub-folders are the ones DependencySingleDecisionArchUnitTest's folder keys name.",
+"F150": "Change the fetch fingerprint file and ask the CI test selection which live Jira suite to run",
+"F151": "The new Domain path selects the live Jira suite and the old Services path no longer does",
+"F152": "A change to the fingerprint still runs the Jira tests after the move",
+"F153": "A classifier keeping the old path, or matching any Domain file, would pass a text-only check; this runs the real classifier on both paths",
 "F16": "Checker mapping: no state machine, temporal or fairness claim exists (behaviour-free relocation), so Quint, TLA+/TLC and Agda are not applicable and liveness is not applicable (no progress or scheduling change). Dependency-direction and placement claims are checked by IL-reading ArchUnit rules (ModuleRules.TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary) in the three slice oracles; behaviour preservation by RefreshesStayTheSameTest and bash Scripts/examine/bin/refresh-answers-compare (base 8a785450c vs HEAD), plus metrics-answers-compare, forecast-answers-compare, ef-model-unchanged and architecture-rules. No property-based law: the finite relocation has no broad input domain.",
 "F17": "Paradigm object_oriented, smell catalogue nw-code-design-oo: every moved type keeps its owner and responsibility; no domain decision moves into a service, no class is created, split or merged. Carriers unchanged: decisions in DependencyHonourPolicy, DependencyCycleDetector, RuleEvaluator, SyncModeResolver; effects in WorkItemService, TeamDataService, RefreshLogService and the handlers; no per-process state is added.",
 "F18": "Program.cs registrations and order stay; only using lines change, DomainEventHandlerOrderPinTest stays green and unmodified. Unit tests of moved types stay in place and gain using lines only; they move in feature C. Feature A's oracle files may take a using-line edit forced by the move, recorded as a target, never a semantic change. TheNamespaceThisEpicOwns already covers Modules.WorkItems; if WorkItemService's move makes it reach the forecast, the crafter returns that to the architect and never loosens the rule.",

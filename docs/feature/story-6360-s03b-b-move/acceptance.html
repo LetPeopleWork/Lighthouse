@@ -151,7 +151,132 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled assembly and ask where sync mode, the fetch fingerprint, the rule evaluator, the dependency policies and their plain values live
+</code></pre>
+
+<pre><code>Each sits in the Work Items module Domain (dependency ones in its Dependencies folder, never flat) and none is left under Services
+</code></pre>
+
+<pre><code>The pure Work Items calculations sit in their module Domain, nothing is left in the old Services folders
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs</p>
+
+<pre><code>Types moved to the module Domain root instead of Domain/Dependencies, or a copy left under Services with a second one in the module, are refused by the second rule case
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled Work Items Domain and list what each of its types reaches
+</code></pre>
+
+<pre><code>Only the Domain itself, the shared Models kernel and the base library are reached; an empty Domain fails
+</code></pre>
+
+<pre><code>Work Items calculations cannot read a database, setting or logger
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs</p>
+
+<pre><code>A Domain that is silently empty or a type reaching Services is caught; a rejected type belongs on the Application list, which the design owner records
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the same Domain rule on made-up Domain types reaching Services, the module Application and the module Adapters, next to a compliant twin
+</code></pre>
+
+<pre><code>Exactly the offender is reported and named with what it reached; the twin is not; the failure message names both
+</code></pre>
+
+<pre><code>A Domain type that leaks to Application or an adapter is named so it can be undone
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs</p>
+
+<pre><code>A rule that flags the twin or misses an async or Application reach would be accepted by a count-only check, which this does not do
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Look at the files of the Domain types on disk
+</code></pre>
+
+<pre><code>The files sit in Modules/WorkItems/Domain and Domain/Dependencies and nowhere else
+</code></pre>
+
+<pre><code>The module layout shows in folders as in namespaces
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs</p>
+
+<pre><code>A namespace edit without git mv is refused
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Change the fetch fingerprint file and ask the CI test selection which live Jira suite to run
+</code></pre>
+
+<pre><code>The new Domain path selects the live Jira suite and the old Services path no longer does
+</code></pre>
+
+<pre><code>A change to the fingerprint still runs the Jira tests after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs</p>
+
+<pre><code>A classifier keeping the old path, or matching any Domain file, would pass a text-only check; this runs the real classifier on both paths
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 
