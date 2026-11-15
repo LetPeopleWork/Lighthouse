@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Modules.WorkItems.Application.Policies
 {
     public class WorkItemBlockedTransitionCaptureHandler(
         IWorkItemBlockedTransitionRepository transitionRepository,

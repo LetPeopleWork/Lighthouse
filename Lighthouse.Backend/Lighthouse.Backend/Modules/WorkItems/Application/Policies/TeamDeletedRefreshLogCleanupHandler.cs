@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 
-namespace Lighthouse.Backend.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Modules.WorkItems.Application.Policies
 {
     public class TeamDeletedRefreshLogCleanupHandler(IRefreshLogService refreshLogService) : IDomainEventHandler<TeamDeleted>
     {
