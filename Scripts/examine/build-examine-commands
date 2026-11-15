@@ -555,7 +555,7 @@ cat > "$out/refresh-answers-compare" <<EOF
 # 2xx, or when a refresh is refused. The values of the keys listed under "masked keys" are blanked at any depth
 # and so not compared.
 # Usage: refresh-answers-compare [base-revision [candidate-revision]]   (takes about 3 to 6 minutes)
-#   no arguments   compares base db70207b8 (the last revision before any Work Items code moves) with HEAD;
+#   no arguments   compares base 8a785450c (the last revision before any Work Items code moves) with HEAD;
 #                  this is the before/after check
 #   one argument   is the base revision; the candidate is HEAD
 #   two arguments  are the base and the candidate revision
@@ -566,7 +566,7 @@ export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TI
 repo="$repo"
 driver="$out/refresh-answers-capture.cs"
 EOF
-sed -e 's/@BASE@/db70207b8/' -e 's/@ANSWER@/refresh answer/g' -e 's/@DONE@/refreshed/' -e 's/@SUBJECT@/refreshes/' \
+sed -e 's/@BASE@/8a785450c/' -e 's/@ANSWER@/refresh answer/g' -e 's/@DONE@/refreshed/' -e 's/@SUBJECT@/refreshes/' \
   "$pieces/compare.sh" >> "$out/refresh-answers-compare"
 chmod +x "$out/refresh-answers-compare"
 
@@ -702,11 +702,11 @@ async Task<bool> ObserveTheTeamRefresh(TeamUnderTest team)
     var what = $"Team {team.Id} \"{team.Name}\" refreshed at {Stamp(requestedAt)}";
     if (row == default)
     {
-        report.Line($"Team refresh stores its Work Items: NOT OBSERVED. {what}; no Team row in the refresh history after it. " + Rerun);
+        report.Line($"Team refresh runs and is recorded in the refresh history: NOT OBSERVED. {what}; no Team row in the refresh history after it. " + Rerun);
         return false;
     }
-    report.Line($"Team refresh stores its Work Items: OBSERVED. {what}; refresh history row at {Stamp(row)}; " +
-        $"{inProgress} Work Items in progress, {blocked} of them blocked");
+    report.Line($"Team refresh runs and is recorded in the refresh history: OBSERVED. {what}; refresh history row at {Stamp(row)}; " +
+        $"after it the Team answers {inProgress} Work Items in progress, {blocked} of them blocked");
     return true;
 }
 
@@ -921,7 +921,7 @@ EOF
 cat > "$out/refresh-reactions-show" <<EOF
 #!/usr/bin/env bash
 # Shows, on demo data and through the public API, the Work Items reactions running around a Team refresh: the
-# refresh stores the Team's Work Items, a change to what the Team's connection downloads refreshes the Team
+# refresh runs and is recorded in the refresh history, a change to what the Team's connection downloads refreshes the Team
 # again, and deleting the Team removes its refresh history. It starts this checkout's backend in-process on a
 # fresh database and loads the smallest demo scenario with Teams. The reactions that open and close blocked
 # periods have no public answer that shows them on the day they run; they are named as not observable.
