@@ -9,16 +9,11 @@ import {
 	everyReport,
 	FILTER,
 	GRAVITY,
-	LOST_FOR_GOOD_WARNING,
 	MONTH,
-	NOT_CONFIRMED_REMOVED,
-	neverAnswered,
-	notAdminOfSome,
 	notRemoved,
 	notRemovedBecause,
 	OCEAN_EXPLORER,
 	PERMISSIONS_COULD_NOT_LOAD,
-	PULSAR,
 	QUARTER,
 	removeButton,
 	removeCount,
@@ -30,22 +25,18 @@ import {
 	selectTheRowOf,
 	theReportNamesListed,
 	theReportsTable,
-	VOYAGER,
 	ZENITH,
 } from "../../tests/BulkReportsTestKit";
 import { aReportService } from "../../tests/ReportsTestKit";
-import { ownerOfReport, reportQueryKeyOf } from "../Common/Reports/reportOwner";
 
 /**
- * Remove several reports at once, from the Reports page. The reader picks rows, confirms a dialog that lists every
- * one of them and warns when one holds a Then that can no longer be rebuilt, and the server answers each report on
- * its own. Remove is offered only when the reader is Admin of every picked report's owner.
+ * Remove several reports at once, from the Reports page. Each rule of the confirmation, the removal hooks and the
+ * Remove button is proven on its own unit; these tests keep one page render per wiring.
  */
 
 const zenithsQuarter = aReportOn(ZENITH, QUARTER, { id: 801 });
 const gravitysQuarter = aReportOn(GRAVITY, QUARTER, { id: 802 });
 const oceanExplorersMonth = aReportOn(OCEAN_EXPLORER, MONTH, { id: 803 });
-const pulsarsQuarter = aReportOn(PULSAR, QUARTER, { id: 804 });
 
 const listing = (
 	getAllReports: IReportService["getAllReports"],
@@ -66,6 +57,14 @@ const pickTheThree = async (
 	await selectTheRowOf(user, QUARTER, ZENITH);
 	await selectTheRowOf(user, QUARTER, GRAVITY);
 	await selectTheRowOf(user, MONTH, OCEAN_EXPLORER);
+};
+
+const pickTwo = async (
+	user: Awaited<ReturnType<typeof renderTheReportsPage>>["user"],
+) => {
+	await theReportsTable();
+	await selectTheRowOf(user, QUARTER, ZENITH);
+	await selectTheRowOf(user, QUARTER, GRAVITY);
 };
 
 const theConfirmation = () => screen.findByRole("dialog");
@@ -108,146 +107,35 @@ describe("Remove several reports at once", () => {
 		expect(await screen.findByText(EMPTY, { exact: true })).toBeInTheDocument();
 	});
 
-	it(`Cancel removes nothing`, async () => {
+	it(`Escape at the confirmation closes it, removes nothing and keeps what was picked`, async () => {
 		const removeReportsInBulk = vi.fn();
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem(), removeReportsInBulk),
 		});
 
 		await pickTheThree(user);
+		await user.click(screen.getByRole("button", { name: removeButton(3) }));
+		fireEvent.keyDown(
+			within(await theConfirmation()).getByRole("button", { name: CANCEL }),
+			{ key: "Escape" },
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
 		await user.click(screen.getByRole("button", { name: removeButton(3) }));
 		await user.click(
 			within(await theConfirmation()).getByRole("button", { name: CANCEL }),
 		);
 
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
 		expect(removeReportsInBulk).not.toHaveBeenCalled();
 		// Portfolios are listed before Teams, so Ocean Explorer's report comes first.
 		expect(theReportNamesListed()).toEqual([MONTH, QUARTER, QUARTER]);
-	});
-
-	it(`the confirmation warns when one of them holds a Then that can no longer be rebuilt`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				vi
-					.fn()
-					.mockResolvedValue(
-						everyReport(
-							zenithsQuarter,
-							{ ...gravitysQuarter, thenAndNow: { thenRebuildable: false } },
-							oceanExplorersMonth,
-						),
-					),
-			),
-		});
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-
 		expect(
-			within(await theConfirmation()).getByText(LOST_FOR_GOOD_WARNING, {
-				exact: true,
-			}),
+			screen.getByText(selectedCount(3), { exact: true }),
 		).toBeInTheDocument();
-	});
-
-	it(`with every Then still rebuildable the confirmation carries no warning`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(theThreeOfThem()),
-		});
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-
-		expect(
-			within(await theConfirmation()).queryByText(
-				/^\d+ of them (has|have) a Then that can no longer be rebuilt from the kept history; removing (it|them) loses (it|them) for good\.$/,
-			),
-		).not.toBeInTheDocument();
-	});
-
-	it(`with one picked report on an owner she only reads, Remove is disabled and says why`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				vi
-					.fn()
-					.mockResolvedValue(
-						everyReport(
-							zenithsQuarter,
-							gravitysQuarter,
-							oceanExplorersMonth,
-							pulsarsQuarter,
-						),
-					),
-			),
-			permissions: { adminOf: [ZENITH, GRAVITY, OCEAN_EXPLORER] },
-		});
-
-		await pickTheThree(user);
-		await selectTheRowOf(user, QUARTER, PULSAR);
-
-		const remove = screen.getByRole("button", { name: removeButton(4) });
-		expect(remove).toBeDisabled();
-		await user.hover(remove.parentElement ?? remove);
-		expect(await screen.findByRole("tooltip")).toHaveTextContent(
-			new RegExp(`^${notAdminOfSome(1, 4).replaceAll(".", "\\.")}$`),
-		);
-	});
-
-	it(`with two picked reports on owners she only reads, the reason says they are`, async () => {
-		const voyagersQuarter = aReportOn(VOYAGER, QUARTER, { id: 805 });
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				vi
-					.fn()
-					.mockResolvedValue(
-						everyReport(zenithsQuarter, pulsarsQuarter, voyagersQuarter),
-					),
-			),
-			permissions: { adminOf: [ZENITH] },
-		});
-		await theReportsTable();
-
-		await selectTheRowOf(user, QUARTER, ZENITH);
-		await selectTheRowOf(user, QUARTER, PULSAR);
-		await selectTheRowOf(user, QUARTER, VOYAGER);
-
-		const remove = screen.getByRole("button", { name: removeButton(3) });
-		expect(remove).toBeDisabled();
-		await user.hover(remove.parentElement ?? remove);
-		expect(await screen.findByRole("tooltip")).toHaveTextContent(
-			new RegExp(`^${notAdminOfSome(2, 3).replaceAll(".", "\\.")}$`),
-		);
-	});
-
-	it(`when her permissions could not be loaded, Remove is disabled and says to reload`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(theThreeOfThem()),
-			permissions: "failing",
-		});
-		await theReportsTable();
-
-		await selectTheRowOf(user, QUARTER, ZENITH);
-
-		const remove = screen.getByRole("button", { name: removeButton(1) });
-		expect(remove).toBeDisabled();
-		await user.hover(remove.parentElement ?? remove);
-		expect(await screen.findByRole("tooltip")).toHaveTextContent(
-			new RegExp(`^${PERMISSIONS_COULD_NOT_LOAD.replaceAll(".", "\\.")}$`),
-		);
-	});
-
-	it(`when her permissions could not be loaded, pressing Remove asks nothing`, async () => {
-		const removeReportsInBulk = vi.fn();
-		const { user } = renderTheReportsPage({
-			reportService: listing(theThreeOfThem(), removeReportsInBulk),
-			permissions: "failing",
-		});
-
-		await pickTheThree(user);
-		fireEvent.click(screen.getByRole("button", { name: removeButton(3) }));
-
-		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-		expect(removeReportsInBulk).not.toHaveBeenCalled();
 	});
 
 	it(`a report the server did not remove is named with its reason and stays listed`, async () => {
@@ -285,279 +173,29 @@ describe("Remove several reports at once", () => {
 		).toBeInTheDocument();
 		await user.click(screen.getByRole("button", { name: "Done" }));
 		await waitFor(() => expect(rowOf(QUARTER, GRAVITY)).toBeInTheDocument());
-	});
-
-	it(`a report somebody else removed first counts as removed`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				theThreeOfThem(),
-				vi
-					.fn()
-					.mockResolvedValue([
-						removed(801),
-						removed(802, "already-gone"),
-						removed(803),
-					]),
-			),
-		});
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-		await user.click(
-			within(await theConfirmation()).getByRole("button", {
-				name: removeCount(3),
-			}),
-		);
-
-		expect(
-			await screen.findByText(removedHeadline(3), { exact: true }),
-		).toBeInTheDocument();
-	});
-
-	it(`when no answer arrives it says it cannot confirm what was removed`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				theThreeOfThem(),
-				vi.fn().mockRejectedValue(new Error("the network dropped")),
-			),
-		});
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-		await user.click(
-			within(await theConfirmation()).getByRole("button", {
-				name: removeCount(3),
-			}),
-		);
-
-		expect(
-			await screen.findByText(NOT_CONFIRMED_REMOVED, { exact: true }),
-		).toBeInTheDocument();
-	});
-
-	it(`while the removal is under way the dialog cannot be closed`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				theThreeOfThem(),
-				vi.fn(() => neverAnswered()),
-			),
-		});
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-		await user.click(
-			within(await theConfirmation()).getByRole("button", {
-				name: removeCount(3),
-			}),
-		);
-		// The Remove button that held focus is gone by now, so Escape is pressed on the dialog itself.
-		fireEvent.keyDown(
-			within(await theConfirmation()).getByRole("progressbar"),
-			{ key: "Escape" },
-		);
-
-		expect(screen.getByRole("dialog")).toBeInTheDocument();
-		expect(
-			within(screen.getByRole("dialog")).getByRole("progressbar"),
-		).toBeInTheDocument();
-	});
-
-	it(`the result counts only the reports removed, and names only the one that was not`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				theThreeOfThem(),
-				vi
-					.fn()
-					.mockResolvedValue([
-						removed(801),
-						notRemoved(802, "not-admin"),
-						removed(803),
-					]),
-			),
-		});
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-		await user.click(
-			within(await theConfirmation()).getByRole("button", {
-				name: removeCount(3),
-			}),
-		);
-
-		expect(
-			await screen.findByText(removedHeadline(2), { exact: true }),
-		).toBeInTheDocument();
-		expect(
-			within(screen.getByRole("dialog"))
-				.getAllByRole("listitem")
-				.map((item) => item.textContent),
-		).toEqual([`${QUARTER}${notRemovedBecause.notAdmin(GRAVITY)}`]);
-	});
-
-	it(`the confirmation warns in the plural when two Thens would be lost`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				vi
-					.fn()
-					.mockResolvedValue(
-						everyReport(
-							{ ...zenithsQuarter, thenAndNow: { thenRebuildable: false } },
-							{ ...gravitysQuarter, thenAndNow: { thenRebuildable: false } },
-							oceanExplorersMonth,
-						),
-					),
-			),
-		});
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-
-		expect(
-			within(await theConfirmation()).getByText(
-				"2 of them have a Then that can no longer be rebuilt from the kept history; removing them loses them for good.",
-				{ exact: true },
-			),
-		).toBeInTheDocument();
-	});
-
-	it(`a picked report without a Then & Now carries no warning`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				vi
-					.fn()
-					.mockResolvedValue(
-						everyReport({ ...zenithsQuarter, thenAndNow: undefined }),
-					),
-			),
-		});
-		await theReportsTable();
-
-		await selectTheRowOf(user, QUARTER, ZENITH);
-		await user.click(screen.getByRole("button", { name: removeButton(1) }));
-
-		const confirmation = await theConfirmation();
-		expect(within(confirmation).queryByRole("alert")).not.toBeInTheDocument();
-		expect(
-			within(confirmation).getByRole("button", { name: "Remove 1 report" }),
-		).toBeInTheDocument();
-	});
-
-	it(`Escape at the confirmation closes it, removes nothing and keeps what was picked`, async () => {
-		const removeReportsInBulk = vi.fn();
-		const { user } = renderTheReportsPage({
-			reportService: listing(theThreeOfThem(), removeReportsInBulk),
-		});
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-		fireEvent.keyDown(
-			within(await theConfirmation()).getByRole("button", { name: CANCEL }),
-			{ key: "Escape" },
-		);
-
-		await waitFor(() =>
-			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-		);
-		expect(removeReportsInBulk).not.toHaveBeenCalled();
-		expect(
-			screen.getByText(selectedCount(3), { exact: true }),
-		).toBeInTheDocument();
-	});
-
-	it(`Escape on the result closes it and clears what was picked`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				theThreeOfThem(),
-				vi.fn().mockResolvedValue([removed(801), removed(802), removed(803)]),
-			),
-		});
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-		await user.click(
-			within(await theConfirmation()).getByRole("button", {
-				name: removeCount(3),
-			}),
-		);
-		await screen.findByText(removedHeadline(3), { exact: true });
-		fireEvent.keyDown(screen.getByRole("button", { name: "Done" }), {
-			key: "Escape",
-		});
-
-		await waitFor(() =>
-			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-		);
 		expect(
 			screen.getByText(selectedCount(0), { exact: true }),
 		).toBeInTheDocument();
 	});
 
-	it(`each report the removal took, or found already gone, is forgotten, and one it could not remove is kept`, async () => {
-		const removeReportsInBulk = vi
-			.fn()
-			.mockResolvedValue([
-				removed(801),
-				removed(802, "already-gone"),
-				notRemoved(803, "not-admin"),
-			]);
-		const { user, queryClient } = renderTheReportsPage({
+	it(`when her permissions could not be loaded, Remove is disabled and says to reload`, async () => {
+		const removeReportsInBulk = vi.fn();
+		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem(), removeReportsInBulk),
+			permissions: "failing",
 		});
-		const readBefore = [zenithsQuarter, gravitysQuarter, oceanExplorersMonth];
-		const keyOf = (report: (typeof readBefore)[number]) =>
-			reportQueryKeyOf(ownerOfReport(report), report.id);
-		for (const report of readBefore) {
-			queryClient.setQueryData(keyOf(report), report);
-		}
 
 		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-		await user.click(
-			within(await theConfirmation()).getByRole("button", {
-				name: removeCount(3),
-			}),
+
+		const remove = screen.getByRole("button", { name: removeButton(3) });
+		expect(remove).toBeDisabled();
+		await user.hover(remove.parentElement ?? remove);
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			new RegExp(`^${PERMISSIONS_COULD_NOT_LOAD.replaceAll(".", "\\.")}$`),
 		);
-		await screen.findByText(removedHeadline(2), { exact: true });
-
-		expect(
-			readBefore.map(
-				(report) => queryClient.getQueryData(keyOf(report)) !== undefined,
-			),
-		).toEqual([false, false, true]);
-	});
-
-	it(`the report forgotten is the one removed, not one picked before it`, async () => {
-		const removeReportsInBulk = vi
-			.fn()
-			.mockResolvedValue([
-				notRemoved(801, "not-admin"),
-				removed(802),
-				removed(803),
-			]);
-		const { user, queryClient } = renderTheReportsPage({
-			reportService: listing(theThreeOfThem(), removeReportsInBulk),
-		});
-		const readBefore = [zenithsQuarter, gravitysQuarter, oceanExplorersMonth];
-		const keyOf = (report: (typeof readBefore)[number]) =>
-			reportQueryKeyOf(ownerOfReport(report), report.id);
-		for (const report of readBefore) {
-			queryClient.setQueryData(keyOf(report), report);
-		}
-
-		await pickTheThree(user);
-		await user.click(screen.getByRole("button", { name: removeButton(3) }));
-		await user.click(
-			within(await theConfirmation()).getByRole("button", {
-				name: removeCount(3),
-			}),
-		);
-		await screen.findByText(removedHeadline(2), { exact: true });
-
-		expect(
-			readBefore.map(
-				(report) => queryClient.getQueryData(keyOf(report)) !== undefined,
-			),
-		).toEqual([true, false, false]);
+		fireEvent.click(remove);
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		expect(removeReportsInBulk).not.toHaveBeenCalled();
 	});
 });
 
@@ -566,7 +204,7 @@ describe("Picking reports", () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
 		});
-		await pickTheThree(user);
+		await pickTwo(user);
 
 		await user.type(screen.getByRole("textbox", { name: FILTER }), "Quarter");
 
@@ -582,12 +220,12 @@ describe("Picking reports", () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
 		});
-		await pickTheThree(user);
+		await pickTwo(user);
 
 		await user.click(screen.getByRole("columnheader", { name: /^Name/ }));
 
 		expect(
-			screen.getByText(selectedCount(3), { exact: true }),
+			screen.getByText(selectedCount(2), { exact: true }),
 		).toBeInTheDocument();
 	});
 });
