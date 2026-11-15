@@ -99,25 +99,25 @@ None.
 P1
 
 ```text
-A made-up file under the Work Items module folder, one in the old Dependencies folder and one in a namesake folder just outside the module are judged by the folder lists of the dependency scans: what the dependency work added, and where a dependency source may be recorded
+Made-up files in the Dependencies sub-folders of the Work Items module's Domain and Application layers, in the old Dependencies folder, directly in the module and its layers outside any Dependencies sub-folder, and in a namesake module, are judged by the folder lists of the dependency scans: what the dependency work added, and where a dependency source may be recorded
 ```
 
 ```text
-Each list takes in a folder under Modules/WorkItems, keeps the old Dependencies folder, and does not take in the namesake folder
+Each list takes in a module Dependencies sub-folder and keeps the old Dependencies folder, and takes in no file of the module outside the Dependencies sub-folders and none of the namesake module
 ```
 
 ```text
-The dependency word and licence scans keep reading the dependency files after they move into Work Items
+The dependency word and licence scans keep reading the dependency files after they move into Work Items, and do not start scanning or exempting the Work Item service
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsRulesSeeTheModuleArchUnitTest\.cs\:\:WorkItemsRulesSeeTheModuleArchUnitTest\.TheDependencyFolderScans\_TakeInAFolderUnderTheModuleBesideTheOldOne
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsRulesSeeTheModuleArchUnitTest\.cs\:\:WorkItemsRulesSeeTheModuleArchUnitTest\.TheDependencyFolderScans\_TakeInTheModulesDependenciesFoldersOnly\_BesideTheOldOne
 
 ```text
-The module folder is the whole module or a whole layer, which would later also scan or exempt the Work Item service; the oracle does not pin the subfolder
+A key names a deeper or oddly named folder below a Dependencies sub-folder, or names only one of the two layers while the dependency files land in the other; feature B's real-code scans catch a file left unread, not this test
 ```
 
 ###### Obligations

@@ -46,12 +46,12 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F110",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheDependencyFolderScans_TakeInAFolderUnderTheModuleBesideTheOldOne"
+"still_passes_if": "F147",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheDependencyFolderScans_TakeInTheModulesDependenciesFoldersOnly_BesideTheOldOne"
 },
-"expected": "F108",
-"stimulus": "F107",
-"user_result": "F109"
+"expected": "F145",
+"stimulus": "F144",
+"user_result": "F146"
 },
 {
 "covers": [
@@ -164,7 +164,7 @@
 "counters": {
 "D": 5,
 "E": 4,
-"F": 143,
+"F": 147,
 "K": 4,
 "P": 3,
 "S": 3,
@@ -619,11 +619,7 @@
 "F104": "The dependency rule's own namespace key, used as the forbidden side, names the step reaching into the module and not the one reaching the namesake",
 "F105": "The forecast still may not reach dependency types once they live in Work Items",
 "F106": "The rule kept the key but stopped using it on its forbidden side; this test reads the key, not the rule body",
-"F107": "A made-up file under the Work Items module folder, one in the old Dependencies folder and one in a namesake folder just outside the module are judged by the folder lists of the dependency scans: what the dependency work added, and where a dependency source may be recorded",
-"F108": "Each list takes in a folder under Modules/WorkItems, keeps the old Dependencies folder, and does not take in the namesake folder",
-"F109": "The dependency word and licence scans keep reading the dependency files after they move into Work Items",
 "F11": "The membership test lists the Work Items types that move, measured from the IL, and fails on a missing or an unlisted type",
-"F110": "The module folder is the whole module or a whole layer, which would later also scan or exempt the Work Item service; the oracle does not pin the subfolder",
 "F111": "The file keys of the one-decision rules for the reconciler, the honour policy and the decision are read from the rules and looked up in the production source",
 "F112": "Each key is the bare file name and exactly one production file carries it, so the rule finds the file wherever it lives",
 "F113": "Moving the reconciler, honour policy or decision into Work Items does not switch the one-decision rules off",
@@ -660,6 +656,10 @@
 "F141": "A user can watch the Work Items reactions fire after a refresh",
 "F142": "A reaction named not observable that stopped running, since nothing public shows it",
 "F143": "The moved dependency files keep their own sub-folder and namespace inside the module: Modules/WorkItems/Domain/Dependencies/ and Modules/WorkItems/Application/Dependencies/ (whichever layer D-1 and B1 place each in; namespaces Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies and .Application.Dependencies). In DependencySingleDecisionArchUnitTest, WhatThisEpicAddedToTheBackend and TheOnlyPlaceThatMayRecordTheSource name exactly those two sub-folders beside the old Services folders, never a whole module layer, so WorkItemService stays outside the exempt folder and outside the blocked-word scan after the move. Feature B moves the dependency types into these sub-folders, not into the bare layer folder.",
+"F144": "Made-up files in the Dependencies sub-folders of the Work Items module's Domain and Application layers, in the old Dependencies folder, directly in the module and its layers outside any Dependencies sub-folder, and in a namesake module, are judged by the folder lists of the dependency scans: what the dependency work added, and where a dependency source may be recorded",
+"F145": "Each list takes in a module Dependencies sub-folder and keeps the old Dependencies folder, and takes in no file of the module outside the Dependencies sub-folders and none of the namesake module",
+"F146": "The dependency word and licence scans keep reading the dependency files after they move into Work Items, and do not start scanning or exempting the Work Item service",
+"F147": "A key names a deeper or oddly named folder below a Dependencies sub-folder, or names only one of the two layers while the dependency files land in the other; feature B's real-code scans catch a file left unread, not this test",
 "F15": "Made-up types live in the test assembly below Lighthouse.Backend.Modules.WorkItems (for example Lighthouse.Backend.Modules.WorkItems.Application.WorkItemsFixtures), with a compliant twin each and a namesake just outside the module (Lighthouse.Backend.Modules.WorkItemsFixtures), the S03c way: the widened patterns end in (\\.|$), so only a type below Modules.WorkItems proves the real widened constant.",
 "F16": "Formal verification: no checker selected, no model written or run. No state, transition, protocol, concurrency or recovery behaviour changes. Rule and membership claims are finite and decided exactly by the compiled IL with a made-up offender as falsifier; the refresh-preservation claim compares the code with itself, so literal expected values at the service port are the honest falsifier. Liveness not applicable: synchronous rule evaluation and a one-shot capture have no progress property. Property-based testing not applicable: every law is a finite enumeration of rules, types, refresh scenarios and named endpoints; the test-writing skill decides test density.",
 "F17": "Carriers, all test-side: rule verdicts are KernelRuleVerdict, InboundVerdict and OutboundVerdict owned by ModuleRules and KernelRules; dependency facts are IlDependent from IlDependencies; per-fixture state is the lazily read Mono.Cecil ModuleDefinition disposed at one-time teardown; the refresh oracle holds a ServicePortHarness per scenario; the compare script holds captured bodies in a temp directory. Layers: application rules only; no adapter, infrastructure or recovery layer changes.",

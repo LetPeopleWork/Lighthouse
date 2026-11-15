@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string AMadeUpFileName = "AMadeUpDependencyFile.cs";
 
+        private const string AMadeUpWorkItemServiceFileName = "AMadeUpWorkItemServiceFile.cs";
+
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 
         private static readonly Lazy<ModuleDefinition> TestModule = new(() => IlDependencies.ReadModule(typeof(WorkItemsRulesSeeTheModuleArchUnitTest).Assembly));
@@ -94,16 +96,13 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [TestCase("WhatThisEpicAddedToTheBackend", "")]
         [TestCase("TheOnlyPlaceThatMayRecordTheSource", "Lighthouse.Backend/")]
-        public void TheDependencyFolderScans_TakeInAFolderUnderTheModuleBesideTheOldOne(string member, string rootOfTheKey)
+        public void TheDependencyFolderScans_TakeInTheModulesDependenciesFoldersOnly_BesideTheOldOne(string member, string rootOfTheKey)
         {
             var folders = GivenTheFoldersOf(typeof(DependencySingleDecisionArchUnitTest), member);
 
-            var admitted = WhenTheFoldersJudge(
-                folders,
-                $"{rootOfTheKey}Services/Implementation/Dependencies/{AMadeUpFileName}",
-                $"{rootOfTheKey}Modules/WorkItemsFixtures/Application/{AMadeUpFileName}");
+            var admitted = WhenTheFoldersJudge(folders, [.. TheMadeUpDependencyFiles(rootOfTheKey), .. TheMadeUpFilesOutsideTheDependencyFolders(rootOfTheKey)]);
 
-            ThenAFolderUnderTheModuleIsTakenInAndTheOldFolderStays(member, rootOfTheKey, folders, admitted);
+            ThenOnlyTheDependencyFoldersAreTakenIn(member, rootOfTheKey, folders, admitted);
         }
 
         [Test]
@@ -203,33 +202,54 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        private static void ThenAFolderUnderTheModuleIsTakenInAndTheOldFolderStays(string member, string rootOfTheKey, List<string> folders, List<string> admitted)
+        private static string[] TheMadeUpDependencyFiles(string rootOfTheKey)
+            =>
+            [
+                $"{rootOfTheKey}Modules/WorkItems/Domain/Dependencies/{AMadeUpFileName}",
+                $"{rootOfTheKey}Modules/WorkItems/Application/Dependencies/{AMadeUpFileName}",
+            ];
+
+        // Files of the module that are not dependency files, such as the Work Item service, land in the same layer folders,
+        // so a folder key that took in a whole layer would scan or exempt them too.
+        private static string[] TheMadeUpFilesOutsideTheDependencyFolders(string rootOfTheKey)
+            =>
+            [
+                $"{rootOfTheKey}Modules/WorkItems/{AMadeUpWorkItemServiceFileName}",
+                $"{rootOfTheKey}Modules/WorkItems/Domain/{AMadeUpWorkItemServiceFileName}",
+                $"{rootOfTheKey}Modules/WorkItems/Application/{AMadeUpWorkItemServiceFileName}",
+                $"{rootOfTheKey}Modules/WorkItemsFixtures/Application/Dependencies/{AMadeUpFileName}",
+            ];
+
+        private static void ThenOnlyTheDependencyFoldersAreTakenIn(string member, string rootOfTheKey, List<string> folders, List<string> admitted)
         {
-            var moduleFolder = $"{rootOfTheKey}Modules/WorkItems/";
             var oldFile = $"{rootOfTheKey}Services/Implementation/Dependencies/{AMadeUpFileName}";
-            var namesakeFile = $"{rootOfTheKey}Modules/WorkItemsFixtures/Application/{AMadeUpFileName}";
+            var moduleDependencyFiles = TheMadeUpDependencyFiles(rootOfTheKey);
+            var takenInByAccident = TheMadeUpFilesOutsideTheDependencyFolders(rootOfTheKey).Where(admitted.Contains).ToList();
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(
-                    folders,
-                    Has.Some.StartsWith(moduleFolder),
-                    $"{member} takes in no folder under {moduleFolder}. Folders: [{string.Join(", ", folders)}]. Why it matters: once the " +
-                    "dependency files move into Modules/WorkItems the scan stops reading them, and passes because it reads nothing, or " +
-                    $"reports the folder as moved or deleted. How to fix: make {member} the old folder or the module folder the dependency " +
-                    "files move to, as path prefixes ending in a slash.");
+                    admitted,
+                    Has.Some.AnyOf(moduleDependencyFiles),
+                    $"{member} takes in neither {string.Join(" nor ", moduleDependencyFiles)}. Folders: [{string.Join(", ", folders)}]. " +
+                    "Why it matters: once the dependency files move into Modules/WorkItems the scan stops reading them, and passes because " +
+                    "it reads nothing, or reports the folder as moved or deleted. How to fix: add Modules/WorkItems/Domain/Dependencies/ " +
+                    $"and/or Modules/WorkItems/Application/Dependencies/ to {member}, beside the old folder, as path prefixes ending in a slash.");
 
                 Assert.That(
-                    admitted,
+                    WhenTheFoldersJudge(folders, oldFile),
                     Does.Contain(oldFile),
                     $"{member} no longer takes in {oldFile}. Why it matters: the dependency selectors stay in the old folder, so the scan " +
                     "must keep reading it beside the module. How to fix: keep the old folder in the list.");
 
                 Assert.That(
-                    admitted,
-                    Does.Not.Contain(namesakeFile),
-                    $"{member} takes in {namesakeFile}, which sits outside Modules/WorkItems. Why it matters: a folder without its closing " +
-                    "slash reads every folder whose name starts the same. How to fix: end each folder with a slash.");
+                    takenInByAccident,
+                    Is.Empty,
+                    $"{member} takes in [{string.Join(", ", takenInByAccident)}], which are not dependency files. Folders: " +
+                    $"[{string.Join(", ", folders)}]. Why it matters: the Work Item service and the rest of the module land in the same " +
+                    "layer folders, so a key naming the whole module or a whole layer would scan them for the dependency words, or exempt " +
+                    "them from the one-place rule, which loosens it. A folder without its closing slash also reads a namesake module. How " +
+                    "to fix: name only the Dependencies sub-folders of the module's layers, each ending in a slash.");
             }
         }
 
