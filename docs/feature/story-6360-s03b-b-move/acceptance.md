@@ -9,7 +9,7 @@
 P1
 
 ```text
-Read the compiled assembly and ask where sync mode, the fetch fingerprint, the rule evaluator, the dependency policies and their plain values live
+Read the compiled assembly and ask where sync mode, the fetch fingerprint, the dependency policies and their plain values live
 ```
 
 ```text
@@ -27,7 +27,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsDomainLayoutArchUnitTest\.cs
 
 ```text
-Types moved to the module Domain root instead of Domain/Dependencies, or a copy left under Services with a second one in the module, are refused by the second rule case
+Types placed in the Domain root instead of Domain/Dependencies, or a copy left under Services, are refused by the two layout rule cases
 ```
 
 ###### Obligations

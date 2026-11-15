@@ -157,7 +157,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>Read the compiled assembly and ask where sync mode, the fetch fingerprint, the rule evaluator, the dependency policies and their plain values live
+<pre><code>Read the compiled assembly and ask where sync mode, the fetch fingerprint, the dependency policies and their plain values live
 </code></pre>
 
 <pre><code>Each sits in the Work Items module Domain (dependency ones in its Dependencies folder, never flat) and none is left under Services
@@ -172,7 +172,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsDomainLayoutArchUnitTest.cs</p>
 
-<pre><code>Types moved to the module Domain root instead of Domain/Dependencies, or a copy left under Services with a second one in the module, are refused by the second rule case
+<pre><code>Types placed in the Domain root instead of Domain/Dependencies, or a copy left under Services, are refused by the two layout rule cases
 </code></pre>
 
 <h6>Obligations</h6>

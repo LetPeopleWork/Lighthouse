@@ -9,7 +9,7 @@ using Mono.Cecil;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// The pure part of Work Items, sync mode, the fetch fingerprint, the rule evaluator and the dependency policies with
+    /// The pure part of Work Items, sync mode, the fetch fingerprint and the dependency policies with
     /// the plain values they read, lives in the module's Domain (the dependency ones in its Dependencies folder) and reaches
     /// only the shared kernel and the base library. The types are named as strings and read from the compiled production
     /// assembly, so this class compiles before and after the move, and a type that has not moved yet is a failure that names it.
@@ -37,13 +37,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string FetchFingerprintInItsOldHome = "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs";
 
-        // The two generic ones carry their arity, as the compiled code names them.
         private static readonly string[] DomainTypes =
         [
             "SyncModeResolver",
             "FetchFingerprint",
-            "RuleEvaluator`1",
-            "IRuleEvaluator`1",
         ];
 
         private static readonly string[] DependencyDomainTypes =
@@ -79,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void SyncModeTheFetchFingerprintAndTheRuleEvaluator_LiveInTheModuleDomain_AndNoneIsLeftUnderServices()
+        public void SyncModeAndTheFetchFingerprint_LiveInTheModuleDomain_AndNoneIsLeftUnderServices()
         {
             ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, WorkItemsDomainNamespace, DomainTypes).Check();
         }
@@ -93,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheWorkItemsDomainFiles_SitInTheModuleDomainFolders_AndNowhereElse()
         {
-            ThenEachFileSitsOnlyIn(WorkItemsDomainFolder, ["SyncModeResolver.cs", "FetchFingerprint.cs", "RuleEvaluator.cs", "IRuleEvaluator.cs"]);
+            ThenEachFileSitsOnlyIn(WorkItemsDomainFolder, ["SyncModeResolver.cs", "FetchFingerprint.cs"]);
             ThenEachFileSitsOnlyIn(WorkItemsDependenciesDomainFolder, ["DependencyHonourPolicy.cs", "IDependencyHonourPolicy.cs", "DependencyCycleDetector.cs", "DependencyFacts.cs"]);
         }
 
@@ -165,12 +162,25 @@ namespace Lighthouse.Backend.Tests.Architecture
             start.ArgumentList.Add("classifier");
             start.ArgumentList.Add(changedPath);
 
-            using var process = Process.Start(start)!;
-            var answer = process.StandardOutput.ReadToEnd().Trim();
-            var errors = process.StandardError.ReadToEnd();
-            process.WaitForExit();
+            Process? process = null;
+            try
+            {
+                process = Process.Start(start);
+            }
+            catch (System.ComponentModel.Win32Exception exception)
+            {
+                Assert.Fail($"The test-selection classifier needs bash on the machine, and it could not be started: {exception.Message}. Why it matters: without it the test cannot tell whether the Jira suite is still selected. How to fix: install bash and put it on the PATH.");
+            }
 
-            Assert.That(process.ExitCode, Is.Zero, $"The test-selection classifier could not be run: {errors}");
+            using var started = process!;
+            var outputRead = started.StandardOutput.ReadToEndAsync();
+            var errorsRead = started.StandardError.ReadToEndAsync();
+            Task.WaitAll(outputRead, errorsRead);
+            started.WaitForExit();
+            var answer = outputRead.Result.Trim();
+            var errors = errorsRead.Result;
+
+            Assert.That(started.ExitCode, Is.Zero, $"The test-selection classifier could not be run: {errors}");
             return answer;
         }
 
