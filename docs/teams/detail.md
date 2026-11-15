@@ -54,13 +54,13 @@ The list is read in one request, so it appears in one go, even for a Team involv
 - **All hidden**: *All 12 Features are completed. Turn off Hide Completed Features to see them.* Every Feature listed is completed, and [Hide Completed Features](#hide-completed-features) is on. The number is how many completed Features the Team has.
 
 {: .note}
-The names in these messages follow your [Terminology](../settings/configuration.html#terminology-configuration) settings, so they read as your own words for Feature and Team.
+The names in these messages follow your [Terminology](../settings/terminology.html) settings, so they read as your own words for Feature and Team.
 
 ## Feature Order
 The Features are listed in the order Lighthouse forecasts them — this Team's slice of an instance-wide sequence, so the Features of Portfolios this Team does not work on sit invisibly in between. The [Features page](../features/features.html) shows the whole sequence.
 
 {: .note}
-On an instance where [Lighthouse owns the order](../settings/configuration.html#feature-order-premium) rather than your Work Tracking System, this list reflects the order you chose, but you cannot change it from here. Move a Feature from the [Features page](../features/features.html#moving-a-feature) or from the Portfolio it belongs to, and this list follows — there is one order, and a move made anywhere is the move everyone sees. Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
+On an instance where [Lighthouse owns the order](../settings/refresh.html#feature-order-premium) rather than your Work Tracking System, this list reflects the order you chose, but you cannot change it from here. Move a Feature from the [Features page](../features/features.html#moving-a-feature) or from the Portfolio it belongs to, and this list follows — there is one order, and a move made anywhere is the move everyone sees. Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
 
 ## Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
@@ -228,7 +228,7 @@ The info icon at the end of the message says where the range comes from, for exa
 
 - It uses the Team's Throughput: every Work Item the Team finished, not only those that went through refinement, with the same history and [throughput filter](./edit.html#exclude-items-for-throughput-premium) as the Team's other forecasts.
 - It covers **one Refinement cycle**: the working days after the next Refinement, up to and including the one after it. A Team that refines every Wednesday gets Thursday to the following Wednesday, whichever day of the week you look; with weekends set up as blackout days, that is 5 working days. A Team that refines on more than one weekday sees the number follow the gap between its next two Refinements. On a Refinement day itself, the cycle runs from today to the next Refinement, and the message says "…likely to pull until the next Refinement".
-- Days in a [blackout period](../settings/configuration.html#blackout-periods--recurring-rules) are not working days, and a Refinement that falls on a blackout day is skipped: the cycle runs to the next Refinement that actually happens. Weekends only count as non-working days when a blackout rule says so, exactly as in the Team's other forecasts.
+- Days in a [blackout period](../settings/calendar.html) are not working days, and a Refinement that falls on a blackout day is skipped: the cycle runs to the next Refinement that actually happens. Weekends only count as non-working days when a blackout rule says so, exactly as in the Team's other forecasts.
 - The low end is the number the Team pulls at least with 50% likelihood, and the Team pulls more than the high end with only 15% likelihood. A Team admin can [change both likelihoods](./edit.html#work-items-needed-before-the-next-refinement).
 
 Work Items the Team pulls before the next Refinement are fine: they leave refinement, the ready count drops, and the number still to refine goes up on its own.

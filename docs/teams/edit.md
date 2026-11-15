@@ -331,7 +331,7 @@ Remove every condition from both rules to go back to readiness by votes.
 ### Refinement Cadence
 Set the days the Team refines on, in the same way as a recurring blackout rule: tick the weekdays, and set **Repeat every (weeks)** (1 for every week, up to 52). Above 1, a **Starting week** is needed: pick any day in a week the Team refines in, and the weeks are counted from there.
 
-The Refinement tab then shows when the next Refinement is and how many Work Items to refine before it. A Refinement that falls on a [blackout day](../settings/configuration.html#blackout-periods--recurring-rules) is skipped. With no weekday ticked, the Team has no cadence, and the tab shows "No Refinement cadence" instead of the number.
+The Refinement tab then shows when the next Refinement is and how many Work Items to refine before it. A Refinement that falls on a [blackout day](../settings/calendar.html) is skipped. With no weekday ticked, the Team has no cadence, and the tab shows "No Refinement cadence" instead of the number.
 
 ### Work Items Needed Before the Next Refinement
 The Refinement tab compares the ready Work Items with a range: how many Work Items the Team is likely to pull between the next Refinement and the one after, from a How Many forecast over that cycle with the Team's Throughput. These two fields set where the ends of that range are read:
@@ -401,14 +401,14 @@ What counts as yielding a parent depends on the source:
 - **A field** yields a parent when it holds a value. Lighthouse takes the value as it stands, even if it names nothing Lighthouse holds, and reads no further.
 - **The tracker's own Parent** yields a parent when the Work Item has one.
 - **A Jira link type** yields a parent only when its links lead to a Feature in one of your Portfolios. Otherwise the next source is read — see [below](#when-a-work-items-links-name-more-than-one-issue).
-- **A source Lighthouse cannot read** yields nothing, so the next source is read and [Refresh History](../settings/systeminfo.html#refresh-history) says so. That is a reference matching no field and no link type or, on Azure DevOps, a relation type.
+- **A source Lighthouse cannot read** yields nothing, so the next source is read and [Refresh History](../settings/refreshhistory.html) says so. That is a reference matching no field and no link type or, on Azure DevOps, a relation type.
 
 Use **Add a source** to add the tracker's own Parent or an Additional Field not yet in the list, and the arrows on each row to change the order. A list holds at most five sources and names each of them once. The only remaining row cannot be removed, because a list needs at least one source.
 
 {: .note}
 Go to **Settings → System → Connections** to define Additional Fields, then return here to add them to the list.
 
-A changed list costs one full update, see [Faster Updates](../settings/configuration.html#faster-updates).
+A changed list costs one full update, see [Faster Updates](../settings/refresh.html#faster-updates).
 
 ### Connection default
 
@@ -483,7 +483,7 @@ Every refresh that had to decide writes a warning listing what it did, for examp
 
 `Team "Payments" placed 1 record whose links name more than one issue: PAY-420 under PAY-88 (oldest link, 2026-03-04; set aside PAY-91, 2026-06-17)`
 
-The day is the UTC day the link was made. **Settings → System → System Info** shows, in the refresh history, the most Work Items one refresh placed this way and the most it could not place. Both figures appear only when there was something to count. See [Refresh History](../settings/systeminfo.html#refresh-history).
+The day is the UTC day the link was made. **Settings → System → System Info** shows, in the refresh history, the most Work Items one refresh placed this way and the most it could not place. Both figures appear only when there was something to count. See [Refresh History](../settings/refreshhistory.html).
 
 {: .note}
 A link is dated from the Work Item's own history. When the issue at the other end of a link was moved to another project or renamed, the history names it by its old key, so that link counts as undated. When Jira hands over only part of a long history, none of the Work Item's links are dated, because the missing part could have removed and re-added any of them.
@@ -493,4 +493,4 @@ When the Features picked are consistently the ones above where you expected, or 
 If two *different* link types both answer to the phrase you typed, Lighthouse resolves neither, for the same reason. Pick a phrase that belongs to only one of them.
 
 {: .important}
-**A link to a Feature that Lighthouse stores later.** A link is judged when the Work Item is read. If the issue at the other end becomes a Feature only afterwards, for example because a Portfolio's query now includes it, the Work Item stays where the next source placed it, because an ordinary update does not read a Work Item that did not change. It moves the next time it is read: when it changes in Jira, or on a full update. Nothing schedules a full update. To start one, save a change to a setting that changes what an update asks for, such as the Team's query or its Parent sources, and let the next update run. See [Faster Updates](../settings/configuration.html#faster-updates).
+**A link to a Feature that Lighthouse stores later.** A link is judged when the Work Item is read. If the issue at the other end becomes a Feature only afterwards, for example because a Portfolio's query now includes it, the Work Item stays where the next source placed it, because an ordinary update does not read a Work Item that did not change. It moves the next time it is read: when it changes in Jira, or on a full update. Nothing schedules a full update. To start one, save a change to a setting that changes what an update asks for, such as the Team's query or its Parent sources, and let the next update run. See [Faster Updates](../settings/refresh.html#faster-updates).

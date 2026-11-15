@@ -11,6 +11,8 @@ Lighthouse has various options to fine-tune it based on your needs. This section
 
 The **Settings** menu in the header opens three areas, and the menu shows only the ones you may open. Each area is a page of its own with a row of tabs, at `/settings/<area>/<tab>`. Old addresses keep working: a bookmark to `/settings?tab=database` or to the earlier single Settings page opens the matching tab in its new area.
 
+![The Settings menu in the header, with the Organization, Access and System areas](../assets/settings/settingsmenu.png)
+
 | Area | For | Tabs |
 |------|-----|------|
 | **Organization** | How we work | Terminology, Calendar, Refresh & ordering |
@@ -22,11 +24,14 @@ Most tabs are for System Administrators only. *API Keys*, *System Info*, *Logs*,
 ## Configuration Areas
 
 ### [Organization](organization.html)
-#### [Configuration](configuration.html)
-The settings that shape how your organization works in Lighthouse:
-- **Terminology**: your own words for Feature, Work Item, Team and the rest
-- **Calendar**: Blackout Periods and Recurring Rules
-- **Refresh & ordering**: periodic refresh settings and who owns the order of your Features
+#### [Terminology](terminology.html)
+Your own words for Feature, Work Item, Team and the rest.
+
+#### [Calendar](calendar.html)
+Blackout Periods and Recurring Rules: the days nobody works, for forecasts and charts.
+
+#### [Refresh & ordering](refresh.html)
+How often Teams and Portfolios refresh, and who owns the order of your Features.
 
 ### [Access](access.html)
 #### [API Keys](apikeys.html)
@@ -54,7 +59,13 @@ it and for how long, what is stored on your own server to remember your answer, 
 your mind. Off until somebody agrees to it.
 
 #### [System Info](systeminfo.html)
-Detailed information about your system, the Refresh History, and the logging information for troubleshooting and monitoring Lighthouse operations, including log level configuration and log viewing capabilities.
+Details about the Lighthouse instance you are running.
+
+#### [Logs](logs.html)
+The log for troubleshooting, its level, and what an update writes.
+
+#### [Refresh History](refreshhistory.html)
+When Teams and Portfolios refreshed, how much they read, and how long it took.
 
 #### License
 The license status, with import and clear for System Administrators. See [Licensing](../licensing/licensing.html#license-information-in-lighthouse).

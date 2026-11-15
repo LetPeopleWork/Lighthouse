@@ -206,7 +206,7 @@ Please be aware that this is a one-time operation. Lighthouse does not keep your
 # Parent sources
 A Team or Portfolio on an Azure DevOps connection reads its parent from its Parent sources, for [Teams](../../teams/edit.html#parent-sources) and for [Portfolios](../../portfolios/edit.html#parent-sources): an ordered list of the native parent link and any Additional Fields holding the parent's ID. The first source that yields a parent wins.
 
-A relation type cannot be one of these sources. Named in the list, it reads nothing: Lighthouse skips it, reads the next source, and [Refresh History](../../settings/systeminfo.html#refresh-history) says so.
+A relation type cannot be one of these sources. Named in the list, it reads nothing: Lighthouse skips it, reads the next source, and [Refresh History](../../settings/refreshhistory.html) says so.
 
 The native parent link sits in a Work Item's relations, which Lighthouse has to ask for separately. While the list holds *Parent (default)*, every update asks for the relations of each Work Item it downloads, and a full update downloads the whole query. A list without it does not ask, unless a Portfolio reads its dependencies from them.
 
@@ -231,6 +231,6 @@ Two names read nothing and are reported in the refresh history:
 - A base name without its end, such as `Contoso.DependsOn`, which covers both ends. Name one end.
 - A relation type without a direction, such as `System.LinkTypes.Related`. It cannot say which end waits, so name a relation type that has two ends.
 
-Only the Dependency Field reads a relation type. Naming one in the Parent sources, or as a Size Estimate, Feature Owner or Estimation field, reads nothing there, and Refresh History says so. See [Refresh History](../../settings/systeminfo.html#refresh-history).
+Only the Dependency Field reads a relation type. Naming one in the Parent sources, or as a Size Estimate, Feature Owner or Estimation field, reads nothing there, and Refresh History says so. See [Refresh History](../../settings/refreshhistory.html).
 
 What you then see is described on the [Features page](../../features/features.html#dependencies).

@@ -384,5 +384,5 @@ The clients ask before they send any usage data to your Lighthouse, and nothing 
 
 - [Settings → Access → API Keys](./settings/apikeys.html)
 - [Authentication](./Installation/authentication.html)
-- [Configuration](./settings/configuration.html)
+- [Organization settings](./settings/organization.html)
 - [Settings](./settings/settings.html)

@@ -257,7 +257,7 @@ The method follows Nick Brown's article [The Full Monte](https://medium.com/asos
 
 The **Fill in past days on over-time charts** behaviour setting from the last release is now switched on by default, so Percentiles Over Time and PBC Over Time show a full line rather than only the days Lighthouse happened to record.
 
-Upgrading switches it on **once** — also on instances where it had been turned off. If you want it off, switch it off again under Behaviour Settings and it stays off from then on. Restoring a backup brings the setting back as the backup held it. It is still a Preview. Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/configuration.html#fill-in-past-days-on-over-time-charts).
+Upgrading switches it on **once** — also on instances where it had been turned off. If you want it off, switch it off again under Behaviour Settings and it stays off from then on. Restoring a backup brings the setting back as the backup held it. It is still a Preview. Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/refresh.html#fill-in-past-days-on-over-time-charts).
 
 ## Bugfixes and Improvements
 
@@ -313,7 +313,7 @@ Switch on the new **Fill in past days on over-time charts** behaviour setting, a
 
 It is a **Preview and off by default** — a System Admin switches it on, no restart needed. A filled day is worked out against *today's* configuration, and days already filled stay when you switch it off, so take a backup first if you might want to undo it.
 
-Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/configuration.html#fill-in-past-days-on-over-time-charts).
+Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/refresh.html#fill-in-past-days-on-over-time-charts).
 
 ## Bugfixes and Improvements
 
@@ -449,7 +449,7 @@ Instance-wide switches were spread out: *Optional Features* in one place, Featur
 
 Feature Ordering moved in as one of those rows, and your existing choice came with it. Turning it on still hands out places to the Features that do not have one yet and re-forecasts; turning it off still leaves those places alone, so taking the order back over adds to the end instead of renumbering everything.
 
-Full detail: [Behaviour Settings](https://docs.lighthouse.letpeople.work/settings/configuration.html#behaviour-settings).
+Full detail: [Behaviour Settings](https://docs.lighthouse.letpeople.work/settings/refresh.html#behaviour-settings).
 
 ## Faster Updates is on by default
 
@@ -579,7 +579,7 @@ Special thanks to everyone who contributed feedback for this release:
 
 Every update asks your work tracking system for the full details of every Work Item the query returns — including the ones nobody has touched in weeks. On a large query that is most of the time an update spends, and most of the load Lighthouse puts on your tracker. On an on-premise instance with years of history, it is the difference between a refresh interval you can afford and one you cannot.
 
-Turn *Faster Updates* on under [System Settings → Configuration](https://docs.lighthouse.letpeople.work/settings/configuration.html#faster-updates) and an update runs in two steps instead of one: it first asks for nothing but the identity of each Work Item and the date the tracker says it last changed, then downloads the full details only for the ones whose date moved. On one real Jira Data Center instance, a Team update went from **468 seconds to 2** — same query, same Work Items, same result.
+Turn *Faster Updates* on under [System Settings → Configuration](https://docs.lighthouse.letpeople.work/settings/refresh.html#faster-updates) and an update runs in two steps instead of one: it first asks for nothing but the identity of each Work Item and the date the tracker says it last changed, then downloads the full details only for the ones whose date moved. On one real Jira Data Center instance, a Team update went from **468 seconds to 2** — same query, same Work Items, same result.
 
 Nothing about your data changes. The whole query is still read on every update, so a Work Item that leaves the query still disappears from Lighthouse on the very next update, exactly as before. And anything Lighthouse cannot be certain about — a connector that cannot sweep, a sweep that failed, a Work Item with no recorded change stamp — falls back to downloading everything. There is no half-updated state.
 
@@ -619,7 +619,7 @@ Special thanks to everyone who contributed feedback for this release:
 
 Lighthouse forecasts your Features in the order your work tracking system gives them, and re-reads that order on every refresh. So a rank someone changes in Azure DevOps, Jira or Linear re-sequences your forecast without anyone on your team deciding it — and on connectors with no meaningful rank at all, the sequence was never yours to begin with.
 
-Turn on *Let Lighthouse own the order of your Features* under [System Settings → Configuration](https://docs.lighthouse.letpeople.work/settings/configuration.html#feature-order-premium) and Lighthouse takes ownership instead. Nothing moves when you flip it — Lighthouse records the order you are already looking at, exactly as it stands — but from then on refreshes stop re-sequencing it, and every row grows an action menu: **Move to Top**, **Move Up**, **Move Down**, **Move to Bottom**. A move re-forecasts at once rather than waiting for the next refresh, and the same menu appears in the Feature list on your Portfolio pages, because there is one order and a move made anywhere is the move everyone sees.
+Turn on *Let Lighthouse own the order of your Features* under [System Settings → Configuration](https://docs.lighthouse.letpeople.work/settings/refresh.html#feature-order-premium) and Lighthouse takes ownership instead. Nothing moves when you flip it — Lighthouse records the order you are already looking at, exactly as it stands — but from then on refreshes stop re-sequencing it, and every row grows an action menu: **Move to Top**, **Move Up**, **Move Down**, **Move to Bottom**. A move re-forecasts at once rather than waiting for the next refresh, and the same menu appears in the Feature list on your Portfolio pages, because there is one order and a move made anywhere is the move everyone sees.
 
 ![The Features page](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/featuresview.png)
 
@@ -907,7 +907,7 @@ Entering every weekend by hand was never going to scale. You can now define **re
 
 ![Recurring Blackout Rule](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/recurringBlackoutRuleConfiguration.png)
 
-See [Blackout Periods & Recurring Rules](https://docs.lighthouse.letpeople.work/settings/configuration.html#blackout-periods--recurring-rules).
+See [Blackout Periods & Recurring Rules](https://docs.lighthouse.letpeople.work/settings/calendar.html).
 
 ## Bugfixes and Improvements
 - **Never show 100% confidence** — forecast likelihoods are now capped at *>95%* on the manual, delivery, and portfolio forecasts. A Monte Carlo simulation can't honestly promise certainty, and showing "100%" invited exactly the wrong kind of trust. Reported by Liz Rettig.
@@ -1455,7 +1455,7 @@ Blackout periods affect Lighthouse in two key areas:
 
 ![Throughput with Blackout](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/throughput_blackout.png)
 
-Blackout periods are configured globally in *System Settings* → *Configuration* → *Blackout Periods* and apply to all teams and portfolios. See the [Configuration documentation](https://docs.lighthouse.letpeople.work/settings/configuration.html#blackout-periods) for details.
+Blackout periods are configured globally in *System Settings* → *Configuration* → *Blackout Periods* and apply to all teams and portfolios. See the [Configuration documentation](https://docs.lighthouse.letpeople.work/settings/calendar.html) for details.
 
 
 ![Throughput with Blackout](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/blackoutPeriodsSection.png)

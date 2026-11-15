@@ -172,7 +172,7 @@ On each chart, Lighthouse visualizes:
 You can click a chip (e.g. *Large Change*) to highlight points that match that special-cause rule. Clicking on a data point opens a dialog with the work items that make up that point.
 
 {: .note}
-If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on all PBC charts. This prevents you from misinterpreting expected gaps or dips as special causes.
+If [Blackout Periods](../settings/calendar.html) are configured, those days are highlighted with a hatched overlay on all PBC charts. This prevents you from misinterpreting expected gaps or dips as special causes.
 
 ## Status Indicator (all PBC charts)
 

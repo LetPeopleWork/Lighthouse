@@ -27,7 +27,7 @@ So the position tells you where a Feature sits in the real forecast sequence, no
 
 By default it comes from your work tracking system — the rank or backlog order your Features already carry there. Lighthouse reads it on every refresh, and never writes it back.
 
-That also means the tracker decides: a rank someone changes there re-sequences your forecast. If you would rather Lighthouse owned the order, turn on *Feature Order* under [Settings → Organization → Refresh & ordering](../settings/configuration.html#feature-order-premium). Nothing moves when you do — Lighthouse records the order you are already looking at — but from then on refreshes stop re-sequencing it, and this column's heading reads *Manual* so you can tell which order you are reading. Turning it back off returns your tracker's order immediately.
+That also means the tracker decides: a rank someone changes there re-sequences your forecast. If you would rather Lighthouse owned the order, turn on *Feature Order* under [Settings → Organization → Refresh & ordering](../settings/refresh.html#feature-order-premium). Nothing moves when you do — Lighthouse records the order you are already looking at — but from then on refreshes stop re-sequencing it, and this column's heading reads *Manual* so you can tell which order you are reading. Turning it back off returns your tracker's order immediately.
 
 {: .note}
 Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability. Reading it — this page and this column — is not.

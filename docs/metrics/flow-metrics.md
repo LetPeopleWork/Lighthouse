@@ -42,7 +42,7 @@ If a percentile or SLE line lies above the top of the axis, it is shown as a lab
 When every visible Work Item is an outlier, the plot says "All visible Work Items are outliers." When you have hidden all Work Item types in the legend, it says "All types are hidden." If there are no outliers, there is no chip and the chart looks as before.
 
 {: .note}
-If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, the corresponding date ranges are highlighted with a hatched overlay on this chart, helping you distinguish expected gaps from anomalies.
+If [Blackout Periods](../settings/calendar.html) are configured, the corresponding date ranges are highlighted with a hatched overlay on this chart, helping you distinguish expected gaps from anomalies.
 
 ![Cycle Time with Blackout](../assets/features/metrics/cycletime_blackout.png)
 
@@ -113,7 +113,7 @@ A **stale** item appears red in the chart, just like a blocked item. Clicking it
 
 ## Work Item Age Band Column
 
-The chart paints a pace zone behind every dot. The work item dialogs put the same judgement into words: open one from the **View Data** button in the widget header, or by clicking a single bubble, and every row carries a **Work Item Age Band**. The header follows whatever you have renamed Work Item Age to under [Terminology Configuration](../settings/configuration.html#terminology-configuration).
+The chart paints a pace zone behind every dot. The work item dialogs put the same judgement into words: open one from the **View Data** button in the widget header, or by clicking a single bubble, and every row carries a **Work Item Age Band**. The header follows whatever you have renamed Work Item Age to under [Terminology Configuration](../settings/terminology.html).
 
 The band names are read off the percentile numbers themselves — with the default percentiles that is `Below 50th`, `50th-70th`, `70th-85th`, `85th-95th` and `Above 95th` — and each is coloured to match the zone the chart draws at that height. An age landing exactly on a boundary belongs to the band beneath it. An item sitting in a state with no completed history to measure against reads `No history`: uncoloured, because not knowing how long the work usually takes is not the same as doing well, and ordered below the calmest band rather than above it.
 
@@ -129,7 +129,7 @@ Clicking **View Data** on that widget opens every item in progress with its risk
 
 ## SLE Risk Column
 
-The SLE line tells you which items have **already** missed the target. The **SLE Risk** column tells you which ones are about to, while you can still do something about it. It sits beside the Age Band in the same dialogs — **View Data** in the widget header, or a click on a single bubble — and is shown only for teams that have published an SLE. The header follows whatever you have renamed SLE to under [Terminology Configuration](../settings/configuration.html#terminology-configuration).
+The SLE line tells you which items have **already** missed the target. The **SLE Risk** column tells you which ones are about to, while you can still do something about it. It sits beside the Age Band in the same dialogs — **View Data** in the widget header, or a click on a single bubble — and is shown only for teams that have published an SLE. The header follows whatever you have renamed SLE to under [Terminology Configuration](../settings/terminology.html).
 
 ![The SLE Risk column in the work item dialog](../assets/features/metrics/sle_risk_column.png)
 
@@ -179,7 +179,7 @@ You can see how many items were closed each day over the last several days. The 
 This widget will adjust based on the selected time range. If you want to know which exact items were closed, you can click on a specific day and get more details.
 
 {: .note}
-If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on this chart, so you can immediately see why Throughput was zero on certain days:
+If [Blackout Periods](../settings/calendar.html) are configured, those days are highlighted with a hatched overlay on this chart, so you can immediately see why Throughput was zero on certain days:
 
 ![Throughput with Blackout](../assets/features/metrics/throughput_blackout.png)
 
@@ -211,7 +211,7 @@ If you click on a specific day, it will show you the details of which items were
 If you have defined a *System WIP Limit*, you can show this as a horizontal line on your chart.
 
 {: .note}
-If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on this chart, making it easy to identify expected gaps in your WIP data.
+If [Blackout Periods](../settings/calendar.html) are configured, those days are highlighted with a hatched overlay on this chart, making it easy to identify expected gaps in your WIP data.
 
 ## Status Indicator
 
@@ -269,7 +269,7 @@ Comparing Arrivals with Throughput helps you understand whether your flow is bal
 If you click on a specific day, it will show you which items were started on that day.
 
 {: .note}
-If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, those days are highlighted with a hatched overlay on this chart, so you can immediately see why arrivals were zero on certain days.
+If [Blackout Periods](../settings/calendar.html) are configured, those days are highlighted with a hatched overlay on this chart, so you can immediately see why arrivals were zero on certain days.
 
 ## Status Indicator
 

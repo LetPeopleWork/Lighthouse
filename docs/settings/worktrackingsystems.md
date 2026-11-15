@@ -94,7 +94,7 @@ When a save changes a default that Teams or Portfolios follow, Lighthouse asks f
 
 ### What the log records
 
-Each changed default writes one Information entry to the [Logs](systeminfo.html#connection-default-changes). It names the connection, the default, the field before and after, the Teams or Portfolios that follow it, and how many updates the save queued. For Parent sources it names the sources in their order, and it ends with how many Teams or Portfolios the change moved:
+Each changed default writes one Information entry to the [Logs](logs.html#connection-default-changes). It names the connection, the default, the field before and after, the Teams or Portfolios that follow it, and how many updates the save queued. For Parent sources it names the sources in their order, and it ends with how many Teams or Portfolios the change moved:
 
 ```
 Connection "Jira Cloud" changed the Teams' Parent sources default from "Caused by" to "Epic Link"; 3 Teams follow it: Payments, Platform, Checkout; 3 updates queued; parent sources moved 3 Teams.
@@ -203,7 +203,7 @@ every watcher of every item it touches.
 
 If the account does not have it, Lighthouse still writes the value — the write is never dropped — but the
 watchers of that work item are emailed, and a warning naming the affected projects appears in the
-[logs](systeminfo.html#view-logs). See
+[logs](logs.html#view-logs). See
 [Quiet Data Sync on Jira](../concepts/worktrackingsystems/jira.html#quiet-data-sync-notifications) for how
 to check whether your account has the permission and how to grant it.
 

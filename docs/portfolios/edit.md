@@ -290,14 +290,14 @@ What counts as yielding a parent depends on the source:
 - **A field** yields a parent when it holds a value. Lighthouse takes the value as it stands, even if it names nothing Lighthouse holds, and reads no further.
 - **The tracker's own Parent** yields a parent when the Feature has one.
 - **A Jira link type** yields a parent when it has a link. Unlike on a Team, the issue at the other end does not have to be a Feature, because a Feature's parent is not itself one of your Features — see [below](#when-a-features-links-name-more-than-one-issue).
-- **A source Lighthouse cannot read** yields nothing, so the next source is read and [Refresh History](../settings/systeminfo.html#refresh-history) says so. That is a reference matching no field and no link type or, on Azure DevOps, a relation type.
+- **A source Lighthouse cannot read** yields nothing, so the next source is read and [Refresh History](../settings/refreshhistory.html) says so. That is a reference matching no field and no link type or, on Azure DevOps, a relation type.
 
 Use **Add a source** to add the tracker's own Parent or an Additional Field not yet in the list, and the arrows on each row to change the order. A list holds at most five sources and names each of them once. The only remaining row cannot be removed, because a list needs at least one source.
 
 {: .note}
 Go to **Settings → System → Connections** to define Additional Fields, then return here to add them to the list.
 
-A changed list costs one full update, see [Faster Updates](../settings/configuration.html#faster-updates).
+A changed list costs one full update, see [Faster Updates](../settings/refresh.html#faster-updates).
 
 ### Connection default
 
@@ -368,7 +368,7 @@ Every refresh that had to decide writes a warning listing what it did, for examp
 
 `Portfolio "Payments" placed 1 record whose links name more than one issue: PAY-88 under PAY-7 (oldest link, 2026-03-04; set aside PAY-9, 2026-06-17)`
 
-The day is the UTC day the link was made. **Settings → System → System Info** shows, in the refresh history, the most Features one refresh placed this way. See [Refresh History](../settings/systeminfo.html#refresh-history).
+The day is the UTC day the link was made. **Settings → System → System Info** shows, in the refresh history, the most Features one refresh placed this way. See [Refresh History](../settings/refreshhistory.html).
 
 {: .note}
 A Feature that already had several parent links is placed the first time Lighthouse reads it again after an update. It can move once at that point, to the parent these rules pick.

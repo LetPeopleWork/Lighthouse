@@ -50,7 +50,7 @@ The list is read in one request, so it appears in one go, even for a Portfolio h
 - **All hidden**: *All 12 Features are completed. Turn off Hide Completed Features to see them.* Every Feature the Portfolio holds is completed, and [Hide Completed Features](#hide-completed-features) is on. The number is how many completed Features the Portfolio holds.
 
 {: .note}
-The names in these messages follow your [Terminology](../settings/configuration.html#terminology-configuration) settings, so they read as your own words for Feature and Portfolio.
+The names in these messages follow your [Terminology](../settings/terminology.html) settings, so they read as your own words for Feature and Portfolio.
 
 ### Feature Order
 Features are ordered based on the [order in your Work Tracking System](../../concepts/concepts.html#feature-order). To change it, adjust your Work Tracking System and [Refresh the Features](#refresh-features).
@@ -58,7 +58,7 @@ Features are ordered based on the [order in your Work Tracking System](../../con
 The order is crucial, as Lighthouse forecasts based on the [Feature WIP of each Team](#feature-wip) from highest to lowest ordered Feature. Note that the order is instance-wide: the Features of every Portfolio compete for the same Teams, so this list shows one slice of a longer sequence. The [Features page](../features/features.html) shows the whole of it.
 
 {: .note}
-If you would rather Lighthouse owned the order than your Work Tracking System, turn on [Feature Order](../settings/configuration.html#feature-order-premium) under Settings → Organization → Refresh & ordering. Each row then offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom* — see [Moving a Feature](../features/features.html#moving-a-feature). Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
+If you would rather Lighthouse owned the order than your Work Tracking System, turn on [Feature Order](../settings/refresh.html#feature-order-premium) under Settings → Organization → Refresh & ordering. Each row then offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom* — see [Moving a Feature](../features/features.html#moving-a-feature). Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
 
 ### Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.

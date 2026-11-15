@@ -23,7 +23,7 @@ Note that this also means that if your future will not be very similar to your p
 Be aware that this is not magic, and you assume that "your future looks like your past". Meaning that it highly depends on the input in the form of Throughput we feed it with.
 
 {: .note}
-**Blackout Periods and Forecasting**: If you have configured [Blackout Periods](../settings/configuration.html#blackout-periods) (e.g. public holidays or company off-days), Lighthouse will automatically skip those days when running a Monte Carlo Simulation. Concretely, each simulated day that lands on a blackout date is not counted as a working day — the simulation simply advances to the next non-blackout day. This means the forecast naturally accounts for known non-working periods without you having to adjust throughput data or add manual buffers.
+**Blackout Periods and Forecasting**: If you have configured [Blackout Periods](../settings/calendar.html) (e.g. public holidays or company off-days), Lighthouse will automatically skip those days when running a Monte Carlo Simulation. Concretely, each simulated day that lands on a blackout date is not counted as a working day — the simulation simply advances to the next non-blackout day. This means the forecast naturally accounts for known non-working periods without you having to adjust throughput data or add manual buffers.
 
 {: .recommendation}
 We recommend that you dive deeper into MCS by reading our blog post [An Introduction and Step-by-Step Guide to Monte Carlo Simulations](https://blog.letpeople.work/p/an-introduction-and-step-by-step-guide-to-monte-carlo-simulations) and follow along the exercise in a spreadsheet.
@@ -119,7 +119,7 @@ The [Feature View](../teams/detail.html#features) in the Teams Detail Page will 
 ### Who decides that order
 By default your work tracking system does, through the rank your Features already carry there. Lighthouse re-reads it on every refresh, which means a rank changed in Azure DevOps, Jira, or Linear moves your forecasted dates without anyone on your team deciding it — and on a connector with no meaningful rank, such as ServiceNow, there was never an order worth reading.
 
-You can hand that decision to Lighthouse instead, with [Feature Order](../settings/configuration.html#feature-order-premium) under Settings → Organization → Refresh & ordering. Nothing moves when you turn it on; from then on refreshes no longer re-sequence the forecast.
+You can hand that decision to Lighthouse instead, with [Feature Order](../settings/refresh.html#feature-order-premium) under Settings → Organization → Refresh & ordering. Nothing moves when you turn it on; from then on refreshes no longer re-sequence the forecast.
 
 Every Feature list then offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom*, and a move re-forecasts straight away rather than waiting for the next refresh — so you can try an order and read the dates it produces. See [Moving a Feature](../features/features.html#moving-a-feature).
 

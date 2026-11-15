@@ -46,13 +46,13 @@ A row reads `Refreshing Team '<name>' — Running`: what is happening, what it i
 | `Removing Team '<name>'` | That Team is being deleted and the deletion is still running. |
 | `Removing Portfolio '<name>'` | The same for a Portfolio. |
 
-The words *Team* and *Portfolio* follow your own [terminology](configuration.html#terminology-configuration). What is being done to them does not — renaming a Portfolio changes what is being worked on, not what is happening to it.
+The words *Team* and *Portfolio* follow your own [terminology](terminology.html). What is being done to them does not — renaming a Portfolio changes what is being worked on, not what is happening to it.
 
 {: .note}
 Refreshing a Portfolio and forecasting it are two separate pieces of work, so **one Portfolio can appear twice**. A Portfolio refresh ends by queueing a forecast of that same Portfolio: you see `Refreshing Portfolio '<name>'` run, then `Forecasting Portfolio '<name>'` behind it. Nothing is duplicated and nothing has gone wrong.
 
 {: .note}
-A forecast row that leaves within seconds is usually one that had nothing to recalculate. When a background update finds that nothing a Portfolio's forecast reads has changed, Lighthouse confirms the existing forecast instead of recalculating it. What you start yourself recalculates, and so does the first forecast after Lighthouse starts. [Refresh History](systeminfo.html#forecasts-that-were-confirmed-not-recalculated) marks these runs as *skipped (nothing changed)*.
+A forecast row that leaves within seconds is usually one that had nothing to recalculate. When a background update finds that nothing a Portfolio's forecast reads has changed, Lighthouse confirms the existing forecast instead of recalculating it. What you start yourself recalculates, and so does the first forecast after Lighthouse starts. [Refresh History](refreshhistory.html#forecasts-that-were-confirmed-not-recalculated) marks these runs as *skipped (nothing changed)*.
 
 After the name comes the state:
 
@@ -77,7 +77,7 @@ A running forecast stops between two of its simulated runs, which usually takes 
 {: .note}
 A removal cannot be stopped, so its row has no ✖️ button. Whoever asked for the removal is waiting on an answer, and a half-removed Team or Portfolio is not a state worth leaving behind.
 
-Nothing is lost by stopping a refresh or a forecast. The data and forecasts Lighthouse already had stay as they were, and the next periodic refresh picks the Team or Portfolio up again. How often that happens is set under [Periodic Refresh Settings](configuration.html#periodic-refresh-settings).
+Nothing is lost by stopping a refresh or a forecast. The data and forecasts Lighthouse already had stay as they were, and the next periodic refresh picks the Team or Portfolio up again. How often that happens is set under [Periodic Refresh Settings](refresh.html#periodic-refresh-settings).
 
 ## Cancel all
 When the instance is busy with more than you want it to be, **Cancel all**, at the right of the *Activity* heading, stops everything at once: the work that is running and everything queued behind it. Hovering it says what it does: *Stops everything running or queued, except removals. Scheduled updates carry on as usual.*
@@ -91,7 +91,7 @@ When the instance is busy with more than you want it to be, **Cancel all**, at t
 The button is only there when something in the list can be stopped, so an instance that is idle or only removing something does not show it. If Lighthouse could not take the request, the section says *Could not cancel. Try again.* and the rows stay as they were.
 
 # Work Tracking Systems
-This section lists every connection you have configured, with what Lighthouse currently knows about its health. Its heading follows your own [terminology](configuration.html#terminology-configuration), as do the words for Team and Portfolio in the rows above it.
+This section lists every connection you have configured, with what Lighthouse currently knows about its health. Its heading follows your own [terminology](terminology.html), as do the words for Team and Portfolio in the rows above it.
 
 | Shown as | State | Meaning |
 |----------|-------|---------|
@@ -112,7 +112,7 @@ Every successful refresh records the connection it used as healthy, so a connect
 
 A connection that nothing refreshes — one you configured but have not attached to a Team or Portfolio yet — would otherwise sit at *Not checked yet* forever. Lighthouse therefore checks connections whose answer is missing or has gone stale, and leaves the rest alone.
 
-An answer is considered stale after **twice the longer of your two refresh intervals**, and Lighthouse looks for stale ones about four times within that window. Both numbers follow the intervals under [Periodic Refresh Settings](configuration.html#periodic-refresh-settings) — there is nothing to configure here, and shortening your refresh intervals tightens this automatically.
+An answer is considered stale after **twice the longer of your two refresh intervals**, and Lighthouse looks for stale ones about four times within that window. Both numbers follow the intervals under [Periodic Refresh Settings](refresh.html#periodic-refresh-settings) — there is nothing to configure here, and shortening your refresh intervals tightens this automatically.
 
 {: .note}
 This costs no extra calls to your Work Tracking System in the normal case. A connection that something refreshes is never stale, so it is never asked twice.
@@ -121,7 +121,7 @@ This costs no extra calls to your Work Tracking System in the normal case. A con
 Everything this instance has logged at **Warning level or worse** since it started — warnings, errors and fatals — newest first, each row carrying the time it was recorded and its own level. It is there so that "something looks wrong" and "here is what went wrong" are not two different trips.
 
 {: .note}
-The log level you set under [System Info](systeminfo.html) applies first. Raise it to *Error* and warnings never reach this list, because they are never recorded at all; at *Information* or below you see both.
+The log level you set under [Logs](logs.html#log-level) applies first. Raise it to *Error* and warnings never reach this list, because they are never recorded at all; at *Information* or below you see both.
 
 Lighthouse keeps the most recent 200 of them in memory. That is enough for about five of the busiest days seen on a real instance, and it is reset by a restart. If you need more, or need them from before the last restart, the log file has everything.
 
@@ -130,7 +130,7 @@ The number is configurable if 200 does not suit your instance: `RecentProblems:C
 
 A [Portfolio](../portfolios/edit.html#large-portfolios) that holds more than 100 Features adds one warning to this list for every successful update of it, saying that its pages and forecasts get slower.
 
-If nothing has gone wrong since the instance started, it says so. **Open the full log** takes you to [System Info](systeminfo.html), where the complete log lives along with the log level setting.
+If nothing has gone wrong since the instance started, it says so. **Open the full log** takes you to [Logs](logs.html), where the complete log lives along with the log level setting.
 
 {: .note}
 If the section is missing entirely, Lighthouse asked for the problems and got no answer. That is deliberately not shown as "nothing has gone wrong" — an unanswered question is not a clean bill of health.

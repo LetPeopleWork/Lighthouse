@@ -286,7 +286,7 @@ Lighthouse reads what a Feature is waiting on from its **issue links**, taking e
 Jira writes each link once and offers it from both ends: the waiting issue is handed an inward link, the issue being waited on an outward one. Only the waiting end is read, so each dependency is recorded once. The other link types — *relates to*, *duplicates* and the rest — arrive in exactly the same shape and are ignored, which is why the description matters. Lighthouse never creates, changes or removes a link.
 
 {: .important}
-A Jira administrator can rename link descriptions. If your Features are linked to each other but none of the links is called *is blocked by*, Lighthouse reads no dependencies at all — and writes a warning to the [Logs](../../settings/systeminfo.html#logs) naming the link descriptions it did see instead. Check there first if a portfolio shows no dependencies where you expect them.
+A Jira administrator can rename link descriptions. If your Features are linked to each other but none of the links is called *is blocked by*, Lighthouse reads no dependencies at all — and writes a warning to the [Logs](../../settings/logs.html) naming the link descriptions it did see instead. Check there first if a portfolio shows no dependencies where you expect them.
 
 This works the same on Jira Cloud and Jira Data Center; no extra configuration or field selection is needed.
 
@@ -296,6 +296,6 @@ A Portfolio can read another link type instead. Add it as an Additional Field of
 
 Name the phrase on the end that waits. For Jira's *Blocks* link type that is *is blocked by*. The other end, *blocks*, reads the links the other way round and would show each dependency backwards. The link type's own name, or a phrase both ends share such as *relates to*, cannot say which end waits, so Lighthouse reads nothing from it and says so in the refresh history.
 
-If the named link matches no link on any Feature of the Portfolio, Refresh History says so under the Portfolio's figures and lists the link names it did see. See [Refresh History](../../settings/systeminfo.html#refresh-history).
+If the named link matches no link on any Feature of the Portfolio, Refresh History says so under the Portfolio's figures and lists the link names it did see. See [Refresh History](../../settings/refreshhistory.html).
 
 What you then see is described on the [Features page](../../features/features.html#dependencies).
