@@ -433,10 +433,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P3</p>
 
-<pre><code>Read the compiled assembly and the tracked source for the six handlers files and the types in the policies
+<pre><code>Read the compiled assembly and the tracked source for the six handlers files and the types in the policies; completion guard, re-run at completion
 </code></pre>
 
-<pre><code>Each handler file sits only in the policies folder; every type in the policies handles a domain event, a non-handler is named and an empty policies namespace fails; no tracked source names a handler&#x27;s old full name or path
+<pre><code>Each handler file sits only in the policies folder; every type in the policies handles a domain event, a non-handler is named and an empty policies namespace fails; no tracked source names a handler&#x27;s old full name or path. The no-stale-name check passes before the move, so it is a post-move completion guard; its old-home fixture cases (a made-up old namespace and path in a rule list or path, each found and named) are its discriminator
 </code></pre>
 
 <pre><code>Policies hold only reactions and no stale list or path points at the old homes
@@ -448,7 +448,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs</p>
 
-<pre><code>A service dropped into the policies, an empty namespace, or a rule list keeping the old full name would pass if the check looked at file names alone
+<pre><code>A service dropped into the policies, an empty namespace, or a rule list keeping the old full name would pass if the check looked at file names alone; tracked non-source files outside the scanned projects are not scanned and are covered by a recorded repository search at completion
 </code></pre>
 
 <h6>Obligations</h6>
@@ -458,15 +458,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P3</p>
 
-<p>P4</p>
-
 <pre><code>Run the existing handler-order pin unmodified after the move
 </code></pre>
 
-<pre><code>The order pin stays green, so handlers still run in the registered order and answers stay the same
+<pre><code>The order pin stays green, so handlers still run in the registered order
 </code></pre>
 
-<pre><code>Refreshes and reactions behave exactly as before the move
+<pre><code>Reactions run in the same order as before the move
 </code></pre>
 
 <h5>Disposition</h5>
@@ -475,11 +473,89 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
 
-<pre><code>A move that reorders registrations in Program.cs would pass if only the layout rule were checked
+<pre><code>A move that reorders registrations in Program.cs would pass if only the layout rule were checked; the pin says nothing about refresh answers, which the answer rows below observe
 </code></pre>
 
 <h6>Obligations</h6>
 
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the refresh scenarios through the service port, with the four blocked-transition handlers registered, after the move
+</code></pre>
+
+<pre><code>Refresh results and blocked-transition records equal those before the move for the same data and request
+</code></pre>
+
+<pre><code>Refresh answers, metrics answers and forecasts are the same as before the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs</p>
+
+<pre><code>A move that changes a blocked-transition handler&#x27;s behaviour in a case the scenarios do not build would pass; the scenarios register only the four blocked-transition handlers
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Delete a team and run the existing team-deleted clean-up handler test after the move
+</code></pre>
+
+<pre><code>The clean-up reaction still removes the team&#x27;s refresh log entries, so the refresh log a user reads is unchanged
+</code></pre>
+
+<pre><code>Refresh history of a deleted team is cleaned as before the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDeletedRefreshLogCleanupHandlerTest.cs</p>
+
+<pre><code>A handler registered in the wrong order or left unregistered would pass; the order pin covers that
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Change a connection&#x27;s fetch shape and run the existing update-trigger handler test after the move
+</code></pre>
+
+<pre><code>The reaction still triggers the update it triggered before the move
+</code></pre>
+
+<pre><code>A changed connection still leads to the same refresh as before the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs</p>
+
+<pre><code>A handler registered in the wrong order or left unregistered would pass; the order pin covers that
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 

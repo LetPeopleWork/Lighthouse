@@ -187,36 +187,74 @@
 "obligations": [
 "T3"
 ],
-"still_passes_if": "F196",
+"still_passes_if": "F203",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs"
 },
-"expected": "F194",
-"stimulus": "F193",
+"expected": "F202",
+"stimulus": "F201",
 "user_result": "F195"
 },
 {
 "covers": [
-"P3",
-"P4"
+"P3"
 ],
 "disposition": {
 "kind": "Tested",
 "obligations": [
 "T3"
 ],
-"still_passes_if": "F200",
+"still_passes_if": "F206",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
 },
-"expected": "F198",
+"expected": "F204",
 "stimulus": "F197",
-"user_result": "F199"
+"user_result": "F205"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F210",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs"
+},
+"expected": "F208",
+"stimulus": "F207",
+"user_result": "F209"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F214",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDeletedRefreshLogCleanupHandlerTest.cs"
+},
+"expected": "F212",
+"stimulus": "F211",
+"user_result": "F213"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F214",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs"
+},
+"expected": "F216",
+"stimulus": "F215",
+"user_result": "F217"
 }
 ]
 },
 "counters": {
 "D": 5,
 "E": 4,
-"F": 200,
+"F": 217,
 "K": 4,
 "P": 4,
 "S": 3,
@@ -1784,17 +1822,28 @@
 "F190": "All six live in the module's Application policies and none is left under Services; a handler left under Services in made-up types fails and is named, a well-placed twin is not",
 "F191": "Work Items reactions are found in one place in the module and nothing reacts from the old Services folders",
 "F192": "A handler left behind in Services or a missing handler would pass if the rule only compared counts or looked at the new namespace alone",
-"F193": "Read the compiled assembly and the tracked source for the six handlers files and the types in the policies",
-"F194": "Each handler file sits only in the policies folder; every type in the policies handles a domain event, a non-handler is named and an empty policies namespace fails; no tracked source names a handler's old full name or path",
 "F195": "Policies hold only reactions and no stale list or path points at the old homes",
-"F196": "A service dropped into the policies, an empty namespace, or a rule list keeping the old full name would pass if the check looked at file names alone",
 "F197": "Run the existing handler-order pin unmodified after the move",
-"F198": "The order pin stays green, so handlers still run in the registered order and answers stay the same",
-"F199": "Refreshes and reactions behave exactly as before the move",
 "F2": "Work Items lives in its own module folder, so feature C can give it its own rules and turn the metrics update into a reaction",
 "F20": "One oracle file per slice; approved oracle and support files of this feature are never edited. Rules are never loosened: full-name rule lists are rewritten to the new names and still compared in both directions. Made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.WorkItemsFixtures. Slice dependencies: S2 after S1, S3 after S2. Per-test and property budgets are the defaults; no derogation.",
-"F200": "A move that reorders registrations in Program.cs would pass if only the layout rule were checked",
+"F201": "Read the compiled assembly and the tracked source for the six handlers files and the types in the policies; completion guard, re-run at completion",
+"F202": "Each handler file sits only in the policies folder; every type in the policies handles a domain event, a non-handler is named and an empty policies namespace fails; no tracked source names a handler's old full name or path. The no-stale-name check passes before the move, so it is a post-move completion guard; its old-home fixture cases (a made-up old namespace and path in a rule list or path, each found and named) are its discriminator",
+"F203": "A service dropped into the policies, an empty namespace, or a rule list keeping the old full name would pass if the check looked at file names alone; tracked non-source files outside the scanned projects are not scanned and are covered by a recorded repository search at completion",
+"F204": "The order pin stays green, so handlers still run in the registered order",
+"F205": "Reactions run in the same order as before the move",
+"F206": "A move that reorders registrations in Program.cs would pass if only the layout rule were checked; the pin says nothing about refresh answers, which the answer rows below observe",
+"F207": "Run the refresh scenarios through the service port, with the four blocked-transition handlers registered, after the move",
+"F208": "Refresh results and blocked-transition records equal those before the move for the same data and request",
+"F209": "Refresh answers, metrics answers and forecasts are the same as before the move",
 "F21": "Every dotnet command runs under flock -o on the shared lock file; declared commands omit the prefix. Code-fact was not consulted: file lists come from the directory listing and the IL membership test (stated limit). Rule strings, ILogger categories, perf harness, Stryker configs and test-selection scripts are grepped for moved full type names, not only using lines. Jev unauthorized: typesafe unavailable by refusal.",
+"F210": "A move that changes a blocked-transition handler's behaviour in a case the scenarios do not build would pass; the scenarios register only the four blocked-transition handlers",
+"F211": "Delete a team and run the existing team-deleted clean-up handler test after the move",
+"F212": "The clean-up reaction still removes the team's refresh log entries, so the refresh log a user reads is unchanged",
+"F213": "Refresh history of a deleted team is cleaned as before the move",
+"F214": "A handler registered in the wrong order or left unregistered would pass; the order pin covers that",
+"F215": "Change a connection's fetch shape and run the existing update-trigger handler test after the move",
+"F216": "The reaction still triggers the update it triggered before the move",
+"F217": "A changed connection still leads to the same refresh as before the move",
 "F22": "Layout oracles reuse TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary as the Forecasting layout oracles do; CreateNew would duplicate the layer rules.",
 "F23": "Its Moves and Stays lists are the move list; it compares by short name and stays green through the move.",
 "F24": "Existing owners of every moved responsibility keep their code; only folder and namespace change. CreateNew would duplicate refresh, blocked, dependency and rule decisions.",
