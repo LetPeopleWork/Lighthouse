@@ -143,9 +143,9 @@
 "still_passes_if": "F175",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs"
 },
-"expected": "F173",
-"stimulus": "F172",
-"user_result": "F174"
+"expected": "F187",
+"stimulus": "F186",
+"user_result": "F188"
 },
 {
 "covers": [
@@ -165,7 +165,7 @@
 "counters": {
 "D": 5,
 "E": 4,
-"F": 185,
+"F": 188,
 "K": 4,
 "P": 4,
 "S": 3,
@@ -1713,9 +1713,6 @@
 "F17": "Paradigm object_oriented, smell catalogue nw-code-design-oo: every moved type keeps its owner and responsibility; no domain decision moves into a service, no class is created, split or merged. Carriers unchanged: decisions in DependencyHonourPolicy, DependencyCycleDetector, RuleEvaluator, SyncModeResolver; effects in WorkItemService, TeamDataService, RefreshLogService and the handlers; no per-process state is added.",
 "F170": "A maintainer is told if a use case starts to depend on storage or the web layer",
 "F171": "A reach into Services or another module that is not in the forbidden list is not caught here",
-"F172": "Every architecture rule list and Stryker config of the test project is scanned for a moved type named at its old home",
-"F173": "No full-name string or file path names a moved type under the old Services namespace or folder; a sample old name is found and a new name or a type that stays is not",
-"F174": "A maintainer sees every rule list and mutation config name the services where they now live",
 "F175": "A list names the new home but drops the type, or a rule is loosened: both-direction comparison stays with the rules own tests",
 "F176": "Refresh, metrics and forecast answers are compared before and after the move",
 "F177": "Identical answers",
@@ -1728,6 +1725,9 @@
 "F183": "Line 34 names moved types by full name in code; follow them to the new namespaces",
 "F184": "Line 616 names moved types by full name in code; follow them to the new namespaces",
 "F185": "Line 6 XML cref names Services.Implementation.WorkItemRules.RuleEvaluator{T}; update the cref text only, fully qualified or plain text; the Models kernel must not gain a using of the module",
+"F186": "Every tracked test and production source file of the backend is scanned for a moved type named at its old home",
+"F187": "No full name or file path in a rule list, registration, comment or cref names a moved type under the old Services namespace or folder; a sample old name is found and a new name or a type that stays is not",
+"F188": "A maintainer sees every rule list and registration name the services where they now live",
 "F19": "Behaviour-free: routes, DTOs, serialized responses, refresh results, metrics answers, forecasts, DI lifetimes, handler order and the schema stay the same. No bound on stored or validated inputs changes. Existing API, E2E and response tests stay green and unmodified apart from using lines.",
 "F2": "Work Items lives in its own module folder, so feature C can give it its own rules and turn the metrics update into a reaction",
 "F20": "One oracle file per slice; approved oracle and support files of this feature are never edited. Rules are never loosened: full-name rule lists are rewritten to the new names and still compared in both directions. Made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.WorkItemsFixtures. Slice dependencies: S2 after S1, S3 after S2. Per-test and property budgets are the defaults; no derogation.",

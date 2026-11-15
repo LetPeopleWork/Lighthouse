@@ -243,15 +243,15 @@ A reach into Services or another module that is not in the forbidden list is not
 P2
 
 ```text
-Every architecture rule list and Stryker config of the test project is scanned for a moved type named at its old home
+Every tracked test and production source file of the backend is scanned for a moved type named at its old home
 ```
 
 ```text
-No full-name string or file path names a moved type under the old Services namespace or folder; a sample old name is found and a new name or a type that stays is not
+No full name or file path in a rule list, registration, comment or cref names a moved type under the old Services namespace or folder; a sample old name is found and a new name or a type that stays is not
 ```
 
 ```text
-A maintainer sees every rule list and mutation config name the services where they now live
+A maintainer sees every rule list and registration name the services where they now live
 ```
 
 ##### Disposition

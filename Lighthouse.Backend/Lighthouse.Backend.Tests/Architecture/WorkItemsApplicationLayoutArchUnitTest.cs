@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models;
 using Mono.Cecil;
@@ -7,7 +8,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// The Work Item, Team data, blocked, rule, dependency, parent-placement and refresh-log services and their ports live in the
     /// module's Application (the dependency ones in its Dependencies folder), none is left under Services, and the Application
-    /// reaches no EF Core, data layer, API or module Adapters. Every rule list and Stryker config that names a moved type
+    /// reaches no EF Core, data layer, API or module Adapters. Every rule list that names a moved type
     /// names it in its new place. The types are named as strings and read from the compiled production assembly, so this class
     /// compiles before and after the move, and a type that has not moved yet is a failure that names it. The rules also run on
     /// made-up types: an offender must be reported and its compliant twin must not be.
@@ -224,23 +225,23 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void NoRuleListOrStrykerConfigOfTheTestProject_NamesAMovedWorkItemsType_AtItsOldHome()
+        public void NoTrackedTestOrProductionSource_NamesAMovedWorkItemsType_AtItsOldHome()
         {
             var stale = ProjectFilesNamingAMovedTypeAtItsOldHome();
 
             Assert.That(
                 stale,
                 Is.Empty,
-                $"These test project files still name a moved Work Items type at its old home: [{string.Join("; ", stale)}]. Why it matters: a rule list or a Stryker path that " +
-                "names the old full name checks, or mutates, a type that no longer lives there, so the rule is green over nothing while the moved type goes unguarded. " +
-                "How to fix: write each full name, and each Stryker path, with the type's new home under Modules/WorkItems/Application, leaving the lists compared in both directions.");
+                $"These tracked source files still name a moved Work Items type at its old home: [{string.Join("; ", stale)}]. Why it matters: a rule list or a path that " +
+                "names the old full name checks, a type that no longer lives there, so the rule is green over nothing while the moved type goes unguarded. " +
+                "How to fix: write each full name, with the type's new home under Modules/WorkItems/Application, leaving the lists compared in both directions.");
         }
 
         [TestCase("\"Lighthouse.Backend.Services.Implementation.WorkItems.WorkItemService\",", "Lighthouse.Backend.Services.Implementation.WorkItems.WorkItemService")]
         [TestCase("\"Lighthouse.Backend.Services.Implementation.TeamData.TeamDataService\",", "Lighthouse.Backend.Services.Implementation.TeamData.TeamDataService")]
         [TestCase("\"Lighthouse.Backend.Services.Implementation.RefreshLogService\"", "Lighthouse.Backend.Services.Implementation.RefreshLogService")]
         [TestCase("\"**/Services/Implementation/Dependencies/DependencyRefreshReporter.cs\",", "Services/Implementation/Dependencies/DependencyRefreshReporter.cs")]
-        public void AnOldHomeInARuleListOrAStrykerPath_IsFound(string line, string expectedHit)
+        public void AnOldHomeInARuleListOrAPath_IsFound(string line, string expectedHit)
         {
             Assert.That(
                 StaleNamesIn(line),
@@ -278,31 +279,57 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static List<string> ProjectFilesNamingAMovedTypeAtItsOldHome()
         {
-            var projectDirectory = TestProjectDirectory();
+            var repositoryRoot = Path.GetDirectoryName(SolutionDirectory())!;
             var thisFile = $"{nameof(WorkItemsApplicationLayoutArchUnitTest)}.cs";
 
-            var files = Directory.EnumerateFiles(projectDirectory, "*.cs", SearchOption.AllDirectories)
-                .Concat(Directory.EnumerateFiles(projectDirectory, "stryker-config*.json", SearchOption.TopDirectoryOnly))
-                .Where(file => !IsBuildOrReportOutput(Path.GetRelativePath(projectDirectory, file)) && Path.GetFileName(file) != thisFile)
-                .Order(StringComparer.Ordinal)
+            var files = TrackedFiles(repositoryRoot)
+                .Where(path => path.EndsWith(".cs", StringComparison.Ordinal)
+                    && (path.StartsWith("Lighthouse.Backend/Lighthouse.Backend.Tests/", StringComparison.Ordinal)
+                        || path.StartsWith("Lighthouse.Backend/Lighthouse.Backend/", StringComparison.Ordinal))
+                    && Path.GetFileName(path) != thisFile)
                 .ToList();
 
-            Assert.That(files, Is.Not.Empty, $"No test project files were found under {projectDirectory}, so the scan would pass without looking at anything.");
+            Assert.That(files, Is.Not.Empty, "git listed no tracked source file of the backend, so the scan would pass without looking at anything.");
 
             return
             [
-                .. files.SelectMany(file => StaleNamesIn(File.ReadAllText(file)).Distinct(StringComparer.Ordinal)
-                    .Select(name => $"{Path.GetRelativePath(projectDirectory, file).Replace('\\', '/')} names {name}")),
+                .. files.SelectMany(file => StaleNamesIn(File.ReadAllText(Path.Combine(repositoryRoot, file))).Distinct(StringComparer.Ordinal)
+                    .Select(name => $"{file} names {name}")),
             ];
         }
 
-        private static bool IsBuildOrReportOutput(string relativePath)
+        // Only tracked files count: a build output or a local config is no part of the committed code.
+        private static List<string> TrackedFiles(string repositoryRoot)
         {
-            var segments = relativePath.Replace('\\', '/').Split('/');
-            return segments.Any(segment => segment is "bin" or "obj" || segment.StartsWith("StrykerOutput", StringComparison.Ordinal));
+            var start = new ProcessStartInfo("git")
+            {
+                WorkingDirectory = repositoryRoot,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            start.ArgumentList.Add("ls-files");
+
+            Process? process = null;
+            try
+            {
+                process = Process.Start(start);
+            }
+            catch (System.ComponentModel.Win32Exception exception)
+            {
+                Assert.Fail($"The scan needs git on the machine to list the tracked files, and it could not be started: {exception.Message}. Why it matters: without it the test cannot tell which files are committed. How to fix: install git and put it on the PATH.");
+            }
+
+            using var started = process!;
+            var outputRead = started.StandardOutput.ReadToEndAsync();
+            var errorsRead = started.StandardError.ReadToEndAsync();
+            Task.WaitAll(outputRead, errorsRead);
+            started.WaitForExit();
+
+            Assert.That(started.ExitCode, Is.Zero, $"git ls-files failed: {errorsRead.Result}");
+            return [.. outputRead.Result.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => line.Trim())];
         }
 
-        private static string TestProjectDirectory()
+        private static string SolutionDirectory()
         {
             var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
             while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Lighthouse.sln")))
@@ -310,8 +337,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 directory = directory.Parent;
             }
 
-            Assert.That(directory, Is.Not.Null, "Could not locate Lighthouse.sln to anchor the test project's files.");
-            return Path.Combine(directory!.FullName, "Lighthouse.Backend.Tests");
+            Assert.That(directory, Is.Not.Null, "Could not locate Lighthouse.sln to anchor the repository root.");
+            return directory!.FullName;
         }
 
         private static void ThenEachFileSitsOnlyIn(string folder, IReadOnlyCollection<string> fileNames)
