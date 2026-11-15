@@ -12,7 +12,8 @@ on:
 
 jobs:
   package-linux-standalone:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5
     if: github.ref == 'refs/heads/main'
     permissions:
       actions: write
@@ -21,14 +22,36 @@ jobs:
       name: "Package and Sign"
 
     steps:
+      - name: Install build packages
+        run: |
+          apt-get update
+          apt-get install -y \
+            ca-certificates \
+            curl \
+            wget \
+            git \
+            jq \
+            binutils \
+            build-essential \
+            pkg-config \
+            libssl-dev \
+            libxdo-dev \
+            xz-utils \
+            xdg-utils \
+            libwebkit2gtk-4.1-0 \
+            libwebkit2gtk-4.1-dev \
+            libjavascriptcoregtk-4.1-0 \
+            libjavascriptcoregtk-4.1-dev \
+            gir1.2-javascriptcoregtk-4.1 \
+            gir1.2-webkit2-4.1 \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+          dpkg-query -W libwebkit2gtk-4.1-0
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: '0'
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
-        with:
-          dotnet-version: '10.0.403'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -61,21 +84,6 @@ jobs:
           mkdir -p ./Lighthouse.Frontend/public/sbom
           cp ./sbom-download/lighthouse-backend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/backend.cdx.json
           cp ./sbom-download/lighthouse-frontend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/frontend.cdx.json
-
-      - name: Install Tauri system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-0=2.44.0-2 \
-            libwebkit2gtk-4.1-dev=2.44.0-2 \
-            libjavascriptcoregtk-4.1-0=2.44.0-2 \
-            libjavascriptcoregtk-4.1-dev=2.44.0-2 \
-            gir1.2-javascriptcoregtk-4.1=2.44.0-2 \
-            gir1.2-webkit2-4.1=2.44.0-2 \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            binutils
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -121,6 +129,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          APPIMAGE_EXTRACT_AND_RUN: 1
         with:
           projectPath: ./Lighthouse.Frontend
 
@@ -140,7 +149,7 @@ jobs:
           APPIMAGE_SIG=$(find ./Lighthouse.Frontend/src-tauri/target/release/bundle/appimage -name "*.AppImage.sig" ! -name "*.tar.gz.sig" | head -1)
           if [ -n "$APPIMAGE_SIG" ]; then
             cp "$APPIMAGE_SIG" ./Lighthouse-standalone.AppImage.sig
-            echo "Copied updater signature: $(basename $APPIMAGE_SIG)"
+            echo "Copied updater signature: $(basename "$APPIMAGE_SIG")"
           else
             echo "WARN: No AppImage updater sig found"
           fi
@@ -182,3 +191,26 @@ jobs:
           path: |
             ./Lighthouse-standalone.AppImage
             ./Lighthouse-standalone.AppImage.sig
+
+  verify-appimage-loads:
+    runs-on: ubuntu-latest
+    needs: package-linux-standalone
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5
+          - debian:13@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: Lighthouse-linux-standalone-${{ inputs.version }}
+          path: ./appimage
+
+      - name: Check the AppImage resolves its libraries on ${{ matrix.image }}
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: bash tools/linux-appimage/check-loads-on.sh "$IMAGE" ./appimage/Lighthouse-standalone.AppImage
