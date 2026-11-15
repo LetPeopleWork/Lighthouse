@@ -253,7 +253,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>SyncModeResolver</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs:1</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncModeResolver.cs:1</p>
 
 <p>Reuse</p>
 
@@ -262,7 +262,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>FetchFingerprint</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs:1</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/FetchFingerprint.cs:1</p>
 
 <p>Reuse</p>
 
@@ -289,7 +289,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>DependencyHonourPolicy</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyHonourPolicy.cs:1</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyHonourPolicy.cs:1</p>
 
 <p>Reuse</p>
 
@@ -298,7 +298,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>IDependencyHonourPolicy</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyHonourPolicy.cs:1</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/IDependencyHonourPolicy.cs:1</p>
 
 <p>Reuse</p>
 
@@ -307,7 +307,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>DependencyCycleDetector</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyCycleDetector.cs:1</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyCycleDetector.cs:1</p>
 
 <p>Reuse</p>
 
@@ -316,7 +316,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>DependencyFacts</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyFacts.cs:1</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyFacts.cs:1</p>
 
 <p>Reuse</p>
 
@@ -771,6 +771,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Reuse</p>
 
 <pre><code>Moved unchanged; owner and responsibility stay.
+</code></pre>
+
+<p>DeliveryRulesControllerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the full-name reference; edited in place.
+</code></pre>
+
+<p>FeaturesControllerTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the full-name reference; edited in place.
+</code></pre>
+
+<p>RuleOperators</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleOperators.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the full-name reference; edited in place.
 </code></pre>
 
 <h3>Impact</h3>
@@ -1378,6 +1405,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Full names naming a moved handler&#x27;s tests follow it; no change if none
 </code></pre>
 
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Names moved types by full name or cref; rewritten to the new place, behaviour unchanged.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Names moved types by full name or cref; rewritten to the new place, behaviour unchanged.
+</code></pre>
+
+<p>edit-target</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleOperators.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Names moved types by full name or cref; rewritten to the new place, behaviour unchanged.
+</code></pre>
+
 <h3>Agreement</h3>
 
 <p>Lighthouse CLR namespaces of Work Items types</p>
@@ -1682,27 +1736,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Extend</p>
 
 <pre><code>Full-name strings follow RuleEvaluator
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5687-slice-05.json</p>
-
-<p>Extend</p>
-
-<pre><code>Mutate paths of FetchFingerprint and SyncModeResolver follow the files
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-4365-slice-02.json</p>
-
-<p>Extend</p>
-
-<pre><code>Mutate paths of DependencyHonourPolicy, DependencyCycleDetector, DependencyFacts follow the files
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json</p>
-
-<p>Extend</p>
-
-<pre><code>Mutate path of DependencyHonourPolicy follows the file
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs</p>
@@ -2017,7 +2050,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>Extend</p>
 
-<pre><code>Using lines only
+<pre><code>Rewrite the registration lines around Program.cs:1443-1483 that spell old full names in place (short names plus usings); registration order and lifetimes unchanged
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs</p>
@@ -2111,27 +2144,6 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5687-slice-05.json</p>
-
-<p>Extend</p>
-
-<pre><code>Mutate path of WorkItemService follows the file
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-4365-slice-02.json</p>
-
-<p>Extend</p>
-
-<pre><code>Mutate path of DependencyRefreshReporter follows the file
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json</p>
-
-<p>Extend</p>
-
-<pre><code>Mutate path of DependencyRefreshReporter follows the file
-</code></pre>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/RuleEvaluator.cs</p>
 
 <p>Create</p>
@@ -2144,6 +2156,27 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <p>Create</p>
 
 <pre><code>git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleEvaluator.cs; rejected by the Domain rule: its public Match signature takes IRuleFieldProvider&lt;T&gt;, an Application port
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Line 34 names moved types by full name in code; follow them to the new namespaces
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Line 616 names moved types by full name in code; follow them to the new namespaces
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleOperators.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Line 6 XML cref names Services.Implementation.WorkItemRules.RuleEvaluator{T}; update the cref text only, fully qualified or plain text; the Models kernel must not gain a using of the module
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>

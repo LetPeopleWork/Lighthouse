@@ -165,7 +165,7 @@
 "counters": {
 "D": 5,
 "E": 4,
-"F": 179,
+"F": 185,
 "K": 4,
 "P": 4,
 "S": 3,
@@ -656,6 +656,24 @@
 "kind": "edit-target",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:1",
 "reason": "F47"
+},
+{
+"decision": "Changed",
+"kind": "edit-target",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs:1",
+"reason": "F181"
+},
+{
+"decision": "Changed",
+"kind": "edit-target",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs:1",
+"reason": "F181"
+},
+{
+"decision": "Changed",
+"kind": "edit-target",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleOperators.cs:1",
+"reason": "F181"
 }
 ],
 "not_applicable": [
@@ -697,13 +715,13 @@
 },
 {
 "decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs:1",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/SyncModeResolver.cs:1",
 "reason": "F27",
 "symbol": "SyncModeResolver"
 },
 {
 "decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs:1",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/FetchFingerprint.cs:1",
 "reason": "F27",
 "symbol": "FetchFingerprint"
 },
@@ -721,25 +739,25 @@
 },
 {
 "decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyHonourPolicy.cs:1",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyHonourPolicy.cs:1",
 "reason": "F27",
 "symbol": "DependencyHonourPolicy"
 },
 {
 "decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyHonourPolicy.cs:1",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/IDependencyHonourPolicy.cs:1",
 "reason": "F27",
 "symbol": "IDependencyHonourPolicy"
 },
 {
 "decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyCycleDetector.cs:1",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyCycleDetector.cs:1",
 "reason": "F27",
 "symbol": "DependencyCycleDetector"
 },
 {
 "decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyFacts.cs:1",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyFacts.cs:1",
 "reason": "F27",
 "symbol": "DependencyFacts"
 },
@@ -1042,6 +1060,24 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandler.cs:1",
 "reason": "F27",
 "symbol": "ConnectionFetchShapeChangedUpdateTriggerHandler"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs:1",
+"reason": "F180",
+"symbol": "DeliveryRulesControllerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs:1",
+"reason": "F180",
+"symbol": "FeaturesControllerTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleOperators.cs:1",
+"reason": "F180",
+"symbol": "RuleOperators"
 }
 ],
 "risks": [
@@ -1196,21 +1232,6 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/BlockedItemSinglePathArchUnitTest.cs",
 "reason": "F37"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5687-slice-05.json",
-"reason": "F38"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-4365-slice-02.json",
-"reason": "F39"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json",
-"reason": "F40"
 },
 {
 "change": "Extend",
@@ -1380,7 +1401,7 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
-"reason": "F33"
+"reason": "F182"
 },
 {
 "change": "Extend",
@@ -1448,21 +1469,6 @@
 "reason": "F42"
 },
 {
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5687-slice-05.json",
-"reason": "F43"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-4365-slice-02.json",
-"reason": "F44"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json",
-"reason": "F44"
-},
-{
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/RuleEvaluator.cs",
 "reason": "F155"
@@ -1471,6 +1477,21 @@
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IRuleEvaluator.cs",
 "reason": "F156"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs",
+"reason": "F183"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs",
+"reason": "F184"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemRules/RuleOperators.cs",
+"reason": "F185"
 }
 ],
 "verification": [
@@ -1701,6 +1722,12 @@
 "F178": "Users see the same refresh results, metrics and forecasts",
 "F179": "Behaviour preservation is a completion check on the candidate (RefreshesStayTheSameTest and the answers-compare commands), not an architecture-layout observation",
 "F18": "Program.cs registrations and order stay; only using lines change, DomainEventHandlerOrderPinTest stays green and unmodified. Unit tests of moved types stay in place and gain using lines only; they move in feature C. Feature A's oracle files may take a using-line edit forced by the move, recorded as a target, never a semantic change. TheNamespaceThisEpicOwns already covers Modules.WorkItems; if WorkItemService's move makes it reach the forecast, the crafter returns that to the architect and never loosens the rule.",
+"F180": "Existing owner of the full-name reference; edited in place.",
+"F181": "Names moved types by full name or cref; rewritten to the new place, behaviour unchanged.",
+"F182": "Rewrite the registration lines around Program.cs:1443-1483 that spell old full names in place (short names plus usings); registration order and lifetimes unchanged",
+"F183": "Line 34 names moved types by full name in code; follow them to the new namespaces",
+"F184": "Line 616 names moved types by full name in code; follow them to the new namespaces",
+"F185": "Line 6 XML cref names Services.Implementation.WorkItemRules.RuleEvaluator{T}; update the cref text only, fully qualified or plain text; the Models kernel must not gain a using of the module",
 "F19": "Behaviour-free: routes, DTOs, serialized responses, refresh results, metrics answers, forecasts, DI lifetimes, handler order and the schema stay the same. No bound on stored or validated inputs changes. Existing API, E2E and response tests stay green and unmodified apart from using lines.",
 "F2": "Work Items lives in its own module folder, so feature C can give it its own rules and turn the metrics update into a reaction",
 "F20": "One oracle file per slice; approved oracle and support files of this feature are never edited. Rules are never loosened: full-name rule lists are rewritten to the new names and still compared in both directions. Made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.WorkItemsFixtures. Slice dependencies: S2 after S1, S3 after S2. Per-test and property budgets are the defaults; no derogation.",

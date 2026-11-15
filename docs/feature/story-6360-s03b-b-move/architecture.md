@@ -118,7 +118,7 @@ Slice layout oracle for Work Items; the model oracle is Forecasting's, ModuleRul
 
 SyncModeResolver
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/WorkItems\/SyncModeResolver\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/SyncModeResolver\.cs\:1
 
 Reuse
 
@@ -128,7 +128,7 @@ Moved unchanged; owner and responsibility stay.
 
 FetchFingerprint
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/WorkItems\/FetchFingerprint\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/FetchFingerprint\.cs\:1
 
 Reuse
 
@@ -158,7 +158,7 @@ Moved unchanged; owner and responsibility stay.
 
 DependencyHonourPolicy
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Dependencies\/DependencyHonourPolicy\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/Dependencies\/DependencyHonourPolicy\.cs\:1
 
 Reuse
 
@@ -168,7 +168,7 @@ Moved unchanged; owner and responsibility stay.
 
 IDependencyHonourPolicy
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Interfaces\/Dependencies\/IDependencyHonourPolicy\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/Dependencies\/IDependencyHonourPolicy\.cs\:1
 
 Reuse
 
@@ -178,7 +178,7 @@ Moved unchanged; owner and responsibility stay.
 
 DependencyCycleDetector
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Dependencies\/DependencyCycleDetector\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/Dependencies\/DependencyCycleDetector\.cs\:1
 
 Reuse
 
@@ -188,7 +188,7 @@ Moved unchanged; owner and responsibility stay.
 
 DependencyFacts
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Dependencies\/DependencyFacts\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/Dependencies\/DependencyFacts\.cs\:1
 
 Reuse
 
@@ -694,6 +694,36 @@ Reuse
 
 ```text
 Moved unchanged; owner and responsibility stay.
+```
+
+DeliveryRulesControllerTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DeliveryRulesControllerTest\.cs\:1
+
+Extend
+
+```text
+Existing owner of the full-name reference; edited in place.
+```
+
+FeaturesControllerTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/FeaturesControllerTest\.cs\:1
+
+Extend
+
+```text
+Existing owner of the full-name reference; edited in place.
+```
+
+RuleOperators
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WorkItemRules\/RuleOperators\.cs\:1
+
+Extend
+
+```text
+Existing owner of the full-name reference; edited in place.
 ```
 
 ### Impact
@@ -1368,6 +1398,36 @@ Changed
 Full names naming a moved handler's tests follow it; no change if none
 ```
 
+edit\-target
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DeliveryRulesControllerTest\.cs\:1
+
+Changed
+
+```text
+Names moved types by full name or cref; rewritten to the new place, behaviour unchanged.
+```
+
+edit\-target
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/FeaturesControllerTest\.cs\:1
+
+Changed
+
+```text
+Names moved types by full name or cref; rewritten to the new place, behaviour unchanged.
+```
+
+edit\-target
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WorkItemRules\/RuleOperators\.cs\:1
+
+Changed
+
+```text
+Names moved types by full name or cref; rewritten to the new place, behaviour unchanged.
+```
+
 ### Agreement
 
 Lighthouse CLR namespaces of Work Items types
@@ -1712,30 +1772,6 @@ Extend
 
 ```text
 Full-name strings follow RuleEvaluator
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/stryker\-config\.epic\-5687\-slice\-05\.json
-
-Extend
-
-```text
-Mutate paths of FetchFingerprint and SyncModeResolver follow the files
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/stryker\-config\.epic\-4365\-slice\-02\.json
-
-Extend
-
-```text
-Mutate paths of DependencyHonourPolicy, DependencyCycleDetector, DependencyFacts follow the files
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/stryker\-config\.epic\-5792\-slice\-02\.json
-
-Extend
-
-```text
-Mutate path of DependencyHonourPolicy follows the file
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsMembershipArchUnitTest\.cs
@@ -2086,7 +2122,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Program\.cs
 Extend
 
 ```text
-Using lines only
+Rewrite the registration lines around Program.cs:1443-1483 that spell old full names in place (short names plus usings); registration order and lifetimes unchanged
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundApplicationArchUnitTest\.cs
@@ -2193,30 +2229,6 @@ Extend
 Full-name strings and typeof usings naming a moved type are rewritten to the new place; lists still compared in both directions, no rule loosened. If the file names no moved type, no change.
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/stryker\-config\.epic\-5687\-slice\-05\.json
-
-Extend
-
-```text
-Mutate path of WorkItemService follows the file
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/stryker\-config\.epic\-4365\-slice\-02\.json
-
-Extend
-
-```text
-Mutate path of DependencyRefreshReporter follows the file
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/stryker\-config\.epic\-5792\-slice\-02\.json
-
-Extend
-
-```text
-Mutate path of DependencyRefreshReporter follows the file
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Application\/RuleEvaluator\.cs
 
 Create
@@ -2231,6 +2243,30 @@ Create
 
 ```text
 git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleEvaluator.cs; rejected by the Domain rule: its public Match signature takes IRuleFieldProvider<T>, an Application port
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DeliveryRulesControllerTest\.cs
+
+Extend
+
+```text
+Line 34 names moved types by full name in code; follow them to the new namespaces
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/FeaturesControllerTest\.cs
+
+Extend
+
+```text
+Line 616 names moved types by full name in code; follow them to the new namespaces
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WorkItemRules\/RuleOperators\.cs
+
+Extend
+
+```text
+Line 6 XML cref names Services.Implementation.WorkItemRules.RuleEvaluator{T}; update the cref text only, fully qualified or plain text; the Models kernel must not gain a using of the module
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsApplicationLayoutArchUnitTest\.cs
