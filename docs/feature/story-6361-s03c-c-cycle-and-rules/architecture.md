@@ -877,6 +877,62 @@ Extend
 Consumer migration only: constructs TeamMetricsService with the ports, or stubs IHowManyForecaster where it stubbed IForecastService in the service provider; no assertion changes
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingApplicationLayoutArchUnitTest\.cs
+
+Extend
+
+```text
+Feature B oracle: TheFlowMetricsOutboundList_NamesTheForecastTypesInTheModuleApplication is rewritten to assert the Flow metrics outbound list holds no Forecasting entry (list 3 to 0); meaning kept in the new shape
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/Forecasting\/SeededForecastsStayTheSameTest\.cs
+
+Extend
+
+```text
+Feature A oracle builds a hand-made container: registers the same port forwarders as Program.cs; no assertion change
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundApplicationArchUnitTest\.cs
+
+Extend
+
+```text
+Inline list gains the two Forecasting implementers ForecastFilterRuleService and ForecastingAnswersToFlowMetrics; S3 then replaces the Forecasting entries by Forecasting becoming a legal caller by namespace
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/ForecastRealityCheck\/RealityCheckAtThePortTest\.cs
+
+Extend
+
+```text
+Port harness registrations gain the Flow metrics port forwarders, as in Program.cs; no assertion change
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/RefinementAtThePortTest\.cs
+
+Extend
+
+```text
+Port harness registrations gain the Flow metrics port forwarders, as in Program.cs; no assertion change
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportsAtThePortTest\.cs
+
+Extend
+
+```text
+Port harness registrations gain the Flow metrics port forwarders, as in Program.cs; no assertion change
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/PortFixtures\/PortFixtureLifetimes\.cs
+
+Extend
+
+```text
+Port harness registrations gain the Flow metrics port forwarders, as in Program.cs; no assertion change
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsDoesNotReachForecastingArchUnitTest\.cs
 
 #### Verification
@@ -930,9 +986,15 @@ Ports (Flow metrics' Application, namespace Lighthouse.Backend.Modules.FlowMetri
 Answers (Forecasting): ForecastFilterRuleService declares IThroughputFilter beside IForecastFilterRuleService (same methods, no new code; IForecastFilterRuleService is unchanged). ForecastingAnswersToFlowMetrics in Modules/Forecasting/Application takes IForecastService and implements IForecastDataSufficiency by calling ForecastDataSufficiencyPolicy.HasEnoughData and IHowManyForecaster by calling IForecastService.HowMany; it decides nothing itself. Program.cs: AddScoped<IThroughputFilter>(sp => (ForecastFilterRuleService)sp.GetRequiredService<IForecastFilterRuleService>()) so the one scoped instance answers both; AddScoped<ForecastingAnswersToFlowMetrics>() with AddScoped<IForecastDataSufficiency> and AddScoped<IHowManyForecaster> resolving it. Forecasting keeps depending on Flow metrics (ITeamMetricsService, ForecastThroughputStatus), which is now the only direction. The Flow metrics outbound Forecasting list goes 3 to 0 here, because the rule compares both ways and the gone edges would fail it.
 ```
 
+```text
+ForecastingAnswersToFlowMetrics resolves IForecastService lazily through IServiceProvider on the first HowMany call, not by constructor injection: constructor injection makes a DI cycle (TeamMetricsService -> IForecastDataSufficiency -> ForecastingAnswersToFlowMetrics -> IForecastService -> ForecastService -> ITeamMetricsService) that ServiceProviderValidationTest does not catch through factory registrations and that hung TeamFeatureSizeAcceptanceTest. Same shape as BaseMetricsService's existing lookup; removed together with the service locator in S07b. Supersedes the constructor-taking wording of the earlier Answers decision.
+```
+
 ##### Constraints
 
-None.
+```text
+The IThroughputFilter DI forwarding never downcasts an interface (casting sp.GetRequiredService<IForecastFilterRuleService>() to ForecastFilterRuleService breaks at runtime if the interface is re-registered): register the concrete ForecastFilterRuleService once (scoped) and forward both IForecastFilterRuleService and IThroughputFilter to it, keeping one scoped instance per scope. Port harnesses and hand-made containers register the same forwarders.
+```
 
 ##### Reuse
 
@@ -1118,6 +1180,14 @@ Extend
 Five Forecasting entries removed (10 to 5); Forecasting module namespaces join the legal callers
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingApplicationLayoutArchUnitTest\.cs
+
+Extend
+
+```text
+Feature B oracle: the TheFlowMetricsInboundList_Names check follows the inbound list 10 to 5 (no Forecasting entry)
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingModuleBoundariesArchUnitTest\.cs
 
 #### Verification
@@ -1217,6 +1287,16 @@ Extend
 Flow metrics' inbound list is edited in place: five Forecasting entries off, Forecasting legal by namespace; no second list
 ```
 
+TheFlowMetricsInboundList\_NamesTheForecastTypesInTheModuleApplication
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingApplicationLayoutArchUnitTest\.cs\:89
+
+Extend
+
+```text
+Feature B's inbound-list check is rewritten in place to the 10 to 5 list with no Forecasting entry; no second check
+```
+
 ##### Impact
 
 test\-support
@@ -1247,6 +1327,16 @@ UnchangedCompatible
 
 ```text
 Earlier oracle; compiles and keeps meaning through the default wording
+```
+
+arch\-rule
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingApplicationLayoutArchUnitTest\.cs\:89
+
+Changed
+
+```text
+Feature B oracle check follows the Flow metrics inbound list (no Forecasting entry); meaning kept
 ```
 
 ##### Agreement

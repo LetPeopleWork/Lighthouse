@@ -171,7 +171,7 @@
 "counters": {
 "D": 5,
 "E": 6,
-"F": 211,
+"F": 220,
 "K": 4,
 "P": 5,
 "S": 4,
@@ -549,9 +549,13 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsDoesNotReachForecastingArchUnitTest.cs"
 }
 ],
+"constraints": [
+"F217"
+],
 "decisions": [
 "F116",
-"F117"
+"F117",
+"F216"
 ],
 "not_applicable": [
 {
@@ -673,6 +677,41 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastFilterFeatureForecastIntegrationTest.cs",
 "reason": "F112"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs",
+"reason": "F212"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs",
+"reason": "F213"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs",
+"reason": "F214"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs",
+"reason": "F215"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs",
+"reason": "F215"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs",
+"reason": "F215"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimes.cs",
+"reason": "F215"
 }
 ],
 "verification": [
@@ -734,6 +773,12 @@
 "kind": "arch-rule",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs:1",
 "reason": "F101"
+},
+{
+"decision": "Changed",
+"kind": "arch-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs:89",
+"reason": "F220"
 }
 ],
 "not_applicable": [
@@ -760,6 +805,12 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:54",
 "reason": "F98",
 "symbol": "OtherOutsideTypesReachingTheApplication"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs:89",
+"reason": "F219",
+"symbol": "TheFlowMetricsInboundList_NamesTheForecastTypesInTheModuleApplication"
 }
 ]
 },
@@ -773,6 +824,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs",
 "reason": "F88"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs",
+"reason": "F218"
 }
 ],
 "verification": [
@@ -1130,7 +1186,16 @@
 "F21": "Behaviour-free: routes, DTO shapes, serialized responses, metrics answers, forecast results, DI lifetimes of existing registrations, domain-event handler order and the schema stay the same. DomainEventHandlerOrderPinTest, SeededForecastsStayTheSameTest and the existing API, E2E and response tests stay green and unmodified. No bound on stored or validated input changes (none is added, widened or narrowed).",
 "F210": "The examiner sees that after a restart the forecasts compute again instead of trusting inputs recorded before the stop, even on data a forecast just before the stop found unchanged.",
 "F211": "Something other than the start-up seeding that makes every first round after a start compute again, for example inputs that differ per process. On main, with the seeding's registration removed, the first round after the restart was Skipped=true in 5 of 6 runs and the line went NOT OBSERVED. The one run that stayed OBSERVED was the first build after the edit, with no refresh check in the probe at that time; the probe now refuses OBSERVED when a refresh runs between the rounds.",
+"F212": "Feature B oracle: TheFlowMetricsOutboundList_NamesTheForecastTypesInTheModuleApplication is rewritten to assert the Flow metrics outbound list holds no Forecasting entry (list 3 to 0); meaning kept in the new shape",
+"F213": "Feature A oracle builds a hand-made container: registers the same port forwarders as Program.cs; no assertion change",
+"F214": "Inline list gains the two Forecasting implementers ForecastFilterRuleService and ForecastingAnswersToFlowMetrics; S3 then replaces the Forecasting entries by Forecasting becoming a legal caller by namespace",
+"F215": "Port harness registrations gain the Flow metrics port forwarders, as in Program.cs; no assertion change",
+"F216": "ForecastingAnswersToFlowMetrics resolves IForecastService lazily through IServiceProvider on the first HowMany call, not by constructor injection: constructor injection makes a DI cycle (TeamMetricsService -> IForecastDataSufficiency -> ForecastingAnswersToFlowMetrics -> IForecastService -> ForecastService -> ITeamMetricsService) that ServiceProviderValidationTest does not catch through factory registrations and that hung TeamFeatureSizeAcceptanceTest. Same shape as BaseMetricsService's existing lookup; removed together with the service locator in S07b. Supersedes the constructor-taking wording of the earlier Answers decision.",
+"F217": "The IThroughputFilter DI forwarding never downcasts an interface (casting sp.GetRequiredService<IForecastFilterRuleService>() to ForecastFilterRuleService breaks at runtime if the interface is re-registered): register the concrete ForecastFilterRuleService once (scoped) and forward both IForecastFilterRuleService and IThroughputFilter to it, keeping one scoped instance per scope. Port harnesses and hand-made containers register the same forwarders.",
+"F218": "Feature B oracle: the TheFlowMetricsInboundList_Names check follows the inbound list 10 to 5 (no Forecasting entry)",
+"F219": "Feature B's inbound-list check is rewritten in place to the 10 to 5 list with no Forecasting entry; no second check",
 "F22": "One oracle file per slice; never edit an earlier slice's or earlier feature's oracle or support bytes. Rules read the compiled IL, lists are inline and compared both ways, never loosened; made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.ForecastingFixtures.* (they may not reach API, Data or EF Core, nor be domain-event handlers). Rule tests assert by the failure naming the offender, not by counts. No nWave scenario tags in code. Default per-test budgets; no derogation. Test-writing skill wins over nWave timing and PBT density rules.",
+"F220": "Feature B oracle check follows the Flow metrics inbound list (no Forecasting entry); meaning kept",
 "F23": "Every dotnet command runs under flock -o on the shared lock file. Fast loop Test-Fast.ps1 plus the slice oracle; full gates (dotnet build zero warnings, dotnet test with the CLAUDE.md connector filter) at slice end. Pure moves (git mv) are their own commit; edits follow in separate commits. Comments only for a why, no internal ids.",
 "F24": "Code-fact: code-fact query.callers-of answered from textsearch at noisy confidence with an empty site list for C# symbols, so it is unknown, not zero callers. Callers and consumers come from git grep over source, limited to textual names (reflection-by-string and generated code may be missed); the IL rules are the authoritative check. Jev: unauthorized, not called.",
 "F25": "Already holds GetEffectiveRuleSet and Filter with the signatures TeamMetricsService calls; it also implements IThroughputFilter by declaration only, so there is one filter, no second implementation.",

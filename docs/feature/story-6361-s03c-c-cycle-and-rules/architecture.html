@@ -929,6 +929,55 @@ bash Scripts/examine/bin/forecast-triggers-show
 <pre><code>Consumer migration only: constructs TeamMetricsService with the ports, or stubs IHowManyForecaster where it stubbed IForecastService in the service provider; no assertion changes
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Feature B oracle: TheFlowMetricsOutboundList_NamesTheForecastTypesInTheModuleApplication is rewritten to assert the Flow metrics outbound list holds no Forecasting entry (list 3 to 0); meaning kept in the new shape
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Feature A oracle builds a hand-made container: registers the same port forwarders as Program.cs; no assertion change
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Inline list gains the two Forecasting implementers ForecastFilterRuleService and ForecastingAnswersToFlowMetrics; S3 then replaces the Forecasting entries by Forecasting becoming a legal caller by namespace
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Port harness registrations gain the Flow metrics port forwarders, as in Program.cs; no assertion change
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Port harness registrations gain the Flow metrics port forwarders, as in Program.cs; no assertion change
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Port harness registrations gain the Flow metrics port forwarders, as in Program.cs; no assertion change
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimes.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Port harness registrations gain the Flow metrics port forwarders, as in Program.cs; no assertion change
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsDoesNotReachForecastingArchUnitTest.cs</p>
 
 <h4>Verification</h4>
@@ -976,9 +1025,13 @@ bash Scripts/examine/bin/forecast-triggers-show
 <pre><code>Answers (Forecasting): ForecastFilterRuleService declares IThroughputFilter beside IForecastFilterRuleService (same methods, no new code; IForecastFilterRuleService is unchanged). ForecastingAnswersToFlowMetrics in Modules/Forecasting/Application takes IForecastService and implements IForecastDataSufficiency by calling ForecastDataSufficiencyPolicy.HasEnoughData and IHowManyForecaster by calling IForecastService.HowMany; it decides nothing itself. Program.cs: AddScoped&lt;IThroughputFilter&gt;(sp =&gt; (ForecastFilterRuleService)sp.GetRequiredService&lt;IForecastFilterRuleService&gt;()) so the one scoped instance answers both; AddScoped&lt;ForecastingAnswersToFlowMetrics&gt;() with AddScoped&lt;IForecastDataSufficiency&gt; and AddScoped&lt;IHowManyForecaster&gt; resolving it. Forecasting keeps depending on Flow metrics (ITeamMetricsService, ForecastThroughputStatus), which is now the only direction. The Flow metrics outbound Forecasting list goes 3 to 0 here, because the rule compares both ways and the gone edges would fail it.
 </code></pre>
 
+<pre><code>ForecastingAnswersToFlowMetrics resolves IForecastService lazily through IServiceProvider on the first HowMany call, not by constructor injection: constructor injection makes a DI cycle (TeamMetricsService -&gt; IForecastDataSufficiency -&gt; ForecastingAnswersToFlowMetrics -&gt; IForecastService -&gt; ForecastService -&gt; ITeamMetricsService) that ServiceProviderValidationTest does not catch through factory registrations and that hung TeamFeatureSizeAcceptanceTest. Same shape as BaseMetricsService&#x27;s existing lookup; removed together with the service locator in S07b. Supersedes the constructor-taking wording of the earlier Answers decision.
+</code></pre>
+
 <h5>Constraints</h5>
 
-<p>None.</p>
+<pre><code>The IThroughputFilter DI forwarding never downcasts an interface (casting sp.GetRequiredService&lt;IForecastFilterRuleService&gt;() to ForecastFilterRuleService breaks at runtime if the interface is re-registered): register the concrete ForecastFilterRuleService once (scoped) and forward both IForecastFilterRuleService and IThroughputFilter to it, keeping one scoped instance per scope. Port harnesses and hand-made containers register the same forwarders.
+</code></pre>
 
 <h5>Reuse</h5>
 
@@ -1151,6 +1204,13 @@ bash Scripts/examine/bin/forecast-triggers-show
 <pre><code>Five Forecasting entries removed (10 to 5); Forecasting module namespaces join the legal callers
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Feature B oracle: the TheFlowMetricsInboundList_Names check follows the inbound list 10 to 5 (no Forecasting entry)
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs</p>
 
 <h4>Verification</h4>
@@ -1238,6 +1298,15 @@ flock -o /tmp/claude-1000/-storage-repos-Lighthouse/e10a069d-75fb-4139-b81b-0d9e
 <pre><code>Flow metrics&#x27; inbound list is edited in place: five Forecasting entries off, Forecasting legal by namespace; no second list
 </code></pre>
 
+<p>TheFlowMetricsInboundList_NamesTheForecastTypesInTheModuleApplication</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs:89</p>
+
+<p>Extend</p>
+
+<pre><code>Feature B&#x27;s inbound-list check is rewritten in place to the 10 to 5 list with no Forecasting entry; no second check
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>test-support</p>
@@ -1265,6 +1334,15 @@ flock -o /tmp/claude-1000/-storage-repos-Lighthouse/e10a069d-75fb-4139-b81b-0d9e
 <p>UnchangedCompatible</p>
 
 <pre><code>Earlier oracle; compiles and keeps meaning through the default wording
+</code></pre>
+
+<p>arch-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs:89</p>
+
+<p>Changed</p>
+
+<pre><code>Feature B oracle check follows the Flow metrics inbound list (no Forecasting entry); meaning kept
 </code></pre>
 
 <h5>Agreement</h5>
