@@ -90,7 +90,7 @@ Frontend per-file budget: 54 s; largest file now 16.6 s, so the budget is not ne
 
 | # | Question | Recommendation | Needs the maintainer |
 |---|---|---|---|
-| Q-6648-1 | The maintainer named the brief's top 3. Today's top 3 is `removal`, `RefinementView.comments`, `ReportsTab.test`; `OverviewDashboard` is 9th | Keep the two Reports page files (T13's slice B is designed and ready); decide the third: today's rank 2 or 3, or Overview as named | **Yes**, before DESIGN |
+| Q-6648-1 | The maintainer named the brief's top 3. Today's top 3 is `removal`, `RefinementView.comments`, `ReportsTab.test`; `OverviewDashboard` is 9th | Keep the two Reports page files (T13's slice B is designed and ready); decide the third: today's rank 2 or 3, or Overview as named | **Answered 2026-11-15:** `ReportsPage.removal`, `ReportsPage.combinedPdf` and `RefinementView.comments`. Overview and `ReportsTab.test` are out of this item; Q6 falls away with Overview |
 | Q7 (T13) | One `refactor(reports)` commit extracting `failedAmong` and `leaveOutPlanOf` from `useReportsPdfExport` into `printFailures.ts` | Ask at DESIGN; without it, `combinedPdf`'s cut rests on a cheaper `rowOf` and two merges (T13's "Skip-path plan") | Yes, at DESIGN |
 | Q6 (T13) | Overview fallback: a pure function out of the page for the header gating | Only if Overview stays in scope and its spike saves too little | Only then |
 
