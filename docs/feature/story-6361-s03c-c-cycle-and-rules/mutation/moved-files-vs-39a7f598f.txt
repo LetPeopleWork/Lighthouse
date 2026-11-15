@@ -1,0 +1,34 @@
+same ForecastInputsForgottenAtStartSeeder.cs
+same ForecastUpdater.cs
+CHANGED Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastFilterRuleService.cs
+<         : IForecastFilterRuleService
+>         : IForecastFilterRuleService, IThroughputFilter
+same ForecastInputFingerprint.cs
+same ForecastLane.cs
+same ForecastRealityCheckService.cs
+same ForecastService.cs
+NEW Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastingAnswersToFlowMetrics.cs
+same IForecastFilterRuleService.cs
+same IForecastRealityCheckService.cs
+same IForecastService.cs
+same IForecastUpdater.cs
+same FeatureOrderingPolicyChangedForecastTriggerHandler.cs
+same FeatureRankChangedForecastTriggerHandler.cs
+same TeamDataRefreshedForecastTriggerHandler.cs
+same TeamDeletedForecastRetriggerHandler.cs
+same AddressableDrawStream.cs
+same DayCounts.cs
+same DrawStreamFactory.cs
+same ForecastDataSufficiencyPolicy.cs
+same ForecastRunOutcome.cs
+same ForecastRunPlan.cs
+same ForecastSimulation.cs
+same HowTheRunEnded.cs
+same IDrawStream.cs
+same IDrawStreamFactory.cs
+same OneWorkersShareOfTheRuns.cs
+same RealityCheckVerdictPolicy.cs
+same SimulatedRun.cs
+same TrialRecordings.cs
+same TrialState.cs
+same WhatTheRunsCouldNotFinish.cs

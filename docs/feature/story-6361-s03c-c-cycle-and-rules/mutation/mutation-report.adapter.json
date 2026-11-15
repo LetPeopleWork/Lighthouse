@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "2",
+  "thresholds": {
+    "high": 80,
+    "low": 70
+  },
+  "files": {
+    "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastingAnswersToFlowMetrics.cs": {
+      "language": "cs",
+      "source": "using Lighthouse.Backend.Models.Forecast;\nusing Lighthouse.Backend.Models.Metrics;\nusing Lighthouse.Backend.Modules.FlowMetrics.Application;\nusing Lighthouse.Backend.Modules.Forecasting.Domain;\n\nnamespace Lighthouse.Backend.Modules.Forecasting.Application\n{\n    /// <summary>\n    /// Answers the questions Flow metrics asks Forecasting, with the answers Forecasting already owns.\n    /// </summary>\n    /// <remarks>\n    /// The forecast service is looked up on the first How-many question, not taken in the constructor: the forecast\n    /// service needs the team metrics service, which needs this answer, so taking it eagerly would make building\n    /// either of them recurse until the process runs out of stack.\n    /// </remarks>\n    public sealed class ForecastingAnswersToFlowMetrics(IServiceProvider serviceProvider) : IForecastDataSufficiency, IHowManyForecaster\n    {\n        private IForecastService ForecastService => field ??= serviceProvider.GetRequiredService<IForecastService>();\n\n        public bool HasEnoughData(RunChartData throughput) => ForecastDataSufficiencyPolicy.HasEnoughData(throughput);\n\n        public HowManyForecast HowMany(RunChartData throughput, int days) => ForecastService.HowMany(throughput, days);\n    }\n}\n",
+      "mutants": [
+        {
+          "id": "8942",
+          "mutatorName": "CoalesceAssignmentExpression to SimpleAssignmentExpression mutation",
+          "replacement": "field = serviceProvider.GetRequiredService<IForecastService>()",
+          "location": {
+            "start": {
+              "line": 18,
+              "column": 53
+            },
+            "end": {
+              "line": 18,
+              "column": 117
+            }
+          },
+          "status": "Survived",
+          "static": false,
+          "coveredBy": [
+            "af1a6f19-f685-23e3-fdc4-7e2d526e33df",
+            "48f225c0-4ca9-ff9a-c7b0-15b53418bb96",
+            "b5fece0e-b67a-d7b0-25f1-926547280491"
+          ],
+          "killedBy": []
+        }
+      ]
+    }
+  }
+}
