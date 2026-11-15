@@ -21,6 +21,8 @@ version=9.9.9
 # A made-up PIN; finding it anywhere in what the step prints or on a command line means a leak.
 sentinel_pin=oracle-sentinel-pin-31337
 plug_in_message="plug in the YubiKey and re-run this job"
+# The message may start a sentence, so it is matched without regard to case on both sides.
+plug_in_message_lower="${plug_in_message,,}"
 case_limit_seconds=90
 # shellcheck disable=SC2016 # the GitHub expression is the literal text the workflow must carry
 pin_secret_expression='${{ secrets.YUBI_PIN }}'
@@ -326,7 +328,7 @@ while [ -f "$rec/osslsigncode-$n" ]; do
   n=$((n + 1))
 done
 echo "@@artifacts"
-find artifacts -type f | sort | while IFS= read -r f; do echo "$f=$(cat "$f")"; done
+find artifacts -type f | LC_ALL=C sort | while IFS= read -r f; do echo "$f=$(cat "$f")"; done
 echo "@@output"; cat "$rec/output"
 HARNESS
 
@@ -535,12 +537,12 @@ else
   ms="$(millis_of no-key)"
   out="$(output_of no-key)"
   events="$(events_of no-key)"
-  if [ "$rc" = 1 ] && [ -n "$ms" ] && [ "$ms" -le 5000 ] && [[ $(lower "$out") == *"$plug_in_message"* ]] \
+  if [ "$rc" = 1 ] && [ -n "$ms" ] && [ "$ms" -le 5000 ] && [[ $(lower "$out") == *"$plug_in_message_lower"* ]] \
      && [ "$(started_of no-key)" = 0 ] && [ "$(calls_of no-key)" = 0 ]; then
     pass "$name"
   else
     fail "$name" \
-      "exit ${rc:-none} (want 1) after ${ms:-?} ms (want at most 5000); plug-in message shown: $(if [[ $(lower "$out") == *"$plug_in_message"* ]]; then echo yes; else echo no; fi); pcscd starts: $(started_of no-key); signing calls: $(calls_of no-key)$(script_missing_note); output: ${out:0:300}" \
+      "exit ${rc:-none} (want 1) after ${ms:-?} ms (want at most 5000); plug-in message shown: $(if [[ $(lower "$out") == *"$plug_in_message_lower"* ]]; then echo yes; else echo no; fi); pcscd starts: $(started_of no-key); signing calls: $(calls_of no-key)$(script_missing_note); output: ${out:0:300}" \
       "without the key nothing can be signed, and a PIN sent to no key, or a wait, only delays the maintainer" \
       "look for a USB device with idVendor 1050 under CODESIGN_USB_SYSFS (default /sys/bus/usb/devices) first; if none, print '$plug_in_message' and exit 1 before starting pcscd"
   fi
@@ -554,12 +556,12 @@ else
   rc="$(exit_of no-reader)"
   ms="$(millis_of no-reader)"
   out="$(lower "$(output_of no-reader)")"
-  if [ "$rc" = 1 ] && [ -n "$ms" ] && [ "$ms" -le 7000 ] && [[ $out == *"$plug_in_message"* ]] && [[ $out == *"check-host.sh"* ]] \
+  if [ "$rc" = 1 ] && [ -n "$ms" ] && [ "$ms" -le 7000 ] && [[ $out == *"$plug_in_message_lower"* ]] && [[ $out == *"check-host.sh"* ]] \
      && [ "$(started_of no-reader)" -gt 0 ] && [ "$(calls_of no-reader)" = 0 ]; then
     pass "$name"
   else
     fail "$name" \
-      "exit ${rc:-none} (want 1) after ${ms:-?} ms with CODESIGN_READER_WAIT=2 (want at most 7000); plug-in message: $(if [[ $out == *"$plug_in_message"* ]]; then echo yes; else echo no; fi); check-host.sh hint: $(if [[ $out == *"check-host.sh"* ]]; then echo yes; else echo no; fi); pcscd starts: $(started_of no-reader); signing calls: $(calls_of no-reader)$(script_missing_note)" \
+      "exit ${rc:-none} (want 1) after ${ms:-?} ms with CODESIGN_READER_WAIT=2 (want at most 7000); plug-in message: $(if [[ $out == *"$plug_in_message_lower"* ]]; then echo yes; else echo no; fi); check-host.sh hint: $(if [[ $out == *"check-host.sh"* ]]; then echo yes; else echo no; fi); pcscd starts: $(started_of no-reader); signing calls: $(calls_of no-reader)$(script_missing_note)" \
       "a PIN sent with no reader is lost on nothing or worse, and a host process holding the key is a known cause the maintainer can check" \
       "start pcscd, poll opensc-tool --list-readers for at most CODESIGN_READER_WAIT seconds, then print the plug-in message plus a hint to run tools/codesign/check-host.sh and exit 1"
   fi
@@ -579,7 +581,7 @@ else
     input="$(arg_after -in "$(section "osslsigncode-$i" "$(report_of signs-all)")")"
     signed_inputs+="${input##*artifacts/} "
   done
-  sorted_inputs="$(printf '%s\n' "$signed_inputs" | tr ' ' '\n' | sed '/^$/d' | sort | tr '\n' ' ')"
+  sorted_inputs="$(printf '%s\n' "$signed_inputs" | tr ' ' '\n' | sed '/^$/d' | LC_ALL=C sort | tr '\n' ' ')"
   artifacts="$(section artifacts "$(report_of signs-all)")"
   wanted_artifacts=$'artifacts/server/Lighthouse.exe=signed unsigned server exe\nartifacts/standalone/Lighthouse-setup.exe=signed unsigned NSIS installer\nartifacts/standalone/Lighthouse.msi=signed unsigned MSI'
   if [ "$rc" = 0 ] && [ "$calls" = 3 ] && [ "$sorted_inputs" = "$expected_files " ] && [ "$artifacts" = "$wanted_artifacts" ]; then
