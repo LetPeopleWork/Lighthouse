@@ -3,7 +3,8 @@
 "B": 5,
 "C": 2,
 "D": 14,
-"F": 189,
+"E": 5,
+"F": 194,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -690,6 +691,45 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F190"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F191"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F192"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F193"
+},
+{
+"id": "E5",
+"promises": [
+"P3"
+],
+"text": "F194"
+}
+]
+},
 "facts": {
 "F1": "Story 6601: Linux standalone builds no longer break when GitHub retires a runner image. The AppImage is built on a GitHub-hosted Ubuntu image with WebKitGTK pinned to that image's package version; when ubuntu-latest moved to 26.04 the pins vanished and the release was blocked; the quick fix pins runs-on: ubuntu-24.04, which breaks again when GitHub retires 24.04. Building on a newer image raises the glibc the AppImage needs and stops it starting on Ubuntu 24.04 LTS and Debian 13. Goal: the Linux build no longer depends on which runner images GitHub offers; the minimum glibc and distribution is a written decision changed on purpose. Acceptance: (1) the Linux standalone builds without naming a GitHub runner image that will be retired, or there is a documented, alarmed path for when it is; (2) the minimum glibc and distribution is written down and CI fails if a build exceeds it; (3) the AppImage still starts on Ubuntu 24.04 LTS.",
 "F10": "Paradigm is procedural: GitHub Actions YAML, bash scripts and a pinned container image. No C# or TypeScript production change; mutation testing does not apply. There is no smell catalogue for procedural; the general classes applied are duplicated knowledge (one floor value, one reader), mixed concerns (the check reads facts, the workflow decides when it runs) and hidden coupling (the floor and the container image release must agree, so both are written next to each other and in one ADR).",
@@ -778,6 +818,11 @@
 "F188": "a release without a Linux AppImage unnoticed",
 "F189": "accepted: first seen on main; rollback is reverting the S2 commit; no cheap local full build exists because the sidecar artifact is built by the pipeline",
 "F19": "Exposure noted only: macOS and Windows packaging still name macos-latest and windows-latest; they have no glibc floor and are out of scope. The verify jobs on ubuntu-latest ship nothing and have no glibc exposure.",
+"F190": "The Linux standalone release build runs on a CI runner image that is not retired, so a release is never blocked by a retired image.",
+"F191": "Before a runner image is retired, a visible alarm reports it, early enough that a release is not blocked by the retirement unannounced.",
+"F192": "A written decision states the minimum glibc version and Linux distribution that the AppImage requires.",
+"F193": "A build whose AppImage needs a newer glibc than the written floor fails in CI, so such an AppImage is never released.",
+"F194": "The produced AppImage starts on Ubuntu 24.04 LTS.",
 "F2": "Releases are never blocked by GitHub retiring a runner image, and Linux users on the supported distributions keep a working app",
 "F20": "Formal verification: Quint is installed (probed with which quint) but no claim here is a state machine or temporal property. Every claim is a total comparison over a finite ordered set of dotted versions or a static shape of a workflow file. They are checked by the finite bash oracles, run by the host. No Quint, TLA+ or Agda model is delivered; nothing is waived and nothing is claimed proven.",
 "F22": "Inputs and bounds: floor is a dotted major.minor integer pair; no upper bound beyond integers; the AppImage is any size the Tauri bundler produces and the check reads every ELF in it with no sampling; image digests are sha256 strings. No bound on number of files.",

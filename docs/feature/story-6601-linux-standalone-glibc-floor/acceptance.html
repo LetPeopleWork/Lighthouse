@@ -155,7 +155,52 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>The Linux standalone release build runs on a CI runner image that is not retired, so a release is never blocked by a retired image.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Before a runner image is retired, a visible alarm reports it, early enough that a release is not blocked by the retirement unannounced.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>A written decision states the minimum glibc version and Linux distribution that the AppImage requires.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>A build whose AppImage needs a newer glibc than the written floor fails in CI, so such an AppImage is never released.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>The produced AppImage starts on Ubuntu 24.04 LTS.
+</code></pre>
 
 <h2>Charter</h2>
 
