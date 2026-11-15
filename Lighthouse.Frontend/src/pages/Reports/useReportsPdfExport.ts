@@ -14,6 +14,7 @@ import {
 } from "../Common/Reports/usePrintFrameAttempts";
 import { useReportPdfExport } from "../Common/Reports/useReportPdfExport";
 import NoPdfDialog from "./NoPdfDialog";
+import { failedAmong, leaveOutTheFailed } from "./printFailures";
 
 export interface ReportsPdfExport {
 	/** Prints the reports as one PDF, in the order given; a second choice while one is prepared does nothing. */
@@ -40,22 +41,6 @@ const printedReportOf = (report: IReportAcrossOwners): PrintedReport => ({
 	owner: ownerOfReport(report),
 	reportId: report.id,
 });
-
-const isTheSameReport = (
-	report: IReportAcrossOwners,
-	{ owner, reportId }: PrintedReport,
-): boolean =>
-	report.id === reportId &&
-	report.ownerKind === owner.kind &&
-	report.ownerId === owner.id;
-
-const failedAmong = (
-	reports: readonly IReportAcrossOwners[],
-	failedReports: readonly PrintedReport[],
-): IReportAcrossOwners[] =>
-	reports.filter((report) =>
-		failedReports.some((failed) => isTheSameReport(report, failed)),
-	);
 
 /**
  * Exports several reports, of any owners, as one PDF from a hidden frame on the Reports page. The frame goes again a
@@ -109,8 +94,8 @@ export const useReportsPdfExport = (
 		};
 
 	const leaveOutTheFailedOf = ({ reports, failed }: NoPdf) => {
-		const rest = reports.filter((report) => !failed.includes(report));
-		if (failed.length === 0 || rest.length === 0) return undefined;
+		const rest = leaveOutTheFailed(reports, failed);
+		if (rest === undefined) return undefined;
 		return () => {
 			unpick(failed);
 			printFromAFreshFrame(rest);
