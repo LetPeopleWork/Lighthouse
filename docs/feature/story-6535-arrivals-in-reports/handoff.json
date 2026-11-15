@@ -1,0 +1,891 @@
+{
+"counters": {
+"B": 2,
+"C": 1,
+"F": 165,
+"L": 3,
+"P": 5,
+"S": 1,
+"Y": 4
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx",
+"public_oracle": {
+"expected": "F24",
+"falsifier": "F25",
+"promises": [
+"P1",
+"P2",
+"P3",
+"P4",
+"P5"
+],
+"stimulus": "F23"
+},
+"records": {
+"agreement": [
+{
+"contract": "report read payload: metrics map by string key with members as CapturedValue",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:84",
+"party": "Producer",
+"reason": "F89"
+},
+{
+"contract": "report read payload: metrics map by string key with members as CapturedValue",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/models/Reports/Report.ts:14",
+"party": "Consumer",
+"reason": "F90"
+},
+{
+"contract": "report read payload: metrics map by string key with members as CapturedValue",
+"decision": "UnchangedCompatible",
+"locator": "/storage/repos/lighthouse-clients/packages/client/src/reportWording.ts:1",
+"party": "Consumer",
+"reason": "F91"
+},
+{
+"contract": "report read payload: metrics map by string key with members as CapturedValue",
+"decision": "Migrated",
+"locator": "/storage/repos/lighthouse-clients/skills/lighthouse-reports:1",
+"party": "Consumer",
+"reason": "F92"
+},
+{
+"contract": "stored Then payload captures map",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:39",
+"party": "Consumer",
+"reason": "F93"
+}
+],
+"boundaries": {
+"dependency_direction": "F99",
+"driven_ports": [
+"F98"
+],
+"driving_port": "F97",
+"failures": [
+{
+"condition": "F100",
+"id": "B1",
+"observation": "F101",
+"outcome": "Refusal"
+},
+{
+"condition": "F102",
+"id": "B2",
+"observation": "F103",
+"outcome": "Indeterminate"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F135",
+"bypass": "F137",
+"constructor": "gapSentenceOf",
+"consumer": "ReportPanels",
+"harm": "F134",
+"id": "C1",
+"owner": "ArrivalsPanel",
+"proposition": "F133",
+"public_observation": "F136"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F142",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F141"
+},
+{
+"axis": "Inhabitation",
+"basis": "F144",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F143"
+},
+{
+"axis": "PublicReachability",
+"basis": "F145",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F143"
+},
+{
+"axis": "Liveness",
+"basis": "F146",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F143"
+}
+],
+"constraints": [
+"F44",
+"F45",
+"F46",
+"F47",
+"F48"
+],
+"constructors": [
+{
+"name": "gapSentenceOf",
+"signature": "gapSentenceOf(rounded: number): { kind: 'more' | 'fewer' | 'balanced'; magnitude: number }"
+},
+{
+"name": "ArrivalsReportMetric.ValuesOver",
+"signature": "ValuesOver(owner: ReportOwner, window: ReportWindow): Dictionary<string, CapturedValue>"
+}
+],
+"decisions": [
+"F26",
+"F27",
+"F28",
+"F29",
+"F30",
+"F31",
+"F32",
+"F33",
+"F34",
+"F35",
+"F36",
+"F37",
+"F38",
+"F39",
+"F40",
+"F41",
+"F42",
+"F43"
+],
+"equality": [
+{
+"definition": "F108",
+"under": "gap sentence"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "backend-metric-implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ArrivalsReportMetric.cs:1",
+"reason": "F69"
+},
+{
+"decision": "Changed",
+"kind": "di-registration",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1340",
+"reason": "F70"
+},
+{
+"decision": "Changed",
+"kind": "port-interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs:5",
+"reason": "F71"
+},
+{
+"decision": "Changed",
+"kind": "test-registration",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs:148",
+"reason": "F72"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "wire-payload",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:39",
+"reason": "F73"
+},
+{
+"decision": "Changed",
+"kind": "frontend-model",
+"locator": "Lighthouse.Frontend/src/models/Reports/Report.ts:14",
+"reason": "F74"
+},
+{
+"decision": "Changed",
+"kind": "frontend-registry",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts:47",
+"reason": "F75"
+},
+{
+"decision": "Changed",
+"kind": "frontend-panel",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.tsx:1",
+"reason": "F76"
+},
+{
+"decision": "Changed",
+"kind": "frontend-comparison",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:1",
+"reason": "F77"
+},
+{
+"decision": "Changed",
+"kind": "frontend-line-parts",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx:1",
+"reason": "F78"
+},
+{
+"decision": "Changed",
+"kind": "frontend-wizard",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx:1",
+"reason": "F79"
+},
+{
+"decision": "Changed",
+"kind": "frontend-panels-host",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ReportPanels.tsx:1",
+"reason": "F80"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "frontend-summary",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowSummary.tsx:1",
+"reason": "F81"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "frontend-print",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx:144",
+"reason": "F82"
+},
+{
+"decision": "Changed",
+"kind": "frontend-test-kit",
+"locator": "Lighthouse.Frontend/src/tests/ReportsTestKit.ts:1",
+"reason": "F83"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "clients-repo",
+"locator": "/storage/repos/lighthouse-clients/packages/client/src/reportWording.ts:1",
+"reason": "F84"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/reports/thenandnow.md:1",
+"reason": "F85"
+},
+{
+"decision": "Changed",
+"kind": "architecture-docs",
+"locator": "docs/product/architecture/adr-247-reports-are-read-through-the-clients-as-four-read-only-tools-that-return-the-reports-raw-values.md:66",
+"reason": "F86"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "context-map",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1",
+"reason": "F87"
+},
+{
+"decision": "Changed",
+"kind": "series-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs:1",
+"reason": "F88"
+},
+{
+"decision": "Changed",
+"kind": "series-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/PortfolioReportMetricSeries.cs:1",
+"reason": "F88"
+},
+{
+"decision": "Changed",
+"kind": "series-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportMetricSeriesByOwner.cs:1",
+"reason": "F88"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "ArrivalsPanel",
+"statement": "F109",
+"treatment": {
+"falsifier": "F117",
+"generator": {
+"depth_bound": "1",
+"domain": "F110",
+"must_include": [
+"F111",
+"F112",
+"F113",
+"F114"
+],
+"seed_policy": "fast-check seed printed on failure and replayable with the reported seed and path",
+"shrinking": "F115",
+"size_bound": "100 cases (fast-check default), plus the fixed examples 0.004, 0.005, -0.005, 0.006"
+},
+"independent_observation": "F116",
+"kind": "Broad"
+}
+},
+{
+"id": "L2",
+"kind": "Algebraic",
+"layer": "Application",
+"owner": "thenNowComparison",
+"statement": "F118",
+"treatment": {
+"falsifier": "F124",
+"generator": {
+"depth_bound": "1",
+"domain": "F119",
+"must_include": [
+"F120",
+"F121"
+],
+"seed_policy": "fast-check seed printed and replayable",
+"shrinking": "F122",
+"size_bound": "100 cases"
+},
+"independent_observation": "F123",
+"kind": "Broad"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "ArrivalsReportMetric",
+"statement": "F125",
+"treatment": {
+"cases": [
+"F126",
+"F127",
+"F128",
+"F129",
+"F130",
+"F131"
+],
+"kind": "Finite",
+"reason": "F132"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F94"
+},
+{
+"analysis": "contract_tests",
+"reason": "F95"
+},
+{
+"analysis": "prefactoring",
+"reason": "F96"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F105",
+"description": "F104",
+"result_type": "CapturedValue"
+},
+{
+"cannot_distinguish": "F107",
+"description": "F106",
+"result_type": "GapSentence"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/WindowedReportMetric.cs:15",
+"reason": "F49",
+"symbol": "WindowedReportMetric"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ThroughputReportMetric.cs:12",
+"reason": "F50",
+"symbol": "ArrivalsReportMetric"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs:5",
+"reason": "F51",
+"symbol": "IReportMetricSeries"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs:12",
+"reason": "F52",
+"symbol": "TeamReportMetricSeries"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/PortfolioReportMetricSeries.cs:12",
+"reason": "F53",
+"symbol": "PortfolioReportMetricSeries"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportMetricSeriesByOwner.cs:7",
+"reason": "F54",
+"symbol": "ReportMetricSeriesByOwner"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts:47",
+"reason": "F55",
+"symbol": "reportPanelRegistry"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowPanelFrame.tsx:1",
+"reason": "F56",
+"symbol": "ThenNowPanelFrame"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.tsx:1",
+"reason": "F57",
+"symbol": "ThroughputPanel"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx:97",
+"reason": "F58",
+"symbol": "LineChanges"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:90",
+"reason": "F59",
+"symbol": "compareThenNow"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.ts:42",
+"reason": "F60",
+"symbol": "summariseChange"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/models/Reports/Report.ts:14",
+"reason": "F61",
+"symbol": "ReportMetricSide"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ReportPanels.tsx:1",
+"reason": "F62",
+"symbol": "ReportPanels"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx:1",
+"reason": "F63",
+"symbol": "MetricsAndNameStep"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:1",
+"reason": "F64",
+"symbol": "ThenAndNowTemplate"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx:144",
+"reason": "F65",
+"symbol": "ReportPrintDocument"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ArrivalsReportMetric.cs:1",
+"reason": "F66",
+"symbol": "ArrivalsReportMetric"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1338",
+"reason": "F67",
+"symbol": "ThroughputReportMetric"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.tsx:1",
+"reason": "F68",
+"symbol": "ArrivalsPanel"
+}
+],
+"risks": [
+{
+"allowed": "F149",
+"forbidden": "F150",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "ArrivalsReportMetric",
+"preserved": "F148",
+"residue": "F151",
+"source": "F147"
+},
+{
+"allowed": "F154",
+"forbidden": "F155",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "FlowMetricsModule",
+"preserved": "F153",
+"residue": "F156",
+"source": "F152"
+},
+{
+"allowed": "F159",
+"forbidden": "F160",
+"id": "Y3",
+"kind": "Bypass",
+"owner": "maintainer",
+"preserved": "F158",
+"residue": "F161",
+"source": "F157"
+},
+{
+"allowed": "F149",
+"forbidden": "F164",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "ArrivalsPanel",
+"preserved": "F163",
+"residue": "F165",
+"source": "F162"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "ArrivalsReportMetric",
+"state": "F138"
+},
+{
+"kind": "Excluded",
+"owner": "ArrivalsPanel",
+"state": "F139"
+},
+{
+"kind": "Unknown",
+"owner": "maintainer",
+"state": "F140"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs",
+"Lighthouse.Frontend/src/tests/ReportsTestKit.ts"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ArrivalsReportMetric.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/PortfolioReportMetricSeries.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportMetricSeriesByOwner.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ReportPanels.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Reports/Report.ts"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ArrivalsReportMetricTest"
+]
+}
+}
+},
+"facts": {
+"F1": "Show Arrivals in reports: have the option to show Arrivals in the (Then & Now) reports as well, compared against Throughput, Then against Now.",
+"F10": "that side reads as many started as finished; a gap of 0.006 reads 0.01 more started than finished per day",
+"F100": "The owner of the report is gone when the series is read",
+"F101": "ReportOwnerGoneException as for every other metric, translated by the existing report read to its existing refusal",
+"F102": "A member of the arrivals capture is missing (old report) or absent",
+"F103": "A dash on that line with Not captured for this report; the header summary lists the metric in no group",
+"F104": "Per side of the arrivals metric: total started, started per day, finished per day and gap per day (unrounded doubles, each with a sample size = the window days)",
+"F105": "Two gaps equal after rounding to 2 decimals (0.004 and 0.000); a window with no start from one with a start balanced by a finish; which Work Items were started.",
+"F106": "Gap sentence per side as the panel shows it: more, fewer or as many started as finished per day, derived from the rounded gap",
+"F107": "The unrounded gap behind a rounded one; the Then window length.",
+"F108": "Two gaps are equal iff they round half away from zero to the same value at 2 decimals; the change is equal iff the difference of the rounded gaps is equal.",
+"F109": "Balanced follows the shown value: for every finite gap g, gapSentenceOf(roundForDisplay(g,2)) is balanced iff roundForDisplay(g,2)==0, more iff it is above 0, fewer iff below 0, and the magnitude equals the absolute rounded value (0.004 balanced, 0.006 -> 0.01 more).",
+"F11": "Reports made before Arrivals existed",
+"F110": "finite doubles in [-50,50] with a bias to values within 0.01 of zero and at half steps like 0.005",
+"F111": "0",
+"F112": "0.004",
+"F113": "-0.004",
+"F114": "0.006",
+"F115": "fast-check native shrinking towards 0",
+"F116": "expected sentence kind written out from the rule on the rounded number by an inlined switch in the test, not by calling gapSentenceOf",
+"F117": "Dropping the rounding before the zero test, or using strict > 0 on the unrounded gap, makes 0.004 read more started than finished.",
+"F118": "Shown Then + shown change = shown Now for the gap line and the change carries no percent: for generated Then and Now gaps, lineComparisonsOf on gapPerDay gives delta = round(round(now)-round(then)) and verdict better iff delta<0; percent text is absent.",
+"F119": "pairs of finite doubles in [-5,5] at 3 decimals",
+"F12": "a report created before this release",
+"F120": "Then 0.30 and Now -0.10",
+"F121": "Then 0 and Now 0.35",
+"F122": "fast-check native",
+"F123": "expected delta computed as (Math.round(now*100)-Math.round(then*100))/100 in the test",
+"F124": "Computing the change from unrounded gaps lets a shown 0.30 and -0.10 sit beside a change other than -0.40; keeping a percent shows a Then was 0 text.",
+"F125": "Capture: for any window of d>=1 days with s started and f finished, arrivals total is s, perDay is s/d, throughputPerDay is f/d, gapPerDay is (s-f)/d, all unrounded, each with sample size d; Then frozen equals the same values over the same series; a report that froze none reads no Then member and still computes Now.",
+"F126": "90 days started 99 finished 72 (1.10/0.80/0.30)",
+"F127": "30 days started 27 finished 30 (0.90/1.00/-0.10)",
+"F128": "30 days nothing finished (throughput 0 real)",
+"F129": "30 days nothing started",
+"F13": "the reader opens or edits it",
+"F130": "1 day started 1 finished 2",
+"F131": "report with no frozen arrivals",
+"F132": "Finite examples through NUnit TestCase on the metric, as ThroughputReportMetricTest does; the rule is one division and one subtraction, so a broad generator adds nothing over the named edges.",
+"F133": "The arrivals panel never shows 0.00 more or 0.00 fewer, never contradicts its change with its sides, and for old reports reads Not captured rather than a rebuilt Then",
+"F134": "A reader trusts a sign or a mark that disagrees with the shown numbers, or reads a rebuilt Then as frozen",
+"F135": "a report read from the port: any metric with members total, perDay, throughputPerDay, gapPerDay each a CapturedValue, a missing member, or no arrivals key",
+"F136": "the panel text and its change mark in ReportView and in the PDF print document",
+"F137": "a client or skill that restates the gap from raw values with its own rounding (separate repo, prose drift, owner maintainer); a hand-edited payload with a gap that disagrees with its perDay members (the stored value is shown as given).",
+"F138": "gap below, at and above zero; a window with nothing started and/or nothing finished; Portfolio and Team owners",
+"F139": "a plus-signed or minus-signed zero gap sentence; a percent change on the gap; a rebuilt Then from live data",
+"F14": "Arrivals is not offered on it, and wherever it appears it reads Not captured for this report",
+"F140": "a stored gapPerDay that disagrees with stored perDay minus throughputPerDay (only a hand-edited row); a client rendering the gap on its own",
+"F141": "gap and sentence law",
+"F142": "Exclusion by a three-way closed sum on the rounded gap; falsified by the broad property laws, not by a proof assistant; no executed formal checker (Quint 0.33.1 is installed but no state model exists to check).",
+"F143": "arrivals value",
+"F144": "Admitted input: a report window and owner -> DailyArrivals/DailyThroughput -> ArrivalsReportMetric.ValuesOver -> ThenAndNowTemplate.Read -> ReportPanels -> ArrivalsPanel; acyclic, every symbol exists or is a named new file.",
+"F145": "Create through ThenAndNowTemplate.Freeze (catalog loop) and read through ThenAndNowTemplate.Read reach the ReportView and ReportPrintDocument, both via ReportPanels and the registry key.",
+"F146": "Non-applicable: no process, retry, queue or eventual-progress claim exists; each read is one synchronous finite computation over a bounded window.",
+"F147": "Assumption: Throughput and Arrivals series count the same days for a window (negated: they differ in length)",
+"F148": "Gap is started minus finished over the same days",
+"F149": "none",
+"F15": "Arrivals reaches the PDF",
+"F150": "A gap from windows of unequal length",
+"F151": "Both come from DailyCounts over the same ReportWindow so lengths are equal by construction; a service that returns a short run chart is the residue",
+"F152": "Assumption: the Metrics tab arrival definition stays one definition (negated: Team and Portfolio started-item readers change)",
+"F153": "A report and the tab never disagree",
+"F154": "Later reports follow the new definition",
+"F155": "A second arrival rule inside Reports",
+"F156": "Frozen Then keeps the old definition by design",
+"F157": "Skill or client restates the gap itself",
+"F158": "Values and words equal the web",
+"F159": "Raw values passed through",
+"F16": "a report that shows Arrivals",
+"F160": "A different rounding or a percent",
+"F161": "Prose drift across repos; the skill reference and its evals",
+"F162": "gapSentenceOf and compareThenNow are the single rounding sites",
+"F163": "Sentence and change agree",
+"F164": "A second rounding site",
+"F165": "Covered by both broad laws",
+"F17": "the reader exports it as a PDF",
+"F18": "the Arrivals panel prints with the same values and words as on screen",
+"F19": "A new Arrivals metric on Then & Now reports for Teams and Portfolios: wizard checkbox, panel, change mark on the gap, header change summary, Not captured on older reports, PDF",
+"F2": "A report reader sees whether the balance between Work Items started and finished got better from Then to Now",
+"F20": "Ratio of arrivals to Throughput; maximum or median per day; percent change on the gap; a 'closer to zero' direction of good; rebuilding Then for reports created before release; charts or limit counts on the panel; changes outside Then & Now reports",
+"F21": "A reader ticks Arrivals when creating a Then & Now report and sees whether the gap between Work Items started and finished per day got smaller from Then to Now, on screen and in the PDF, for Team and Portfolio reports",
+"F22": "The arrivals-to-Throughput balance, Then against Now, on the report",
+"F23": "Open the report (ReportView, and the print document) for a Team report whose Then started 1.10 and finished 0.80 and Now 0.90 and 1.00 per day, with Arrivals shown; also a gap of 0.004 and 0.006, and a report with no arrivals capture",
+"F24": "Panel reads 0.30 more started than finished per day (Then), 0.10 fewer started than finished per day (Now), change 0.40 per day marked better with no percent, header lists Arrivals under Improved; 0.004 reads as many started as finished per day and 0.006 reads 0.01 more; the old report reads Not captured for this report; the print document shows the same words",
+"F25": "A build that rounds after comparing, keeps a percent, signs a zero gap, rebuilds Then from live data, or omits the print panel fails a named row",
+"F26": "OQ3 Clients: the wire gains one metric key arrivals whose sides carry the members total, perDay, throughputPerDay and gapPerDay (each a CapturedValue, doubles unrounded). lighthouse-clients holds no list of report metric keys or members (packages/client reportWording.ts and mcp-core reportTools.ts pass the raw answer through, per ADR-247), so no client code or release is needed. Only the lighthouse-reports skill reference (separate repo, prose) must learn the gap wording, the lower-is-better direction, and that Then is never rebuilt; the skill evals and drift test there own it. No changeset.",
+"F27": "OQ5 Wording: started and finished are fixed English words, not terminology tokens (Arrivals is a fixed name too: the Metrics tab uses the literal word and the seeder has no Arrivals key; a new key would need seeding for no reader gain). The tokens {Work Item}/{Work Items} (total line, as ThroughputPanel) and {Throughput} (line title) stay tokens. Rows: Total started N {Work Items}; Arrivals per day X.XX per day; {Throughput} per day X.XX per day; gap line. Gap line copy from the rounded gap g: g>0 -> g.toFixed(2) more started than finished per day; g<0 -> |g|.toFixed(2) fewer started than finished per day; g==0 -> as many started as finished per day. Number is never signed with a plus or minus on the Then and Now sides; the words carry the sign. Singular/plural: none needed, the sentence uses the unit per day, and the total line reuses the {Work Item}/{Work Items} choice of ThroughputPanel.",
+"F28": "Rounding: PER_DAY_DECIMALS = 2 (ThroughputPanel). The backend freezes gapPerDay = arrivalsPerDay - throughputPerDay from the unrounded per-day values of one pair of series; the frontend rounds each side with roundForDisplay(.,2), and M10 balanced iff the rounded gap is 0 (so 0.004 reads balanced, 0.006 reads 0.01 more). The change line is compareThenNow on the SHOWN gaps (lineComparisonsOf already rounds both sides before subtracting), so shown Then + shown change = shown Now, the ADR-220 rule; 0.30 and -0.10 give -0.40 better. Rejected: change from unrounded values, because the displayed numbers could then contradict the displayed change.",
+"F29": "Gap owner: the arithmetic arrivals minus throughput lives once, in the new backend ArrivalsReportMetric (cohesive owner, a WindowedReportMetric beside ThroughputReportMetric), so Then and Now use one computation and the clients receive the gap raw. The frontend ArrivalsPanel owns only presentation: rounding, the three sentences, the mark. Direction of good (lower) lives only in reportPanelRegistry (ADR-220). No domain decision sits in a React component beyond the wording of an already computed value.",
+"F3": "When creating a Then & Now report for a Team or a Portfolio, the reader can tick Arrivals; the report then shows an Arrivals panel that, for Then and for Now, gives the Work Items started in total and per day, Throughput per day, and the gap per day (started minus finished) in words with its sign, with a change mark on the gap where a lower gap is better and no percent change.",
+"F30": "Old reports (M6, Epic 5878 D27, followed as is): Read leaves out members the report never froze, so an old report has no arrivals metric and ReportPanels draws NOTHING_CAPTURED; the panel shows dashes and the existing absence note Not captured for this report on both sides. The edit wizard already lists a metric whose key is missing from the captured keys as a disabled, unticked checkbox with the helper Not captured for this report, and ThenAndNowTemplate.Edit refuses MetricNotCaptured for it; no new code. An old report cannot show Arrivals at all (shown keys are only ever from the stored list), so the panel appears only if a user had ticked it, which is impossible; the not captured read stays as the defensive look. New reports capture arrivals for every owner, shown or not, like the other metrics.",
+"F31": "Header summary: the registry entry has one change line, gapPerDay, with changeLines [gapPerDay, label gap per day, decimals 2], so summariseChange needs no change: gap change below zero lists Arrivals under Improved, above zero under Got worse, shown change zero under Unchanged, and a dash on either side (not captured) puts it in no group, as for other metrics. The group name is the panel title Arrivals.",
+"F32": "Edge cases: nothing finished gives throughput total 0 and perDay 0.00 as a real value (the Throughput rule; no absentReason), so gap = arrivals per day. Nothing started gives arrivals 0 and 0.00 and gap = -throughput per day (fewer started), or zero (as many started as finished) if nothing finished. Window days come from the series length, as Throughput, so no division by zero for a window of at least one day. Absent members use the existing CapturedValue.Absent plus absenceTextOf. Windows inside the done-items cutoff: Then creation is already refused by ReportWindowPolicy.ThenRefusal; Now uses the same series. Portfolio arrivals are Features started: PortfolioReportMetricSeries reads IPortfolioMetricsService.GetArrivalsForPortfolio (the Metrics tab's own reader), Team reads ITeamMetricsService.GetStartedItemsForTeam (the Metrics tab's arrivals endpoint). One definition of arrival; BuildArrivalsInfoDto is not reused because it computes a previous-period comparison, a different shape.",
+"F33": "Throughput repeated: throughputPerDay is stored inside the arrivals capture from the same IReportMetricSeries.DailyThroughput the Throughput metric reads over the same window and day count, so both panels show the same number: Then is frozen in one CaptureThen call per metric at one instant over the same series and Now is computed from the same Metrics tab reader on each read. Stored twice by design (the panel must read alone and a report may hide Throughput); never disagree because both come from one reader and one window. The change mark of Throughput never depends on it.",
+"F34": "Loading and failure looks: no new fetch. The panel is a pure function of its props (ADR-220 item 5) inside ThenNowPanelFrame and renders from the one report read ReportView already makes, so ReportView loading/failure looks, the print page preparing/failed looks and WidgetShell are unchanged and reused. No separate loading or failure look exists for the panel. The panel also reads a dash with the reason in the Not captured and no-finished states.",
+"F35": "PDF: ReportPrintDocument renders ReportPanels, the same component as the screen, so Arrivals prints with the same values and words; no print-specific work. Pin it by rendering the print document through its existing test kit once with Arrivals shown.",
+"F36": "Metric order and name: the catalog order is cycle-time, throughput, wip, work-item-age, arrivals (Arrivals last, a new metric in a later version goes last). Backend catalog order follows DI registration: register ArrivalsReportMetric last. Name Arrivals is a fixed name through a new fixedName on the frontend METRIC_CATALOG entry read by a new metricNameOf(key,getTerm) used by the wizard checkbox, UnsupportedMetricPanel title and panelTitle; no terminology key.",
+"F37": "Default ticking (open, see question to maintainer): ThenAndNowDraft defaults to every offered metric ticked; Arrivals follows that rule unless the maintainer wants it off by default. DESIGN records the default-on rule because changing it would add a new per-metric default concept.",
+"F38": "Cross-layer algebra. Domain (Reports metric): state = per-window CapturedValue members {total, perDay, throughputPerDay, gapPerDay} with total integer and gapPerDay = perDay - throughputPerDay; operations CaptureThen/Read over a window; observation = the four values per side; equality = field-wise CapturedValue equality. Application/port: IReportMetricSeries gains DailyArrivals(owner, window) returning one count per day; outcome is values or ReportOwnerGoneException like the other series. Adapter: TeamReportMetricSeries/PortfolioReportMetricSeries map the Metrics services' RunChartData to counts through DailyCounts (the order and the day count are the window's). Presentation: ArrivalsPanel maps four values to rows plus one gap sentence; absent values map to dash and note. Infrastructure/recovery: none new; the Then payload is the existing JSON column captures, a new key in the existing JsonObject, no migration (EF migrations N/A); old payloads lack the key and read as not captured.",
+"F39": "Carriers and owners: decisions about the balance live in ArrivalsReportMetric (C#, Services/Implementation/Reports/Metrics); effects in the two series adapters; errors as ReportOwnerGoneException (existing); presentation decision in ArrivalsPanel.tsx plus a pure exported function gapSentenceOf(gap) in the panel module (testable with no render); direction in reportPanelRegistry. Per-process state: none.",
+"F4": "The balance improved",
+"F40": "Checker mapping: no state machine, concurrency or liveness is introduced, so Quint (installed, 0.33.1) and TLC/Agda are not applicable; the claims are total pure arithmetic on two numbers and a sign-word mapping, falsified by native properties: fast-check (frontend package.json, fast-check 4.10.2) for the rounding and sign-word laws, and NUnit TestCase rows for the backend capture (no FsCheck in the backend manifest). Type strength: the C# CapturedValue record and the TS union of sentence kinds; invalid states (a plus-signed zero, '0.00 more') are excluded by a three-way closed sum returned by gapSentenceOf, but the TS wire type stays a nullable number as for other members. Property tests: see laws.",
+"F41": "Prefactoring: none needed on behavior; one small move before the feature, extracting the 'metric name or term key' choice behind metricNameOf in reportPanelRegistry is part of the feature itself, not a preserving move. No smell blocks the new metric: code-fact (code-fact query.callers-of) was not run; readings were by hand with ctx_shell/grep, which is noisy and could miss dynamic callers, so a consumer of ReportMetricSide keys outside the grepped Reports tree is unknown.",
+"F42": "UI sketch and visualization section 8 (DESIGN answers): one question (did the started-versus-finished balance fall); simplest form is the existing three-column panel, no chart, so axis, labelling, bar baseline and limit-count items are N/A with that reason; awkward data covered (nothing finished, nothing started, balanced, not captured, one-day window); colour: the existing mark plus word, never colour alone (LineChange draws the mark icon and the Improved/Got worse words); title Arrivals; info text (the i help) states: Arrivals are Work Items started; the gap is started minus finished per day; lower is better; no percent because the gap can cross zero; docs how-to-read passage goes in docs/reports/thenandnow.md at finalize. Phone, dark and enlarged: reuse ThenNowPanelFrame unchanged. The gap sentence wraps on its own line, as the AbsenceNotes do; the sketch is for DELIVER's start.",
+"F43": "Usage data is left to DEVOPS (OQ4); no event is designed. ADR/context map: ADR-270 and ARCHITECTURE.md section 4 need no change (a metric-catalog entry inside the Reports context); no new ADR; ADR-220's catalog gains an entry within its decision, and ADR-247's table of web presentation rules (the skill reference, a drift list) gains a row at DELIVER finalize.",
+"F44": "Per-day values are shown to 2 decimals; totals to 0 decimals; no percent change on the gap line (M7); direction of good is lower and fixed in the frontend registry only; no new direction kind (M2).",
+"F45": "No stored bound beyond the existing ones: Then and Now windows are held to ReportWindowPolicy (minimum length, done-items cutoff); the design adds no input and widens nothing. The new members are doubles with unbounded sign for gapPerDay (it can be negative); that is a deliberate property, not a deviation.",
+"F46": "Public stimulus stays the report read (GET report by id through the application-service port) and the create report call; no endpoint, DTO type or enum ordinal changes; metric keys are strings on the wire (ADR-220 item 6).",
+"F47": "No scenario tags, no Epic/Story words in copy: copy uses {Work Items}, {Throughput}; the fixed words are started, finished, Arrivals.",
+"F48": "Test budgets are the defaults: per-test and property budgets and the CI suite ceiling (300 s) unchanged; the property uses a bounded example count with fast-check defaults; no derogation requested; no infrastructure suite.",
+"F49": "Base class already freezes Then, recomputes Now and omits unfrozen members; ArrivalsReportMetric derives from it unchanged.",
+"F5": "a Team report whose Then started 1.10 and finished 0.80 Work Items per day, and whose Now started 0.90 and finished 1.00 per day",
+"F50": "No existing metric computes started-versus-finished; ThroughputReportMetric owns only finished and BaseMetricsService.BuildArrivalsInfoDto returns a previous-period comparison, a different shape. The new class holds the balance rule once, beside its sibling.",
+"F51": "Add DailyArrivals(owner, window) next to DailyThroughput; the port is the single seam over the Metrics services.",
+"F52": "Implement DailyArrivals through ITeamMetricsService.GetStartedItemsForTeam, the reader of the Team Metrics tab arrivals chart, so no second arrival definition exists.",
+"F53": "Implement DailyArrivals through IPortfolioMetricsService.GetArrivalsForPortfolio (Features started), the reader the Portfolio Metrics tab uses.",
+"F54": "Delegate DailyArrivals to the series of the owner kind, as every other series member.",
+"F55": "Add the arrivals entry (component, title, lower, changeLines) and the catalog entry; the satisfies Record<ReportMetricKey,...> forces the panel once the key exists.",
+"F56": "The shared frame (title, Then, Now, Change columns) and PanelLine are reused by ArrivalsPanel unchanged.",
+"F57": "Pattern, TOTAL/PER_DAY decimals, totalText and absence handling are the model; ArrivalsPanel does not copy the total-line rule where it can import PER_DAY_DECIMALS; totalText is exported for reuse if needed. Not a semantic duplicate: Throughput shows only finished and compares per day.",
+"F58": "LineChanges and changeText render a percent; the gap line needs none, so ChangeLine gains an optional showPercent (default true) honoured by changeText, keeping every other panel byte-identical.",
+"F59": "Add the optional percent suppression on ChangeLine; compareThenNow and lineComparisonsOf are reused unchanged for the change on shown values.",
+"F6": "the reader opens the report",
+"F60": "summariseChange already groups by each panel change lines; Arrivals needs no code here.",
+"F61": "Add the members throughputPerDay and gapPerDay and the arrivals key to ReportMetricKey; total and perDay already exist.",
+"F62": "Use metricNameOf for the unsupported-metric title; otherwise unchanged.",
+"F63": "Label through metricNameOf so Arrivals reads as a fixed name; checkbox, disabled and Not captured behaviour are reused for old reports.",
+"F64": "Freeze, Edit and Read iterate the catalog; a registered metric is captured, edited and read with no code change; MetricNotCaptured refusal covers old reports.",
+"F65": "Renders ReportPanels; the PDF needs no print-specific code.",
+"F66": "New file; see the ArrivalsReportMetric row: no existing owner of the started-versus-finished balance.",
+"F67": "Composition root registers each metric; ArrivalsReportMetric is registered after WorkItemAgeReportMetric.",
+"F68": "New file; ThroughputPanel shows only finished and compares one line, the Arrivals panel has four rows and a sentence line, so extending ThroughputPanel would add mode flags.",
+"F69": "New file: the metric.",
+"F7": "the Arrivals panel reads 0.30 more started than finished per day for Then, 0.10 fewer started than finished per day for Now, and marks the gap's change of 0.40 per day as better, without a percent",
+"F70": "Register ArrivalsReportMetric last so the catalog order follows.",
+"F71": "New member DailyArrivals; every implementer (the three series classes) and every test double that implements it changes; Moq mocks need a setup only where Arrivals is read.",
+"F72": "The port harness lists the metric classes explicitly and must register ArrivalsReportMetric; ATD owns this support.",
+"F73": "Captures is a map of JsonObject by key; a new key is data, old payloads lack it, no migration.",
+"F74": "ReportMetricKey and ReportMetricSide gain members.",
+"F75": "New entry plus metricNameOf.",
+"F76": "New file: the panel and gapSentenceOf.",
+"F77": "Optional percent suppression.",
+"F78": "LineChange passes the suppression to changeText.",
+"F79": "Label through metricNameOf.",
+"F8": "Balanced follows the shown value",
+"F80": "Title through metricNameOf.",
+"F81": "Summary reads the registry change lines; throughput closed count unchanged.",
+"F82": "Same ReportPanels.",
+"F83": "Report fixtures may add the new members; ATD owns this support.",
+"F84": "Raw pass-through; no key list; no code or release. The lighthouse-reports skill reference needs a prose update in that repo, owner maintainer.",
+"F85": "New metric and how to read the gap, at finalize.",
+"F86": "Its table of web presentation rules and the drift-risk mitigation (b) call for the skill reference row for the gap wording; at finalize.",
+"F87": "A metric-catalog entry inside Reports; no concept, context or edge changes.",
+"F88": "Implements the new DailyArrivals member.",
+"F89": "Emits one more key arrivals and four members through the existing catalog loop.",
+"F9": "a window whose gap per day is 0.004",
+"F90": "Adds the key and the two new members to the TS types and the registry.",
+"F91": "Passes raw values through; an unknown key is shown as given.",
+"F92": "Prose reference learns the gap wording and lower-is-better; separate repo, maintainer follow-up.",
+"F93": "Old rows lack arrivals and read as not captured; newer rows read by an older version are skipped with a warning (existing LogKeysNotInTheCatalog).",
+"F94": "No new dependency or boundary: ArrivalsReportMetric sits in the same namespace under the existing ReportsModuleArchUnitTest rules, which cover members added later; the frontend registry's satisfies check and reportPanelRegistry.parity.test already govern the panel family.",
+"F95": "The only party that could change apart is lighthouse-clients, which keeps no list of report metric keys or members and passes the raw answer through (reportWording.ts), so there is no parsing contract the new key can break; the skill prose is checked by that repo's own skill drift tests.",
+"F96": "No behavior-preserving move is needed first: the registry, frame and comparison seams take a new entry as they are; the two small extensions (fixed metric name, optional percent suppression) are part of the feature and keep every existing panel byte-identical, guarded by reportPanelRegistry.parity.test.",
+"F97": "Report read through the application-service port (ReportQueries / IReportService) for the values, and the ReportView plus ReportPrintDocument components through ReportPanels for the words",
+"F98": "IReportMetricSeries.DailyArrivals and DailyThroughput over ITeamMetricsService / IPortfolioMetricsService",
+"F99": "ArrivalsReportMetric -> IReportMetricSeries -> the two series adapters -> Metrics services; frontend ArrivalsPanel -> thenNowComparison and ThenNowPanelFrame; nothing in the metrics services knows reports."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"given": "F5",
+"id": "P2",
+"kind": "Scenario",
+"then": "F7",
+"title": "F4",
+"when": "F6"
+},
+{
+"given": "F9",
+"id": "P3",
+"kind": "Scenario",
+"then": "F10",
+"title": "F8",
+"when": "F6"
+},
+{
+"given": "F12",
+"id": "P4",
+"kind": "Scenario",
+"then": "F14",
+"title": "F11",
+"when": "F13"
+},
+{
+"given": "F16",
+"id": "P5",
+"kind": "Scenario",
+"then": "F18",
+"title": "F15",
+"when": "F17"
+}
+],
+"scope_in": [
+"F19"
+],
+"scope_out": [
+"F20"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F21",
+"promises": [
+"P1",
+"P2",
+"P3",
+"P4",
+"P5"
+],
+"work": {
+"size": "S",
+"value": "F22"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6535-arrivals-in-reports",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
