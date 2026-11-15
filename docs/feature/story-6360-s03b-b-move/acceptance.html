@@ -512,7 +512,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Delete a team and run the existing team-deleted clean-up handler test after the move
 </code></pre>
 
-<pre><code>The clean-up reaction still removes the team&#x27;s refresh log entries, so the refresh log a user reads is unchanged
+<pre><code>The clean-up reaction removes the team&#x27;s refresh logs: the test&#x27;s single Verify on the refresh log removal passes
 </code></pre>
 
 <pre><code>Refresh history of a deleted team is cleaned as before the move
@@ -524,7 +524,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDeletedRefreshLogCleanupHandlerTest.cs</p>
 
-<pre><code>A handler registered in the wrong order or left unregistered would pass; the order pin covers that
+<pre><code>A clean-up that does not remove the team&#x27;s refresh logs fails that Verify, so it is not accepted; the only wrong behaviour still accepted is a handler registered in a different order or left unregistered, which the order pin catches
 </code></pre>
 
 <h6>Obligations</h6>
@@ -538,7 +538,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Change a connection&#x27;s fetch shape and run the existing update-trigger handler test after the move
 </code></pre>
 
-<pre><code>The reaction still triggers the update it triggered before the move
+<pre><code>The reaction triggers exactly the updates it triggered before: the trigger and count assertions pass
 </code></pre>
 
 <pre><code>A changed connection still leads to the same refresh as before the move
@@ -550,7 +550,59 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs</p>
 
-<pre><code>A handler registered in the wrong order or left unregistered would pass; the order pin covers that
+<pre><code>A missing, extra or reordered trigger fails the trigger and count assertions, so it is not accepted; the only wrong behaviour still accepted is a handler left unregistered or registered in a different order, which the order pin catches
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>At completion, compare metrics answers of the base commit 8a785450c with HEAD using the metrics answers comparison command
+</code></pre>
+
+<pre><code>Metrics answers are identical before and after the move
+</code></pre>
+
+<pre><code>Metrics answers a user reads are the same as before the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/bin/metrics-answers-compare 8a785450c HEAD</p>
+
+<pre><code>A change in a metric the comparison does not sample would pass; the host runs it on the implemented candidate and records the result
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>At completion, compare forecast answers of the base commit 8a785450c with HEAD using the forecast answers comparison command
+</code></pre>
+
+<pre><code>Forecast answers are identical before and after the move
+</code></pre>
+
+<pre><code>Forecasts a user reads are the same as before the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/bin/forecast-answers-compare 8a785450c HEAD</p>
+
+<pre><code>A change in a forecast the comparison does not sample would pass; the host runs it on the implemented candidate and records the result
 </code></pre>
 
 <h6>Obligations</h6>

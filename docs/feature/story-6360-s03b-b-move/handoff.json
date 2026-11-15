@@ -229,10 +229,10 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F214",
+"still_passes_if": "F219",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDeletedRefreshLogCleanupHandlerTest.cs"
 },
-"expected": "F212",
+"expected": "F218",
 "stimulus": "F211",
 "user_result": "F213"
 },
@@ -242,19 +242,45 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F214",
+"still_passes_if": "F221",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ConnectionFetchShapeChangedUpdateTriggerHandlerTest.cs"
 },
-"expected": "F216",
+"expected": "F220",
 "stimulus": "F215",
 "user_result": "F217"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F225",
+"test": "Scripts/examine/bin/metrics-answers-compare 8a785450c HEAD"
+},
+"expected": "F223",
+"stimulus": "F222",
+"user_result": "F224"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F229",
+"test": "Scripts/examine/bin/forecast-answers-compare 8a785450c HEAD"
+},
+"expected": "F227",
+"stimulus": "F226",
+"user_result": "F228"
 }
 ]
 },
 "counters": {
 "D": 5,
 "E": 4,
-"F": 217,
+"F": 229,
 "K": 4,
 "P": 4,
 "S": 3,
@@ -1838,13 +1864,22 @@
 "F21": "Every dotnet command runs under flock -o on the shared lock file; declared commands omit the prefix. Code-fact was not consulted: file lists come from the directory listing and the IL membership test (stated limit). Rule strings, ILogger categories, perf harness, Stryker configs and test-selection scripts are grepped for moved full type names, not only using lines. Jev unauthorized: typesafe unavailable by refusal.",
 "F210": "A move that changes a blocked-transition handler's behaviour in a case the scenarios do not build would pass; the scenarios register only the four blocked-transition handlers",
 "F211": "Delete a team and run the existing team-deleted clean-up handler test after the move",
-"F212": "The clean-up reaction still removes the team's refresh log entries, so the refresh log a user reads is unchanged",
 "F213": "Refresh history of a deleted team is cleaned as before the move",
-"F214": "A handler registered in the wrong order or left unregistered would pass; the order pin covers that",
 "F215": "Change a connection's fetch shape and run the existing update-trigger handler test after the move",
-"F216": "The reaction still triggers the update it triggered before the move",
 "F217": "A changed connection still leads to the same refresh as before the move",
+"F218": "The clean-up reaction removes the team's refresh logs: the test's single Verify on the refresh log removal passes",
+"F219": "A clean-up that does not remove the team's refresh logs fails that Verify, so it is not accepted; the only wrong behaviour still accepted is a handler registered in a different order or left unregistered, which the order pin catches",
 "F22": "Layout oracles reuse TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary as the Forecasting layout oracles do; CreateNew would duplicate the layer rules.",
+"F220": "The reaction triggers exactly the updates it triggered before: the trigger and count assertions pass",
+"F221": "A missing, extra or reordered trigger fails the trigger and count assertions, so it is not accepted; the only wrong behaviour still accepted is a handler left unregistered or registered in a different order, which the order pin catches",
+"F222": "At completion, compare metrics answers of the base commit 8a785450c with HEAD using the metrics answers comparison command",
+"F223": "Metrics answers are identical before and after the move",
+"F224": "Metrics answers a user reads are the same as before the move",
+"F225": "A change in a metric the comparison does not sample would pass; the host runs it on the implemented candidate and records the result",
+"F226": "At completion, compare forecast answers of the base commit 8a785450c with HEAD using the forecast answers comparison command",
+"F227": "Forecast answers are identical before and after the move",
+"F228": "Forecasts a user reads are the same as before the move",
+"F229": "A change in a forecast the comparison does not sample would pass; the host runs it on the implemented candidate and records the result",
 "F23": "Its Moves and Stays lists are the move list; it compares by short name and stays green through the move.",
 "F24": "Existing owners of every moved responsibility keep their code; only folder and namespace change. CreateNew would duplicate refresh, blocked, dependency and rule decisions.",
 "F25": "Model for the three layout oracles: types named as strings, read from the compiled assembly, with made-up offenders in a fixture namespace.",

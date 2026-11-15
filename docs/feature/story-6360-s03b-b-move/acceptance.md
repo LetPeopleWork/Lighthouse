@@ -421,7 +421,7 @@ Delete a team and run the existing team-deleted clean-up handler test after the 
 ```
 
 ```text
-The clean-up reaction still removes the team's refresh log entries, so the refresh log a user reads is unchanged
+The clean-up reaction removes the team's refresh logs: the test's single Verify on the refresh log removal passes
 ```
 
 ```text
@@ -435,7 +435,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/DomainEvents\/TeamDeletedRefreshLogCleanupHandlerTest\.cs
 
 ```text
-A handler registered in the wrong order or left unregistered would pass; the order pin covers that
+A clean-up that does not remove the team's refresh logs fails that Verify, so it is not accepted; the only wrong behaviour still accepted is a handler registered in a different order or left unregistered, which the order pin catches
 ```
 
 ###### Obligations
@@ -451,7 +451,7 @@ Change a connection's fetch shape and run the existing update-trigger handler te
 ```
 
 ```text
-The reaction still triggers the update it triggered before the move
+The reaction triggers exactly the updates it triggered before: the trigger and count assertions pass
 ```
 
 ```text
@@ -465,7 +465,67 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/BackgroundServices\/Update\/ConnectionFetchShapeChangedUpdateTriggerHandlerTest\.cs
 
 ```text
-A handler registered in the wrong order or left unregistered would pass; the order pin covers that
+A missing, extra or reordered trigger fails the trigger and count assertions, so it is not accepted; the only wrong behaviour still accepted is a handler left unregistered or registered in a different order, which the order pin catches
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P4
+
+```text
+At completion, compare metrics answers of the base commit 8a785450c with HEAD using the metrics answers comparison command
+```
+
+```text
+Metrics answers are identical before and after the move
+```
+
+```text
+Metrics answers a user reads are the same as before the move
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/bin\/metrics\-answers\-compare 8a785450c HEAD
+
+```text
+A change in a metric the comparison does not sample would pass; the host runs it on the implemented candidate and records the result
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P4
+
+```text
+At completion, compare forecast answers of the base commit 8a785450c with HEAD using the forecast answers comparison command
+```
+
+```text
+Forecast answers are identical before and after the move
+```
+
+```text
+Forecasts a user reads are the same as before the move
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/bin\/forecast\-answers\-compare 8a785450c HEAD
+
+```text
+A change in a forecast the comparison does not sample would pass; the host runs it on the implemented candidate and records the result
 ```
 
 ###### Obligations
