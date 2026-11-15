@@ -70,9 +70,12 @@ echo "candidate manifest:"; cat "\$work/candidate/_manifest.txt"
 EOF
 chmod +x "$out/metrics-answers-compare"
 
-# The forecast comparison runs each revision's backend inside a small program that pins the forecast's
-# random numbers; the product itself has no switch for that.
-cat > "$out/forecast-answers-capture.cs" <<'EOF'
+# The forecast and refresh comparisons run each revision's backend inside a small program that pins the
+# forecast's random numbers; the product itself has no switch for that. Both programs, and both comparisons,
+# are put together from the shared pieces below, so they capture, compare and report the same way.
+pieces="$(mktemp -d)"
+trap 'rm -rf "$pieces"' EXIT
+cat > "$pieces/project.cs" <<'EOF'
 #:project @BACKEND@/Lighthouse.Backend/Lighthouse.Backend.csproj
 #:project @BACKEND@/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj
 #:project @BACKEND@/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj
@@ -82,9 +85,8 @@ cat > "$out/forecast-answers-capture.cs" <<'EOF'
 #:property PublishAot=false
 #:property ValidateExecutableReferencesMatchSelfContained=false
 
-// Starts the backend of one revision in this process with its forecast draws started from one fixed number,
-// loads each demo scenario in turn, waits until its updates and forecasts have run, and writes the body of
-// every forecast answer. Arguments: <output-folder> <work-folder> <seed> [licence-file]
+EOF
+cat > "$pieces/setup.cs" <<'EOF'
 using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
@@ -174,6 +176,8 @@ foreach (var scenario in scenarios)
         return 1;
     }
     await WaitUntilNothingIsUpdating();
+EOF
+cat > "$pieces/loop.cs" <<'EOF'
     var requests = await RequestsForWhatIsLoaded();
     Dictionary<string, string>? previous = null;
     Dictionary<string, string>? settled = null;
@@ -195,7 +199,7 @@ foreach (var scenario in scenarios)
     }
     if (settled is null)
     {
-        Console.Error.WriteLine($"scenario {scenario}: forecast answers still changed after {round} rounds");
+        Console.Error.WriteLine($"scenario {scenario}: @ANSWERS@ still changed after {round} rounds");
         return 1;
     }
     foreach (var (name, json) in settled)
@@ -210,30 +214,8 @@ foreach (var scenario in scenarios)
 Console.WriteLine($"captured {total} answers over {scenarios.Count} scenarios");
 return 0;
 
-async Task<List<(string Name, string Path, object? Body)>> RequestsForWhatIsLoaded()
-{
-    var teamIds = (await Get("/api/v1/teams")).AsArray().Select(t => t!["id"]!.GetValue<int>()).Order().ToList();
-    var portfolioIds = (await Get("/api/v1/portfolios")).AsArray().Select(p => p!["id"]!.GetValue<int>()).Order().ToList();
-    var requests = new List<(string Name, string Path, object? Body)>();
-    foreach (var team in teamIds)
-    {
-        var types = (await Get($"/api/v1/teams/{team}/settings"))["workItemTypes"]!.AsArray().Select(t => t!.GetValue<string>()).ToArray();
-        requests.Add(($"team-{team}/manual-when-and-how-many", $"/api/v1/forecast/manual/{team}", new { remainingItems = 10, targetDate = Day(30) }));
-        requests.Add(($"team-{team}/manual-how-many", $"/api/v1/forecast/manual/{team}", new { targetDate = Day(60) }));
-        requests.Add(($"team-{team}/manual-when-filtered", $"/api/v1/forecast/manual/{team}", new { remainingItems = 25, targetDate = Day(45), applyFilterOverride = true }));
-        requests.Add(($"team-{team}/item-creation-prediction", $"/api/v1/forecast/itemprediction/{team}", new { startDate = Day(-90), endDate = Day(0), targetDate = Day(30), workItemTypes = types }));
-        requests.Add(($"team-{team}/backtest", $"/api/v1/forecast/backtest/{team}", new { startDate = Day(-30), endDate = Day(0), historicalStartDate = Day(-90), historicalEndDate = Day(-30) }));
-        requests.Add(($"team-{team}/reality-check", $"/api/v1/forecast/reality-check/{team}", new { }));
-        requests.Add(($"team-{team}/feature-list", $"/api/v1/teams/{team}/feature-list", null));
-    }
-    foreach (var portfolio in portfolioIds)
-    {
-        requests.Add(($"portfolio-{portfolio}/feature-list", $"/api/v1/portfolios/{portfolio}/feature-list", null));
-        requests.Add(($"portfolio-{portfolio}/deliveries", $"/api/v1/deliveries/portfolio/{portfolio}", null));
-    }
-    requests.Add(("features", "/api/v1/features", null));
-    return requests;
-}
+EOF
+cat > "$pieces/round.cs" <<'EOF'
 
 async Task<Dictionary<string, string>> Round(List<(string Name, string Path, object? Body)> requests)
 {
@@ -279,12 +261,8 @@ static JsonNode Normalised(JsonNode node)
     return node;
 }
 
-// When a stored forecast was made, and the token a write leaves behind, depend on the run, not on the answer;
-// their values are blanked at any depth and so not compared.
-public static class MaskedKeys
-{
-    public static readonly string[] Names = ["lastUpdated", "creationTime", "concurrencyToken"];
-}
+EOF
+cat > "$pieces/pinned.cs" <<'EOF'
 
 public class PinnedDraws : DispatchProxy
 {
@@ -310,30 +288,55 @@ public class PinnedNumbers : DispatchProxy
         numbers.Next((int)args![0]!);
 }
 EOF
-
-cat > "$out/forecast-answers-compare" <<EOF
-#!/usr/bin/env bash
-# Captures every forecast answer on two git revisions, on the seeded demo data with the forecast's random
-# numbers pinned, and compares them. Each demo scenario is loaded in turn; per scenario it asks every Team for
-# a manual When and How Many forecast, an item creation prediction, a backtest and a reality check, and reads
-# the feature lists, the Delivery likelihoods and the Feature forecasts. Prints one line per kind of answer and
-# a last VERDICT line; exit 0 and "IDENTICAL" mean every answer was compared, answered with a 2xx status on
-# both sides, and matches. It fails when no answer was compared or when any captured answer is not a 2xx.
-# The values of the keys listed under "masked keys" are blanked at any depth and so not compared.
-# Usage: forecast-answers-compare [base-revision [candidate-revision]]   (takes about 2 to 4 minutes)
-#   no arguments   compares base 39a7f598f (the last revision before the forecasting code moves) with HEAD;
-#                  this is the before/after check
-#   one argument   is the base revision; the candidate is HEAD
-#   two arguments  are the base and the candidate revision
-# Given the same revision twice it shows the capture itself is repeatable.
-set -euo pipefail
-# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
-export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
-repo="$repo"
-driver="$out/forecast-answers-capture.cs"
+{
+  cat "$pieces/project.cs"
+  cat <<'EOF'
+// Starts the backend of one revision in this process with its forecast draws started from one fixed number,
+// loads each demo scenario in turn, waits until its updates and forecasts have run, and writes the body of
+// every forecast answer. Arguments: <output-folder> <work-folder> <seed> [licence-file]
 EOF
-cat >> "$out/forecast-answers-compare" <<'EOF'
-base="${1:-39a7f598f}"
+  cat "$pieces/setup.cs"
+  sed 's/@ANSWERS@/forecast answers/' "$pieces/loop.cs"
+  cat <<'EOF'
+async Task<List<(string Name, string Path, object? Body)>> RequestsForWhatIsLoaded()
+{
+    var teamIds = (await Get("/api/v1/teams")).AsArray().Select(t => t!["id"]!.GetValue<int>()).Order().ToList();
+    var portfolioIds = (await Get("/api/v1/portfolios")).AsArray().Select(p => p!["id"]!.GetValue<int>()).Order().ToList();
+    var requests = new List<(string Name, string Path, object? Body)>();
+    foreach (var team in teamIds)
+    {
+        var types = (await Get($"/api/v1/teams/{team}/settings"))["workItemTypes"]!.AsArray().Select(t => t!.GetValue<string>()).ToArray();
+        requests.Add(($"team-{team}/manual-when-and-how-many", $"/api/v1/forecast/manual/{team}", new { remainingItems = 10, targetDate = Day(30) }));
+        requests.Add(($"team-{team}/manual-how-many", $"/api/v1/forecast/manual/{team}", new { targetDate = Day(60) }));
+        requests.Add(($"team-{team}/manual-when-filtered", $"/api/v1/forecast/manual/{team}", new { remainingItems = 25, targetDate = Day(45), applyFilterOverride = true }));
+        requests.Add(($"team-{team}/item-creation-prediction", $"/api/v1/forecast/itemprediction/{team}", new { startDate = Day(-90), endDate = Day(0), targetDate = Day(30), workItemTypes = types }));
+        requests.Add(($"team-{team}/backtest", $"/api/v1/forecast/backtest/{team}", new { startDate = Day(-30), endDate = Day(0), historicalStartDate = Day(-90), historicalEndDate = Day(-30) }));
+        requests.Add(($"team-{team}/reality-check", $"/api/v1/forecast/reality-check/{team}", new { }));
+        requests.Add(($"team-{team}/feature-list", $"/api/v1/teams/{team}/feature-list", null));
+    }
+    foreach (var portfolio in portfolioIds)
+    {
+        requests.Add(($"portfolio-{portfolio}/feature-list", $"/api/v1/portfolios/{portfolio}/feature-list", null));
+        requests.Add(($"portfolio-{portfolio}/deliveries", $"/api/v1/deliveries/portfolio/{portfolio}", null));
+    }
+    requests.Add(("features", "/api/v1/features", null));
+    return requests;
+}
+EOF
+  cat "$pieces/round.cs"
+  cat <<'EOF'
+// When a stored forecast was made, and the token a write leaves behind, depend on the run, not on the answer;
+// their values are blanked at any depth and so not compared.
+public static class MaskedKeys
+{
+    public static readonly string[] Names = ["lastUpdated", "creationTime", "concurrencyToken"];
+}
+EOF
+  cat "$pieces/pinned.cs"
+} > "$out/forecast-answers-capture.cs"
+
+cat > "$pieces/compare.sh" <<'EOF'
+base="${1:-@BASE@}"
 candidate="${2:-HEAD}"
 base_sha="$(git -C "$repo" rev-parse --verify "${base}^{commit}")"
 candidate_sha="$(git -C "$repo" rev-parse --verify "${candidate}^{commit}")"
@@ -391,7 +394,7 @@ wait "$candidate_pid" || { grep -E "^(scenario|licence|FATAL)" "$work/candidate.
 grep -E "^(licence|captured)" "$work/base.log" | sed 's/^/base: /'
 grep -E "^masked keys:" "$work/base.log" | head -1 | sed 's/$/ (their values are not compared)/'
 
-# An error answer on both sides would match and hide that nothing was forecast, so every answer must be a 2xx.
+# An error answer on both sides would match and hide that nothing was @DONE@, so every answer must be a 2xx.
 failing=0
 for side in base candidate; do
   while IFS= read -r file; do
@@ -403,11 +406,11 @@ for side in base candidate; do
   done < <(find "$work/$side" -name '*.json' | sort)
 done
 if [ "$failing" -gt 0 ]; then
-  echo "VERDICT: FAILED, $failing captured forecast answers are not a 2xx, so they say nothing about the forecasts"
+  echo "VERDICT: FAILED, $failing captured @ANSWER@s are not a 2xx, so they say nothing about the @SUBJECT@"
   exit 1
 fi
 
-# One line per kind of forecast answer: how many were compared and how many differ.
+# One line per kind of @ANSWER@: how many were compared and how many differ.
 different=0
 compared=0
 for kind in $( (cd "$work/base" && find . -name '*.json'; cd "$work/candidate" && find . -name '*.json') \
@@ -420,46 +423,160 @@ for kind in $( (cd "$work/base" && find . -name '*.json'; cd "$work/candidate" &
   echo "$kind: $((same + differ)) compared, $differ different"
 done
 if [ "$compared" -eq 0 ]; then
-  echo "VERDICT: FAILED, no forecast answer was captured, so nothing was compared"
+  echo "VERDICT: FAILED, no @ANSWER@ was captured, so nothing was compared"
   exit 1
 fi
 if [ "$different" -gt 0 ]; then
   echo "differences (first lines):"
   diff -r -u "$work/base" "$work/candidate" | grep -E '^(\+\+\+|Only in|[-+] )' | head -30
-  echo "VERDICT: DIFFERENT, $different of $compared forecast answers differ"
+  echo "VERDICT: DIFFERENT, $different of $compared @ANSWER@s differ"
   exit 1
 fi
-echo "VERDICT: IDENTICAL, all $compared forecast answers match"
+echo "VERDICT: IDENTICAL, all $compared @ANSWER@s match"
 EOF
-chmod +x "$out/forecast-answers-compare"
-
-# The trigger probe is committed next to this script; the copy in bin names this checkout's backend.
-sed "s|@BACKEND@|$repo/Lighthouse.Backend|" "$repo/Scripts/examine/forecast-triggers-show.cs" > "$out/forecast-triggers-show.cs"
-cat > "$out/forecast-triggers-show" <<EOF
+cat > "$out/forecast-answers-compare" <<EOF
 #!/usr/bin/env bash
-# Shows, on demo data and through the public API, two things the forecasts do on their own: (1) a Team refresh
-# makes every Portfolio the Team serves forecast again, and (2) a restart makes the next forecast compute again,
-# because the start-up seeding forgets what the stored forecasts were computed from. It starts this checkout's
-# backend in-process on a fresh database, loads the smallest demo scenario with Teams and Portfolios, and reads
-# the refresh history (Type Forecast, Portfolio id, ExecutedAt, Skipped). For (2) it asks every Portfolio to
-# forecast on unchanged data by sending the Feature-order setting back unchanged, restarts the backend on the
-# same database and asks again: before the restart that round is Skipped=true, after it Skipped=false.
-# Prints one line per observation and a last VERDICT line; exit 0 and "OBSERVED" only when both were seen.
-# The Feature-order setting is premium, so (2) needs the premium licence file the backend tests use.
-# Usage: forecast-triggers-show   (takes about 1 to 3 minutes)
-set -uo pipefail
+# Captures every forecast answer on two git revisions, on the seeded demo data with the forecast's random
+# numbers pinned, and compares them. Each demo scenario is loaded in turn; per scenario it asks every Team for
+# a manual When and How Many forecast, an item creation prediction, a backtest and a reality check, and reads
+# the feature lists, the Delivery likelihoods and the Feature forecasts. Prints one line per kind of answer and
+# a last VERDICT line; exit 0 and "IDENTICAL" mean every answer was compared, answered with a 2xx status on
+# both sides, and matches. It fails when no answer was compared or when any captured answer is not a 2xx.
+# The values of the keys listed under "masked keys" are blanked at any depth and so not compared.
+# Usage: forecast-answers-compare [base-revision [candidate-revision]]   (takes about 2 to 4 minutes)
+#   no arguments   compares base 39a7f598f (the last revision before the forecasting code moves) with HEAD;
+#                  this is the before/after check
+#   one argument   is the base revision; the candidate is HEAD
+#   two arguments  are the base and the candidate revision
+# Given the same revision twice it shows the capture itself is repeatable.
+set -euo pipefail
 # The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
 export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 repo="$repo"
-driver="$out/forecast-triggers-show.cs"
+driver="$out/forecast-answers-capture.cs"
 EOF
-cat >> "$out/forecast-triggers-show" <<'EOF'
+sed -e 's/@BASE@/39a7f598f/' -e 's/@ANSWER@/forecast answer/g' -e 's/@DONE@/forecast/' -e 's/@SUBJECT@/forecasts/' \
+  "$pieces/compare.sh" >> "$out/forecast-answers-compare"
+chmod +x "$out/forecast-answers-compare"
+
+cat > "$pieces/refresh-requests.cs" <<'EOF'
+async Task<List<(string Name, string Path, object? Body)>> RequestsForWhatIsLoaded()
+{
+    var owners = new[]
+    {
+        (Name: "team", Ids: await IdsOf("/api/v1/teams"), At: "/api/v1/teams"),
+        (Name: "portfolio", Ids: await IdsOf("/api/v1/portfolios"), At: "/api/v1/portfolios"),
+    };
+    var requests = new List<(string Name, string Path, object? Body)>();
+    foreach (var owner in owners)
+    {
+        foreach (var id in owner.Ids)
+        {
+            var at = $"{owner.At}/{id}";
+            var name = $"{owner.Name}-{id}";
+            requests.Add(($"{name}/in-progress-today", $"{at}/metrics/wip?asOfDate={Day(0)}", null));
+            // A past day is answered from the stored blocked periods rather than from today's items.
+            requests.Add(($"{name}/in-progress-a-week-ago", $"{at}/metrics/wip?asOfDate={Day(-7)}", null));
+            requests.Add(($"{name}/finished", $"{at}/metrics/cycleTimeData?startDate={Day(-90)}&endDate={Day(0)}", null));
+            requests.Add(($"{name}/blocked-today", $"{at}/metrics/blockedItemsAtDate?date={Day(0)}", null));
+            requests.Add(($"{name}/blocked-a-week-ago", $"{at}/metrics/blockedItemsAtDate?date={Day(-7)}", null));
+            requests.Add(($"{name}/blocked-count-history", $"{at}/metrics/blockedCountHistory?startDate={Day(-90)}&endDate={Day(0)}", null));
+            requests.Add(($"{name}/feature-list", $"{at}/feature-list", null));
+        }
+    }
+    foreach (var feature in await IdsOf("/api/v1/features"))
+    {
+        requests.Add(($"feature-{feature}/work-items", $"/api/v1/features/{feature}/workitems", null));
+    }
+    requests.Add(("features-with-dependencies", "/api/v1/features", null));
+    return requests;
+}
+
+async Task<List<int>> IdsOf(string path) =>
+    (await Get(path)).AsArray().Select(o => o!["id"]!.GetValue<int>()).Order().ToList();
+
+// Refreshes each listed Team or Portfolio through its refresh button and waits until the updates have run;
+// returns why a refresh was refused, or null.
+async Task<string?> RefreshEach(string listPath, Func<int, string> refreshPath)
+{
+    foreach (var id in await IdsOf(listPath))
+    {
+        var answer = await client.PostAsync(refreshPath(id), null);
+        if (!answer.IsSuccessStatusCode)
+        {
+            return $"POST {refreshPath(id)} answered {(int)answer.StatusCode}, so this revision's refresh cannot be compared";
+        }
+    }
+    await WaitUntilNothingIsUpdating();
+    return null;
+}
+EOF
+cat > "$pieces/refresh-masked.cs" <<'EOF'
+// When something was last updated or created, and the token a write leaves behind, depend on the run, not on
+// the answer; their values are blanked at any depth and so not compared.
+public static class MaskedKeys
+{
+    public static readonly string[] Names = ["lastUpdated", "creationTime", "concurrencyToken"];
+}
+EOF
+{
+  cat "$pieces/project.cs"
+  cat <<'EOF'
+// Starts the backend of one revision in this process with its forecast draws started from one fixed number,
+// loads each demo scenario in turn, refreshes every Team and then every Portfolio once more, waits until the
+// updates have run, and writes the body of every Work Item, Feature list, dependency and blocked answer.
+// Arguments: <output-folder> <work-folder> <seed> [licence-file]
+EOF
+  cat "$pieces/setup.cs"
+  cat <<'EOF'
+    // The load already refreshed everything once; a second refresh over the stored items is the one that
+    // moves, closes and drops what an earlier refresh stored. Teams go first, as in an update round.
+    var refused = await RefreshEach("/api/v1/teams", id => $"/api/v1/teams/{id}")
+        ?? await RefreshEach("/api/v1/portfolios", id => $"/api/v1/portfolios/{id}/refresh");
+    if (refused is not null)
+    {
+        Console.Error.WriteLine($"scenario {scenario}: {refused}");
+        return 1;
+    }
+EOF
+  sed 's/@ANSWERS@/refresh answers/' "$pieces/loop.cs"
+  cat "$pieces/refresh-requests.cs" "$pieces/round.cs" "$pieces/refresh-masked.cs" "$pieces/pinned.cs"
+} > "$out/refresh-answers-capture.cs"
+
+cat > "$out/refresh-answers-compare" <<EOF
+#!/usr/bin/env bash
+# Captures the refresh answers on two git revisions, on the seeded demo data with the forecast's random numbers
+# pinned, and compares them. Each demo scenario is loaded in turn and every Team, then every Portfolio, is
+# refreshed once more; then, per Team and per Portfolio, it reads the Work Items in progress (today and a week
+# ago), the finished ones, the blocked ones (today and a week ago), the blocked count history and the Feature
+# list, plus every Feature's Work Items and the Features with what they depend on. Prints one line per kind of
+# answer and a last VERDICT line; exit 0 and "IDENTICAL" mean every answer was compared, answered with a 2xx
+# status on both sides, and matches. It fails when no answer was compared, when any captured answer is not a
+# 2xx, or when a refresh is refused. The values of the keys listed under "masked keys" are blanked at any depth
+# and so not compared.
+# Usage: refresh-answers-compare [base-revision [candidate-revision]]   (takes about 3 to 6 minutes)
+#   no arguments   compares base db70207b8 (the last revision before any Work Items code moves) with HEAD;
+#                  this is the before/after check
+#   one argument   is the base revision; the candidate is HEAD
+#   two arguments  are the base and the candidate revision
+# Given the same revision twice it shows the capture itself is repeatable.
+set -euo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+repo="$repo"
+driver="$out/refresh-answers-capture.cs"
+EOF
+sed -e 's/@BASE@/db70207b8/' -e 's/@ANSWER@/refresh answer/g' -e 's/@DONE@/refreshed/' -e 's/@SUBJECT@/refreshes/' \
+  "$pieces/compare.sh" >> "$out/refresh-answers-compare"
+chmod +x "$out/refresh-answers-compare"
+
+cat > "$pieces/probe-runner.sh" <<'EOF'
 backend="$repo/Lighthouse.Backend"
 licence="$backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json"
 # The physical path: a symlink in it makes the compiler miss the .editorconfig sections and the build fails.
 work="$(cd "$(mktemp -d)" && pwd -P)"
 trap 'rm -rf "$work"' EXIT INT TERM
-rerun="Rerun with: bash Scripts/examine/build-examine-commands, then bash Scripts/examine/bin/forecast-triggers-show"
+rerun="Rerun with: bash Scripts/examine/build-examine-commands, then bash Scripts/examine/bin/@NAME@"
 # The backend references the migration assemblies by path, so they are built first.
 { dotnet build "$backend/Lighthouse.Migrations.Sqlite" -nologo -v quiet \
   && dotnet build "$backend/Lighthouse.Migrations.Postgres" -nologo -v quiet \
@@ -482,7 +599,343 @@ if ! grep -q '^VERDICT:' "$work/result.txt" 2>/dev/null; then
 fi
 exit "$status"
 EOF
+# The trigger probe is committed next to this script; the copy in bin names this checkout's backend.
+sed "s|@BACKEND@|$repo/Lighthouse.Backend|" "$repo/Scripts/examine/forecast-triggers-show.cs" > "$out/forecast-triggers-show.cs"
+cat > "$out/forecast-triggers-show" <<EOF
+#!/usr/bin/env bash
+# Shows, on demo data and through the public API, two things the forecasts do on their own: (1) a Team refresh
+# makes every Portfolio the Team serves forecast again, and (2) a restart makes the next forecast compute again,
+# because the start-up seeding forgets what the stored forecasts were computed from. It starts this checkout's
+# backend in-process on a fresh database, loads the smallest demo scenario with Teams and Portfolios, and reads
+# the refresh history (Type Forecast, Portfolio id, ExecutedAt, Skipped). For (2) it asks every Portfolio to
+# forecast on unchanged data by sending the Feature-order setting back unchanged, restarts the backend on the
+# same database and asks again: before the restart that round is Skipped=true, after it Skipped=false.
+# Prints one line per observation and a last VERDICT line; exit 0 and "OBSERVED" only when both were seen.
+# The Feature-order setting is premium, so (2) needs the premium licence file the backend tests use.
+# Usage: forecast-triggers-show   (takes about 1 to 3 minutes)
+set -uo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+repo="$repo"
+driver="$out/forecast-triggers-show.cs"
+EOF
+sed 's/@NAME@/forecast-triggers-show/g' "$pieces/probe-runner.sh" >> "$out/forecast-triggers-show"
 chmod +x "$out/forecast-triggers-show"
+
+# The reactions probe is put together like the comparison drivers; the copy in bin names this checkout's backend.
+{
+  cat "$pieces/project.cs"
+  cat <<'EOF'
+// Shows, read through the public API on demo data, which Work Items reactions run around a Team refresh.
+// It starts the checkout's backend in this process on a database of its own, loads the smallest demo scenario
+// with Teams, refreshes a Team, changes what its connection downloads, and deletes the Team, reading the
+// refresh history after each step. A reaction no public answer can show is named as not observable.
+// Arguments: <work-folder> <result-file> [licence-file]
+// Writes one line per reaction and a last VERDICT line to the result file; exit 0 only when every observable
+// reaction was observed.
+using System.Globalization;
+using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Mvc.Testing;
+
+var workDir = args[0];
+var report = new Report(args[1]);
+var licence = args.Length > 2 && File.Exists(args[2]) ? args[2] : null;
+Directory.CreateDirectory(workDir);
+
+Environment.SetEnvironmentVariable("Database__Provider", "sqlite");
+Environment.SetEnvironmentVariable("Database__ConnectionString", $"Data Source={Path.Combine(workDir, "LighthouseAppContext.db")}");
+Environment.SetEnvironmentVariable("Encryption__KeyStorePath", Path.Combine(workDir, "keys"));
+Environment.SetEnvironmentVariable("Encryption__StartEvenIfNothingStoredCanBeRead", "true");
+Environment.SetEnvironmentVariable("Serilog__WriteTo__0__Args__path", Path.Combine(workDir, "logs", "log-.txt"));
+Environment.SetEnvironmentVariable("RateLimits__Enabled", "false");
+Environment.SetEnvironmentVariable("Lighthouse__TimeZone", "UTC");
+
+const string Rerun = "Rerun with: bash Scripts/examine/build-examine-commands, then bash Scripts/examine/bin/refresh-reactions-show.";
+
+string[] notObservable =
+[
+    "Work Item becomes blocked opens a blocked period",
+    "Work Item is no longer blocked closes its blocked period",
+    "Feature becomes blocked opens a blocked period",
+    "Feature is no longer blocked closes its blocked period",
+];
+
+await using var lighthouse = new Instance();
+try
+{
+    await lighthouse.Start();
+    await lighthouse.ImportLicence(licence, report);
+    var (scenarioId, scenarioTitle) = await lighthouse.SmallestScenarioWithTeams();
+    await lighthouse.LoadScenario(scenarioId);
+    report.Line($"demo data: scenario {scenarioId} \"{scenarioTitle}\" loaded and every update finished");
+    var team = await lighthouse.FirstTeam();
+
+    var seen = new List<bool>
+    {
+        await ObserveTheTeamRefresh(team),
+        await ObserveTheFetchShapeTrigger(team),
+        await ObserveTheRefreshHistoryCleanup(team),
+    };
+    NameWhatIsNotObservable();
+
+    var observed = seen.All(s => s);
+    report.Verdict(observed, observed
+        ? $"all {seen.Count} observable reactions were seen through the public API; {notObservable.Length} are not observable, see above"
+        : "an observable reaction was not seen; the NOT OBSERVED lines above say what was missing. " + Rerun);
+    return observed ? 0 : 1;
+}
+catch (Exception failure)
+{
+    report.Verdict(false, $"the run stopped: {failure.Message}. Nothing after this point was observed. " +
+        "Check that the backend starts from the checkout and that the demo data files are present; " + Rerun);
+    return 1;
+}
+
+async Task<bool> ObserveTheTeamRefresh(TeamUnderTest team)
+{
+    var requestedAt = DateTime.UtcNow;
+    await lighthouse.Send(HttpMethod.Post, $"/api/v1/teams/{team.Id}");
+    await lighthouse.WaitUntilNothingIsUpdating();
+    var row = (await lighthouse.TeamRefreshes(team.Id)).Where(at => at > requestedAt).Order().FirstOrDefault();
+    var inProgress = await lighthouse.Count($"/api/v1/teams/{team.Id}/metrics/wip?asOfDate={DateTime.UtcNow:yyyy-MM-dd}");
+    var blocked = await lighthouse.Count($"/api/v1/teams/{team.Id}/metrics/blockedItemsAtDate?date={DateTime.UtcNow:yyyy-MM-dd}");
+    var what = $"Team {team.Id} \"{team.Name}\" refreshed at {Stamp(requestedAt)}";
+    if (row == default)
+    {
+        report.Line($"Team refresh stores its Work Items: NOT OBSERVED. {what}; no Team row in the refresh history after it. " + Rerun);
+        return false;
+    }
+    report.Line($"Team refresh stores its Work Items: OBSERVED. {what}; refresh history row at {Stamp(row)}; " +
+        $"{inProgress} Work Items in progress, {blocked} of them blocked");
+    return true;
+}
+
+// Adding a field to the connection changes what its Teams download, which the connection save announces; the
+// Work Items reaction to that announcement is the only thing that refreshes the Teams after the save.
+async Task<bool> ObserveTheFetchShapeTrigger(TeamUnderTest team)
+{
+    var connection = await lighthouse.Get($"/api/v1/worktrackingsystemconnections/{team.ConnectionId}");
+    connection["additionalFieldDefinitions"]!.AsArray().Add(new JsonObject
+    {
+        ["id"] = -1,
+        ["displayName"] = "Refresh probe field",
+        ["reference"] = "RefreshProbeField",
+        ["isPredefined"] = false,
+    });
+    var savedAt = DateTime.UtcNow;
+    await lighthouse.Send(HttpMethod.Put, $"/api/v1/worktrackingsystemconnections/{team.ConnectionId}", connection);
+    var row = await lighthouse.TeamRefreshAfter(team.Id, savedAt);
+    var what = $"a field was added to connection {team.ConnectionId} at {Stamp(savedAt)}";
+    if (row is null)
+    {
+        report.Line($"changed download refreshes the connection's Teams: NOT OBSERVED. {what}; no refresh of Team {team.Id} followed. " + Rerun);
+        return false;
+    }
+    report.Line($"changed download refreshes the connection's Teams: OBSERVED. {what}; Team {team.Id} refreshed at {Stamp(row.Value)}");
+    return true;
+}
+
+async Task<bool> ObserveTheRefreshHistoryCleanup(TeamUnderTest team)
+{
+    var before = (await lighthouse.TeamRefreshes(team.Id)).Count;
+    await lighthouse.Send(HttpMethod.Delete, $"/api/v1/teams/{team.Id}");
+    var after = await lighthouse.TeamRefreshesOnceGone(team.Id);
+    var what = $"Team {team.Id} had {before} rows in the refresh history and was deleted";
+    if (before == 0 || after > 0)
+    {
+        report.Line($"deleted Team leaves the refresh history: NOT OBSERVED. {what}; {after} rows are left. " + Rerun);
+        return false;
+    }
+    report.Line($"deleted Team leaves the refresh history: OBSERVED. {what}; none are left");
+    return true;
+}
+
+void NameWhatIsNotObservable()
+{
+    foreach (var reaction in notObservable)
+    {
+        report.Line($"{reaction}: NOT OBSERVABLE, see the next line");
+    }
+    report.Line("why not observable: blocked periods are read only by answers about a past day, so a period opened or " +
+        "closed now shows nothing before tomorrow, and on demo data the demo blocked history is written as well; " +
+        "the refresh scenarios at the service port cover these reactions");
+}
+
+static string Stamp(DateTime instant) => instant.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+
+public sealed record TeamUnderTest(int Id, string Name, int ConnectionId);
+
+public sealed class Report(string path)
+{
+    public void Line(string text)
+    {
+        Console.WriteLine(text);
+        File.AppendAllText(path, text + "\n");
+    }
+
+    public void Verdict(bool observed, string why) =>
+        Line($"VERDICT: {(observed ? "OBSERVED" : "NOT OBSERVED")}, {why}");
+}
+
+public sealed class Instance : IAsyncDisposable
+{
+    private WebApplicationFactory<Lighthouse.Backend.Program>? factory;
+    private HttpClient? client;
+
+    private HttpClient Client => client ?? throw new InvalidOperationException("the backend was not started");
+
+    public async Task Start()
+    {
+        factory = new WebApplicationFactory<Lighthouse.Backend.Program>();
+        client = factory.CreateClient();
+        client.Timeout = TimeSpan.FromMinutes(2);
+        await Get("/api/v1/update/status");
+    }
+
+    public async Task ImportLicence(string? licence, Report report)
+    {
+        if (licence is null)
+        {
+            report.Line("licence: none, which the smallest demo scenario does not need");
+            return;
+        }
+        using var form = new MultipartFormDataContent();
+        form.Add(new ByteArrayContent(await File.ReadAllBytesAsync(licence)), "file", "licence.json");
+        var imported = await Client.PostAsync("/api/v1/license/import", form);
+        report.Line($"licence: premium licence imported ({(int)imported.StatusCode})");
+    }
+
+    public async Task<(int Id, string Title)> SmallestScenarioWithTeams()
+    {
+        var chosen = (await Get("/api/v1/demo/scenarios")).AsArray()
+            .Select(s => s!)
+            .Where(s => s["teams"]!.AsArray().Count > 0)
+            .OrderBy(s => s["teams"]!.AsArray().Count + s["projects"]!.AsArray().Count)
+            .ThenBy(s => s["id"]!.GetValue<int>())
+            .FirstOrDefault()
+            ?? throw new InvalidOperationException("no demo scenario has Teams; the demo data files may be missing");
+        return (chosen["id"]!.GetValue<int>(), chosen["title"]!.GetValue<string>());
+    }
+
+    public async Task LoadScenario(int id)
+    {
+        await Send(HttpMethod.Post, $"/api/v1/demo/scenarios/{id}/load");
+        await WaitUntilNothingIsUpdating();
+    }
+
+    public async Task<TeamUnderTest> FirstTeam()
+    {
+        var id = (await Get("/api/v1/teams")).AsArray().Select(t => t!["id"]!.GetValue<int>()).Min();
+        var settings = await Get($"/api/v1/teams/{id}/settings");
+        return new TeamUnderTest(id, settings["name"]!.GetValue<string>(), settings["workTrackingSystemConnectionId"]!.GetValue<int>());
+    }
+
+    public async Task Send(HttpMethod method, string path, JsonNode? body = null)
+    {
+        using var request = new HttpRequestMessage(method, path);
+        if (body is not null)
+        {
+            request.Content = new StringContent(body.ToJsonString(), System.Text.Encoding.UTF8, "application/json");
+        }
+        var answer = await Client.SendAsync(request);
+        if (!answer.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"{method} {path} answered {(int)answer.StatusCode} {await answer.Content.ReadAsStringAsync()}");
+        }
+    }
+
+    public async Task<int> Count(string path) => (await Get(path)).AsArray().Count;
+
+    /// <summary>When the refresh history says the Team was refreshed.</summary>
+    public async Task<List<DateTime>> TeamRefreshes(int teamId) =>
+        [.. (await Get("/api/v1/systeminfo/refreshlog")).AsArray()
+            .Select(r => r!)
+            .Where(r => IsTeamRefresh(r["type"]!) && r["entityId"]!.GetValue<int>() == teamId)
+            .Select(r => DateTime.Parse(r["executedAt"]!.GetValue<string>(), CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal))];
+
+    /// <summary>The first refresh of the Team after an instant, waiting a short while for it to be queued.</summary>
+    public async Task<DateTime?> TeamRefreshAfter(int teamId, DateTime since)
+    {
+        for (var i = 0; i < 20; i++)
+        {
+            await WaitUntilNothingIsUpdating();
+            var after = (await TeamRefreshes(teamId)).Where(at => at > since).Order().ToList();
+            if (after.Count > 0)
+            {
+                return after[0];
+            }
+            await Task.Delay(1000);
+        }
+        return null;
+    }
+
+    /// <summary>How many refresh history rows of the Team are left once the clean-up had a short while to run.</summary>
+    public async Task<int> TeamRefreshesOnceGone(int teamId)
+    {
+        var left = (await TeamRefreshes(teamId)).Count;
+        for (var i = 0; i < 20 && left > 0; i++)
+        {
+            await Task.Delay(1000);
+            left = (await TeamRefreshes(teamId)).Count;
+        }
+        return left;
+    }
+
+    public async Task WaitUntilNothingIsUpdating()
+    {
+        var quiet = 0;
+        for (var i = 0; i < 600 && quiet < 3; i++)
+        {
+            await Task.Delay(300);
+            var status = await Get("/api/v1/update/status");
+            quiet = status["hasActiveUpdates"]!.GetValue<bool>() ? 0 : quiet + 1;
+        }
+        if (quiet < 3)
+        {
+            throw new TimeoutException("updates were still running after 3 minutes");
+        }
+    }
+
+    public async Task<JsonNode> Get(string path) =>
+        JsonNode.Parse(await Client.GetStringAsync(path)) ?? throw new InvalidOperationException($"empty answer from {path}");
+
+    public async ValueTask DisposeAsync()
+    {
+        client?.Dispose();
+        client = null;
+        if (factory is not null)
+        {
+            await factory.DisposeAsync();
+            factory = null;
+        }
+    }
+
+    private static bool IsTeamRefresh(JsonNode type) =>
+        type.GetValueKind() == System.Text.Json.JsonValueKind.String
+            ? type.GetValue<string>() == "Team"
+            : type.GetValue<int>() == (int)Lighthouse.Backend.Models.RefreshType.Team;
+}
+EOF
+} | sed "s|@BACKEND@|$repo/Lighthouse.Backend|" > "$out/refresh-reactions-show.cs"
+cat > "$out/refresh-reactions-show" <<EOF
+#!/usr/bin/env bash
+# Shows, on demo data and through the public API, the Work Items reactions running around a Team refresh: the
+# refresh stores the Team's Work Items, a change to what the Team's connection downloads refreshes the Team
+# again, and deleting the Team removes its refresh history. It starts this checkout's backend in-process on a
+# fresh database and loads the smallest demo scenario with Teams. The reactions that open and close blocked
+# periods have no public answer that shows them on the day they run; they are named as not observable.
+# Prints one line per reaction and a last VERDICT line; exit 0 and "OBSERVED" only when every observable
+# reaction was seen.
+# Usage: refresh-reactions-show   (takes about 1 to 2 minutes)
+set -uo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+repo="$repo"
+driver="$out/refresh-reactions-show.cs"
+EOF
+sed 's/@NAME@/refresh-reactions-show/g' "$pieces/probe-runner.sh" >> "$out/refresh-reactions-show"
+chmod +x "$out/refresh-reactions-show"
 
 cat > "$out/backend-tests" <<EOF
 #!/usr/bin/env bash
