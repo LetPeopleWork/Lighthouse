@@ -59,8 +59,9 @@ jobs:
       - name: Sign on Linux
         if: runner.os == 'Linux'
         shell: bash
-        run: bash tools/codesign/sign-windows.sh "${{ inputs.version }}"
+        run: bash tools/codesign/sign-windows.sh "$VERSION"
         env:
+          VERSION: ${{ inputs.version }}
           YUBI_PIN: ${{ secrets.YUBI_PIN }}
 
       - name: Re-sign NSIS updater sig after code signing

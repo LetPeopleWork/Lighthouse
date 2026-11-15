@@ -6,17 +6,23 @@
 # Never add set -x here: it would print the PIN.
 set -euo pipefail
 
+# The PIN moves to a shell variable that is not exported, and YUBI_PIN leaves the environment before
+# any other program starts, so no child process can read the PIN from its environment.
+pin="${YUBI_PIN:-}"
+unset YUBI_PIN
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 version="${1:-}"
 usb_sysfs="${CODESIGN_USB_SYSFS:-/sys/bus/usb/devices}"
 reader_wait="${CODESIGN_READER_WAIT:-10}"
 yubico_vendor=1050
-opensc_module=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so
+opensc_module="${PKCS11_PROVIDER_MODULE:-/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so}"
 intermediate_cert="$script_dir/SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt"
 plug_in_message="Plug in the YubiKey and re-run this job."
 
-# The pkcs11 provider reads its module from this variable; the sign config adds the provider settings.
-# Both are set here, not in the image, so other jobs on this runner keep OpenSSL's stock behaviour.
+# The pkcs11 provider reads its module from this variable, which the image sets; it is exported again
+# so that the -pkcs11module argument and the provider always name the same module. The sign config
+# that loads the provider is set only here, so other jobs on this runner keep OpenSSL's stock behaviour.
 export PKCS11_PROVIDER_MODULE="$opensc_module"
 export OPENSSL_CONF=/etc/ssl/openssl-pkcs11.cnf
 
@@ -28,7 +34,7 @@ fail() {
 check_arguments() {
   if [ -z "$version" ]; then fail "no version given. Call: bash tools/codesign/sign-windows.sh VERSION"; fi
   # An empty PIN sent to the key counts as a wrong one and uses up one of its few PIN retries.
-  if [ -z "${YUBI_PIN:-}" ]; then fail "YUBI_PIN is empty. Set it from the YUBI_PIN secret in the step env."; fi
+  if [ -z "$pin" ]; then fail "YUBI_PIN is empty. Set it from the YUBI_PIN secret in the step env."; fi
   if ! [[ $reader_wait =~ ^[0-9]+$ ]]; then fail "CODESIGN_READER_WAIT must be a whole number of seconds, not '$reader_wait'."; fi
 }
 
@@ -97,7 +103,7 @@ sign_file() {
   local file=$1
   echo "Signing $file"
   # The PIN goes on stdin only: an argument is visible to every process on the machine.
-  if ! printf '%s' "$YUBI_PIN" | osslsigncode sign \
+  if ! printf '%s' "$pin" | osslsigncode sign \
       -provider pkcs11 \
       -pkcs11module "$opensc_module" \
       -key "pkcs11:id=%01;type=private" \
