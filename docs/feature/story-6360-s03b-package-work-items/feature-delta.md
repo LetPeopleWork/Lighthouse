@@ -511,3 +511,40 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 - Entity, event and DTO relocation: **deferred** (S04b, S12c, S13); migration snapshots carry entity names.
 - DI extension `AddWorkItems`: **deferred** (S09a); handler order is behaviour.
 - Not needed: outbox, unit of work, value objects, optimistic concurrency, strategy (no data or variation changes).
+
+## Wave: DEVOPS / [REF] Platform lens and usage data (2026-11-15)
+
+- **Platform risk: none material.** Nothing is deployed differently: no new env var, chart value, credential,
+  workflow, container or migration (D-0). Standalone, Docker and Helm builds are unchanged.
+- **CI:** no workflow change. Features B and C edit `Program.cs` (`using` lines; C1 adds one handler registration),
+  so their pushes run the full CI backend suite, live tracker tests included. A red live-tracker test there is
+  checked against the environmental signatures in CLAUDE.md before it is called a regression.
+- **CI test selection (found at DEVOPS, measured 2026-11-15):** `Scripts/test-selection/path-classifier.sh` line 13
+  selects the Jira tests by path, and one of its paths is
+  `Services/Implementation/WorkItems/FetchFingerprint.cs`. `Scripts/test-selection/test-path-classifier.sh` lines
+  135 to 146 pin that path. The slice that moves `FetchFingerprint` (B1) also updates both files to the new path,
+  or the Jira tests stop running when the fingerprint changes. The `Parents/` entries stay valid: the parent
+  selector stays (D-1).
+- **Observability:** log categories change with the namespace (`Lighthouse.Backend.Services.Implementation.WorkItems`
+  and the other moved folders → `Lighthouse.Backend.Modules.WorkItems.*`). No appsettings, workflow or Stryker config
+  filters on the old names (checked 2026-11-15 with `git grep` over json, yml, ps1, sh, props and config files; the
+  only hits are the test-selection scripts above). Moving a type renames its `ILogger<T>` category, so the move
+  slices grep full type names in strings too. That is a log-category change, not user-facing behaviour; no release
+  note.
+- **Rollback:** revert the commit range; no data to undo.
+- **Usage-data event: N/A, because the Story is behaviour-free.** It adds nothing a user can use, so there is nothing
+  to count. No `UsageDataEventName` entry, no `docs/settings/usagedata.md` line.
+
+## Wave: DELIVER / [REF] Start of DELIVER (maintainer, 2026-11-15)
+
+- **UI sketches: N/A, because nothing a user sees changes** (behaviour-free; routes, DTOs and pixels unchanged).
+- **Architecture review owed: none**; DESIGN was reviewed by the maintainer at hold 1.
+- **AFK options:** slice wrap-up = refactor + review; push per slice with CI watched; no 5-minute review window
+  (improvement work); rebase onto `origin/main` allowed for this session.
+- **Rigor profile:**
+
+| nwdes feature | Slices | Profile | Crafter, acceptance designer | Reviewers, EXAMINE |
+|---|---|---|---|---|
+| A rules first | A1–A3 | `thorough` | opus | sonnet |
+| B the move | B1–B3 | `standard` | sonnet | haiku |
+| C edge and rules | C1–C3 | `thorough` | opus | sonnet |
