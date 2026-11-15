@@ -735,4 +735,82 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+unmet
+
+#### Observations
+
+```text
+Probe frontend-tests with path fragments ReportsPage.removal,ReportsPage.combinedPdf,RefinementView.comments,NoPdfDialog,printFailures: exit 0, 5 files, 42 passed, 0 failed (removal 6, combinedPdf 13, RefinementView.comments 7, NoPdfDialog 8, printFailures 8). Per-test ms durations shown for one run only; no before-commit run, no repeated runs, so no baseline per-test median (P1, E1) is observable.
+```
+
+```text
+Not probed: E2 (test-to-replacement mapping needs removed/moved test list from before-commit, not public); E3 (slice-S1/S2/S3-breaks.tsv not public, break-and-run not performed); E1 (measure-slice.sh withheld from examiner by instruction, not run; no 4-run median before vs after); E4 (no before-commit or pixel capture); E5 (refinement loading/failure rows not observed, no before comparison). Public read projection is empty: nwdes examine read returned no public documents for the feature docs path.
+```
+
+observation_gap
+
+### E2
+
+unmet
+
+#### Observations
+
+```text
+Probe frontend-tests with path fragments ReportsPage.removal,ReportsPage.combinedPdf,RefinementView.comments,NoPdfDialog,printFailures: exit 0, 5 files, 42 passed, 0 failed (removal 6, combinedPdf 13, RefinementView.comments 7, NoPdfDialog 8, printFailures 8). Per-test ms durations shown for one run only; no before-commit run, no repeated runs, so no baseline per-test median (P1, E1) is observable.
+```
+
+```text
+Not probed: E2 (test-to-replacement mapping needs removed/moved test list from before-commit, not public); E3 (slice-S1/S2/S3-breaks.tsv not public, break-and-run not performed); E1 (measure-slice.sh withheld from examiner by instruction, not run; no 4-run median before vs after); E4 (no before-commit or pixel capture); E5 (refinement loading/failure rows not observed, no before comparison). Public read projection is empty: nwdes examine read returned no public documents for the feature docs path.
+```
+
+observation_gap
+
+### E3
+
+unmet
+
+#### Observations
+
+```text
+Not probed: E2 (test-to-replacement mapping needs removed/moved test list from before-commit, not public); E3 (slice-S1/S2/S3-breaks.tsv not public, break-and-run not performed); E1 (measure-slice.sh withheld from examiner by instruction, not run; no 4-run median before vs after); E4 (no before-commit or pixel capture); E5 (refinement loading/failure rows not observed, no before comparison). Public read projection is empty: nwdes examine read returned no public documents for the feature docs path.
+```
+
+observation_gap
+
+### E4
+
+unmet
+
+#### Observations
+
+```text
+Probe frontend-tests with path fragments ReportsPage.removal,ReportsPage.combinedPdf,RefinementView.comments,NoPdfDialog,printFailures: exit 0, 5 files, 42 passed, 0 failed (removal 6, combinedPdf 13, RefinementView.comments 7, NoPdfDialog 8, printFailures 8). Per-test ms durations shown for one run only; no before-commit run, no repeated runs, so no baseline per-test median (P1, E1) is observable.
+```
+
+```text
+Probe frontend-tests with fragments Reports,RefinementView and name fragment load: exit 0, 23 files, 66 passed, 0 failed, 1117 skipped. Passing rows show loading and could-not-load looks for ReportsPage (loading look; cannot-load says so, no empty table), ReportsTab, BulkReportWizard, ReportView, ReportPrintPage, DataOverviewTable. Zero RefinementView rows matched, so the refinement view's loading and failure looks were not observed. Current-tree only; no before-commit comparison.
+```
+
+```text
+Not probed: E2 (test-to-replacement mapping needs removed/moved test list from before-commit, not public); E3 (slice-S1/S2/S3-breaks.tsv not public, break-and-run not performed); E1 (measure-slice.sh withheld from examiner by instruction, not run; no 4-run median before vs after); E4 (no before-commit or pixel capture); E5 (refinement loading/failure rows not observed, no before comparison). Public read projection is empty: nwdes examine read returned no public documents for the feature docs path.
+```
+
+observation_gap
+
+### E5
+
+unmet
+
+#### Observations
+
+```text
+Probe frontend-tests with fragments Reports,RefinementView and name fragment load: exit 0, 23 files, 66 passed, 0 failed, 1117 skipped. Passing rows show loading and could-not-load looks for ReportsPage (loading look; cannot-load says so, no empty table), ReportsTab, BulkReportWizard, ReportView, ReportPrintPage, DataOverviewTable. Zero RefinementView rows matched, so the refinement view's loading and failure looks were not observed. Current-tree only; no before-commit comparison.
+```
+
+```text
+Not probed: E2 (test-to-replacement mapping needs removed/moved test list from before-commit, not public); E3 (slice-S1/S2/S3-breaks.tsv not public, break-and-run not performed); E1 (measure-slice.sh withheld from examiner by instruction, not run; no 4-run median before vs after); E4 (no before-commit or pixel capture); E5 (refinement loading/failure rows not observed, no before comparison). Public read projection is empty: nwdes examine read returned no public documents for the feature docs path.
+```
+
+observation_gap
