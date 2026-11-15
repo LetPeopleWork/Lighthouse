@@ -621,6 +621,14 @@ Membership from D-1: Moves = the 27 core files' types (WorkItemService, IWorkIte
 Per-type kernel reach of the Work Items Models types (E5) is measured with IlDependencies during S2 and reported in the slice hand-back for the host to record in the feature workspace as the S04b list; it is not a test, because no Models type moves in S03b.
 ```
 
+```text
+Candidate admission, measured from the IL by S2: RefreshLogService and IRefreshLogService move (Application). OrphanedFeatureCleanupService stays: it reaches Data.LighthouseAppContext and EF Core directly; owner Work Items once it reads Features through a repository port. Amended admission rule: an interface whose only implementation stays, stays with it, because a port does not move ahead of the class that implements it (otherwise a Services class implements a Work Items module port, and PortfolioUpdater and Program reach into the module for a service that is not yet the module's). So IOrphanedFeatureCleanupService is on Stays with the same owner as its implementation, although its own IL edges reach only System. This replaces the provisional candidate reading in the earlier S2 membership decision.
+```
+
+```text
+The IL found six top-level types in the moving files that D-1 does not name: DependenciesAsRead, DependencyLoop, DependencyLoops, RecordPlacement, DependencyHonourInput, FeatureDependencyFacts. All six are on Moves with the file that declares them.
+```
+
 ##### Constraints
 
 None.

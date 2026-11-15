@@ -80,6 +80,86 @@
 "user_result": "F117"
 }
 ],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F151",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::TheWorkItemsTypesInTheCompiledCode_AreExactlyTheTypesListedToMoveOrToStay"
+},
+"expected": "F170",
+"stimulus": "F148",
+"user_result": "F150"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F155",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::AMadeUpTypeInAWorkItemsNamespace_IsNamedAsUnlisted_AndANamesakeOutsideIsNot"
+},
+"expected": "F153",
+"stimulus": "F152",
+"user_result": "F154"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F159",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted"
+},
+"expected": "F157",
+"stimulus": "F156",
+"user_result": "F158"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F163",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::ARefreshLogCandidate_MovesExactlyWhenItAndTheImplementationsOfItReachOnlyWhatWorkItemsMayReach"
+},
+"expected": "F172",
+"stimulus": "F171",
+"user_result": "F173"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F167",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::EveryTypeThatStays_NamesTheContextThatKeepsIt"
+},
+"expected": "F165",
+"stimulus": "F164",
+"user_result": "F166"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F177",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::AnInterfaceWithCleanEdges_StaysWhenItsOnlyImplementationStays_AndMovesWhenItsImplementationMoves"
+},
+"expected": "F175",
+"stimulus": "F174",
+"user_result": "F176"
+}
+],
 "S3": [
 {
 "covers": [
@@ -164,7 +244,7 @@
 "counters": {
 "D": 5,
 "E": 4,
-"F": 147,
+"F": 177,
 "K": 4,
 "P": 3,
 "S": 3,
@@ -461,7 +541,9 @@
 "records": {
 "decisions": [
 "F56",
-"F57"
+"F57",
+"F168",
+"F169"
 ],
 "not_applicable": [
 {
@@ -660,9 +742,35 @@
 "F145": "Each list takes in a module Dependencies sub-folder and keeps the old Dependencies folder, and takes in no file of the module outside the Dependencies sub-folders and none of the namesake module",
 "F146": "The dependency word and licence scans keep reading the dependency files after they move into Work Items, and do not start scanning or exempting the Work Item service",
 "F147": "A key names a deeper or oddly named folder below a Dependencies sub-folder, or names only one of the two layers while the dependency files land in the other; feature B's real-code scans catch a file left unread, not this test",
+"F148": "Read the compiled Lighthouse code and collect every top-level type in a Work Items namespace, old or new, plus the six Work Items reactions and the four refresh-log candidates found by name",
 "F15": "Made-up types live in the test assembly below Lighthouse.Backend.Modules.WorkItems (for example Lighthouse.Backend.Modules.WorkItems.Application.WorkItemsFixtures), with a compliant twin each and a namesake just outside the module (Lighthouse.Backend.Modules.WorkItemsFixtures), the S03c way: the widened patterns end in (\\.|$), so only a type below Modules.WorkItems proves the real widened constant.",
+"F150": "The maintainer has one fixed list of what moves into Modules/WorkItems and what stays behind, measured from the code",
+"F151": "a type listed on both lists at once; caught by NoTypeIsListedBothToMoveAndToStay",
+"F152": "Add a made-up type under Modules.WorkItems, another under the old Work Items namespace, a namesake in Modules.WorkItemsMembershipFixtures and a nested type, then compare with the lists",
+"F153": "Both made-up types are named as not on the list; the namesake and the nested type are not named; no listed type is reported missing",
+"F154": "A type that joins Work Items during the move without being listed fails the test by name",
+"F155": "a made-up type that only another assembly holds; the production collection itself is unchanged by it",
+"F156": "Rename a listed type in the collected set, as a move that also renames would",
+"F157": "The old name is named as listed but missing and the new name as not on the list",
+"F158": "A type that disappears or is renamed during the move fails the test by name until the list follows",
+"F159": "a move that keeps the short name and changes only the namespace; correct by design, the lists hold before and after the move",
 "F16": "Formal verification: no checker selected, no model written or run. No state, transition, protocol, concurrency or recovery behaviour changes. Rule and membership claims are finite and decided exactly by the compiled IL with a made-up offender as falsifier; the refresh-preservation claim compares the code with itself, so literal expected values at the service port are the honest falsifier. Liveness not applicable: synchronous rule evaluation and a one-shot capture have no progress property. Property-based testing not applicable: every law is a finite enumeration of rules, types, refresh scenarios and named endpoints; the test-writing skill decides test density.",
+"F163": "a candidate reaching a forbidden type only in a catch clause, an event or a named attribute argument, which the IL reader does not see; the failure text says so",
+"F164": "Read every entry of the Stays list",
+"F165": "Each entry names the context that keeps the type, and no type is on both lists",
+"F166": "Every Work Items type left behind has a named owner who will move it later",
+"F167": "an owner text that names no real context, such as one word; judged by review",
+"F168": "Candidate admission, measured from the IL by S2: RefreshLogService and IRefreshLogService move (Application). OrphanedFeatureCleanupService stays: it reaches Data.LighthouseAppContext and EF Core directly; owner Work Items once it reads Features through a repository port. Amended admission rule: an interface whose only implementation stays, stays with it, because a port does not move ahead of the class that implements it (otherwise a Services class implements a Work Items module port, and PortfolioUpdater and Program reach into the module for a service that is not yet the module's). So IOrphanedFeatureCleanupService is on Stays with the same owner as its implementation, although its own IL edges reach only System. This replaces the provisional candidate reading in the earlier S2 membership decision.",
+"F169": "The IL found six top-level types in the moving files that D-1 does not name: DependenciesAsRead, DependencyLoop, DependencyLoops, RecordPlacement, DependencyHonourInput, FeatureDependencyFacts. All six are on Moves with the file that declares them.",
 "F17": "Carriers, all test-side: rule verdicts are KernelRuleVerdict, InboundVerdict and OutboundVerdict owned by ModuleRules and KernelRules; dependency facts are IlDependent from IlDependencies; per-fixture state is the lazily read Mono.Cecil ModuleDefinition disposed at one-time teardown; the refresh oracle holds a ServicePortHarness per scenario; the compare script holds captured bodies in a temp directory. Layers: application rules only; no adapter, infrastructure or recovery layer changes.",
+"F170": "The collected types are exactly the 41 types listed to move plus the 5 listed to stay, compared by name both ways",
+"F171": "Judge each of the four refresh-log candidates by its compiled outbound edges and, for an interface, by whether its only implementation stays",
+"F172": "RefreshLogService and IRefreshLogService reach only the kernel, repositories, settings, logging and Work Items and are on Moves; OrphanedFeatureCleanupService reaches the database context, EF Core and the service scope factory and is on Stays; IOrphanedFeatureCleanupService reaches nothing outside but its only implementation stays, so it is on Stays with the same owner",
+"F173": "Which refresh-log services move is decided by what their compiled code reaches, a port stays with an implementation that stays, and a change in either fails the test naming the cause",
+"F174": "Judge a made-up port with clean edges whose only implementation reads the database context, and a made-up port whose implementation reaches nothing outside",
+"F175": "The first port reaches nothing outside itself, is held back by its implementation by name and is not admitted; the second port is admitted",
+"F176": "An interface never moves into Modules/WorkItems ahead of the implementation it belongs to",
+"F177": "an interface with two implementations of which only one stays; it is admitted, because the amended rule holds a port back only when its only implementation stays",
 "F18": "Fixture types placed under Lighthouse.Backend.Modules in the test assembly must not reach the API, Data or EF Core, nor be domain-event handlers, because ApplicationCoreRulesReachModulesArchUnitTest runs the core rules over the test assembly with the Services-or-Modules pattern.",
 "F19": "Examiner budget about 5 minutes wall and 3 probing calls reading only the output tail: each public command prints compact per-line results and a last VERDICT line, never raw dotnet output.",
 "F2": "The Work Items move (features B and C) can start with every rule already watching the new place, a fixed list of what moves, and a capture that proves a refresh did not change",

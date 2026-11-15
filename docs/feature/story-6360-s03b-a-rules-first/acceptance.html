@@ -309,6 +309,164 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the compiled Lighthouse code and collect every top-level type in a Work Items namespace, old or new, plus the six Work Items reactions and the four refresh-log candidates found by name
+</code></pre>
+
+<pre><code>The collected types are exactly the 41 types listed to move plus the 5 listed to stay, compared by name both ways
+</code></pre>
+
+<pre><code>The maintainer has one fixed list of what moves into Modules/WorkItems and what stays behind, measured from the code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::TheWorkItemsTypesInTheCompiledCode_AreExactlyTheTypesListedToMoveOrToStay</p>
+
+<pre><code>a type listed on both lists at once; caught by NoTypeIsListedBothToMoveAndToStay
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Add a made-up type under Modules.WorkItems, another under the old Work Items namespace, a namesake in Modules.WorkItemsMembershipFixtures and a nested type, then compare with the lists
+</code></pre>
+
+<pre><code>Both made-up types are named as not on the list; the namesake and the nested type are not named; no listed type is reported missing
+</code></pre>
+
+<pre><code>A type that joins Work Items during the move without being listed fails the test by name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::AMadeUpTypeInAWorkItemsNamespace_IsNamedAsUnlisted_AndANamesakeOutsideIsNot</p>
+
+<pre><code>a made-up type that only another assembly holds; the production collection itself is unchanged by it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Rename a listed type in the collected set, as a move that also renames would
+</code></pre>
+
+<pre><code>The old name is named as listed but missing and the new name as not on the list
+</code></pre>
+
+<pre><code>A type that disappears or is renamed during the move fails the test by name until the list follows
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted</p>
+
+<pre><code>a move that keeps the short name and changes only the namespace; correct by design, the lists hold before and after the move
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Judge each of the four refresh-log candidates by its compiled outbound edges and, for an interface, by whether its only implementation stays
+</code></pre>
+
+<pre><code>RefreshLogService and IRefreshLogService reach only the kernel, repositories, settings, logging and Work Items and are on Moves; OrphanedFeatureCleanupService reaches the database context, EF Core and the service scope factory and is on Stays; IOrphanedFeatureCleanupService reaches nothing outside but its only implementation stays, so it is on Stays with the same owner
+</code></pre>
+
+<pre><code>Which refresh-log services move is decided by what their compiled code reaches, a port stays with an implementation that stays, and a change in either fails the test naming the cause
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::ARefreshLogCandidate_MovesExactlyWhenItAndTheImplementationsOfItReachOnlyWhatWorkItemsMayReach</p>
+
+<pre><code>a candidate reaching a forbidden type only in a catch clause, an event or a named attribute argument, which the IL reader does not see; the failure text says so
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read every entry of the Stays list
+</code></pre>
+
+<pre><code>Each entry names the context that keeps the type, and no type is on both lists
+</code></pre>
+
+<pre><code>Every Work Items type left behind has a named owner who will move it later
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::EveryTypeThatStays_NamesTheContextThatKeepsIt</p>
+
+<pre><code>an owner text that names no real context, such as one word; judged by review
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Judge a made-up port with clean edges whose only implementation reads the database context, and a made-up port whose implementation reaches nothing outside
+</code></pre>
+
+<pre><code>The first port reaches nothing outside itself, is held back by its implementation by name and is not admitted; the second port is admitted
+</code></pre>
+
+<pre><code>An interface never moves into Modules/WorkItems ahead of the implementation it belongs to
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs::AnInterfaceWithCleanEdges_StaysWhenItsOnlyImplementationStays_AndMovesWhenItsImplementationMoves</p>
+
+<pre><code>an interface with two implementations of which only one stays; it is admitted, because the amended rule holds a port back only when its only implementation stays
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h3>S3</h3>
 
 <h5>Covers</h5>
