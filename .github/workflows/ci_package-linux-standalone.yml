@@ -29,6 +29,7 @@ jobs:
             ca-certificates \
             curl \
             wget \
+            file \
             git \
             jq \
             binutils \
