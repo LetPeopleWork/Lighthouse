@@ -13,7 +13,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
     /// <summary>
     /// Where the forecast asks for its numbers, rather than what comes back. The draw source answers by

@@ -13,7 +13,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.Policies
 {
     /// <summary>
     /// The simulation draws each day's throughput from the first few Features in order, so handing the

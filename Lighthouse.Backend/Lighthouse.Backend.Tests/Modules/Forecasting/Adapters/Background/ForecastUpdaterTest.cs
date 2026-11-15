@@ -21,7 +21,7 @@ using Moq;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
 {
     public class ForecastUpdaterTest : UpdateServiceTestBase
     {

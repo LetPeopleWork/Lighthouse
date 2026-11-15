@@ -13,7 +13,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Domain
 {
     /// <summary>
     /// A simulated run ends when the work is done, when nothing is left that anybody could start, or when it

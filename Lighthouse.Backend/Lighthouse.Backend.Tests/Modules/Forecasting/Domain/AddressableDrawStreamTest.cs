@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Domain
 {
     /// <summary>
     /// The numbers a forecast draws from, written out in Lighthouse rather than taken from the runtime.

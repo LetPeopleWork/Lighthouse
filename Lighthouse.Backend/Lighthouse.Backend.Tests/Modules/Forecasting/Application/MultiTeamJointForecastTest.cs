@@ -12,7 +12,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
     // Story #5569, Tier 3 of the slice-01 test strategy: real Monte Carlo through the real aggregation.
     // Throughput [1, 3] with 3 items has the closed form {1: .50, 2: .25, 3: .25} per team, so the joint

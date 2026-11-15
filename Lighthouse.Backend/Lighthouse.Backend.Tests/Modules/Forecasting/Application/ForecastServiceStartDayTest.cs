@@ -13,7 +13,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
     /// <summary>
     /// The day the simulation begins work on a Feature, read off forecasts that really ran.

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
     /// <summary>
     /// What waiting on another Feature does to a date, read off forecasts that really ran. Every comparison

@@ -3,7 +3,7 @@ using Lighthouse.Backend.Modules.Forecasting.Adapters.Background;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
 {
     public class ForecastInputsForgottenAtStartSeederTests
     {

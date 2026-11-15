@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Domain
 {
     [TestFixture]
     public class RealityCheckVerdictPolicyTest

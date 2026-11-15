@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.Policies
 {
     public class TeamDeletedForecastRetriggerHandlerTest
     {

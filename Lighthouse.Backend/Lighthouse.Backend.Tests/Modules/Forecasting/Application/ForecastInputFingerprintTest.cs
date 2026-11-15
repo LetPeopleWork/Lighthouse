@@ -11,7 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Tests.API;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
     /// <summary>
     /// The fingerprint decides whether a Portfolio forecast runs at all, so it is tested against both ways it

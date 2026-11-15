@@ -4,7 +4,7 @@ using Lighthouse.Backend.Modules.Forecasting.Application;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
     /// <summary>
     /// Every participant here blocks on a latch, and each one is a lane thread of its own, so no shared pool

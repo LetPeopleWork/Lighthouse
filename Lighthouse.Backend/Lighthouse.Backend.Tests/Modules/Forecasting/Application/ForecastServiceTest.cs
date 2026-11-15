@@ -14,7 +14,7 @@ using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
     public class ForecastServiceTest
     {

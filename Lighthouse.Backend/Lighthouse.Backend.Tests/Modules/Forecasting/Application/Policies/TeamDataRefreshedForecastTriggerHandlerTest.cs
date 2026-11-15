@@ -6,7 +6,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.Policies
 {
     public class TeamDataRefreshedForecastTriggerHandlerTest
     {

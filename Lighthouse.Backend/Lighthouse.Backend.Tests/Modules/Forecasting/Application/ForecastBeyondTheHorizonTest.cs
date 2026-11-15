@@ -4,7 +4,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
     /// <summary>
     /// A simulated run that does not finish within the horizon still counts. It counts as beyond the

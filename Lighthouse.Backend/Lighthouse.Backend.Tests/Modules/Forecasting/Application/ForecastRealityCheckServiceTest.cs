@@ -9,7 +9,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
     [TestFixture]
     public class ForecastRealityCheckServiceTest
