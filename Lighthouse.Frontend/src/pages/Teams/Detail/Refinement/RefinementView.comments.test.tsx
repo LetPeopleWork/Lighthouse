@@ -28,11 +28,8 @@ import {
 } from "../../../../tests/RefinementTabTestKit";
 
 /**
- * How the Refinement tab wires comments, conditions and questions: the condition prompt of a "Yes, if…" and
- * the name asked first, a comment sent from a Work Item's votes and comments, the log read again for the
- * Work Item now open, and the marks in the Votes and Warnings cells. The rules behind each wiring are proven
- * where they live: ConditionPrompt, VotesAndCommentsDialog, useVoteCasting, useSizingLog, useCommentAdding
- * and sizingLogWording.
+ * Only the wiring of comments and conditions on the tab is rendered here. Each rule behind it is proven on
+ * the unit that owns it, so a test here needs one render and no more.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
@@ -95,8 +92,6 @@ const advancedReportingWithComments = () =>
 		}),
 		aRow(API_VERSIONING, "Public API versioning", "Analysing"),
 	]);
-
-const openTheLogOf = openTheVotesAndCommentsOf;
 
 /** Starts a comment from the Work Item's votes and comments, wherever the comment box then opens. */
 const startACommentOn = async (
@@ -269,7 +264,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			within(theOpenDialog()).getByRole("button", { name: "Close" }),
 		);
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-		const apiVersioning = await openTheLogOf(user, API_VERSIONING);
+		const apiVersioning = await openTheVotesAndCommentsOf(user, API_VERSIONING);
 		expect(await within(apiVersioning).findByText("Mo Okafor")).toBeVisible();
 
 		await actAndSettle(() => {
@@ -375,7 +370,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 			sizingLogService,
 		);
 
-		await openTheLogOf(user, ADVANCED_REPORTING);
+		await openTheVotesAndCommentsOf(user, ADVANCED_REPORTING);
 
 		await waitFor(() =>
 			expect(sizingLogService.getLog).toHaveBeenCalledWith(
