@@ -40,3 +40,24 @@ Rigor: standard (Sonnet crafter, acceptance designer and architect; Haiku review
 - [ ] Mutation: N/A unless C# or TypeScript production code changes.
 - [ ] Architecture docs in the same change (ADR for the glibc floor).
 - [ ] No user-facing release notes unless the maintainer says so.
+
+## DESIGN
+
+Architecture and decisions: `architecture.md` in this folder, ADR-284. Maintainer decisions (2026-11-15): the runner goes
+back to `ubuntu-latest`; the build environment stays Ubuntu 24.04 (glibc floor 2.39); the six exact WebKitGTK pins are
+dropped (rendering risk accepted: the maintainer starts the new AppImage once on a desktop before the release); no pull
+request workflow for the oracles. Design review: one revision (ICU / setup-dotnet removed, silent-pass guard, loader job
+specified, floor oracle case), then approved.
+
+## DEVOPS
+
+- Platform lens: carried in DESIGN (runner, container, Renovate, rollback by reverting the S2 commit, the first real
+  container build is seen on main).
+- Usage-data event: N/A, because this is release tooling that no Lighthouse user runs.
+
+## DELIVER start
+
+- Rigor: `standard` for S1 and S2 (Sonnet acceptance designer and crafter, Haiku reviewers and examiner), as agreed.
+- UI sketch: N/A, because nothing a user sees in the app changes (the WebKitGTK update is covered by the manual desktop
+  start above).
+- Loading and failure looks: N/A, no view.
