@@ -1,0 +1,163 @@
+An example execution:
+
+[State 0]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: false,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "running",
+  today::refreshPass::pc: "fetch",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 1]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: false,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "running",
+  today::refreshPass::pc: "inlineMetrics",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 2]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 3]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 4]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 5]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 6]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 7]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 8]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 9]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 10]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 11]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[State 12]
+{
+  today::refreshPass::idx: 0,
+  today::refreshPass::invalidated: true,
+  today::refreshPass::metricsFails: true,
+  today::refreshPass::metricsSaved: false,
+  today::refreshPass::outcome: "failed",
+  today::refreshPass::pc: "done",
+  today::refreshPass::ran: Set(),
+  today::refreshPass::readerSawStale: false
+}
+
+[ok] No violation found (188ms at 10638 traces/second).
+Trace length statistics: max=13, min=13, average=13.00
+You may increase --max-samples and --max-steps.
+Use --verbosity to produce more (or less) output.
+Use --seed=0x1dc5a --backend=rust to reproduce.

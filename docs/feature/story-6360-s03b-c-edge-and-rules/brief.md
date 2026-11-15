@@ -1,0 +1,131 @@
+# Product brief: story\-6360\-s03b\-c\-edge\-and\-rules
+
+## Request
+
+```text
+Story #6360 S03b Package Work Items, nwdes feature C of three (edge and rules). C1: Work Items no longer tells Flow metrics to update a Team's metrics: TeamDataService drops its teamMetricsService.UpdateTeamMetrics(team) call and a new Flow metrics reaction TeamDataRefreshedTeamMetricsUpdateHandler (Modules/FlowMetrics/Application/Policies) updates them when it hears TeamDataRefreshed, registered first among the TeamDataRefreshed handlers; an oracle first pins the event order and the handler-failure behaviour; if it shows a difference, fall back to D-2 e (ratchet only). C2: Work Items gets its own module rules (Domain reaches only the kernel and the BCL; Application in and out lists; Policies hold only domain-event handlers) with inline baselines compared both ways, measured from the IL; Flow metrics R4 loses TeamDataService; the two WorkItemService query edges stay named. C3: Work Items unit tests move to Lighthouse.Backend.Tests/Modules/WorkItems/{Domain, Application, Application/Policies} (pure moves apart from edits) and WorkItemsUnitTestPlacementTest keeps them there; API/Integration tests stay. Behaviour-free for the user: routes, DTOs, refresh results, metrics answers, forecasts and the schema stay the same. Design: docs/feature/story-6360-s03b-package-work-items/feature-delta.md (D-2 a, D-8, D-9, slices C1-C3, Ratchet design 'New rules (C2)').
+```
+
+## Work
+
+M
+
+```text
+Work Items and Flow metrics talk through an event instead of a command, and Work Items has its own module rules and test folder, so Epic 6474 builds on a closed module
+```
+
+### Rework
+
+None.
+
+## Promises
+
+### P1
+
+Outcome
+
+```text
+Work Items no longer commands Flow metrics: TeamDataService makes no UpdateTeamMetrics call, and a Flow metrics reaction updates a Team's metrics when it hears TeamDataRefreshed, running first among that event's handlers, with the handler-failure behaviour pinned
+```
+
+### P2
+
+Outcome
+
+```text
+Work Items has its own module rules (Domain reaches only the shared kernel and the BCL; Application in and out lists; Policies hold only domain-event handlers) with inline baselines compared both ways, and Flow metrics' R4 list no longer names TeamDataService
+```
+
+### P3
+
+Outcome
+
+```text
+Work Items' unit tests live under Lighthouse.Backend.Tests/Modules/WorkItems by layer, and a placement test keeps them there; API/Integration tests stay where they are
+```
+
+### P4
+
+Outcome
+
+```text
+Refresh answers, metrics answers and forecasts are identical before and after feature C
+```
+
+## Scope
+
+```text
+TeamDataService, the new Flow metrics reaction and its registration in Program.cs, the order pin, new Work Items module rule tests, Flow metrics R4 list, moves of Work Items unit tests and their using lines, the CI test-selection classifier if it names moved test paths
+```
+
+```text
+The two WorkItemService query edges to Flow metrics (6474 slice 10 and S07a), UpdateTeamMetrics writing through IWorkItemRepository (S07b), an AddWorkItems extension (S09a), ADR-270 and ARCHITECTURE.md edits (finalize)
+```
+
+## Decisions
+
+None.
+
+## Journey
+
+None.
+
+## Slices
+
+### S1
+
+```text
+After a Team refresh, Flow metrics updates the Team's metrics in reaction to TeamDataRefreshed, first among its handlers, and the metrics answers are the same as before
+```
+
+#### Promises
+
+P1
+
+P4
+
+#### Depends on
+
+None.
+
+#### Slice work
+
+None.
+
+### S2
+
+```text
+A Work Items type that reaches outside its allowed lists, or a non-handler in Policies, is named by the Work Items module rules; Flow metrics R4 no longer lists TeamDataService
+```
+
+#### Promises
+
+P2
+
+#### Depends on
+
+S1
+
+#### Slice work
+
+None.
+
+### S3
+
+```text
+Work Items' unit tests sit under Tests/Modules/WorkItems by layer, and a test placed elsewhere is named by the placement test
+```
+
+#### Promises
+
+P3
+
+P4
+
+#### Depends on
+
+S2
+
+#### Slice work
+
+None.

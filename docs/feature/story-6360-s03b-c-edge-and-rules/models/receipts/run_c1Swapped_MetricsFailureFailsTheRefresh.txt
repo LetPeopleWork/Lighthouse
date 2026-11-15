@@ -1,0 +1,176 @@
+An example execution:
+
+[State 0]
+{
+  c1Swapped::refreshPass::idx: 0,
+  c1Swapped::refreshPass::invalidated: false,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "fetch",
+  c1Swapped::refreshPass::ran: Set(),
+  c1Swapped::refreshPass::readerSawStale: false
+}
+
+[State 1]
+{
+  c1Swapped::refreshPass::idx: 0,
+  c1Swapped::refreshPass::invalidated: false,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "publish",
+  c1Swapped::refreshPass::ran: Set(),
+  c1Swapped::refreshPass::readerSawStale: false
+}
+
+[State 2]
+{
+  c1Swapped::refreshPass::idx: 1,
+  c1Swapped::refreshPass::invalidated: false,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "publish",
+  c1Swapped::refreshPass::ran: Set("memo"),
+  c1Swapped::refreshPass::readerSawStale: false
+}
+
+[State 3]
+{
+  c1Swapped::refreshPass::idx: 2,
+  c1Swapped::refreshPass::invalidated: false,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "publish",
+  c1Swapped::refreshPass::ran: Set("forecast", "memo"),
+  c1Swapped::refreshPass::readerSawStale: false
+}
+
+[State 4]
+{
+  c1Swapped::refreshPass::idx: 3,
+  c1Swapped::refreshPass::invalidated: false,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "publish",
+  c1Swapped::refreshPass::ran: Set("blocked", "forecast", "memo"),
+  c1Swapped::refreshPass::readerSawStale: true
+}
+
+[State 5]
+{
+  c1Swapped::refreshPass::idx: 4,
+  c1Swapped::refreshPass::invalidated: true,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "publish",
+  c1Swapped::refreshPass::ran: Set("blocked", "forecast", "memo", "metrics"),
+  c1Swapped::refreshPass::readerSawStale: true
+}
+
+[State 6]
+{
+  c1Swapped::refreshPass::idx: 5,
+  c1Swapped::refreshPass::invalidated: true,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "publish",
+  c1Swapped::refreshPass::ran:
+    Set("blocked", "forecast", "memo", "metrics", "percentiles"),
+  c1Swapped::refreshPass::readerSawStale: true
+}
+
+[State 7]
+{
+  c1Swapped::refreshPass::idx: 6,
+  c1Swapped::refreshPass::invalidated: true,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "publish",
+  c1Swapped::refreshPass::ran:
+    Set(
+      "blocked",
+      "forecast",
+      "memo",
+      "metrics",
+      "percentiles",
+      "processBehavior"
+    ),
+  c1Swapped::refreshPass::readerSawStale: true
+}
+
+[State 8]
+{
+  c1Swapped::refreshPass::idx: 7,
+  c1Swapped::refreshPass::invalidated: true,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "publish",
+  c1Swapped::refreshPass::ran:
+    Set(
+      "blocked",
+      "demoBlocked",
+      "forecast",
+      "memo",
+      "metrics",
+      "percentiles",
+      "processBehavior"
+    ),
+  c1Swapped::refreshPass::readerSawStale: true
+}
+
+[State 9]
+{
+  c1Swapped::refreshPass::idx: 8,
+  c1Swapped::refreshPass::invalidated: true,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "running",
+  c1Swapped::refreshPass::pc: "publish",
+  c1Swapped::refreshPass::ran:
+    Set(
+      "blocked",
+      "demoBlocked",
+      "demoPercentiles",
+      "forecast",
+      "memo",
+      "metrics",
+      "percentiles",
+      "processBehavior"
+    ),
+  c1Swapped::refreshPass::readerSawStale: true
+}
+
+[State 10]
+{
+  c1Swapped::refreshPass::idx: 8,
+  c1Swapped::refreshPass::invalidated: true,
+  c1Swapped::refreshPass::metricsFails: true,
+  c1Swapped::refreshPass::metricsSaved: false,
+  c1Swapped::refreshPass::outcome: "ok",
+  c1Swapped::refreshPass::pc: "done",
+  c1Swapped::refreshPass::ran:
+    Set(
+      "blocked",
+      "demoBlocked",
+      "demoPercentiles",
+      "forecast",
+      "memo",
+      "metrics",
+      "percentiles",
+      "processBehavior"
+    ),
+  c1Swapped::refreshPass::readerSawStale: true
+}
+
+[violation] Found an issue (13ms at 154 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x44 --backend=rust to reproduce.
+error: Invariant violated

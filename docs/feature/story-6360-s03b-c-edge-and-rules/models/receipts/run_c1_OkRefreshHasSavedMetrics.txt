@@ -1,0 +1,176 @@
+An example execution:
+
+[State 0]
+{
+  c1::refreshPass::idx: 0,
+  c1::refreshPass::invalidated: false,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "fetch",
+  c1::refreshPass::ran: Set(),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 1]
+{
+  c1::refreshPass::idx: 0,
+  c1::refreshPass::invalidated: false,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "publish",
+  c1::refreshPass::ran: Set(),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 2]
+{
+  c1::refreshPass::idx: 1,
+  c1::refreshPass::invalidated: true,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "publish",
+  c1::refreshPass::ran: Set("metrics"),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 3]
+{
+  c1::refreshPass::idx: 2,
+  c1::refreshPass::invalidated: true,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "publish",
+  c1::refreshPass::ran: Set("memo", "metrics"),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 4]
+{
+  c1::refreshPass::idx: 3,
+  c1::refreshPass::invalidated: true,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "publish",
+  c1::refreshPass::ran: Set("forecast", "memo", "metrics"),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 5]
+{
+  c1::refreshPass::idx: 4,
+  c1::refreshPass::invalidated: true,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "publish",
+  c1::refreshPass::ran: Set("blocked", "forecast", "memo", "metrics"),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 6]
+{
+  c1::refreshPass::idx: 5,
+  c1::refreshPass::invalidated: true,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "publish",
+  c1::refreshPass::ran:
+    Set("blocked", "forecast", "memo", "metrics", "percentiles"),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 7]
+{
+  c1::refreshPass::idx: 6,
+  c1::refreshPass::invalidated: true,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "publish",
+  c1::refreshPass::ran:
+    Set(
+      "blocked",
+      "forecast",
+      "memo",
+      "metrics",
+      "percentiles",
+      "processBehavior"
+    ),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 8]
+{
+  c1::refreshPass::idx: 7,
+  c1::refreshPass::invalidated: true,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "publish",
+  c1::refreshPass::ran:
+    Set(
+      "blocked",
+      "demoBlocked",
+      "forecast",
+      "memo",
+      "metrics",
+      "percentiles",
+      "processBehavior"
+    ),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 9]
+{
+  c1::refreshPass::idx: 8,
+  c1::refreshPass::invalidated: true,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "running",
+  c1::refreshPass::pc: "publish",
+  c1::refreshPass::ran:
+    Set(
+      "blocked",
+      "demoBlocked",
+      "demoPercentiles",
+      "forecast",
+      "memo",
+      "metrics",
+      "percentiles",
+      "processBehavior"
+    ),
+  c1::refreshPass::readerSawStale: false
+}
+
+[State 10]
+{
+  c1::refreshPass::idx: 8,
+  c1::refreshPass::invalidated: true,
+  c1::refreshPass::metricsFails: true,
+  c1::refreshPass::metricsSaved: false,
+  c1::refreshPass::outcome: "ok",
+  c1::refreshPass::pc: "done",
+  c1::refreshPass::ran:
+    Set(
+      "blocked",
+      "demoBlocked",
+      "demoPercentiles",
+      "forecast",
+      "memo",
+      "metrics",
+      "percentiles",
+      "processBehavior"
+    ),
+  c1::refreshPass::readerSawStale: false
+}
+
+[violation] Found an issue (14ms at 143 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x44 --backend=rust to reproduce.
+error: Invariant violated
