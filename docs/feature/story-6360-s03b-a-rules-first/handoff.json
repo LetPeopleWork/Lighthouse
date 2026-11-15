@@ -1,8 +1,170 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F98",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.AConnectorReachingATypeUnderTheModule_IsCaughtByTheConnectorLeafRule"
+},
+"expected": "F96",
+"stimulus": "F95",
+"user_result": "F97"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F102",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.ADependencyTypeUnderTheModuleReachingTheForecast_IsCaughtByTheForecastIsolationRule"
+},
+"expected": "F100",
+"stimulus": "F99",
+"user_result": "F101"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F106",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheForecastReachingADependencyTypeUnderTheModule_IsCaughtByTheForecastIsolationRule"
+},
+"expected": "F104",
+"stimulus": "F103",
+"user_result": "F105"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F110",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheDependencyFolderScans_TakeInAFolderUnderTheModuleBesideTheOldOne"
+},
+"expected": "F108",
+"stimulus": "F107",
+"user_result": "F109"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F114",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheOneDecisionFiles_AreFoundByTheirNameWhereverTheyLive"
+},
+"expected": "F112",
+"stimulus": "F111",
+"user_result": "F113"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F118",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheWorkItemServiceHistoryCutoffs_FindTheirFileByItsNameWhereverItLives"
+},
+"expected": "F116",
+"stimulus": "F115",
+"user_result": "F117"
+}
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F122",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs::A_Teams_first_refresh_stores_its_Work_Items_and_opens_the_blocked_period_of_the_waiting_one"
+},
+"expected": "F120",
+"stimulus": "F119",
+"user_result": "F121"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F126",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs::A_Teams_next_refresh_records_the_moves_closes_the_blocked_period_and_drops_what_left_the_upload"
+},
+"expected": "F124",
+"stimulus": "F123",
+"user_result": "F125"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F130",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs::A_Portfolios_first_refresh_stores_its_Features_under_their_parents_and_announces_nothing"
+},
+"expected": "F128",
+"stimulus": "F127",
+"user_result": "F129"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F134",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs::A_Portfolios_next_refresh_stores_the_new_states_without_moves_and_opens_the_blocked_period_of_the_waiting_Feature"
+},
+"expected": "F132",
+"stimulus": "F131",
+"user_result": "F133"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F138",
+"test": "bash Scripts/examine/bin/refresh-answers-compare"
+},
+"expected": "F136",
+"stimulus": "F135",
+"user_result": "F137"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F142",
+"test": "bash Scripts/examine/bin/refresh-reactions-show"
+},
+"expected": "F140",
+"stimulus": "F139",
+"user_result": "F141"
+}
+]
+},
 "counters": {
 "D": 5,
 "E": 4,
-"F": 94,
+"F": 142,
 "K": 4,
 "P": 3,
 "S": 3,
@@ -449,10 +611,53 @@
 "facts": {
 "F1": "Story #6360 S03b Package Work Items, nwdes feature A of three (rules first). Before any Work Items type moves into Modules/WorkItems, make every architecture rule that names Work Items' namespaces, folders, paths or types also see Modules/WorkItems, fix the membership list from the compiled code, and add a safety net that shows a refresh gives the same items, transitions, blocks and events. Behaviour-free: routes, DTOs, responses, refresh results and metrics stay the same. Design: docs/feature/story-6360-s03b-package-work-items/feature-delta.md (slices A1-A3, Ratchet design, D-1, D-10).",
 "F10": "A made-up type under Modules/WorkItems is caught by every rule that names Work Items today",
+"F100": "The dependency rule's own namespace key names the type in the module reaching the forecast, and names neither the twin nor the namesake",
+"F101": "A dependency decision that moves into Work Items still may not reach into the simulation",
+"F102": "The key took in every module whose name does not start with WorkItems, for example the whole Modules tree minus the namesake; the oracle checks only the Work Items module and its namesake",
+"F103": "A made-up forecast step reaches a made-up Work Items type in the module; a second reaches a namesake just outside the module",
+"F104": "The dependency rule's own namespace key, used as the forbidden side, names the step reaching into the module and not the one reaching the namesake",
+"F105": "The forecast still may not reach dependency types once they live in Work Items",
+"F106": "The rule kept the key but stopped using it on its forbidden side; this test reads the key, not the rule body",
+"F107": "A made-up file under the Work Items module folder, one in the old Dependencies folder and one in a namesake folder just outside the module are judged by the folder lists of the dependency scans: what the dependency work added, and where a dependency source may be recorded",
+"F108": "Each list takes in a folder under Modules/WorkItems, keeps the old Dependencies folder, and does not take in the namesake folder",
+"F109": "The dependency word and licence scans keep reading the dependency files after they move into Work Items",
 "F11": "The membership test lists the Work Items types that move, measured from the IL, and fails on a missing or an unlisted type",
+"F110": "The module folder is the whole module or a whole layer, which would later also scan or exempt the Work Item service; the oracle does not pin the subfolder",
+"F111": "The file keys of the one-decision rules for the reconciler, the honour policy and the decision are read from the rules and looked up in the production source",
+"F112": "Each key is the bare file name and exactly one production file carries it, so the rule finds the file wherever it lives",
+"F113": "Moving the reconciler, honour policy or decision into Work Items does not switch the one-decision rules off",
+"F114": "The keys are bare names but the rules still compare them with full paths; the run over the real code catches that as no longer calls, not this test",
+"F115": "The tracker history cutoff list is read from the calendar-day rule and its Work Item service entries are looked up in the production source",
+"F116": "Both Work Item service window cutoffs name the file by its name alone, and exactly one production file carries that name",
+"F117": "Moving the Work Item service into Work Items does not make its history cutoffs report the file as gone",
+"F118": "The entries hold the bare name but the rule still joins it to a fixed folder; the run over the real code catches that as file no longer exists, not this test",
+"F119": "A Team reading a fixed CSV upload of four Work Items, one of them in the blocked state, is refreshed for the first time at a fixed instant",
 "F12": "A refresh at the service port gives the same items, transitions, blocks and events, and refresh-answers-compare reports identical answers on demo data",
+"F120": "The four Work Items are stored with their names, types, states, dates, parents and tags as written out; no moves; one open blocked period for the waiting item from the refresh instant; announcements in order: that item blocked, then the Team refreshed; a full sync of 4",
+"F121": "The Team's items, blocked history and the reactions to a refresh are the same after the code moves",
+"F122": "A reaction other than the blocked-period capture stops running, since only the blocked periods are observed among the reactions",
+"F123": "A day later the same Team reads an upload where one item started, one finished, the blocked one moved on, one left and one is new, and is refreshed",
+"F124": "Four stored items as written out, the departed one gone; three moves dated at the second refresh; the blocked period closed at the second refresh; announcements in order: three moves, the unblock, the Team refreshed",
+"F125": "Cycle times, blocked history and removals after a refresh stay the same after the move",
+"F126": "A change that alters only the moment the metrics renew inside the refresh, since the Team's refresh time is not read",
+"F127": "A Portfolio reading a fixed CSV upload of three Features is refreshed for the first time",
+"F128": "Three Features stored with states, dates, parent and size as written out; no moves; no blocked period; no announcements; a full sync of 3",
+"F129": "A Portfolio's Features and their parent placement are the same after the move",
 "F13": "Behaviour-free, test-side and script-side only: no production type moves, no route, DTO, response, schema, refresh result, metrics answer, DI lifetime or handler order changes. Every rule reads the compiled IL through IlDependencies or the ArchUnitNET production architecture; inline lists stay two-way (InlineBaseline); no rule is loosened. DomainEventHandlerOrderPinTest stays green unmodified.",
+"F130": "A changed remaining-work split across Teams, since remaining work is not part of the promise and no Team works on these Features",
+"F131": "A day later the Portfolio reads an upload where one Feature now waits and one has started, and is refreshed",
+"F132": "The new states stored as written out; still no Feature moves; one open blocked period for the waiting Feature from the second refresh; one announcement: that Feature blocked in the Portfolio for Waiting",
+"F133": "A Feature's blocked history after a refresh is the same after the move",
+"F134": "A Feature unblock path that changed, since no Feature leaves the blocked state in this scenario; the Work Item unblock covers that path for Work Items only",
+"F135": "On demo data, every Team and Portfolio is refreshed on the pinned base revision and on the current revision, and the Work Item, Feature list, dependency and blocked answers are captured on both",
+"F136": "One line per answer kind and a last line VERDICT IDENTICAL; a failure when no answer was captured or any answer was not a success",
+"F137": "A user can see from outside that refresh answers did not change",
+"F138": "A difference in a time-stamped field that the comparison masks",
+"F139": "This checkout's backend on a fresh database loads the smallest demo scenario with Teams and a Team is refreshed through the public API",
 "F14": "Shared rules owner: ModuleRules and ModuleWording (Architecture folder) are reused; no rule is copied and no second rules class is created. KernelRules and ApplicationCoreRules already treat Modules as application core and need no change.",
+"F140": "One line per Work Items reaction seen in public answers such as refresh history and blocked history, a reaction with no public observation named as not observable, and a last line VERDICT OBSERVED",
+"F141": "A user can watch the Work Items reactions fire after a refresh",
+"F142": "A reaction named not observable that stopped running, since nothing public shows it",
 "F15": "Made-up types live in the test assembly below Lighthouse.Backend.Modules.WorkItems (for example Lighthouse.Backend.Modules.WorkItems.Application.WorkItemsFixtures), with a compliant twin each and a namesake just outside the module (Lighthouse.Backend.Modules.WorkItemsFixtures), the S03c way: the widened patterns end in (\\.|$), so only a type below Modules.WorkItems proves the real widened constant.",
 "F16": "Formal verification: no checker selected, no model written or run. No state, transition, protocol, concurrency or recovery behaviour changes. Rule and membership claims are finite and decided exactly by the compiled IL with a made-up offender as falsifier; the refresh-preservation claim compares the code with itself, so literal expected values at the service port are the honest falsifier. Liveness not applicable: synchronous rule evaluation and a one-shot capture have no progress property. Property-based testing not applicable: every law is a finite enumeration of rules, types, refresh scenarios and named endpoints; the test-writing skill decides test density.",
 "F17": "Carriers, all test-side: rule verdicts are KernelRuleVerdict, InboundVerdict and OutboundVerdict owned by ModuleRules and KernelRules; dependency facts are IlDependent from IlDependencies; per-fixture state is the lazily read Mono.Cecil ModuleDefinition disposed at one-time teardown; the refresh oracle holds a ServicePortHarness per scenario; the compare script holds captured bodies in a temp directory. Layers: application rules only; no adapter, infrastructure or recovery layer changes.",
@@ -540,7 +745,12 @@
 "F91": "When a made-up type is placed in the Work Items module folder (Modules/WorkItems), every architecture rule that applies to Work Items namespaces, folders, paths or types flags it, just as it would for the existing Work Items locations.",
 "F92": "A test fixes the list of Work Items types that move, derived from the compiled code, and that test fails when a listed type is missing from the code and when a Work Items type that is not on the list appears.",
 "F93": "Asking the service port to refresh gives the same items, transitions, blocked periods and events before and after the move, so a user sees no change in their data.",
-"F94": "Public commands let a user capture the refresh answers and watch the Work Items reactions fire on demo data, so the before and after can be compared from outside."
+"F94": "Public commands let a user capture the refresh answers and watch the Work Items reactions fire on demo data, so the before and after can be compared from outside.",
+"F95": "A made-up connector reaches a made-up Work Items type placed in the Work Items module; a second connector reaches a namesake just outside the module, and a third reaches only a plain value",
+"F96": "The connector leaf rule's own Work Items pattern names the connector reaching into the module, and names neither the namesake reader nor the value reader",
+"F97": "A connector that reaches into Work Items after the move is still refused by the leaf rule",
+"F98": "The pattern also took in the old Dependencies and Parents folders, which the real connectors call; the run over the real code catches that, not this test",
+"F99": "A made-up dependency type in the Work Items module reaches the forecast; a compliant twin there reads only a value; a namesake just outside the module reaches the forecast"
 },
 "product": {
 "promises": [

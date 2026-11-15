@@ -151,6 +151,320 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up connector reaches a made-up Work Items type placed in the Work Items module; a second connector reaches a namesake just outside the module, and a third reaches only a plain value
+</code></pre>
+
+<pre><code>The connector leaf rule&#x27;s own Work Items pattern names the connector reaching into the module, and names neither the namesake reader nor the value reader
+</code></pre>
+
+<pre><code>A connector that reaches into Work Items after the move is still refused by the leaf rule
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.AConnectorReachingATypeUnderTheModule_IsCaughtByTheConnectorLeafRule</p>
+
+<pre><code>The pattern also took in the old Dependencies and Parents folders, which the real connectors call; the run over the real code catches that, not this test
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up dependency type in the Work Items module reaches the forecast; a compliant twin there reads only a value; a namesake just outside the module reaches the forecast
+</code></pre>
+
+<pre><code>The dependency rule&#x27;s own namespace key names the type in the module reaching the forecast, and names neither the twin nor the namesake
+</code></pre>
+
+<pre><code>A dependency decision that moves into Work Items still may not reach into the simulation
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.ADependencyTypeUnderTheModuleReachingTheForecast_IsCaughtByTheForecastIsolationRule</p>
+
+<pre><code>The key took in every module whose name does not start with WorkItems, for example the whole Modules tree minus the namesake; the oracle checks only the Work Items module and its namesake
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up forecast step reaches a made-up Work Items type in the module; a second reaches a namesake just outside the module
+</code></pre>
+
+<pre><code>The dependency rule&#x27;s own namespace key, used as the forbidden side, names the step reaching into the module and not the one reaching the namesake
+</code></pre>
+
+<pre><code>The forecast still may not reach dependency types once they live in Work Items
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheForecastReachingADependencyTypeUnderTheModule_IsCaughtByTheForecastIsolationRule</p>
+
+<pre><code>The rule kept the key but stopped using it on its forbidden side; this test reads the key, not the rule body
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up file under the Work Items module folder, one in the old Dependencies folder and one in a namesake folder just outside the module are judged by the folder lists of the dependency scans: what the dependency work added, and where a dependency source may be recorded
+</code></pre>
+
+<pre><code>Each list takes in a folder under Modules/WorkItems, keeps the old Dependencies folder, and does not take in the namesake folder
+</code></pre>
+
+<pre><code>The dependency word and licence scans keep reading the dependency files after they move into Work Items
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheDependencyFolderScans_TakeInAFolderUnderTheModuleBesideTheOldOne</p>
+
+<pre><code>The module folder is the whole module or a whole layer, which would later also scan or exempt the Work Item service; the oracle does not pin the subfolder
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The file keys of the one-decision rules for the reconciler, the honour policy and the decision are read from the rules and looked up in the production source
+</code></pre>
+
+<pre><code>Each key is the bare file name and exactly one production file carries it, so the rule finds the file wherever it lives
+</code></pre>
+
+<pre><code>Moving the reconciler, honour policy or decision into Work Items does not switch the one-decision rules off
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheOneDecisionFiles_AreFoundByTheirNameWhereverTheyLive</p>
+
+<pre><code>The keys are bare names but the rules still compare them with full paths; the run over the real code catches that as no longer calls, not this test
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The tracker history cutoff list is read from the calendar-day rule and its Work Item service entries are looked up in the production source
+</code></pre>
+
+<pre><code>Both Work Item service window cutoffs name the file by its name alone, and exactly one production file carries that name
+</code></pre>
+
+<pre><code>Moving the Work Item service into Work Items does not make its history cutoffs report the file as gone
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs::WorkItemsRulesSeeTheModuleArchUnitTest.TheWorkItemServiceHistoryCutoffs_FindTheirFileByItsNameWhereverItLives</p>
+
+<pre><code>The entries hold the bare name but the rule still joins it to a fixed folder; the run over the real code catches that as file no longer exists, not this test
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A Team reading a fixed CSV upload of four Work Items, one of them in the blocked state, is refreshed for the first time at a fixed instant
+</code></pre>
+
+<pre><code>The four Work Items are stored with their names, types, states, dates, parents and tags as written out; no moves; one open blocked period for the waiting item from the refresh instant; announcements in order: that item blocked, then the Team refreshed; a full sync of 4
+</code></pre>
+
+<pre><code>The Team&#x27;s items, blocked history and the reactions to a refresh are the same after the code moves
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs::A_Teams_first_refresh_stores_its_Work_Items_and_opens_the_blocked_period_of_the_waiting_one</p>
+
+<pre><code>A reaction other than the blocked-period capture stops running, since only the blocked periods are observed among the reactions
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A day later the same Team reads an upload where one item started, one finished, the blocked one moved on, one left and one is new, and is refreshed
+</code></pre>
+
+<pre><code>Four stored items as written out, the departed one gone; three moves dated at the second refresh; the blocked period closed at the second refresh; announcements in order: three moves, the unblock, the Team refreshed
+</code></pre>
+
+<pre><code>Cycle times, blocked history and removals after a refresh stay the same after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs::A_Teams_next_refresh_records_the_moves_closes_the_blocked_period_and_drops_what_left_the_upload</p>
+
+<pre><code>A change that alters only the moment the metrics renew inside the refresh, since the Team&#x27;s refresh time is not read
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A Portfolio reading a fixed CSV upload of three Features is refreshed for the first time
+</code></pre>
+
+<pre><code>Three Features stored with states, dates, parent and size as written out; no moves; no blocked period; no announcements; a full sync of 3
+</code></pre>
+
+<pre><code>A Portfolio&#x27;s Features and their parent placement are the same after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs::A_Portfolios_first_refresh_stores_its_Features_under_their_parents_and_announces_nothing</p>
+
+<pre><code>A changed remaining-work split across Teams, since remaining work is not part of the promise and no Team works on these Features
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A day later the Portfolio reads an upload where one Feature now waits and one has started, and is refreshed
+</code></pre>
+
+<pre><code>The new states stored as written out; still no Feature moves; one open blocked period for the waiting Feature from the second refresh; one announcement: that Feature blocked in the Portfolio for Waiting
+</code></pre>
+
+<pre><code>A Feature&#x27;s blocked history after a refresh is the same after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs::A_Portfolios_next_refresh_stores_the_new_states_without_moves_and_opens_the_blocked_period_of_the_waiting_Feature</p>
+
+<pre><code>A Feature unblock path that changed, since no Feature leaves the blocked state in this scenario; the Work Item unblock covers that path for Work Items only
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>On demo data, every Team and Portfolio is refreshed on the pinned base revision and on the current revision, and the Work Item, Feature list, dependency and blocked answers are captured on both
+</code></pre>
+
+<pre><code>One line per answer kind and a last line VERDICT IDENTICAL; a failure when no answer was captured or any answer was not a success
+</code></pre>
+
+<pre><code>A user can see from outside that refresh answers did not change
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>bash Scripts/examine/bin/refresh-answers-compare</p>
+
+<pre><code>A difference in a time-stamped field that the comparison masks
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>This checkout&#x27;s backend on a fresh database loads the smallest demo scenario with Teams and a Team is refreshed through the public API
+</code></pre>
+
+<pre><code>One line per Work Items reaction seen in public answers such as refresh history and blocked history, a reaction with no public observation named as not observable, and a last line VERDICT OBSERVED
+</code></pre>
+
+<pre><code>A user can watch the Work Items reactions fire after a refresh
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>bash Scripts/examine/bin/refresh-reactions-show</p>
+
+<pre><code>A reaction named not observable that stopped running, since nothing public shows it
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>
