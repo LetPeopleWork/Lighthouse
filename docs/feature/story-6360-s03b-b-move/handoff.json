@@ -280,7 +280,7 @@
 "counters": {
 "D": 5,
 "E": 4,
-"F": 229,
+"F": 230,
 "K": 4,
 "P": 4,
 "S": 3,
@@ -1739,7 +1739,7 @@
 "promises": [
 "P3"
 ],
-"text": "F131"
+"text": "F230"
 },
 {
 "id": "E4",
@@ -1786,7 +1786,6 @@
 "F128": "The six handlers sit in Modules/WorkItems/Application/Policies, none remains in Services; handler order pin unchanged",
 "F13": "The six Work Items reactions live in Modules/WorkItems/Application/Policies and handler order is unchanged",
 "F130": "E2 (P2, architectural placement, user-view proxy): Work Item, Team data, blocked, rule, dependency, parent-placement and refresh-log services keep producing the same visible results for a user after the move; every rule list that names them still resolves to the moved services. The Modules/WorkItems/Application location and full-name rule lists are architectural claims referred to candidate review.",
-"F131": "E3 (P3, handler order): when a Work Items domain event fires, the six Work Items event handlers run in the same order as before the move, so the user sees the same resulting state (for example the same item, team or refresh-log update) after the event. The Policies folder location is an architectural claim referred to candidate review.",
 "F132": "E4 (P4, user-observable): refresh answers, metrics answers and forecasts a user reads are identical before and after the move for the same data and the same request.",
 "F133": "E1 (P1): after the move, the sync mode, fetch fingerprint, rule evaluation and dependency decisions give the same visible results a user or operator sees (refresh answers, metrics answers and forecasts) as before the move, for the same data and the same request. The layer placement that P1 describes (a type the Domain architecture rule rejects is moved to Application and recorded) is an architectural claim referred to candidate review, not judged here.",
 "F135": "Each sits in the Work Items module Domain (dependency ones in its Dependencies folder, never flat) and none is left under Services",
@@ -1881,6 +1880,7 @@
 "F228": "Forecasts a user reads are the same as before the move",
 "F229": "A change in a forecast the comparison does not sample would pass; the host runs it on the implemented candidate and records the result",
 "F23": "Its Moves and Stays lists are the move list; it compares by short name and stays green through the move.",
+"F230": "E3 (P3, user-view handler outcome): when a Work Items domain event fires, the user sees the same resulting state after the event as before the move: the same Team refresh and its refresh-history entry, the same Teams refresh after a changed download of the connection, and the deleted Team's refresh history removed. The handler order of the six Work Items event handlers, and the blocked-period reactions (opening and closing blocked periods for Work Items and Features), have no public surface on the day they are opened and cannot be read through a public probe; they are referred to candidate review and to the unchanged handler-order pin. The Policies folder location is an architectural claim referred to candidate review.",
 "F24": "Existing owners of every moved responsibility keep their code; only folder and namespace change. CreateNew would duplicate refresh, blocked, dependency and rule decisions.",
 "F25": "Model for the three layout oracles: types named as strings, read from the compiled assembly, with made-up offenders in a fixture namespace.",
 "F26": "Slice layout oracle for Work Items; the model oracle is Forecasting's, ModuleRules supplies the rules, no existing test owns this list.",

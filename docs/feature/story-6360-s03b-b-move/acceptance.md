@@ -563,7 +563,7 @@ E2 (P2, architectural placement, user-view proxy): Work Item, Team data, blocked
 P3
 
 ```text
-E3 (P3, handler order): when a Work Items domain event fires, the six Work Items event handlers run in the same order as before the move, so the user sees the same resulting state (for example the same item, team or refresh-log update) after the event. The Policies folder location is an architectural claim referred to candidate review.
+E3 (P3, user-view handler outcome): when a Work Items domain event fires, the user sees the same resulting state after the event as before the move: the same Team refresh and its refresh-history entry, the same Teams refresh after a changed download of the connection, and the deleted Team's refresh history removed. The handler order of the six Work Items event handlers, and the blocked-period reactions (opening and closing blocked periods for Work Items and Features), have no public surface on the day they are opened and cannot be read through a public probe; they are referred to candidate review and to the unchanged handler-order pin. The Policies folder location is an architectural claim referred to candidate review.
 ```
 
 #### E4
