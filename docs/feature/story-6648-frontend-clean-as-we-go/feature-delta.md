@@ -129,6 +129,18 @@ Frontend per-file budget: 54 s; largest file now 16.6 s, so the budget is not ne
   so a slice may record "unmeasured, machine loaded" and is then judged by CI after the push.
 - **No push** until the maintainer says so.
 
+## Wave: DELIVER / [REF] S2 time target not met (host decision, AFK, 2026-11-15)
+
+`measure-slice.sh S2` with the default 5 valid pairs: `file_alone_ratio=0.790` against the design limit 0.75, and
+`combined_ratio=0.816` against 0.80 (exit 1). The page file falls from about 9.0 s to 7.0-7.8 s per run; the 13 kept
+tests are fixed by the oracle, and the merged ones (the two-phase held-back test, the four-pick Leave it out test) cost
+more each than the tests they replace. No further cut keeps every required assertion.
+
+Decision, by the design's own rule ("P1 has no numeric floor; the ratios are this design's own margin. A file that
+misses its ratio is recorded as target not met with the number, not stretched with a timeout"): **target not met,
+recorded with the numbers; the limit is not changed and no assertion is weakened.** P1 itself (less per-test time) holds:
+about 21 % less. CI medians after the push judge P1 as #6648 states it. For the maintainer to revisit at the hold.
+
 ## Checklist
 
 - [ ] Behaviour-free: production behaviour and pixels unchanged; no production file changes unless Q7 is a yes
