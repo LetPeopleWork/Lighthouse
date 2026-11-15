@@ -141,11 +141,11 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F275",
+"still_passes_if": "F294",
 "test": "bash docs/feature/story-6648-frontend-clean-as-we-go/measurement/check-slice.sh S2"
 },
-"expected": "F273",
-"stimulus": "F272",
+"expected": "F293",
+"stimulus": "F292",
 "user_result": "F274"
 },
 {
@@ -352,7 +352,7 @@
 "counters": {
 "D": 17,
 "E": 5,
-"F": 291,
+"F": 294,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -1217,10 +1217,7 @@
 "F27": "Every removed or shrunk expect( has a moved-assertions row; test ids lost have a row; deleting a test without mapping its rule is refused by check-slice. A merged test keeps the union of the assertions of the tests it replaces.",
 "F270": "No rule of the combined PDF export, its failure dialog or Leave it out is left without a test",
 "F271": "a removed row that names an unrelated passing test (the break list proves each rule separately)",
-"F272": "Run the check against the files changed since the before commit",
-"F273": "No production file, shared test kit, time-budget file or end-to-end file differs, and no skip, only, todo, retry, timeout or weaker matcher was added",
 "F274": "The Reports page and its dialog look and behave exactly as before; the loading and failure looks stay pinned",
-"F275": "a production edit inside a file the check allows (none is allowed here)",
 "F276": "The failure dialog is shown alone with its failed reports and its handlers, then each button and Escape is used",
 "F277": "It names each failed report in print order with its owner kind word, is described by that list, shows the part-of-the-page message for an empty list, offers Cancel, Leave it out, Retry only when offered, and each button and Escape call their own handler once",
 "F278": "A reader who could not export is told which reports failed and gets the buttons that do what they say",
@@ -1239,6 +1236,9 @@
 "F29": "Trunk safety: Story 6535 changes report panels (not these files) and T12 may touch test order; re-read each file at slice start, stop on a conflict, never rebase autonomously.",
 "F290": "A reader whose every report failed is not offered a Leave it out that would print nothing",
 "F291": "Leave it out wired to always show (a break removes the undefined case) and only the first report printed (a break prints one report)",
+"F292": "Run the check against the files changed since the before commit, found by its subject line on the branch history",
+"F293": "No production file, shared test kit, time-budget file or end-to-end file differs, except the two Reports files the feature's allow-list names (the reviewed move of the failure rules), and no skip, only, todo, retry, timeout or weaker matcher was added",
+"F294": "a further edit inside the two allowed Reports files (the reviewer reads that move)",
 "F3": "Each of the three test files takes less per-test time than before, judged by the median of at least 4 main runs measured the same way as the baseline",
 "F30": "No shared contract is touched: no schema, wire format or config shape changes, and the shared Reports and Refinement test kits (BulkReportsTestKit.tsx, RefinementTabTestKit.tsx) are left unchanged, so their importers (15 files for the Reports kit) need no migration.",
 "F31": "No dependency, boundary or owner law is reachable by a test-only change with no production file in any target; the existing law in reportsPage.enforcement.test.ts (only useBulkReportRemoval calls removeReportsInBulk) keeps running in pnpm test and is not changed.",

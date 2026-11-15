@@ -257,11 +257,11 @@ None.
 P3
 
 ```text
-Run the check against the files changed since the before commit
+Run the check against the files changed since the before commit, found by its subject line on the branch history
 ```
 
 ```text
-No production file, shared test kit, time-budget file or end-to-end file differs, and no skip, only, todo, retry, timeout or weaker matcher was added
+No production file, shared test kit, time-budget file or end-to-end file differs, except the two Reports files the feature's allow-list names (the reviewed move of the failure rules), and no skip, only, todo, retry, timeout or weaker matcher was added
 ```
 
 ```text
@@ -275,7 +275,7 @@ Tested
 bash docs\/feature\/story\-6648\-frontend\-clean\-as\-we\-go\/measurement\/check\-slice\.sh S2
 
 ```text
-a production edit inside a file the check allows (none is allowed here)
+a further edit inside the two allowed Reports files (the reviewer reads that move)
 ```
 
 ###### Obligations

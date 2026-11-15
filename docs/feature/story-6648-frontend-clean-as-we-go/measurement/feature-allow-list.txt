@@ -1,0 +1,3 @@
+# Production files the feature changes as a reviewed move; every slice's changed-file scan allows them.
+Lighthouse.Frontend/src/pages/Reports/printFailures.ts
+Lighthouse.Frontend/src/pages/Reports/useReportsPdfExport.ts

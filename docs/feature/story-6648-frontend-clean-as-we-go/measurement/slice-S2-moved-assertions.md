@@ -5,7 +5,8 @@ The scripts `measure-slice.sh`, `check-slice.sh` and `deliberate-breaks.sh` read
 
 ## Measure
 
-- Before commit: f9cfb6b61936f70fb532b2432e1d80d839ad9b21
+- Before commit subject: refactor(reports): move the failure rules of a combined PDF into a pure module
+- Before commit: 33f14d0a0f4fb249e06b845f2830b62969db2e22
 - Page test file: src/pages/Reports/ReportsPage.combinedPdf.test.tsx
 - Direct test files: src/pages/Reports/NoPdfDialog.test.tsx src/pages/Reports/printFailures.test.ts
 - File-alone ratio at most: 0.75

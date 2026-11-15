@@ -5,7 +5,8 @@ The scripts `measure-slice.sh`, `check-slice.sh` and `deliberate-breaks.sh` read
 
 ## Measure
 
-- Before commit: 6bdd76fa5056704c11702c176bbbf85e52000f73
+- Before commit subject: docs(test-infra): story 6648 — S1 slice review accepted
+- Before commit: 8e1ae167a3743c08399100089933e4d17832ba6d
 - Page test file: src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx
 - Direct test files: src/pages/Teams/Detail/Refinement/ConditionPrompt.test.tsx src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.test.tsx src/pages/Teams/Detail/Refinement/useSizingLog.test.tsx src/pages/Teams/Detail/Refinement/useCommentAdding.test.tsx src/pages/Teams/Detail/Refinement/useVoteCasting.test.tsx src/pages/Teams/Detail/Refinement/sizingLogWording.test.ts
 - File-alone ratio at most: 0.60

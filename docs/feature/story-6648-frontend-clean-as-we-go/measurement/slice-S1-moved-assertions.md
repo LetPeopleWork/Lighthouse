@@ -5,7 +5,8 @@ The scripts `measure-slice.sh`, `check-slice.sh` and `deliberate-breaks.sh` read
 
 ## Measure
 
-- Before commit: a0c6f17aa96229a5f79376d47b8da30c0548d2a0
+- Before commit subject: docs(test-infra): story 6648 — fixed examiner expectations
+- Before commit: 84635e0e20a51c8912c2b6cdb94d8890ea488f12
 - Page test file: src/pages/Reports/ReportsPage.removal.test.tsx
 - Direct test files: src/pages/Reports/RemoveSelectedDialog.test.tsx src/pages/Reports/useBulkReportRemoval.test.tsx src/pages/Reports/useSelectionActions.test.tsx
 - File-alone ratio at most: 0.60

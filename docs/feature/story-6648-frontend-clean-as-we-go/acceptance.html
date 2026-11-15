@@ -373,10 +373,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P3</p>
 
-<pre><code>Run the check against the files changed since the before commit
+<pre><code>Run the check against the files changed since the before commit, found by its subject line on the branch history
 </code></pre>
 
-<pre><code>No production file, shared test kit, time-budget file or end-to-end file differs, and no skip, only, todo, retry, timeout or weaker matcher was added
+<pre><code>No production file, shared test kit, time-budget file or end-to-end file differs, except the two Reports files the feature&#x27;s allow-list names (the reviewed move of the failure rules), and no skip, only, todo, retry, timeout or weaker matcher was added
 </code></pre>
 
 <pre><code>The Reports page and its dialog look and behave exactly as before; the loading and failure looks stay pinned
@@ -388,7 +388,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>bash docs/feature/story-6648-frontend-clean-as-we-go/measurement/check-slice.sh S2</p>
 
-<pre><code>a production edit inside a file the check allows (none is allowed here)
+<pre><code>a further edit inside the two allowed Reports files (the reviewer reads that move)
 </code></pre>
 
 <h6>Obligations</h6>

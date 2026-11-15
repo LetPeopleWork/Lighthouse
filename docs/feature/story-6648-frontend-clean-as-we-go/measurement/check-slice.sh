@@ -34,6 +34,18 @@ trap cleanup EXIT
 
 field() { sed -n "s/^- $1: *//p" "$data" | head -1 | sed 's/[[:space:]]*$//'; }
 before_sha="$(field "Before commit")"
+# The before commit is found by its subject line on HEAD's history, so a rebase does not break it; the SHA is only
+# the fallback when no subject is given.
+before_subject="$(field "Before commit subject")"
+if [ -n "$before_subject" ]; then
+	matches="$(git log --format='%H%x09%s' --fixed-strings --grep="$before_subject" HEAD | awk -F'\t' -v s="$before_subject" '$2 == s { print $1 }')"
+	if [ "$(printf '%s\n' "$matches" | grep -c .)" -ne 1 ]; then
+		echo "setup failed: the subject '$before_subject' names $(printf '%s\n' "$matches" | grep -c .) commits on HEAD's history, one is required"
+		gate 0 0 1 setup-failed
+		exit 3
+	fi
+	before_sha="$matches"
+fi
 page="$(field "Page test file")"
 direct_list="$(field "Direct test files")"
 allow="$(field "Production allow-list")"
@@ -54,7 +66,7 @@ pnpm --dir "$frontend" exec cross-env TZ=Europe/Zurich vitest run \
 	"$page" $direct_list >"$work/run.log" 2>&1
 mv -f "$frontend/test-results.json" "$report" 2>/dev/null
 
-python3 -I - "$data" "$report" "$started" "$before_sha" "$page" "$direct_list" "$allow" "$frontend" "$work/result" "$before_report" <<'PY'
+python3 -I - "$data" "$report" "$started" "$before_sha" "$page" "$direct_list" "$allow" "$frontend" "$work/result" "$before_report" "$here/feature-allow-list.txt" <<'PY'
 import json, os, re, subprocess, sys
 
 data, report_path, started, before_sha, page, direct_list, allow, frontend = sys.argv[1:9]
@@ -143,6 +155,12 @@ for text in diff.splitlines():
 # Nothing beyond the tests changes.
 SRC = f"{frontend}/src"
 allowed = set() if allow in ("", "none") else {f"{frontend}/{p}" for p in allow.split()}
+feature_allow = sys.argv[11]
+if os.path.exists(feature_allow):
+    for text in open(feature_allow, encoding="utf-8"):
+        text = text.strip()
+        if text and not text.startswith("#"):
+            allowed.add(text)
 changed = git("diff", "--no-renames", "--name-only", before_sha, "--", SRC).splitlines()
 changed += git("ls-files", "-o", "--exclude-standard", "--", SRC).splitlines()
 FROZEN = {

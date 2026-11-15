@@ -48,6 +48,13 @@ page="$(field "Page test file")"
 direct_list="$(field "Direct test files")"
 limit_alone="$(field "File-alone ratio at most")"
 limit_combined="$(field "Combined ratio at most")"
+before_subject="$(field "Before commit subject")"
+if [ -n "$before_subject" ]; then
+	matches="$(git log --format='%H%x09%s' --fixed-strings --grep="$before_subject" HEAD | awk -F'\t' -v s="$before_subject" '$2 == s { print $1 }')"
+	[ "$(printf '%s\n' "$matches" | grep -c .)" -eq 1 ] ||
+		setup_fail "the subject '$before_subject' names $(printf '%s\n' "$matches" | grep -c .) commits on HEAD's history, one is required"
+	before_sha="$matches"
+fi
 [ -n "$before_sha" ] && [ -n "$page" ] && [ -n "$limit_alone" ] && [ -n "$limit_combined" ] ||
 	setup_fail "the Measure section of $data lacks a before commit, a page file or a ratio limit"
 [ -f "$frontend/$page" ] || setup_fail "page test file $page does not exist"
