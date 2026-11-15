@@ -91,6 +91,9 @@ jobs:
           BUILDX_BUILDER: default
         run: bash tools/codesign/tests/test-sign-step.sh
 
+      - name: Check the host check
+        run: bash tools/codesign/tests/test-host-check.sh
+
   publish:
     needs: verify
     # Only main may move latest, which the signing machine pulls; a branch dispatch must never overwrite it.
