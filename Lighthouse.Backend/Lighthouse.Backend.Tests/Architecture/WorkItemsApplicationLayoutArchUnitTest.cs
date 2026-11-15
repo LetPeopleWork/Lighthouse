@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string FixtureReachingStorageOrClean = FixtureApplications + "(ReachingStorage|Clean)$";
 
         private const string WhereTheTypesLivedBefore =
-            @"Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.((WorkItems|TeamData|WorkItemRules|Dependencies|Parents)\.)?";
+            @"(?<![\w.])(Lighthouse\.Backend\.)?Services\.(Implementation|Interfaces)\.((WorkItems|TeamData|WorkItemRules|Dependencies|Parents)\.)?";
 
         // Generic types carry their arity in the compiled name.
         private static readonly string[] ApplicationTypes =
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         private static readonly Regex AnOldFullName = new(
-            $@"\b{WhereTheTypesLivedBefore}(?<type>{string.Join("|", AllMovedNames())})\b",
+            $@"{WhereTheTypesLivedBefore}(?<type>{string.Join("|", AllMovedNames())})\b",
             RegexOptions.None,
             TimeSpan.FromSeconds(1));
 
@@ -241,6 +241,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase("\"Lighthouse.Backend.Services.Implementation.TeamData.TeamDataService\",", "Lighthouse.Backend.Services.Implementation.TeamData.TeamDataService")]
         [TestCase("\"Lighthouse.Backend.Services.Implementation.RefreshLogService\"", "Lighthouse.Backend.Services.Implementation.RefreshLogService")]
         [TestCase("\"**/Services/Implementation/Dependencies/DependencyRefreshReporter.cs\",", "Services/Implementation/Dependencies/DependencyRefreshReporter.cs")]
+        [TestCase("    /// <see cref=\"Services.Implementation.WorkItemRules.RuleEvaluator{T}\"/>, and every", "Services.Implementation.WorkItemRules.RuleEvaluator")]
         public void AnOldHomeInARuleListOrAPath_IsFound(string line, string expectedHit)
         {
             Assert.That(
@@ -253,6 +254,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase("\"Lighthouse.Backend.Services.Implementation.WorkItems.SomethingThatDidNotMove\",")]
         [TestCase("\"Lighthouse.Backend.Services.Implementation.Dependencies.DependencySourceSelector\",")]
         [TestCase("\"**/Modules/WorkItems/Application/Dependencies/DependencyRefreshReporter.cs\",")]
+        [TestCase("    /// <see cref=\"Modules.WorkItems.Application.RuleEvaluator{T}\"/>, and every")]
         public void ANewHomeOrATypeThatStays_IsNotFound(string line)
         {
             Assert.That(
