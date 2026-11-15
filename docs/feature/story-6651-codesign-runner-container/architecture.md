@@ -23,13 +23,13 @@ Context map (ADR-270): the feature touches no bounded context. It changes only t
 #### D3
 
 ```text
-Runner image (owner tools/codesign/Dockerfile): a multi-stage build whose every FROM names debian:trixie-slim by tag and sha256 digest. The runtime stage installs from Debian trixie: pkcs11-provider (latchset, 1.0), opensc, opensc-pkcs11, pcscd, libccid, sudo, nodejs and npm (the existing Tauri re-sign steps run npx @tauri-apps/cli@2 on this runner), git, curl and ca-certificates. actions/runner at ARG RUNNER_VERSION (tarball sha256 checked) is unpacked to /opt/runner as the pristine copy each start copies from. User runner has ARG RUNNER_UID (default 1000, matching the host user that owns the token file). The Dockerfile creates /home/runner/state and /home/runner/runtime owned by runner, so a fresh named volume mounted at /home/runner/state takes that ownership and the register copy-back can write. LABEL org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse links the GHCR package to the repository. libengine-pkcs11-openssl (the OpenSSL engine) is deliberately NOT installed.
+Runner image (owner tools/codesign/Dockerfile): a single-stage build FROM ubuntu:26.04 by tag and sha256 digest. It installs from Ubuntu 26.04: osslsigncode (2.13), pkcs11-provider (latchset, 1.2.0), opensc and opensc-pkcs11 (0.27.0~rc1), pcscd (2.4.1), libccid (1.7.1), sudo, nodejs and npm (22; the existing Tauri re-sign steps run npx @tauri-apps/cli@2 on this runner), git, curl and ca-certificates; OpenSSL is 3.5. actions/runner at ARG RUNNER_VERSION (tarball sha256 checked) is unpacked to /opt/runner as the pristine copy each start copies from. User runner keeps uid ARG RUNNER_UID (default 1000, matching the host user that owns the token file): the Ubuntu image already has user ubuntu with uid 1000, so the Dockerfile renames it (usermod -l runner -d /home/runner -m ubuntu and groupmod -n runner ubuntu) instead of adding a second uid-1000 user. The Dockerfile creates /home/runner/state and /home/runner/runtime owned by runner, so a fresh named volume mounted at /home/runner/state takes that ownership and the register copy-back can write. LABEL org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse links the GHCR package to the repository. libengine-pkcs11-openssl (the OpenSSL engine, a separate package) is deliberately NOT installed.
 ```
 
 #### D4
 
 ```text
-osslsigncode is built from source in a builder stage, at ARG OSSLSIGNCODE_VERSION (2.16 at design time) with the release tarball sha256 checked, against the trixie OpenSSL 3.5, and copied into the runtime stage. Reason (probed): Debian trixie ships osslsigncode 2.9-2, whose sign command has no -provider option; upstream added it in 2.10 (2025-06-23). This confirms the maintainer target (pkcs11 provider, not engine) with a changed means: the Debian package cannot deliver it.
+osslsigncode comes from the Ubuntu 26.04 package (2.13-1, whose sign help lists -provider): no builder stage and no osslsigncode version or sha256 ARG. Reason: Debian trixie ships osslsigncode 2.9-2, which has no -provider option (upstream added it in 2.10), and Debian sid is rolling; Ubuntu 26.04 carries a provider-capable osslsigncode together with pkcs11-provider 1.2.0, so the maintainer target (pkcs11 provider, not engine) needs no source build.
 ```
 
 #### D5
@@ -59,7 +59,7 @@ One independent workflow (owner .github/workflows/codesign-runner-image.yml, nam
 #### D9
 
 ```text
-Renovate (owner renovate.json): the dockerfile manager finds the FROM digests in tools/codesign/Dockerfile. One new custom regex manager reads lines of the form # renovate: datasource=github-releases depName=OWNER/REPO followed by ARG NAME=VERSION in tools/codesign/Dockerfile (actions/runner, mtrojnar/osslsigncode). ADR-212 automerge stays on. These PRs are gated by the required check Codesign Runner Image / verify (D14): a version bump whose sha256 ARG was not updated fails the image build, stays red and does not merge until a human edits the checksum. That is the intended safe failure.
+Renovate (owner renovate.json): the dockerfile manager finds the FROM digest of ubuntu:26.04 in tools/codesign/Dockerfile. One new custom regex manager reads a line of the form # renovate: datasource=github-releases depName=actions/runner followed by ARG RUNNER_VERSION=VERSION in tools/codesign/Dockerfile; Renovate tracks only the base digest and the runner version. ADR-212 automerge stays on. These PRs are gated by the required check Codesign Runner Image / verify (D14): a runner bump whose sha256 ARG was not updated fails the image build, stays red and does not merge until a human edits the checksum. That is the intended safe failure.
 ```
 
 #### D10
@@ -133,7 +133,7 @@ Bounds from authority: P3 says the no-key failure is at once and before any PIN 
 #### K3
 
 ```text
-Deviation, labelled: pinned are the base image digest, actions/runner (version and sha256) and osslsigncode (version and sha256). Debian packages float within the pinned trixie base at build time on purpose, so the weekly scheduled rebuild picks up Debian security fixes. A package update can therefore change the image between rebuilds, but only through a CI build that runs the oracles before publish, never on the maintainer workstation.
+Deviation, labelled: pinned are the base image digest (ubuntu:26.04) and actions/runner (version and sha256). Ubuntu packages, osslsigncode included, float within the pinned base at build time on purpose, so the weekly scheduled rebuild picks up Ubuntu security fixes. A package update can therefore change the image between rebuilds, but only through a CI build that runs the oracles before publish, never on the maintainer workstation.
 ```
 
 #### K4
@@ -169,7 +169,7 @@ Manual host steps (maintainer, not CI): once per fresh machine: install compose.
 #### K9
 
 ```text
-Only the maintainer can check these at EXAMINE, no oracle can: pkcs11-provider 1.0-3 with the PIV key in slot 9c (always-authenticate) across three signs in one run (fallback: pkcs11-provider 1.2.0 from trixie-backports); the static reader entry finding the real key inside the container; /sys/bus/usb showing the plugged key inside the container; growth of /home/runner/work (no volume, so it is reset on every recreate).
+Only the maintainer can check these at EXAMINE, no oracle can: pkcs11-provider 1.2.0 with the PIV key in slot 9c (always-authenticate) across three signs in one run; opensc-pkcs11 0.27.0~rc1 (a release candidate in Ubuntu 26.04) talking to the real YubiKey; the static reader entry finding the real key inside the container; /sys/bus/usb showing the plugged key inside the container; growth of /home/runner/work (no volume, so it is reset on every recreate).
 ```
 
 #### K10
@@ -515,7 +515,7 @@ tools\/codesign\/Dockerfile
 Create
 
 ```text
-Runner image: digest-pinned trixie base, actions/runner at pinned version and sha256, non-root user, entrypoint
+Runner image: digest-pinned ubuntu:26.04 base, actions/runner at pinned version and sha256, user runner with uid 1000 (renamed from ubuntu), entrypoint
 ```
 
 tools\/codesign\/entrypoint\.sh
@@ -579,7 +579,7 @@ Build the image from tools/codesign/Dockerfile (or take IMAGE); run it through i
 ```
 
 ```text
-(1) Every FROM names debian:trixie-slim with an @sha256 digest; the image has label org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse; /opt/runner holds config.sh and run.sh at the RUNNER_VERSION in the Dockerfile; /home/runner/state and /home/runner/runtime exist owned by runner; the default user is runner with uid 1000. (2) Run mode with an empty volume exits 1 within 60 s, names the register command and never starts run.sh or config.sh. (3) Run mode with a volume holding .runner, .credentials and .credentials_rsaparams starts run.sh and never config.sh. (4) A volume left by an older image plus the new image: run.sh executes from /home/runner/runtime (writable, a copy, not a symlink to /opt/runner), the three files sit beside it, and the runner there reports the image RUNNER_VERSION. (5) Real-binary case, no stand-in: with the three fixture files in the volume, the image real run.sh started by the entrypoint under a 60 s timeout prints neither Must configure nor Permission denied (a network or authentication failure is acceptable). (6) Register mode with a token file: curl receives the token only through a file or stdin and never on argv; config.sh runs from /home/runner/runtime with labels linux,codesign and --disableupdate; the three files land in a fresh volume; the token is in no output. Register mode without a token file exits 1 naming /run/secrets/github_token. (7) Rendered compose: service runner has restart unless-stopped, init true, a bind of /dev/bus/usb, device_cgroup_rules c 189:* rmw, no privileged true, no fixed devices entry, the state volume, image ghcr.io/letpeoplework/lighthouse-codesign-runner:latest and NO secrets; service register has profile register and the github_token secret with a source outside the repo; config with a missing token file still renders the runner service. (8) The unit has ExecStartPre=-docker compose pull, ExecStart=docker compose up -d runner, After=docker.service, WantedBy=multi-user.target. (9) codesign-runner-image.yml has a pull_request trigger with no paths filter; its changes job writes codesign as the string true or false; the verify job if contains !cancelled(), a needs.changes.result clause and a comparison of needs.changes.outputs.codesign with the quoted string true, and its first step exits 1 when needs.changes.result is not success; publish needs verify and its if requires github.ref refs/heads/main, an event other than pull_request and needs.verify.result success; ci.yml and ci_changes.yml are not referenced. So the check Codesign Runner Image / verify runs when codesign is true.
+(1) Every FROM names ubuntu:26.04 with an @sha256 digest; the image has label org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse; /opt/runner holds config.sh and run.sh at the RUNNER_VERSION in the Dockerfile; /home/runner/state and /home/runner/runtime exist owned by runner; the default user is runner with uid 1000 and no user ubuntu remains. (2) Run mode with an empty volume exits 1 within 60 s, names the register command and never starts run.sh or config.sh. (3) Run mode with a volume holding .runner, .credentials and .credentials_rsaparams starts run.sh and never config.sh. (4) A volume left by an older image plus the new image: run.sh executes from /home/runner/runtime (writable, a copy, not a symlink to /opt/runner), the three files sit beside it, and the runner there reports the image RUNNER_VERSION. (5) Real-binary case, no stand-in: with the three fixture files in the volume, the image real run.sh started by the entrypoint under a 60 s timeout prints neither Must configure nor Permission denied (a network or authentication failure is acceptable). (6) Register mode with a token file: curl receives the token only through a file or stdin and never on argv; config.sh runs from /home/runner/runtime with labels linux,codesign and --disableupdate; the three files land in a fresh volume; the token is in no output. Register mode without a token file exits 1 naming /run/secrets/github_token. (7) Rendered compose: service runner has restart unless-stopped, init true, a bind of /dev/bus/usb, device_cgroup_rules c 189:* rmw, no privileged true, no fixed devices entry, the state volume, image ghcr.io/letpeoplework/lighthouse-codesign-runner:latest and NO secrets; service register has profile register and the github_token secret with a source outside the repo; config with a missing token file still renders the runner service. (8) The unit has ExecStartPre=-docker compose pull, ExecStart=docker compose up -d runner, After=docker.service, WantedBy=multi-user.target. (9) codesign-runner-image.yml has a pull_request trigger with no paths filter; its changes job writes codesign as the string true or false; the verify job if contains !cancelled(), a needs.changes.result clause and a comparison of needs.changes.outputs.codesign with the quoted string true, and its first step exits 1 when needs.changes.result is not success; publish needs verify and its if requires github.ref refs/heads/main, an event other than pull_request and needs.verify.result success; ci.yml and ci_changes.yml are not referenced. So the check Codesign Runner Image / verify runs when codesign is true.
 ```
 
 ```text
@@ -1013,7 +1013,7 @@ tools\/codesign\/Dockerfile
 Extend
 
 ```text
-osslsigncode builder stage, pkcs11-provider, opensc, pcscd, libccid, node/npm, reader entry, sudoers line, PKCS11_PROVIDER_MODULE; no pkcs11 engine
+Ubuntu packages osslsigncode, pkcs11-provider, opensc, pcscd, libccid, node/npm, reader entry, sudoers line, PKCS11_PROVIDER_MODULE; no pkcs11 engine
 ```
 
 tools\/codesign\/sign\-windows\.sh

@@ -13,7 +13,7 @@ Build the runner image and read every base line of its Dockerfile
 ```
 
 ```text
-Every build stage starts from debian:trixie-slim pinned by a sha256 digest
+Every build stage starts from ubuntu:26.04 pinned by a sha256 digest
 ```
 
 ```text
@@ -24,10 +24,10 @@ A rebuild of the same commit cannot pick up a different base, and Renovate can p
 
 Tested
 
-tools\/codesign\/tests\/test\-runner\-image\.sh\:\:every build stage starts from debian\:trixie\-slim pinned by digest
+tools\/codesign\/tests\/test\-runner\-image\.sh\:\:every build stage starts from ubuntu\:26\.04 pinned by digest
 
 ```text
-A digest that is well formed but not a real trixie-slim digest; the digest is not looked up in a registry
+A digest that is well formed but not a real ubuntu:26.04 digest; the digest is not looked up in a registry
 ```
 
 ###### Obligations
@@ -71,15 +71,15 @@ P1
 P4
 
 ```text
-Look inside the built image at the pristine runner, the state and run directories and the default user
+Look inside the built image at the pristine runner, the state and run directories and the users
 ```
 
 ```text
-The pristine runner has config.sh and run.sh and reports the runner version the Dockerfile pins; the state and run directories belong to runner; the image runs as runner with uid 1000
+The pristine runner has config.sh and run.sh and reports the runner version the Dockerfile pins; the state and run directories belong to runner; the image runs as runner with uid 1000 and no user ubuntu remains
 ```
 
 ```text
-The runner GitHub sees is the pinned version, jobs do not run as root, and a fresh state volume can receive the registration
+The runner GitHub sees is the pinned version, jobs do not run as root, uid 1000 has one name, and a fresh state volume can receive the registration
 ```
 
 ##### Disposition

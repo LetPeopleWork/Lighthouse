@@ -263,15 +263,16 @@ start_entrypoint() {
   chmod 777 "$RECORD_DIR"
   created_containers+=("$name")
   local started=$SECONDS
-  docker run -d --name "$name" --network none \
+  if ! docker run -d --name "$name" --network none \
     -v "$volume:/home/runner/state" \
     -v "$RECORD_DIR:/record" \
     -v "$stubs_dir/run.sh:/opt/runner/run.sh:ro" \
     -v "$stubs_dir/config.sh:/opt/runner/config.sh:ro" \
     -v "$path_stubs_dir:/stubs:ro" \
     -e PATH=/stubs:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-    "$@" "$image" "$mode" >/dev/null
-  if RUN_EXIT="$(timeout "$start_limit_seconds" docker wait "$name")"; then :; else RUN_EXIT=timeout; fi
+    "$@" "$image" "$mode" >/dev/null 2>"$work_dir/start-$label.err"; then
+    RUN_EXIT="did not start: $(cat "$work_dir/start-$label.err")"
+  elif RUN_EXIT="$(timeout "$start_limit_seconds" docker wait "$name")"; then :; else RUN_EXIT=timeout; fi
   RUN_SECONDS=$((SECONDS - started))
   RUN_OUTPUT="$(docker logs "$name" 2>&1 || true)"
   docker rm -f "$name" >/dev/null 2>&1 || true
@@ -285,15 +286,15 @@ record_of() {
 
 # ---------------------------------------------------------------- the image itself
 
-base_check="every build stage starts from debian:trixie-slim pinned by digest"
+base_check="every build stage starts from ubuntu:26.04 pinned by digest"
 if [ ! -f "$dockerfile" ]; then
   fail "$base_check" "tools/codesign/Dockerfile does not exist" \
     "Renovate can only bump a base digest that is written down, and an unpinned tag can change under a rebuild" \
-    "write every FROM as debian:trixie-slim@sha256:<digest>"
+    "write every FROM as ubuntu:26.04@sha256:<digest>"
 else
   from_total=0
   from_unpinned=""
-  pinned_from='^[[:space:]]*FROM[[:space:]]+(--platform=[^[:space:]]+[[:space:]]+)?debian:trixie-slim@sha256:[0-9a-f]{64}([[:space:]]+[Aa][Ss][[:space:]]+[^[:space:]]+)?[[:space:]]*$'
+  pinned_from='^[[:space:]]*FROM[[:space:]]+(--platform=[^[:space:]]+[[:space:]]+)?ubuntu:26\.04@sha256:[0-9a-f]{64}([[:space:]]+[Aa][Ss][[:space:]]+[^[:space:]]+)?[[:space:]]*$'
   while IFS= read -r line; do
     if [[ $line =~ ^[[:space:]]*FROM[[:space:]] ]]; then
       from_total=$((from_total + 1))
@@ -303,9 +304,9 @@ else
   if [ "$from_total" -gt 0 ] && [ -z "$from_unpinned" ]; then
     pass "$base_check ($from_total of $from_total FROM lines)"
   else
-    fail "$base_check" "of $from_total FROM lines, these are not debian:trixie-slim@sha256:<digest>: ${from_unpinned:-none found}" \
+    fail "$base_check" "of $from_total FROM lines, these are not ubuntu:26.04@sha256:<digest>: ${from_unpinned:-none found}" \
       "a tag-only base can change between two builds of the same commit, and Renovate bumps only a written digest" \
-      "write every FROM as debian:trixie-slim@sha256:<64 hex digits>"
+      "write every FROM as ubuntu:26.04@sha256:<64 hex digits>"
   fi
 fi
 
@@ -347,7 +348,8 @@ else
     for d in /home/runner/state /home/runner/runtime; do
       if [ -d "$d" ]; then echo "owner=$d:$(stat -c %U "$d")"; else echo "owner=$d:missing"; fi
     done
-    echo "uid=$(id -u)"; echo "name=$(id -un)"' 2>&1 || true)"
+    echo "uid=$(id -u)"; echo "name=$(id -un)"
+    if getent passwd ubuntu >/dev/null; then echo "ubuntu_user=present"; else echo "ubuntu_user=absent"; fi' 2>&1 || true)"
   if contains_line "owner=/home/runner/state:runner" "$owners" && contains_line "owner=/home/runner/runtime:runner" "$owners"; then
     pass "the state and run directories belong to the runner user"
   else
@@ -358,13 +360,14 @@ else
   fi
 
   config_user="$(docker image inspect -f '{{.Config.User}}' "$image" 2>/dev/null || true)"
-  if [ "$config_user" = "runner" ] && contains_line "uid=1000" "$owners" && contains_line "name=runner" "$owners"; then
+  if [ "$config_user" = "runner" ] && contains_line "uid=1000" "$owners" && contains_line "name=runner" "$owners" \
+     && contains_line "ubuntu_user=absent" "$owners"; then
     pass "the image runs as the runner user with uid 1000"
   else
     fail "the image runs as the runner user with uid 1000" \
-      "default user is '$config_user', running as uid '$(value_of uid "$owners")' named '$(value_of name "$owners")'" \
-      "jobs must not run as root, and uid 1000 owns the token file on the machine" \
-      "create user runner with ARG RUNNER_UID=1000 and end the Dockerfile with USER runner"
+      "default user is '$config_user', running as uid '$(value_of uid "$owners")' named '$(value_of name "$owners")', user ubuntu is $(value_of ubuntu_user "$owners")" \
+      "jobs must not run as root, uid 1000 owns the token file on the machine, and a leftover ubuntu account would be a second name for that uid" \
+      "rename the base image user ubuntu (uid 1000) to runner and end the Dockerfile with USER runner"
   fi
 fi
 
@@ -433,12 +436,14 @@ else
   fill_registered_volume "$volume"
   real_name="$prefix-real"
   created_containers+=("$real_name")
-  docker run -d --name "$real_name" --network none -v "$volume:/home/runner/state" "$image" run >/dev/null
+  docker run -d --name "$real_name" --network none -v "$volume:/home/runner/state" "$image" run >/dev/null 2>&1 || true
   real_output=""
   while IFS= read -r line; do
     real_output+="$line"$'\n'
     case "$line" in
-      *"Must configure"*|*"Permission denied"*|*"re-launch"*|*"An error occurred"*|*"Exiting"*|*"Connected to GitHub"*|*"Listening for Jobs"*) break ;;
+      *"Must configure"*|*"Permission denied"*|*"re-launch"*|*"An error occurred"*|*"Exiting"*|*"Connected to GitHub"*|*"Listening for Jobs"*)
+        docker rm -f "$real_name" >/dev/null 2>&1 || true
+        break ;;
     esac
   done < <(timeout "$start_limit_seconds" docker logs -f "$real_name" 2>&1 || true)
   docker rm -f "$real_name" >/dev/null 2>&1 || true
@@ -632,7 +637,7 @@ workflow_checks=(
 )
 workflow_facts_expression='"name=" + (.name // ""),
   "pr=" + ((.on // {}) | has("pull_request") | tostring),
-  "pr_filtered=" + ((((.on.pull_request // {}) | has("paths")) or ((.on.pull_request // {}) | has("paths-ignore"))) | tostring),
+  "pr_filtered=" + ((.on.pull_request // {}) | has("paths") | tostring) + ((.on.pull_request // {}) | has("paths-ignore") | tostring),
   "schedule=" + ((.on // {}) | has("schedule") | tostring),
   "push_branch=" + ((.on.push.branches // [])[]),
   "push_path=" + ((.on.push.paths // [])[]),
@@ -643,16 +648,16 @@ workflow_facts_expression='"name=" + (.name // ""),
   "verify_if_result=" + ((.jobs.verify["if"] // "") | test("needs\\.changes\\.result") | tostring),
   "verify_if_string=" + ((.jobs.verify["if"] // "") | test("needs\\.changes\\.outputs\\.codesign\\s*==\\s*\x27true\x27|\x27true\x27\\s*==\\s*needs\\.changes\\.outputs\\.codesign") | tostring),
   "verify_if_boolean=" + ((.jobs.verify["if"] // "") | test("needs\\.changes\\.outputs\\.codesign\\s*==\\s*true|true\\s*==\\s*needs\\.changes\\.outputs\\.codesign") | tostring),
-  "verify_first_step_gate=" + ((((.jobs.verify.steps // [])[0] // {}) | to_json(0) | test("needs\\.changes\\.result")) and (((.jobs.verify.steps // [])[0] // {}) | to_json(0) | test("exit 1")) | tostring),
+  "verify_first_step_gate=" + (((.jobs.verify.steps // [])[0] // {}) | to_json(0) | test("needs\\.changes\\.result") | tostring) + (((.jobs.verify.steps // [])[0] // {}) | to_json(0) | test("exit 1") | tostring),
   "verify_runs_oracle=" + ((.jobs.verify // {}) | to_json(0) | test("tools/codesign/tests/test-runner-image\\.sh") | tostring),
   "verify_pushes=" + ((.jobs.verify // {}) | to_json(0) | test("\"push\":\\s*\"?true|docker/login-action|docker push") | tostring),
   "changes_output=" + (.jobs.changes.outputs.codesign // ""),
-  "changes_writes=" + ((((.jobs.changes.steps // []) | to_json(0) | test("codesign=")) and ((.jobs.changes.steps // []) | to_json(0) | test("true")) and ((.jobs.changes.steps // []) | to_json(0) | test("false"))) | tostring),
+  "changes_writes=" + ((.jobs.changes.steps // []) | to_json(0) | test("codesign=") | tostring) + ((.jobs.changes.steps // []) | to_json(0) | test("true") | tostring) + ((.jobs.changes.steps // []) | to_json(0) | test("false") | tostring),
   "publish_needs=" + ([.jobs.publish.needs // []] | flatten | .[]),
   "publish_if_main=" + ((.jobs.publish["if"] // "") | test("github\\.ref\\s*==\\s*\x27refs/heads/main\x27") | tostring),
   "publish_if_event=" + ((.jobs.publish["if"] // "") | test("github\\.event_name\\s*!=\\s*\x27pull_request\x27") | tostring),
   "publish_if_verify=" + ((.jobs.publish["if"] // "") | test("needs\\.verify\\.result\\s*==\\s*\x27success\x27") | tostring),
-  "publish_tags=" + ((((.jobs.publish // {}) | to_json(0) | test("ghcr\\.io/letpeoplework/lighthouse-codesign-runner")) and ((.jobs.publish // {}) | to_json(0) | test("latest")) and ((.jobs.publish // {}) | to_json(0) | test("sha-"))) | tostring)'
+  "publish_tags=" + ((.jobs.publish // {}) | to_json(0) | test("ghcr\\.io/letpeoplework/lighthouse-codesign-runner") | tostring) + ((.jobs.publish // {}) | to_json(0) | test("latest") | tostring) + ((.jobs.publish // {}) | to_json(0) | test("sha-") | tostring)'
 
 if [ ! -f "$workflow_file" ]; then
   for name in "${workflow_checks[@]}"; do
@@ -663,7 +668,7 @@ else
   workflow_facts="$(yq_facts "$workflow_file" "$workflow_facts_expression" 2>&1 || true)"
   wf() { value_of "$1" "$workflow_facts"; }
 
-  if [ "$(wf name)" = "Codesign Runner Image" ] && [ "$(wf pr)" = "true" ] && [ "$(wf pr_filtered)" = "false" ] \
+  if [ "$(wf name)" = "Codesign Runner Image" ] && [ "$(wf pr)" = "true" ] && [ "$(wf pr_filtered)" = "falsefalse" ] \
      && [ "$(wf verify_present)" = "true" ] && [ "$(wf verify_name)" = "verify" ]; then
     pass "${workflow_checks[0]}"
   else
@@ -679,11 +684,11 @@ else
   else
     fail "${workflow_checks[1]}" \
       "push branches [$(joined_values_of push_branch "$workflow_facts")], push paths [$(joined_values_of push_path "$workflow_facts")], schedule: $(wf schedule)" \
-      "a change to the image files and Debian security fixes reach the machine only through a rebuild" \
+      "a change to the image files and Ubuntu security fixes reach the machine only through a rebuild" \
       "trigger on push to main for tools/codesign/** and on a weekly schedule"
   fi
 
-  if [ -n "$(wf changes_output)" ] && [ "$(wf changes_writes)" = "true" ]; then
+  if [ -n "$(wf changes_output)" ] && [ "$(wf changes_writes)" = "truetruetrue" ]; then
     pass "${workflow_checks[2]}"
   else
     fail "${workflow_checks[2]}" \
@@ -694,7 +699,7 @@ else
 
   if contains_line "verify_needs=changes" "$workflow_facts" && [ "$(wf verify_if_cancelled)" = "true" ] \
      && [ "$(wf verify_if_result)" = "true" ] && [ "$(wf verify_if_string)" = "true" ] \
-     && [ "$(wf verify_if_boolean)" = "false" ] && [ "$(wf verify_first_step_gate)" = "true" ]; then
+     && [ "$(wf verify_if_boolean)" = "false" ] && [ "$(wf verify_first_step_gate)" = "truetrue" ]; then
     pass "${workflow_checks[3]}"
   else
     fail "${workflow_checks[3]}" \
@@ -713,7 +718,7 @@ else
   fi
 
   if contains_line "publish_needs=verify" "$workflow_facts" && [ "$(wf publish_if_main)" = "true" ] \
-     && [ "$(wf publish_if_event)" = "true" ] && [ "$(wf publish_if_verify)" = "true" ] && [ "$(wf publish_tags)" = "true" ]; then
+     && [ "$(wf publish_if_event)" = "true" ] && [ "$(wf publish_if_verify)" = "true" ] && [ "$(wf publish_tags)" = "truetruetrue" ]; then
     pass "${workflow_checks[5]}"
   else
     fail "${workflow_checks[5]}" \

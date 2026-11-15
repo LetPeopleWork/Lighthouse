@@ -160,7 +160,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Build the runner image and read every base line of its Dockerfile
 </code></pre>
 
-<pre><code>Every build stage starts from debian:trixie-slim pinned by a sha256 digest
+<pre><code>Every build stage starts from ubuntu:26.04 pinned by a sha256 digest
 </code></pre>
 
 <pre><code>A rebuild of the same commit cannot pick up a different base, and Renovate can propose base digest bumps
@@ -170,9 +170,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>tools/codesign/tests/test-runner-image.sh::every build stage starts from debian:trixie-slim pinned by digest</p>
+<p>tools/codesign/tests/test-runner-image.sh::every build stage starts from ubuntu:26.04 pinned by digest</p>
 
-<pre><code>A digest that is well formed but not a real trixie-slim digest; the digest is not looked up in a registry
+<pre><code>A digest that is well formed but not a real ubuntu:26.04 digest; the digest is not looked up in a registry
 </code></pre>
 
 <h6>Obligations</h6>
@@ -211,13 +211,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P4</p>
 
-<pre><code>Look inside the built image at the pristine runner, the state and run directories and the default user
+<pre><code>Look inside the built image at the pristine runner, the state and run directories and the users
 </code></pre>
 
-<pre><code>The pristine runner has config.sh and run.sh and reports the runner version the Dockerfile pins; the state and run directories belong to runner; the image runs as runner with uid 1000
+<pre><code>The pristine runner has config.sh and run.sh and reports the runner version the Dockerfile pins; the state and run directories belong to runner; the image runs as runner with uid 1000 and no user ubuntu remains
 </code></pre>
 
-<pre><code>The runner GitHub sees is the pinned version, jobs do not run as root, and a fresh state volume can receive the registration
+<pre><code>The runner GitHub sees is the pinned version, jobs do not run as root, uid 1000 has one name, and a fresh state volume can receive the registration
 </code></pre>
 
 <h5>Disposition</h5>
