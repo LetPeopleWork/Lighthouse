@@ -1,8 +1,147 @@
 {
+"acceptance": {
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F171",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsDoesNotReachForecastingArchUnitTest.cs::FlowMetrics_ReachesNoForecastingType"
+},
+"expected": "F169",
+"stimulus": "F168",
+"user_result": "F170"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F175",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsDoesNotReachForecastingArchUnitTest.cs::TheThreeQuestionsFlowMetricsAsks_AreItsOwnPorts_AndForecastingAnswersEach"
+},
+"expected": "F173",
+"stimulus": "F172",
+"user_result": "F174"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F179",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsDoesNotReachForecastingArchUnitTest.cs::AMetricsTypeReachingForecasting_FailsAndIsNamedWithWhatItReaches"
+},
+"expected": "F177",
+"stimulus": "F176",
+"user_result": "F178"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F183",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsDoesNotReachForecastingArchUnitTest.cs::APortDeclaredInForecastingInsteadOfFlowMetrics_FailsAndIsNamedWithWhereItLives"
+},
+"expected": "F181",
+"stimulus": "F180",
+"user_result": "F182"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F187",
+"test": "Scripts/examine/bin/metrics-answers-compare"
+},
+"expected": "F185",
+"stimulus": "F184",
+"user_result": "F186"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F191",
+"test": "Scripts/examine/bin/forecast-answers-compare"
+},
+"expected": "F189",
+"stimulus": "F188",
+"user_result": "F190"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F195",
+"test": "Scripts/examine/bin/forecast-triggers-show"
+},
+"expected": "F193",
+"stimulus": "F192",
+"user_result": "F194"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F199",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsDoesNotReachForecastingArchUnitTest.cs::AMetricsTypeAskingOnlyThroughItsOwnPort_PassesBothRules"
+},
+"expected": "F197",
+"stimulus": "F196",
+"user_result": "F198"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F203",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsDoesNotReachForecastingArchUnitTest.cs::APortThatOnlyFlowMetricsAnswers_FailsAndIsNamedWithWhoAnswersIt"
+},
+"expected": "F201",
+"stimulus": "F200",
+"user_result": "F202"
+}
+]
+},
 "counters": {
 "D": 5,
 "E": 6,
-"F": 167,
+"F": 203,
 "K": 4,
 "P": 5,
 "S": 4,
@@ -911,11 +1050,47 @@
 "F165": "Forecasting's unit tests sit under Lighthouse.Backend.Tests/Modules/Forecasting, and a placement test fails if they are moved elsewhere.",
 "F166": "For the same inputs, metrics answers, forecasts and forecast answers are identical before and after the change.",
 "F167": "After the change, forecasts still refresh after a Team refresh and at start-up.",
+"F168": "Read the compiled production code and look for any Flow metrics type that uses a Forecasting type, with no list of allowed exceptions",
+"F169": "No Flow metrics type uses a Forecasting type; today the rule fails and names the three uses: the base metrics service on the forecast service, and the Team metrics service on the forecast filter rule service and on the forecast data sufficiency policy",
 "F17": "Checker mapping: no state, transition, protocol, concurrency, recovery or scheduling behaviour changes, so Quint, TLA+/TLC and Agda cover no claim here (Quint is installed; nothing is modelled). Liveness: not applicable, no progress claim is added or changed. Dependency-direction, layer and placement claims are decided exactly by the IL-reading rules (IlDependencies) in the S2, S3 and S4 oracles, each with a made-up offender as its falsifier. Answer preservation is observed by SeededForecastsStayTheSameTest, forecast-answers-compare and metrics-answers-compare; trigger and seeding firing by the S1 public command. A property test over seeds would compare the code with itself (both sides run the same code), so pinned values and before/after captures are the falsifiers. Types: C# nominal interfaces under the compiler; the claim is that no Flow metrics type names a Forecasting type, checked on the IL, not a proof.",
+"F170": "Flow metrics no longer depends on Forecasting, so the two modules no longer form a cycle",
+"F171": "A Flow metrics type reaches Forecasting only through a type the IL reader cannot see (a catch clause, an event or a named attribute argument)",
+"F172": "Read the compiled production code for the three questions Flow metrics asks Forecasting: the throughput filter, the forecast data sufficiency and the how-many forecaster",
+"F173": "Each is an interface in Flow metrics' Application and a Forecasting type implements each; today the rule fails and names all three as missing",
+"F174": "Flow metrics owns the questions it asks, in its own words, and Forecasting is the one that answers them",
+"F175": "A port carries a member that is never called, or the Forecasting answer is registered with a different lifetime; those are left to the answer comparisons and the review",
+"F176": "Run the same no-reach rule over made-up modules: a metrics type taking a Forecasting service in its constructor, one calling a static Forecasting policy, and one resolving a Forecasting service from the service provider",
+"F177": "Each fails and is named with the Forecasting type it reaches",
+"F178": "Any of the three ways the cycle could come back is caught and named",
+"F179": "A rule that names the edge but also reports an unrelated second edge in the same message",
 "F18": "ForecastUpdater edge into the shared update infrastructure (UpdateServiceBase, UpdateKey in Services.Implementation.BackgroundServices.Update): the shared update code stays where it is, because it also serves TeamUpdater and PortfolioUpdater; moving it is S09a's. S3 adds one Forecasting Adapters outbound rule: Modules.Forecasting.Adapters reaches Services.Implementation.BackgroundServices.Update only through an inline list, compared both ways, whose entries are the ForecastUpdater edges read from the IL in S3 (expected UpdateServiceBase and UpdateKey). The list is a ratchet candidate for S09a and only shrinks. The edges into Services.Interfaces.Update, DomainEvents and Repositories are platform-lane contracts and stay legal by namespace; ForecastUpdater's licence read stays named in prose (R-F6).",
+"F180": "Run the port rule over a made-up module whose port is declared in Forecasting instead of Flow metrics' Application",
+"F181": "The rule fails and names where the port actually lives",
+"F182": "A port that moves back into Forecasting is caught and named",
+"F183": "A port declared in a sub-namespace of Flow metrics' Application is refused although it is still Flow metrics' own; the design places the ports in the Application namespace itself",
+"F184": "Capture the metrics answers on demo data before and after the change and compare them",
+"F185": "Every metrics answer is identical, including the forecast predictability score that uses the how-many forecast and the forecast throughput status that uses the filter and the sufficiency check",
+"F186": "Users see the same metrics after the change",
+"F187": "A difference only in an answer the capture does not ask for",
+"F188": "Capture the forecasts and forecast answers before and after the change, and compute the seeded forecasts and the Flow metrics unit and filter-forecast tests",
+"F189": "Forecasts and forecast answers are identical, the seeded forecasts keep their pinned values, and the Flow metrics and filter-forecast tests stay green unchanged in their assertions",
 "F19": "Behaviour-free: same objects answer the same calls through another interface name. Program.cs keeps every existing line and position; the new registrations resolve the existing scoped instances (IThroughputFilter resolves the scoped ForecastFilterRuleService instance already registered for IForecastFilterRuleService; the Forecasting adapter answering IForecastDataSufficiency and IHowManyForecaster is scoped, the lifetime of IForecastService it delegates to). Handler order, routes, DTOs, responses and schema unchanged; BaseMetricsService keeps resolving through the service provider (S07b removes that), now asking for IHowManyForecaster.",
+"F190": "Users get the same forecasts after the change",
+"F191": "A difference only for an input neither the capture nor the seeded set covers",
+"F192": "On demo data, refresh a Team and restart the application, then read the forecasts through the public API",
+"F193": "Forecasts are recomputed after the Team refresh and seeded at start-up, as before the change",
+"F194": "Forecasts still refresh after a Team refresh and at start-up",
+"F195": "A trigger fires but recomputes with a stale answer; the answer comparisons cover the values",
+"F196": "Run both rules over a made-up module whose metrics type asks only through its own port, which a made-up Forecasting type implements",
+"F197": "The no-reach rule looks at the metrics type, finds no edge and passes; the port rule passes",
+"F198": "Asking Forecasting through a port Flow metrics owns stays allowed",
+"F199": "A rule that counts implementing a metrics port as reaching Forecasting would fail here, so only an over-lenient rule passes; the failing cases pin that side",
 "F2": "Forecasting is a module of its own with its own rules, and Flow metrics no longer depends on it, so the Flow metrics and Forecasting cycle is gone and Epic 6474 slice 07 can write into Forecasting's seam",
 "F20": "Moves and renames search full type names inside strings (ILogger<T> categories, perf harness, Stryker configs, reflection by name, test-name lists in guards), not only using lines. Checked at design for the S4 test move: no guard list, Stryker config, script or workflow names a Forecasting test class by namespace (stryker.6094 filters by class name, which survives the move); the crafter repeats the search at the move.",
+"F200": "Run the port rule over a made-up module whose port only a Flow metrics type implements, with a Forecasting type present that answers something else",
+"F201": "The rule fails and names the Flow metrics type that answers the port instead of Forecasting",
+"F202": "An answer copied into Flow metrics instead of asked of Forecasting is caught and named",
+"F203": "Forecasting implements the port but the composition root registers a Flow metrics copy instead; the answer comparisons cover that",
 "F21": "Behaviour-free: routes, DTO shapes, serialized responses, metrics answers, forecast results, DI lifetimes of existing registrations, domain-event handler order and the schema stay the same. DomainEventHandlerOrderPinTest, SeededForecastsStayTheSameTest and the existing API, E2E and response tests stay green and unmodified. No bound on stored or validated input changes (none is added, widened or narrowed).",
 "F22": "One oracle file per slice; never edit an earlier slice's or earlier feature's oracle or support bytes. Rules read the compiled IL, lists are inline and compared both ways, never loosened; made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.ForecastingFixtures.* (they may not reach API, Data or EF Core, nor be domain-event handlers). Rule tests assert by the failure naming the offender, not by counts. No nWave scenario tags in code. Default per-test budgets; no derogation. Test-writing skill wins over nWave timing and PBT density rules.",
 "F23": "Every dotnet command runs under flock -o on the shared lock file. Fast loop Test-Fast.ps1 plus the slice oracle; full gates (dotnet build zero warnings, dotnet test with the CLAUDE.md connector filter) at slice end. Pure moves (git mv) are their own commit; edits follow in separate commits. Comments only for a why, no internal ids.",
