@@ -44,7 +44,7 @@ The maintainer runs the break script: each listed production line is broken in t
 ```
 
 ```text
-Every listed break turns its named test red, including the two that name a kept page test (Cancel at the confirmation, Done clearing the picks), every production file is restored, and the gate line shows no surviving break.
+Every listed break turns its named test red, including the two that name a kept page test (Cancel at the confirmation; Done clearing the picks, caught by the not-removed report that stays listed and must read zero selected), every production file is restored, and the gate line shows no surviving break once the page file is rewritten.
 ```
 
 ```text
@@ -58,7 +58,7 @@ Tested
 docs\/feature\/story\-6648\-frontend\-clean\-as\-we\-go\/measurement\/deliberate\-breaks\.sh
 
 ```text
-A moved test that asserts a value computed by the code under test, or a kept page test rewritten without its Cancel click or its cleared-picks assertion; the break lines turn those red.
+A moved test that asserts a value computed by the code under test, or a kept page test rewritten without its Cancel click or its zero-selected assertion after Done; the break lines turn those red.
 ```
 
 ###### Obligations

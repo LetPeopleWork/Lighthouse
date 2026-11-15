@@ -187,7 +187,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The maintainer runs the break script: each listed production line is broken in turn, the named tests run, and the line is put back. The list holds one break per moved rule, seventeen lines in all.
 </code></pre>
 
-<pre><code>Every listed break turns its named test red, including the two that name a kept page test (Cancel at the confirmation, Done clearing the picks), every production file is restored, and the gate line shows no surviving break.
+<pre><code>Every listed break turns its named test red, including the two that name a kept page test (Cancel at the confirmation; Done clearing the picks, caught by the not-removed report that stays listed and must read zero selected), every production file is restored, and the gate line shows no surviving break once the page file is rewritten.
 </code></pre>
 
 <pre><code>Every moved rule is shown to fail when its production line is broken, and no production behaviour is left changed.
@@ -199,7 +199,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>docs/feature/story-6648-frontend-clean-as-we-go/measurement/deliberate-breaks.sh</p>
 
-<pre><code>A moved test that asserts a value computed by the code under test, or a kept page test rewritten without its Cancel click or its cleared-picks assertion; the break lines turn those red.
+<pre><code>A moved test that asserts a value computed by the code under test, or a kept page test rewritten without its Cancel click or its zero-selected assertion after Done; the break lines turn those red.
 </code></pre>
 
 <h6>Obligations</h6>

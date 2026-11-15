@@ -19,7 +19,7 @@ tests that now prove its rule, separated by `;;`.
 
 | Old id | Disposition | Rule proved | New tests |
 |---|---|---|---|
-| src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list | kept | pick three, confirm, the picks leave the list, and after Done the picks are cleared (selected count 0) | |
+| src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list | kept | pick three, confirm, the picks leave the list, and the list is empty after the removal | |
 | src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Escape at the confirmation closes it, removes nothing and keeps what was picked | kept | Escape and Cancel at the confirmation close the dialog, remove nothing, keep three picked and the list as before | |
 | src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a report the server did not remove is named with its reason and stays listed | kept | a report the server did not remove is named and stays listed | |
 | src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once when her permissions could not be loaded, Remove is disabled and says to reload | kept | tooltip says to reload and pressing Remove asks nothing | |
@@ -37,7 +37,7 @@ tests that now prove its rule, separated by `;;`.
 | src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once when no answer arrives it says it cannot confirm what was removed | removed | cannot confirm what was removed | src/pages/Reports/RemoveSelectedDialog.test.tsx :: Confirming the removal of picked reports says it cannot confirm what was removed when no answer arrives |
 | src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once while the removal is under way the dialog cannot be closed | removed | progress shown and Escape does not close while under way | src/pages/Reports/RemoveSelectedDialog.test.tsx :: Confirming the removal of picked reports while the removal is under way it shows progress and cannot be closed |
 | src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the result counts only the reports removed, and names only the one that was not | removed | headline counts only removed, only the failed is named with its reason | src/pages/Reports/RemoveSelectedDialog.test.tsx :: Confirming the removal of picked reports the result counts only the reports removed and names only the one that was not, with its reason |
-| src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Escape on the result closes it and clears what was picked | removed | Escape on the result is done; the picks are cleared after done | src/pages/Reports/RemoveSelectedDialog.test.tsx :: Confirming the removal of picked reports Escape on the result is the reader being done ;; src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list |
+| src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Escape on the result closes it and clears what was picked | removed | Escape on the result is done; the picks are cleared after done | src/pages/Reports/RemoveSelectedDialog.test.tsx :: Confirming the removal of picked reports Escape on the result is the reader being done ;; src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a report the server did not remove is named with its reason and stays listed |
 | src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once each report the removal took, or found already gone, is forgotten, and one it could not remove is kept | removed | removed and already-gone reports are forgotten, a not-removed one is kept | src/pages/Reports/useBulkReportRemoval.test.tsx :: Removing several reports in one request forgets each report removed or found already gone, and keeps one it could not remove |
 | src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the report forgotten is the one removed, not one picked before it | removed | the forgotten report is the one removed | src/pages/Reports/useBulkReportRemoval.test.tsx :: Removing several reports in one request forgets the report that was removed, not one picked before it |
 
@@ -71,8 +71,12 @@ tests that now prove its rule, separated by `;;`.
 The page file after the rewrite holds exactly the six kept tests. Three of them absorb assertions of removed tests; the
 crafter adds exactly these, and the completion review reads them in the file because the scripts check names only.
 
-- "a coach removes three trial reports on two Teams and a Portfolio, and they leave the list": after pressing Done on
-  the result, the selected count reads 0 (`selectedCount(0)`), as well as the existing list and removal-call assertions.
+- "a coach removes three trial reports on two Teams and a Portfolio, and they leave the list": after the removal the
+  list is empty (the server re-read returns no reports), as well as the existing removal-call assertions; it does not
+  assert selectedCount, because picks follow the listed reports and an empty list hides a missing clear.
+- "a report the server did not remove is named with its reason and stays listed": after Done the not-removed report is
+  still listed AND the selected count reads 0 (`selectedCount(0)`); that report stays listed, so only a working clear
+  makes it unpicked.
 - "Escape at the confirmation closes it, removes nothing and keeps what was picked": it also presses Cancel on the
   confirmation (a Cancel click, not only the Escape key) and, after it, the removal service was not called, the
   names listed are `[MONTH, QUARTER, QUARTER]` (Portfolios before Teams) and the selected count still reads 3.
@@ -82,8 +86,9 @@ crafter adds exactly these, and the completion review reads them in the file bec
 ## Deliberate breaks that name a kept page test
 
 Two break lines name a kept page test, not a direct test: Cancel at the confirmation (`Cancel removes nothing|Escape at the
-confirmation`) and Done clearing the picks (`a coach removes three|Escape on the result`). Both go red on today's
-page file, through the old tests that the rewrite merges, so they stay in the list and must keep going red after the
-rewrite: through the kept Escape test with its Cancel click and its picks-still-3 assertion, and through the kept coach
-test with its selectedCount(0) assertion. If a rewrite leaves either break green, the rule lost its test. Every other
-break names a direct test and goes red today.
+confirmation`) and Done clearing the picks (`a report the server did not remove is named with its reason and stays listed`).
+The Cancel break goes red on today's page file through the old tests the rewrite merges; it must stay red after the
+rewrite, through the kept Escape test with its Cancel click and its picks-still-3 assertion. The Done break goes red only
+once the kept not-removed test asserts selectedCount(0) after Done, because that report stays listed; before that
+assertion exists it survives, and that survivor is part of the RED. If a rewrite leaves either break green, the rule lost
+its test. Every other break names a direct test and goes red today.
