@@ -464,16 +464,6 @@ P1
 The Linux standalone release build runs on a CI runner image that is not retired, so a release is never blocked by a retired image.
 ```
 
-#### E2
-
-##### Promises
-
-P1
-
-```text
-Before a runner image is retired, a visible alarm reports it, early enough that a release is not blocked by the retirement unannounced.
-```
-
 #### E3
 
 ##### Promises

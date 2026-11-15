@@ -255,7 +255,7 @@
 "C": 2,
 "D": 14,
 "E": 6,
-"F": 271,
+"F": 272,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -952,13 +952,6 @@
 "text": "F190"
 },
 {
-"id": "E2",
-"promises": [
-"P1"
-],
-"text": "F191"
-},
-{
 "id": "E3",
 "promises": [
 "P2"
@@ -1070,7 +1063,6 @@
 "F189": "accepted: first seen on main; rollback is reverting the S2 commit; no cheap local full build exists because the sidecar artifact is built by the pipeline",
 "F19": "Exposure noted only: macOS and Windows packaging still name macos-latest and windows-latest; they have no glibc floor and are out of scope. The verify jobs on ubuntu-latest ship nothing and have no glibc exposure.",
 "F190": "The Linux standalone release build runs on a CI runner image that is not retired, so a release is never blocked by a retired image.",
-"F191": "Before a runner image is retired, a visible alarm reports it, early enough that a release is not blocked by the retirement unannounced.",
 "F192": "A written decision states the minimum glibc version and Linux distribution that the AppImage requires.",
 "F193": "A build whose AppImage needs a newer glibc than the written floor fails in CI, so such an AppImage is never released.",
 "F195": "The packaging check runs over today's Ubuntu 24.04 libraries (bash, WebKitGTK, JavaScriptCore, WebKit web process)",
@@ -1145,6 +1137,7 @@
 "F27": "workflow steps call the scripts; scripts read tools/linux-appimage/glibc-floor and never the workflow; oracles read the workflow, renovate.json and the ADR as files; nothing in the backend or frontend depends on any of it",
 "F270": "Files that are not programs, or a harmless warning, never block a good release",
 "F271": "A check that refuses any file that makes the tool warn even when its needs were read, or refuses or counts files that are not ELF programs",
+"F272": "The maintainer (2026-11-15) recorded the alarm branch of the first promise as not applicable: the promise reads 'builds without naming a retired runner image, or a retirement is announced by an alarm', and the first branch is met, because the job runs on ubuntu-latest (an alias GitHub moves forward and does not retire) inside a digest-pinned Ubuntu 24.04 container; if that label ever disappeared, every job would fail loudly at job start rather than break silently",
 "F28": "Floor check result: exit code, one line per offending ELF naming its path and the highest GLIBC_x.y it needs, and the summary scanned=N over_floor=M",
 "F29": "which symbol inside a file needs the version; libstdc++ or other library versions; whether a file is actually loaded at run time",
 "F3": "The Linux standalone release builds without naming a GitHub runner image that GitHub will retire, or a retirement is announced by an alarm before it blocks a release",
@@ -1226,6 +1219,12 @@
 "kind": "Confirmed"
 },
 "text": "F256"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F272"
 }
 ],
 "promises": [

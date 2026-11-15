@@ -458,8 +458,15 @@ package_steps_report() {
   awk '
     function note(text,   i, count, words) {
       if (text ~ /^[[:space:]]*#/) return
-      if (index(text, "check-glibc-floor.sh")) { floor_steps[step] = 1 }
-      if (text ~ /(^|[^A-Za-z0-9_.-])squashfs-root($|[^A-Za-z0-9_.-])/) { scans_extracted[step] = 1 }
+      if (index(text, "check-glibc-floor.sh")) {
+        floor_steps[step] = 1
+        argument = substr(text, index(text, "check-glibc-floor.sh") + 20)
+        if (argument ~ /(^|[^A-Za-z0-9_.-])squashfs-root($|[^A-Za-z0-9_.-])/) { scans_extracted[step] = 1 }
+        continued = (text ~ /\\[[:space:]]*$/)
+      } else if (continued) {
+        if (text ~ /(^|[^A-Za-z0-9_.-])squashfs-root($|[^A-Za-z0-9_.-])/) { scans_extracted[step] = 1 }
+        continued = (text ~ /\\[[:space:]]*$/)
+      }
       if (index(text, "libssl.so") && !ssl) ssl = step
       if (collecting || index(text, "apt-get install")) {
         if (!collecting) sub(/.*apt-get install/, "", text)
@@ -468,8 +475,8 @@ package_steps_report() {
         collecting = (text ~ /\\[[:space:]]*$/)
       }
     }
-    /^      - / { step++; collecting = 0; in_run = 0; line = "        " substr($0, 9) }
-    step == 0 && /^    continue-on-error:/ { value = $0; sub(/^ +continue-on-error:[[:space:]]*/, "", value); if (value !~ /^false/) job_may_fail = 1 }
+    /^      - / { step++; collecting = 0; in_run = 0; continued = 0; line = "        " substr($0, 9) }
+    /^    continue-on-error:/ { value = $0; sub(/^ +continue-on-error:[[:space:]]*/, "", value); if (value !~ /^false/) job_may_fail = 1 }
     step == 0 { next }
     !/^      - / { line = $0 }
     line ~ /^        [A-Za-z_-]+:/ {
