@@ -99,6 +99,11 @@ describe("casting a vote from the tab", () => {
 		expect(sizingLogService.castVote).toHaveBeenCalledOnce();
 		await act(async () => answer(theRow));
 		await waitFor(() => expect(result.current.votesBeingSent.size).toBe(0));
+
+		act(() => {
+			result.current.onVote({ referenceId: "GR-073", answer: "No" });
+		});
+		expect(sizingLogService.castVote).toHaveBeenCalledTimes(2);
 	});
 
 	it("casts for the Team the tab shows now, not the one it opened on", async () => {

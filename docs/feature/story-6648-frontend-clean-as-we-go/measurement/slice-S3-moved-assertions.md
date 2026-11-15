@@ -70,6 +70,7 @@ the ones that already existed included, because the check compares the whole run
 - src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.test.tsx :: what the votes and comments of a Work Item list shows a comment as the text it is, never as markup
 - src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.test.tsx :: what the votes and comments of a Work Item list shows a reader who never voted how the votes split, who cast them, and every comment
 - src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.test.tsx :: what the votes and comments of a Work Item list shows why the log could not be read in the words it is given
+- src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.test.tsx :: what the votes and comments of a Work Item list shows no comments, not even the line that says there are none, while the log is still being read
 - src/pages/Teams/Detail/Refinement/sizingLogWording.test.ts :: what somebody wrote, as the votes and comments list it counts a comment as written: { kind: 'Comment', answer: null, …(6) }
 - src/pages/Teams/Detail/Refinement/sizingLogWording.test.ts :: what somebody wrote, as the votes and comments list it counts a vote taken back as written: { kind: 'Revocation', …(7) }
 - src/pages/Teams/Detail/Refinement/sizingLogWording.test.ts :: what somebody wrote, as the votes and comments list it counts a vote taken back that still carries the words it had as written: { kind: 'Revocation', …(7) }

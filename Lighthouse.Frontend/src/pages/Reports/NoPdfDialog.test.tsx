@@ -93,6 +93,7 @@ describe("the word that no PDF was made", () => {
 		).toBeInTheDocument();
 		expect(theDialog()).toHaveAccessibleDescription(PART_OF_THE_PAGE_FAILED);
 		expect(within(theDialog()).queryByRole("list")).not.toBeInTheDocument();
+		expect(theButtonsOffered()).toEqual([CANCEL, RETRY]);
 	});
 
 	it("offers Cancel, Leave it out and Retry when leaving the failed reports out is offered", () => {

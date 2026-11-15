@@ -269,6 +269,15 @@ describe("what the votes and comments of a Work Item list", () => {
 		);
 		expect(describeFailure).toHaveBeenCalledWith(refusal);
 	});
+
+	it("shows no comments, not even the line that says there are none, while the log is still being read", () => {
+		const { dialog } = renderTheDialog({ log: { status: "reading" } });
+
+		expect(
+			within(dialog).queryByText("No comments yet."),
+		).not.toBeInTheDocument();
+		expect(within(dialog).queryAllByRole("listitem")).toHaveLength(0);
+	});
 });
 
 describe("sending a comment from the votes and comments of a Work Item", () => {

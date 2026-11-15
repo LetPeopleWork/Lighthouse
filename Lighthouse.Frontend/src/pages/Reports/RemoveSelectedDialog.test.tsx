@@ -197,7 +197,7 @@ describe("Confirming the removal of picked reports", () => {
 		);
 
 		await removeAllPicked(user, 3);
-		// The Remove button that held focus is gone by now, so Escape is pressed on the dialog itself.
+		// The Remove button that held focus is gone by now, so Escape is pressed on the progress bar inside the dialog.
 		fireEvent.keyDown(await within(theDialog()).findByRole("progressbar"), {
 			key: "Escape",
 		});

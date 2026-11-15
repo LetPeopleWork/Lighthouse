@@ -70,7 +70,7 @@ matcher (`/^Cancel$/`), add no weaker matcher (`toContain`, `toMatch`, `objectCo
 
 - "a reader who is Admin of none of them may still export them" (absorbs the coach test): the reader is Admin of none
   (`permissions: { adminOf: [] }`); Zenith's Quarter report and Gravity's Month report are picked, Export PDF (2) is
-  pressed, one print happens, and the printed titles are `[MONTH, QUARTER]`, one level-1 heading per report; that each report starts on a page of its own is proved by ReportPrintPage.pageBreaks.test.tsx, since a heading count is not a page break (Gravity
+  pressed, one print happens, and the printed titles are `[MONTH, QUARTER]`, one level-1 heading per report; that each report starts on a page of its own is proved by src/pages/Common/Reports/print/ReportsPrintPage.test.tsx ("starts every report after the first on a page of its own"), since a heading count is not a page break (Gravity
   before Zenith, as the table lists Teams by name, whichever was picked first). Both halves are asserted.
 - "while a PDF of several is prepared, a row's PDF icon is held back and starts no second" (absorbs the Export PDF
   held-back test): `getReport` answers every report at once except Gravity's, which waits on a gate, and Voyager's,
@@ -91,7 +91,7 @@ matcher (`/^Cancel$/`), add no weaker matcher (`toContain`, `toMatch`, `objectCo
   Pulsar's cannot be read. Export PDF (4) is pressed and the dialog appears. `/^Leave it out$/` is pressed: one print
   happens, the titles are `[MONTH, QUARTER]` (Gravity before Zenith, the table's order), Export PDF (2) is there (both
   failed reports unpicked, none of the others), and the dialog is gone.
-- "when part of the page cannot be loaded no PDF is made and it says so": the dialog is named "No PDF was made", it
+- "when part of the page cannot be loaded no PDF is made and it says so": the dialog offers exactly the buttons Cancel and Retry, in that order (the crafter adds this assertion); the dialog is named "No PDF was made", it
   shows the anchored exact part-of-the-page message, it names no report (no line of a report), no `Leave it out`
   button is there, and nothing printed. Its accessible description and its Cancel and Retry buttons leave the page.
 - "Leave it out is not offered when leaving the failed reports out would leave nothing to print": Zenith's and Voyager's Quarter reports are picked and both cannot be read; the dialog named "No PDF was made" shows exactly the buttons Cancel and Retry (in that order), no `Leave it out` button, and nothing printed. The test keeps its old assertions; the page wiring of the not-offered case is proved here.

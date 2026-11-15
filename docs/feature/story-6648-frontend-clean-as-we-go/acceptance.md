@@ -291,7 +291,7 @@ The failure dialog is shown alone with its failed reports and its handlers, then
 ```
 
 ```text
-It names each failed report in print order with its owner kind word, is described by that list, shows the part-of-the-page message for an empty list, offers Cancel, Leave it out, Retry only when offered, and each button and Escape call their own handler once
+It names each failed report in print order with its owner kind word, is described by that list, shows the part-of-the-page message and exactly Cancel and Retry for an empty list, offers Cancel, Leave it out, Retry only when offered, and each button and Escape call their own handler once
 ```
 
 ```text
@@ -305,7 +305,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Reports\/NoPdfDialog\.test\.tsx\:1
 
 ```text
-a dialog with two handlers swapped on a button no test presses; all four buttons and Escape are pressed
+a dialog with two handlers swapped on a button no test presses; all four buttons and Escape are pressed, and the part-of-the-page buttons are counted
 ```
 
 ###### Obligations
@@ -644,6 +644,36 @@ A Yes, if cast at once
 
 ###### Obligations
 
+
+##### Covers
+
+P3
+
+```text
+Open the votes and comments of a Work Item while its log is still being read
+```
+
+```text
+The dialog shows no comment list entry and not the line that says nobody has commented
+```
+
+```text
+A reader whose log is on its way is not told wrongly that there are no comments
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/Refinement\/VotesAndCommentsDialog\.test\.tsx\:1
+
+```text
+a dialog that shows No comments yet while reading (a break does exactly that)
+```
+
+###### Obligations
+
+None.
 
 ## Expectations
 

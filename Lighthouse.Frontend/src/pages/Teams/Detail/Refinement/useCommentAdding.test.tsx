@@ -162,6 +162,11 @@ describe("adding a comment to a Work Item without voting", () => {
 		expect(sizingLogService.addComment).toHaveBeenCalledOnce();
 		await act(async () => answer(theRow));
 		await waitFor(() => expect(result.current.commentsBeingSent.size).toBe(0));
+
+		act(() => {
+			result.current.addComment(aComment("Which API version?"));
+		});
+		expect(sizingLogService.addComment).toHaveBeenCalledTimes(2);
 	});
 
 	it("never counts a commented Work Item as just made ready, whatever the server's row says", async () => {

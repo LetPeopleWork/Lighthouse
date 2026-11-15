@@ -115,9 +115,7 @@ describe("what Leave it out prints", () => {
 
 	it("leaves out only the report that failed, not the other report of the same Team", () => {
 		const listed = [zenithsQuarter, zenithsMonth];
-		const failed = failedAmong(listed, [
-			failedReportOf(teamOwner(ZENITH.id), zenithsMonth.id),
-		]);
+		const failed = [zenithsMonth];
 
 		expect(leaveOutTheFailed(listed, failed)).toEqual([zenithsQuarter]);
 	});

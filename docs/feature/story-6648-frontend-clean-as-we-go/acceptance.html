@@ -402,7 +402,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The failure dialog is shown alone with its failed reports and its handlers, then each button and Escape is used
 </code></pre>
 
-<pre><code>It names each failed report in print order with its owner kind word, is described by that list, shows the part-of-the-page message for an empty list, offers Cancel, Leave it out, Retry only when offered, and each button and Escape call their own handler once
+<pre><code>It names each failed report in print order with its owner kind word, is described by that list, shows the part-of-the-page message and exactly Cancel and Retry for an empty list, offers Cancel, Leave it out, Retry only when offered, and each button and Escape call their own handler once
 </code></pre>
 
 <pre><code>A reader who could not export is told which reports failed and gets the buttons that do what they say
@@ -414,7 +414,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Reports/NoPdfDialog.test.tsx:1</p>
 
-<pre><code>a dialog with two handlers swapped on a button no test presses; all four buttons and Escape are pressed
+<pre><code>a dialog with two handlers swapped on a button no test presses; all four buttons and Escape are pressed, and the part-of-the-page buttons are counted
 </code></pre>
 
 <h6>Obligations</h6>
@@ -709,6 +709,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h6>Obligations</h6>
 
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Open the votes and comments of a Work Item while its log is still being read
+</code></pre>
+
+<pre><code>The dialog shows no comment list entry and not the line that says nobody has commented
+</code></pre>
+
+<pre><code>A reader whose log is on its way is not told wrongly that there are no comments
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.test.tsx:1</p>
+
+<pre><code>a dialog that shows No comments yet while reading (a break does exactly that)
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 

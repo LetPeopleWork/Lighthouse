@@ -159,10 +159,10 @@
 "L4/F115",
 "L4/F116"
 ],
-"still_passes_if": "F279",
+"still_passes_if": "F296",
 "test": "Lighthouse.Frontend/src/pages/Reports/NoPdfDialog.test.tsx:1"
 },
-"expected": "F277",
+"expected": "F295",
 "stimulus": "F276",
 "user_result": "F278"
 },
@@ -346,13 +346,26 @@
 "expected": "F255",
 "stimulus": "F254",
 "user_result": "F256"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F300",
+"test": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.test.tsx:1"
+},
+"expected": "F298",
+"stimulus": "F297",
+"user_result": "F299"
 }
 ]
 },
 "counters": {
 "D": 17,
 "E": 5,
-"F": 294,
+"F": 300,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -1219,9 +1232,7 @@
 "F271": "a removed row that names an unrelated passing test (the break list proves each rule separately)",
 "F274": "The Reports page and its dialog look and behave exactly as before; the loading and failure looks stay pinned",
 "F276": "The failure dialog is shown alone with its failed reports and its handlers, then each button and Escape is used",
-"F277": "It names each failed report in print order with its owner kind word, is described by that list, shows the part-of-the-page message for an empty list, offers Cancel, Leave it out, Retry only when offered, and each button and Escape call their own handler once",
 "F278": "A reader who could not export is told which reports failed and gets the buttons that do what they say",
-"F279": "a dialog with two handlers swapped on a button no test presses; all four buttons and Escape are pressed",
 "F28": "Direct tests drive the public port of the unit: the dialog by its props, the hook by renderHook with its real collaborators (QueryClient, ApiServiceContext with a mocked service), the function by call. They never import a private symbol; lostForGoodWarningOf stays private and is reached by rendering the dialog.",
 "F280": "The failed-report and Leave it out decisions are called directly with reports of one Team and of different owners",
 "F281": "failedAmong names only the failed reports in listed order and matches by id, owner kind and owner id; leaving out is not offered when nothing failed or nothing would be left, and leaves out only the failed report, not the other report of the same Team",
@@ -1239,8 +1250,14 @@
 "F292": "Run the check against the files changed since the before commit, found by its subject line on the branch history",
 "F293": "No production file, shared test kit, time-budget file or end-to-end file differs, except the two Reports files the feature's allow-list names (the reviewed move of the failure rules), and no skip, only, todo, retry, timeout or weaker matcher was added",
 "F294": "a further edit inside the two allowed Reports files (the reviewer reads that move)",
+"F295": "It names each failed report in print order with its owner kind word, is described by that list, shows the part-of-the-page message and exactly Cancel and Retry for an empty list, offers Cancel, Leave it out, Retry only when offered, and each button and Escape call their own handler once",
+"F296": "a dialog with two handlers swapped on a button no test presses; all four buttons and Escape are pressed, and the part-of-the-page buttons are counted",
+"F297": "Open the votes and comments of a Work Item while its log is still being read",
+"F298": "The dialog shows no comment list entry and not the line that says nobody has commented",
+"F299": "A reader whose log is on its way is not told wrongly that there are no comments",
 "F3": "Each of the three test files takes less per-test time than before, judged by the median of at least 4 main runs measured the same way as the baseline",
 "F30": "No shared contract is touched: no schema, wire format or config shape changes, and the shared Reports and Refinement test kits (BulkReportsTestKit.tsx, RefinementTabTestKit.tsx) are left unchanged, so their importers (15 files for the Reports kit) need no migration.",
+"F300": "a dialog that shows No comments yet while reading (a break does exactly that)",
 "F31": "No dependency, boundary or owner law is reachable by a test-only change with no production file in any target; the existing law in reportsPage.enforcement.test.ts (only useBulkReportRemoval calls removeReportsInBulk) keeps running in pnpm test and is not changed.",
 "F32": "Producer and consumer do not change apart: no wire or persisted data and no second deployable is involved; the real unit rendered by each direct test is the same unit the page renders, so the page tests that stay are the integration.",
 "F33": "story-6648 test rewrite S1 S2 S3",
