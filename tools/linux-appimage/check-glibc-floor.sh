@@ -28,10 +28,13 @@ if ! command -v readelf >/dev/null 2>&1; then
   indeterminate "readelf is not installed, so no GLIBC version can be read" "install binutils"
 fi
 if [ -z "$floor" ]; then
-  floor="$(sed -n 's/^FLOOR=\([0-9][0-9.]*\)[[:space:]]*$/\1/p' "$floor_file" 2>/dev/null | head -n 1)"
+  floor="$(sed -n 's/^FLOOR=\([^[:space:]]*\)[[:space:]]*$/\1/p' "$floor_file" 2>/dev/null | head -n 1)"
   if [ -z "$floor" ]; then
     indeterminate "no FLOOR=<version> line in $floor_file" "write the minimum glibc as FLOOR=2.39 in $floor_file"
   fi
+fi
+if ! [[ "$floor" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+  indeterminate "the floor '$floor' is not a dotted version" "write the floor as digits separated by dots, such as 2.39"
 fi
 
 # Numeric, field by field: 2.9 is older than 2.39 and 2.100 is newer than 2.39.
@@ -49,21 +52,26 @@ version_greater() {
   return 1
 }
 
-is_elf() {
-  [ "$(head -c 4 "$1" 2>/dev/null | od -An -tx1 | tr -d ' \n')" = "7f454c46" ]
+# Fails when the first bytes cannot be read; the caller decides whether they are an ELF header.
+read_magic() {
+  magic="$(head -c 4 -- "$1" 2>/dev/null | od -An -tx1 | tr -d ' \n')"
 }
 
-# The GLIBC versions the file requires (its version-needs section only, not versions it defines).
+# The GLIBC versions in a readelf -V listing (its version-needs section only, not versions it defines).
 needed_glibc_versions() {
-  readelf -V "$1" 2>/dev/null | awk '
+  awk '
     /^Version needs section/ { in_needs = 1; next }
     /^Version (symbols|definition) section/ { in_needs = 0 }
     in_needs && match($0, /GLIBC_[0-9][0-9.]*/) { print substr($0, RSTART + 6, RLENGTH - 6) }
-  '
+  ' <<< "$1"
 }
 
-links_libc() {
-  readelf -d "$1" 2>/dev/null | grep -q -F '[libc.so.6]'
+could_not_read() {
+  unreadable=$((unreadable + 1))
+  echo "::error::could not read $1"
+  echo "WHAT: $1 could not be read ($2)"
+  echo "WHY:  a file that cannot be read cannot be shown to be within the glibc floor, so it is never a pass"
+  echo "HOW:  check the file is complete and readable by the user running the check, then run it again"
 }
 
 scanned=0
@@ -71,17 +79,45 @@ over_floor=0
 unreadable=0
 highest=""
 
+listing="$(mktemp)"
+readelf_errors="$(mktemp)"
+trap 'rm -f "$listing" "$readelf_errors"' EXIT
+if ! find "$scan_dir" -type f -print0 > "$listing" 2>/dev/null; then
+  indeterminate "the files under '$scan_dir' could not all be listed" "make the directory readable by the user running the check"
+fi
+
 while IFS= read -r -d '' file; do
-  is_elf "$file" || continue
+  if ! read_magic "$file"; then
+    could_not_read "$file" "its first bytes could not be read"
+    continue
+  fi
+  [ "$magic" = "7f454c46" ] || continue
   scanned=$((scanned + 1))
+
+  # readelf exits 0 on a cut-off file and only prints "Error:" lines, so those count too, but only
+  # when no GLIBC version was parsed: a healthy file that makes readelf warn still passes.
+  if ! versions_listing="$(readelf -V "$file" 2> "$readelf_errors")"; then
+    could_not_read "$file" "readelf -V failed"
+    continue
+  fi
+  versions_errors="$(cat "$readelf_errors")"
+  if ! dynamic_listing="$(readelf -d "$file" 2> "$readelf_errors")"; then
+    could_not_read "$file" "readelf -d failed"
+    continue
+  fi
+  dynamic_errors="$(cat "$readelf_errors")"
 
   file_highest=""
   while IFS= read -r version; do
     if [ -z "$file_highest" ] || version_greater "$version" "$file_highest"; then file_highest="$version"; fi
-  done < <(needed_glibc_versions "$file")
+  done < <(needed_glibc_versions "$versions_listing")
 
   if [ -z "$file_highest" ]; then
-    if links_libc "$file"; then
+    if [[ "$versions_errors$dynamic_errors" == *"Error:"* ]]; then
+      could_not_read "$file" "readelf reported an error and gave no GLIBC versions"
+      continue
+    fi
+    if grep -q -F '[libc.so.6]' <<< "$dynamic_listing"; then
       unreadable=$((unreadable + 1))
       echo "::error::no GLIBC version could be read from $file"
       echo "WHAT: $file links libc.so.6 but readelf -V gave no GLIBC versions"
@@ -99,7 +135,7 @@ while IFS= read -r -d '' file; do
     echo "WHY:  the written floor is glibc $floor ($floor_file); a newer requirement stops the AppImage starting on the floor distribution"
     echo "HOW:  build in the pinned Ubuntu 24.04 container, or raise the floor on purpose by a new decision in $floor_file"
   fi
-done < <(find "$scan_dir" -type f -print0)
+done < "$listing"
 
 echo "scanned=$scanned highest=GLIBC_${highest:-none} over_floor=$over_floor"
 
