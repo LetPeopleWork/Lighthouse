@@ -16,6 +16,7 @@ import {
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
+import { formatLocalDate } from "../../../../../utils/date/localDate";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 
 // Mock the useTerminology hook
@@ -143,7 +144,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 	};
 
 	const formatDateForInput = (date: Date): string => {
-		return date.toISOString().split("T")[0];
+		return formatLocalDate(date);
 	};
 
 	beforeEach(() => {

@@ -246,10 +246,11 @@
 				"!src/tests/**",
 				"!src/utils/date/localDate.ts"
 			],
-			"plugins": [
-				"./biome-plugins/no-iso-string-day-key.grit",
-				"./biome-plugins/no-date-from-day-string.grit"
-			]
+			"plugins": ["./biome-plugins/no-date-from-day-string.grit"]
+		},
+		{
+			"includes": ["src/**", "!src/utils/date/localDate.ts"],
+			"plugins": ["./biome-plugins/no-iso-string-day-key.grit"]
 		},
 		{
 			"includes": [

@@ -1,0 +1,22 @@
+[0] Start: today 2026-11-15, kept history starts 2026-11-15; report 1 saved before this Story with Then ending 2026-11-15, Then length 14, Now length 14; migration will not change the report version
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[1] Migration runs once: every saved report's Now length set to its Then length (version kept)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[2] Kept history start moves 45 days later, to 2026-12-30
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[3] User creates a report in the UI, Then ending today: length 14, Then ending 2026-11-15 -> refused: Then starts before kept history
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[4] User opens Edit for report 1 in the new page (no Now length)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[5] 45 day(s) pass; today is now 2026-12-30
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-12-17..2026-12-30 (14 days), stored Now length 14, version 1
+[6] User creates a report in the UI, Then ending today: length 30, Then ending 2026-12-30 -> refused: Then starts before kept history
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-12-17..2026-12-30 (14 days), stored Now length 14, version 1
+[7] Throughput arrives for report 1: Then total 2, Now total 45
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-12-17..2026-12-30 (14 days), stored Now length 14, version 1; Total Then 2 (0.1/day), Now 45 (3.2/day): ▲ 43 (+2150%)
+[8] User saves the Edit of report 1: Then ending 2026-12-30, length 14, no Now length -> refused: Then starts before kept history
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-12-17..2026-12-30 (14 days), stored Now length 14, version 1; Total Then 2 (0.1/day), Now 45 (3.2/day): ▲ 43 (+2150%)

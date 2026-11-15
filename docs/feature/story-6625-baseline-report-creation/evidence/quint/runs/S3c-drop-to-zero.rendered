@@ -1,0 +1,8 @@
+[0] Start: today 2026-11-15, kept history starts 2026-06-18; report 1 saved before this Story with Then ending 2026-10-01, Then length 14, Now length 45; migration will change the report version
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1
+[1] Migration runs once: every saved report's Now length set to its Then length (version bumped)
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 2
+[2] 45 day(s) pass; today is now 2026-12-30
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2026-12-17..2026-12-30 (14 days), stored Now length 14, version 2
+[3] Throughput arrives for report 1: Then total 30, Now total 0
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2026-12-17..2026-12-30 (14 days), stored Now length 14, version 2; Total Then 30 (2.1/day), Now 0 (0.0/day): ▼ 30 (-100%)

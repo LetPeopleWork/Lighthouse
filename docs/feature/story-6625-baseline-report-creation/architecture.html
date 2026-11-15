@@ -1,0 +1,2812 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: story-6625-baseline-report-creation</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Now is derived, never stored: every read computes the Now window as the window of Then length days ending on the instance today. The stored payload member nowLengthDays is never read or written again and stays in the JSON payload unread (expand-only). No migration, no data update, no concurrency-version change. This resolves the DISCUSS open item on snap and version bump: nothing is migrated, so no Edit is refused as stale because of this change.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Carriers and owners: the value object ReportWindow (Models/Reports/ThenAndNowPayload.cs) gains NowEndingOn(today), so a Now window can only be built from a Then window and cannot take another length. The pure static ReportWindowPolicy (Services/Implementation/Reports/ReportWindowPolicy.cs) owns window refusals: NowLengthRefusal(requestedNowLengthDays, thenLengthDays) replaces NowRefusal and NowWindow. ReportRefusalCodes gains now-length-differs-from-then; now-too-short, now-too-long and now-before-cutoff stay as constants because their spelling is a client contract, but are no longer emitted. ThenAndNowTemplate stays the template that freezes, edits and reads, and delegates every window decision to those two owners. Errors stay ReportOutcome Refused(code), mapped to 400 ProblemDetails by ReportsControllerBase; a stale save stays 409.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Cross-layer algebra. Domain: states are a frozen Then window (start, end, length) and a Now window derived per day; operations EndingOn, NowEndingOn, ThenRefusal, NowLengthRefusal; observation is the read model thenWindow and nowWindow. Application: Create and Edit return Done or Refused(code); Edit returns stale (409) only after a real concurrent save. Adapter: refusal codes map to 400 ProblemDetails, unchanged. Infrastructure: no change, no migration, no recovery path added.
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>Claim-to-checker: the state and request claims (Now length equals Then length on every read; accepted requests carry no Now or an equal one; no stale refusal from the deploy; Edit never refused for kept history; a valid Then implies a Now inside kept history; Total and per-day changes never opposed with equal lengths) are checked with Quint (state model, quint run simulation with behavioural mutants) in docs/feature/story-6625-baseline-report-creation/evidence/quint/design.qnt. The window-relation and total-line claims reuse the DISCUSS model evidence/quint/baseline.qnt. Agda is not selected: no general theorem beyond these finite rules is claimed. TLA+/TLC is not selected: there is no temporal or fairness claim.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>Liveness is not applicable: every create, edit and read is a synchronous request answered once, and no claim promises eventual progress. The daily movement of Now follows the instance clock, not a system process.
+</code></pre>
+
+<h4>D6</h4>
+
+<pre><code>Second stressor walk over the finished design (walkthrough, not execution): the day changes while the wizard is open (today comes from the keyed templates query refetched each time the wizard opens, and the server derives Now at create, so the saved report is still equal length); the oldest kept day moves later after creation (Then is frozen and Edit never re-checks it, P8); a client sends nowLengthDays 0 or a negative value (not equal to Then, refused with the same code); a payload written by a later version carries unknown members (Edit still edits the JSON tree and writes nothing about windows). None showed a new residue.
+</code></pre>
+
+<h4>D7</h4>
+
+<pre><code>Test substrate. Backend: new acceptance scenarios at the application-service port in Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/ (namespace Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation), built with ServicePortHarness and FakeLighthouseClock; no new host test. Frontend: Vitest with React Testing Library; rules on functions in .test.ts files, one render per wiring in .test.tsx files. The Lighthouse test-writing skill wins over nWave per-test timing and PBT-density rules. Mutation: new configs Lighthouse.Backend/Lighthouse.Backend.Tests/stryker.6625.backend.json (ReportWindowPolicy, ReportWindow, ThenAndNowTemplate; its test-case filter names Tests.Acceptance.BaselineReportCreation) and Lighthouse.Frontend/stryker.6625.frontend.json (thenAndNowDraft.ts, reportWindowCheck.ts, thenNowComparison.ts, ThroughputPanel.tsx), run once on frozen code, 80 percent kill minimum.
+</code></pre>
+
+<h4>D8</h4>
+
+<pre><code>Context map unchanged: Reports context only, no new glossary term, no domain event, no new external call. ADR-270 and ARCHITECTURE.md section 4 need no change.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Then length: at least 14 days (ReportWindowPolicy.MinimumLengthDays); no upper bound other than the first day the calendar can name (then-too-long).
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>Then end: on or before the instance today. Then start: on or after the oldest kept day of the owner; no bound when the owner keeps every finished item.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>Now length in a create or edit request: absent, or exactly equal to the Then length. Every other value is refused, including 0 and negative values.
+</code></pre>
+
+<h4>K4</h4>
+
+<pre><code>EF migrations are expand-only: this feature adds no migration and drops no column; the unread payload member stays.
+</code></pre>
+
+<h4>K5</h4>
+
+<pre><code>Open, owner Acceptance designer with the maintainer: the copy of the too-little-history line (P5) and of the Total change magnitude (P10, for example 13 more) is decided at the UI sketch at the start of DELIVER. This design pins no exact wording for them.
+</code></pre>
+
+<h4>K6</h4>
+
+<pre><code>Loading and failure looks: the Then step fetches nothing new. Today, the oldest kept day and the minimum length come from the existing keyed reportTemplates query; while it loads, the wizard shows its existing lone spinner with Next disabled, and on failure its existing could-not-load alert. The bulk owner step keeps its existing owner-limit looks. The report view and the Throughput panel keep the existing report loading and failure looks.
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>ReportWindow</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:26</p>
+
+<p>Extend</p>
+
+<pre><code>Existing value object for an inclusive window; NowEndingOn(today) makes equal length a property of construction instead of a caller rule.
+</code></pre>
+
+<p>ReportWindowPolicy</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>The single existing owner of window refusals, already held pure by architecture rule E15; NowLengthRefusal replaces NowRefusal.
+</code></pre>
+
+<p>ReportRefusalCodes</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs:4</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of refusal code spellings; one code is added and none is renamed.
+</code></pre>
+
+<p>ThenAndNowTemplate</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:14</p>
+
+<p>Extend</p>
+
+<pre><code>Existing template that freezes, edits and reads Then and Now; its own Now handling is replaced by calls to the two window owners.
+</code></pre>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Every producer and consumer of NewReportRequest, ReportEditRequest and the refusal codes is in one deployable and changes in the same commit; Lighthouse-Clients only lists and reads reports and never sends a Now length.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>IReportCommands (Create, Edit) and IReportBulkCommands (create for several owners) for writes; IReportQueries (Get, List, Templates) for reads; the frontend ReportWizard and BulkReportWizard reach them through the reports HTTP API
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>IReportReader
+</code></pre>
+
+<pre><code>IReportWriter
+</code></pre>
+
+<pre><code>IReportMetricSeries
+</code></pre>
+
+<pre><code>ILighthouseClock
+</code></pre>
+
+<pre><code>API controllers to application services to ThenAndNowTemplate to ReportWindow and ReportWindowPolicy; the pure policies depend on no port and no clock
+</code></pre>
+
+<h4>Failures</h4>
+
+<h5>B1</h5>
+
+<pre><code>A create or edit carries a Now length different from the Then length
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Refused now-length-differs-from-then, HTTP 400 ProblemDetails; nothing is written
+</code></pre>
+
+<h5>B2</h5>
+
+<pre><code>At create, Then is shorter than 14 days, ends after today, or starts before the oldest kept day
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Existing then-* codes, HTTP 400; the wizard shows the refusal before Next
+</code></pre>
+
+<h5>B3</h5>
+
+<pre><code>An Edit is saved after somebody else saved the same report
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>HTTP 409 with the existing stale message
+</code></pre>
+
+<h3>Observations</h3>
+
+<pre><code>Read model thenAndNow.thenWindow and thenAndNow.nowWindow (start, end, lengthDays) of a report on a given instance day
+</code></pre>
+
+<p>ThenAndNowRead</p>
+
+<pre><code>Whether the stored payload still holds a legacy nowLengthDays member
+</code></pre>
+
+<pre><code>Outcome of a create or edit: Done, Refused with a refusal code (400 ProblemDetails), or stale (409)
+</code></pre>
+
+<p>ReportOutcome</p>
+
+<pre><code>Which later checks would also have failed; checks stop at the first refusal
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>ThenAndNowRead</p>
+
+<pre><code>Two reads are equal when their Then and Now windows have the same start, end and length on the same instance day and the shown metric values are the same
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>An edit is refused as stale only after a real concurrent save of the same report; this change bumps no version
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>ThenAndNowTemplate</p>
+
+<h5>Treatment</h5>
+
+<p>NoTest</p>
+
+<pre><code>Holds by construction: no migration and no write of any version exists in this change; the existing 409 test of the concurrency token stays; model evidence in runs/design-invStaleOnlyAfterRealChange.meta
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L2</h4>
+
+<pre><code>A Then accepted at create has a Now of the same length that starts on or after the oldest kept day
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>ReportWindowPolicy</p>
+
+<h5>Treatment</h5>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>today fixed; Then length 14..400; Then end 0..800 days before today; oldest kept day null or 0..900 days before today
+</code></pre>
+
+<p>length &lt;= 400, offsets &lt;= 900</p>
+
+<p>fixed seed per run, printed on failure</p>
+
+<h6>Must include</h6>
+
+<pre><code>Then ending today
+</code></pre>
+
+<pre><code>Then starting exactly on the oldest kept day
+</code></pre>
+
+<p>None.</p>
+
+<pre><code>Native FsCheck or seeded generation with smallest-first replay of the failing case
+</code></pre>
+
+<pre><code>Now start computed independently as today minus length plus one, compared with the oldest kept day
+</code></pre>
+
+<pre><code>A policy that accepts a Then starting before the oldest kept day
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-invCreatedNowInsideKeptHistory.meta</p>
+
+<h4>L3</h4>
+
+<pre><code>With equal lengths, the Throughput Total change and the per-day change never point in opposite directions, so Throughput is never judged mixed by its own lines
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>ThroughputPanel</p>
+
+<h5>Treatment</h5>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>Then total 0..500, Now total 0..500, length 14..400
+</code></pre>
+
+<p>totals &lt;= 500, length &lt;= 400</p>
+
+<p>fast-check fixed seed, printed on failure</p>
+
+<h6>Must include</h6>
+
+<pre><code>Totals differing by 1 over a long window
+</code></pre>
+
+<pre><code>Both totals 0
+</code></pre>
+
+<p>None.</p>
+
+<pre><code>fast-check integer shrinking
+</code></pre>
+
+<pre><code>Sign of Now total minus Then total, computed apart from lineComparisonsOf
+</code></pre>
+
+<pre><code>Per day computed over a Now of another length
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-invTotalAndPerDayAgree.meta</p>
+
+<h4>L4</h4>
+
+<pre><code>For every report and every instance day, nowWindow.lengthDays equals thenWindow.lengthDays and nowWindow.end equals today
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>ReportWindow</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Legacy payload Then 30, stored Now 45: Now 30 days ending today
+</code></pre>
+
+<pre><code>New report Then 14 ending today: Now equals Then
+</code></pre>
+
+<pre><code>Then 90 ending 45 days ago: Now 90 days ending today
+</code></pre>
+
+<pre><code>The input domain that matters is closed: legacy payload with an unequal stored Now, no stored Now, Then ending today, Then in the past
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-invShownNowEqThen.meta</p>
+
+<h4>L5</h4>
+
+<pre><code>A create or edit is accepted only when its Now length is absent or equal to the Then length; otherwise it is refused with now-length-differs-from-then and nothing is written
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>ReportWindowPolicy</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Then 90, Now 45: refused
+</code></pre>
+
+<pre><code>Then 90, Now 90: accepted
+</code></pre>
+
+<pre><code>Then 90, no Now: accepted
+</code></pre>
+
+<pre><code>Then 90, Now 0: refused
+</code></pre>
+
+<pre><code>Three outcome classes (absent, equal, different) cover the rule; boundary rows pin each
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-invAcceptOnlyEqualOrAbsentNow.meta</p>
+
+<h4>L6</h4>
+
+<pre><code>Edit never refuses for kept history, so a report whose Then starts before the oldest kept day stays editable
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>ThenAndNowTemplate</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Then starts one day before the oldest kept day: edit of name and shown metrics accepted
+</code></pre>
+
+<pre><code>One boundary decides it: Then start one day before the oldest kept day
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-invEditNeverRefusedForHistory.meta</p>
+
+<h3>Refuted</h3>
+
+<pre><code>A one-time snap of saved Now lengths keeps every open Edit safe
+</code></pre>
+
+<pre><code>A snap that bumps the concurrency version makes an Edit opened before it stale though nobody changed the report; without a bump there is a gap between deploy and migration. Carrier diagnosis: storing a derivable fact made the state representable; deriving Now removes it.
+</code></pre>
+
+<pre><code>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-mutant-bump.out: the deploy bumps the version of a 30/45 report while an Edit is open; the save is refused as stale with no concurrent save
+</code></pre>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>Every Then and Now report read shows a Now window exactly as long as its Then window, ending today
+</code></pre>
+
+<pre><code>A reader compares windows of different lengths and draws a false conclusion from Throughput totals and other counts
+</code></pre>
+
+<p>ReportWindow</p>
+
+<pre><code>A frozen Then window from the payload and the instance today
+</code></pre>
+
+<p>ReportWindow.NowEndingOn(today)</p>
+
+<p>ThenAndNowTemplate.Read</p>
+
+<pre><code>IReportQueries Get returns nowWindow.lengthDays equal to thenWindow.lengthDays
+</code></pre>
+
+<pre><code>A payload without thenWindow throws, as today; a previous Lighthouse version after rollback reads the stored member again (recorded residue); no other type computes a Now window (architecture check)
+</code></pre>
+
+<h4>C2</h4>
+
+<pre><code>A create or edit request is accepted only with no Now length or one equal to the Then length
+</code></pre>
+
+<pre><code>An old page or client silently saves a Now of another length
+</code></pre>
+
+<p>ReportWindowPolicy</p>
+
+<pre><code>NewReportRequest or ReportEditRequest with an optional thenAndNow.nowLengthDays
+</code></pre>
+
+<p>ReportWindowPolicy.NowLengthRefusal(requestedNowLengthDays, thenLengthDays)</p>
+
+<p>ThenAndNowTemplate.Freeze and ThenAndNowTemplate.Edit</p>
+
+<pre><code>Refused with code now-length-differs-from-then, HTTP 400
+</code></pre>
+
+<pre><code>None in production code: single and bulk create both go through ThenAndNowTemplate.Freeze
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Legacy report whose payload holds a nowLengthDays different from its Then length: the read shows a Now of Then length and the member is kept unread
+</code></pre>
+
+<p>None.</p>
+
+<p>Admitted</p>
+
+<pre><code>Report whose Then starts before the current oldest kept day: readable and editable (name, shown metrics)
+</code></pre>
+
+<p>None.</p>
+
+<p>Admitted</p>
+
+<pre><code>Then ending today: Then and Now are the same days on that day
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>A report shown with a Now length different from its Then length
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>A report created by this version with a stored Now length
+</code></pre>
+
+<p>None.</p>
+
+<p>Unknown</p>
+
+<pre><code>After a rollback to a previous Lighthouse version, legacy reports show their stored Now length again
+</code></pre>
+
+<p>maintainer</p>
+
+<h3>Models</h3>
+
+<p>Quint</p>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/design.qnt</p>
+
+<h5>Properties</h5>
+
+<p>invShownNowEqThen</p>
+
+<p>Invariant</p>
+
+<pre><code>After deploy every report shows a Now exactly as long as its Then
+</code></pre>
+
+<p>ThenAndNowTemplate.Read</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:95</p>
+
+<p>invNoStoredNowOnCreate</p>
+
+<p>Invariant</p>
+
+<pre><code>A report created by this version stores no Now length
+</code></pre>
+
+<p>ThenAndNowTemplate.Freeze</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:24</p>
+
+<p>invAcceptOnlyEqualOrAbsentNow</p>
+
+<p>Invariant</p>
+
+<pre><code>An accepted create or edit carried no Now length or one equal to the Then length
+</code></pre>
+
+<p>ReportWindowPolicy.NowLengthRefusal</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:56</p>
+
+<p>invStaleOnlyAfterRealChange</p>
+
+<p>Invariant</p>
+
+<pre><code>An edit is refused as stale only after somebody else saved the same report meanwhile
+</code></pre>
+
+<p>ReportCommands.Edit</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:1</p>
+
+<p>invEditNeverRefusedForHistory</p>
+
+<p>Invariant</p>
+
+<pre><code>An edit is never refused because Then starts before the oldest kept day
+</code></pre>
+
+<p>ThenAndNowTemplate.Edit</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:66</p>
+
+<p>invCreatedNowInsideKeptHistory</p>
+
+<p>Invariant</p>
+
+<pre><code>The Now of an accepted create starts on or after the oldest kept day
+</code></pre>
+
+<p>ReportWindowPolicy.ThenRefusal</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:32</p>
+
+<p>invTotalAndPerDayAgree</p>
+
+<p>Invariant</p>
+
+<pre><code>With equal lengths the Throughput Total change and per-day change never point in opposite directions
+</code></pre>
+
+<p>lineComparisonsOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:123</p>
+
+<h5>Atoms</h5>
+
+<p>State</p>
+
+<p>reports</p>
+
+<p>Report.TemplatePayloadJson</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:10</p>
+
+<pre><code>One row write per create or edit through IReportWriter
+</code></pre>
+
+<p>State</p>
+
+<p>cutoff</p>
+
+<p>ReportWindowPolicy.EarliestStart</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:17</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>create</p>
+
+<p>ThenAndNowTemplate.Freeze</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:24</p>
+
+<pre><code>Validation is pure; the single row insert is the only write
+</code></pre>
+
+<p>Action</p>
+
+<p>saveEdit</p>
+
+<p>ThenAndNowTemplate.Edit</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:66</p>
+
+<pre><code>Concurrency token compare-and-set on the row, existing
+</code></pre>
+
+<p>Action</p>
+
+<p>shownNowLen</p>
+
+<p>ThenAndNowTemplate.Read</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:95</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>deploy</p>
+
+<p>none: release of this version; model-only</p>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/design.qnt:80</p>
+
+<p>None.</p>
+
+<p>Constant</p>
+
+<p>perDayHundredths</p>
+
+<p>roundForDisplay</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:44</p>
+
+<p>None.</p>
+
+<h5>Assumptions</h5>
+
+<pre><code>Simulation with quint run, max 10 steps, 20000 samples, seed 6625; not exhaustive
+</code></pre>
+
+<pre><code>Day 1000 is 2026-11-15; windows inclusive at both ends
+</code></pre>
+
+<pre><code>Lengths 14, 30, 45, 90; Then end 0, 15, 31 or 45 days before today; oldest kept day 800 or 960, moving one day per day
+</code></pre>
+
+<pre><code>Per day rounded to hundredths half away from zero, as the shipped panel rounds to 2 decimals
+</code></pre>
+
+<h5>Mutants</h5>
+
+<h6>N1</h6>
+
+<pre><code>Read uses the stored Now length after deploy; kills invShownNowEqThen (runs/design-mutant-read-stored.out)
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N2</h6>
+
+<pre><code>Create stores the requested Now length; kills invNoStoredNowOnCreate (runs/design-mutant-store-now.out)
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N3</h6>
+
+<pre><code>Now rule skipped on create and edit; kills invAcceptOnlyEqualOrAbsentNow (runs/design-mutant-skip-now-check.out)
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N4</h6>
+
+<pre><code>Deploy snaps Now and bumps the concurrency version; kills invStaleOnlyAfterRealChange (runs/design-mutant-bump.out)
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N5</h6>
+
+<pre><code>Edit re-checks Then against kept history; kills invEditNeverRefusedForHistory (runs/design-mutant-edit-checks-history.out)
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N6</h6>
+
+<pre><code>Create skips the kept-history check on Then; kills invCreatedNowInsideKeptHistory (runs/design-mutant-skip-history.out)
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N7</h6>
+
+<pre><code>Per day computed over a Now 15 days longer than Then; kills invTotalAndPerDayAgree (runs/design-mutant-unequal-lengths.out)
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<p>Quint</p>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/baseline.qnt</p>
+
+<h5>Properties</h5>
+
+<p>invOverlapIffShareDay</p>
+
+<p>Invariant</p>
+
+<pre><code>The overlap line is shown exactly when Then and Now share a day
+</code></pre>
+
+<p>windowsRelationOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:1</p>
+
+<p>invOverlapUntilIsLastSharedDay</p>
+
+<p>Invariant</p>
+
+<pre><code>The overlap line names the last shared day, which is the last day of Then
+</code></pre>
+
+<p>windowsRelationOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:1</p>
+
+<p>invChangeIffBothCaptured</p>
+
+<p>Invariant</p>
+
+<pre><code>The Total line shows a change only when Then and Now totals are both captured
+</code></pre>
+
+<p>lineComparisonsOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:123</p>
+
+<p>invPctOnlyWhenThenPositive</p>
+
+<p>Invariant</p>
+
+<pre><code>A percent change is shown only when the Then total is above 0
+</code></pre>
+
+<p>compareThenNow</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:90</p>
+
+<h5>Atoms</h5>
+
+<p>None.</p>
+
+<h5>Assumptions</h5>
+
+<pre><code>DISCUSS model reused for the window-relation and Throughput total-line claims; simulation with quint run, max 12 steps, seed 6625; not exhaustive
+</code></pre>
+
+<pre><code>Per day rounded to tenths in this model, coarser than the shipped 2 decimals
+</code></pre>
+
+<h5>Mutants</h5>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>Now derived from Then on every read
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Quint invariant invShownNowEqThen held; mutant read-stored killed
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-invShownNowEqThen.meta</p>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-mutant-read-stored.meta</p>
+
+<pre><code>Now derived from Then on every read
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>A legacy 30/45 payload and a new report both build a Now window through ReportWindow.NowEndingOn from an admitted Then window
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Now derived from Then on every read
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>payload to ThenAndNowTemplate.Read to IReportQueries.Get to the reports API to the report view and PDF
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Now derived from Then on every read
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: synchronous request and response; no eventual-progress claim
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: this version stays deployed. Negated: rollback to the previous version
+</code></pre>
+
+<pre><code>Then windows, frozen values and past PDF exports
+</code></pre>
+
+<pre><code>Legacy reports show their old stored Now length again; reports created by this version show Now equal to Then because the old reader falls back to the Then length
+</code></pre>
+
+<pre><code>Data loss or a refused read
+</code></pre>
+
+<pre><code>Accepted by the maintainer: old stored Now lengths reappear after a rollback
+</code></pre>
+
+<p>maintainer</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: every client sends the new request shape. Negated: a page opened before the deploy resends Now 45 on Edit
+</code></pre>
+
+<pre><code>The stored report
+</code></pre>
+
+<pre><code>Refusal with now-length-differs-from-then and its clear message
+</code></pre>
+
+<pre><code>A silent save of an unequal Now, or a stale refusal caused by the deploy
+</code></pre>
+
+<pre><code>The user reloads the page and saves again
+</code></pre>
+
+<p>ThenAndNowTemplate</p>
+
+<h4>Y3</h4>
+
+<p>Bypass</p>
+
+<pre><code>Deserialization of TemplatePayloadJson, and any outside writer of the Reports table
+</code></pre>
+
+<pre><code>Reads derive Now from thenWindow whatever nowLengthDays member is present
+</code></pre>
+
+<pre><code>A foreign nowLengthDays member stays unread
+</code></pre>
+
+<pre><code>A read that uses a stored Now length
+</code></pre>
+
+<pre><code>A payload without thenWindow still throws, as before this change
+</code></pre>
+
+<p>ThenAndNowTemplate</p>
+
+<h4>Y4</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>ReportWindow.NowEndingOn is the only producer of a Now window
+</code></pre>
+
+<pre><code>One definition of Now for the read, the PDF export and the overview
+</code></pre>
+
+<pre><code>A defect there affects every report the same way and shows in the shared tests
+</code></pre>
+
+<pre><code>A second Now computation that disagrees
+</code></pre>
+
+<pre><code>Held by the architecture check and the port scenarios
+</code></pre>
+
+<p>ReportWindow</p>
+
+<h3>Architectural tests</h3>
+
+<h4>T1</h4>
+
+<pre><code>Only ReportWindow and ReportWindowPolicy compute a Now window: no other type in the Reports module calls ReportWindow.EndingOn with today or builds a Now window; E15 purity of ReportWindowPolicy stays
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest
+</code></pre>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Remove nowLength and thenEndsBeforeNow; back-to-back default end; windowsRelationOf closed sum apart, overlapUntil, sameDays; requests carry no Now length
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Show Then and Now by date and the relation line
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Deleted: the Now step and the bulk Same as Then / Custom choice go
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Drop the Now step from the Then &amp; Now steps
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWizardRules.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Edit now opens on Metrics &amp; name, index unchanged; comment updated
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Remove the Now side of the check
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Too-little-history copy naming the owner (wording from the DELIVER sketch)
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Reports/ownerLimitOfWindow.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Remove the per-owner Now branch; a valid Then always fits a same-length Now
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts</p>
+
+<p>Extend</p>
+
+<pre><code>INewReport loses nowLengthDays
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs</p>
+
+<p>Extend</p>
+
+<pre><code>ReportWindow.NowEndingOn; the payload record stops carrying NowLengthDays
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs</p>
+
+<p>Extend</p>
+
+<pre><code>NowLengthRefusal replaces NowRefusal and NowWindow
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Add now-length-differs-from-then
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Freeze applies the Now rule and stores no Now length
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Carry the optional Now length only as RequestedNowLengthDays for the refusal
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs</p>
+
+<p>Extend</p>
+
+<pre><code>NewThenAndNow carries RequestedNowLengthDays
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Log the Then length only
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Log the Then length only
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportsTab.createWizard.test.tsx src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts src/pages/Common/Reports/wizard/reportWindowCheck.test.ts src/pages/Reports/BulkReportWizard.test.tsx
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.test.tsx</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>On instance day 15 Nov 2026 a Team Admin opens Create Report on the Team Reports tab, picks Then &amp; Now and a Then length of 30 days, keeps the default end, then creates the report; variants set Then to end 15 Nov 2026 with 14 days, to end 31 Oct 2026 with 30 days, and pick a length the owner kept history cannot hold; the bulk wizard on the Reports page creates for several Teams with 30 days
+</code></pre>
+
+<pre><code>The Then step shows Then 17 Sep - 16 Oct 2026 and Now 17 Oct - 15 Nov 2026 with no overlap line and the wizard has no Now step; Then ending today shows the same-days line and can be created; Then ending 31 Oct shows Now 17 Oct - 15 Nov 2026 and the overlap-until line naming 31 Oct 2026; the too-little-history case shows a refusal naming the owner and Next stays disabled; every create request carries no Now length; every saved report (single and bulk) reads back a 30-day Now ending today
+</code></pre>
+
+<pre><code>A wizard that keeps the Now step, defaults Then to end today, shows no Now dates or a wrong overlap day, lets Next through on too little history, or a server that stores or applies a Now length different from Then
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<p>P5</p>
+
+<p>P6</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>ThenAndNowDraft</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:24</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of the wizard draft rules; dayBeforeNowStarts already gives the back-to-back end for several owners
+</code></pre>
+
+<p>ThenStep</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx:15</p>
+
+<p>Extend</p>
+
+<pre><code>Existing step already shows the Then days line and refusal; the Now line and relation line join it
+</code></pre>
+
+<p>reportWindowCheck</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.ts:88</p>
+
+<p>Extend</p>
+
+<pre><code>Existing frontend mirror of the server window rules; only the Now side goes
+</code></pre>
+
+<p>limitOfFor</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/ownerLimitOfWindow.ts:16</p>
+
+<p>Extend</p>
+
+<pre><code>Existing per-owner limit; the Now branch becomes unreachable and is removed
+</code></pre>
+
+<p>NowStep</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx:1</p>
+
+<p>Replace</p>
+
+<pre><code>The question it asks no longer exists; the Then step shows the derived Now
+</code></pre>
+
+<p>NewReportRequest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:6</p>
+
+<p>Extend</p>
+
+<pre><code>Existing request DTO keeps the optional member so an unequal Now can be refused
+</code></pre>
+
+<p>reportTypes</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.ts:74</p>
+
+<p>Extend</p>
+
+<pre><code>Existing registry of Then &amp; Now steps; the Now step leaves it
+</code></pre>
+
+<p>firstStepOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWizardRules.ts:17</p>
+
+<p>Reuse</p>
+
+<pre><code>Edit start index stays 2, which now names Metrics &amp; name; only the comment changes
+</code></pre>
+
+<p>cutoffRefusal</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:79</p>
+
+<p>Extend</p>
+
+<pre><code>Existing copy for then-before-cutoff becomes the too-little-history line naming the owner
+</code></pre>
+
+<p>INewReport</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:120</p>
+
+<p>Extend</p>
+
+<pre><code>Existing create request type; loses nowLengthDays
+</code></pre>
+
+<p>NewThenAndNow</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs:27</p>
+
+<p>Extend</p>
+
+<pre><code>Existing create carrier; its Now member becomes RequestedNowLengthDays
+</code></pre>
+
+<p>ReportCommands</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>Existing create command; only its log line changes
+</code></pre>
+
+<p>ReportBulkCommands</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:8</p>
+
+<p>Extend</p>
+
+<pre><code>Existing bulk create command; only its log line changes
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:24</p>
+
+<p>Changed</p>
+
+<pre><code>Draft without Now; new relation function
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx:15</p>
+
+<p>Changed</p>
+
+<pre><code>Shows Now and the relation line
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Deleted
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.ts:91</p>
+
+<p>Changed</p>
+
+<pre><code>Now step removed from the step list
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWizardRules.ts:15</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Index 2 now names Metrics &amp; name; only the comment changes
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.ts:4</p>
+
+<p>Changed</p>
+
+<pre><code>now-* variants leave the union
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:88</p>
+
+<p>Changed</p>
+
+<pre><code>Too-little-history copy
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/ownerLimitOfWindow.ts:20</p>
+
+<p>Changed</p>
+
+<pre><code>Now branch removed
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>INewReport without nowLengthDays
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>Member removed from the record; legacy JSON still deserialises, unknown members ignored
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:56</p>
+
+<p>Changed</p>
+
+<pre><code>NowLengthRefusal replaces NowRefusal
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs:20</p>
+
+<p>Changed</p>
+
+<pre><code>New code; now-* kept, NamesEarliestStart keeps NowBeforeCutoff harmlessly
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:46</p>
+
+<p>Changed</p>
+
+<pre><code>Freeze stores no Now
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:40</p>
+
+<p>Changed</p>
+
+<pre><code>Optional member kept, read only for the refusal
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs:27</p>
+
+<p>Changed</p>
+
+<pre><code>RequestedNowLengthDays
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:138</p>
+
+<p>Changed</p>
+
+<pre><code>Logging without a Now length
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:90</p>
+
+<p>Changed</p>
+
+<pre><code>Logging without a Now length
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Now rows of the shared boundary table become NowLengthRefusal rows
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Now-length freeze cases change to the equal-length rule; touched rows move toward the port
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice07NowLengthScenarios.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Host scenarios for a chosen Now length no longer hold; replaced by port scenarios, line off HostUsersStillToMove when emptied
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/BulkReports/BulkReportsAcceptanceTest.cs:61</p>
+
+<p>Migrated</p>
+
+<pre><code>Requests stop sending a Now length
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Log text without Now
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Reports/ThenAndNowPayloadRoundTripTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Legacy payload with nowLengthDays still reads
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.test.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Now rows removed from the shared table
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Draft without Now; relation cases added
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.portfolios.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>No Now choice
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>No Now choice
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>No Now step; back-to-back default
+</code></pre>
+
+<p>build</p>
+
+<p>Lighthouse.Frontend/stryker.6625.frontend.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>New per-feature mutation config
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>NewReportRequest thenAndNow.nowLengthDays</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:203</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Single-owner wizard stops sending a Now length
+</code></pre>
+
+<p>NewReportRequest thenAndNow.nowLengthDays</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:218</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Bulk wizard stops sending a Now length
+</code></pre>
+
+<p>NewReportRequest thenAndNow.nowLengthDays</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:22</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Reads the member only to refuse an unequal Now
+</code></pre>
+
+<p>NewReportRequest thenAndNow.nowLengthDays</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:90</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Logs only the Then length
+</code></pre>
+
+<p>NewReportRequest thenAndNow.nowLengthDays</p>
+
+<p>docs/feature/story-6625-baseline-report-creation/brief.md:1</p>
+
+<p>Producer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Lighthouse-Clients CLI and MCP only list and read reports and never send a Now length (DISCUSS checklist)
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The Now derivation replaces one expression and the draft change is local to thenAndNowDraft; no structure must move first
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L8</h6>
+
+<pre><code>In the Then step: the overlap line shows exactly when Then and Now share a day, it names the last day of Then, and the same-days line shows exactly when Then ends today; the default Then ends the day before Now starts, so default windows never overlap
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>thenAndNowDraft</p>
+
+<h6>Treatment</h6>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>today fixed; Then length 14..400; Then end 0..800 days before today or left at its default
+</code></pre>
+
+<p>length &lt;= 400, offset &lt;= 800</p>
+
+<p>fast-check fixed seed, printed on failure</p>
+
+<h6>Must include</h6>
+
+<pre><code>Then ending today
+</code></pre>
+
+<pre><code>Then ending the day before Now starts
+</code></pre>
+
+<pre><code>Then ending on the day Now starts
+</code></pre>
+
+<p>None.</p>
+
+<pre><code>fast-check integer shrinking
+</code></pre>
+
+<pre><code>Day numbers of both windows compared directly: shared day iff Then end &gt;= today - length + 1
+</code></pre>
+
+<pre><code>A relation that shows overlap one day early or names the Now start as the until day
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/invOverlapIffShareDay.meta</p>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/invOverlapUntilIsLastSharedDay.meta</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>Create asks no Now question and saves Now equal to Then
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Quint invNoStoredNowOnCreate and invAcceptOnlyEqualOrAbsentNow held; mutants store-now and skip-now-check killed
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-invNoStoredNowOnCreate.meta</p>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-mutant-store-now.meta</p>
+
+<pre><code>Create asks no Now question and saves Now equal to Then
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>A 30-day Then with the default end is accepted and builds a 30-day Now ending today (P2)
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Create asks no Now question and saves Now equal to Then
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>ReportWizard / BulkReportWizard to reports API to IReportCommands.Create to ThenAndNowTemplate.Freeze; read back through IReportQueries.Get
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Create asks no Now question and saves Now equal to Then
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: synchronous request and response
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Read derives Now through ReportWindow.NowEndingOn; Edit refuses an unequal Now and writes no window member
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportCommands.cs</p>
+
+<p>Extend</p>
+
+<pre><code>ReportEdit carries RequestedNowLengthDays
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Maps the optional Now length into RequestedNowLengthDays
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/ReportEditRequest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Optional Now length kept only for the refusal
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts</p>
+
+<p>Extend</p>
+
+<pre><code>reportChangeOf sends no Now length; thenAndNowDraftOf drops nowLength
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts</p>
+
+<p>Extend</p>
+
+<pre><code>ReportChange loses thenAndNow.nowLengthDays; ReportRefusalCode gains now-length-differs-from-then
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Copy for now-length-differs-from-then: Now is always as long as Then.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportView.editWizard.test.tsx src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportView.editWizard.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Through IReportQueries.Get and IReportCommands at the application-service port with a fake clock on 15 Nov 2026: read a report stored with Then 30 days and a legacy stored Now of 45 days; edit its name and shown metrics; edit a report whose Then starts before the oldest kept day; create and edit a 90-day Then report with Now 45, with Now 90 and with no Now; in the frontend open Edit report
+</code></pre>
+
+<pre><code>The legacy report reads a 30-day Now ending today with its Then window and frozen values unchanged and the stored payload member left unchanged; the edits are saved; the old report stays editable; Now 45 is refused with now-length-differs-from-then and nothing is written, Now 90 and no Now are accepted; Edit report opens on Metrics &amp; name, offers no Now length and sends none
+</code></pre>
+
+<pre><code>A read that still shows the stored 45-day Now, an edit that writes a Now length or re-checks kept history, or a server that accepts Now 45
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P7</p>
+
+<p>P8</p>
+
+<p>P9</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>Edit</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:66</p>
+
+<p>Extend</p>
+
+<pre><code>ThenAndNowTemplate.Edit already edits the JSON tree and keeps unknown members; it stops writing the Now member
+</code></pre>
+
+<p>ReportEdit</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportCommands.cs:6</p>
+
+<p>Extend</p>
+
+<pre><code>Existing edit carrier
+</code></pre>
+
+<p>REFUSAL_COPY</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:82</p>
+
+<p>Extend</p>
+
+<pre><code>Exhaustive copy table for refusal codes gains one row
+</code></pre>
+
+<p>ReportsControllerBase</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>Existing controller mapping of edit requests
+</code></pre>
+
+<p>ReportEditThenAndNowRequest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/ReportEditRequest.cs:14</p>
+
+<p>Extend</p>
+
+<pre><code>Existing edit DTO keeps the optional member so an unequal Now can be refused
+</code></pre>
+
+<p>reportChangeOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:234</p>
+
+<p>Extend</p>
+
+<pre><code>Existing builder of the edit request; stops sending a Now length
+</code></pre>
+
+<p>ReportChange</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:140</p>
+
+<p>Extend</p>
+
+<pre><code>Existing edit request type; loses thenAndNow.nowLengthDays
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:82</p>
+
+<p>Changed</p>
+
+<pre><code>Edit Now rule; no Now write
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:100</p>
+
+<p>Changed</p>
+
+<pre><code>Read derives Now
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportCommands.cs:6</p>
+
+<p>Changed</p>
+
+<pre><code>RequestedNowLengthDays
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs:41</p>
+
+<p>Changed</p>
+
+<pre><code>Mapping
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/ReportEditRequest.cs:16</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Member kept; meaning narrowed to refusal input
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:234</p>
+
+<p>Changed</p>
+
+<pre><code>No Now length in an edit
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>ReportChange and ReportRefusalCode
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:82</p>
+
+<p>Changed</p>
+
+<pre><code>New copy row
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/useReportsPdfExport.ts:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>PDF export reads nowWindow from the read model, which is now derived; past PDF files are untouched
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateEditTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Edit universe: name, shown keys and token change; the legacy nowLengthDays member must survive unchanged
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice10EditReportScenarios.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Now-length edit rows go; touched rows move to the port
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportQueriesTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Reads with a stored Now now show Now equal to Then
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamReportsControllerTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Edit mapping without a Now write
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportView.editWizard.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Edit opens on Metrics &amp; name; no Now step
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/services/Api/ReportService.test.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Request bodies without nowLengthDays
+</code></pre>
+
+<p>build</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker.6625.backend.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>New per-feature mutation config naming Tests.Acceptance.BaselineReportCreation
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>ReportEditRequest thenAndNow.nowLengthDays</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:234</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Edit stops sending a Now length
+</code></pre>
+
+<p>ReportEditRequest thenAndNow.nowLengthDays</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs:41</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Reads it only to refuse an unequal Now
+</code></pre>
+
+<p>Refusal code set (ReportRefusalCodes)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs:4</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Adds now-length-differs-from-then; keeps every shipped spelling
+</code></pre>
+
+<p>Refusal code set (ReportRefusalCodes)</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:82</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Exhaustive copy table gains the new code
+</code></pre>
+
+<p>Report read model nowWindow</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/useReportsPdfExport.ts:1</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Same shape; value now always equal in length to thenWindow
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>S1 already moves Now to ReportWindow.NowEndingOn; S2 only calls it from Read and Edit
+</code></pre>
+
+<p>architectural_tests</p>
+
+<pre><code>The shared architecture check (only ReportWindow and ReportWindowPolicy compute a Now window) and E15 cover the laws S2 can reach
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>Saved and edited reports compare equal lengths
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Quint invShownNowEqThen, invStaleOnlyAfterRealChange and invEditNeverRefusedForHistory held; mutants read-stored, bump and edit-checks-history killed
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-mutant-bump.meta</p>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-mutant-edit-checks-history.meta</p>
+
+<pre><code>Saved and edited reports compare equal lengths
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>A legacy 30/45 payload reads as a 30-day Now; an edit of name and metrics is accepted
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Saved and edited reports compare equal lengths
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Payload to ThenAndNowTemplate.Read to IReportQueries.Get to report view; Edit wizard to reports API to IReportCommands.Edit
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Saved and edited reports compare equal lengths
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: synchronous request and response
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>CHANGE_LINES gains the Total line (0 decimals) before per day; the Total change replaces the empty placeholder; both-0 form for both Throughput lines lives in this panel line definition
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts</p>
+
+<p>Extend</p>
+
+<pre><code>ChangeLine gains an optional both-0 form that a line definition opts into; compareThenNow and other panels keep their behaviour
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Render the both-0 form with no mark and no percent
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/panels/ThroughputPanel.test.tsx src/pages/Common/Reports/panels/thenNowComparison.test.ts src/pages/Common/Reports/panels/changeSummary.test.ts src/pages/Common/Reports/panels/reportPanelRegistry.parity.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.parity.test.tsx</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render the Throughput panel and the report summary for a read of 30-day windows with Throughput Total 52 in Then and 65 in Now; then reads with totals 0 and 0, 0 and 30 over 14 days, 91 and 91, and a Then not captured
+</code></pre>
+
+<pre><code>52 to 65: the Total line shows the change and +25 percent marked better, per day keeps its own change, and the CHANGE summary judges Throughput on Total too; 0 and 0: both Throughput lines read No change (both 0) with no mark and no percent, and Throughput counts as unchanged; 0 to 30: the Total line reads the up mark, 30 and (Then was 0) with no percent; 91 and 91: the grey dash mark and No change, counted unchanged; not captured: no Total change and Throughput not judged. WIP and Work Item Age panels are unchanged
+</code></pre>
+
+<pre><code>A Total line with no change mark, a percent over a Then of 0, a both-0 line with a mark, a WIP or Work Item Age panel that changes its 0/0 look, or a summary that ignores the Total line
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P10</p>
+
+<p>P11</p>
+
+<p>P12</p>
+
+<p>P13</p>
+
+<p>P14</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>CHANGE_LINES</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.tsx:23</p>
+
+<p>Extend</p>
+
+<pre><code>The panel line definition already feeds both the panel and summariseChange through the registry
+</code></pre>
+
+<p>lineComparisonsOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:123</p>
+
+<p>Extend</p>
+
+<pre><code>Existing single owner of line judgement; the both-0 form is an opt-in per line
+</code></pre>
+
+<p>summariseChange</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.ts:40</p>
+
+<p>Reuse</p>
+
+<pre><code>Already judges every listed line; a neutral both-0 line counts as unchanged with no code change
+</code></pre>
+
+<p>LineChanges</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx:64</p>
+
+<p>Extend</p>
+
+<pre><code>Existing renderer of a change line and its mark
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.tsx:23</p>
+
+<p>Changed</p>
+
+<pre><code>Total change line
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:27</p>
+
+<p>Changed</p>
+
+<pre><code>Optional both-0 form on ChangeLine
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx:64</p>
+
+<p>Changed</p>
+
+<pre><code>Both-0 rendering
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts:54</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Passes CHANGE_LINES as before
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.ts:40</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Judges the added line automatically
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.parity.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Parity now includes the Total line
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Throughput judged on Total too
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>No shared contract changes: the read model already carries throughput total; the change is inside the frontend panel definitions
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>Adding a line to an existing line list needs no preparatory move
+</code></pre>
+
+<p>architectural_tests</p>
+
+<pre><code>Existing E16 (header judges like its panel, pure comparison modules) covers the added line; no new boundary
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L7</h6>
+
+<pre><code>The Throughput Total and per-day lines read No change (both 0) with no mark and no percent exactly when both shown sides are 0; equal non-zero sides read the grey dash and No change; a Then of 0 with Now above 0 reads Then was 0 with no percent; a dash on either side gives no change; other panels are unaffected
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>ThroughputPanel</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>0 and 0: No change (both 0), no mark
+</code></pre>
+
+<pre><code>91 and 91: grey dash, No change
+</code></pre>
+
+<pre><code>0 and 30: up mark, 30 (Then was 0)
+</code></pre>
+
+<pre><code>52 and 65: up, 13, +25 percent, better
+</code></pre>
+
+<pre><code>Then not captured: no change
+</code></pre>
+
+<pre><code>Five closed classes of a line comparison
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/invChangeIffBothCaptured.meta</p>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/invPctOnlyWhenThenPositive.meta</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>Throughput Total compared and counted in CHANGE
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Quint invChangeIffBothCaptured, invPctOnlyWhenThenPositive (DISCUSS model) and invTotalAndPerDayAgree held; mutant unequal-lengths killed
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6625-baseline-report-creation/evidence/quint/runs/design-mutant-unequal-lengths.meta</p>
+
+<pre><code>Throughput Total compared and counted in CHANGE
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>A read with totals 52 and 65 builds a Total change of +13 and +25 percent
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Throughput Total compared and counted in CHANGE
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>IReportQueries.Get read to ReportView to ThroughputPanel and ThenAndNowSummary
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Throughput Total compared and counted in CHANGE
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: pure rendering of a read
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>

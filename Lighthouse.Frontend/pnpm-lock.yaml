@@ -326,8 +326,8 @@ importers:
         specifier: ^31.0.0
         version: 31.0.0
       parse5:
-        specifier: ^8.1.0
-        version: 8.1.0
+        specifier: ^8.1.1
+        version: 8.1.1
       typescript:
         specifier: ^7.0.2
         version: 7.0.2

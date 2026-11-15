@@ -7956,6 +7956,23 @@ jobs:
       DISCOVER G1-G3 failed and the maintainer accepted the risk (D2). Changelog: 2026-10-03 - wording revised in
       DISCUSS after the maintainer decided the Then & Now report gives no verdicts and states no rules (feature-delta
       D39, D40); it shows the chosen metrics, how they changed, and Now's points beyond limits frozen from Then.
+      2026-11-15 - DISCOVER of Story #6535 (Show Arrivals in reports): first customer-originated request for a
+      nice-to-have metric of this job (arrivals, parked in epic-5878 D39). One request, relayed second-hand via the
+      Productboard ideas board (2026-11-03). Asked directly (maintainer thread, ~2026-11-03), the requester said: the
+      number of arrivals in the window, compared with Throughput, and arrivals above Throughput is a bad sign. The
+      maintainer adds that the comparison that matters is Then against Now (has the arrivals-to-Throughput balance
+      improved), not arrivals Now against Throughput Now. Arrivals become one more metric in the catalog the reader
+      already ticks; the job wording is unchanged. Open for DIVERGE: which values (total, per-day average; max and
+      median per day doubtful) and how to show the balance (e.g. the gap between average arrivals and average
+      Throughput per day, moving towards zero).
+      2026-11-15 - DIVERGE of story-6535-arrivals-in-reports (approved rev. 1): six mechanisms scored; recommended
+      one new Then & Now metric "Arrivals" whose panel sets arrivals per day (Work Items started) against Throughput
+      per day and compares the gap, Then against Now, lower gap better (4.50); dissent arrivals alone (4.30); gap
+      towards zero 4.00. Job wording unchanged. See docs/feature/story-6535-arrivals-in-reports/diverge/.
+      2026-11-15 - DISCUSS of story-6535-arrivals-in-reports: Team and Portfolio; old reports show Arrivals as
+      "Not captured" and cannot tick it. One deliberate exception to the functional dimension below: the Arrivals
+      panel's gap line shows its change in per-day units without a percent change, because the gap can cross zero
+      and a percent of it misleads; like every panel today it counts no points beyond limits.
     job_story: >
       When I (or the Team) have changed how work flows and someone asks whether it helped,
       I want to set today's flow against a "before" that cannot move, with the metrics chosen before looking,

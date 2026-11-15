@@ -44,3 +44,23 @@ export function parseLocalDate(dateString: string): Date | null {
 
 	return isTheDayItClaimsToBe ? parsed : null;
 }
+
+/**
+ * The day a moment falls on in UTC. Only for days the backend stores as UTC midnight, such as the
+ * throughput and baseline dates in team and portfolio settings: the date input writes them with
+ * `new Date("YYYY-MM-DD")`, so reading them back by the local day would show the day before to
+ * everyone west of Greenwich. Anything the viewer picks or reads as their own day uses
+ * formatLocalDate.
+ */
+export function formatUtcDate(date: Date): string {
+	if (!isValidDate(date)) {
+		throw new TypeError(
+			`formatUtcDate cannot encode ${String(date)} as a calendar day.`,
+		);
+	}
+
+	const year = date.getUTCFullYear();
+	const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+	const day = String(date.getUTCDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+}

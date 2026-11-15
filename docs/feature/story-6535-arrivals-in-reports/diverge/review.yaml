@@ -1,0 +1,70 @@
+review_result:
+  artifact_path: "docs/feature/story-6535-arrivals-in-reports/diverge/"
+  review_date: "2026-11-15"
+  reviewer: "nw-diverger-reviewer"
+  revision: 2
+  verdict: APPROVED
+  coverage: "rev 2 re-read in full: options-raw.md, taste-evaluation.md, recommendation.md (fresh). job-analysis.md and competitive-research.md NOT re-read in rev 2; rev-1 PASS results carried over. Durable job entry jobs.yaml:7943-7985 read in rev 1. Internal code/doc citations NOT-CHECKED."
+
+  jtbd_rigor:
+    status: PASSED
+    issues: []
+    notes:
+      - "Carried from rev 1. Job id job-flow-coach-show-whether-flow-changed resolves at jobs.yaml:7943."
+
+  research_quality:
+    status: PASSED
+    issues: []
+    notes:
+      - "Carried from rev 1. Non-blocking: 'Good is nearly always stated as balance' has no count; reword as N of M sources read."
+      - "Most sources snippet-level; Nave worked example and Zendesk URL flagged by the researcher for verification."
+
+  option_diversity:
+    status: PASSED
+    checks:
+      - "Six curated rows, six mechanisms: A arrivals alone; B difference of two rates; C ratio; D modify Throughput panel (coupling); E WIP change (consequence); F navigation to Metrics charts (no computation)."
+      - "Head-clustering: stated p = 0.30, 0.30, 0.12, 0.12, 0.10, 0.06; sum = 1.00 (verified). Head A+B = 0.60 across two distinct mechanisms, not one family. Pass."
+      - "Tails (p <= 0.2): C, D, E, F (four). Pass."
+      - "name_origin present on all six. Pass."
+    notes:
+      - "A is a subset of B (B = A + gap line). Distinct on mechanism (raw series vs derived difference) and assumption. Accepted, but nested; the dissent says so."
+      - "C vs B is borderline: ratio vs difference of the same two rates. Accepted on transform, assumption and cost (dash rule)."
+
+  taste_application:
+    status: PASSED
+    checks:
+      - "Rubrics quoted for DVF and T1-T4 (taste-evaluation.md section 2). Pass."
+      - "Reason given per DVF cell and per T cell (sections 3-4). Pass."
+      - "All seven rows (six options, B split into B-lower and B-zero) scored on DVF and T1-T4 with identical weights. No cherry-picking. Pass."
+      - "T4 varies (D = 5, F = 3) with reasons. Pass."
+      - "Eliminate threshold (total < 6) applied; minimum total 9 (E). None eliminated. Pass."
+    recomputed_matrix:
+      formula: "0.30*DVFavg + 0.20*T1 + 0.20*T2 + 0.15*T3 + 0.15*T4"
+      rows:
+        - {row: B-lower, dvf: 4.67, t: "4/4/5/5", weighted: 4.50, artifact: 4.50, match: true}
+        - {row: A, dvf: 4.00, t: "4/4/5/5", weighted: 4.30, artifact: 4.30, match: true}
+        - {row: C, dvf: 3.67, t: "5/3/5/5", weighted: 4.20, artifact: 4.20, match: true}
+        - {row: B-zero, dvf: 3.67, t: "4/3/5/5", weighted: 4.00, artifact: 4.00, match: true}
+        - {row: F, dvf: 3.33, t: "5/5/3/3", weighted: 3.90, artifact: 3.90, match: true}
+        - {row: E, dvf: 3.00, t: "4/3/5/5", weighted: 3.80, artifact: 3.80, match: true}
+        - {row: D, dvf: 3.67, t: "3/4/3/5", weighted: 3.70, artifact: 3.70, match: true}
+      arithmetic: "All DVF totals/averages and weighted totals reproduce; ranking reproduces."
+
+  recommendation_coherence:
+    status: PASSED
+    checks:
+      - "Winner = highest weighted row (B-lower, 4.50). Recommended option is a single scored row. Pass."
+      - "Decision statement for DISCUSS present at top of recommendation.md. Pass."
+      - "Dissent present: row A at 4.30, margin 0.20, with the condition under which it wins. Pass."
+      - "Traces to job and research via the matrix. Pass."
+    notes:
+      - "Decision statement names the risk as the direction but not in the template form 'assuming [key risk] is acceptable'. Non-blocking; tighten in DISCUSS."
+      - "B-zero (4.00) remains open for DISCUSS. Scored as its own row, so the choice is traceable either way."
+
+  approval_status: approved
+  verdict_mapping: "APPROVED (all five dimensions PASSED). Rev 1 blocking issues resolved."
+  blocking_issues: []
+  recommendations:
+    - "Reword 'nearly always' in competitive-research.md with a count (not blocking)."
+    - "Restate the decision statement in the 'assuming [risk] is acceptable' form when DISCUSS confirms the direction."
+    - "Verify the Nave worked example and the Zendesk URL before DISCUSS relies on them."

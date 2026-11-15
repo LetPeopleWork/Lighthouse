@@ -29,7 +29,7 @@ import {
 } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { formatLocalDate } from "../../../utils/date/localDate";
+import { formatLocalDate, formatUtcDate } from "../../../utils/date/localDate";
 import { DeliveryRuleBuilder } from "../DeliveryRuleBuilder/DeliveryRuleBuilder";
 import {
 	type DeliveryRuleGroupMode,
@@ -691,15 +691,15 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 						slotProps={{
 							inputLabel: { shrink: true },
 							htmlInput: {
-								max: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
-									.toISOString()
-									.slice(0, 10),
+								max: formatUtcDate(
+									new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+								),
 							},
 						}}
 						defaultValue={
 							settings.processBehaviourChartBaselineStartDate
-								?.toISOString()
-								.slice(0, 10) ?? ""
+								? formatUtcDate(settings.processBehaviourChartBaselineStartDate)
+								: ""
 						}
 						onChange={(e) =>
 							onSettingsChange(
@@ -715,20 +715,20 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							inputLabel: { shrink: true },
 							htmlInput: {
 								min: settings.processBehaviourChartBaselineStartDate
-									? new Date(
-											settings.processBehaviourChartBaselineStartDate.getTime() +
-												14 * 24 * 60 * 60 * 1000,
+									? formatUtcDate(
+											new Date(
+												settings.processBehaviourChartBaselineStartDate.getTime() +
+													14 * 24 * 60 * 60 * 1000,
+											),
 										)
-											.toISOString()
-											.slice(0, 10)
 									: undefined,
 								max: formatLocalDate(new Date()),
 							},
 						}}
 						defaultValue={
 							settings.processBehaviourChartBaselineEndDate
-								?.toISOString()
-								.slice(0, 10) ?? ""
+								? formatUtcDate(settings.processBehaviourChartBaselineEndDate)
+								: ""
 						}
 						onChange={(e) =>
 							onSettingsChange(

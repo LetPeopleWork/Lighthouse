@@ -6,6 +6,7 @@ import type { Team } from "../models/Team/Team";
 import TeamForecastView from "../pages/Teams/Detail/TeamForecastView";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { formatUtcDate } from "../utils/date/localDate";
 import { inSequence } from "./inSequence";
 import { createMockApiServiceContext } from "./MockApiServiceProvider";
 
@@ -158,7 +159,7 @@ export interface RealityCheckAnswerOptions {
 const shiftDay = (day: string, days: number): string => {
 	const [year, month, date] = day.split("-").map(Number);
 	const shifted = new Date(Date.UTC(year, month - 1, date + days));
-	return shifted.toISOString().slice(0, 10);
+	return formatUtcDate(shifted);
 };
 
 const sweptWindows = (

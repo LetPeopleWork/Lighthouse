@@ -1,0 +1,1250 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: story-6535-arrivals-in-reports</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ArrivalsReportMetric.cs</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/PortfolioReportMetricSeries.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportMetricSeriesByOwner.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.tsx</p>
+
+<p>Create</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ReportPanels.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ArrivalsReportMetricTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs</p>
+
+<p>Lighthouse.Frontend/src/tests/ReportsTestKit.ts</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Open the report (ReportView, and the print document) for a Team report whose Then started 1.10 and finished 0.80 and Now 0.90 and 1.00 per day, with Arrivals shown; also a gap of 0.004 and 0.006, and a report with no arrivals capture
+</code></pre>
+
+<pre><code>Panel reads 0.30 more started than finished per day (Then), 0.10 fewer started than finished per day (Now), change 0.40 per day marked better with no percent, header lists Arrivals under Improved; 0.004 reads as many started as finished per day and 0.006 reads 0.01 more; the old report reads Not captured for this report; the print document shows the same words
+</code></pre>
+
+<pre><code>A build that rounds after comparing, keeps a percent, signs a zero gap, rebuilds Then from live data, or omits the print panel fails a named row
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<p>P5</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>OQ3 Clients: the wire gains one metric key arrivals whose sides carry the members total, perDay, throughputPerDay and gapPerDay (each a CapturedValue, doubles unrounded). lighthouse-clients holds no list of report metric keys or members (packages/client reportWording.ts and mcp-core reportTools.ts pass the raw answer through, per ADR-247), so no client code or release is needed. Only the lighthouse-reports skill reference (separate repo, prose) must learn the gap wording, the lower-is-better direction, and that Then is never rebuilt; the skill evals and drift test there own it. No changeset.
+</code></pre>
+
+<pre><code>OQ5 Wording: started and finished are fixed English words, not terminology tokens (Arrivals is a fixed name too: the Metrics tab uses the literal word and the seeder has no Arrivals key; a new key would need seeding for no reader gain). The tokens {Work Item}/{Work Items} (total line, as ThroughputPanel) and {Throughput} (line title) stay tokens. Rows: Total started N {Work Items}; Arrivals per day X.XX per day; {Throughput} per day X.XX per day; gap line. Gap line copy from the rounded gap g: g&gt;0 -&gt; g.toFixed(2) more started than finished per day; g&lt;0 -&gt; |g|.toFixed(2) fewer started than finished per day; g==0 -&gt; as many started as finished per day. Number is never signed with a plus or minus on the Then and Now sides; the words carry the sign. Singular/plural: none needed, the sentence uses the unit per day, and the total line reuses the {Work Item}/{Work Items} choice of ThroughputPanel.
+</code></pre>
+
+<pre><code>Rounding: PER_DAY_DECIMALS = 2 (ThroughputPanel). The backend freezes gapPerDay = arrivalsPerDay - throughputPerDay from the unrounded per-day values of one pair of series; the frontend rounds each side with roundForDisplay(.,2), and M10 balanced iff the rounded gap is 0 (so 0.004 reads balanced, 0.006 reads 0.01 more). The change line is compareThenNow on the SHOWN gaps (lineComparisonsOf already rounds both sides before subtracting), so shown Then + shown change = shown Now, the ADR-220 rule; 0.30 and -0.10 give -0.40 better. Rejected: change from unrounded values, because the displayed numbers could then contradict the displayed change.
+</code></pre>
+
+<pre><code>Gap owner: the arithmetic arrivals minus throughput lives once, in the new backend ArrivalsReportMetric (cohesive owner, a WindowedReportMetric beside ThroughputReportMetric), so Then and Now use one computation and the clients receive the gap raw. The frontend ArrivalsPanel owns only presentation: rounding, the three sentences, the mark. Direction of good (lower) lives only in reportPanelRegistry (ADR-220). No domain decision sits in a React component beyond the wording of an already computed value.
+</code></pre>
+
+<pre><code>Old reports (M6, Epic 5878 D27, followed as is): Read leaves out members the report never froze, so an old report has no arrivals metric and ReportPanels draws NOTHING_CAPTURED; the panel shows dashes and the existing absence note Not captured for this report on both sides. The edit wizard already lists a metric whose key is missing from the captured keys as a disabled, unticked checkbox with the helper Not captured for this report, and ThenAndNowTemplate.Edit refuses MetricNotCaptured for it; no new code. An old report cannot show Arrivals at all (shown keys are only ever from the stored list), so the panel appears only if a user had ticked it, which is impossible; the not captured read stays as the defensive look. New reports capture arrivals for every owner, shown or not, like the other metrics.
+</code></pre>
+
+<pre><code>Header summary: the registry entry has one change line, gapPerDay, with changeLines [gapPerDay, label gap per day, decimals 2], so summariseChange needs no change: gap change below zero lists Arrivals under Improved, above zero under Got worse, shown change zero under Unchanged, and a dash on either side (not captured) puts it in no group, as for other metrics. The group name is the panel title Arrivals.
+</code></pre>
+
+<pre><code>Edge cases: nothing finished gives throughput total 0 and perDay 0.00 as a real value (the Throughput rule; no absentReason), so gap = arrivals per day. Nothing started gives arrivals 0 and 0.00 and gap = -throughput per day (fewer started), or zero (as many started as finished) if nothing finished. Window days come from the series length, as Throughput, so no division by zero for a window of at least one day. Absent members use the existing CapturedValue.Absent plus absenceTextOf. Windows inside the done-items cutoff: Then creation is already refused by ReportWindowPolicy.ThenRefusal; Now uses the same series. Portfolio arrivals are Features started: PortfolioReportMetricSeries reads IPortfolioMetricsService.GetArrivalsForPortfolio (the Metrics tab&#x27;s own reader), Team reads ITeamMetricsService.GetStartedItemsForTeam (the Metrics tab&#x27;s arrivals endpoint). One definition of arrival; BuildArrivalsInfoDto is not reused because it computes a previous-period comparison, a different shape.
+</code></pre>
+
+<pre><code>Throughput repeated: throughputPerDay is stored inside the arrivals capture from the same IReportMetricSeries.DailyThroughput the Throughput metric reads over the same window and day count, so both panels show the same number: Then is frozen in one CaptureThen call per metric at one instant over the same series and Now is computed from the same Metrics tab reader on each read. Stored twice by design (the panel must read alone and a report may hide Throughput); never disagree because both come from one reader and one window. The change mark of Throughput never depends on it.
+</code></pre>
+
+<pre><code>Loading and failure looks: no new fetch. The panel is a pure function of its props (ADR-220 item 5) inside ThenNowPanelFrame and renders from the one report read ReportView already makes, so ReportView loading/failure looks, the print page preparing/failed looks and WidgetShell are unchanged and reused. No separate loading or failure look exists for the panel. The panel also reads a dash with the reason in the Not captured and no-finished states.
+</code></pre>
+
+<pre><code>PDF: ReportPrintDocument renders ReportPanels, the same component as the screen, so Arrivals prints with the same values and words; no print-specific work. Pin it by rendering the print document through its existing test kit once with Arrivals shown.
+</code></pre>
+
+<pre><code>Metric order and name: the catalog order is cycle-time, throughput, wip, work-item-age, arrivals (Arrivals last, a new metric in a later version goes last). Backend catalog order follows DI registration: register ArrivalsReportMetric last. Name Arrivals is a fixed name through a new fixedName on the frontend METRIC_CATALOG entry read by a new metricNameOf(key,getTerm) used by the wizard checkbox, UnsupportedMetricPanel title and panelTitle; no terminology key.
+</code></pre>
+
+<pre><code>Default ticking (open, see question to maintainer): ThenAndNowDraft defaults to every offered metric ticked; Arrivals follows that rule unless the maintainer wants it off by default. DESIGN records the default-on rule because changing it would add a new per-metric default concept.
+</code></pre>
+
+<pre><code>Cross-layer algebra. Domain (Reports metric): state = per-window CapturedValue members {total, perDay, throughputPerDay, gapPerDay} with total integer and gapPerDay = perDay - throughputPerDay; operations CaptureThen/Read over a window; observation = the four values per side; equality = field-wise CapturedValue equality. Application/port: IReportMetricSeries gains DailyArrivals(owner, window) returning one count per day; outcome is values or ReportOwnerGoneException like the other series. Adapter: TeamReportMetricSeries/PortfolioReportMetricSeries map the Metrics services&#x27; RunChartData to counts through DailyCounts (the order and the day count are the window&#x27;s). Presentation: ArrivalsPanel maps four values to rows plus one gap sentence; absent values map to dash and note. Infrastructure/recovery: none new; the Then payload is the existing JSON column captures, a new key in the existing JsonObject, no migration (EF migrations N/A); old payloads lack the key and read as not captured.
+</code></pre>
+
+<pre><code>Carriers and owners: decisions about the balance live in ArrivalsReportMetric (C#, Services/Implementation/Reports/Metrics); effects in the two series adapters; errors as ReportOwnerGoneException (existing); presentation decision in ArrivalsPanel.tsx plus a pure exported function gapSentenceOf(gap) in the panel module (testable with no render); direction in reportPanelRegistry. Per-process state: none.
+</code></pre>
+
+<pre><code>Checker mapping: no state machine, concurrency or liveness is introduced, so Quint (installed, 0.33.1) and TLC/Agda are not applicable; the claims are total pure arithmetic on two numbers and a sign-word mapping, falsified by native properties: fast-check (frontend package.json, fast-check 4.10.2) for the rounding and sign-word laws, and NUnit TestCase rows for the backend capture (no FsCheck in the backend manifest). Type strength: the C# CapturedValue record and the TS union of sentence kinds; invalid states (a plus-signed zero, &#x27;0.00 more&#x27;) are excluded by a three-way closed sum returned by gapSentenceOf, but the TS wire type stays a nullable number as for other members. Property tests: see laws.
+</code></pre>
+
+<pre><code>Prefactoring: none needed on behavior; one small move before the feature, extracting the &#x27;metric name or term key&#x27; choice behind metricNameOf in reportPanelRegistry is part of the feature itself, not a preserving move. No smell blocks the new metric: code-fact (code-fact query.callers-of) was not run; readings were by hand with ctx_shell/grep, which is noisy and could miss dynamic callers, so a consumer of ReportMetricSide keys outside the grepped Reports tree is unknown.
+</code></pre>
+
+<pre><code>UI sketch and visualization section 8 (DESIGN answers): one question (did the started-versus-finished balance fall); simplest form is the existing three-column panel, no chart, so axis, labelling, bar baseline and limit-count items are N/A with that reason; awkward data covered (nothing finished, nothing started, balanced, not captured, one-day window); colour: the existing mark plus word, never colour alone (LineChange draws the mark icon and the Improved/Got worse words); title Arrivals; info text (the i help) states: Arrivals are Work Items started; the gap is started minus finished per day; lower is better; no percent because the gap can cross zero; docs how-to-read passage goes in docs/reports/thenandnow.md at finalize. Phone, dark and enlarged: reuse ThenNowPanelFrame unchanged. The gap sentence wraps on its own line, as the AbsenceNotes do; the sketch is for DELIVER&#x27;s start.
+</code></pre>
+
+<pre><code>Usage data is left to DEVOPS (OQ4); no event is designed. ADR/context map: ADR-270 and ARCHITECTURE.md section 4 need no change (a metric-catalog entry inside the Reports context); no new ADR; ADR-220&#x27;s catalog gains an entry within its decision, and ADR-247&#x27;s table of web presentation rules (the skill reference, a drift list) gains a row at DELIVER finalize.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<pre><code>Per-day values are shown to 2 decimals; totals to 0 decimals; no percent change on the gap line (M7); direction of good is lower and fixed in the frontend registry only; no new direction kind (M2).
+</code></pre>
+
+<pre><code>No stored bound beyond the existing ones: Then and Now windows are held to ReportWindowPolicy (minimum length, done-items cutoff); the design adds no input and widens nothing. The new members are doubles with unbounded sign for gapPerDay (it can be negative); that is a deliberate property, not a deviation.
+</code></pre>
+
+<pre><code>Public stimulus stays the report read (GET report by id through the application-service port) and the create report call; no endpoint, DTO type or enum ordinal changes; metric keys are strings on the wire (ADR-220 item 6).
+</code></pre>
+
+<pre><code>No scenario tags, no Epic/Story words in copy: copy uses {Work Items}, {Throughput}; the fixed words are started, finished, Arrivals.
+</code></pre>
+
+<pre><code>Test budgets are the defaults: per-test and property budgets and the CI suite ceiling (300 s) unchanged; the property uses a bounded example count with fast-check defaults; no derogation requested; no infrastructure suite.
+</code></pre>
+
+<h5>Reuse</h5>
+
+<p>WindowedReportMetric</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/WindowedReportMetric.cs:15</p>
+
+<p>Reuse</p>
+
+<pre><code>Base class already freezes Then, recomputes Now and omits unfrozen members; ArrivalsReportMetric derives from it unchanged.
+</code></pre>
+
+<p>ArrivalsReportMetric</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ThroughputReportMetric.cs:12</p>
+
+<p>CreateNew</p>
+
+<pre><code>No existing metric computes started-versus-finished; ThroughputReportMetric owns only finished and BaseMetricsService.BuildArrivalsInfoDto returns a previous-period comparison, a different shape. The new class holds the balance rule once, beside its sibling.
+</code></pre>
+
+<p>IReportMetricSeries</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs:5</p>
+
+<p>Extend</p>
+
+<pre><code>Add DailyArrivals(owner, window) next to DailyThroughput; the port is the single seam over the Metrics services.
+</code></pre>
+
+<p>TeamReportMetricSeries</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>Implement DailyArrivals through ITeamMetricsService.GetStartedItemsForTeam, the reader of the Team Metrics tab arrivals chart, so no second arrival definition exists.
+</code></pre>
+
+<p>PortfolioReportMetricSeries</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/PortfolioReportMetricSeries.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>Implement DailyArrivals through IPortfolioMetricsService.GetArrivalsForPortfolio (Features started), the reader the Portfolio Metrics tab uses.
+</code></pre>
+
+<p>ReportMetricSeriesByOwner</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportMetricSeriesByOwner.cs:7</p>
+
+<p>Extend</p>
+
+<pre><code>Delegate DailyArrivals to the series of the owner kind, as every other series member.
+</code></pre>
+
+<p>reportPanelRegistry</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts:47</p>
+
+<p>Extend</p>
+
+<pre><code>Add the arrivals entry (component, title, lower, changeLines) and the catalog entry; the satisfies Record&lt;ReportMetricKey,...&gt; forces the panel once the key exists.
+</code></pre>
+
+<p>ThenNowPanelFrame</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowPanelFrame.tsx:1</p>
+
+<p>Reuse</p>
+
+<pre><code>The shared frame (title, Then, Now, Change columns) and PanelLine are reused by ArrivalsPanel unchanged.
+</code></pre>
+
+<p>ThroughputPanel</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.tsx:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Pattern, TOTAL/PER_DAY decimals, totalText and absence handling are the model; ArrivalsPanel does not copy the total-line rule where it can import PER_DAY_DECIMALS; totalText is exported for reuse if needed. Not a semantic duplicate: Throughput shows only finished and compares per day.
+</code></pre>
+
+<p>LineChanges</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx:97</p>
+
+<p>Extend</p>
+
+<pre><code>LineChanges and changeText render a percent; the gap line needs none, so ChangeLine gains an optional showPercent (default true) honoured by changeText, keeping every other panel byte-identical.
+</code></pre>
+
+<p>compareThenNow</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:90</p>
+
+<p>Extend</p>
+
+<pre><code>Add the optional percent suppression on ChangeLine; compareThenNow and lineComparisonsOf are reused unchanged for the change on shown values.
+</code></pre>
+
+<p>summariseChange</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.ts:42</p>
+
+<p>Reuse</p>
+
+<pre><code>summariseChange already groups by each panel change lines; Arrivals needs no code here.
+</code></pre>
+
+<p>ReportMetricSide</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:14</p>
+
+<p>Extend</p>
+
+<pre><code>Add the members throughputPerDay and gapPerDay and the arrivals key to ReportMetricKey; total and perDay already exist.
+</code></pre>
+
+<p>ReportPanels</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ReportPanels.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Use metricNameOf for the unsupported-metric title; otherwise unchanged.
+</code></pre>
+
+<p>MetricsAndNameStep</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Label through metricNameOf so Arrivals reads as a fixed name; checkbox, disabled and Not captured behaviour are reused for old reports.
+</code></pre>
+
+<p>ThenAndNowTemplate</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Freeze, Edit and Read iterate the catalog; a registered metric is captured, edited and read with no code change; MetricNotCaptured refusal covers old reports.
+</code></pre>
+
+<p>ReportPrintDocument</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx:144</p>
+
+<p>Reuse</p>
+
+<pre><code>Renders ReportPanels; the PDF needs no print-specific code.
+</code></pre>
+
+<p>ArrivalsReportMetric</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ArrivalsReportMetric.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; see the ArrivalsReportMetric row: no existing owner of the started-versus-finished balance.
+</code></pre>
+
+<p>ThroughputReportMetric</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1338</p>
+
+<p>Extend</p>
+
+<pre><code>Composition root registers each metric; ArrivalsReportMetric is registered after WorkItemAgeReportMetric.
+</code></pre>
+
+<p>ArrivalsPanel</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; ThroughputPanel shows only finished and compares one line, the Arrivals panel has four rows and a sentence line, so extending ThroughputPanel would add mode flags.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>backend-metric-implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/Metrics/ArrivalsReportMetric.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file: the metric.
+</code></pre>
+
+<p>di-registration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1340</p>
+
+<p>Changed</p>
+
+<pre><code>Register ArrivalsReportMetric last so the catalog order follows.
+</code></pre>
+
+<p>port-interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportMetricSeries.cs:5</p>
+
+<p>Changed</p>
+
+<pre><code>New member DailyArrivals; every implementer (the three series classes) and every test double that implements it changes; Moq mocks need a setup only where Arrivals is read.
+</code></pre>
+
+<p>test-registration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs:148</p>
+
+<p>Changed</p>
+
+<pre><code>The port harness lists the metric classes explicitly and must register ArrivalsReportMetric; ATD owns this support.
+</code></pre>
+
+<p>wire-payload</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:39</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Captures is a map of JsonObject by key; a new key is data, old payloads lack it, no migration.
+</code></pre>
+
+<p>frontend-model</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:14</p>
+
+<p>Changed</p>
+
+<pre><code>ReportMetricKey and ReportMetricSide gain members.
+</code></pre>
+
+<p>frontend-registry</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.ts:47</p>
+
+<p>Changed</p>
+
+<pre><code>New entry plus metricNameOf.
+</code></pre>
+
+<p>frontend-panel</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file: the panel and gapSentenceOf.
+</code></pre>
+
+<p>frontend-comparison</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Optional percent suppression.
+</code></pre>
+
+<p>frontend-line-parts</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>LineChange passes the suppression to changeText.
+</code></pre>
+
+<p>frontend-wizard</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Label through metricNameOf.
+</code></pre>
+
+<p>frontend-panels-host</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ReportPanels.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Title through metricNameOf.
+</code></pre>
+
+<p>frontend-summary</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowSummary.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Summary reads the registry change lines; throughput closed count unchanged.
+</code></pre>
+
+<p>frontend-print</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx:144</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Same ReportPanels.
+</code></pre>
+
+<p>frontend-test-kit</p>
+
+<p>Lighthouse.Frontend/src/tests/ReportsTestKit.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Report fixtures may add the new members; ATD owns this support.
+</code></pre>
+
+<p>clients-repo</p>
+
+<p>/storage/repos/lighthouse-clients/packages/client/src/reportWording.ts:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Raw pass-through; no key list; no code or release. The lighthouse-reports skill reference needs a prose update in that repo, owner maintainer.
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/reports/thenandnow.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>New metric and how to read the gap, at finalize.
+</code></pre>
+
+<p>architecture-docs</p>
+
+<p>docs/product/architecture/adr-247-reports-are-read-through-the-clients-as-four-read-only-tools-that-return-the-reports-raw-values.md:66</p>
+
+<p>Changed</p>
+
+<pre><code>Its table of web presentation rules and the drift-risk mitigation (b) call for the skill reference row for the gap wording; at finalize.
+</code></pre>
+
+<p>context-map</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>A metric-catalog entry inside Reports; no concept, context or edge changes.
+</code></pre>
+
+<p>series-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/TeamReportMetricSeries.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Implements the new DailyArrivals member.
+</code></pre>
+
+<p>series-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/PortfolioReportMetricSeries.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Implements the new DailyArrivals member.
+</code></pre>
+
+<p>series-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportMetricSeriesByOwner.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Implements the new DailyArrivals member.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>report read payload: metrics map by string key with members as CapturedValue</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:84</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Emits one more key arrivals and four members through the existing catalog loop.
+</code></pre>
+
+<p>report read payload: metrics map by string key with members as CapturedValue</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:14</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Adds the key and the two new members to the TS types and the registry.
+</code></pre>
+
+<p>report read payload: metrics map by string key with members as CapturedValue</p>
+
+<p>/storage/repos/lighthouse-clients/packages/client/src/reportWording.ts:1</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Passes raw values through; an unknown key is shown as given.
+</code></pre>
+
+<p>report read payload: metrics map by string key with members as CapturedValue</p>
+
+<p>/storage/repos/lighthouse-clients/skills/lighthouse-reports:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Prose reference learns the gap wording and lower-is-better; separate repo, maintainer follow-up.
+</code></pre>
+
+<p>stored Then payload captures map</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:39</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Old rows lack arrivals and read as not captured; newer rows read by an older version are skipped with a warning (existing LogKeysNotInTheCatalog).
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>architectural_tests</p>
+
+<pre><code>No new dependency or boundary: ArrivalsReportMetric sits in the same namespace under the existing ReportsModuleArchUnitTest rules, which cover members added later; the frontend registry&#x27;s satisfies check and reportPanelRegistry.parity.test already govern the panel family.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>The only party that could change apart is lighthouse-clients, which keeps no list of report metric keys or members and passes the raw answer through (reportWording.ts), so there is no parsing contract the new key can break; the skill prose is checked by that repo&#x27;s own skill drift tests.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>No behavior-preserving move is needed first: the registry, frame and comparison seams take a new entry as they are; the two small extensions (fixed metric name, optional percent suppression) are part of the feature and keep every existing panel byte-identical, guarded by reportPanelRegistry.parity.test.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>Report read through the application-service port (ReportQueries / IReportService) for the values, and the ReportView plus ReportPrintDocument components through ReportPanels for the words
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>IReportMetricSeries.DailyArrivals and DailyThroughput over ITeamMetricsService / IPortfolioMetricsService
+</code></pre>
+
+<pre><code>ArrivalsReportMetric -&gt; IReportMetricSeries -&gt; the two series adapters -&gt; Metrics services; frontend ArrivalsPanel -&gt; thenNowComparison and ThenNowPanelFrame; nothing in the metrics services knows reports.
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>####### B1</p>
+
+<pre><code>The owner of the report is gone when the series is read
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>ReportOwnerGoneException as for every other metric, translated by the existing report read to its existing refusal
+</code></pre>
+
+<p>####### B2</p>
+
+<pre><code>A member of the arrivals capture is missing (old report) or absent
+</code></pre>
+
+<p>Indeterminate</p>
+
+<pre><code>A dash on that line with Not captured for this report; the header summary lists the metric in no group
+</code></pre>
+
+<h5>Observations</h5>
+
+<pre><code>Per side of the arrivals metric: total started, started per day, finished per day and gap per day (unrounded doubles, each with a sample size = the window days)
+</code></pre>
+
+<p>CapturedValue</p>
+
+<pre><code>Two gaps equal after rounding to 2 decimals (0.004 and 0.000); a window with no start from one with a start balanced by a finish; which Work Items were started.
+</code></pre>
+
+<pre><code>Gap sentence per side as the panel shows it: more, fewer or as many started as finished per day, derived from the rounded gap
+</code></pre>
+
+<p>GapSentence</p>
+
+<pre><code>The unrounded gap behind a rounded one; the Then window length.
+</code></pre>
+
+<h5>Equality</h5>
+
+<p>gap sentence</p>
+
+<pre><code>Two gaps are equal iff they round half away from zero to the same value at 2 decimals; the change is equal iff the difference of the rounded gaps is equal.
+</code></pre>
+
+<h5>Constructors</h5>
+
+<p>gapSentenceOf</p>
+
+<p>gapSentenceOf(rounded: number): { kind: &#x27;more&#x27; | &#x27;fewer&#x27; | &#x27;balanced&#x27;; magnitude: number }</p>
+
+<p>ArrivalsReportMetric.ValuesOver</p>
+
+<p>ValuesOver(owner: ReportOwner, window: ReportWindow): Dictionary&lt;string, CapturedValue&gt;</p>
+
+<h5>Laws</h5>
+
+<h6>L1</h6>
+
+<pre><code>Balanced follows the shown value: for every finite gap g, gapSentenceOf(roundForDisplay(g,2)) is balanced iff roundForDisplay(g,2)==0, more iff it is above 0, fewer iff below 0, and the magnitude equals the absolute rounded value (0.004 balanced, 0.006 -&gt; 0.01 more).
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>ArrivalsPanel</p>
+
+<h6>Treatment</h6>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>finite doubles in [-50,50] with a bias to values within 0.01 of zero and at half steps like 0.005
+</code></pre>
+
+<p>100 cases (fast-check default), plus the fixed examples 0.004, 0.005, -0.005, 0.006</p>
+
+<p>fast-check seed printed on failure and replayable with the reported seed and path</p>
+
+<h6>Must include</h6>
+
+<pre><code>0
+</code></pre>
+
+<pre><code>0.004
+</code></pre>
+
+<pre><code>-0.004
+</code></pre>
+
+<pre><code>0.006
+</code></pre>
+
+<p>1</p>
+
+<pre><code>fast-check native shrinking towards 0
+</code></pre>
+
+<pre><code>expected sentence kind written out from the rule on the rounded number by an inlined switch in the test, not by calling gapSentenceOf
+</code></pre>
+
+<pre><code>Dropping the rounding before the zero test, or using strict &gt; 0 on the unrounded gap, makes 0.004 read more started than finished.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L2</h6>
+
+<pre><code>Shown Then + shown change = shown Now for the gap line and the change carries no percent: for generated Then and Now gaps, lineComparisonsOf on gapPerDay gives delta = round(round(now)-round(then)) and verdict better iff delta&lt;0; percent text is absent.
+</code></pre>
+
+<p>Algebraic</p>
+
+<p>Application</p>
+
+<p>thenNowComparison</p>
+
+<h6>Treatment</h6>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>pairs of finite doubles in [-5,5] at 3 decimals
+</code></pre>
+
+<p>100 cases</p>
+
+<p>fast-check seed printed and replayable</p>
+
+<h6>Must include</h6>
+
+<pre><code>Then 0.30 and Now -0.10
+</code></pre>
+
+<pre><code>Then 0 and Now 0.35
+</code></pre>
+
+<p>1</p>
+
+<pre><code>fast-check native
+</code></pre>
+
+<pre><code>expected delta computed as (Math.round(now*100)-Math.round(then*100))/100 in the test
+</code></pre>
+
+<pre><code>Computing the change from unrounded gaps lets a shown 0.30 and -0.10 sit beside a change other than -0.40; keeping a percent shows a Then was 0 text.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L3</h6>
+
+<pre><code>Capture: for any window of d&gt;=1 days with s started and f finished, arrivals total is s, perDay is s/d, throughputPerDay is f/d, gapPerDay is (s-f)/d, all unrounded, each with sample size d; Then frozen equals the same values over the same series; a report that froze none reads no Then member and still computes Now.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>ArrivalsReportMetric</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>90 days started 99 finished 72 (1.10/0.80/0.30)
+</code></pre>
+
+<pre><code>30 days started 27 finished 30 (0.90/1.00/-0.10)
+</code></pre>
+
+<pre><code>30 days nothing finished (throughput 0 real)
+</code></pre>
+
+<pre><code>30 days nothing started
+</code></pre>
+
+<pre><code>1 day started 1 finished 2
+</code></pre>
+
+<pre><code>report with no frozen arrivals
+</code></pre>
+
+<pre><code>Finite examples through NUnit TestCase on the metric, as ThroughputReportMetricTest does; the rule is one division and one subtraction, so a broad generator adds nothing over the named edges.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<h6>C1</h6>
+
+<pre><code>The arrivals panel never shows 0.00 more or 0.00 fewer, never contradicts its change with its sides, and for old reports reads Not captured rather than a rebuilt Then
+</code></pre>
+
+<pre><code>A reader trusts a sign or a mark that disagrees with the shown numbers, or reads a rebuilt Then as frozen
+</code></pre>
+
+<p>ArrivalsPanel</p>
+
+<pre><code>a report read from the port: any metric with members total, perDay, throughputPerDay, gapPerDay each a CapturedValue, a missing member, or no arrivals key
+</code></pre>
+
+<p>gapSentenceOf</p>
+
+<p>ReportPanels</p>
+
+<pre><code>the panel text and its change mark in ReportView and in the PDF print document
+</code></pre>
+
+<pre><code>a client or skill that restates the gap from raw values with its own rounding (separate repo, prose drift, owner maintainer); a hand-edited payload with a gap that disagrees with its perDay members (the stored value is shown as given).
+</code></pre>
+
+<h5>States</h5>
+
+<p>Admitted</p>
+
+<pre><code>gap below, at and above zero; a window with nothing started and/or nothing finished; Portfolio and Team owners
+</code></pre>
+
+<p>ArrivalsReportMetric</p>
+
+<p>Excluded</p>
+
+<pre><code>a plus-signed or minus-signed zero gap sentence; a percent change on the gap; a rebuilt Then from live data
+</code></pre>
+
+<p>ArrivalsPanel</p>
+
+<p>Unknown</p>
+
+<pre><code>a stored gapPerDay that disagrees with stored perDay minus throughputPerDay (only a hand-edited row); a client rendering the gap on its own
+</code></pre>
+
+<p>maintainer</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>gap and sentence law
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Exclusion by a three-way closed sum on the rounded gap; falsified by the broad property laws, not by a proof assistant; no executed formal checker (Quint 0.33.1 is installed but no state model exists to check).
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>arrivals value
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Admitted input: a report window and owner -&gt; DailyArrivals/DailyThroughput -&gt; ArrivalsReportMetric.ValuesOver -&gt; ThenAndNowTemplate.Read -&gt; ReportPanels -&gt; ArrivalsPanel; acyclic, every symbol exists or is a named new file.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>arrivals value
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Create through ThenAndNowTemplate.Freeze (catalog loop) and read through ThenAndNowTemplate.Read reach the ReportView and ReportPrintDocument, both via ReportPanels and the registry key.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>arrivals value
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Non-applicable: no process, retry, queue or eventual-progress claim exists; each read is one synchronous finite computation over a bounded window.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<h6>Y1</h6>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: Throughput and Arrivals series count the same days for a window (negated: they differ in length)
+</code></pre>
+
+<pre><code>Gap is started minus finished over the same days
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<pre><code>A gap from windows of unequal length
+</code></pre>
+
+<pre><code>Both come from DailyCounts over the same ReportWindow so lengths are equal by construction; a service that returns a short run chart is the residue
+</code></pre>
+
+<p>ArrivalsReportMetric</p>
+
+<h6>Y2</h6>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: the Metrics tab arrival definition stays one definition (negated: Team and Portfolio started-item readers change)
+</code></pre>
+
+<pre><code>A report and the tab never disagree
+</code></pre>
+
+<pre><code>Later reports follow the new definition
+</code></pre>
+
+<pre><code>A second arrival rule inside Reports
+</code></pre>
+
+<pre><code>Frozen Then keeps the old definition by design
+</code></pre>
+
+<p>FlowMetricsModule</p>
+
+<h6>Y3</h6>
+
+<p>Bypass</p>
+
+<pre><code>Skill or client restates the gap itself
+</code></pre>
+
+<pre><code>Values and words equal the web
+</code></pre>
+
+<pre><code>Raw values passed through
+</code></pre>
+
+<pre><code>A different rounding or a percent
+</code></pre>
+
+<pre><code>Prose drift across repos; the skill reference and its evals
+</code></pre>
+
+<p>maintainer</p>
+
+<h6>Y4</h6>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>gapSentenceOf and compareThenNow are the single rounding sites
+</code></pre>
+
+<pre><code>Sentence and change agree
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<pre><code>A second rounding site
+</code></pre>
+
+<pre><code>Covered by both broad laws
+</code></pre>
+
+<p>ArrivalsPanel</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>

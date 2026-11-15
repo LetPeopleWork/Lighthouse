@@ -10,6 +10,7 @@ import {
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
+import { formatUtcDate } from "../../../../../utils/date/localDate";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 
 // Mock the TerminologyContext to avoid dependency issues
@@ -59,7 +60,7 @@ const getTwoWeeksFromNow = (): Date => {
 };
 
 const formatDateForInput = (date: Date): string => {
-	return date.toISOString().split("T")[0];
+	return formatUtcDate(date);
 };
 
 const formatDateForAPI = (date: Date): string => {

@@ -1,0 +1,12 @@
+[ok] No violation found (3829ms at 5223 traces/second).
+Witnesses:
+wPerDaySameTotalBy1 was witnessed in 1996 trace(s) out of 20000 explored (9.98%)
+wThenWas0 was witnessed in 2323 trace(s) out of 20000 explored (11.62%)
+wEqualTotals was witnessed in 2362 trace(s) out of 20000 explored (11.81%)
+wNotCaptured was witnessed in 4662 trace(s) out of 20000 explored (23.31%)
+wOverlapThenEnded was witnessed in 4964 trace(s) out of 20000 explored (24.82%)
+wDefaultRefused was witnessed in 7781 trace(s) out of 20000 explored (38.91%)
+wEndsTodayOk was witnessed in 6469 trace(s) out of 20000 explored (32.34%)
+wApiNowLenRefused was witnessed in 3142 trace(s) out of 20000 explored (15.71%)
+wApiAfterToday was witnessed in 5142 trace(s) out of 20000 explored (25.71%)
+wOldEditRefusedAfterMigration was witnessed in 5397 trace(s) out of 20000 explored (26.98%)
