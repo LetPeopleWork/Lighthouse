@@ -548,7 +548,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Read the compiled production code for every edge from Forecasting&#x27;s Adapters into the update code it shares with the Team and Portfolio updaters
 </code></pre>
 
-<pre><code>Only the forecast updater&#x27;s edges to the updater base class, its type parameter, the update key and the update cancellation context, as listed; today this already holds
+<pre><code>Only the forecast updater&#x27;s edges to the updater base class, the update key and the update cancellation context, as listed; today it fails naming an edge to the base class&#x27;s type parameter, which is a placeholder and not a dependency
 </code></pre>
 
 <pre><code>Forecasting&#x27;s background work does not tie itself tighter to the shared update code
@@ -891,6 +891,31 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Adapters outbound rule over a made-up adapter built on a generic base class in the shared update code, calling a base member whose signature uses the base&#x27;s type parameter
+</code></pre>
+
+<pre><code>The rule finds only the edge to the base class, never one to its type parameter, and passes with that edge listed; today it also reports the type parameter
+</code></pre>
+
+<pre><code>Renaming a type parameter in the shared update code cannot break Forecasting&#x27;s list
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AForecastingAdapterBuiltOnAGenericBaseOfTheSharedUpdateCode_HasAnEdgeToTheBaseOnly_NotToItsTypeParameter</p>
+
+<pre><code>The rule skips a generic parameter only when it is the base class&#x27;s, and still reports one of a generic method or a generic interface
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

@@ -244,7 +244,7 @@
 "still_passes_if": "F240",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingAdapters_ReachTheSharedUpdateCodeOnlyThroughTheListedEdges"
 },
-"expected": "F238",
+"expected": "F291",
 "stimulus": "F237",
 "user_result": "F239"
 },
@@ -452,13 +452,29 @@
 "expected": "F288",
 "stimulus": "F287",
 "user_result": "F289"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F295",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AForecastingAdapterBuiltOnAGenericBaseOfTheSharedUpdateCode_HasAnEdgeToTheBaseOnly_NotToItsTypeParameter"
+},
+"expected": "F293",
+"stimulus": "F292",
+"user_result": "F294"
 }
 ]
 },
 "counters": {
 "D": 5,
 "E": 6,
-"F": 290,
+"F": 295,
 "K": 4,
 "P": 5,
 "S": 4,
@@ -1501,7 +1517,6 @@
 "F235": "Forecast answers do not depend on storage or presentation, and the licence is asked in one place",
 "F236": "A listed type reaches the same licence service from a second method",
 "F237": "Read the compiled production code for every edge from Forecasting's Adapters into the update code it shares with the Team and Portfolio updaters",
-"F238": "Only the forecast updater's edges to the updater base class, its type parameter, the update key and the update cancellation context, as listed; today this already holds",
 "F239": "Forecasting's background work does not tie itself tighter to the shared update code",
 "F24": "Code-fact: code-fact query.callers-of answered from textsearch at noisy confidence with an empty site list for C# symbols, so it is unknown, not zero callers. Callers and consumers come from git grep over source, limited to textual names (reflection-by-string and generated code may be missed); the IL rules are the authoritative check. Jev: unauthorized, not called.",
 "F240": "The forecast updater uses a listed update type in more places",
@@ -1560,6 +1575,11 @@
 "F289": "Forecasts the user sees do not change",
 "F29": "Its placement method (files on disk plus classes read from the test assembly with symbols) is the model for ForecastingUnitTestPlacementTest. Generalising it would edit an earlier feature's approved oracle, so S4 adds a sibling fixture; folding the two is a later improvement item.",
 "F290": "A change to a forecast path the seeded data does not exercise",
+"F291": "Only the forecast updater's edges to the updater base class, the update key and the update cancellation context, as listed; today it fails naming an edge to the base class's type parameter, which is a placeholder and not a dependency",
+"F292": "Run Forecasting's Adapters outbound rule over a made-up adapter built on a generic base class in the shared update code, calling a base member whose signature uses the base's type parameter",
+"F293": "The rule finds only the edge to the base class, never one to its type parameter, and passes with that edge listed; today it also reports the type parameter",
+"F294": "Renaming a type parameter in the shared update code cannot break Forecasting's list",
+"F295": "The rule skips a generic parameter only when it is the base class's, and still reports one of a generic method or a generic interface",
 "F3": "An examiner can run a public command that shows, on demo data, forecasts recomputed after a Team refresh and the start-up forecast seeding firing",
 "F30": "Its in-process WebApplicationFactory start on the seeded demo data, scenario loading and wait-until-idle loop are the model for the S1 probe; no existing command shows a trigger or the seeder firing.",
 "F31": "GET /api/v1/systeminfo/refreshlog already returns per run the Type (Forecast), EntityId, ExecutedAt and Skipped; the S1 probe observes the triggers and the seeder through it, no new endpoint.",

@@ -461,7 +461,7 @@ Read the compiled production code for every edge from Forecasting's Adapters int
 ```
 
 ```text
-Only the forecast updater's edges to the updater base class, its type parameter, the update key and the update cancellation context, as listed; today this already holds
+Only the forecast updater's edges to the updater base class, the update key and the update cancellation context, as listed; today it fails naming an edge to the base class's type parameter, which is a placeholder and not a dependency
 ```
 
 ```text
@@ -858,6 +858,35 @@ A change to a forecast path the seeded data does not exercise
 ###### Obligations
 
 None.
+
+##### Covers
+
+P3
+
+```text
+Run Forecasting's Adapters outbound rule over a made-up adapter built on a generic base class in the shared update code, calling a base member whose signature uses the base's type parameter
+```
+
+```text
+The rule finds only the edge to the base class, never one to its type parameter, and passes with that edge listed; today it also reports the type parameter
+```
+
+```text
+Renaming a type parameter in the shared update code cannot break Forecasting's list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingModuleBoundariesArchUnitTest\.cs\:\:AForecastingAdapterBuiltOnAGenericBaseOfTheSharedUpdateCode\_HasAnEdgeToTheBaseOnly\_NotToItsTypeParameter
+
+```text
+The rule skips a generic parameter only when it is the base class's, and still reports one of a generic method or a generic interface
+```
+
+###### Obligations
+
 
 ## Expectations
 

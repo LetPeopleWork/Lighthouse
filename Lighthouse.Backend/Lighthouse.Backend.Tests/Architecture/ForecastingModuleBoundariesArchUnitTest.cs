@@ -14,6 +14,8 @@ using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundaries.Domain;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.CompliantAdapters.Adapters;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.CompliantApplication.Application;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.HoldingADbSet.Application;
+using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.OnAGenericBase.Adapters;
+using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.OnAGenericBase.SharedUpdateCode;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.ReachingAModuleAdapter.Application;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.SecondLicensingType.Application;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.SecondUpdateType.Adapters;
@@ -111,14 +113,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         // The edges from Forecasting's Adapters into the update code the Team and Portfolio updaters use too. It stays
-        // where it is until the update code is split by module; the list only shrinks. TEntity is the type parameter of
-        // the updater base class, which the IL reader places in the namespace of the class that declares it.
+        // where it is until the update code is split by module; the list only shrinks.
         private static readonly string[] EdgesOfTheAdaptersIntoTheSharedUpdateCode =
         [
             "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateCancellationContext",
             "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey",
             "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase`1",
-            "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> TEntity",
         ];
 
         private static readonly string TheLayersBelowTheApplicationAndTheLicence =
@@ -342,6 +342,20 @@ namespace Lighthouse.Backend.Tests.Architecture
             ThenTheOutboundRuleFailsNamingOnlyTheStaleEdgeForDeletion(verdict, goneEdge);
         }
 
+        [Test]
+        public void AForecastingAdapterBuiltOnAGenericBaseOfTheSharedUpdateCode_HasAnEdgeToTheBaseOnly_NotToItsTypeParameter()
+        {
+            var baseEdge = Edge(typeof(AForecastJobOnAGenericBase), typeof(AnUpdaterBase<>).FullName!);
+
+            var verdict = ForecastingsAdaptersOutboundRule(
+                TestModule.Value,
+                LayerOf(typeof(AForecastJobOnAGenericBase), "Adapters"),
+                [baseEdge],
+                LayerOf(typeof(AForecastJobOnAGenericBase), "SharedUpdateCode"));
+
+            ThenTheOutboundRuleSawExactlyAndPasses(verdict, [baseEdge]);
+        }
+
         private static IEnumerable<TestCaseData> ApplicationTypesReachingBelowOrIntoTheLicence()
         {
             yield return new TestCaseData(typeof(AForecastServiceHoldingADbSet), Array.Empty<string>(), Edge(typeof(AForecastServiceHoldingADbSet), "Microsoft.EntityFrameworkCore.DbSet`1"))
@@ -417,14 +431,14 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "new place spreads the premium check across the module. Read the records through a repository port, return a Models type, " +
                 "and ask the licence where it is already asked.");
 
-        private static OutboundVerdict ForecastingsAdaptersOutboundRule(ModuleDefinition module, string adapters, IReadOnlyCollection<string> listed)
+        private static OutboundVerdict ForecastingsAdaptersOutboundRule(ModuleDefinition module, string adapters, IReadOnlyCollection<string> listed, string sharedUpdateCode = KernelRules.TheUpdateQueue)
             => ModuleRules.OutboundEdges(
                 module,
                 adapters,
-                KernelRules.TheUpdateQueue,
+                sharedUpdateCode,
                 listed,
                 $"Types in Forecasting's Adapters, namespaces matching \"{adapters}\", should reach the update code in namespaces matching " +
-                $"\"{KernelRules.TheUpdateQueue}\" only through the listed edges, because that code is shared with the Team and Portfolio " +
+                $"\"{sharedUpdateCode}\" only through the listed edges, because that code is shared with the Team and Portfolio " +
                 "updaters and is still to be split by module; every new edge ties Forecasting's background work tighter to the other " +
                 "updaters. Use the update contracts in Services.Interfaces.Update instead.");
 
@@ -862,5 +876,24 @@ namespace Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutboun
         public static string Names() =>
             typeof(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey).Name +
             typeof(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateCancellationContext).Name;
+    }
+}
+
+namespace Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.OnAGenericBase.SharedUpdateCode
+{
+    internal abstract class AnUpdaterBase<TEntity>
+        where TEntity : class
+    {
+        protected static int Weigh(TEntity entity) => entity.GetHashCode() == 0 ? 0 : 1;
+    }
+}
+
+namespace Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.OnAGenericBase.Adapters
+{
+    // Calling a base member whose signature uses the base's type parameter puts that parameter in the IL, where its
+    // namespace is the base class's; it is a placeholder, not a dependency.
+    internal sealed class AForecastJobOnAGenericBase : global::Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.OnAGenericBase.SharedUpdateCode.AnUpdaterBase<global::Lighthouse.Backend.Models.Feature>
+    {
+        public static int Run(global::Lighthouse.Backend.Models.Feature feature) => Weigh(feature);
     }
 }
