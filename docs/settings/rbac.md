@@ -270,6 +270,8 @@ Turn this on only if everyone who can sign in to Lighthouse may see all your tea
 
 A team's or portfolio's **Access** tab shows, read-only, under **Also reachable through access to all Teams and Portfolios**, every rule that also reaches it: the role and the group, or *everyone signed in*. Removing someone from the list below does not take away what these rules give, and only a System Admin changes them. While the tab checks, it shows *Checking access to all Teams and Portfolios…*. If the check fails, it says more people may reach the team than listed, and asks you to reload.
 
+![A Team's Access tab listing the rules for all Teams and Portfolios that also reach it](../assets/settings/rbac_systemwiderules_notice.png)
+
 In **Settings → Access**, the Users table column and filter **No direct role** mean a person has no role of their own. Such a person may still read through a system-wide rule.
 
 ### When a change takes effect

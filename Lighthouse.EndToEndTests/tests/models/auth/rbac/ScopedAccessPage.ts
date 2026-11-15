@@ -43,6 +43,13 @@ export class ScopedAccessPage {
 	// Member assignments
 	// -------------------------------------------------------------------------
 
+	/** The read-only notice listing the rules for all Teams and Portfolios that also reach this unit. */
+	get systemWideRulesNotice(): Locator {
+		return this.page.getByRole("alert").filter({
+			has: this.page.getByText(/^Also reachable through access to all/),
+		});
+	}
+
 	get membersTable(): Locator {
 		return this.page.getByTestId("scoped-members-table");
 	}

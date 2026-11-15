@@ -54,6 +54,13 @@ test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
 	await takePageScreenshot(overviewPage.page, "installation/landingpage.png");
 });
 
+test("Take @screenshot of the Settings menu", async ({ overviewPage }) => {
+	const menu = await overviewPage.lightHousePage.openSettingsMenu();
+	await expect(menu.getByRole("menuitem")).toHaveCount(3);
+
+	await takePageScreenshot(overviewPage.page, "settings/settingsmenu.png");
+});
+
 test("Take @screenshot of licensing", async ({ overviewPage }) => {
 	await overviewPage.lightHousePage.showLicenseTooltip();
 

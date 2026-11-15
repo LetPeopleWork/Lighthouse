@@ -99,6 +99,14 @@ export class LighthousePage {
 		return settingsPage;
 	}
 
+	/** Opens the header's Settings menu and returns it, with one entry per area the viewer may open. */
+	async openSettingsMenu(): Promise<Locator> {
+		await this.page.getByTestId("settings-menu").click();
+		const menu = this.page.getByRole("menu");
+		await expect(menu).toBeVisible();
+		return menu;
+	}
+
 	/** System, Connections, where connections are added, edited and removed. */
 	async goToConnections(): Promise<SystemConnectionsPage> {
 		const settingsPage = await this.goToSettings();

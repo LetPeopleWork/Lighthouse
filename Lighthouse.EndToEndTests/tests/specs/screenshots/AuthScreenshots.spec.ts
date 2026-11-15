@@ -3,12 +3,22 @@ import test, { expect } from "@playwright/test";
 import { TestConfig } from "../../../playwright.config";
 import { testWithAuth } from "../../fixutres/LighthouseFixture";
 import {
+	loadDemoScenario,
+	waitForBackgroundUpdates,
+} from "../../helpers/api/demo";
+import {
+	addRuleForAllUnits,
+	letEveryoneSignedInView,
+	removeRulesForAllUnits,
+} from "../../helpers/api/systemWideAccess";
+import {
 	takeDialogScreenshot,
 	takePageScreenshot,
 } from "../../helpers/screenshots";
 import { LighthousePage } from "../../models/app/LighthousePage";
 import { BlockedPage } from "../../models/auth/BlockedPage";
 import type { LoginPage } from "../../models/auth/LoginPage";
+import { ScopedAccessPage } from "../../models/auth/rbac/ScopedAccessPage";
 import { OverviewPage } from "../../models/overview/OverviewPage";
 
 const LICENSE_FILE_PATH = path.join(
@@ -103,6 +113,51 @@ test.describe("@screenshot @auth", () => {
 				groupMappingsSection,
 				"settings/rbac_groupmapping.png",
 			);
+		},
+	);
+
+	testWithAuth(
+		"Take @screenshot @auth of the rules for all units on a Team's Access tab",
+		async ({ loginPage }) => {
+			const overview = await loginAsWithLicense(
+				loginPage,
+				TestConfig.AUTH_TEST_USER_USERNAME,
+				TestConfig.AUTH_TEST_USER_PASSWORD,
+			);
+
+			const settingsPage = await overview.lightHousePage.goToSettings();
+			const rbac = await settingsPage.goToRbacSettings();
+			await expect(rbac.usersTable).toBeVisible();
+			if (await rbac.bootstrapBanner.isVisible()) {
+				await rbac.becomeFirstSystemAdmin();
+			}
+
+			const request = overview.page.request;
+			await loadDemoScenario(request, 0);
+			await waitForBackgroundUpdates(request);
+			await addRuleForAllUnits(
+				request,
+				TestConfig.TEAMADMIN_GROUP_NAME,
+				"UnitAdmin",
+			);
+			await letEveryoneSignedInView(request, true);
+
+			try {
+				await overview.lightHousePage.goToOverview();
+				const team = await overview.goToTeam("Team Zenith");
+				const access = new ScopedAccessPage(team.page);
+				await access.goToAccessTab();
+				await expect(access.systemWideRulesNotice).toBeVisible();
+				await expect(access.membersTable).toBeVisible();
+
+				await takePageScreenshot(
+					team.page,
+					"settings/rbac_systemwiderules_notice.png",
+				);
+			} finally {
+				await letEveryoneSignedInView(request, false);
+				await removeRulesForAllUnits(request, TestConfig.TEAMADMIN_GROUP_NAME);
+			}
 		},
 	);
 
