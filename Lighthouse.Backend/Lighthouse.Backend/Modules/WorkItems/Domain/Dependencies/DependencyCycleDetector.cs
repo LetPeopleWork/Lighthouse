@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces.Dependencies;
 
 namespace Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies
 {
