@@ -1,0 +1,3 @@
+# The sign step starts and stops the smart-card daemon and nothing else: jobs run repository code as
+# runner, so any wider right here would make that code root.
+runner ALL=(root) NOPASSWD: /usr/sbin/pcscd --disable-polkit, /usr/bin/pkill -x pcscd

@@ -84,6 +84,13 @@ jobs:
           IMAGE: lighthouse-codesign-runner:verify
         run: bash tools/codesign/tests/test-runner-image.sh
 
+      - name: Check the sign step in the runner image
+        env:
+          IMAGE: lighthouse-codesign-runner:verify
+          # The check builds a test image on top of IMAGE; only the default builder sees the local image.
+          BUILDX_BUILDER: default
+        run: bash tools/codesign/tests/test-sign-step.sh
+
   publish:
     needs: verify
     # Only main may move latest, which the signing machine pulls; a branch dispatch must never overwrite it.
@@ -122,9 +129,12 @@ jobs:
       - name: Check the pushed image
         env:
           IMAGE: ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          # The sign step check builds a test image on top of IMAGE; only the default builder sees the pulled image.
+          BUILDX_BUILDER: default
         run: |
           docker pull --platform linux/amd64 "$IMAGE"
           bash tools/codesign/tests/test-runner-image.sh
+          bash tools/codesign/tests/test-sign-step.sh
 
       - name: Move latest to the checked image
         env:

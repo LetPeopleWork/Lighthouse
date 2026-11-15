@@ -346,6 +346,388 @@
 "stimulus": "F402",
 "user_result": "F404"
 }
+],
+"S2": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F148",
+"L3/F156"
+],
+"still_passes_if": "F422",
+"test": "tools/codesign/tests/test-sign-step.sh::with no YubiKey plugged in the step stops at once with the plug-in message"
+},
+"expected": "F420",
+"stimulus": "F419",
+"user_result": "F421"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F149",
+"L3/F157"
+],
+"still_passes_if": "F426",
+"test": "tools/codesign/tests/test-sign-step.sh::with the key on USB but no reader the step gives up within its wait and sends no PIN"
+},
+"expected": "F424",
+"stimulus": "F423",
+"user_result": "F425"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F152"
+],
+"still_passes_if": "F430",
+"test": "tools/codesign/tests/test-sign-step.sh::the key is released when the step ends after no reader appeared"
+},
+"expected": "F428",
+"stimulus": "F427",
+"user_result": "F429"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F159"
+],
+"still_passes_if": "F434",
+"test": "tools/codesign/tests/test-sign-step.sh::with the key plugged in the step signs the server exe, the NSIS installer and the MSI once each in place"
+},
+"expected": "F432",
+"stimulus": "F431",
+"user_result": "F433"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F162"
+],
+"still_passes_if": "F438",
+"test": "tools/codesign/tests/test-sign-step.sh::every signing call uses the pkcs11 provider with the PIN on stdin"
+},
+"expected": "F515",
+"stimulus": "F435",
+"user_result": "F437"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F153"
+],
+"still_passes_if": "F440",
+"test": "tools/codesign/tests/test-sign-step.sh::the key is released when the step ends after signing all files"
+},
+"expected": "F428",
+"stimulus": "F435",
+"user_result": "F439"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F160"
+],
+"still_passes_if": "F444",
+"test": "tools/codesign/tests/test-sign-step.sh::when signing one file fails the step stops with that file named and retries nothing"
+},
+"expected": "F442",
+"stimulus": "F441",
+"user_result": "F443"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F154"
+],
+"still_passes_if": "F447",
+"test": "tools/codesign/tests/test-sign-step.sh::the key is released when the step ends after a failed signing"
+},
+"expected": "F428",
+"stimulus": "F445",
+"user_result": "F446"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F162"
+],
+"still_passes_if": "F451",
+"test": "tools/codesign/tests/test-sign-step.sh::the PIN never shows in the step's output or on any command line it runs"
+},
+"expected": "F449",
+"stimulus": "F448",
+"user_result": "F450"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F163"
+],
+"still_passes_if": "F455",
+"test": "tools/codesign/tests/test-sign-step.sh::the image's osslsigncode can sign through a provider"
+},
+"expected": "F453",
+"stimulus": "F452",
+"user_result": "F454"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F163"
+],
+"still_passes_if": "F459",
+"test": "tools/codesign/tests/test-sign-step.sh::the pkcs11 provider loads in the image"
+},
+"expected": "F457",
+"stimulus": "F456",
+"user_result": "F458"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F163"
+],
+"still_passes_if": "F463",
+"test": "tools/codesign/tests/test-sign-step.sh::the image carries no pkcs11 engine"
+},
+"expected": "F461",
+"stimulus": "F460",
+"user_result": "F462"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F467",
+"test": "tools/codesign/tests/test-sign-step.sh::sudo lets the runner start and stop pcscd and nothing else"
+},
+"expected": "F465",
+"stimulus": "F464",
+"user_result": "F466"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F471",
+"test": "tools/codesign/tests/test-sign-step.sh::the image carries the reader entry and the tools the sign step calls"
+},
+"expected": "F469",
+"stimulus": "F468",
+"user_result": "F470"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F163"
+],
+"still_passes_if": "F518",
+"test": "tools/codesign/tests/test-sign-step.sh::the image's osslsigncode makes a signature through the pkcs11 provider that verifies against the signing certificate"
+},
+"expected": "F473",
+"stimulus": "F516",
+"user_result": "F517"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F163"
+],
+"still_passes_if": "F479",
+"test": "tools/codesign/tests/test-sign-step.sh::without the provider's module setting signing fails and writes no file"
+},
+"expected": "F477",
+"stimulus": "F519",
+"user_result": "F478"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F483",
+"test": "tools/codesign/tests/test-sign-step.sh::the release job's Linux sign step runs the sign script with the PIN only in its environment"
+},
+"expected": "F481",
+"stimulus": "F480",
+"user_result": "F482"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F487",
+"test": "tools/codesign/tests/test-sign-step.sh::the image workflow checks the sign step in the image before it is published and before latest moves"
+},
+"expected": "F485",
+"stimulus": "F484",
+"user_result": "F486"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F491",
+"test": ".github/scripts/action-pins.test.mjs"
+},
+"expected": "F489",
+"stimulus": "F488",
+"user_result": "F490"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F495",
+"test": ".github/scripts/dependency-bot.test.mjs"
+},
+"expected": "F493",
+"stimulus": "F492",
+"user_result": "F494"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "maintainer",
+"reason": "F499"
+},
+"expected": "F497",
+"stimulus": "F496",
+"user_result": "F498"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F502",
+"test": "tools/codesign/tests/test-sign-step.sh::no PIN is sent before a reader is listed"
+},
+"expected": "F500",
+"stimulus": "F435",
+"user_result": "F501"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F506",
+"test": "tools/codesign/tests/test-sign-step.sh::a pcscd left from an earlier run is stopped before the step starts its own"
+},
+"expected": "F504",
+"stimulus": "F503",
+"user_result": "F505"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F163"
+],
+"still_passes_if": "F523",
+"test": "tools/codesign/tests/test-sign-step.sh::the image ships the sign step's own OpenSSL config and leaves the stock one to other jobs"
+},
+"expected": "F521",
+"stimulus": "F520",
+"user_result": "F522"
+}
 ]
 },
 "counters": {
@@ -353,7 +735,7 @@
 "C": 1,
 "D": 18,
 "E": 6,
-"F": 418,
+"F": 523,
 "K": 10,
 "L": 5,
 "N": 5,
@@ -444,7 +826,7 @@
 },
 {
 "id": "K9",
-"text": "F410"
+"text": "F509"
 },
 {
 "id": "K10",
@@ -482,7 +864,7 @@
 },
 {
 "id": "D5",
-"text": "F18"
+"text": "F507"
 },
 {
 "id": "D6",
@@ -502,7 +884,7 @@
 },
 {
 "id": "D10",
-"text": "F223"
+"text": "F508"
 },
 {
 "id": "D11",
@@ -860,7 +1242,7 @@
 "S2": {
 "oracle": "tools/codesign/tests/test-sign-step.sh",
 "public_oracle": {
-"expected": "F272",
+"expected": "F512",
 "falsifier": "F243",
 "promises": [
 "P2",
@@ -1011,6 +1393,12 @@
 "kind": "ci-workflow",
 "locator": ".github/workflows/ci_verifywindows.yml:1",
 "reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "runtime-config",
+"locator": "tools/codesign/openssl-pkcs11.cnf:1",
+"reason": "F514"
 }
 ],
 "laws": [
@@ -1323,6 +1711,12 @@
 "locator": ".github/workflows/codesign-runner-image.yml:1",
 "reason": "F129",
 "symbol": "codesign-runner-image.yml"
+},
+{
+"decision": "CreateNew",
+"locator": "tools/codesign/openssl-pkcs11.cnf:1",
+"reason": "F513",
+"symbol": "openssl-pkcs11.cnf"
 }
 ],
 "states": [
@@ -1353,7 +1747,7 @@
 {
 "change": "Extend",
 "path": "tools/codesign/Dockerfile",
-"reason": "F411"
+"reason": "F510"
 },
 {
 "change": "Create",
@@ -1379,6 +1773,11 @@
 "change": "Extend",
 "path": ".github/workflows/codesign-runner-image.yml",
 "reason": "F123"
+},
+{
+"change": "Create",
+"path": "tools/codesign/openssl-pkcs11.cnf",
+"reason": "F511"
 }
 ],
 "verification": [
@@ -1668,7 +2067,6 @@
 "F177": "The reader wait never exceeds its deadline",
 "F178": "Success only after every file is signed",
 "F179": "Every run takes at most MAX_WAIT+FILES+3 protocol steps (bounded response)",
-"F18": "Provider, not engine, by construction. osslsigncode 2.10+ with -pkcs11module first tries the provider named by -provider and silently falls back to the libp11 engine when the provider does not load (source: osslsigncode.c sign key loading). Because the image carries no pkcs11 engine, that fallback cannot sign: a provider load failure fails the step loudly instead of signing through the engine. The sign command is: osslsigncode sign -provider pkcs11 -pkcs11module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so -key pkcs11:id=%01;type=private -pkcs11cert pkcs11:id=%01;type=cert -ac tools/codesign/SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt -readpass - -n \"Lighthouse VERSION\" -i https://letpeople.work/lighthouse -t http://timestamp.digicert.com -in FILE -out FILE.signed. The image sets ENV PKCS11_PROVIDER_MODULE to the opensc module because the latchset provider reads that variable, not the PKCS11_MODULE_PATH that osslsigncode exports.",
 "F180": "one shell function call in the single script process",
 "F181": "One sequential script process; each protocol step is atomic at script level",
 "F182": "SIGKILL of the container is outside the model: the trap does not run; next run stops any stale pcscd before starting",
@@ -1708,7 +2106,6 @@
 "F216": "clean host after retirement",
 "F217": "Only the maintainer runs check-host.sh on the real machine (P5)",
 "F220": "Start on boot and update (owners tools/codesign/compose.yaml and tools/codesign/lighthouse-codesign-runner.service). Service runner (always on): image ghcr.io/letpeoplework/lighthouse-codesign-runner:latest, command run, restart: unless-stopped, init: true (reaps a daemonised pcscd), the state volume, a bind of /dev/bus/usb, device_cgroup_rules c 189:* rmw, no privileged mode, and NO secrets entry, so no job can read the PAT. Service register (profile register, one-shot): same image, command register, the state volume and the github_token secret whose file source is outside the repo (default ~/.config/lighthouse-codesign/github-token). The systemd unit (After=docker.service network-online.target, Type=oneshot, RemainAfterExit=yes) runs ExecStartPre=-docker compose pull and ExecStart=docker compose up -d runner. A failed pull at boot does not stop the start; the maintainer sees it only as a warning in journalctl -u lighthouse-codesign-runner, and the runner keeps the cached image. Between boots the maintainer runs watchtower regularly, which pulls the latest image and recreates the container; the README names watchtower and has no manual restart step. GHCR package visibility: public, so the machine pulls without login (README; otherwise a one-time docker login).",
-"F223": "Sign step (owner tools/codesign/sign-windows.sh; caller .github/workflows/ci_codesign-windows.yml Sign on Linux step, which shrinks to bash tools/codesign/sign-windows.sh VERSION with YUBI_PIN in env). Lifecycle carrier: shell state in the one script process. The script exports PKCS11_PROVIDER_MODULE=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so itself, so it does not depend on the image ENV. Order: (1) look for a USB device with idVendor 1050 under the sysfs root (default /sys/bus/usb/devices, overridable by CODESIGN_USB_SYSFS for the oracle); none: print plug in the YubiKey and re-run this job, exit 1, no pcscd, no PIN read. (2) set trap stop_pcscd EXIT INT TERM; stop any stale pcscd (sudo -n /usr/bin/pkill -x pcscd, failure ignored) left by a killed earlier run; start pcscd (sudo -n /usr/sbin/pcscd --disable-polkit) with the static reader entry. (3) wait at most CODESIGN_READER_WAIT seconds (default 10) for opensc-tool --list-readers to list a reader; timeout: the plug-in message plus a hint to run tools/codesign/check-host.sh, exit 1, PIN never read. (4) sign the server exe, the NSIS exe and the MSI, PIN on stdin from YUBI_PIN, never argv, never echoed, no set -x, no retry of a failed file. (5) the trap stops pcscd on every exit. Tools resolved through PATH so the oracle can put recording stand-ins first. Sudoers (tools/codesign/sudoers-pcscd, installed 0440 root:root): exactly runner ALL=(root) NOPASSWD: /usr/sbin/pcscd --disable-polkit, /usr/bin/pkill -x pcscd; no wildcard, no ALL command. Accepted: YUBI_PIN is in the environment of the script children (osslsigncode, opensc-tool) as for any GitHub secret in a step env.",
 "F225": "Secrets: YUBI_PIN only in the step env and on osslsigncode stdin; never in argv, never printed, never in the image (inherited by the script children: accepted). The GitHub PAT only in the host file outside the repo, mounted read-only only into the one-shot register service, passed to curl only from a file, never on argv, never in compose.yaml for the runner service, the image, env or logs. The registration credentials live only in the named state volume and the run directory of the always-on container.",
 "F226": "Manual host steps (maintainer, not CI): once per fresh machine: install compose.yaml and the unit, write the token file (owned by the user with uid RUNNER_UID, mode 0600), run docker compose --profile register run --rm register, enable the unit, add disable-ccid, disable host pcscd. Retirement: stop and remove the host actions-runner service and its registration, delete ~/.local/bin/osslsigncode and the .path entry, docker image rm local/osslsigncode-ossl3:trixie. Ongoing: watchtower keeps the image current; nothing manual after a reboot. The README lists them in order; check-host.sh confirms the result.",
 "F229": "The image can be older than main until the next watchtower run or boot",
@@ -1735,7 +2132,6 @@
 "F27": "Scope: the Windows signtool branch of ci_codesign-windows.yml stays as it is, including runs-on [self-hosted, codesign]; the container registers with labels linux,codesign so the existing job selector still picks either runner. A cloud signing service is out of scope.",
 "F270": "A tag-only FROM, a missing source label, binaries in the volume, a run directory of symlinks into /opt/runner (run.sh then fails with Permission denied or Must configure), a root-owned state directory, a run mode that runs config.sh, a PAT on curl argv or in output, a secrets entry on the runner service, privileged: true, a fixed devices line, missing restart or init, a pull without the leading minus, or a boolean comparison in the job if each turns one named check red.",
 "F271": "Run tools/codesign/sign-windows.sh VERSION inside the built image (docker run, workdir holding artifacts/server/Lighthouse.exe, artifacts/standalone/Lighthouse-setup.exe and Lighthouse.msi), YUBI_PIN set to a sentinel, with recording stand-ins for sudo/pcscd/pkill, opensc-tool and osslsigncode first on PATH: (a) CODESIGN_USB_SYSFS empty; (b) a fake device with idVendor 1050 and no reader ever listed, CODESIGN_READER_WAIT=2; (c) fake device and a listed reader; (d) as (c) with osslsigncode failing on the second file; (e) as (c) with a stale pcscd reported running before start. In the image without stand-ins: osslsigncode sign --help, openssl list -providers -provider pkcs11, a search for any pkcs11 engine file, and the sudoers file. Real-binary case, test only: a test image derived from the built image adds softhsm2, creates an EC key and self-signed cert with id 01 in a token, sets PKCS11_PROVIDER_MODULE to the SoftHSM module (the provider reads that variable, not -pkcs11module) and runs the image real osslsigncode sign -provider pkcs11 -pkcs11module SOFTHSM -key pkcs11:id=%01;type=private -pkcs11cert pkcs11:id=%01;type=cert -readpass - on a tiny PE fixture, then osslsigncode verify; then the same sign with PKCS11_PROVIDER_MODULE unset.",
-"F272": "(a) exit 1 within 5 s, output contains plug in the YubiKey and re-run this job, pcscd never started, osslsigncode never invoked; (b) exit 1 within 7 s, same message plus the check-host.sh hint, pcscd started then stopped, osslsigncode never invoked; (c) exit 0, osslsigncode invoked exactly three times, once per file, each argv with -provider pkcs11 and -readpass - and without -pkcs11engine, the sentinel on stdin and never on argv, pcscd stopped; (d) non-zero exit, two invocations, no third, pcscd stopped; (e) pkill -x pcscd runs before the pcscd start. The sentinel never appears in stdout or stderr. Tools: help lists -provider, the pkcs11 provider is active, no pkcs11 engine file exists, sudoers is 0440 root:root and allows exactly /usr/sbin/pcscd --disable-polkit and /usr/bin/pkill -x pcscd with no * and no ALL command. Real-binary: with the variable set to the SoftHSM module, sign exits 0 and verify accepts the signature against the test cert; with it unset, sign exits non-zero and writes no signed file. Signing with the real YubiKey and Verify signing coverage: maintainer at EXAMINE (P2).",
 "F276": "ADR-212 is not edited: its consequence that path-filtered workflows are not required checks stays true in general. The ADR of this feature records that for the runner image this gap is closed by the required check Codesign Runner Image / verify, a pull_request workflow without a paths filter.",
 "F277": "Renovate bump PRs must pass the required check Codesign Runner Image / verify, which builds the image; a bump without its sha256 stays red and waits for a human; the weekly rebuild and watchtower carry a merged bump to the machine",
 "F278": "No workflow if: decides on the actor, and every Renovate hold carries a reason (ADR-212 consequences). Covers the codesign runner workflow and the new renovate.json custom manager: a Renovate PR runs the same Codesign Runner Image / verify check as a person.",
@@ -1875,8 +2271,6 @@
 "F408": "Renovate (owner renovate.json): the dockerfile manager finds the FROM digest of ubuntu:26.04 in tools/codesign/Dockerfile. One new custom regex manager reads a line of the form # renovate: datasource=github-releases depName=actions/runner followed by ARG RUNNER_VERSION=VERSION in tools/codesign/Dockerfile; Renovate tracks only the base digest and the runner version. ADR-212 automerge stays on. These PRs are gated by the required check Codesign Runner Image / verify (D14): a runner bump whose sha256 ARG was not updated fails the image build, stays red and does not merge until a human edits the checksum. That is the intended safe failure.",
 "F409": "Deviation, labelled: pinned are the base image digest (ubuntu:26.04) and actions/runner (version and sha256). Ubuntu packages, osslsigncode included, float within the pinned base at build time on purpose, so the weekly scheduled rebuild picks up Ubuntu security fixes. A package update can therefore change the image between rebuilds, but only through a CI build that runs the oracles before publish, never on the maintainer workstation.",
 "F41": "Negates: the pkcs11 provider loads and finds the key through opensc",
-"F410": "Only the maintainer can check these at EXAMINE, no oracle can: pkcs11-provider 1.2.0 with the PIV key in slot 9c (always-authenticate) across three signs in one run; opensc-pkcs11 0.27.0~rc1 (a release candidate in Ubuntu 26.04) talking to the real YubiKey; the static reader entry finding the real key inside the container; /sys/bus/usb showing the plugged key inside the container; growth of /home/runner/work (no volume, so it is reset on every recreate).",
-"F411": "Ubuntu packages osslsigncode, pkcs11-provider, opensc, pcscd, libccid, node/npm, reader entry, sudoers line, PKCS11_PROVIDER_MODULE; no pkcs11 engine",
 "F412": "Runner image: digest-pinned ubuntu:26.04 base, actions/runner at pinned version and sha256, user runner with uid 1000 (renamed from ubuntu), entrypoint",
 "F413": "(1) Every FROM names ubuntu:26.04 with an @sha256 digest; the image has label org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse; /opt/runner holds config.sh and run.sh at the RUNNER_VERSION in the Dockerfile; /home/runner/state and /home/runner/runtime exist owned by runner; the default user is runner with uid 1000 and no user ubuntu remains. (2) Run mode with an empty volume exits 1 within 60 s, names the register command and never starts run.sh or config.sh. (3) Run mode with a volume holding .runner, .credentials and .credentials_rsaparams starts run.sh and never config.sh. (4) A volume left by an older image plus the new image: run.sh executes from /home/runner/runtime (writable, a copy, not a symlink to /opt/runner), the three files sit beside it, and the runner there reports the image RUNNER_VERSION. (5) Real-binary case, no stand-in: with the three fixture files in the volume, the image real run.sh started by the entrypoint under a 60 s timeout prints neither Must configure nor Permission denied (a network or authentication failure is acceptable). (6) Register mode with a token file: curl receives the token only through a file or stdin and never on argv; config.sh runs from /home/runner/runtime with labels linux,codesign and --disableupdate; the three files land in a fresh volume; the token is in no output. Register mode without a token file exits 1 naming /run/secrets/github_token. (7) Rendered compose: service runner has restart unless-stopped, init true, a bind of /dev/bus/usb, device_cgroup_rules c 189:* rmw, no privileged true, no fixed devices entry, the state volume, image ghcr.io/letpeoplework/lighthouse-codesign-runner:latest and NO secrets; service register has profile register and the github_token secret with a source outside the repo; config with a missing token file still renders the runner service. (8) The unit has ExecStartPre=-docker compose pull, ExecStart=docker compose up -d runner, After=docker.service, WantedBy=multi-user.target. (9) codesign-runner-image.yml has a pull_request trigger with no paths filter; its changes job writes codesign as the string true or false; the verify job if contains !cancelled(), a needs.changes.result clause and a comparison of needs.changes.outputs.codesign with the quoted string true, and its first step exits 1 when needs.changes.result is not success; publish needs verify and its if requires github.ref refs/heads/main, an event other than pull_request and needs.verify.result success; ci.yml and ci_changes.yml are not referenced. So the check Codesign Runner Image / verify runs when codesign is true.",
 "F414": "Every build stage starts from ubuntu:26.04 pinned by a sha256 digest",
@@ -1884,16 +2278,116 @@
 "F416": "Look inside the built image at the pristine runner, the state and run directories and the users",
 "F417": "The pristine runner has config.sh and run.sh and reports the runner version the Dockerfile pins; the state and run directories belong to runner; the image runs as runner with uid 1000 and no user ubuntu remains",
 "F418": "The runner GitHub sees is the pinned version, jobs do not run as root, uid 1000 has one name, and a fresh state volume can receive the registration",
+"F419": "Run the sign step in the runner image with no YubiKey plugged in (only a USB root hub present)",
 "F42": "No file is signed through the engine; the failure names the provider and the step exits non-zero",
+"F420": "The step exits 1 within 5 seconds with the message plug in the YubiKey and re-run this job; pcscd is never started and osslsigncode is never called",
+"F421": "The maintainer sees at once that the key is missing and re-runs the job after plugging it in; no PIN was sent",
+"F422": "A script that starts no pcscd but still reads YUBI_PIN into a variable before the key check; reading without sending is not observable here",
+"F423": "Run the sign step in the runner image with the key on USB but no reader ever listed, reader wait 2 seconds",
+"F424": "The step exits 1 within 7 seconds with the plug-in message and a hint to run check-host.sh; pcscd was started; osslsigncode is never called",
+"F425": "The maintainer learns the key is not usable and that a host process may hold it, and no PIN was sent",
+"F426": "A script that gives up at once without polling for a reader; only an upper bound on the wait is observed",
+"F427": "Same run as with the key on USB but no reader",
+"F428": "A pcscd stop follows the last pcscd start and no pcscd runs when the step ends",
+"F429": "The YubiKey is free for the next run after a refused one",
 "F43": "The release sign step fails and the release waits",
+"F430": "A script that stops pcscd with a direct call instead of a trap, which still stops it on this path",
+"F431": "Run the sign step in the runner image with the key plugged in and a reader listed, holding the server exe, the NSIS installer and the MSI",
+"F432": "The step exits 0, osslsigncode is called exactly three times, once for each of the three files, and each file is replaced in place by its signed copy under its own name",
+"F433": "The release carries the three signed files under the names the upload and the coverage check expect",
+"F434": "A script that signs the files in a different order; order is not promised",
+"F435": "Same signing run with the key plugged in",
+"F437": "Every signature goes through the provider with the PIN never on a command line",
+"F438": "A script that passes the right flags but a wrong timestamp scheme the server rejects only at release time; the timestamp server is not contacted",
+"F439": "The YubiKey is free again after a successful signing",
 "F44": "Silent fallback to the libp11 engine or an unsigned file passing Verify signing coverage",
+"F440": "A script whose trap misses INT or TERM; only the normal exit path is driven",
+"F441": "Run the sign step with the key and a reader present while the second signing call fails",
+"F442": "The step exits non-zero after exactly two signing calls for two different files, and its output names the failed file",
+"F443": "A failed signing stops the release with the file named, and a wrong PIN is never tried twice",
+"F444": "A script that names the file only through osslsigncode's own message; the stand-in prints only Failed, so the script must name it",
+"F445": "Same run with the second signing call failing",
+"F446": "The YubiKey is free again after a failed signing",
+"F447": "A script that stops pcscd in its failure branch rather than a trap, which still stops it here",
+"F448": "All five sign-step runs above, with a sentinel PIN in the environment",
+"F449": "The sentinel appears in no output and in no recorded command line of sudo, opensc-tool, pcscd, pkill or osslsigncode, and at least one run handed it to a signing call",
 "F45": "The engine is absent from the image, so the fallback cannot sign; the S2 oracle loads the provider in the built image before publish",
+"F450": "The PIN never shows in the job log or the process list",
+"F451": "A script that writes the PIN to a temporary file; files are not searched",
+"F452": "Ask the image's osslsigncode for its sign help",
+"F453": "The help lists the -provider option",
+"F454": "The image can sign through the provider rather than an engine",
+"F455": "An osslsigncode that lists -provider but is older than the provider support the PIV key needs; the real-signature check covers the working path",
+"F456": "List OpenSSL providers in the image with the pkcs11 provider and the opensc module",
+"F457": "The pkcs11 provider is listed with status active",
+"F458": "The provider the sign step names loads in the image",
+"F459": "A provider that loads but cannot reach the opensc module on a real key; that is a maintainer check",
 "F46": "Negates: GHCR is reachable when the machine boots",
+"F460": "Search the image's library and config folders for an OpenSSL pkcs11 engine",
+"F461": "No pkcs11 engine file exists",
+"F462": "Signing can only go through the provider, never silently through the retired engine",
+"F463": "An engine installed outside /usr, /opt and /etc; the unset-module real signing check covers that path",
+"F464": "Ask sudo in the image, as the runner user, which pcscd and other commands it may run, and read the pcscd sudoers file as root",
+"F465": "Starting pcscd with --disable-polkit and pkill -x pcscd are allowed; pcscd with other or no arguments, pkill of another process or by pattern, a shell and id are refused; the file is 0440 root:root with no wildcard and no ALL command",
+"F466": "Job code can start and stop the reader daemon and gains no other root right",
+"F467": "A second sudoers file granting another narrow command that is not one of the probed ones",
+"F468": "Look in the image for opensc-tool, the opensc module, pcscd, pkill and a reader entry for usb:1050/0407",
+"F469": "All are present",
 "F47": "The runner starts and shows online with the cached image",
+"F470": "The sign script from any checkout finds what it calls in the image the machine pulled",
+"F471": "A reader entry with a wrong driver path; only the real key at EXAMINE shows the entry works",
+"F473": "Signing exits 0, writes the signed file, and verify accepts the signature against the test certificate",
+"F477": "Signing exits non-zero and writes no signed file, while the same signing with the setting succeeded",
+"F478": "No engine signs in place of the provider when the provider has no module",
+"F479": "An engine that fails for an unrelated reason on this tiny file; the engine-file search covers presence",
+"F480": "Read the Sign on Linux step of the release signing workflow",
+"F481": "It runs only on Linux runners, calls tools/codesign/sign-windows.sh with the release version, keeps YUBI_PIN from the secret in its environment, holds no inline osslsigncode, engine, password argument or PIN reference, and Verify signing coverage still runs after it",
+"F482": "A release run signs through the script and the coverage check still judges the signed files",
+"F483": "A run that calls the script with a hard-coded version string containing inputs.version in a comment-like echo",
+"F484": "Read the jobs of the codesign runner image workflow",
+"F485": "The verify job runs the sign-step oracle, and the publish job runs it on the pushed commit-tag image before the step that moves latest",
+"F486": "An image that cannot run the checkout's sign script never becomes the image the machine pulls",
+"F487": "A publish step that runs the oracle without IMAGE set, checking a fresh local build instead of the pushed image",
+"F488": "Run the existing action-pin guard over every workflow",
+"F489": "Every uses: is pinned to a full commit with its release named",
 "F49": "The runner does not start because a pull failed",
+"F490": "Renovate can keep the actions of the signing workflows current",
+"F491": "A pinned commit that is not the named release; the guard checks the shape, not the registry",
+"F492": "Run the existing dependency-bot guard over the workflows and Renovate config",
+"F493": "No workflow if: decides on the actor and every Renovate hold carries a reason",
+"F494": "A Renovate pull request runs the same checks as a person",
+"F495": "An actor check written as an environment variable instead of if:",
+"F496": "Run a release with the real YubiKey plugged into the signing machine",
+"F497": "The NSIS installer, the MSI and the server exe are signed through the pkcs11 provider and Verify signing coverage passes",
+"F498": "Customers download Windows binaries signed with the Lighthouse certificate",
+"F499": "Needs the physical YubiKey, its PIN and the signing machine; the design leaves this to the maintainer at EXAMINE",
 "F5": "With no YubiKey plugged in, the sign step fails at once with 'plug in the YubiKey and re-run this job', before any PIN is sent.",
+"F500": "A reader was listed before the first signing call",
+"F501": "No PIN reaches a token before the key is seen",
+"F502": "A script that lists readers once and ignores the answer, then signs anyway; the separate no-reader run catches that",
+"F503": "Run the sign step with the key and a reader present while a pcscd from an earlier killed run is still running",
+"F504": "pkill -x pcscd runs before the new pcscd start, and the step goes on to sign all three files",
+"F505": "A release after a killed run signs without manual cleanup on the machine",
+"F506": "A script that always kills pcscd twice; extra stops are not refused",
+"F507": "Provider, not engine, by construction. osslsigncode 2.10+ with -pkcs11module first tries the provider named by -provider and silently falls back to the libp11 engine when the provider does not load (source: osslsigncode.c sign key loading). Because the image carries no pkcs11 engine, that fallback cannot sign: a provider load failure fails the step loudly instead of signing through the engine. The sign command is: osslsigncode sign -provider pkcs11 -pkcs11module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so -key pkcs11:id=%01;type=private -pkcs11cert pkcs11:id=%01;type=cert -ac tools/codesign/SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt -readpass - -n \"Lighthouse VERSION\" -i https://letpeople.work/lighthouse -t http://timestamp.digicert.com -in FILE -out FILE.signed. The image sets ENV PKCS11_PROVIDER_MODULE to the opensc module because the latchset provider reads that variable, not the PKCS11_MODULE_PATH that osslsigncode exports. The provider is also configured with pkcs11-module-quirks = no-deinit (tools/codesign/openssl-pkcs11.cnf, installed as /etc/ssl/openssl-pkcs11.cnf): with osslsigncode 2.13 and pkcs11-provider 1.2.0, osslsigncode crashes (exit 139) when the provider shuts the PKCS#11 module down at process exit, even after a good signature; skipping that shutdown costs nothing because signing is a short-lived process and the sign step stops pcscd right after. The file includes the system OpenSSL config and declares the pkcs11 provider section with the quirk.",
+"F508": "Sign step (owner tools/codesign/sign-windows.sh; caller .github/workflows/ci_codesign-windows.yml Sign on Linux step, which shrinks to bash tools/codesign/sign-windows.sh VERSION with YUBI_PIN in env). Lifecycle carrier: shell state in the one script process. The script exports PKCS11_PROVIDER_MODULE=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so itself, so it does not depend on the image ENV. Order: (1) look for a USB device with idVendor 1050 under the sysfs root (default /sys/bus/usb/devices, overridable by CODESIGN_USB_SYSFS for the oracle); none: print plug in the YubiKey and re-run this job, exit 1, no pcscd, no PIN read. (2) set trap stop_pcscd EXIT INT TERM; stop any stale pcscd (sudo -n /usr/bin/pkill -x pcscd, failure ignored) left by a killed earlier run; start pcscd (sudo -n /usr/sbin/pcscd --disable-polkit) with the static reader entry. (3) wait at most CODESIGN_READER_WAIT seconds (default 10) for opensc-tool --list-readers to list a reader; timeout: the plug-in message plus a hint to run tools/codesign/check-host.sh, exit 1, PIN never read. (4) sign the server exe, the NSIS exe and the MSI, PIN on stdin from YUBI_PIN, never argv, never echoed, no set -x, no retry of a failed file. (5) the trap stops pcscd on every exit. Tools resolved through PATH so the oracle can put recording stand-ins first. Sudoers (tools/codesign/sudoers-pcscd, installed 0440 root:root): exactly runner ALL=(root) NOPASSWD: /usr/sbin/pcscd --disable-polkit, /usr/bin/pkill -x pcscd; no wildcard, no ALL command. The script exports OPENSSL_CONF=/etc/ssl/openssl-pkcs11.cnf for its own osslsigncode calls, not the image ENV: every other job on this runner (git, curl, node) then keeps the stock OpenSSL config and never loads the pkcs11 provider. Accepted: YUBI_PIN is in the environment of the script children (osslsigncode, opensc-tool) as for any GitHub secret in a step env.",
+"F509": "Only the maintainer can check these at EXAMINE, no oracle can: pkcs11-provider 1.2.0 with the PIV key in slot 9c (always-authenticate) across three signs in one run; a sign with the real YubiKey exits 0 (no crash at exit, the no-deinit quirk holding for opensc-pkcs11 as it does for SoftHSM); opensc-pkcs11 0.27.0~rc1 (a release candidate in Ubuntu 26.04) talking to the real YubiKey; the static reader entry finding the real key inside the container; /sys/bus/usb showing the plugged key inside the container; growth of /home/runner/work (no volume, so it is reset on every recreate).",
 "F51": "Negates: the runner version stays inside the window GitHub accepts",
+"F510": "Ubuntu packages osslsigncode, pkcs11-provider, opensc, pcscd, libccid, node/npm, reader entry, sudoers line, PKCS11_PROVIDER_MODULE, the provider OpenSSL config copied to /etc/ssl/openssl-pkcs11.cnf; no pkcs11 engine",
+"F511": "OpenSSL config for the pkcs11 provider: includes the system config and sets pkcs11-module-quirks = no-deinit, so osslsigncode does not crash at exit",
+"F512": "(a) exit 1 within 5 s, output contains plug in the YubiKey and re-run this job, pcscd never started, osslsigncode never invoked; (b) exit 1 within 7 s, same message plus the check-host.sh hint, pcscd started then stopped, osslsigncode never invoked; (c) exit 0, osslsigncode invoked exactly three times, once per file, each argv with -provider pkcs11 and -readpass - and without -pkcs11engine, the sentinel on stdin and never on argv, pcscd stopped; (d) non-zero exit, two invocations, no third, pcscd stopped; (e) pkill -x pcscd runs before the pcscd start. The sentinel never appears in stdout or stderr. Tools: help lists -provider, the pkcs11 provider is active, no pkcs11 engine file exists, sudoers is 0440 root:root and allows exactly /usr/sbin/pcscd --disable-polkit and /usr/bin/pkill -x pcscd with no * and no ALL command. Real-binary: with the variable set to the SoftHSM module and the image own OpenSSL provider config (/etc/ssl/openssl-pkcs11.cnf, which sets pkcs11-module-quirks = no-deinit) in OPENSSL_CONF, the real osslsigncode signs the PE against the software token and exits 0 (no crash at exit), and verify accepts the signature against the test cert; with it unset, sign exits non-zero and writes no signed file. Signing with the real YubiKey and Verify signing coverage: maintainer at EXAMINE (P2).",
+"F513": "No OpenSSL provider config exists in the repository; the system openssl.cnf is included, not copied",
+"F514": "New file, read only by the sign step through OPENSSL_CONF",
+"F515": "Every signing call names the pkcs11 provider, the opensc module, the key and certificate of slot id 01, the SSL.com intermediate, the description Lighthouse VERSION, the product URL and the DigiCert timestamp server, reads the password from stdin, receives exactly the PIN there, has no engine and no password argument, and inherits from the script both the provider module setting and the sign step's own OpenSSL config",
+"F516": "In a test image derived from the runner image with SoftHSM holding an EC key and self-signed certificate with id 01, sign a tiny Windows executable with the image's osslsigncode through the pkcs11 provider using the image's own sign-step OpenSSL config, only the module pointed at SoftHSM, PIN on stdin, then verify it",
+"F517": "The image's signing tools and its own OpenSSL config produce a valid Authenticode signature through the provider and exit cleanly",
+"F518": "A provider that signs with SoftHSM but not with the YubiKey PIV slot 9c, or an opensc module that still crashes at exit; that is the maintainer's check at EXAMINE",
+"F519": "Same SoftHSM signing with the image's sign-step OpenSSL config but the provider's module setting unset",
 "F52": "A refused runner is visible as offline in GitHub and in the container log",
+"F520": "Read the image's sign-step OpenSSL config and the environment the image sets",
+"F521": "The config file /etc/ssl/openssl-pkcs11.cnf exists and declares pkcs11-module-quirks with no-deinit, and the image environment does not set OPENSSL_CONF",
+"F522": "Signing does not crash at exit, and other jobs on the runner keep OpenSSL's stock config",
+"F523": "A config that sets the quirk but does not include the system config; only the real-signature check shows the default provider still loads",
 "F53": "Signing blocked until the image is rebuilt with a current runner",
 "F6": "The runner image is built in GitHub Actions from a digest-pinned base, published to GHCR, and rebuilt on changes under tools/codesign/** and on a schedule; Renovate bumps the base digest and the runner version.",
 "F61": "One signing machine and one YubiKey",

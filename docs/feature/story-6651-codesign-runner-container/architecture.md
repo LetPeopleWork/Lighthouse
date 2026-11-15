@@ -35,7 +35,7 @@ osslsigncode comes from the Ubuntu 26.04 package (2.13-1, whose sign help lists 
 #### D5
 
 ```text
-Provider, not engine, by construction. osslsigncode 2.10+ with -pkcs11module first tries the provider named by -provider and silently falls back to the libp11 engine when the provider does not load (source: osslsigncode.c sign key loading). Because the image carries no pkcs11 engine, that fallback cannot sign: a provider load failure fails the step loudly instead of signing through the engine. The sign command is: osslsigncode sign -provider pkcs11 -pkcs11module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so -key pkcs11:id=%01;type=private -pkcs11cert pkcs11:id=%01;type=cert -ac tools/codesign/SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt -readpass - -n "Lighthouse VERSION" -i https://letpeople.work/lighthouse -t http://timestamp.digicert.com -in FILE -out FILE.signed. The image sets ENV PKCS11_PROVIDER_MODULE to the opensc module because the latchset provider reads that variable, not the PKCS11_MODULE_PATH that osslsigncode exports.
+Provider, not engine, by construction. osslsigncode 2.10+ with -pkcs11module first tries the provider named by -provider and silently falls back to the libp11 engine when the provider does not load (source: osslsigncode.c sign key loading). Because the image carries no pkcs11 engine, that fallback cannot sign: a provider load failure fails the step loudly instead of signing through the engine. The sign command is: osslsigncode sign -provider pkcs11 -pkcs11module /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so -key pkcs11:id=%01;type=private -pkcs11cert pkcs11:id=%01;type=cert -ac tools/codesign/SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt -readpass - -n "Lighthouse VERSION" -i https://letpeople.work/lighthouse -t http://timestamp.digicert.com -in FILE -out FILE.signed. The image sets ENV PKCS11_PROVIDER_MODULE to the opensc module because the latchset provider reads that variable, not the PKCS11_MODULE_PATH that osslsigncode exports. The provider is also configured with pkcs11-module-quirks = no-deinit (tools/codesign/openssl-pkcs11.cnf, installed as /etc/ssl/openssl-pkcs11.cnf): with osslsigncode 2.13 and pkcs11-provider 1.2.0, osslsigncode crashes (exit 139) when the provider shuts the PKCS#11 module down at process exit, even after a good signature; skipping that shutdown costs nothing because signing is a short-lived process and the sign step stops pcscd right after. The file includes the system OpenSSL config and declares the pkcs11 provider section with the quirk.
 ```
 
 #### D6
@@ -65,7 +65,7 @@ Renovate (owner renovate.json): the dockerfile manager finds the FROM digest of 
 #### D10
 
 ```text
-Sign step (owner tools/codesign/sign-windows.sh; caller .github/workflows/ci_codesign-windows.yml Sign on Linux step, which shrinks to bash tools/codesign/sign-windows.sh VERSION with YUBI_PIN in env). Lifecycle carrier: shell state in the one script process. The script exports PKCS11_PROVIDER_MODULE=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so itself, so it does not depend on the image ENV. Order: (1) look for a USB device with idVendor 1050 under the sysfs root (default /sys/bus/usb/devices, overridable by CODESIGN_USB_SYSFS for the oracle); none: print plug in the YubiKey and re-run this job, exit 1, no pcscd, no PIN read. (2) set trap stop_pcscd EXIT INT TERM; stop any stale pcscd (sudo -n /usr/bin/pkill -x pcscd, failure ignored) left by a killed earlier run; start pcscd (sudo -n /usr/sbin/pcscd --disable-polkit) with the static reader entry. (3) wait at most CODESIGN_READER_WAIT seconds (default 10) for opensc-tool --list-readers to list a reader; timeout: the plug-in message plus a hint to run tools/codesign/check-host.sh, exit 1, PIN never read. (4) sign the server exe, the NSIS exe and the MSI, PIN on stdin from YUBI_PIN, never argv, never echoed, no set -x, no retry of a failed file. (5) the trap stops pcscd on every exit. Tools resolved through PATH so the oracle can put recording stand-ins first. Sudoers (tools/codesign/sudoers-pcscd, installed 0440 root:root): exactly runner ALL=(root) NOPASSWD: /usr/sbin/pcscd --disable-polkit, /usr/bin/pkill -x pcscd; no wildcard, no ALL command. Accepted: YUBI_PIN is in the environment of the script children (osslsigncode, opensc-tool) as for any GitHub secret in a step env.
+Sign step (owner tools/codesign/sign-windows.sh; caller .github/workflows/ci_codesign-windows.yml Sign on Linux step, which shrinks to bash tools/codesign/sign-windows.sh VERSION with YUBI_PIN in env). Lifecycle carrier: shell state in the one script process. The script exports PKCS11_PROVIDER_MODULE=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so itself, so it does not depend on the image ENV. Order: (1) look for a USB device with idVendor 1050 under the sysfs root (default /sys/bus/usb/devices, overridable by CODESIGN_USB_SYSFS for the oracle); none: print plug in the YubiKey and re-run this job, exit 1, no pcscd, no PIN read. (2) set trap stop_pcscd EXIT INT TERM; stop any stale pcscd (sudo -n /usr/bin/pkill -x pcscd, failure ignored) left by a killed earlier run; start pcscd (sudo -n /usr/sbin/pcscd --disable-polkit) with the static reader entry. (3) wait at most CODESIGN_READER_WAIT seconds (default 10) for opensc-tool --list-readers to list a reader; timeout: the plug-in message plus a hint to run tools/codesign/check-host.sh, exit 1, PIN never read. (4) sign the server exe, the NSIS exe and the MSI, PIN on stdin from YUBI_PIN, never argv, never echoed, no set -x, no retry of a failed file. (5) the trap stops pcscd on every exit. Tools resolved through PATH so the oracle can put recording stand-ins first. Sudoers (tools/codesign/sudoers-pcscd, installed 0440 root:root): exactly runner ALL=(root) NOPASSWD: /usr/sbin/pcscd --disable-polkit, /usr/bin/pkill -x pcscd; no wildcard, no ALL command. The script exports OPENSSL_CONF=/etc/ssl/openssl-pkcs11.cnf for its own osslsigncode calls, not the image ENV: every other job on this runner (git, curl, node) then keeps the stock OpenSSL config and never loads the pkcs11 provider. Accepted: YUBI_PIN is in the environment of the script children (osslsigncode, opensc-tool) as for any GitHub secret in a step env.
 ```
 
 #### D11
@@ -169,7 +169,7 @@ Manual host steps (maintainer, not CI): once per fresh machine: install compose.
 #### K9
 
 ```text
-Only the maintainer can check these at EXAMINE, no oracle can: pkcs11-provider 1.2.0 with the PIV key in slot 9c (always-authenticate) across three signs in one run; opensc-pkcs11 0.27.0~rc1 (a release candidate in Ubuntu 26.04) talking to the real YubiKey; the static reader entry finding the real key inside the container; /sys/bus/usb showing the plugged key inside the container; growth of /home/runner/work (no volume, so it is reset on every recreate).
+Only the maintainer can check these at EXAMINE, no oracle can: pkcs11-provider 1.2.0 with the PIV key in slot 9c (always-authenticate) across three signs in one run; a sign with the real YubiKey exits 0 (no crash at exit, the no-deinit quirk holding for opensc-pkcs11 as it does for SoftHSM); opensc-pkcs11 0.27.0~rc1 (a release candidate in Ubuntu 26.04) talking to the real YubiKey; the static reader entry finding the real key inside the container; /sys/bus/usb showing the plugged key inside the container; growth of /home/runner/work (no volume, so it is reset on every recreate).
 ```
 
 #### K10
@@ -1013,7 +1013,7 @@ tools\/codesign\/Dockerfile
 Extend
 
 ```text
-Ubuntu packages osslsigncode, pkcs11-provider, opensc, pcscd, libccid, node/npm, reader entry, sudoers line, PKCS11_PROVIDER_MODULE; no pkcs11 engine
+Ubuntu packages osslsigncode, pkcs11-provider, opensc, pcscd, libccid, node/npm, reader entry, sudoers line, PKCS11_PROVIDER_MODULE, the provider OpenSSL config copied to /etc/ssl/openssl-pkcs11.cnf; no pkcs11 engine
 ```
 
 tools\/codesign\/sign\-windows\.sh
@@ -1056,6 +1056,14 @@ Extend
 Runs the S2 oracle against the built image before publish
 ```
 
+tools\/codesign\/openssl\-pkcs11\.cnf
+
+Create
+
+```text
+OpenSSL config for the pkcs11 provider: includes the system config and sets pkcs11-module-quirks = no-deinit, so osslsigncode does not crash at exit
+```
+
 tools\/codesign\/tests\/test\-sign\-step\.sh
 
 #### Verification
@@ -1076,7 +1084,7 @@ Run tools/codesign/sign-windows.sh VERSION inside the built image (docker run, w
 ```
 
 ```text
-(a) exit 1 within 5 s, output contains plug in the YubiKey and re-run this job, pcscd never started, osslsigncode never invoked; (b) exit 1 within 7 s, same message plus the check-host.sh hint, pcscd started then stopped, osslsigncode never invoked; (c) exit 0, osslsigncode invoked exactly three times, once per file, each argv with -provider pkcs11 and -readpass - and without -pkcs11engine, the sentinel on stdin and never on argv, pcscd stopped; (d) non-zero exit, two invocations, no third, pcscd stopped; (e) pkill -x pcscd runs before the pcscd start. The sentinel never appears in stdout or stderr. Tools: help lists -provider, the pkcs11 provider is active, no pkcs11 engine file exists, sudoers is 0440 root:root and allows exactly /usr/sbin/pcscd --disable-polkit and /usr/bin/pkill -x pcscd with no * and no ALL command. Real-binary: with the variable set to the SoftHSM module, sign exits 0 and verify accepts the signature against the test cert; with it unset, sign exits non-zero and writes no signed file. Signing with the real YubiKey and Verify signing coverage: maintainer at EXAMINE (P2).
+(a) exit 1 within 5 s, output contains plug in the YubiKey and re-run this job, pcscd never started, osslsigncode never invoked; (b) exit 1 within 7 s, same message plus the check-host.sh hint, pcscd started then stopped, osslsigncode never invoked; (c) exit 0, osslsigncode invoked exactly three times, once per file, each argv with -provider pkcs11 and -readpass - and without -pkcs11engine, the sentinel on stdin and never on argv, pcscd stopped; (d) non-zero exit, two invocations, no third, pcscd stopped; (e) pkill -x pcscd runs before the pcscd start. The sentinel never appears in stdout or stderr. Tools: help lists -provider, the pkcs11 provider is active, no pkcs11 engine file exists, sudoers is 0440 root:root and allows exactly /usr/sbin/pcscd --disable-polkit and /usr/bin/pkill -x pcscd with no * and no ALL command. Real-binary: with the variable set to the SoftHSM module and the image own OpenSSL provider config (/etc/ssl/openssl-pkcs11.cnf, which sets pkcs11-module-quirks = no-deinit) in OPENSSL_CONF, the real osslsigncode signs the PE against the software token and exits 0 (no crash at exit), and verify accepts the signature against the test cert; with it unset, sign exits non-zero and writes no signed file. Signing with the real YubiKey and Verify signing coverage: maintainer at EXAMINE (P2).
 ```
 
 ```text
@@ -1175,6 +1183,16 @@ CreateNew
 Created by this feature in S1 (no owner existed before); this slice adds its part to that new file
 ```
 
+openssl\-pkcs11\.cnf
+
+tools\/codesign\/openssl\-pkcs11\.cnf\:1
+
+CreateNew
+
+```text
+No OpenSSL provider config exists in the repository; the system openssl.cnf is included, not copied
+```
+
 ##### Impact
 
 container\-image
@@ -1245,6 +1263,16 @@ UnchangedCompatible
 
 ```text
 Consumes the same artifact names
+```
+
+runtime\-config
+
+tools\/codesign\/openssl\-pkcs11\.cnf\:1
+
+Changed
+
+```text
+New file, read only by the sign step through OPENSSL_CONF
 ```
 
 ##### Agreement
