@@ -163,6 +163,75 @@
 "stimulus": "F231",
 "user_result": "F233"
 }
+],
+"S2": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F133",
+"L3/F134",
+"L3/F135"
+],
+"still_passes_if": "F238",
+"test": "tools/linux-appimage/tests/test-build-environment.sh"
+},
+"expected": "F236",
+"stimulus": "F235",
+"user_result": "F237"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F242",
+"test": "tools/linux-appimage/tests/test-build-environment.sh"
+},
+"expected": "F240",
+"stimulus": "F239",
+"user_result": "F241"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F246",
+"test": "tools/linux-appimage/tests/test-build-environment.sh"
+},
+"expected": "F244",
+"stimulus": "F243",
+"user_result": "F245"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F250",
+"test": "tools/linux-appimage/tests/test-build-environment.sh"
+},
+"expected": "F248",
+"stimulus": "F247",
+"user_result": "F249"
+}
 ]
 },
 "counters": {
@@ -170,7 +239,7 @@
 "C": 2,
 "D": 14,
 "E": 5,
-"F": 234,
+"F": 250,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -1033,8 +1102,24 @@
 "F232": "The run fails as indeterminate with what is wrong, why and how to fix it, naming the refused floor",
 "F233": "A mistyped floor stops the build with a clear message and never lets every file pass",
 "F234": "the bad floor is treated as a number, or as zero, and the run exits successfully or refuses real files against a wrong floor",
+"F235": "The maintainer reads the Linux packaging workflow, its runner label, its build container and its steps",
+"F236": "The job runs on ubuntu-latest, no job names a versioned Ubuntu runner, the build container is an Ubuntu image by digest whose release matches the written floor (a tag only, or a digest of another release, is refused), there is no .NET setup, no exact WebKitGTK pin, the installed WebKitGTK version is printed, the bundler runs without FUSE, packages install as root first, and the libssl rejection stays after the build",
+"F237": "A GitHub runner image retirement cannot change the glibc of the Linux AppImage or block the release",
+"F238": "a container image given by tag only that happens to say 24.04, or a runner label ubuntu-latest with the old sudo install that fails in a bare container",
+"F239": "The maintainer reads the Renovate configuration for the Linux packaging workflow",
 "F24": "The packaging job runs only on main: the real container build and the real AppImage are observable only on the main pipeline or by a maintainer running the container steps by hand. Local oracles prove the floor check, the workflow shape, and that the package install and bundled WebKitGTK library resolve in the pinned image under the floor.",
+"F240": "No rule disables every Ubuntu update of that workflow, and one rule disables major and minor Ubuntu updates while digest updates stay on",
+"F241": "Renovate keeps the container digest current and can never raise the Ubuntu release and with it the glibc floor",
+"F242": "a rule that disables all Ubuntu updates of any file, which would also freeze the digest",
+"F243": "The package list of the workflow is installed in a fresh container of the digest the workflow names, and the floor check runs over the installed WebKitGTK libraries",
+"F244": "The install succeeds without version pins, prints the installed WebKitGTK version, and the installed libwebkit2gtk and libjavascriptcoregtk need no glibc newer than the floor",
+"F245": "The release build can install its tools from the current Ubuntu 24.04 archive and still stay within the floor",
+"F246": "an install step that only echoes a version string without the package being installed, or a list installed in a different image than the digest named",
+"F247": "The loader job of the workflow is read, and the loader check runs on stand-in AppImages and, when APPIMAGE is set, on the finished AppImage for Ubuntu 24.04 and Debian 13",
+"F248": "The loader job waits for the packaging job and runs both digests; a missing AppImage or one without ELF files exits 2; a missing library or a glibc version the system lacks exits 1 and names it; a fully resolving AppImage exits 0, and the real AppImage resolves on both distributions",
+"F249": "The AppImage still resolves all its libraries on Ubuntu 24.04 LTS and Debian 13 before it is released",
 "F25": "bash tools/linux-appimage/check-glibc-floor.sh DIR [FLOOR]; bash tools/linux-appimage/check-loads-on.sh IMAGE APPIMAGE; the reusable workflow .github/workflows/ci_package-linux-standalone.yml called from ci.yml",
+"F250": "a loader check that exits 0 without reading the AppImage, or one that refuses everything; rendering and window start are not covered",
 "F26": "readelf and file from binutils; docker; the Ubuntu apt archive; GitHub Actions job container",
 "F27": "workflow steps call the scripts; scripts read tools/linux-appimage/glibc-floor and never the workflow; oracles read the workflow, renovate.json and the ADR as files; nothing in the backend or frontend depends on any of it",
 "F28": "Floor check result: exit code, one line per offending ELF naming its path and the highest GLIBC_x.y it needs, and the summary scanned=N over_floor=M",

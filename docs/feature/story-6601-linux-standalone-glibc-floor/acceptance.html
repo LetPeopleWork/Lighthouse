@@ -409,6 +409,111 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The maintainer reads the Linux packaging workflow, its runner label, its build container and its steps
+</code></pre>
+
+<pre><code>The job runs on ubuntu-latest, no job names a versioned Ubuntu runner, the build container is an Ubuntu image by digest whose release matches the written floor (a tag only, or a digest of another release, is refused), there is no .NET setup, no exact WebKitGTK pin, the installed WebKitGTK version is printed, the bundler runs without FUSE, packages install as root first, and the libssl rejection stays after the build
+</code></pre>
+
+<pre><code>A GitHub runner image retirement cannot change the glibc of the Linux AppImage or block the release
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-build-environment.sh</p>
+
+<pre><code>a container image given by tag only that happens to say 24.04, or a runner label ubuntu-latest with the old sudo install that fails in a bare container
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The maintainer reads the Renovate configuration for the Linux packaging workflow
+</code></pre>
+
+<pre><code>No rule disables every Ubuntu update of that workflow, and one rule disables major and minor Ubuntu updates while digest updates stay on
+</code></pre>
+
+<pre><code>Renovate keeps the container digest current and can never raise the Ubuntu release and with it the glibc floor
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-build-environment.sh</p>
+
+<pre><code>a rule that disables all Ubuntu updates of any file, which would also freeze the digest
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The package list of the workflow is installed in a fresh container of the digest the workflow names, and the floor check runs over the installed WebKitGTK libraries
+</code></pre>
+
+<pre><code>The install succeeds without version pins, prints the installed WebKitGTK version, and the installed libwebkit2gtk and libjavascriptcoregtk need no glibc newer than the floor
+</code></pre>
+
+<pre><code>The release build can install its tools from the current Ubuntu 24.04 archive and still stay within the floor
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-build-environment.sh</p>
+
+<pre><code>an install step that only echoes a version string without the package being installed, or a list installed in a different image than the digest named
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The loader job of the workflow is read, and the loader check runs on stand-in AppImages and, when APPIMAGE is set, on the finished AppImage for Ubuntu 24.04 and Debian 13
+</code></pre>
+
+<pre><code>The loader job waits for the packaging job and runs both digests; a missing AppImage or one without ELF files exits 2; a missing library or a glibc version the system lacks exits 1 and names it; a fully resolving AppImage exits 0, and the real AppImage resolves on both distributions
+</code></pre>
+
+<pre><code>The AppImage still resolves all its libraries on Ubuntu 24.04 LTS and Debian 13 before it is released
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-build-environment.sh</p>
+
+<pre><code>a loader check that exits 0 without reading the AppImage, or one that refuses everything; rendering and window start are not covered
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
