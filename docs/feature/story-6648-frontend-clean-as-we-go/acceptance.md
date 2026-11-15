@@ -190,6 +190,191 @@ A button that counts owners she can edit as not Admin or enables itself while a 
 
 
 
+### S2
+
+##### Covers
+
+P1
+
+```text
+Run the timing measure for the combined PDF page tests and the new dialog and function tests: 5 alternating before and after pairs
+```
+
+```text
+Exit 0 with no failed assertion, the page file alone at most 0.75 and with the new tests at most 0.80 of the before-commit time per test, over at least 3 quiet pairs
+```
+
+```text
+The combined PDF test file gives its answer in less time per test, so the suite is faster to wait for
+```
+
+##### Disposition
+
+Tested
+
+bash docs\/feature\/story\-6648\-frontend\-clean\-as\-we\-go\/measurement\/measure\-slice\.sh S2
+
+```text
+the page file keeps all 18 tests and only new files are added on top
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Run the check that maps every old page test to a kept test or to the tests that now prove its rule
+```
+
+```text
+The 18 old ids equal the rows, 12 stay on the page, each removed row names tests that exist and pass, and the new test files hold exactly the listed tests
+```
+
+```text
+No rule of the combined PDF export, its failure dialog or Leave it out is left without a test
+```
+
+##### Disposition
+
+Tested
+
+bash docs\/feature\/story\-6648\-frontend\-clean\-as\-we\-go\/measurement\/check\-slice\.sh S2
+
+```text
+a removed row that names an unrelated passing test (the break list proves each rule separately)
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Run the check against the files changed since the before commit
+```
+
+```text
+No production file, shared test kit, time-budget file or end-to-end file differs, and no skip, only, todo, retry, timeout or weaker matcher was added
+```
+
+```text
+The Reports page and its dialog look and behave exactly as before; the loading and failure looks stay pinned
+```
+
+##### Disposition
+
+Tested
+
+bash docs\/feature\/story\-6648\-frontend\-clean\-as\-we\-go\/measurement\/check\-slice\.sh S2
+
+```text
+a production edit inside a file the check allows (none is allowed here)
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+The failure dialog is shown alone with its failed reports and its handlers, then each button and Escape is used
+```
+
+```text
+It names each failed report in print order with its owner kind word, is described by that list, shows the part-of-the-page message for an empty list, offers Cancel, Leave it out, Retry only when offered, and each button and Escape call their own handler once
+```
+
+```text
+A reader who could not export is told which reports failed and gets the buttons that do what they say
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Reports\/NoPdfDialog\.test\.tsx\:1
+
+```text
+a dialog with two handlers swapped on a button no test presses; all four buttons and Escape are pressed
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+```text
+The failed-report and Leave it out decisions are called directly with reports of one Team and of different owners
+```
+
+```text
+failedAmong names only the failed reports in listed order and matches by id, owner kind and owner id; leaving out is not offered when nothing failed or nothing would be left, and leaves out only the failed report, not the other report of the same Team
+```
+
+```text
+Leave it out never drops a report that loaded and is never offered when it would print nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Reports\/printFailures\.test\.ts\:1
+
+```text
+matching by id only or by owner only (the fixture has a same-id other owner, a same-owner other id and a same-id portfolio)
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+On the Reports page, four reports are picked and two cannot be read; the reader presses Leave it out, and in another test Cancel
+```
+
+```text
+Leave it out unpicks both failed reports, closes the dialog and prints the rest in table order with Export PDF (2); Cancel closes the dialog, prints nothing and keeps the picks
+```
+
+```text
+Leave it out and Cancel on the real page do what the dialog says and the picks follow
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Reports\/ReportsPage\.combinedPdf\.test\.tsx\:1
+
+```text
+an unpick of only the first failed report (two failures are picked); a no-op Cancel (the dialog must close)
+```
+
+###### Obligations
+
+
+
 ### S3
 
 ##### Covers

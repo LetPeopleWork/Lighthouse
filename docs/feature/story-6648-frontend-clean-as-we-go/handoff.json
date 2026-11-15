@@ -108,6 +108,101 @@
 "user_result": "F216"
 }
 ],
+"S2": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F267",
+"test": "bash docs/feature/story-6648-frontend-clean-as-we-go/measurement/measure-slice.sh S2"
+},
+"expected": "F265",
+"stimulus": "F264",
+"user_result": "F266"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F271",
+"test": "bash docs/feature/story-6648-frontend-clean-as-we-go/measurement/check-slice.sh S2"
+},
+"expected": "F269",
+"stimulus": "F268",
+"user_result": "F270"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F275",
+"test": "bash docs/feature/story-6648-frontend-clean-as-we-go/measurement/check-slice.sh S2"
+},
+"expected": "F273",
+"stimulus": "F272",
+"user_result": "F274"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F114",
+"L4/F115",
+"L4/F116"
+],
+"still_passes_if": "F279",
+"test": "Lighthouse.Frontend/src/pages/Reports/NoPdfDialog.test.tsx:1"
+},
+"expected": "F277",
+"stimulus": "F276",
+"user_result": "F278"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F179",
+"L4/F180",
+"L4/F181",
+"L4/F182"
+],
+"still_passes_if": "F283",
+"test": "Lighthouse.Frontend/src/pages/Reports/printFailures.test.ts:1"
+},
+"expected": "F281",
+"stimulus": "F280",
+"user_result": "F282"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F183",
+"L4/F184"
+],
+"still_passes_if": "F287",
+"test": "Lighthouse.Frontend/src/pages/Reports/ReportsPage.combinedPdf.test.tsx:1"
+},
+"expected": "F285",
+"stimulus": "F284",
+"user_result": "F286"
+}
+],
 "S3": [
 {
 "covers": [
@@ -241,7 +336,7 @@
 "counters": {
 "D": 17,
 "E": 5,
-"F": 263,
+"F": 287,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -1097,8 +1192,32 @@
 "F261": "The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; a second send of the same Work Item's comment waits for the first answer; the name is asked and the comment sent once under it",
 "F262": "A refused comment keeps its text and a comment is never sent twice",
 "F263": "A refusal is swallowed, a second send goes out, or the comment is sent without asking for a name",
+"F264": "Run the timing measure for the combined PDF page tests and the new dialog and function tests: 5 alternating before and after pairs",
+"F265": "Exit 0 with no failed assertion, the page file alone at most 0.75 and with the new tests at most 0.80 of the before-commit time per test, over at least 3 quiet pairs",
+"F266": "The combined PDF test file gives its answer in less time per test, so the suite is faster to wait for",
+"F267": "the page file keeps all 18 tests and only new files are added on top",
+"F268": "Run the check that maps every old page test to a kept test or to the tests that now prove its rule",
+"F269": "The 18 old ids equal the rows, 12 stay on the page, each removed row names tests that exist and pass, and the new test files hold exactly the listed tests",
 "F27": "Every removed or shrunk expect( has a moved-assertions row; test ids lost have a row; deleting a test without mapping its rule is refused by check-slice. A merged test keeps the union of the assertions of the tests it replaces.",
+"F270": "No rule of the combined PDF export, its failure dialog or Leave it out is left without a test",
+"F271": "a removed row that names an unrelated passing test (the break list proves each rule separately)",
+"F272": "Run the check against the files changed since the before commit",
+"F273": "No production file, shared test kit, time-budget file or end-to-end file differs, and no skip, only, todo, retry, timeout or weaker matcher was added",
+"F274": "The Reports page and its dialog look and behave exactly as before; the loading and failure looks stay pinned",
+"F275": "a production edit inside a file the check allows (none is allowed here)",
+"F276": "The failure dialog is shown alone with its failed reports and its handlers, then each button and Escape is used",
+"F277": "It names each failed report in print order with its owner kind word, is described by that list, shows the part-of-the-page message for an empty list, offers Cancel, Leave it out, Retry only when offered, and each button and Escape call their own handler once",
+"F278": "A reader who could not export is told which reports failed and gets the buttons that do what they say",
+"F279": "a dialog with two handlers swapped on a button no test presses; all four buttons and Escape are pressed",
 "F28": "Direct tests drive the public port of the unit: the dialog by its props, the hook by renderHook with its real collaborators (QueryClient, ApiServiceContext with a mocked service), the function by call. They never import a private symbol; lostForGoodWarningOf stays private and is reached by rendering the dialog.",
+"F280": "The failed-report and Leave it out decisions are called directly with reports of one Team and of different owners",
+"F281": "failedAmong names only the failed reports in listed order and matches by id, owner kind and owner id; leaving out is not offered when nothing failed or nothing would be left, and leaves out only the failed report, not the other report of the same Team",
+"F282": "Leave it out never drops a report that loaded and is never offered when it would print nothing",
+"F283": "matching by id only or by owner only (the fixture has a same-id other owner, a same-owner other id and a same-id portfolio)",
+"F284": "On the Reports page, four reports are picked and two cannot be read; the reader presses Leave it out, and in another test Cancel",
+"F285": "Leave it out unpicks both failed reports, closes the dialog and prints the rest in table order with Export PDF (2); Cancel closes the dialog, prints nothing and keeps the picks",
+"F286": "Leave it out and Cancel on the real page do what the dialog says and the picks follow",
+"F287": "an unpick of only the first failed report (two failures are picked); a no-op Cancel (the dialog must close)",
 "F29": "Trunk safety: Story 6535 changes report panels (not these files) and T12 may touch test order; re-read each file at slice start, stop on a conflict, never rebase autonomously.",
 "F3": "Each of the three test files takes less per-test time than before, judged by the median of at least 4 main runs measured the same way as the baseline",
 "F30": "No shared contract is touched: no schema, wire format or config shape changes, and the shared Reports and Refinement test kits (BulkReportsTestKit.tsx, RefinementTabTestKit.tsx) are left unchanged, so their importers (15 files for the Reports kit) need no migration.",
