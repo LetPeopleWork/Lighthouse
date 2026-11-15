@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatLocalDate, parseLocalDate } from "./localDate";
+import { formatLocalDate, formatUtcDate, parseLocalDate } from "./localDate";
 
 /**
  * The metrics dashboards used to encode the startDate/endDate URL params in UTC
@@ -110,5 +110,25 @@ describe("round-trip", () => {
 		const roundTripped = parseLocalDate(formatLocalDate(original));
 
 		expect(roundTripped?.getTime()).toBe(original.getTime());
+	});
+});
+
+describe("formatUtcDate", () => {
+	it.each([
+		["late evening", Date.UTC(2026, 9, 14, 23, 30), "2026-10-14"],
+		["early morning", Date.UTC(2026, 9, 15, 0, 30), "2026-10-15"],
+	])(
+		"gives the UTC day for a UTC %s, whatever the local day is",
+		(_, instant, day) => {
+			expect(formatUtcDate(new Date(instant))).toBe(day);
+		},
+	);
+
+	it("reads back the day a date input stored as UTC midnight", () => {
+		expect(formatUtcDate(new Date(Date.UTC(2026, 0, 5)))).toBe("2026-01-05");
+	});
+
+	it("refuses a date that could not be parsed", () => {
+		expect(() => formatUtcDate(new Date("nonsense"))).toThrow(/Invalid Date/);
 	});
 });

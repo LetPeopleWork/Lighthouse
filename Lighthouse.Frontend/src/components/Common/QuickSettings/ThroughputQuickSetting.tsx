@@ -16,7 +16,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { formatLocalDate } from "../../../utils/date/localDate";
+import { formatLocalDate, formatUtcDate } from "../../../utils/date/localDate";
 
 type ThroughputQuickSettingProps = {
 	useFixedDates: boolean;
@@ -32,6 +32,9 @@ type ThroughputQuickSettingProps = {
 	hasBlackoutOverlap?: boolean;
 	hasForecastFilter?: boolean;
 };
+
+const utcDayOf = (date: Date | null): string | undefined =>
+	date ? formatUtcDate(date) : undefined;
 
 const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 	useFixedDates: initialUseFixedDates,
@@ -84,7 +87,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 		}
 
 		if (initialUseFixedDates && initialStartDate && initialEndDate) {
-			return `${throughputTerm}: Fixed dates ${formatLocalDate(initialStartDate)} to ${formatLocalDate(initialEndDate)}`;
+			return `${throughputTerm}: Fixed dates ${formatUtcDate(initialStartDate)} to ${formatUtcDate(initialEndDate)}`;
 		}
 
 		return `${throughputTerm}: Rolling ${initialThroughputHistory} days`;
@@ -148,17 +151,12 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 				return false;
 			}
 
-			const start = new Date(startDate);
-			const end = new Date(endDate);
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
-
-			if (end > today) {
+			if (formatUtcDate(endDate) > formatLocalDate(new Date())) {
 				setError("End date cannot be in the future");
 				return false;
 			}
 
-			const daysDiff = differenceInCalendarDays(end, start);
+			const daysDiff = differenceInCalendarDays(endDate, startDate);
 			if (daysDiff < 10) {
 				setError("Start date must be at least 10 days before end date");
 				return false;
@@ -176,11 +174,11 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 		if (!useFixedDates && throughputHistory !== initialThroughputHistory)
 			return true;
 		if (useFixedDates) {
-			const start1 = startDate?.toISOString().split("T")[0];
-			const start2 = initialStartDate?.toISOString().split("T")[0];
-			const end1 = endDate?.toISOString().split("T")[0];
-			const end2 = initialEndDate?.toISOString().split("T")[0];
-			if (start1 !== start2 || end1 !== end2) return true;
+			if (
+				utcDayOf(startDate) !== utcDayOf(initialStartDate) ||
+				utcDayOf(endDate) !== utcDayOf(initialEndDate)
+			)
+				return true;
 		}
 		return false;
 	};
@@ -290,7 +288,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 									label="Start Date"
 									type="date"
 									fullWidth
-									value={startDate ? formatLocalDate(startDate) : ""}
+									value={utcDayOf(startDate) ?? ""}
 									onChange={(e) =>
 										setStartDate(
 											e.target.value ? new Date(e.target.value) : null,
@@ -305,7 +303,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 									label="End Date"
 									type="date"
 									fullWidth
-									value={endDate ? formatLocalDate(endDate) : ""}
+									value={utcDayOf(endDate) ?? ""}
 									onChange={(e) =>
 										setEndDate(e.target.value ? new Date(e.target.value) : null)
 									}
