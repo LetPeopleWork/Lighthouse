@@ -422,6 +422,23 @@ for kind in $( (cd "$work/base" && find . -name '*.json'; cd "$work/candidate" &
   compared=$((compared + same + differ)); different=$((different + differ))
   echo "$kind: $((same + differ)) compared, $differ different"
 done
+# Parent placement has no answer of its own; where an item hangs shows in the parent reference every Work Item
+# answer carries. A comparison that sets parent_field reports those fields, compared one by one.
+if [ -n "${parent_field:-}" ]; then
+  fields=0; fields_different=0; fields_with_parent=0
+  for file in $( (cd "$work/base" && find . -name '*.json'; cd "$work/candidate" && find . -name '*.json') | sort -u); do
+    a="$work/base/$file"; [ -f "$a" ] || { a="$work/none.json"; echo null > "$a"; }
+    b="$work/candidate/$file"; [ -f "$b" ] || { b="$work/none.json"; echo null > "$b"; }
+    counts="$(jq -n -r --arg f "$parent_field" --slurpfile a "$a" --slurpfile b "$b" '
+      def p: [.. | objects | select(has($f)) | .[$f]];
+      ($a[0] | p) as $x | ($b[0] | p) as $y
+      | [($x | length), ([range(0; ([($x | length), ($y | length)] | max))] | map(select($x[.] != $y[.])) | length),
+         ($x | map(select(. != null and . != "")) | length)] | @tsv')"
+    read -r n d w <<< "$counts"
+    fields=$((fields + n)); fields_different=$((fields_different + d)); fields_with_parent=$((fields_with_parent + w))
+  done
+  echo "parent-placement: $fields compared, $fields_different different ($fields_with_parent of them name a parent)"
+fi
 if [ "$compared" -eq 0 ]; then
   echo "VERDICT: FAILED, no @ANSWER@ was captured, so nothing was compared"
   exit 1
@@ -549,7 +566,9 @@ cat > "$out/refresh-answers-compare" <<EOF
 # pinned, and compares them. Each demo scenario is loaded in turn and every Team, then every Portfolio, is
 # refreshed once more; then, per Team and per Portfolio, it reads the Work Items in progress (today and a week
 # ago), the finished ones, the blocked ones (today and a week ago), the blocked count history and the Feature
-# list, plus every Feature's Work Items and the Features with what they depend on. Prints one line per kind of
+# list, plus every Feature's Work Items and the Features with what they depend on. It also prints a
+# parent-placement line: the parentWorkItemReference fields the answers carry (where the parent rule put each
+# Work Item), compared one by one. Prints one line per kind of
 # answer and a last VERDICT line; exit 0 and "IDENTICAL" mean every answer was compared, answered with a 2xx
 # status on both sides, and matches. It fails when no answer was compared, when any captured answer is not a
 # 2xx, or when a refresh is refused. The values of the keys listed under "masked keys" are blanked at any depth
@@ -565,6 +584,7 @@ set -euo pipefail
 export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 repo="$repo"
 driver="$out/refresh-answers-capture.cs"
+parent_field="parentWorkItemReference"
 EOF
 sed -e 's/@BASE@/8a785450c/' -e 's/@ANSWER@/refresh answer/g' -e 's/@DONE@/refreshed/' -e 's/@SUBJECT@/refreshes/' \
   "$pieces/compare.sh" >> "$out/refresh-answers-compare"
@@ -703,10 +723,13 @@ async Task<bool> ObserveTheTeamRefresh(TeamUnderTest team)
     if (row == default)
     {
         report.Line($"Team refresh runs and is recorded in the refresh history: NOT OBSERVED. {what}; no Team row in the refresh history after it. " + Rerun);
+        report.Outcome("Team refresh runs and is recorded in the refresh history", "not recorded");
         return false;
     }
     report.Line($"Team refresh runs and is recorded in the refresh history: OBSERVED. {what}; refresh history row at {Stamp(row)}; " +
         $"after it the Team answers {inProgress} Work Items in progress, {blocked} of them blocked");
+    report.Outcome("Team refresh runs and is recorded in the refresh history",
+        $"recorded in the refresh history; Team \"{team.Name}\" answers {inProgress} Work Items in progress, {blocked} of them blocked");
     return true;
 }
 
@@ -729,9 +752,13 @@ async Task<bool> ObserveTheFetchShapeTrigger(TeamUnderTest team)
     if (row is null)
     {
         report.Line($"changed download refreshes the connection's Teams: NOT OBSERVED. {what}; no refresh of Team {team.Id} followed. " + Rerun);
+        report.Outcome("changed download refreshes the connection's Teams", "no refresh followed");
         return false;
     }
     report.Line($"changed download refreshes the connection's Teams: OBSERVED. {what}; Team {team.Id} refreshed at {Stamp(row.Value)}");
+    var inProgressAfter = await lighthouse.Count($"/api/v1/teams/{team.Id}/metrics/wip?asOfDate={DateTime.UtcNow:yyyy-MM-dd}");
+    report.Outcome("changed download refreshes the connection's Teams",
+        $"the Team was refreshed after the save; it answers {inProgressAfter} Work Items in progress");
     return true;
 }
 
@@ -744,9 +771,11 @@ async Task<bool> ObserveTheRefreshHistoryCleanup(TeamUnderTest team)
     if (before == 0 || after > 0)
     {
         report.Line($"deleted Team leaves the refresh history: NOT OBSERVED. {what}; {after} rows are left. " + Rerun);
+        report.Outcome("deleted Team leaves the refresh history", $"{after} rows are left, the Team had {(before == 0 ? "no" : "some")} before");
         return false;
     }
     report.Line($"deleted Team leaves the refresh history: OBSERVED. {what}; none are left");
+    report.Outcome("deleted Team leaves the refresh history", "the Team had refresh history rows before; none are left after the delete");
     return true;
 }
 
@@ -755,6 +784,7 @@ void NameWhatIsNotObservable()
     foreach (var reaction in notObservable)
     {
         report.Line($"{reaction}: NOT OBSERVABLE, see the next line");
+        report.Outcome(reaction, "NOT OBSERVABLE");
     }
     report.Line("why not observable: blocked periods are read only by answers about a past day, so a period opened or " +
         "closed now shows nothing before tomorrow, and on demo data the demo blocked history is written as well; " +
@@ -767,6 +797,17 @@ public sealed record TeamUnderTest(int Id, string Name, int ConnectionId);
 
 public sealed class Report(string path)
 {
+    // The comparison command sets this to collect, per reaction, what was seen in a form that can be diffed.
+    private readonly string? outcomes = Environment.GetEnvironmentVariable("REACTION_OUTCOMES_FILE");
+
+    public void Outcome(string reaction, string outcome)
+    {
+        if (outcomes is not null)
+        {
+            File.AppendAllText(outcomes, reaction + "\t" + outcome + "\n");
+        }
+    }
+
     public void Line(string text)
     {
         Console.WriteLine(text);
@@ -917,7 +958,8 @@ public sealed class Instance : IAsyncDisposable
             : type.GetValue<int>() == (int)Lighthouse.Backend.Models.RefreshType.Team;
 }
 EOF
-} | sed "s|@BACKEND@|$repo/Lighthouse.Backend|" > "$out/refresh-reactions-show.cs"
+} > "$out/refresh-reactions-compare.cs"
+sed "s|@BACKEND@|$repo/Lighthouse.Backend|" "$out/refresh-reactions-compare.cs" > "$out/refresh-reactions-show.cs"
 cat > "$out/refresh-reactions-show" <<EOF
 #!/usr/bin/env bash
 # Shows, on demo data and through the public API, the Work Items reactions running around a Team refresh: the
@@ -936,6 +978,116 @@ driver="$out/refresh-reactions-show.cs"
 EOF
 sed 's/@NAME@/refresh-reactions-show/g' "$pieces/probe-runner.sh" >> "$out/refresh-reactions-show"
 chmod +x "$out/refresh-reactions-show"
+
+cat > "$out/refresh-reactions-compare" <<EOF
+#!/usr/bin/env bash
+# Runs the Work Items reactions around a Team refresh (the ones refresh-reactions-show reads) on two git
+# revisions, each on a fresh database with the smallest demo scenario with Teams, and compares what each reaction
+# leaves behind in the public answers: the refresh history, the Team's Work Items in progress and blocked, and
+# whether a changed download refreshes the Team again. Times and generated ids differ per run and are left out of
+# the outcome that is compared. Prints one line per reaction, "<reaction>: base <outcome> / candidate <outcome> -
+# same|different", names the reactions no public answer shows as not observable, and a last VERDICT line; exit 0
+# and "IDENTICAL" only when every observable reaction gives the same outcome on both sides and was seen on both.
+# Usage: refresh-reactions-compare [base-revision [candidate-revision]]   (takes about 4 to 8 minutes)
+#   no arguments   compares base 8a785450c (the last revision before any Work Items code moves) with HEAD
+#   one argument   is the base revision; the candidate is HEAD
+#   two arguments  are the base and the candidate revision
+# Given the same revision twice it shows the comparison itself is repeatable.
+set -euo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+repo="$repo"
+driver="$out/refresh-reactions-compare.cs"
+EOF
+cat >> "$out/refresh-reactions-compare" <<'EOF'
+base="${1:-8a785450c}"
+candidate="${2:-HEAD}"
+base_sha="$(git -C "$repo" rev-parse --verify "${base}^{commit}")"
+candidate_sha="$(git -C "$repo" rev-parse --verify "${candidate}^{commit}")"
+echo "comparing base ${base_sha:0:9} with candidate ${candidate_sha:0:9}"
+licence="$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json"
+# The physical path: a symlink in it makes the compiler miss the .editorconfig sections and the build fails.
+work="$(cd "$(mktemp -d)" && pwd -P)"
+cleanup() {
+  local status=$?
+  for tree in "$work"/src-*; do
+    [ -d "$tree" ] && git -C "$repo" worktree remove --force "$tree" >/dev/null 2>&1 || true
+  done
+  git -C "$repo" worktree prune || true
+  rm -rf "$work"
+  exit "$status"
+}
+trap cleanup EXIT INT TERM
+
+prepare() {
+  local sha=$1 src="$work/src-$1"
+  [ -d "$src" ] && return 0
+  git -C "$repo" worktree add --detach --quiet "$src" "$sha"
+  local backend="$src/Lighthouse.Backend" log="$work/build-$sha.log"
+  # The backend references the migration assemblies by path, so they are built first, and the backend again
+  # without the incremental shortcut so its output lists them.
+  { dotnet build "$backend/Lighthouse.Migrations.Sqlite" -nologo -v quiet \
+    && dotnet build "$backend/Lighthouse.Migrations.Postgres" -nologo -v quiet \
+    && dotnet build "$backend/Lighthouse.Backend" --no-incremental -nologo -v quiet; } >"$log" 2>&1 \
+    || { tail -20 "$log"; echo "VERDICT: build of ${sha:0:9} failed"; exit 1; }
+  mkdir -p "$work/driver-$sha"
+  sed "s|@BACKEND@|$backend|" "$driver" > "$work/driver-$sha/probe.cs"
+  dotnet build "$work/driver-$sha/probe.cs" >>"$log" 2>&1 \
+    || { tail -20 "$log"; echo "VERDICT: probe did not build against ${sha:0:9}"; exit 1; }
+}
+
+# One side after the other: the reactions are timed, and two backends running together would slow each other.
+observe() {
+  local sha=$1 side=$2 content="$work/src-$1/Lighthouse.Backend/Lighthouse.Backend"
+  mkdir -p "$work/run-$side"
+  ( cd "$content" && REACTION_OUTCOMES_FILE="$work/$side.outcomes" ASPNETCORE_TEST_CONTENTROOT_LIGHTHOUSE="$content" \
+      dotnet run --no-build --file "$work/driver-$sha/probe.cs" -- "$work/run-$side" "$work/$side.result" "$licence" ) \
+    >"$work/$side.log" 2>&1 || true
+  grep -q '^VERDICT:' "$work/$side.result" 2>/dev/null || { grep -E "Exception|error" "$work/$side.log" | head -5; }
+}
+
+prepare "$base_sha"
+prepare "$candidate_sha"
+observe "$base_sha" base
+observe "$candidate_sha" candidate
+for side in base candidate; do
+  [ -s "$work/$side.outcomes" ] || { echo "VERDICT: FAILED, the $side run recorded no reaction, so nothing was compared"; exit 1; }
+  grep -E '^(licence|demo data):' "$work/$side.result" | sed "s/^/$side: /"
+done
+
+different=0; compared=0; unseen=0
+while IFS=$'\t' read -r reaction base_outcome; do
+  candidate_outcome="$(awk -F'\t' -v r="$reaction" '$1 == r { print $2; exit }' "$work/candidate.outcomes")"
+  if [ "$base_outcome" = "NOT OBSERVABLE" ]; then
+    echo "$reaction: NOT OBSERVABLE on either side, no public answer shows it on the day it runs"
+    continue
+  fi
+  compared=$((compared + 1))
+  if [ "$base_outcome" = "${candidate_outcome:-}" ]; then
+    verdict=same
+  else
+    verdict=different; different=$((different + 1))
+  fi
+  case "$base_outcome$candidate_outcome" in
+    *"not recorded"*|*"no refresh followed"*|*"rows are left"*) unseen=$((unseen + 1)) ;;
+  esac
+  echo "$reaction: base $base_outcome / candidate ${candidate_outcome:-<missing>} — $verdict"
+done < "$work/base.outcomes"
+if [ "$compared" -eq 0 ]; then
+  echo "VERDICT: FAILED, no observable reaction was recorded, so nothing was compared"
+  exit 1
+fi
+if [ "$different" -gt 0 ]; then
+  echo "VERDICT: DIFFERENT, $different of $compared observable reactions give another outcome"
+  exit 1
+fi
+if [ "$unseen" -gt 0 ]; then
+  echo "VERDICT: FAILED, a reaction was not seen on one side, so its sameness says nothing"
+  exit 1
+fi
+echo "VERDICT: IDENTICAL, all $compared observable reactions give the same outcome on both sides"
+EOF
+chmod +x "$out/refresh-reactions-compare"
 
 cat > "$out/backend-tests" <<EOF
 #!/usr/bin/env bash

@@ -29,6 +29,10 @@
       "path": "Scripts/examine/bin/refresh-reactions-show"
     },
     {
+      "name": "refresh-reactions-compare",
+      "path": "Scripts/examine/bin/refresh-reactions-compare"
+    },
+    {
       "name": "backend-tests",
       "path": "Scripts/examine/bin/backend-tests"
     },
