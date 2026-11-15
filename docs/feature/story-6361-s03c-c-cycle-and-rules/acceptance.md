@@ -888,6 +888,186 @@ The rule skips a generic parameter only when it is the base class's, and still r
 ###### Obligations
 
 
+### S4
+
+##### Covers
+
+P4
+
+P5
+
+```text
+For each of the 24 Forecasting unit-test files with the layer of its subject, look for the file on disk and for the classes compiled from it
+```
+
+```text
+Each file sits only in Modules/Forecasting/<its layer>, no copy or old file remains elsewhere, its class keeps the file's name and every class in it has the namespace of that layer folder; otherwise the failure names the file, the path still holding it and each class with a stale namespace or missing name
+```
+
+```text
+A maintainer finds every Forecasting unit test next to the module, in the layer of what it tests, under the same class name as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingUnitTestPlacementTest\.AForecastingUnitTestFile\_SitsOnlyInItsModuleLayerFolder\_AndKeepsItsClassInThatLayer
+
+```text
+the file sits in the right layer folder with the right namespace but its test methods were renamed or deleted, which the moved tests' own run and review must catch
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Look for any test file in the folder the Forecasting tests left, and run the same rule over made-up test trees: a newcomer there, a newcomer in a subfolder of it, and tests only in other folders, one of them in a folder whose name starts the same
+```
+
+```text
+The real folder holds no test file; the made-up newcomers are each named and the trees with tests only elsewhere report nothing
+```
+
+```text
+A Forecasting test written into the old folder after the move is caught by name instead of slipping back outside the module
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingUnitTestPlacementTest\.TheFolderTheForecastingTestsLeft\_HoldsNoTestFile
+
+```text
+a new Forecasting test is put in a folder other than the one the tests left, for example next to the shared update tests, and is not on the list
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Collect every compiled test class from a file under Modules/Forecasting or declared in its namespace
+```
+
+```text
+The module test folder holds at least one class and every one has the namespace of its folder; otherwise the failure names the empty folder or each class whose namespace differs from its folder
+```
+
+```text
+An empty module test folder fails instead of passing, and a test class that claims the module namespace from outside the folder is named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingUnitTestPlacementTest\.EveryClassOfTheForecastingModuleTests\_HasTheNamespaceOfItsFolder
+
+```text
+a class is placed under Modules/Forecasting in the wrong layer folder with that wrong folder's namespace, which only the listed-file check catches
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Run the file placement rule over made-up test trees for one made-up test file: left in its old place, moved with a copy left behind, moved into the wrong layer, and moved into its layer beside a neighbour, a shared update test and an integration test
+```
+
+```text
+The first three report the missing layer path and every other path holding the file; the compliant tree reports nothing, so the shared update tests and integration tests that stay where they are are not flagged
+```
+
+```text
+An unfinished or wrong move is named by path, and a finished move with the shared tests left in place is not
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingUnitTestPlacementTest\.AMadeUpTestFileOutsideItsLayerFolder\_IsReported\_AndOneThatSitsThereIsNot
+
+```text
+a same-named file differs only in letter case on a case-insensitive file system
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+P5
+
+```text
+Run the class rule over made-up classes compiled from one made-up test file: its class kept in its layer namespace with a helper beside it, its class in a stale namespace, its class renamed, and no class at all
+```
+
+```text
+The kept case reports nothing; the stale namespace reports that class and the missing expected class name; the renamed case reports the missing expected class name; the empty case reports the file
+```
+
+```text
+A moved test keeps its name, so a filter or a reader finds it under the same name, and a test that lost its name or namespace in the move is named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingUnitTestPlacementTest\.AMadeUpTestFileWhoseClassLostItsNameOrLayerNamespace\_IsReported\_AndOneThatKeptThemIsNot
+
+```text
+the class keeps its name but its test methods are renamed
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Read the made-up classes compiled from the placement test's own file: a class in a made-up module layer namespace whose file sits outside that module's folder, and a compliant twin
+```
+
+```text
+Both are tied to the file; only the made-up newcomer is reported as a namespace that does not match its folder, and it is taken as a test of that module though its file is outside the module folder
+```
+
+```text
+A newcomer declared in the module namespace from outside the module folder is caught, and a compliant class is not, so the rule passing on the real tree means something
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ForecastingUnitTestPlacementTest\.AMadeUpClassDeclaredInTheModuleNamespaceOutsideItsFolder\_IsReported\_AndItsCompliantTwinIsNot
+
+```text
+the symbols tie a class to a generated file outside the test project, which the scan leaves out
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

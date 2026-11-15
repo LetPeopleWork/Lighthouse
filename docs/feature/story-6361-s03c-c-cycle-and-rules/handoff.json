@@ -469,12 +469,112 @@
 "stimulus": "F292",
 "user_result": "F294"
 }
+],
+"S4": [
+{
+"covers": [
+"P4",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F299",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingUnitTestPlacementTest.AForecastingUnitTestFile_SitsOnlyInItsModuleLayerFolder_AndKeepsItsClassInThatLayer"
+},
+"expected": "F297",
+"stimulus": "F296",
+"user_result": "F298"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F303",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingUnitTestPlacementTest.TheFolderTheForecastingTestsLeft_HoldsNoTestFile"
+},
+"expected": "F301",
+"stimulus": "F300",
+"user_result": "F302"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F307",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingUnitTestPlacementTest.EveryClassOfTheForecastingModuleTests_HasTheNamespaceOfItsFolder"
+},
+"expected": "F305",
+"stimulus": "F304",
+"user_result": "F306"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F311",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingUnitTestPlacementTest.AMadeUpTestFileOutsideItsLayerFolder_IsReported_AndOneThatSitsThereIsNot"
+},
+"expected": "F309",
+"stimulus": "F308",
+"user_result": "F310"
+},
+{
+"covers": [
+"P4",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F315",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingUnitTestPlacementTest.AMadeUpTestFileWhoseClassLostItsNameOrLayerNamespace_IsReported_AndOneThatKeptThemIsNot"
+},
+"expected": "F313",
+"stimulus": "F312",
+"user_result": "F314"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F319",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingUnitTestPlacementTest.AMadeUpClassDeclaredInTheModuleNamespaceOutsideItsFolder_IsReported_AndItsCompliantTwinIsNot"
+},
+"expected": "F317",
+"stimulus": "F316",
+"user_result": "F318"
+}
 ]
 },
 "counters": {
 "D": 5,
 "E": 6,
-"F": 295,
+"F": 319,
 "K": 4,
 "P": 5,
 "S": 4,
@@ -1580,9 +1680,33 @@
 "F293": "The rule finds only the edge to the base class, never one to its type parameter, and passes with that edge listed; today it also reports the type parameter",
 "F294": "Renaming a type parameter in the shared update code cannot break Forecasting's list",
 "F295": "The rule skips a generic parameter only when it is the base class's, and still reports one of a generic method or a generic interface",
+"F296": "For each of the 24 Forecasting unit-test files with the layer of its subject, look for the file on disk and for the classes compiled from it",
+"F297": "Each file sits only in Modules/Forecasting/<its layer>, no copy or old file remains elsewhere, its class keeps the file's name and every class in it has the namespace of that layer folder; otherwise the failure names the file, the path still holding it and each class with a stale namespace or missing name",
+"F298": "A maintainer finds every Forecasting unit test next to the module, in the layer of what it tests, under the same class name as before",
+"F299": "the file sits in the right layer folder with the right namespace but its test methods were renamed or deleted, which the moved tests' own run and review must catch",
 "F3": "An examiner can run a public command that shows, on demo data, forecasts recomputed after a Team refresh and the start-up forecast seeding firing",
 "F30": "Its in-process WebApplicationFactory start on the seeded demo data, scenario loading and wait-until-idle loop are the model for the S1 probe; no existing command shows a trigger or the seeder firing.",
+"F300": "Look for any test file in the folder the Forecasting tests left, and run the same rule over made-up test trees: a newcomer there, a newcomer in a subfolder of it, and tests only in other folders, one of them in a folder whose name starts the same",
+"F301": "The real folder holds no test file; the made-up newcomers are each named and the trees with tests only elsewhere report nothing",
+"F302": "A Forecasting test written into the old folder after the move is caught by name instead of slipping back outside the module",
+"F303": "a new Forecasting test is put in a folder other than the one the tests left, for example next to the shared update tests, and is not on the list",
+"F304": "Collect every compiled test class from a file under Modules/Forecasting or declared in its namespace",
+"F305": "The module test folder holds at least one class and every one has the namespace of its folder; otherwise the failure names the empty folder or each class whose namespace differs from its folder",
+"F306": "An empty module test folder fails instead of passing, and a test class that claims the module namespace from outside the folder is named",
+"F307": "a class is placed under Modules/Forecasting in the wrong layer folder with that wrong folder's namespace, which only the listed-file check catches",
+"F308": "Run the file placement rule over made-up test trees for one made-up test file: left in its old place, moved with a copy left behind, moved into the wrong layer, and moved into its layer beside a neighbour, a shared update test and an integration test",
+"F309": "The first three report the missing layer path and every other path holding the file; the compliant tree reports nothing, so the shared update tests and integration tests that stay where they are are not flagged",
 "F31": "GET /api/v1/systeminfo/refreshlog already returns per run the Type (Forecast), EntityId, ExecutedAt and Skipped; the S1 probe observes the triggers and the seeder through it, no new endpoint.",
+"F310": "An unfinished or wrong move is named by path, and a finished move with the shared tests left in place is not",
+"F311": "a same-named file differs only in letter case on a case-insensitive file system",
+"F312": "Run the class rule over made-up classes compiled from one made-up test file: its class kept in its layer namespace with a helper beside it, its class in a stale namespace, its class renamed, and no class at all",
+"F313": "The kept case reports nothing; the stale namespace reports that class and the missing expected class name; the renamed case reports the missing expected class name; the empty case reports the file",
+"F314": "A moved test keeps its name, so a filter or a reader finds it under the same name, and a test that lost its name or namespace in the move is named",
+"F315": "the class keeps its name but its test methods are renamed",
+"F316": "Read the made-up classes compiled from the placement test's own file: a class in a made-up module layer namespace whose file sits outside that module's folder, and a compliant twin",
+"F317": "Both are tied to the file; only the made-up newcomer is reported as a namespace that does not match its folder, and it is taken as a test of that module though its file is outside the module folder",
+"F318": "A newcomer declared in the module namespace from outside the module folder is caught, and a compliant class is not, so the rule passing on the real tree means something",
+"F319": "the symbols tie a class to a generated file outside the test project, which the scan leaves out",
 "F32": "S2: three port registrations added next to the filter-rule registration; existing lines, order and lifetimes unchanged",
 "F33": "S2: constructor parameters swap to IThroughputFilter and IForecastDataSufficiency (S107 suppression already present); behaviour identical",
 "F34": "S2: resolves IHowManyForecaster through the same service-locator call",
