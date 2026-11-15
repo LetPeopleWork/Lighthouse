@@ -433,6 +433,57 @@ echo "VERDICT: IDENTICAL, all $compared forecast answers match"
 EOF
 chmod +x "$out/forecast-answers-compare"
 
+# The trigger probe is committed next to this script; the copy in bin names this checkout's backend.
+sed "s|@BACKEND@|$repo/Lighthouse.Backend|" "$repo/Scripts/examine/forecast-triggers-show.cs" > "$out/forecast-triggers-show.cs"
+cat > "$out/forecast-triggers-show" <<EOF
+#!/usr/bin/env bash
+# Shows, on demo data and through the public API, two things the forecasts do on their own: (1) a Team refresh
+# makes every Portfolio the Team serves forecast again, and (2) a restart makes the next forecast compute again,
+# because the start-up seeding forgets what the stored forecasts were computed from. It starts this checkout's
+# backend in-process on a fresh database, loads the smallest demo scenario with Teams and Portfolios, and reads
+# the refresh history (Type Forecast, Portfolio id, ExecutedAt, Skipped). For (2) it asks every Portfolio to
+# forecast on unchanged data by sending the Feature-order setting back unchanged, restarts the backend on the
+# same database and asks again: before the restart that round is Skipped=true, after it Skipped=false.
+# Prints one line per observation and a last VERDICT line; exit 0 and "OBSERVED" only when both were seen.
+# The Feature-order setting is premium, so (2) needs the premium licence file the backend tests use.
+# Usage: forecast-triggers-show   (takes about 1 to 3 minutes)
+set -uo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+repo="$repo"
+driver="$out/forecast-triggers-show.cs"
+EOF
+cat >> "$out/forecast-triggers-show" <<'EOF'
+backend="$repo/Lighthouse.Backend"
+licence="$backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json"
+# The physical path: a symlink in it makes the compiler miss the .editorconfig sections and the build fails.
+work="$(cd "$(mktemp -d)" && pwd -P)"
+trap 'rm -rf "$work"' EXIT INT TERM
+rerun="Rerun with: bash Scripts/examine/build-examine-commands, then bash Scripts/examine/bin/forecast-triggers-show"
+# The backend references the migration assemblies by path, so they are built first.
+{ dotnet build "$backend/Lighthouse.Migrations.Sqlite" -nologo -v quiet \
+  && dotnet build "$backend/Lighthouse.Migrations.Postgres" -nologo -v quiet \
+  && dotnet build "$backend/Lighthouse.Backend" -nologo -v quiet; } >"$work/build.log" 2>&1 \
+  || { tail -20 "$work/build.log"; echo "VERDICT: NOT OBSERVED, the backend did not build, so nothing could run. Fix the build. $rerun"; exit 1; }
+mkdir -p "$work/driver"
+cp "$driver" "$work/driver/probe.cs"
+dotnet build "$work/driver/probe.cs" >>"$work/build.log" 2>&1 \
+  || { tail -20 "$work/build.log"; echo "VERDICT: NOT OBSERVED, the probe did not build against this checkout. $rerun"; exit 1; }
+content="$backend/Lighthouse.Backend"
+# The demo data files are read relative to the working directory, which must be the backend's folder.
+( cd "$content" && ASPNETCORE_TEST_CONTENTROOT_LIGHTHOUSE="$content" \
+    dotnet run --no-build --file "$work/driver/probe.cs" -- "$work/run" "$work/result.txt" "$licence" ) >"$work/run.log" 2>&1
+status=$?
+[ -f "$work/result.txt" ] && cat "$work/result.txt"
+if ! grep -q '^VERDICT:' "$work/result.txt" 2>/dev/null; then
+  grep -E "Exception|error" "$work/run.log" | head -5
+  echo "VERDICT: NOT OBSERVED, the probe stopped before it reached a verdict (exit $status), so nothing it printed can be trusted. $rerun"
+  exit 1
+fi
+exit "$status"
+EOF
+chmod +x "$out/forecast-triggers-show"
+
 cat > "$out/backend-tests" <<EOF
 #!/usr/bin/env bash
 # Runs the whole backend test suite except the tests that talk to real Jira, Linear, Azure DevOps, ServiceNow

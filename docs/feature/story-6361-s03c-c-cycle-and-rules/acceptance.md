@@ -2,6 +2,72 @@
 
 ## Slices
 
+### S1
+
+##### Covers
+
+P1
+
+P5
+
+```text
+An examiner runs the public forecast-triggers-show command. It loads the smallest demo scenario with Teams and Portfolios into a fresh backend, picks a Team that serves at least one Portfolio, notes the time and asks for a refresh of that Team.
+```
+
+```text
+After the Team refresh the refresh history holds a new Forecast row for every Portfolio the Team serves, executed after the request. The command prints one line that names the Team, the Portfolio ids, the request time and each row's time, marked OBSERVED. A missing row prints NOT OBSERVED with what is missing, why it matters and how to rerun, and the command exits non-zero.
+```
+
+```text
+The examiner sees that a Team refresh still makes the forecasts of every Portfolio that Team serves compute again.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/forecast\-triggers\-show\.cs
+
+```text
+A Forecast row for the Portfolio that some other path writes shortly after the Team refresh, while the Team-refresh trigger itself is gone. On main only that trigger writes the row: with its registration removed the line went NOT OBSERVED.
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+P5
+
+```text
+The same command then asks every Portfolio to forecast on unchanged data by sending the Feature-order setting back as it is, a request that does not forget what the stored forecasts were computed from, unlike every refresh button. It then stops the backend, starts a new one on the same database and asks the same again.
+```
+
+```text
+The Portfolio's round before the restart is confirmed unchanged (Skipped=true). The first round after the restart computes again (Skipped=false), and no Team or Portfolio refresh ran between the two rounds. The line names the Portfolio, both rows' times and Skipped values, the restart time and the refreshes in between, marked OBSERVED. Any other combination, a missing row or a refused request prints NOT OBSERVED with why and how to rerun, and the command exits non-zero. The setting is premium, so this needs the backend tests' premium licence file.
+```
+
+```text
+The examiner sees that after a restart the forecasts compute again instead of trusting inputs recorded before the stop, even on data a forecast just before the stop found unchanged.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/forecast\-triggers\-show\.cs
+
+```text
+Something other than the start-up seeding that makes every first round after a start compute again, for example inputs that differ per process. On main, with the seeding's registration removed, the first round after the restart was Skipped=true in 5 of 6 runs and the line went NOT OBSERVED. The one run that stayed OBSERVED was the first build after the edit, with no refresh check in the probe at that time; the probe now refuses OBSERVED when a refresh runs between the rounds.
+```
+
+###### Obligations
+
+None.
+
 ### S2
 
 ##### Covers

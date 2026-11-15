@@ -17,6 +17,10 @@
       "path": "Scripts/examine/bin/forecast-answers-compare"
     },
     {
+      "name": "forecast-triggers-show",
+      "path": "Scripts/examine/bin/forecast-triggers-show"
+    },
+    {
       "name": "backend-tests",
       "path": "Scripts/examine/bin/backend-tests"
     },
