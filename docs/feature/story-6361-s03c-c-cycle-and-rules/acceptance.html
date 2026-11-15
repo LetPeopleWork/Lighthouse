@@ -439,6 +439,459 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read the compiled production code for every outside type that reaches Forecasting&#x27;s Domain
+</code></pre>
+
+<pre><code>Only the composition root reaches it, as the inline list says; today this already holds
+</code></pre>
+
+<pre><code>Forecasting&#x27;s calculations can change without breaking code outside the module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingDomain_IsReachedFromOutsideOnlyByTheListedTypes</p>
+
+<pre><code>An outside type reaches the Domain only through a catch clause, an event or a named attribute argument, which the IL reader cannot see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read the compiled production code for every outside type that reaches Forecasting&#x27;s Adapters
+</code></pre>
+
+<pre><code>Only the composition root reaches them; today this already holds
+</code></pre>
+
+<pre><code>Nothing outside Forecasting depends on how it stores data or runs in the background
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingAdapters_AreReachedFromOutsideOnlyByTheCompositionRoot</p>
+
+<pre><code>An outside type reaches an adapter only through a type the IL reader cannot see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read the compiled production code for every outside type that reaches Forecasting&#x27;s Application, with Forecasting&#x27;s own wording
+</code></pre>
+
+<pre><code>Only the API, the composition root, Refinement and the listed Portfolio updater reach it; today the rule fails because it cannot take Forecasting&#x27;s wording yet
+</code></pre>
+
+<pre><code>Forecasting&#x27;s front door is reached only by its legal callers, and a new caller is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingApplication_IsReachedFromOutsideOnlyByTheApiTheCompositionRootRefinementAndTheListedTypes</p>
+
+<pre><code>A new caller sits in a Refinement or API namespace while doing other work, so it is legal by namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read the compiled production code for every edge from Forecasting&#x27;s Application into EF Core, the data layer, the API, its own Adapters or the licence
+</code></pre>
+
+<pre><code>Only the filter rule service&#x27;s edge to the licence service, as listed; today this already holds
+</code></pre>
+
+<pre><code>Forecast answers do not depend on storage or presentation, and the licence is asked in one place
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingApplication_ReachesNoEntityFrameworkCoreDataApiOrModuleAdapterType_AndTheLicenceOnlyThroughTheListedEdges</p>
+
+<pre><code>A listed type reaches the same licence service from a second method
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read the compiled production code for every edge from Forecasting&#x27;s Adapters into the update code it shares with the Team and Portfolio updaters
+</code></pre>
+
+<pre><code>Only the forecast updater&#x27;s edges to the updater base class, its type parameter, the update key and the update cancellation context, as listed; today this already holds
+</code></pre>
+
+<pre><code>Forecasting&#x27;s background work does not tie itself tighter to the shared update code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingAdapters_ReachTheSharedUpdateCodeOnlyThroughTheListedEdges</p>
+
+<pre><code>The forecast updater uses a listed update type in more places
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read Flow metrics&#x27; inbound list and apply Flow metrics&#x27; Application rule with Forecasting as a legal caller
+</code></pre>
+
+<pre><code>The list names no Forecasting type and still matches what reaches Flow metrics both ways; today it fails naming seven Forecasting entries
+</code></pre>
+
+<pre><code>Flow metrics&#x27; list shows only the callers still to remove, not Forecasting, which may call Flow metrics
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheFlowMetricsInboundList_NamesNoForecastingType_AndStillMatchesWhatReachesFlowMetricsFromOutside</p>
+
+<pre><code>The list is renamed so the check cannot read it, which fails loudly rather than passing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Domain, Adapters and Application rules over a made-up module where only allowed types reach each layer
+</code></pre>
+
+<pre><code>Each rule finds exactly the allowed types and passes
+</code></pre>
+
+<pre><code>The rules do not fail on compliant code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::OnlyTheAllowedOutsideTypesReachingTheLayer_PassForecastingsRule</p>
+
+<pre><code>A rule that also ignores the composition root&#x27;s nested types for Domain and Adapters
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Domain, Adapters and Application rules over a made-up module with an outside newcomer reaching each layer, the Application one only inside an async method
+</code></pre>
+
+<pre><code>Each rule fails and names the newcomer and what it reaches
+</code></pre>
+
+<pre><code>A new dependency on Forecasting is caught and named
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AnOutsideTypeNotOnTheList_FailsForecastingsRuleAndIsNamedWithWhatItReaches</p>
+
+<pre><code>A newcomer reaching the layer only through a type the IL reader cannot see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Domain, Adapters and Application rules over a made-up module whose list keeps a type that no longer reaches the layer
+</code></pre>
+
+<pre><code>Each rule fails and names the gone entry for deletion
+</code></pre>
+
+<pre><code>Forecasting&#x27;s lists only shrink
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AListedTypeThatNoLongerReachesTheLayer_FailsForecastingsRuleAndIsNamedForDeletion</p>
+
+<pre><code>A gone entry repeated twice in the list, which is named once
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Domain, Adapters and Application rules with Forecasting&#x27;s wording over a made-up module with a newcomer
+</code></pre>
+
+<pre><code>No failure speaks of Flow metrics, and the Application failure names Forecasting&#x27;s legal callers and not Reports; today the Application rule cannot take a wording
+</code></pre>
+
+<pre><code>A failing rule sends the reader to the module it checks
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AFailingForecastingRule_SpeaksOfForecastingAndNotOfFlowMetrics</p>
+
+<pre><code>The Domain and Adapters texts name the module only through its namespace pattern
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the shared Application rule without a wording over a made-up module with an unlisted caller
+</code></pre>
+
+<pre><code>The failure speaks of Flow metrics, whose wording is the default; today it does not
+</code></pre>
+
+<pre><code>Flow metrics&#x27; rule tests keep their meaning without an edit
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AFailingFlowMetricsApplicationRule_SpeaksOfFlowMetricsByDefault</p>
+
+<pre><code>The default wording names Flow metrics but lists the wrong legal callers
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Application outbound rule over a made-up Application that reaches only the Models and a listed licence edge
+</code></pre>
+
+<pre><code>The rule finds exactly that edge and passes
+</code></pre>
+
+<pre><code>The outbound rule does not fail on compliant code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AForecastingApplicationReachingOnlyItsModelsAndAListedLicenceEdge_PassesTheOutboundRule</p>
+
+<pre><code>A rule that ignores Models types entirely
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Application outbound rule over made-up Application types holding an EF Core DbSet, running a module adapter, or a listed type reaching a second licence type
+</code></pre>
+
+<pre><code>Each fails and names only its new edge
+</code></pre>
+
+<pre><code>Forecasting&#x27;s Application cannot start depending on storage, its adapters or more of the licence unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AForecastingApplicationTypeReachingALayerBelowOrAnUnlistedLicenceType_FailsAndIsNamed</p>
+
+<pre><code>An Application type reaching the data layer or the API, which share the rule but have no made-up case
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Application outbound rule with a listed licence edge that is gone
+</code></pre>
+
+<pre><code>The rule fails and names the gone edge for deletion
+</code></pre>
+
+<pre><code>The licence list only shrinks
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AListedLicenceEdgeOfTheForecastingApplicationThatIsGone_FailsAndIsNamedForDeletion</p>
+
+<pre><code>A gone edge listed alongside a new one, reported together
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Adapters outbound rule over a made-up adapter reaching the shared update code only through a listed edge
+</code></pre>
+
+<pre><code>The rule finds exactly that edge and passes
+</code></pre>
+
+<pre><code>The rule does not fail on compliant background code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::ForecastingAdaptersReachingTheSharedUpdateCodeOnlyThroughAListedEdge_PassTheOutboundRule</p>
+
+<pre><code>A rule that only looks at type references and not method calls
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Adapters outbound rule over a made-up adapter that also reaches a second type of the shared update code
+</code></pre>
+
+<pre><code>The rule fails and names only the new edge
+</code></pre>
+
+<pre><code>A new edge into the shared update code is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AForecastingAdapterReachingASecondTypeOfTheSharedUpdateCode_FailsAndNamesOnlyTheNewEdge</p>
+
+<pre><code>A new edge through a type the IL reader cannot see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run Forecasting&#x27;s Adapters outbound rule with a listed edge into the shared update code that is gone
+</code></pre>
+
+<pre><code>The rule fails and names the gone edge for deletion
+</code></pre>
+
+<pre><code>The shared update code list only shrinks
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AListedEdgeOfTheForecastingAdaptersIntoTheSharedUpdateCodeThatIsGone_FailsAndIsNamedForDeletion</p>
+
+<pre><code>A gone edge repeated in the list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Compute the seeded forecasts after the slice, which changes only test code
+</code></pre>
+
+<pre><code>The forecasts are the same as before
+</code></pre>
+
+<pre><code>Forecasts the user sees do not change
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs</p>
+
+<pre><code>A change to a forecast path the seeded data does not exercise
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

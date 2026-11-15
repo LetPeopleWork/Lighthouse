@@ -166,12 +166,299 @@
 "stimulus": "F200",
 "user_result": "F202"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F224",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingDomain_IsReachedFromOutsideOnlyByTheListedTypes"
+},
+"expected": "F222",
+"stimulus": "F221",
+"user_result": "F223"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F228",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingAdapters_AreReachedFromOutsideOnlyByTheCompositionRoot"
+},
+"expected": "F226",
+"stimulus": "F225",
+"user_result": "F227"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F232",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingApplication_IsReachedFromOutsideOnlyByTheApiTheCompositionRootRefinementAndTheListedTypes"
+},
+"expected": "F230",
+"stimulus": "F229",
+"user_result": "F231"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F236",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingApplication_ReachesNoEntityFrameworkCoreDataApiOrModuleAdapterType_AndTheLicenceOnlyThroughTheListedEdges"
+},
+"expected": "F234",
+"stimulus": "F233",
+"user_result": "F235"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F240",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheForecastingAdapters_ReachTheSharedUpdateCodeOnlyThroughTheListedEdges"
+},
+"expected": "F238",
+"stimulus": "F237",
+"user_result": "F239"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F244",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::TheFlowMetricsInboundList_NamesNoForecastingType_AndStillMatchesWhatReachesFlowMetricsFromOutside"
+},
+"expected": "F242",
+"stimulus": "F241",
+"user_result": "F243"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F248",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::OnlyTheAllowedOutsideTypesReachingTheLayer_PassForecastingsRule"
+},
+"expected": "F246",
+"stimulus": "F245",
+"user_result": "F247"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F252",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AnOutsideTypeNotOnTheList_FailsForecastingsRuleAndIsNamedWithWhatItReaches"
+},
+"expected": "F250",
+"stimulus": "F249",
+"user_result": "F251"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F256",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AListedTypeThatNoLongerReachesTheLayer_FailsForecastingsRuleAndIsNamedForDeletion"
+},
+"expected": "F254",
+"stimulus": "F253",
+"user_result": "F255"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F260",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AFailingForecastingRule_SpeaksOfForecastingAndNotOfFlowMetrics"
+},
+"expected": "F258",
+"stimulus": "F257",
+"user_result": "F259"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F264",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AFailingFlowMetricsApplicationRule_SpeaksOfFlowMetricsByDefault"
+},
+"expected": "F262",
+"stimulus": "F261",
+"user_result": "F263"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F268",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AForecastingApplicationReachingOnlyItsModelsAndAListedLicenceEdge_PassesTheOutboundRule"
+},
+"expected": "F266",
+"stimulus": "F265",
+"user_result": "F267"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F272",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AForecastingApplicationTypeReachingALayerBelowOrAnUnlistedLicenceType_FailsAndIsNamed"
+},
+"expected": "F270",
+"stimulus": "F269",
+"user_result": "F271"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F276",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AListedLicenceEdgeOfTheForecastingApplicationThatIsGone_FailsAndIsNamedForDeletion"
+},
+"expected": "F274",
+"stimulus": "F273",
+"user_result": "F275"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F279",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::ForecastingAdaptersReachingTheSharedUpdateCodeOnlyThroughAListedEdge_PassTheOutboundRule"
+},
+"expected": "F266",
+"stimulus": "F277",
+"user_result": "F278"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F283",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AForecastingAdapterReachingASecondTypeOfTheSharedUpdateCode_FailsAndNamesOnlyTheNewEdge"
+},
+"expected": "F281",
+"stimulus": "F280",
+"user_result": "F282"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F286",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs::AListedEdgeOfTheForecastingAdaptersIntoTheSharedUpdateCodeThatIsGone_FailsAndIsNamedForDeletion"
+},
+"expected": "F274",
+"stimulus": "F284",
+"user_result": "F285"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F290",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs"
+},
+"expected": "F288",
+"stimulus": "F287",
+"user_result": "F289"
+}
 ]
 },
 "counters": {
 "D": 5,
 "E": 6,
-"F": 220,
+"F": 290,
 "K": 4,
 "P": 5,
 "S": 4,
@@ -1196,13 +1483,83 @@
 "F219": "Feature B's inbound-list check is rewritten in place to the 10 to 5 list with no Forecasting entry; no second check",
 "F22": "One oracle file per slice; never edit an earlier slice's or earlier feature's oracle or support bytes. Rules read the compiled IL, lists are inline and compared both ways, never loosened; made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.ForecastingFixtures.* (they may not reach API, Data or EF Core, nor be domain-event handlers). Rule tests assert by the failure naming the offender, not by counts. No nWave scenario tags in code. Default per-test budgets; no derogation. Test-writing skill wins over nWave timing and PBT density rules.",
 "F220": "Feature B oracle check follows the Flow metrics inbound list (no Forecasting entry); meaning kept",
+"F221": "Read the compiled production code for every outside type that reaches Forecasting's Domain",
+"F222": "Only the composition root reaches it, as the inline list says; today this already holds",
+"F223": "Forecasting's calculations can change without breaking code outside the module",
+"F224": "An outside type reaches the Domain only through a catch clause, an event or a named attribute argument, which the IL reader cannot see",
+"F225": "Read the compiled production code for every outside type that reaches Forecasting's Adapters",
+"F226": "Only the composition root reaches them; today this already holds",
+"F227": "Nothing outside Forecasting depends on how it stores data or runs in the background",
+"F228": "An outside type reaches an adapter only through a type the IL reader cannot see",
+"F229": "Read the compiled production code for every outside type that reaches Forecasting's Application, with Forecasting's own wording",
 "F23": "Every dotnet command runs under flock -o on the shared lock file. Fast loop Test-Fast.ps1 plus the slice oracle; full gates (dotnet build zero warnings, dotnet test with the CLAUDE.md connector filter) at slice end. Pure moves (git mv) are their own commit; edits follow in separate commits. Comments only for a why, no internal ids.",
+"F230": "Only the API, the composition root, Refinement and the listed Portfolio updater reach it; today the rule fails because it cannot take Forecasting's wording yet",
+"F231": "Forecasting's front door is reached only by its legal callers, and a new caller is caught",
+"F232": "A new caller sits in a Refinement or API namespace while doing other work, so it is legal by namespace",
+"F233": "Read the compiled production code for every edge from Forecasting's Application into EF Core, the data layer, the API, its own Adapters or the licence",
+"F234": "Only the filter rule service's edge to the licence service, as listed; today this already holds",
+"F235": "Forecast answers do not depend on storage or presentation, and the licence is asked in one place",
+"F236": "A listed type reaches the same licence service from a second method",
+"F237": "Read the compiled production code for every edge from Forecasting's Adapters into the update code it shares with the Team and Portfolio updaters",
+"F238": "Only the forecast updater's edges to the updater base class, its type parameter, the update key and the update cancellation context, as listed; today this already holds",
+"F239": "Forecasting's background work does not tie itself tighter to the shared update code",
 "F24": "Code-fact: code-fact query.callers-of answered from textsearch at noisy confidence with an empty site list for C# symbols, so it is unknown, not zero callers. Callers and consumers come from git grep over source, limited to textual names (reflection-by-string and generated code may be missed); the IL rules are the authoritative check. Jev: unauthorized, not called.",
+"F240": "The forecast updater uses a listed update type in more places",
+"F241": "Read Flow metrics' inbound list and apply Flow metrics' Application rule with Forecasting as a legal caller",
+"F242": "The list names no Forecasting type and still matches what reaches Flow metrics both ways; today it fails naming seven Forecasting entries",
+"F243": "Flow metrics' list shows only the callers still to remove, not Forecasting, which may call Flow metrics",
+"F244": "The list is renamed so the check cannot read it, which fails loudly rather than passing",
+"F245": "Run Forecasting's Domain, Adapters and Application rules over a made-up module where only allowed types reach each layer",
+"F246": "Each rule finds exactly the allowed types and passes",
+"F247": "The rules do not fail on compliant code",
+"F248": "A rule that also ignores the composition root's nested types for Domain and Adapters",
+"F249": "Run Forecasting's Domain, Adapters and Application rules over a made-up module with an outside newcomer reaching each layer, the Application one only inside an async method",
 "F25": "Already holds GetEffectiveRuleSet and Filter with the signatures TeamMetricsService calls; it also implements IThroughputFilter by declaration only, so there is one filter, no second implementation.",
+"F250": "Each rule fails and names the newcomer and what it reaches",
+"F251": "A new dependency on Forecasting is caught and named",
+"F252": "A newcomer reaching the layer only through a type the IL reader cannot see",
+"F253": "Run Forecasting's Domain, Adapters and Application rules over a made-up module whose list keeps a type that no longer reaches the layer",
+"F254": "Each rule fails and names the gone entry for deletion",
+"F255": "Forecasting's lists only shrink",
+"F256": "A gone entry repeated twice in the list, which is named once",
+"F257": "Run Forecasting's Domain, Adapters and Application rules with Forecasting's wording over a made-up module with a newcomer",
+"F258": "No failure speaks of Flow metrics, and the Application failure names Forecasting's legal callers and not Reports; today the Application rule cannot take a wording",
+"F259": "A failing rule sends the reader to the module it checks",
 "F26": "The sufficiency rule stays Forecasting's single owner (the reality check reads it too); the adapter calls it, nothing copies the limit.",
+"F260": "The Domain and Adapters texts name the module only through its namespace pattern",
+"F261": "Run the shared Application rule without a wording over a made-up module with an unlisted caller",
+"F262": "The failure speaks of Flow metrics, whose wording is the default; today it does not",
+"F263": "Flow metrics' rule tests keep their meaning without an edit",
+"F264": "The default wording names Flow metrics but lists the wrong legal callers",
+"F265": "Run Forecasting's Application outbound rule over a made-up Application that reaches only the Models and a listed licence edge",
+"F266": "The rule finds exactly that edge and passes",
+"F267": "The outbound rule does not fail on compliant code",
+"F268": "A rule that ignores Models types entirely",
+"F269": "Run Forecasting's Application outbound rule over made-up Application types holding an EF Core DbSet, running a module adapter, or a listed type reaching a second licence type",
 "F27": "The How Many forecast stays ForecastService's; IHowManyForecaster's answer delegates to it.",
+"F270": "Each fails and names only its new edge",
+"F271": "Forecasting's Application cannot start depending on storage, its adapters or more of the licence unseen",
+"F272": "An Application type reaching the data layer or the API, which share the rule but have no made-up case",
+"F273": "Run Forecasting's Application outbound rule with a listed licence edge that is gone",
+"F274": "The rule fails and names the gone edge for deletion",
+"F275": "The licence list only shrinks",
+"F276": "A gone edge listed alongside a new one, reported together",
+"F277": "Run Forecasting's Adapters outbound rule over a made-up adapter reaching the shared update code only through a listed edge",
+"F278": "The rule does not fail on compliant background code",
+"F279": "A rule that only looks at type references and not method calls",
 "F28": "The one shared rules class; its rule wording gains the module name and the module's legal callers as parameters, and Forecasting's rules call it with Forecasting's namespaces. No second rules class.",
+"F280": "Run Forecasting's Adapters outbound rule over a made-up adapter that also reaches a second type of the shared update code",
+"F281": "The rule fails and names only the new edge",
+"F282": "A new edge into the shared update code is caught",
+"F283": "A new edge through a type the IL reader cannot see",
+"F284": "Run Forecasting's Adapters outbound rule with a listed edge into the shared update code that is gone",
+"F285": "The shared update code list only shrinks",
+"F286": "A gone edge repeated in the list",
+"F287": "Compute the seeded forecasts after the slice, which changes only test code",
+"F288": "The forecasts are the same as before",
+"F289": "Forecasts the user sees do not change",
 "F29": "Its placement method (files on disk plus classes read from the test assembly with symbols) is the model for ForecastingUnitTestPlacementTest. Generalising it would edit an earlier feature's approved oracle, so S4 adds a sibling fixture; folding the two is a later improvement item.",
+"F290": "A change to a forecast path the seeded data does not exercise",
 "F3": "An examiner can run a public command that shows, on demo data, forecasts recomputed after a Team refresh and the start-up forecast seeding firing",
 "F30": "Its in-process WebApplicationFactory start on the seeded demo data, scenario loading and wait-until-idle loop are the model for the S1 probe; no existing command shows a trigger or the seeder firing.",
 "F31": "GET /api/v1/systeminfo/refreshlog already returns per run the Type (Forecast), EntityId, ExecutedAt and Skipped; the S1 probe observes the triggers and the seeder through it, no new endpoint.",
