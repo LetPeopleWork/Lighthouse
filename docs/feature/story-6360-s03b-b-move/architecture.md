@@ -17,7 +17,7 @@ Pure relocation of 43 Work Items types by git mv from Services into Lighthouse.B
 #### D2
 
 ```text
-Layer placement. Domain: SyncModeResolver, FetchFingerprint; Domain/Dependencies: DependencyHonourPolicy with IDependencyHonourPolicy, DependencyHonourInput and FeatureDependencyFacts (declared in the interface file), DependencyCycleDetector with DependencyLoops and DependencyLoop, DependencyFacts; RuleEvaluator<T> with IRuleEvaluator<T> in Domain, because a Domain type cannot reach an Application port and the port reaches only the kernel (deviation from D-1, which listed the port under Application). Final Domain membership is what the IL-reading Domain rule admits: a candidate that reaches anything beyond Models and the BCL goes to Application, recorded in the oracle list. Application: WorkItemService, IWorkItemService, BlockedItemService, IBlockedItemService, TeamDataService, ITeamDataService, IRuleFieldProvider, WorkItemFieldProvider, FeatureFieldProvider, ParentPlacementReport with RecordPlacement, RefreshLogService, IRefreshLogService; Application/Dependencies: DependencyDecision, DependencyReconciler, DependencyRefreshReporter, FeatureDependencyRendering with DependenciesAsRead, WhatTheForecastWaitsFor and IDependencyDecision, IDependencyReconciler, IDependencyRefreshReporter, IWhatTheForecastWaitsFor. Application/Policies: WorkItemBlockedTransitionCaptureHandler, WorkItemBlockedTransitionCloseHandler, FeatureBlockedTransitionCaptureHandler, FeatureBlockedTransitionCloseHandler, TeamDeletedRefreshLogCleanupHandler, ConnectionFetchShapeChangedUpdateTriggerHandler. Dependency types never sit flat in a layer: the sub-folders are the ones DependencySingleDecisionArchUnitTest's folder keys name.
+Layer placement. Domain: SyncModeResolver, FetchFingerprint; Domain/Dependencies: DependencyHonourPolicy with IDependencyHonourPolicy, DependencyHonourInput and FeatureDependencyFacts (declared in the interface file), DependencyCycleDetector with DependencyLoops and DependencyLoop, DependencyFacts. RuleEvaluator<T> and IRuleEvaluator<T> go to Application with IRuleFieldProvider<T> and the field providers: rejected by the Domain rule, because their public Match signature takes IRuleFieldProvider<T>, an Application port; no rule is loosened. Final Domain membership is what the IL-reading Domain rule admits: a candidate that reaches anything beyond Models and the BCL goes to Application, recorded in the oracle list. Application: WorkItemService, IWorkItemService, BlockedItemService, IBlockedItemService, TeamDataService, ITeamDataService, RuleEvaluator, IRuleEvaluator, IRuleFieldProvider, WorkItemFieldProvider, FeatureFieldProvider, ParentPlacementReport with RecordPlacement, RefreshLogService, IRefreshLogService; Application/Dependencies: DependencyDecision, DependencyReconciler, DependencyRefreshReporter, FeatureDependencyRendering with DependenciesAsRead, WhatTheForecastWaitsFor and IDependencyDecision, IDependencyReconciler, IDependencyRefreshReporter, IWhatTheForecastWaitsFor. Application/Policies: the six handlers. Dependency types never sit flat in a layer: the sub-folders are the ones DependencySingleDecisionArchUnitTest's folder keys name.
 ```
 
 #### D3
@@ -56,6 +56,12 @@ One oracle file per slice; approved oracle and support files of this feature are
 
 ```text
 Every dotnet command runs under flock -o on the shared lock file; declared commands omit the prefix. Code-fact was not consulted: file lists come from the directory listing and the IL membership test (stated limit). Rule strings, ILogger categories, perf harness, Stryker configs and test-selection scripts are grepped for moved full type names, not only using lines. Jev unauthorized: typesafe unavailable by refusal.
+```
+
+#### K4
+
+```text
+P4 is a completion obligation on the candidate: RefreshesStayTheSameTest and refresh-answers-compare are run by the final reviewer and EXAMINE; they are not an S1 support. Feature A's oracle files are not frozen supports here and may take using-line edits forced by the move.
 ```
 
 ### Reuse
@@ -1612,22 +1618,6 @@ Create
 git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/RuleEvaluator\.cs
-
-Create
-
-```text
-git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/RuleEvaluator.cs
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/IRuleEvaluator\.cs
-
-Create
-
-```text
-git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleEvaluator.cs
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Domain\/Dependencies\/DependencyHonourPolicy\.cs
 
 Create
@@ -1763,7 +1753,6 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsDomainLa
 ```text
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkItemsDomainLayoutArchUnitTest
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefreshesStayTheSameTest
 ```
 
 #### Supports
@@ -2226,6 +2215,22 @@ Extend
 
 ```text
 Mutate path of DependencyRefreshReporter follows the file
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Application\/RuleEvaluator\.cs
+
+Create
+
+```text
+git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/RuleEvaluator.cs; rejected by the Domain rule: its public Match signature takes IRuleFieldProvider<T>, an Application port
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/WorkItems\/Application\/IRuleEvaluator\.cs
+
+Create
+
+```text
+git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleEvaluator.cs; rejected by the Domain rule: its public Match signature takes IRuleFieldProvider<T>, an Application port
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsApplicationLayoutArchUnitTest\.cs

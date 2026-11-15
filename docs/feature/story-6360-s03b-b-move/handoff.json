@@ -86,8 +86,8 @@
 "counters": {
 "D": 5,
 "E": 4,
-"F": 153,
-"K": 3,
+"F": 157,
+"K": 4,
 "P": 4,
 "S": 3,
 "T": 3,
@@ -147,6 +147,10 @@
 {
 "id": "K3",
 "text": "F21"
+},
+{
+"id": "K4",
+"text": "F154"
 }
 ],
 "decisions": [
@@ -156,7 +160,7 @@
 },
 {
 "id": "D2",
-"text": "F15"
+"text": "F157"
 },
 {
 "id": "D3",
@@ -1056,16 +1060,6 @@
 },
 {
 "change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/RuleEvaluator.cs",
-"reason": "F73"
-},
-{
-"change": "Create",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/IRuleEvaluator.cs",
-"reason": "F74"
-},
-{
-"change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/DependencyHonourPolicy.cs",
 "reason": "F75"
 },
@@ -1147,8 +1141,7 @@
 ],
 "verification": [
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkItemsDomainLayoutArchUnitTest",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefreshesStayTheSameTest"
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
 ]
 },
 "S2": {
@@ -1389,6 +1382,16 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5792-slice-02.json",
 "reason": "F44"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/RuleEvaluator.cs",
+"reason": "F155"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/IRuleEvaluator.cs",
+"reason": "F156"
 }
 ],
 "verification": [
@@ -1588,11 +1591,14 @@
 "F147": "The files sit in Modules/WorkItems/Domain and Domain/Dependencies and nowhere else",
 "F148": "The module layout shows in folders as in namespaces",
 "F149": "A namespace edit without git mv is refused",
-"F15": "Layer placement. Domain: SyncModeResolver, FetchFingerprint; Domain/Dependencies: DependencyHonourPolicy with IDependencyHonourPolicy, DependencyHonourInput and FeatureDependencyFacts (declared in the interface file), DependencyCycleDetector with DependencyLoops and DependencyLoop, DependencyFacts; RuleEvaluator<T> with IRuleEvaluator<T> in Domain, because a Domain type cannot reach an Application port and the port reaches only the kernel (deviation from D-1, which listed the port under Application). Final Domain membership is what the IL-reading Domain rule admits: a candidate that reaches anything beyond Models and the BCL goes to Application, recorded in the oracle list. Application: WorkItemService, IWorkItemService, BlockedItemService, IBlockedItemService, TeamDataService, ITeamDataService, IRuleFieldProvider, WorkItemFieldProvider, FeatureFieldProvider, ParentPlacementReport with RecordPlacement, RefreshLogService, IRefreshLogService; Application/Dependencies: DependencyDecision, DependencyReconciler, DependencyRefreshReporter, FeatureDependencyRendering with DependenciesAsRead, WhatTheForecastWaitsFor and IDependencyDecision, IDependencyReconciler, IDependencyRefreshReporter, IWhatTheForecastWaitsFor. Application/Policies: WorkItemBlockedTransitionCaptureHandler, WorkItemBlockedTransitionCloseHandler, FeatureBlockedTransitionCaptureHandler, FeatureBlockedTransitionCloseHandler, TeamDeletedRefreshLogCleanupHandler, ConnectionFetchShapeChangedUpdateTriggerHandler. Dependency types never sit flat in a layer: the sub-folders are the ones DependencySingleDecisionArchUnitTest's folder keys name.",
 "F150": "Change the fetch fingerprint file and ask the CI test selection which live Jira suite to run",
 "F151": "The new Domain path selects the live Jira suite and the old Services path no longer does",
 "F152": "A change to the fingerprint still runs the Jira tests after the move",
 "F153": "A classifier keeping the old path, or matching any Domain file, would pass a text-only check; this runs the real classifier on both paths",
+"F154": "P4 is a completion obligation on the candidate: RefreshesStayTheSameTest and refresh-answers-compare are run by the final reviewer and EXAMINE; they are not an S1 support. Feature A's oracle files are not frozen supports here and may take using-line edits forced by the move.",
+"F155": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/RuleEvaluator.cs; rejected by the Domain rule: its public Match signature takes IRuleFieldProvider<T>, an Application port",
+"F156": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleEvaluator.cs; rejected by the Domain rule: its public Match signature takes IRuleFieldProvider<T>, an Application port",
+"F157": "Layer placement. Domain: SyncModeResolver, FetchFingerprint; Domain/Dependencies: DependencyHonourPolicy with IDependencyHonourPolicy, DependencyHonourInput and FeatureDependencyFacts (declared in the interface file), DependencyCycleDetector with DependencyLoops and DependencyLoop, DependencyFacts. RuleEvaluator<T> and IRuleEvaluator<T> go to Application with IRuleFieldProvider<T> and the field providers: rejected by the Domain rule, because their public Match signature takes IRuleFieldProvider<T>, an Application port; no rule is loosened. Final Domain membership is what the IL-reading Domain rule admits: a candidate that reaches anything beyond Models and the BCL goes to Application, recorded in the oracle list. Application: WorkItemService, IWorkItemService, BlockedItemService, IBlockedItemService, TeamDataService, ITeamDataService, RuleEvaluator, IRuleEvaluator, IRuleFieldProvider, WorkItemFieldProvider, FeatureFieldProvider, ParentPlacementReport with RecordPlacement, RefreshLogService, IRefreshLogService; Application/Dependencies: DependencyDecision, DependencyReconciler, DependencyRefreshReporter, FeatureDependencyRendering with DependenciesAsRead, WhatTheForecastWaitsFor and IDependencyDecision, IDependencyReconciler, IDependencyRefreshReporter, IWhatTheForecastWaitsFor. Application/Policies: the six handlers. Dependency types never sit flat in a layer: the sub-folders are the ones DependencySingleDecisionArchUnitTest's folder keys name.",
 "F16": "Checker mapping: no state machine, temporal or fairness claim exists (behaviour-free relocation), so Quint, TLA+/TLC and Agda are not applicable and liveness is not applicable (no progress or scheduling change). Dependency-direction and placement claims are checked by IL-reading ArchUnit rules (ModuleRules.TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary) in the three slice oracles; behaviour preservation by RefreshesStayTheSameTest and bash Scripts/examine/bin/refresh-answers-compare (base 8a785450c vs HEAD), plus metrics-answers-compare, forecast-answers-compare, ef-model-unchanged and architecture-rules. No property-based law: the finite relocation has no broad input domain.",
 "F17": "Paradigm object_oriented, smell catalogue nw-code-design-oo: every moved type keeps its owner and responsibility; no domain decision moves into a service, no class is created, split or merged. Carriers unchanged: decisions in DependencyHonourPolicy, DependencyCycleDetector, RuleEvaluator, SyncModeResolver; effects in WorkItemService, TeamDataService, RefreshLogService and the handlers; no per-process state is added.",
 "F18": "Program.cs registrations and order stay; only using lines change, DomainEventHandlerOrderPinTest stays green and unmodified. Unit tests of moved types stay in place and gain using lines only; they move in feature C. Feature A's oracle files may take a using-line edit forced by the move, recorded as a target, never a semantic change. TheNamespaceThisEpicOwns already covers Modules.WorkItems; if WorkItemService's move makes it reach the forecast, the crafter returns that to the architect and never loosens the rule.",
@@ -1656,8 +1662,6 @@
 "F70": "Oracle: Domain list, layout and kernel-only reach",
 "F71": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs",
 "F72": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs",
-"F73": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItemRules/RuleEvaluator.cs",
-"F74": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItemRules/IRuleEvaluator.cs",
 "F75": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyHonourPolicy.cs",
 "F76": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Dependencies/IDependencyHonourPolicy.cs",
 "F77": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyCycleDetector.cs",
