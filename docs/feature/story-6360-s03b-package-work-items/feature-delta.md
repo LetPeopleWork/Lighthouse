@@ -548,3 +548,15 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 | A rules first | A1–A3 | `thorough` | opus | sonnet |
 | B the move | B1–B3 | `standard` | sonnet | haiku |
 | C edge and rules | C1–C3 | `thorough` | opus | sonnet |
+
+## Wave: DELIVER / [REF] Feature B — deviations from D-8 and D-9 accepted (2026-11-15, AFK)
+
+The whole-candidate review of feature B accepted the candidate with two low design findings. Both are taken as they
+stand, and D-8 and D-9 are read this way from here on:
+
+- **D-8:** in `Program.cs` the registration lines kept their place, their order and their lifetimes, but the moved
+  types' qualifiers were shortened to the short type name (the `using` carries the namespace). The order pin and the
+  refresh, metrics and forecast compares all stayed identical, so this is text only.
+- **D-9:** two controller tests (`DeliveryRulesControllerTest`, `FeaturesControllerTest`) named `IBlockedItemService`
+  by its full name inside `Mock.Of<…>`. A `using` line cannot fix a full name, so they were retargeted to the new
+  full name. No expectation changed.
