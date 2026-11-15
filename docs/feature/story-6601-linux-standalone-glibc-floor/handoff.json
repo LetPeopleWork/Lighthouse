@@ -238,8 +238,8 @@
 "B": 5,
 "C": 2,
 "D": 14,
-"E": 5,
-"F": 254,
+"E": 6,
+"F": 258,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -957,11 +957,11 @@
 "text": "F193"
 },
 {
-"id": "E5",
+"id": "E6",
 "promises": [
 "P3"
 ],
-"text": "F194"
+"text": "F258"
 }
 ]
 },
@@ -1057,7 +1057,6 @@
 "F191": "Before a runner image is retired, a visible alarm reports it, early enough that a release is not blocked by the retirement unannounced.",
 "F192": "A written decision states the minimum glibc version and Linux distribution that the AppImage requires.",
 "F193": "A build whose AppImage needs a newer glibc than the written floor fails in CI, so such an AppImage is never released.",
-"F194": "The produced AppImage starts on Ubuntu 24.04 LTS.",
 "F195": "The packaging check runs over today's Ubuntu 24.04 libraries (bash, WebKitGTK, JavaScriptCore, WebKit web process)",
 "F196": "It passes and reports the highest version it parsed, 2.38, not only that nothing was over the floor",
 "F197": "The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS",
@@ -1120,6 +1119,10 @@
 "F252": "A GitHub runner image retirement cannot change the glibc of the Linux AppImage or block the release, and an AppImage over the floor is never uploaded",
 "F253": "a container image given by tag only that happens to say 24.04, a runner label ubuntu-latest with the old sudo install that fails in a bare container, or a workflow with the floor step deleted",
 "F254": "The loader check script exists; the loader job waits for the packaging job and runs both digests; a missing AppImage or one without ELF files exits 2; a missing library or a glibc version the system lacks exits 1 and names it; a fully resolving AppImage exits 0, and the real AppImage resolves on both distributions",
+"F255": "Every binary bundled in the AppImage resolves its libraries and glibc versions on Ubuntu 24.04 LTS and Debian 13; the maintainer starts the AppImage once on a desktop before the release",
+"F256": "The maintainer (2026-11-15) narrowed 'the AppImage still starts on Ubuntu 24.04 LTS' to library and glibc resolution of every bundled binary on Ubuntu 24.04 and Debian 13, checked in CI; a real window start is the maintainer's one manual desktop start before the release, because a headless start probe of a WebKit app with a backend sidecar is slow and flaky in CI",
+"F257": "The Linux AppImage is built on a build environment whose glibc we choose, on a runner GitHub will not retire, still passes the floor check, and every bundled binary resolves its libraries on Ubuntu 24.04 LTS and Debian 13",
+"F258": "Every binary bundled in the AppImage resolves its libraries and glibc versions on Ubuntu 24.04 LTS and on Debian 13, and the maintainer has started the AppImage once on a desktop before the release.",
 "F26": "readelf and file from binutils; docker; the Ubuntu apt archive; GitHub Actions job container",
 "F27": "workflow steps call the scripts; scripts read tools/linux-appimage/glibc-floor and never the workflow; oracles read the workflow, renovate.json and the ADR as files; nothing in the backend or frontend depends on any of it",
 "F28": "Floor check result: exit code, one line per offending ELF naming its path and the highest GLIBC_x.y it needs, and the summary scanned=N over_floor=M",
@@ -1146,7 +1149,6 @@
 "F47": "libstdc++ and other non-glibc library floors of the host",
 "F48": "The floor check: reads GLIBC versions from every ELF and fails above the floor.",
 "F49": "The single written floor value FLOOR=2.39.",
-"F5": "The AppImage still starts on Ubuntu 24.04 LTS",
 "F51": "Linux section states the minimum: Ubuntu 24.04 LTS (glibc 2.39) and newer.",
 "F55": "The oracle repeats the same summary-line and WHAT/WHY/HOW helper shape (pass, fail, setup_failure, summary_and_exit); a convention copy, since bash has no shared library here and the tools are unrelated.",
 "F56": "It already extracts the AppImage to squashfs-root; the floor check follows it and reuses that extraction.",
@@ -1186,7 +1188,6 @@
 "F87": "directory with no ELF",
 "F88": "Three concrete layouts, built as real ELF files.",
 "F89": "floor check on today build",
-"F9": "The Linux AppImage is built on a build environment whose glibc we choose, on a runner GitHub will not retire, still passes the floor check and still starts on Ubuntu 24.04 LTS",
 "F90": "Total numeric comparison over finite version pairs, three outcomes reach the exit code; checked by the finite oracle, not a model.",
 "F91": "Input: Ubuntu 24.04 archive libraries -> check-glibc-floor.sh -> exit 0 on the shell; constructed in the oracle from real binaries.",
 "F92": "tools/linux-appimage/check-glibc-floor.sh is invoked by a workflow step in ci_package-linux-standalone.yml after extraction (CreateNew step) and by the oracle argv.",
@@ -1199,6 +1200,14 @@
 "F99": "Assumption: readelf prints the needs section in the format the parser reads. Negated: binutils changes the format."
 },
 "product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F256"
+}
+],
 "promises": [
 {
 "id": "P1",
@@ -1213,7 +1222,7 @@
 {
 "id": "P3",
 "kind": "Outcome",
-"text": "F5"
+"text": "F255"
 }
 ],
 "scope_out": [
@@ -1233,7 +1242,7 @@
 "S1"
 ],
 "id": "S2",
-"observation": "F9",
+"observation": "F257",
 "promises": [
 "P1",
 "P3"

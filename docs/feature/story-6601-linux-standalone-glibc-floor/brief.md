@@ -41,7 +41,7 @@ The minimum glibc and distribution for the Linux AppImage is a written decision,
 Outcome
 
 ```text
-The AppImage still starts on Ubuntu 24.04 LTS
+Every binary bundled in the AppImage resolves its libraries and glibc versions on Ubuntu 24.04 LTS and Debian 13; the maintainer starts the AppImage once on a desktop before the release
 ```
 
 ## Scope
@@ -58,7 +58,14 @@ Moving the macOS and Windows packaging off macos-latest and windows-latest; DESI
 
 ## Decisions
 
-None.
+```text
+The maintainer (2026-11-15) narrowed 'the AppImage still starts on Ubuntu 24.04 LTS' to library and glibc resolution of every bundled binary on Ubuntu 24.04 and Debian 13, checked in CI; a real window start is the maintainer's one manual desktop start before the release, because a headless start probe of a WebKit app with a backend sidecar is slow and flaky in CI
+```
+
+#### Status
+
+Confirmed
+
 
 ## Journey
 
@@ -87,7 +94,7 @@ None.
 ### S2
 
 ```text
-The Linux AppImage is built on a build environment whose glibc we choose, on a runner GitHub will not retire, still passes the floor check and still starts on Ubuntu 24.04 LTS
+The Linux AppImage is built on a build environment whose glibc we choose, on a runner GitHub will not retire, still passes the floor check, and every bundled binary resolves its libraries on Ubuntu 24.04 LTS and Debian 13
 ```
 
 #### Promises

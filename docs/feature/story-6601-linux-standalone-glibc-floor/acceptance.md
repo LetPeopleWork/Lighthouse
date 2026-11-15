@@ -465,14 +465,14 @@ P2
 A build whose AppImage needs a newer glibc than the written floor fails in CI, so such an AppImage is never released.
 ```
 
-#### E5
+#### E6
 
 ##### Promises
 
 P3
 
 ```text
-The produced AppImage starts on Ubuntu 24.04 LTS.
+Every binary bundled in the AppImage resolves its libraries and glibc versions on Ubuntu 24.04 LTS and on Debian 13, and the maintainer has started the AppImage once on a desktop before the release.
 ```
 
 ## Charter
