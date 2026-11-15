@@ -151,6 +151,187 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The packaging check runs over today&#x27;s Ubuntu 24.04 libraries (bash, WebKitGTK, JavaScriptCore, WebKit web process)
+</code></pre>
+
+<pre><code>It passes and reports the highest version it parsed, 2.38, not only that nothing was over the floor
+</code></pre>
+
+<pre><code>The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
+
+<pre><code>A check that scans nothing and prints a clean summary without a parsed highest version
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The check runs over a binary needing glibc 2.9, 2.39, 2.40 and 2.100 against the written floor, and over a 2.42 binary against floors written as 2.9 and 2.100, and over today&#x27;s libraries against floors 2.37 and 2.38
+</code></pre>
+
+<pre><code>2.9 and 2.39 pass, 2.40 and 2.100 fail; a 2.42 binary fails under floor 2.9 and passes under 2.100; today&#x27;s libraries fail under 2.37 naming 2.38 and pass under 2.38
+</code></pre>
+
+<pre><code>A version one step above the minimum stops the release and a version below it never does, however many figures it has
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
+
+<pre><code>Versions compared as text, so 2.100 looks older than 2.39 and 2.9 looks newer than 2.39
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The check runs over a directory holding a binary built in Ubuntu 26.04 that needs glibc 2.42
+</code></pre>
+
+<pre><code>It fails, naming the binary&#x27;s path, GLIBC_2.42, the floor 2.39 and the floor file where the minimum is written
+</code></pre>
+
+<pre><code>The maintainer sees which binary raised the glibc requirement and where to change the minimum on purpose
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
+
+<pre><code>A failure that exits non-zero without naming the file, the version or the floor
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The check runs over a layout with the offender in a nested directory next to passing files, and a symbolic link pointing at the offender
+</code></pre>
+
+<pre><code>It fails once, naming the real path of the offender, and names neither the passing files nor the link
+</code></pre>
+
+<pre><code>One problem looks like one problem, found at any depth
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
+
+<pre><code>A check that only scans the top level, blames passing files, or reports the same library once under its real path and once under the link
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The check runs over an empty directory, a directory with only a shell script, a missing directory, and a runner without readelf
+</code></pre>
+
+<pre><code>Each ends as indeterminate with its own non-zero outcome, never as a pass; the missing tool is named
+</code></pre>
+
+<pre><code>A broken extraction or missing tool stops the release visibly instead of looking like a clean AppImage
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
+
+<pre><code>A check that exits 0 with nothing scanned
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The check runs over a file linked to libc whose version-needs section was removed
+</code></pre>
+
+<pre><code>It ends as indeterminate, naming the file and that reading the versions gave no GLIBC versions
+</code></pre>
+
+<pre><code>A changed tool output cannot turn into a silent pass
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
+
+<pre><code>A check that treats a file with no parsed versions as needing nothing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The repository is read for the written minimum and the packaging workflow
+</code></pre>
+
+<pre><code>The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum, and the workflow installs binutils and runs the check after the libssl rejection and before the upload
+</code></pre>
+
+<pre><code>The minimum Linux is written down in one place and a build over it cannot be uploaded
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
+
+<pre><code>A floor check present in the repository but never run by the packaging job, or run after the upload
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>

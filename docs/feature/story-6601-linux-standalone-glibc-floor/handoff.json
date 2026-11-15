@@ -1,10 +1,128 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F198",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F196",
+"stimulus": "F195",
+"user_result": "F197"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F79",
+"L1/F80",
+"L1/F81",
+"L1/F82"
+],
+"still_passes_if": "F202",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F200",
+"stimulus": "F199",
+"user_result": "F201"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F206",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F204",
+"stimulus": "F203",
+"user_result": "F205"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F85",
+"L2/F86",
+"L4/F179"
+],
+"still_passes_if": "F210",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F208",
+"stimulus": "F207",
+"user_result": "F209"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F87"
+],
+"still_passes_if": "F214",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F212",
+"stimulus": "F211",
+"user_result": "F213"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F178"
+],
+"still_passes_if": "F218",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F216",
+"stimulus": "F215",
+"user_result": "F217"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F222",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F220",
+"stimulus": "F219",
+"user_result": "F221"
+}
+]
+},
 "counters": {
 "B": 5,
 "C": 2,
 "D": 14,
 "E": 5,
-"F": 194,
+"F": 222,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -823,9 +941,37 @@
 "F192": "A written decision states the minimum glibc version and Linux distribution that the AppImage requires.",
 "F193": "A build whose AppImage needs a newer glibc than the written floor fails in CI, so such an AppImage is never released.",
 "F194": "The produced AppImage starts on Ubuntu 24.04 LTS.",
+"F195": "The packaging check runs over today's Ubuntu 24.04 libraries (bash, WebKitGTK, JavaScriptCore, WebKit web process)",
+"F196": "It passes and reports the highest version it parsed, 2.38, not only that nothing was over the floor",
+"F197": "The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS",
+"F198": "A check that scans nothing and prints a clean summary without a parsed highest version",
+"F199": "The check runs over a binary needing glibc 2.9, 2.39, 2.40 and 2.100 against the written floor, and over a 2.42 binary against floors written as 2.9 and 2.100, and over today's libraries against floors 2.37 and 2.38",
 "F2": "Releases are never blocked by GitHub retiring a runner image, and Linux users on the supported distributions keep a working app",
 "F20": "Formal verification: Quint is installed (probed with which quint) but no claim here is a state machine or temporal property. Every claim is a total comparison over a finite ordered set of dotted versions or a static shape of a workflow file. They are checked by the finite bash oracles, run by the host. No Quint, TLA+ or Agda model is delivered; nothing is waived and nothing is claimed proven.",
+"F200": "2.9 and 2.39 pass, 2.40 and 2.100 fail; a 2.42 binary fails under floor 2.9 and passes under 2.100; today's libraries fail under 2.37 naming 2.38 and pass under 2.38",
+"F201": "A version one step above the minimum stops the release and a version below it never does, however many figures it has",
+"F202": "Versions compared as text, so 2.100 looks older than 2.39 and 2.9 looks newer than 2.39",
+"F203": "The check runs over a directory holding a binary built in Ubuntu 26.04 that needs glibc 2.42",
+"F204": "It fails, naming the binary's path, GLIBC_2.42, the floor 2.39 and the floor file where the minimum is written",
+"F205": "The maintainer sees which binary raised the glibc requirement and where to change the minimum on purpose",
+"F206": "A failure that exits non-zero without naming the file, the version or the floor",
+"F207": "The check runs over a layout with the offender in a nested directory next to passing files, and a symbolic link pointing at the offender",
+"F208": "It fails once, naming the real path of the offender, and names neither the passing files nor the link",
+"F209": "One problem looks like one problem, found at any depth",
+"F210": "A check that only scans the top level, blames passing files, or reports the same library once under its real path and once under the link",
+"F211": "The check runs over an empty directory, a directory with only a shell script, a missing directory, and a runner without readelf",
+"F212": "Each ends as indeterminate with its own non-zero outcome, never as a pass; the missing tool is named",
+"F213": "A broken extraction or missing tool stops the release visibly instead of looking like a clean AppImage",
+"F214": "A check that exits 0 with nothing scanned",
+"F215": "The check runs over a file linked to libc whose version-needs section was removed",
+"F216": "It ends as indeterminate, naming the file and that reading the versions gave no GLIBC versions",
+"F217": "A changed tool output cannot turn into a silent pass",
+"F218": "A check that treats a file with no parsed versions as needing nothing",
+"F219": "The repository is read for the written minimum and the packaging workflow",
 "F22": "Inputs and bounds: floor is a dotted major.minor integer pair; no upper bound beyond integers; the AppImage is any size the Tauri bundler produces and the check reads every ELF in it with no sampling; image digests are sha256 strings. No bound on number of files.",
+"F220": "The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum, and the workflow installs binutils and runs the check after the libssl rejection and before the upload",
+"F221": "The minimum Linux is written down in one place and a build over it cannot be uploaded",
+"F222": "A floor check present in the repository but never run by the packaging job, or run after the upload",
 "F23": "The libssl rejection step, secrets handling (TAURI_SIGNING_PRIVATE_KEY), artifact names, the if: main condition, the Package and Sign environment and the ci.yml caller stay unchanged.",
 "F24": "The packaging job runs only on main: the real container build and the real AppImage are observable only on the main pipeline or by a maintainer running the container steps by hand. Local oracles prove the floor check, the workflow shape, and that the package install and bundled WebKitGTK library resolve in the pinned image under the floor.",
 "F25": "bash tools/linux-appimage/check-glibc-floor.sh DIR [FLOOR]; bash tools/linux-appimage/check-loads-on.sh IMAGE APPIMAGE; the reusable workflow .github/workflows/ci_package-linux-standalone.yml called from ci.yml",
