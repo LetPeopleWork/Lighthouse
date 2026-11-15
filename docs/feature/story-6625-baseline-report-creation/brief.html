@@ -322,7 +322,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Scenario</p>
 
-<pre><code>Throughput Total of 0 on both sides reads as no change
+<pre><code>Throughput of 0 on both sides reads as no change on both lines
 </code></pre>
 
 <pre><code>a Then &amp; Now report whose {Throughput} Total is 0 in Then and 0 in Now
@@ -331,7 +331,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Martin opens the report
 </code></pre>
 
-<pre><code>the Total line reads &#x27;No change (both 0)&#x27; with no arrow and no %, and counts as no change in the CHANGE summary
+<pre><code>both the Total line and the per-day line read &#x27;No change (both 0)&#x27; with no arrow and no %, and {Throughput} counts as no change in the CHANGE summary
 </code></pre>
 
 <h3>P12</h3>
@@ -390,7 +390,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Bulk Create wizard on the app-level Reports page: no &#x27;Same as Then / Custom&#x27; Now choice; every saved report&#x27;s Now = Then.
 </code></pre>
 
-<pre><code>Every saved report&#x27;s Now length snapped to its Then length once.
+<pre><code>Every saved report shows a Now as long as its Then: Lighthouse always works Now out from Then&#x27;s length and never reads a stored Now length (derived, not snapped; no migration).
 </code></pre>
 
 <pre><code>Edit report: name and shown metrics only.
@@ -411,7 +411,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Editing Then, or checking Then again against the kept history on Edit.
 </code></pre>
 
-<pre><code>A notice to owners about reports whose Now was snapped to Then&#x27;s length.
+<pre><code>A notice to owners about reports whose Now is now derived from Then&#x27;s length.
 </code></pre>
 
 <pre><code>Usage-data events: answered in DEVOPS, not here.
@@ -451,7 +451,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Confirmed</p>
 
 
-<pre><code>Q2: every saved report&#x27;s Now is snapped to Then&#x27;s length once. Then and its frozen values, and past PDF exports, are untouched. No notice to owners, also where a snapped report newly overlaps.
+<pre><code>Q2 (revised at DESIGN 2026-11-15, snap replaced by derive): every saved report shows a Now as long as its Then. From this version on Lighthouse always works Now out from Then&#x27;s length and never reads a stored Now length; the old stored value stays in the data, unread. Nothing is migrated. Then and its frozen values, and past PDF exports, are untouched. No notice to owners, also where a report newly overlaps. Known residue: a rollback to the previous Lighthouse version shows the old stored Now length again on reports that had one.
 </code></pre>
 
 <h4>Status</h4>
@@ -459,7 +459,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Confirmed</p>
 
 
-<pre><code>Q3: the {Throughput} Total line gets change and % change; per day keeps its own; Total counts in CHANGE. Both 0 reads &#x27;No change (both 0)&#x27; (no arrow, no %, no change). Then 0 and Now &gt; 0 keeps &#x27;▲ N (Then was 0)&#x27;. Not captured: no change. % rounding as 5878 defines. Per day showing no change while Total moves by 1 is accepted. Reverses 5878 D53&#x27;s rule that the Total line carries no change mark and does not count.
+<pre><code>Q3: the {Throughput} Total line gets change and % change; per day keeps its own; Total counts in CHANGE. When both sides are 0, BOTH {Throughput} lines (Total and per day) read &#x27;No change (both 0)&#x27; (no arrow, no %, no change); with equal lengths per day is 0/0 exactly when Total is 0/0, so one look for one fact. This rule lives in the {Throughput} panel only; {WIP} and {Work Item Age} are unchanged. Then 0 and Now &gt; 0 keeps &#x27;▲ N (Then was 0)&#x27;. Not captured: no change. % rounding as 5878 defines. Per day showing no change while Total moves by 1 is accepted. Reverses 5878 D53&#x27;s rule that the Total line carries no change mark and does not count.
 </code></pre>
 
 <h4>Status</h4>
@@ -507,14 +507,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Confirmed</p>
 
 
-<pre><code>Whether the snap migration bumps the report&#x27;s concurrency version: with a bump, an Edit open at that moment is refused as stale even if nothing was changed; without it, an old browser page resending Now 45 is refused by the Q5 rule. Also the gap between deploy and migration. (Quint S2 traces.)
+<pre><code>Resolved at DESIGN 2026-11-15: the questions of a concurrency-version bump during a snap migration and of the gap between deploy and migration no longer apply, because nothing is migrated (Now is derived from Then&#x27;s length). No Edit is refused as stale because of this change.
 </code></pre>
 
 <h4>Status</h4>
 
-<p>Open</p>
+<p>Confirmed</p>
 
-<p>Design</p>
 
 <pre><code>Quint evidence: quint 0.33.1, model baseline.qnt sha256 88a325f5...0477f and s1grid.qnt sha256 f4615960...dac92, quint run --max-steps 12 --max-samples 20000/50000 --seed 6625, deterministic renderer render.py; random simulation, not exhaustive; model day 1000 = 2026-11-15. Invariants held: Now length = Then length after migration; overlap message iff a shared day; until-date = Then&#x27;s last day; change only when both totals captured; % only when Then &gt; 0; API accepts only equal or absent Now; Then &gt;= 14 days and not after today. Helper assumptions: check order length, after today, kept history, Now rule; per day rounded to tenths (shipped panel uses 2 decimals, so the 41-of-61 &#x27;per day unchanged while Total moves&#x27; figure overstates the frequency; behaviour accepted either way); % half away from zero.
 </code></pre>
@@ -596,7 +595,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>S2</h3>
 
-<pre><code>Every saved report compares equal lengths: existing reports snapped once, Edit offers name and metrics only, the API refuses an unequal Now
+<pre><code>Every saved report compares equal lengths: existing reports show a Now derived from Then&#x27;s length, Edit offers name and metrics only, the API refuses an unequal Now
 </code></pre>
 
 <h4>Promises</h4>

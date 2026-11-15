@@ -1,0 +1,337 @@
+An example execution:
+
+[State 0]
+{
+  cutoff: 800,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "init",
+      len: 30,
+      nowLen: 45,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 1 }),
+  tLen: 30,
+  tNow: 0,
+  tThen: 0,
+  today: 1000
+}
+
+[State 1]
+{
+  cutoff: 800,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "totals",
+      len: 14,
+      nowLen: 14,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 1 }),
+  tLen: 14,
+  tNow: 91,
+  tThen: 1,
+  today: 1000
+}
+
+[State 2]
+{
+  cutoff: 800,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "totals",
+      len: 14,
+      nowLen: 14,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 1 }),
+  tLen: 14,
+  tNow: 29,
+  tThen: 1,
+  today: 1000
+}
+
+[State 3]
+{
+  cutoff: 800,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "deploy",
+      len: 0,
+      nowLen: 0,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 1 }),
+  tLen: 14,
+  tNow: 29,
+  tThen: 1,
+  today: 1000
+}
+
+[State 4]
+{
+  cutoff: 800,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: -1,
+      id: 1,
+      oldPage: false,
+      open: true,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "open-edit",
+      len: 30,
+      nowLen: -1,
+      oldPage: false,
+      result: "open",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 1 }),
+  tLen: 14,
+  tNow: 29,
+  tThen: 1,
+  today: 1000
+}
+
+[State 5]
+{
+  cutoff: 800,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: -1,
+      id: 1,
+      oldPage: false,
+      open: true,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "create",
+      len: 30,
+      nowLen: 90,
+      oldPage: false,
+      result: "now-length-differs-from-then",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 1 }),
+  tLen: 14,
+  tNow: 29,
+  tThen: 1,
+  today: 1000
+}
+
+[State 6]
+{
+  cutoff: 801,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: -1,
+      id: 1,
+      oldPage: false,
+      open: true,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "advance",
+      len: 0,
+      nowLen: 0,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 1 }),
+  tLen: 14,
+  tNow: 29,
+  tThen: 1,
+  today: 1001
+}
+
+[State 7]
+{
+  cutoff: 802,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: -1,
+      id: 1,
+      oldPage: false,
+      open: true,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "advance",
+      len: 0,
+      nowLen: 0,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 1 }),
+  tLen: 14,
+  tNow: 29,
+  tThen: 1,
+  today: 1002
+}
+
+[State 8]
+{
+  cutoff: 802,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: -1,
+      id: 1,
+      oldPage: false,
+      open: true,
+      sawConcurrent: true
+    },
+  event:
+    {
+      kind: "concurrent-save",
+      len: 30,
+      nowLen: -1,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 2 }),
+  tLen: 14,
+  tNow: 29,
+  tThen: 1,
+  today: 1002
+}
+
+[State 9]
+{
+  cutoff: 803,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: -1,
+      id: 1,
+      oldPage: false,
+      open: true,
+      sawConcurrent: true
+    },
+  event:
+    {
+      kind: "advance",
+      len: 0,
+      nowLen: 0,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 2 }),
+  tLen: 14,
+  tNow: 29,
+  tThen: 1,
+  today: 1003
+}
+
+[State 10]
+{
+  cutoff: 804,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: -1,
+      id: 1,
+      oldPage: false,
+      open: true,
+      sawConcurrent: true
+    },
+  event:
+    {
+      kind: "advance",
+      len: 0,
+      nowLen: 0,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 45, thenEnd: 1000, version: 2 }),
+  tLen: 14,
+  tNow: 29,
+  tThen: 1,
+  today: 1004
+}
+
+[ok] No violation found (2903ms at 6889 traces/second).
+Trace length statistics: max=11, min=11, average=11.00
+You may increase --max-samples and --max-steps.
+Use --verbosity to produce more (or less) output.
+Use --seed=0x288456 --backend=rust to reproduce.

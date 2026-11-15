@@ -1,0 +1,190 @@
+An example execution:
+
+[State 0]
+{
+  cutoff: 800,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "init",
+      len: 14,
+      nowLen: -1,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 14, storedNowLen: -1, thenEnd: 955, version: 1 }),
+  tLen: 30,
+  tNow: 0,
+  tThen: 0,
+  today: 1000
+}
+
+[State 1]
+{
+  cutoff: 800,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "totals",
+      len: 14,
+      nowLen: 14,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 14, storedNowLen: -1, thenEnd: 955, version: 1 }),
+  tLen: 14,
+  tNow: 0,
+  tThen: 30,
+  today: 1000
+}
+
+[State 2]
+{
+  cutoff: 800,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: 14,
+      id: 1,
+      oldPage: true,
+      open: true,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "open-edit",
+      len: 14,
+      nowLen: -1,
+      oldPage: true,
+      result: "open",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 14, storedNowLen: -1, thenEnd: 955, version: 1 }),
+  tLen: 14,
+  tNow: 0,
+  tThen: 30,
+  today: 1000
+}
+
+[State 3]
+{
+  cutoff: 801,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: 14,
+      id: 1,
+      oldPage: true,
+      open: true,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "advance",
+      len: 0,
+      nowLen: 0,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 14, storedNowLen: -1, thenEnd: 955, version: 1 }),
+  tLen: 14,
+  tNow: 0,
+  tThen: 30,
+  today: 1001
+}
+
+[State 4]
+{
+  cutoff: 801,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: 14,
+      id: 1,
+      oldPage: true,
+      open: true,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "deploy",
+      len: 0,
+      nowLen: 0,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 14, storedNowLen: -1, thenEnd: 955, version: 1 }),
+  tLen: 14,
+  tNow: 0,
+  tThen: 30,
+  today: 1001
+}
+
+[State 5]
+{
+  cutoff: 801,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 1,
+      draftNowLen: 14,
+      id: 1,
+      oldPage: true,
+      open: true,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "create",
+      len: 14,
+      nowLen: 14,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 3,
+  reports:
+    Map(
+      1 -> { len: 14, storedNowLen: -1, thenEnd: 955, version: 1 },
+      2 -> { len: 14, storedNowLen: 14, thenEnd: 986, version: 1 }
+    ),
+  tLen: 14,
+  tNow: 0,
+  tThen: 30,
+  today: 1001
+}
+
+[violation] Found an issue (157ms at 6 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x19e1 --backend=rust to reproduce.
+error: Invariant violated

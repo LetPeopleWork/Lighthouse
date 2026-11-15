@@ -1,0 +1,126 @@
+An example execution:
+
+[State 0]
+{
+  cutoff: 960,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "init",
+      len: 30,
+      nowLen: 90,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 90, thenEnd: 985, version: 1 }),
+  tLen: 30,
+  tNow: 0,
+  tThen: 0,
+  today: 1000
+}
+
+[State 1]
+{
+  cutoff: 960,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "totals",
+      len: 14,
+      nowLen: 14,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 90, thenEnd: 985, version: 1 }),
+  tLen: 14,
+  tNow: 91,
+  tThen: 91,
+  today: 1000
+}
+
+[State 2]
+{
+  cutoff: 961,
+  deployed: false,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "advance",
+      len: 0,
+      nowLen: 0,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 90, thenEnd: 985, version: 1 }),
+  tLen: 14,
+  tNow: 91,
+  tThen: 91,
+  today: 1001
+}
+
+[State 3]
+{
+  cutoff: 961,
+  deployed: true,
+  edit:
+    {
+      baseVersion: 0,
+      draftNowLen: -1,
+      id: 0,
+      oldPage: false,
+      open: false,
+      sawConcurrent: false
+    },
+  event:
+    {
+      kind: "deploy",
+      len: 0,
+      nowLen: 0,
+      oldPage: false,
+      result: "ok",
+      sawConcurrent: false
+    },
+  nextId: 2,
+  reports: Map(1 -> { len: 30, storedNowLen: 90, thenEnd: 985, version: 1 }),
+  tLen: 14,
+  tNow: 91,
+  tThen: 91,
+  today: 1001
+}
+
+[violation] Found an issue (26ms at 77 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x1a36 --backend=rust to reproduce.
+error: Invariant violated
