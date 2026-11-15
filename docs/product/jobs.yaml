@@ -7969,6 +7969,10 @@ jobs:
       one new Then & Now metric "Arrivals" whose panel sets arrivals per day (Work Items started) against Throughput
       per day and compares the gap, Then against Now, lower gap better (4.50); dissent arrivals alone (4.30); gap
       towards zero 4.00. Job wording unchanged. See docs/feature/story-6535-arrivals-in-reports/diverge/.
+      2026-11-15 - DISCUSS of story-6535-arrivals-in-reports: Team and Portfolio; old reports show Arrivals as
+      "Not captured" and cannot tick it. One deliberate exception to the functional dimension below: the Arrivals
+      panel's gap line shows its change in per-day units without a percent change, because the gap can cross zero
+      and a percent of it misleads; like every panel today it counts no points beyond limits.
     job_story: >
       When I (or the Team) have changed how work flows and someone asks whether it helped,
       I want to set today's flow against a "before" that cannot move, with the metrics chosen before looking,
