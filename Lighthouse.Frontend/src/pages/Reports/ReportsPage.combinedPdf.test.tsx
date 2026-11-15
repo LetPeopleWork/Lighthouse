@@ -514,6 +514,11 @@ describe("One PDF of several reports", () => {
 		expect(
 			within(failure).queryByRole("button", { name: LEAVE_IT_OUT }),
 		).not.toBeInTheDocument();
+		expect(
+			within(failure)
+				.getAllByRole("button")
+				.map((button) => button.textContent),
+		).toEqual([CANCEL, RETRY]);
 		expect(frames.timesAFramePrinted()).toBe(0);
 	});
 

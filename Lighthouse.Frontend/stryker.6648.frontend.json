@@ -17,7 +17,7 @@
 	"disableTypeChecks": false,
 	"ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports"],
 	"mutate": ["src/pages/Reports/printFailures.ts"],
-	"thresholds": { "high": 90, "low": 80, "break": 0 },
+	"thresholds": { "high": 90, "low": 80, "break": 80 },
 	"jsonReporter": {
 		"fileName": "../docs/feature/story-6648-frontend-clean-as-we-go/mutation/stryker-6648-frontend.json"
 	},
