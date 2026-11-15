@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
         }
 
         /// <summary>
-        /// The whole point of the slice, and its arithmetic is worth spelling out. The Team waited on gets
+        /// The rule this class is about, and its arithmetic is worth spelling out. The Team waited on gets
         /// through six items at one a day and is done on day six. The Team waiting has four items of its own
         /// and could have been done on day four, but may not start until day six is over, so it finishes on
         /// day ten.

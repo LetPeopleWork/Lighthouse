@@ -333,7 +333,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
         {
             forecastService
                 .Setup(service => service.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
-                .Returns((RunChartData _, int days) => new HowManyForecast([], days, DateTime.UtcNow));
+                .Returns((RunChartData _, int days) => new HowManyForecast([], days, TestToday.FrozenNow.UtcDateTime));
 
             var result = Run();
 
@@ -436,6 +436,6 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 
         /// <summary>Ten trials each at 16, 14, 12 and 10 items, so the four levels read 16, 14, 12 and 10.</summary>
         private static HowManyForecast AForecastOfTenTwelveFourteenSixteen(int days)
-            => new(new Dictionary<int, int> { [16] = 50, [14] = 20, [12] = 15, [10] = 15 }, days, DateTime.UtcNow);
+            => new(new Dictionary<int, int> { [16] = 50, [14] = 20, [12] = 15, [10] = 15 }, days, TestToday.FrozenNow.UtcDateTime);
     }
 }

@@ -975,7 +975,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 
         private Portfolio CreatePortfolio(params Feature[] features)
         {
-            var portfolio = CreatePortfolio(DateTime.UtcNow, features);
+            var portfolio = CreatePortfolio(TestToday.FrozenNow.UtcDateTime, features);
 
             return portfolio;
         }

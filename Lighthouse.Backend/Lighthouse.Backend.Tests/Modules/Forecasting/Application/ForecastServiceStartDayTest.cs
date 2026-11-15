@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
         }
 
         /// <summary>
-        /// The Epic was framed on the assumption that the next Feature begins the day after the one above
+        /// It is tempting to assume that the next Feature begins the day after the one above
         /// it ends. It does not: a team re-reads what it may work on after every item it delivers, so one
         /// that closes a Feature with capacity left in the day starts the next immediately.
         /// </summary>
@@ -196,7 +196,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
         {
             var silent = ATeamDelivering(9, NothingMeasured, featureWip: 1);
             var alpha = AFeature(1, Alpha, (silent, 5));
-            alpha.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [7] = 1 }, null, DateTime.UtcNow)]);
+            alpha.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [7] = 1 }, null, TestToday.FrozenNow.UtcDateTime)]);
 
             await TheForecastRunsOver(alpha);
 

@@ -14,7 +14,7 @@ using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {
-    // Story #5569, Tier 3 of the slice-01 test strategy: real Monte Carlo through the real aggregation.
+    // A real Monte Carlo run through the real aggregation of several Teams into one joint forecast.
     // Throughput [1, 3] with 3 items has the closed form {1: .50, 2: .25, 3: .25} per team, so the joint
     // CDF is .25 / .5625 / 1.00. Assertions are on percentile *days* rather than probabilities, which is
     // robust against the ~0.5 % sampling error at 10 000 trials.
@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
             {
                 Name = "Portfolio",
                 Id = idCounter++,
-                UpdateTime = DateTime.UtcNow,
+                UpdateTime = TestToday.FrozenNow.UtcDateTime,
             };
 
             portfolio.UpdateFeatures(features);

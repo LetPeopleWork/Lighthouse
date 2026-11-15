@@ -151,12 +151,12 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application.Policies
                 .Returns(true);
         }
 
-        private static Portfolio APortfolioWorkedOnBy(Team team)
+        private Portfolio APortfolioWorkedOnBy(Team team)
         {
             var feature = new Feature { Name = "Feature", Id = 1 };
             feature.FeatureWork.Add(new FeatureWork(team, 3, 5, feature));
 
-            var portfolio = new Portfolio { Name = "Portfolio", Id = 1, UpdateTime = DateTime.UtcNow };
+            var portfolio = new Portfolio { Name = "Portfolio", Id = 1, UpdateTime = Now };
             portfolio.UpdateFeatures([feature]);
 
             return portfolio;

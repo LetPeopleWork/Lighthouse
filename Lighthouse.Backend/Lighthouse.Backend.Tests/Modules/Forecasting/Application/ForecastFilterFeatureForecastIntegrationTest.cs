@@ -277,7 +277,7 @@ namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
                 ReferenceId = referenceId,
                 Name = referenceId,
                 Type = type,
-                StartedDate = DateTime.UtcNow.AddDays(-(daysAgo + 5)),
+                StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-(daysAgo + 5)),
                 ClosedDate = TestToday.AmbientAsUtcMidnight.AddDays(-daysAgo),
             };
             workItems.Add(workItem);
