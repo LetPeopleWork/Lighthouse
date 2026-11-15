@@ -1140,4 +1140,70 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+forecast-triggers-show on demo data: (1) Team 1 Team Zenith, Portfolio 1 Forecast row at 08:53:40.056Z after refresh at 08:53:39.270Z OBSERVED; (2) unchanged round Skipped=true, after restart Skipped=false OBSERVED; VERDICT OBSERVED.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules probe: 765 tests passed 0 failed, incl. TheThreeQuestionsFlowMetricsAsks_AreItsOwnPorts_AndForecastingAnswersEach, FlowMetrics inbound/outbound lists name no Forecasting type, Forecasting module rules (Domain/Adapters/Application inbound and outbound, listed-edge-gone, second-edge made-ups), AFailingForecastingRule_SpeaksOfForecastingAndNotOfFlowMetrics, AFailingFlowMetricsApplicationRule_SpeaksOfFlowMetricsByDefault, placement tests (Forecast services, updater, seeder, triggers sit in module folders and nowhere else; empty Domain fails not vacuous). A placement test named for the Forecasting unit-test folder Tests/Modules/Forecasting was not seen by name in my grep of the output.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+architecture-rules probe: 765 tests passed 0 failed, incl. TheThreeQuestionsFlowMetricsAsks_AreItsOwnPorts_AndForecastingAnswersEach, FlowMetrics inbound/outbound lists name no Forecasting type, Forecasting module rules (Domain/Adapters/Application inbound and outbound, listed-edge-gone, second-edge made-ups), AFailingForecastingRule_SpeaksOfForecastingAndNotOfFlowMetrics, AFailingFlowMetricsApplicationRule_SpeaksOfFlowMetricsByDefault, placement tests (Forecast services, updater, seeder, triggers sit in module folders and nowhere else; empty Domain fails not vacuous). A placement test named for the Forecasting unit-test folder Tests/Modules/Forecasting was not seen by name in my grep of the output.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Same architecture-rules output: 24 passing AForecastingUnitTestFile_SitsOnlyInItsModuleLayerFolder_AndKeepsItsClassInThatLayer cases (e.g. AddressableDrawStreamTest Domain, ForecastBeyondTheHorizonTest Application); 24 files tracked under Lighthouse.Backend.Tests/Modules/Forecasting. Supersedes the caution in O2 about not seeing a Forecasting unit-test placement test.
+```
+
+```text
+architecture-rules probe: 765 tests passed 0 failed, incl. TheThreeQuestionsFlowMetricsAsks_AreItsOwnPorts_AndForecastingAnswersEach, FlowMetrics inbound/outbound lists name no Forecasting type, Forecasting module rules (Domain/Adapters/Application inbound and outbound, listed-edge-gone, second-edge made-ups), AFailingForecastingRule_SpeaksOfForecastingAndNotOfFlowMetrics, AFailingFlowMetricsApplicationRule_SpeaksOfFlowMetricsByDefault, placement tests (Forecast services, updater, seeder, triggers sit in module folders and nowhere else; empty Domain fails not vacuous). A placement test named for the Forecasting unit-test folder Tests/Modules/Forecasting was not seen by name in my grep of the output.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+metrics-answers-compare base 7ec328cb vs candidate d6838038: IDENTICAL, 366 responses and 3 snapshot tables. forecast-answers-compare: IDENTICAL, all 128 forecast answers match, 0 different per family.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+forecast-triggers-show on demo data: (1) Team 1 Team Zenith, Portfolio 1 Forecast row at 08:53:40.056Z after refresh at 08:53:39.270Z OBSERVED; (2) unchanged round Skipped=true, after restart Skipped=false OBSERVED; VERDICT OBSERVED.
+```
+
+```text
+metrics-answers-compare base 7ec328cb vs candidate d6838038: IDENTICAL, 366 responses and 3 snapshot tables. forecast-answers-compare: IDENTICAL, all 128 forecast answers match, 0 different per family.
+```

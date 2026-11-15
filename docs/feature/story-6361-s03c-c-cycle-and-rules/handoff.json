@@ -574,7 +574,7 @@
 "counters": {
 "D": 5,
 "E": 6,
-"F": 319,
+"F": 323,
 "K": 4,
 "P": 5,
 "S": 4,
@@ -1415,6 +1415,46 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F321"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F320"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F320"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F322",
+"F320"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F323"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F321",
+"F323"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1708,6 +1748,10 @@
 "F318": "A newcomer declared in the module namespace from outside the module folder is caught, and a compliant class is not, so the rule passing on the real tree means something",
 "F319": "the symbols tie a class to a generated file outside the test project, which the scan leaves out",
 "F32": "S2: three port registrations added next to the filter-rule registration; existing lines, order and lifetimes unchanged",
+"F320": "architecture-rules probe: 765 tests passed 0 failed, incl. TheThreeQuestionsFlowMetricsAsks_AreItsOwnPorts_AndForecastingAnswersEach, FlowMetrics inbound/outbound lists name no Forecasting type, Forecasting module rules (Domain/Adapters/Application inbound and outbound, listed-edge-gone, second-edge made-ups), AFailingForecastingRule_SpeaksOfForecastingAndNotOfFlowMetrics, AFailingFlowMetricsApplicationRule_SpeaksOfFlowMetricsByDefault, placement tests (Forecast services, updater, seeder, triggers sit in module folders and nowhere else; empty Domain fails not vacuous). A placement test named for the Forecasting unit-test folder Tests/Modules/Forecasting was not seen by name in my grep of the output.",
+"F321": "forecast-triggers-show on demo data: (1) Team 1 Team Zenith, Portfolio 1 Forecast row at 08:53:40.056Z after refresh at 08:53:39.270Z OBSERVED; (2) unchanged round Skipped=true, after restart Skipped=false OBSERVED; VERDICT OBSERVED.",
+"F322": "Same architecture-rules output: 24 passing AForecastingUnitTestFile_SitsOnlyInItsModuleLayerFolder_AndKeepsItsClassInThatLayer cases (e.g. AddressableDrawStreamTest Domain, ForecastBeyondTheHorizonTest Application); 24 files tracked under Lighthouse.Backend.Tests/Modules/Forecasting. Supersedes the caution in O2 about not seeing a Forecasting unit-test placement test.",
+"F323": "metrics-answers-compare base 7ec328cb vs candidate d6838038: IDENTICAL, 366 responses and 3 snapshot tables. forecast-answers-compare: IDENTICAL, all 128 forecast answers match, 0 different per family.",
 "F33": "S2: constructor parameters swap to IThroughputFilter and IForecastDataSufficiency (S107 suppression already present); behaviour identical",
 "F34": "S2: resolves IHowManyForecaster through the same service-locator call",
 "F35": "S2: declares IThroughputFilter, no new method",
