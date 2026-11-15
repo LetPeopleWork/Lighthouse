@@ -300,6 +300,127 @@ the bad floor is treated as a number, or as zero, and the run exits successfully
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P1
+
+```text
+The maintainer reads the Linux packaging workflow, its runner label, its build container and its steps
+```
+
+```text
+The job runs on ubuntu-latest, no job names a versioned Ubuntu runner, the build container is an Ubuntu image by digest whose release matches the written floor (a tag only, or a digest of another release, is refused), there is no .NET setup, no exact WebKitGTK pin, the install step prints the installed WebKitGTK version after the install, the bundler runs without FUSE, packages install as root first, and the libssl rejection and the glibc floor check both run after the build and before the upload
+```
+
+```text
+A GitHub runner image retirement cannot change the glibc of the Linux AppImage or block the release, and an AppImage over the floor is never uploaded
+```
+
+##### Disposition
+
+Tested
+
+tools\/linux\-appimage\/tests\/test\-build\-environment\.sh
+
+```text
+a container image given by tag only that happens to say 24.04, a runner label ubuntu-latest with the old sudo install that fails in a bare container, or a workflow with the floor step deleted
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+The maintainer reads the Renovate configuration for the Linux packaging workflow
+```
+
+```text
+No rule disables every Ubuntu update of that workflow, and one rule disables major and minor Ubuntu updates while digest updates stay on
+```
+
+```text
+Renovate keeps the container digest current and can never raise the Ubuntu release and with it the glibc floor
+```
+
+##### Disposition
+
+Tested
+
+tools\/linux\-appimage\/tests\/test\-build\-environment\.sh
+
+```text
+a rule that disables all Ubuntu updates of any file, which would also freeze the digest
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+The package list of the workflow is installed in a fresh container of the digest the workflow names, and the floor check runs over the installed WebKitGTK libraries
+```
+
+```text
+The install succeeds without version pins, prints the installed WebKitGTK version, and the installed libwebkit2gtk and libjavascriptcoregtk need no glibc newer than the floor
+```
+
+```text
+The release build can install its tools from the current Ubuntu 24.04 archive and still stay within the floor
+```
+
+##### Disposition
+
+Tested
+
+tools\/linux\-appimage\/tests\/test\-build\-environment\.sh
+
+```text
+an install step that only echoes a version string without the package being installed, or a list installed in a different image than the digest named
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The loader job of the workflow is read, and the loader check runs on stand-in AppImages and, when APPIMAGE is set, on the finished AppImage for Ubuntu 24.04 and Debian 13
+```
+
+```text
+The loader check script exists; the loader job waits for the packaging job and runs both digests; a missing AppImage or one without ELF files exits 2; a missing library or a glibc version the system lacks exits 1 and names it; a fully resolving AppImage exits 0, and the real AppImage resolves on both distributions
+```
+
+```text
+The AppImage still resolves all its libraries on Ubuntu 24.04 LTS and Debian 13 before it is released
+```
+
+##### Disposition
+
+Tested
+
+tools\/linux\-appimage\/tests\/test\-build\-environment\.sh
+
+```text
+a loader check that exits 0 without reading the AppImage, or one that refuses everything; rendering and window start are not covered
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
@@ -344,14 +465,14 @@ P2
 A build whose AppImage needs a newer glibc than the written floor fails in CI, so such an AppImage is never released.
 ```
 
-#### E5
+#### E6
 
 ##### Promises
 
 P3
 
 ```text
-The produced AppImage starts on Ubuntu 24.04 LTS.
+Every binary bundled in the AppImage resolves its libraries and glibc versions on Ubuntu 24.04 LTS and on Debian 13, and the maintainer has started the AppImage once on a desktop before the release.
 ```
 
 ## Charter
