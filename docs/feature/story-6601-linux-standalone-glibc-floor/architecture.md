@@ -29,25 +29,25 @@ Floor: one value, glibc 2.39 (Ubuntu 24.04 LTS), in tools/linux-appimage/glibc-f
 #### D4
 
 ```text
-Floor check carrier: bash script tools/linux-appimage/check-glibc-floor.sh DIR [FLOOR]. It walks DIR for ELF files (file magic 7f454c46), reads the GLIBC_x.y versions each one needs from readelf -V (version-needs section, undefined side only, GLIBC_PRIVATE ignored), and compares dotted versions numerically (sort -V semantics, never lexical). Outcomes: exit 0 pass, exit 1 over the floor with one WHAT/WHY/HOW block per offending file naming the path and the highest GLIBC version it needs, exit 2 indeterminate (directory missing, readelf missing, or zero ELF files scanned). Summary line scanned=N over_floor=M. Binutils is installed in the build container by the workflow.
+Floor check carrier: bash script tools/linux-appimage/check-glibc-floor.sh DIR [FLOOR]. It walks DIR with find -type f (symlinks are not followed, so a linked library is read once under its real path), keeps files with the ELF magic 7f454c46, reads the GLIBC_x.y versions each needs from readelf -V (version-needs section, GLIBC_PRIVATE ignored), and compares dotted versions numerically (sort -V semantics, never lexical). Outcomes: exit 0 pass; exit 1 over the floor, one WHAT/WHY/HOW block per offending file naming the path and the highest GLIBC version it needs; exit 2 indeterminate when the directory is missing, readelf is missing, zero ELF files were scanned, or an ELF lists libc.so.6 as needed (readelf -d) and zero GLIBC versions were parsed from it, so a format change cannot read as needs nothing. Summary line scanned=N highest=GLIBC_x.y over_floor=M. readelf comes from binutils and file(1) is not used for the ELF test.
 ```
 
 #### D5
 
 ```text
-Container constraints: the container has no FUSE, so the Tauri build step sets APPIMAGE_EXTRACT_AND_RUN=1 for linuxdeploy; the libssl rejection step already extracts with --appimage-extract and needs no FUSE. The container runs as root, so sudo is dropped. A bare ubuntu image lacks what the GitHub runner image preinstalls: the first step installs ca-certificates, curl, git, jq, file, xz-utils, build-essential, pkg-config, libssl-dev and binutils before checkout (checkout with fetch-depth 0 needs git), and the existing WebKitGTK installs keep their pins. These packages are the crafter list to complete: the oracle installs exactly what the workflow lists in a fresh digest-pinned container.
+Container constraints: no FUSE, so the Tauri build step sets APPIMAGE_EXTRACT_AND_RUN=1 for linuxdeploy; the libssl rejection step extracts with --appimage-extract and needs no FUSE. The container runs as root, so sudo is dropped. The setup-dotnet step is removed: no later step runs dotnet (the backend arrives as a downloaded artifact, the frontend build is tsc and vite, Tauri is Rust) and the bare image has no ICU library for it. A bare ubuntu image lacks what the GitHub runner image preinstalls, so a first step before checkout installs ca-certificates, curl, wget, git, jq, binutils, build-essential, pkg-config, libssl-dev, libxdo-dev, xz-utils and xdg-utils (git is needed by checkout with fetch-depth 0; curl and ca-certificates by the Rust toolchain action; node comes from setup-node and pnpm from pnpm/action-setup, both JavaScript actions that run in the container). The WebKitGTK dev packages are installed without version pins. The crafter completes the list; the oracle installs exactly what the workflow lists in a fresh digest-pinned container. Not provable locally: the first real Tauri bundling (linuxdeploy and appimagetool download and run in extract-and-run mode, squashfs comes inside appimagetool). That risk is accepted; the rollback is to revert the S2 commit.
 ```
 
 #### D6
 
 ```text
-Loader check carrier: tools/linux-appimage/check-loads-on.sh IMAGE APPIMAGE extracts the AppImage and, inside IMAGE, installs the distribution WebKitGTK/GTK runtime packages, runs ldd with the AppImage lib directory on LD_LIBRARY_PATH over every ELF in the AppImage, and fails on any not found or version GLIBC_ not found line. Proof: the bundled binaries resolve their libraries and glibc symbols on that distribution. Not proof: the window opens, the backend serves, the app works. A second job in the same reusable workflow runs it for ubuntu:24.04 and debian:13 (both digest-pinned) after the artifact is uploaded.
+Loader check carrier: tools/linux-appimage/check-loads-on.sh IMAGE APPIMAGE extracts the AppImage on the host (APPIMAGE --appimage-extract needs no FUSE) and, in a container of IMAGE, installs the distribution runtime packages libwebkit2gtk-4.1-0 libgtk-3-0t64 librsvg2-2 libayatana-appindicator3-1 (the crafter confirms the names in both images; the oracle shows a wrong one), runs ldd with the AppImage lib directory on LD_LIBRARY_PATH over every ELF in it, and fails on any line saying not found or version GLIBC_ not found. Exit 0 pass, 1 unresolved, 2 indeterminate (no ELF, no AppImage, docker or package install failed). Proof: bundled binaries resolve their libraries and glibc symbols on that distribution. Not proof: the window opens, the backend serves. The workflow gets a second job verify-appimage-loads: needs package-linux-standalone, runs-on ubuntu-latest, checks out the repository for the script, downloads the artifact Lighthouse-linux-standalone-<version> and runs for a matrix of ubuntu:24.04@sha256 and debian:13@sha256 (digests resolved by the crafter): bash tools/linux-appimage/check-loads-on.sh "$IMAGE" ./appimage/Lighthouse-standalone.AppImage. The S2 oracle runs the same script with the same digests it reads from the workflow matrix and the AppImage from the APPIMAGE environment variable. The first main run must show that a failed loader job fails the ci.yml caller and blocks the release job.
 ```
 
 #### D7
 
 ```text
-Runner and Renovate: the maintainer decided the runner is runs-on: ubuntu-latest and the glibc floor comes from the pinned container base, not the runner. The rule that froze the runner image (matchDepNames ubuntu, this workflow file) is removed, and a separate rule for the container image allows digest updates of the container image and disables major and minor updates of it, so a dependency pull request cannot raise the floor. Unchanged: every other rule.
+Runner and Renovate: the runner is runs-on: ubuntu-latest and the glibc floor comes from the pinned container base, not the runner (maintainer decision). The rule in renovate.json that froze the runner image for this workflow is removed and replaced by this rule: {"description": "The Linux AppImage build container is pinned to Ubuntu 24.04 because its glibc is the written floor. Digest updates stay on; a new Ubuntu release changes the floor and needs an ADR.", "matchManagers": ["github-actions"], "matchFileNames": [".github/workflows/ci_package-linux-standalone.yml"], "matchDepNames": ["ubuntu"], "matchUpdateTypes": ["major", "minor"], "enabled": false}. Unverified: whether the github-actions manager reads jobs.*.container images and treats 24.04 to 26.04 as major or minor; if it does not, the first Renovate pull request shows it and the Ubuntu release then stays a human decision. Every other rule is unchanged.
 ```
 
 #### D8
@@ -78,6 +78,18 @@ Formal verification: Quint is installed (probed with which quint) but no claim h
 
 ```text
 Test substrate: oracles are bash plus Docker in the style of tools/codesign/tests, summary line observed=N assertions_failed=M setup_failed=K, WHAT/WHY/HOW per failure, no set -e aborts. They need Docker and network. They are not in the default CI suite and no pull request workflow runs them: the files change rarely, and the main build runs the floor check for real. The maintainer runs them locally when these files change. No infrastructure derogation requested.
+```
+
+#### D13
+
+```text
+Docker Hub rate limits can fail the pull of the container or distribution images on a runner; the job then fails loudly and a re-run fixes it. No mirror is added. Accepted.
+```
+
+#### D14
+
+```text
+Docs: docs/Installation/standalone.md states the Linux requirement (glibc 2.39 or newer, WebKitGTK 4.1 and GTK 3, tested on Ubuntu 24.04 and Debian 13). docs/Installation/installation.md only links to the standalone page and gives no platform requirement, so it is unchanged.
 ```
 
 ### Constraints
@@ -337,7 +349,7 @@ The single written floor value FLOOR=2.39.
 Extend
 
 ```text
-Install binutils, extract the AppImage once, run the floor check after the libssl rejection and before the upload.
+Install binutils (readelf), extract the AppImage once, run the floor check after the libssl rejection and before the upload.
 ```
 
 docs\/Installation\/standalone\.md
@@ -363,15 +375,15 @@ None.
 #### Public oracle
 
 ```text
-Run the oracle: it runs check-glibc-floor.sh inside digest-pinned ubuntu:24.04 over (a) the real bash binary and the real libwebkit2gtk-4.1 library installed from the Ubuntu 24.04 archive, (b) a small C program compiled in ubuntu:26.04 against a symbol first versioned GLIBC_2.42, (c) an empty directory, (d) a copy of (a) with the floor argument lowered to 2.38.
+Run the oracle: it runs check-glibc-floor.sh inside digest-pinned ubuntu:24.04 over (a) the real bash binary, libwebkit2gtk-4.1, libjavascriptcoregtk-4.1 and WebKitWebProcess installed from the archive, (b) a small C program compiled in ubuntu:26.04 against a symbol first versioned GLIBC_2.42, (c) an empty directory, (d) copies of (a) with the floor argument 2.37 and then 2.38, (e) a layout with the offender in a nested directory and a symlink to it, (f) an ELF that needs libc.so.6 but has its version-needs section stripped.
 ```
 
 ```text
-(a) exit 0 with scanned>0 over_floor=0; (b) exit 1 and output names the offending file path and GLIBC_2.42; (c) exit 2; (d) exit 1 naming the highest version found; the workflow runs the check after the libssl rejection and before the upload.
+(a) exit 0, highest=GLIBC_2.38 as parsed (not only over_floor=0); (b) exit 1 naming the file path and GLIBC_2.42; (c) exit 2; (d) floor 2.37 exit 1 naming GLIBC_2.38, floor 2.38 exit 0; (e) exit 1 naming the real path once; (f) exit 2; the workflow runs the check after the libssl rejection and before the upload.
 ```
 
 ```text
-A check that compares versions as strings (2.9 above 2.39), accepts a directory with no ELF, names no file, ignores a library below the top directory, or passes (b) fails the oracle.
+A check that compares versions as strings, accepts a directory with no ELF, passes a file whose GLIBC needs it failed to parse, names no file, ignores nested files, reports a symlinked file twice, or passes (b) fails the oracle.
 ```
 
 ##### Promises
@@ -596,6 +608,18 @@ Refusal
 exit 1; one block per file with WHAT (path, GLIBC version), WHY (floor and where it is written), HOW (build in the pinned container or raise the floor by ADR)
 ```
 
+####### B5
+
+```text
+an ELF needs libc but no GLIBC version could be parsed
+```
+
+Indeterminate
+
+```text
+exit 2 naming the file and that readelf -V gave no GLIBC versions
+```
+
 ##### Observations
 
 None.
@@ -684,6 +708,40 @@ directory with no ELF
 
 ```text
 Three concrete layouts, built as real ELF files.
+```
+
+###### Evidence
+
+None.
+
+###### L4
+
+```text
+A file linked to libc.so.6 with no parsed GLIBC version, and a symlink to a library, never yield a silent pass or a duplicate offender
+```
+
+Invariant
+
+Application
+
+tools\/linux\-appimage\/check\-glibc\-floor\.sh
+
+###### Treatment
+
+Finite
+
+###### Cases
+
+```text
+stripped version-needs section
+```
+
+```text
+symlink to an offending library
+```
+
+```text
+Two concrete layouts built as real ELF files.
 ```
 
 ###### Evidence
@@ -851,7 +909,7 @@ None.
 Extend
 
 ```text
-Job container ubuntu:24.04 by digest, runs-on ubuntu-latest, first step installs build packages as root, sudo removed, exact WebKitGTK version pins dropped and the installed version printed to the log, APPIMAGE_EXTRACT_AND_RUN on the build step, loader-check job after upload.
+Job container ubuntu:24.04 by digest, runs-on ubuntu-latest, first step installs build packages as root, setup-dotnet and sudo removed, exact WebKitGTK pins dropped and the installed version printed, APPIMAGE_EXTRACT_AND_RUN on the build step, verify-appimage-loads job after upload.
 ```
 
 tools\/linux\-appimage\/check\-loads\-on\.sh
@@ -885,15 +943,15 @@ tools\/linux\-appimage\/tests\/test\-glibc\-floor\.sh
 #### Public oracle
 
 ```text
-Run the oracle: it reads the workflow, renovate.json and the ADR as files; installs the workflow package list in a fresh ubuntu:24.04 container by the digest the workflow names, with no exact version pin, and runs check-glibc-floor.sh over the libwebkit2gtk-4.1 library installed from the current archive; with APPIMAGE set it runs check-loads-on.sh for that AppImage in ubuntu:24.04 and debian:13.
+Run the oracle: it reads the workflow, renovate.json and the ADR as files; installs the workflow package list in a fresh ubuntu:24.04 container by the digest the workflow names, with no exact version pin, and runs check-glibc-floor.sh over the libwebkit2gtk-4.1 library installed from the current archive; with APPIMAGE set it runs bash tools/linux-appimage/check-loads-on.sh <image digest> $APPIMAGE for the ubuntu:24.04 and debian:13 digests it reads from the workflow matrix.
 ```
 
 ```text
-The Linux packaging job names runs-on ubuntu-latest and a container image ubuntu:24.04@sha256 digest and no versioned ubuntu runner label; no webkit or javascriptcore package in the workflow carries an exact = version pin; the workflow prints the installed WebKitGTK version; the package install succeeds in the digest container and the installed libwebkit2gtk library passes the floor; renovate.json no longer freezes a runner and keeps the container image on digest updates only; the libssl rejection and the floor check steps stay between build and upload; the ADR and the floor file exist and agree; with APPIMAGE set both distributions resolve every bundled binary.
+The Linux packaging job names runs-on ubuntu-latest and a container image ubuntu:24.04@sha256 digest and no versioned ubuntu runner label; there is no setup-dotnet step; no webkit or javascriptcore package carries an exact = pin; the workflow prints the installed WebKitGTK version; the package install succeeds in the digest container and the installed libwebkit2gtk passes the floor; renovate.json no longer freezes a runner and has the container rule with major and minor disabled for the ubuntu dependency; the libssl rejection and the floor check stay between build and upload; verify-appimage-loads needs the package job and runs both digests; the ADR and the floor file exist and agree; with APPIMAGE set both distributions resolve every bundled binary.
 ```
 
 ```text
-A workflow still naming a versioned ubuntu runner, a container by tag only, an exact = pin on a webkit or javascriptcore package, no version print, a Renovate rule that lets the Ubuntu release move or still freezes the runner, a package list that fails to install in the digest container, a libwebkit2gtk that exceeds the floor, or a loader line not found on either distribution fails the oracle. Not covered: rendering; the maintainer starts the AppImage once on a desktop before the release.
+A versioned ubuntu runner, a container by tag only, a setup-dotnet step, an exact = pin, no version print, a Renovate rule that lets the Ubuntu release move or still freezes the runner, a package list that fails to install, a libwebkit2gtk over the floor, a loader job without needs, or a loader line not found on either distribution fails the oracle. Not covered: rendering; the maintainer starts the AppImage once on a desktop before the release.
 ```
 
 ##### Promises
@@ -1328,6 +1386,32 @@ silent fallback to another base image or version
 
 ```text
 walked through the design, not executed: all four stop the job before upload; recovery is a manual digest or pin change by ADR
+```
+
+maintainer
+
+###### Y6
+
+SinglePointOfFailure
+
+```text
+Assumption: linuxdeploy, appimagetool and the JavaScript actions work in the bare container. Negated: one needs a package the list lacks.
+```
+
+```text
+earlier releases stay available; no over-floor AppImage is uploaded
+```
+
+```text
+the Linux job fails on main
+```
+
+```text
+a release without a Linux AppImage unnoticed
+```
+
+```text
+accepted: first seen on main; rollback is reverting the S2 commit; no cheap local full build exists because the sidecar artifact is built by the pipeline
 ```
 
 maintainer
