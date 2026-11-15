@@ -46,6 +46,8 @@ run_runner() {
       "put the GitHub token in $host_token_file and run: $register_command"
   fi
   prepare_runtime
+  # The registration files are the runner's credentials; only the runner user may read its copies.
+  umask 077
   local file
   for file in "${registration_files[@]}"; do
     cp "$state_dir/$file" "$runtime_dir/$file"
@@ -89,6 +91,7 @@ register_runner() {
   "$runtime_dir/config.sh" --unattended --url "$repository_url" --token "$registration_token" \
     --name "$runner_name" --labels "$runner_labels" --replace --disableupdate
 
+  umask 077
   local file
   for file in "${registration_files[@]}"; do
     cp "$runtime_dir/$file" "$state_dir/$file"
