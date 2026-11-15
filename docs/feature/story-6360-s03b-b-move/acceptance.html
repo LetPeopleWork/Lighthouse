@@ -655,6 +655,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe argv: nwdes examine probe --workspace /tmp/nwdes-examine-mn78cs8s -- refresh-answers-compare (no arguments). Output: base 8a785450c vs candidate e4ca94f48; 297 refresh answers captured over 9 scenarios; masked keys lastUpdated, creationTime, concurrencyToken. Per-scenario: blocked-a-week-ago 22/0 different, blocked-count-history 22/0, blocked-today 22/0, feature-list 22/0, features-with-dependencies 9/0, finished 22/0, in-progress-a-week-ago 22/0, in-progress-today 22/0, work-items 134/0. Verdict line: IDENTICAL, all 297 refresh answers match. Exit status: not printed in captured output (exit line empty).
+</code></pre>
+
+<pre><code>Probe argv: nwdes examine probe --workspace /tmp/nwdes-examine-mn78cs8s -- metrics-answers-compare (no arguments). Output: base 7ec328cb6 captured 2026-11-15T15:42:23Z; candidate e4ca94f48 captured 2026-11-15T15:45:00Z; window 2026-07-20..2026-10-17; 366 requests per round; rounds_until_settled 3; teams 1 4 5; portfolios 1 4 5. Verdict line: IDENTICAL: 366 responses and 3 snapshot tables. Exit status: not printed in captured output.
+</code></pre>
+
+<pre><code>Probe argv: nwdes examine probe --workspace /tmp/nwdes-examine-mn78cs8s -- forecast-answers-compare (no arguments). Base 39a7f598f vs candidate e4ca94f48. Output: 128 forecast answers captured over 9 scenarios (backtest 15 compared 0 different; deliveries 7/0; feature-list 22/0; features 9/0; item-creation-prediction 15/0; manual-how-many 15/0; manual-when-and-how-many 15/0; manual-when-filtered 15/0; reality-check 15/0). Verdict line: IDENTICAL, all 128 forecast answers match. Exit status: not printed in captured output.
+</code></pre>
+
+<pre><code>Probe refresh-answers-compare (no args, base 8a785450c vs HEAD e2dbc016a), exit 0. Base licence import 200; captured 297 answers over 9 scenarios on base and candidate. Masked keys lastUpdated, creationTime, concurrencyToken (values not compared). Per scenario, compared/different: blocked-a-week-ago 22/0; blocked-count-history 22/0; blocked-today 22/0; feature-list 22/0; features-with-dependencies 9/0; finished 22/0; in-progress-a-week-ago 22/0; in-progress-today 22/0; work-items 134/0. parent-placement: 2159 compared, 0 different (1248 name a parent). Probe verdict line: IDENTICAL, all 297 refresh answers match.
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe refresh-reactions-compare (no args, base 8a785450c vs HEAD e2dbc016a), exit 0. Base and candidate both: premium licence imported (200); demo scenario 1 &#x27;Too Much WIP&#x27; loaded, all updates finished. Team refresh runs and is recorded: base and candidate both answer Team &#x27;Team Voyager&#x27; 22 Work Items in progress, 5 blocked (same). Changed download refreshes connection Teams: both 22 in progress, refreshed after save (same). Deleted Team leaves refresh history: both had rows before, none after (same). Work Item / Feature becomes blocked or no longer blocked: NOT OBSERVABLE on either side, no public answer shows the blocked period on the day it runs. Probe verdict line: IDENTICAL for all 3 observable reactions.
+</code></pre>
+
+<pre><code>Probe refresh-answers-compare (no args, base 8a785450c vs HEAD e2dbc016a), exit 0. Base licence import 200; captured 297 answers over 9 scenarios on base and candidate. Masked keys lastUpdated, creationTime, concurrencyToken (values not compared). Per scenario, compared/different: blocked-a-week-ago 22/0; blocked-count-history 22/0; blocked-today 22/0; feature-list 22/0; features-with-dependencies 9/0; finished 22/0; in-progress-a-week-ago 22/0; in-progress-today 22/0; work-items 134/0. parent-placement: 2159 compared, 0 different (1248 name a parent). Probe verdict line: IDENTICAL, all 297 refresh answers match.
+</code></pre>
+
+<h3>E3</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe refresh-reactions-compare (no args, base 8a785450c vs HEAD e2dbc016a), exit 0. Base and candidate both: premium licence imported (200); demo scenario 1 &#x27;Too Much WIP&#x27; loaded, all updates finished. Team refresh runs and is recorded: base and candidate both answer Team &#x27;Team Voyager&#x27; 22 Work Items in progress, 5 blocked (same). Changed download refreshes connection Teams: both 22 in progress, refreshed after save (same). Deleted Team leaves refresh history: both had rows before, none after (same). Work Item / Feature becomes blocked or no longer blocked: NOT OBSERVABLE on either side, no public answer shows the blocked period on the day it runs. Probe verdict line: IDENTICAL for all 3 observable reactions.
+</code></pre>
+
+<h3>E4</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe argv: nwdes examine probe --workspace /tmp/nwdes-examine-mn78cs8s -- refresh-answers-compare (no arguments). Output: base 8a785450c vs candidate e4ca94f48; 297 refresh answers captured over 9 scenarios; masked keys lastUpdated, creationTime, concurrencyToken. Per-scenario: blocked-a-week-ago 22/0 different, blocked-count-history 22/0, blocked-today 22/0, feature-list 22/0, features-with-dependencies 9/0, finished 22/0, in-progress-a-week-ago 22/0, in-progress-today 22/0, work-items 134/0. Verdict line: IDENTICAL, all 297 refresh answers match. Exit status: not printed in captured output (exit line empty).
+</code></pre>
+
+<pre><code>Probe argv: nwdes examine probe --workspace /tmp/nwdes-examine-mn78cs8s -- metrics-answers-compare (no arguments). Output: base 7ec328cb6 captured 2026-11-15T15:42:23Z; candidate e4ca94f48 captured 2026-11-15T15:45:00Z; window 2026-07-20..2026-10-17; 366 requests per round; rounds_until_settled 3; teams 1 4 5; portfolios 1 4 5. Verdict line: IDENTICAL: 366 responses and 3 snapshot tables. Exit status: not printed in captured output.
+</code></pre>
+
+<pre><code>Probe argv: nwdes examine probe --workspace /tmp/nwdes-examine-mn78cs8s -- forecast-answers-compare (no arguments). Base 39a7f598f vs candidate e4ca94f48. Output: 128 forecast answers captured over 9 scenarios (backtest 15 compared 0 different; deliveries 7/0; feature-list 22/0; features 9/0; item-creation-prediction 15/0; manual-how-many 15/0; manual-when-and-how-many 15/0; manual-when-filtered 15/0; reality-check 15/0). Verdict line: IDENTICAL, all 128 forecast answers match. Exit status: not printed in captured output.
+</code></pre>
+
+<pre><code>Probe refresh-answers-compare (no args, base 8a785450c vs HEAD e2dbc016a), exit 0. Base licence import 200; captured 297 answers over 9 scenarios on base and candidate. Masked keys lastUpdated, creationTime, concurrencyToken (values not compared). Per scenario, compared/different: blocked-a-week-ago 22/0; blocked-count-history 22/0; blocked-today 22/0; feature-list 22/0; features-with-dependencies 9/0; finished 22/0; in-progress-a-week-ago 22/0; in-progress-today 22/0; work-items 134/0. parent-placement: 2159 compared, 0 different (1248 name a parent). Probe verdict line: IDENTICAL, all 297 refresh answers match.
+</code></pre>
 
 </body></html>
