@@ -69,6 +69,10 @@ The app checks for updates on startup and prompts you to install them automatica
    ./Lighthouse*.AppImage
    ```
 
+### Minimum Linux version
+
+The AppImage needs Ubuntu 24.04 LTS (glibc 2.39) or newer, or another distribution with glibc 2.39 or newer, such as Debian 13. Your distribution must also provide WebKitGTK 4.1 and GTK 3. Older distributions, such as Ubuntu 22.04, cannot start the AppImage.
+
 ### Updating
 
 The app checks for updates on startup and prompts you to install them automatically.

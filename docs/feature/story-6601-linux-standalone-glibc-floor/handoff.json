@@ -1,0 +1,1170 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F198",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F196",
+"stimulus": "F195",
+"user_result": "F197"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F79",
+"L1/F80",
+"L1/F81",
+"L1/F82"
+],
+"still_passes_if": "F202",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F200",
+"stimulus": "F199",
+"user_result": "F201"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F206",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F204",
+"stimulus": "F203",
+"user_result": "F205"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F85",
+"L2/F86",
+"L4/F179"
+],
+"still_passes_if": "F210",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F208",
+"stimulus": "F207",
+"user_result": "F209"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F87"
+],
+"still_passes_if": "F214",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F212",
+"stimulus": "F211",
+"user_result": "F213"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F178"
+],
+"still_passes_if": "F218",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F216",
+"stimulus": "F215",
+"user_result": "F217"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F222",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F220",
+"stimulus": "F219",
+"user_result": "F221"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4"
+],
+"still_passes_if": "F226",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F224",
+"stimulus": "F223",
+"user_result": "F225"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F230",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F228",
+"stimulus": "F227",
+"user_result": "F229"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F234",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F232",
+"stimulus": "F231",
+"user_result": "F233"
+}
+]
+},
+"counters": {
+"B": 5,
+"C": 2,
+"D": 14,
+"E": 5,
+"F": 234,
+"K": 4,
+"L": 4,
+"P": 3,
+"S": 2,
+"Y": 6
+},
+"design": {
+"paradigm": "procedural",
+"shared": {
+"boundaries": {
+"dependency_direction": "F27",
+"driven_ports": [
+"F26"
+],
+"driving_port": "F25"
+},
+"claims": [
+{
+"admitted_input": "F35",
+"bypass": "F37",
+"constructor": "check-glibc-floor step between the libssl rejection step and the upload step",
+"consumer": "upload step, release job",
+"harm": "F34",
+"id": "C1",
+"owner": "tools/linux-appimage/check-glibc-floor.sh",
+"proposition": "F33",
+"public_observation": "F36"
+},
+{
+"admitted_input": "F40",
+"bypass": "F42",
+"constructor": "job container block",
+"consumer": "ci.yml release job",
+"harm": "F39",
+"id": "C2",
+"owner": ".github/workflows/ci_package-linux-standalone.yml",
+"proposition": "F38",
+"public_observation": "F41"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F22"
+},
+{
+"id": "K2",
+"text": "F23"
+},
+{
+"id": "K3",
+"text": "F24"
+},
+{
+"id": "K4",
+"text": "F157"
+}
+],
+"constructors": [
+{
+"name": "check-glibc-floor",
+"signature": "DIR [FLOOR] -> exit 0 | 1 | 2"
+},
+{
+"name": "check-loads-on",
+"signature": "IMAGE APPIMAGE -> exit 0 | 1 | 2"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F10"
+},
+{
+"id": "D2",
+"text": "F11"
+},
+{
+"id": "D3",
+"text": "F12"
+},
+{
+"id": "D4",
+"text": "F165"
+},
+{
+"id": "D5",
+"text": "F166"
+},
+{
+"id": "D6",
+"text": "F167"
+},
+{
+"id": "D7",
+"text": "F168"
+},
+{
+"id": "D8",
+"text": "F162"
+},
+{
+"id": "D9",
+"text": "F163"
+},
+{
+"id": "D10",
+"text": "F19"
+},
+{
+"id": "D11",
+"text": "F20"
+},
+{
+"id": "D12",
+"text": "F164"
+},
+{
+"id": "D13",
+"text": "F169"
+},
+{
+"id": "D14",
+"text": "F170"
+}
+],
+"equality": [
+{
+"definition": "F32",
+"under": "floor check outcome"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F29",
+"description": "F28",
+"result_type": "exit 0|1|2 plus text lines"
+},
+{
+"cannot_distinguish": "F31",
+"description": "F30",
+"result_type": "exit 0|1|2 plus text lines"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "tools/linux-appimage/check-glibc-floor.sh",
+"state": "F43"
+},
+{
+"kind": "Excluded",
+"owner": "tools/linux-appimage/check-glibc-floor.sh",
+"state": "F44"
+},
+{
+"kind": "Excluded",
+"owner": "docs/product/architecture/adr-284",
+"state": "F45"
+},
+{
+"kind": "Unknown",
+"owner": "maintainer at the first main pipeline",
+"state": "F46"
+},
+{
+"kind": "Unknown",
+"owner": "maintainer",
+"state": "F47"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "tools/linux-appimage/tests/test-glibc-floor.sh",
+"public_oracle": {
+"expected": "F173",
+"falsifier": "F174",
+"promises": [
+"P2"
+],
+"stimulus": "F172"
+},
+"records": {
+"agreement": [
+{
+"contract": "glibc floor value",
+"decision": "Migrated",
+"locator": "tools/linux-appimage/glibc-floor:1",
+"party": "Producer",
+"reason": "F65"
+},
+{
+"contract": "glibc floor value",
+"decision": "Migrated",
+"locator": "tools/linux-appimage/check-glibc-floor.sh:1",
+"party": "Consumer",
+"reason": "F66"
+},
+{
+"contract": "glibc floor value",
+"decision": "Migrated",
+"locator": "docs/Installation/standalone.md:60",
+"party": "Consumer",
+"reason": "F67"
+}
+],
+"boundaries": {
+"dependency_direction": "F73",
+"driven_ports": [
+"F72"
+],
+"driving_port": "F71",
+"failures": [
+{
+"condition": "F74",
+"id": "B1",
+"observation": "F75",
+"outcome": "Indeterminate"
+},
+{
+"condition": "F76",
+"id": "B2",
+"observation": "F77",
+"outcome": "Refusal"
+},
+{
+"condition": "F175",
+"id": "B5",
+"observation": "F176",
+"outcome": "Indeterminate"
+}
+]
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F90",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F89"
+},
+{
+"axis": "Inhabitation",
+"basis": "F91",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F89"
+},
+{
+"axis": "PublicReachability",
+"basis": "F92",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F89"
+},
+{
+"axis": "Liveness",
+"basis": "F93",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F89"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "workflow",
+"locator": ".github/workflows/ci_package-linux-standalone.yml:150",
+"reason": "F60"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/Installation/standalone.md:60",
+"reason": "F61"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "caller",
+"locator": ".github/workflows/ci.yml:164",
+"reason": "F62"
+},
+{
+"decision": "Changed",
+"kind": "script",
+"locator": "tools/linux-appimage/check-glibc-floor.sh:1",
+"reason": "F63"
+},
+{
+"decision": "Changed",
+"kind": "config",
+"locator": "tools/linux-appimage/glibc-floor:1",
+"reason": "F64"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Algebraic",
+"layer": "Domain",
+"owner": "tools/linux-appimage/check-glibc-floor.sh",
+"statement": "F78",
+"treatment": {
+"cases": [
+"F79",
+"F80",
+"F81",
+"F82"
+],
+"kind": "Finite",
+"reason": "F83"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "tools/linux-appimage/check-glibc-floor.sh",
+"statement": "F84",
+"treatment": {
+"cases": [
+"F85",
+"F86",
+"F87"
+],
+"kind": "Finite",
+"reason": "F88"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "tools/linux-appimage/check-glibc-floor.sh",
+"statement": "F177",
+"treatment": {
+"cases": [
+"F178",
+"F179"
+],
+"kind": "Finite",
+"reason": "F180"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F68"
+},
+{
+"analysis": "contract_tests",
+"reason": "F69"
+},
+{
+"analysis": "prefactoring",
+"reason": "F70"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "tools/codesign/tests/test-runner-image.sh:40",
+"reason": "F55",
+"symbol": "pass"
+},
+{
+"decision": "Extend",
+"locator": ".github/workflows/ci_package-linux-standalone.yml:150",
+"reason": "F56",
+"symbol": "Reject an AppImage that bundles libssl"
+},
+{
+"decision": "CreateNew",
+"locator": "tools/linux-appimage/check-glibc-floor.sh:1",
+"reason": "F57",
+"symbol": "floor check"
+},
+{
+"decision": "CreateNew",
+"locator": "tools/linux-appimage/glibc-floor:1",
+"reason": "F58",
+"symbol": "FLOOR"
+},
+{
+"decision": "Extend",
+"locator": "docs/Installation/standalone.md:60",
+"reason": "F59",
+"symbol": "Linux"
+}
+],
+"risks": [
+{
+"allowed": "F96",
+"forbidden": "F97",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "maintainer",
+"preserved": "F95",
+"residue": "F98",
+"source": "F94"
+},
+{
+"allowed": "F101",
+"forbidden": "F102",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F100",
+"residue": "F103",
+"source": "F99"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "tools/linux-appimage/check-glibc-floor.sh",
+"reason": "F48"
+},
+{
+"change": "Create",
+"path": "tools/linux-appimage/glibc-floor",
+"reason": "F49"
+},
+{
+"change": "Extend",
+"path": ".github/workflows/ci_package-linux-standalone.yml",
+"reason": "F171"
+},
+{
+"change": "Extend",
+"path": "docs/Installation/standalone.md",
+"reason": "F51"
+}
+],
+"verification": [
+"bash tools/linux-appimage/tests/test-glibc-floor.sh"
+]
+},
+"S2": {
+"oracle": "tools/linux-appimage/tests/test-build-environment.sh",
+"public_oracle": {
+"expected": "F183",
+"falsifier": "F184",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F182"
+},
+"records": {
+"agreement": [
+{
+"contract": "build container Ubuntu release",
+"decision": "Migrated",
+"locator": ".github/workflows/ci_package-linux-standalone.yml:14",
+"party": "Producer",
+"reason": "F119"
+},
+{
+"contract": "build container Ubuntu release",
+"decision": "Migrated",
+"locator": "renovate.json:77",
+"party": "Consumer",
+"reason": "F120"
+},
+{
+"contract": "build container Ubuntu release",
+"decision": "UnchangedCompatible",
+"locator": "tools/linux-appimage/glibc-floor:1",
+"party": "Consumer",
+"reason": "F121"
+}
+],
+"boundaries": {
+"dependency_direction": "F127",
+"driven_ports": [
+"F126"
+],
+"driving_port": "F125",
+"failures": [
+{
+"condition": "F128",
+"id": "B3",
+"observation": "F129",
+"outcome": "Refusal"
+},
+{
+"condition": "F130",
+"id": "B4",
+"observation": "F131",
+"outcome": "Refusal"
+}
+]
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F138",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F137"
+},
+{
+"axis": "Inhabitation",
+"basis": "F139",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F137"
+},
+{
+"axis": "PublicReachability",
+"basis": "F140",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F137"
+},
+{
+"axis": "Liveness",
+"basis": "F141",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F137"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "workflow",
+"locator": ".github/workflows/ci_package-linux-standalone.yml:15",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "config",
+"locator": "renovate.json:77",
+"reason": "F115"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "caller",
+"locator": ".github/workflows/ci.yml:240",
+"reason": "F116"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "docs",
+"locator": "docs/ci-learnings.md:409",
+"reason": "F117"
+},
+{
+"decision": "Changed",
+"kind": "script",
+"locator": "tools/linux-appimage/check-loads-on.sh:1",
+"reason": "F118"
+}
+],
+"laws": [
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": ".github/workflows/ci_package-linux-standalone.yml",
+"statement": "F132",
+"treatment": {
+"cases": [
+"F133",
+"F134",
+"F135"
+],
+"kind": "Finite",
+"reason": "F136"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F122"
+},
+{
+"analysis": "contract_tests",
+"reason": "F123"
+},
+{
+"analysis": "prefactoring",
+"reason": "F124"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "tools/codesign/Dockerfile:4",
+"reason": "F110",
+"symbol": "ubuntu:26.04@sha256"
+},
+{
+"decision": "Extend",
+"locator": ".github/workflows/ci_package-linux-standalone.yml:14",
+"reason": "F111",
+"symbol": "package-linux-standalone"
+},
+{
+"decision": "Replace",
+"locator": "renovate.json:78",
+"reason": "F112",
+"symbol": "ci_package-linux-standalone.yml"
+},
+{
+"decision": "CreateNew",
+"locator": "tools/linux-appimage/check-loads-on.sh:1",
+"reason": "F113",
+"symbol": "check-loads-on"
+}
+],
+"risks": [
+{
+"allowed": "F144",
+"forbidden": "F145",
+"id": "Y3",
+"kind": "SinglePointOfFailure",
+"owner": "maintainer",
+"preserved": "F143",
+"residue": "F146",
+"source": "F142"
+},
+{
+"allowed": "F149",
+"forbidden": "F150",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "maintainer",
+"preserved": "F148",
+"residue": "F151",
+"source": "F147"
+},
+{
+"allowed": "F154",
+"forbidden": "F155",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "maintainer",
+"preserved": "F153",
+"residue": "F156",
+"source": "F152"
+},
+{
+"allowed": "F187",
+"forbidden": "F188",
+"id": "Y6",
+"kind": "SinglePointOfFailure",
+"owner": "maintainer",
+"preserved": "F186",
+"residue": "F189",
+"source": "F185"
+}
+]
+},
+"supports": [
+"tools/linux-appimage/tests/test-glibc-floor.sh"
+],
+"targets": [
+{
+"change": "Extend",
+"path": ".github/workflows/ci_package-linux-standalone.yml",
+"reason": "F181"
+},
+{
+"change": "Create",
+"path": "tools/linux-appimage/check-loads-on.sh",
+"reason": "F105"
+},
+{
+"change": "Extend",
+"path": "renovate.json",
+"reason": "F106"
+}
+],
+"verification": [
+"bash tools/linux-appimage/tests/test-build-environment.sh"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F190"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F191"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F192"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F193"
+},
+{
+"id": "E5",
+"promises": [
+"P3"
+],
+"text": "F194"
+}
+]
+},
+"facts": {
+"F1": "Story 6601: Linux standalone builds no longer break when GitHub retires a runner image. The AppImage is built on a GitHub-hosted Ubuntu image with WebKitGTK pinned to that image's package version; when ubuntu-latest moved to 26.04 the pins vanished and the release was blocked; the quick fix pins runs-on: ubuntu-24.04, which breaks again when GitHub retires 24.04. Building on a newer image raises the glibc the AppImage needs and stops it starting on Ubuntu 24.04 LTS and Debian 13. Goal: the Linux build no longer depends on which runner images GitHub offers; the minimum glibc and distribution is a written decision changed on purpose. Acceptance: (1) the Linux standalone builds without naming a GitHub runner image that will be retired, or there is a documented, alarmed path for when it is; (2) the minimum glibc and distribution is written down and CI fails if a build exceeds it; (3) the AppImage still starts on Ubuntu 24.04 LTS.",
+"F10": "Paradigm is procedural: GitHub Actions YAML, bash scripts and a pinned container image. No C# or TypeScript production change; mutation testing does not apply. There is no smell catalogue for procedural; the general classes applied are duplicated knowledge (one floor value, one reader), mixed concerns (the check reads facts, the workflow decides when it runs) and hidden coupling (the floor and the container image release must agree, so both are written next to each other and in one ADR).",
+"F100": "Floor check never passes silently",
+"F101": "exit 2 indeterminate",
+"F102": "exit 0 with scanned=0",
+"F103": "format drift shows as exit 2 on main, not as a false pass",
+"F105": "Loader check of the finished AppImage on a distribution image.",
+"F106": "Remove the runner freeze rule and add a rule for the container image that allows digest updates and disables major and minor updates of the container image.",
+"F11": "Build environment: the packaging job keeps runs-on: ubuntu-latest, an alias GitHub moves and does not retire, and sets job container ubuntu:24.04 pinned by sha256 digest, so glibc 2.39, the WebKitGTK packages and the toolchain come from an image we chose. The runner host only starts containers. The ADR in docs/product/architecture/adr-284 is the written decision and the authority; no nwdes ADR is declared.",
+"F110": "Same technique as the signing runner (base pinned by digest, Renovate keeps the digest); no image of our own is built because the build needs no pre-baked state.",
+"F111": "One job already owns build, signing and upload; adding a container block keeps one owner.",
+"F112": "The rule froze a runner label that is no longer a decision; it is removed and a separate rule keeps the container image digest current without moving its Ubuntu release.",
+"F113": "Nothing in the repo runs an AppImage against a distribution image.",
+"F114": "Runner label, container, package step, extra job.",
+"F115": "Rule replaced.",
+"F116": "The release job needs the same package-linux-standalone job id; the added job belongs to the called workflow and its failure still fails the call.",
+"F117": "No learning added; the ADR holds the rule.",
+"F118": "New script; called by the loader-check job and the oracle.",
+"F119": "Names the ubuntu:24.04 digest.",
+"F12": "Floor: one value, glibc 2.39 (Ubuntu 24.04 LTS), in tools/linux-appimage/glibc-floor as a single line FLOOR=2.39. It is read by the floor check and is the only place the number lives besides the ADR and the docs page; changing it is a deliberate edit plus a superseding ADR. Scope out: the floor itself is not changed.",
+"F120": "Must not move the release.",
+"F121": "Floor 2.39 is the glibc of the same release.",
+"F122": "No code module dependency law is touched; the shape of the workflow is asserted by the primary oracle.",
+"F123": "Parties change in the same commit and deployable; no persisted or wire data outlives the producer.",
+"F124": "No behaviour-preserving move precedes the change; the workflow edit is the change itself.",
+"F125": "the reusable workflow .github/workflows/ci_package-linux-standalone.yml called from ci.yml; bash tools/linux-appimage/check-loads-on.sh IMAGE APPIMAGE",
+"F126": "docker; the Ubuntu apt archive; the GitHub Actions job container",
+"F127": "oracle reads workflow, renovate.json and ADR as files; workflow calls scripts; nothing in backend or frontend depends on any of it",
+"F128": "the container build fails on a missing package or without FUSE",
+"F129": "the main pipeline job fails before upload; the release waits for a fix; seen only on main",
+"F130": "the ubuntu-latest label or the container image becomes unavailable",
+"F131": "every job fails at job start with a visible error; the ADR names this as the documented path",
+"F132": "The build container image is named by a sha256 digest and its Ubuntu release equals the release the floor file documents; changing one without the other fails the oracle",
+"F133": "tag only without digest",
+"F134": "digest with release 26.04",
+"F135": "digest with release 24.04",
+"F136": "Finite shapes of one string; a table of cases.",
+"F137": "container build on a non-retiring runner",
+"F138": "Container digest fixes glibc; the floor check from the first slice excludes an over-floor upload; checked by the static workflow oracle and the install-and-floor probe.",
+"F139": "Workflow package list -> digest ubuntu:24.04 container -> installed WebKitGTK library -> floor check exit 0, built in the oracle; the full Tauri build is first seen on main.",
+"F140": "ci.yml package-linux-standalone calls the reusable workflow; the loader-check job and the oracle argv call check-loads-on.sh (CreateNew).",
+"F141": "Not applicable: no state machine; the job is a finite sequence of steps that ends or fails.",
+"F142": "Assumption: the first real Tauri build in a bare container works with the listed packages and APPIMAGE_EXTRACT_AND_RUN. Negated: a package or tool the runner image preinstalled is missing.",
+"F143": "The previous release artifacts stay available; no AppImage over the floor is uploaded",
+"F144": "the Linux job fails on main until fixed",
+"F145": "an AppImage built outside the container is released silently",
+"F146": "the real build is first seen on main; the maintainer may run the container steps by hand before merging if a release is imminent",
+"F147": "Assumption: nobody edits the workflow back to a runner build. Negated: a person re-adds runs-on ubuntu-NN.04.",
+"F148": "floor and container are one written decision",
+"F149": "a deliberate edit with a new ADR",
+"F150": "an unreviewed change of the Ubuntu release",
+"F151": "Renovate is disabled for the release; the oracle fails on a versioned runner label; humans can still edit",
+"F152": "Second set: Docker Hub rate limit or outage; the image digest is withdrawn; ubuntu-latest drops Docker; apt archive removes the pinned WebKitGTK version.",
+"F153": "no wrong AppImage is released",
+"F154": "the job fails loudly at pull or install",
+"F155": "silent fallback to another base image or version",
+"F156": "walked through the design, not executed: all four stop the job before upload; recovery is a manual digest or pin change by ADR",
+"F157": "Proof limit: the floor check and loader check cannot see rendering. The maintainer starts the S2 AppImage once on a desktop before the release; this is a manual step, not a CI gate.",
+"F162": "WebKitGTK pins are dropped: the six exact =2.44.0-2 pins go, so the build takes the current Ubuntu 24.04 versions (release, updates and security) and keeps getting security fixes. The pins were added in March 2026 with no recorded reason and the Tauri code has no WebKit workaround. The floor still comes from the 24.04 base, whose archive keeps glibc 2.39. The build prints the installed libwebkit2gtk-4.1 version into the job log. User-visible risk: a newer WebKitGTK can change rendering, for example the DMABUF renderer showing a blank window on some GPUs; the floor check cannot see it, so the maintainer starts the AppImage of the first build once on a desktop before the release.",
+"F163": "Rejected: keep runs-on ubuntu-24.04 (postpones the failure); prebuilt builder image on GHCR like the signing runner image (adds an image pipeline and a registry dependency for a few minutes saved per release; can replace the install step later without touching the floor); keep the exact WebKitGTK pins (no recorded reason, no WebKit workaround, no security updates); scheduled canary on the newest runner (the container removes the dependency the canary would watch, and a vanished ubuntu-latest label fails every job loudly at job start); raising the floor to 26.04 (drops Ubuntu 24.04 users, out of scope); a pull request workflow for the oracles (files change rarely, main runs the floor check).",
+"F164": "Test substrate: oracles are bash plus Docker in the style of tools/codesign/tests, summary line observed=N assertions_failed=M setup_failed=K, WHAT/WHY/HOW per failure, no set -e aborts. They need Docker and network. They are not in the default CI suite and no pull request workflow runs them: the files change rarely, and the main build runs the floor check for real. The maintainer runs them locally when these files change. No infrastructure derogation requested.",
+"F165": "Floor check carrier: bash script tools/linux-appimage/check-glibc-floor.sh DIR [FLOOR]. It walks DIR with find -type f (symlinks are not followed, so a linked library is read once under its real path), keeps files with the ELF magic 7f454c46, reads the GLIBC_x.y versions each needs from readelf -V (version-needs section, GLIBC_PRIVATE ignored), and compares dotted versions numerically (sort -V semantics, never lexical). Outcomes: exit 0 pass; exit 1 over the floor, one WHAT/WHY/HOW block per offending file naming the path and the highest GLIBC version it needs; exit 2 indeterminate when the directory is missing, readelf is missing, zero ELF files were scanned, or an ELF lists libc.so.6 as needed (readelf -d) and zero GLIBC versions were parsed from it, so a format change cannot read as needs nothing. Summary line scanned=N highest=GLIBC_x.y over_floor=M. readelf comes from binutils and file(1) is not used for the ELF test.",
+"F166": "Container constraints: no FUSE, so the Tauri build step sets APPIMAGE_EXTRACT_AND_RUN=1 for linuxdeploy; the libssl rejection step extracts with --appimage-extract and needs no FUSE. The container runs as root, so sudo is dropped. The setup-dotnet step is removed: no later step runs dotnet (the backend arrives as a downloaded artifact, the frontend build is tsc and vite, Tauri is Rust) and the bare image has no ICU library for it. A bare ubuntu image lacks what the GitHub runner image preinstalls, so a first step before checkout installs ca-certificates, curl, wget, git, jq, binutils, build-essential, pkg-config, libssl-dev, libxdo-dev, xz-utils and xdg-utils (git is needed by checkout with fetch-depth 0; curl and ca-certificates by the Rust toolchain action; node comes from setup-node and pnpm from pnpm/action-setup, both JavaScript actions that run in the container). The WebKitGTK dev packages are installed without version pins. The crafter completes the list; the oracle installs exactly what the workflow lists in a fresh digest-pinned container. Not provable locally: the first real Tauri bundling (linuxdeploy and appimagetool download and run in extract-and-run mode, squashfs comes inside appimagetool). That risk is accepted; the rollback is to revert the S2 commit.",
+"F167": "Loader check carrier: tools/linux-appimage/check-loads-on.sh IMAGE APPIMAGE extracts the AppImage on the host (APPIMAGE --appimage-extract needs no FUSE) and, in a container of IMAGE, installs the distribution runtime packages libwebkit2gtk-4.1-0 libgtk-3-0t64 librsvg2-2 libayatana-appindicator3-1 (the crafter confirms the names in both images; the oracle shows a wrong one), runs ldd with the AppImage lib directory on LD_LIBRARY_PATH over every ELF in it, and fails on any line saying not found or version GLIBC_ not found. Exit 0 pass, 1 unresolved, 2 indeterminate (no ELF, no AppImage, docker or package install failed). Proof: bundled binaries resolve their libraries and glibc symbols on that distribution. Not proof: the window opens, the backend serves. The workflow gets a second job verify-appimage-loads: needs package-linux-standalone, runs-on ubuntu-latest, checks out the repository for the script, downloads the artifact Lighthouse-linux-standalone-<version> and runs for a matrix of ubuntu:24.04@sha256 and debian:13@sha256 (digests resolved by the crafter): bash tools/linux-appimage/check-loads-on.sh \"$IMAGE\" ./appimage/Lighthouse-standalone.AppImage. The S2 oracle runs the same script with the same digests it reads from the workflow matrix and the AppImage from the APPIMAGE environment variable. The first main run must show that a failed loader job fails the ci.yml caller and blocks the release job.",
+"F168": "Runner and Renovate: the runner is runs-on: ubuntu-latest and the glibc floor comes from the pinned container base, not the runner (maintainer decision). The rule in renovate.json that froze the runner image for this workflow is removed and replaced by this rule: {\"description\": \"The Linux AppImage build container is pinned to Ubuntu 24.04 because its glibc is the written floor. Digest updates stay on; a new Ubuntu release changes the floor and needs an ADR.\", \"matchManagers\": [\"github-actions\"], \"matchFileNames\": [\".github/workflows/ci_package-linux-standalone.yml\"], \"matchDepNames\": [\"ubuntu\"], \"matchUpdateTypes\": [\"major\", \"minor\"], \"enabled\": false}. Unverified: whether the github-actions manager reads jobs.*.container images and treats 24.04 to 26.04 as major or minor; if it does not, the first Renovate pull request shows it and the Ubuntu release then stays a human decision. Every other rule is unchanged.",
+"F169": "Docker Hub rate limits can fail the pull of the container or distribution images on a runner; the job then fails loudly and a re-run fixes it. No mirror is added. Accepted.",
+"F170": "Docs: docs/Installation/standalone.md states the Linux requirement (glibc 2.39 or newer, WebKitGTK 4.1 and GTK 3, tested on Ubuntu 24.04 and Debian 13). docs/Installation/installation.md only links to the standalone page and gives no platform requirement, so it is unchanged.",
+"F171": "Install binutils (readelf), extract the AppImage once, run the floor check after the libssl rejection and before the upload.",
+"F172": "Run the oracle: it runs check-glibc-floor.sh inside digest-pinned ubuntu:24.04 over (a) the real bash binary, libwebkit2gtk-4.1, libjavascriptcoregtk-4.1 and WebKitWebProcess installed from the archive, (b) a small C program compiled in ubuntu:26.04 against a symbol first versioned GLIBC_2.42, (c) an empty directory, (d) copies of (a) with the floor argument 2.37 and then 2.38, (e) a layout with the offender in a nested directory and a symlink to it, (f) an ELF that needs libc.so.6 but has its version-needs section stripped.",
+"F173": "(a) exit 0, highest=GLIBC_2.38 as parsed (not only over_floor=0); (b) exit 1 naming the file path and GLIBC_2.42; (c) exit 2; (d) floor 2.37 exit 1 naming GLIBC_2.38, floor 2.38 exit 0; (e) exit 1 naming the real path once; (f) exit 2; the workflow runs the check after the libssl rejection and before the upload.",
+"F174": "A check that compares versions as strings, accepts a directory with no ELF, passes a file whose GLIBC needs it failed to parse, names no file, ignores nested files, reports a symlinked file twice, or passes (b) fails the oracle.",
+"F175": "an ELF needs libc but no GLIBC version could be parsed",
+"F176": "exit 2 naming the file and that readelf -V gave no GLIBC versions",
+"F177": "A file linked to libc.so.6 with no parsed GLIBC version, and a symlink to a library, never yield a silent pass or a duplicate offender",
+"F178": "stripped version-needs section",
+"F179": "symlink to an offending library",
+"F180": "Two concrete layouts built as real ELF files.",
+"F181": "Job container ubuntu:24.04 by digest, runs-on ubuntu-latest, first step installs build packages as root, setup-dotnet and sudo removed, exact WebKitGTK pins dropped and the installed version printed, APPIMAGE_EXTRACT_AND_RUN on the build step, verify-appimage-loads job after upload.",
+"F182": "Run the oracle: it reads the workflow, renovate.json and the ADR as files; installs the workflow package list in a fresh ubuntu:24.04 container by the digest the workflow names, with no exact version pin, and runs check-glibc-floor.sh over the libwebkit2gtk-4.1 library installed from the current archive; with APPIMAGE set it runs bash tools/linux-appimage/check-loads-on.sh <image digest> $APPIMAGE for the ubuntu:24.04 and debian:13 digests it reads from the workflow matrix.",
+"F183": "The Linux packaging job names runs-on ubuntu-latest and a container image ubuntu:24.04@sha256 digest and no versioned ubuntu runner label; there is no setup-dotnet step; no webkit or javascriptcore package carries an exact = pin; the workflow prints the installed WebKitGTK version; the package install succeeds in the digest container and the installed libwebkit2gtk passes the floor; renovate.json no longer freezes a runner and has the container rule with major and minor disabled for the ubuntu dependency; the libssl rejection and the floor check stay between build and upload; verify-appimage-loads needs the package job and runs both digests; the ADR and the floor file exist and agree; with APPIMAGE set both distributions resolve every bundled binary.",
+"F184": "A versioned ubuntu runner, a container by tag only, a setup-dotnet step, an exact = pin, no version print, a Renovate rule that lets the Ubuntu release move or still freezes the runner, a package list that fails to install, a libwebkit2gtk over the floor, a loader job without needs, or a loader line not found on either distribution fails the oracle. Not covered: rendering; the maintainer starts the AppImage once on a desktop before the release.",
+"F185": "Assumption: linuxdeploy, appimagetool and the JavaScript actions work in the bare container. Negated: one needs a package the list lacks.",
+"F186": "earlier releases stay available; no over-floor AppImage is uploaded",
+"F187": "the Linux job fails on main",
+"F188": "a release without a Linux AppImage unnoticed",
+"F189": "accepted: first seen on main; rollback is reverting the S2 commit; no cheap local full build exists because the sidecar artifact is built by the pipeline",
+"F19": "Exposure noted only: macOS and Windows packaging still name macos-latest and windows-latest; they have no glibc floor and are out of scope. The verify jobs on ubuntu-latest ship nothing and have no glibc exposure.",
+"F190": "The Linux standalone release build runs on a CI runner image that is not retired, so a release is never blocked by a retired image.",
+"F191": "Before a runner image is retired, a visible alarm reports it, early enough that a release is not blocked by the retirement unannounced.",
+"F192": "A written decision states the minimum glibc version and Linux distribution that the AppImage requires.",
+"F193": "A build whose AppImage needs a newer glibc than the written floor fails in CI, so such an AppImage is never released.",
+"F194": "The produced AppImage starts on Ubuntu 24.04 LTS.",
+"F195": "The packaging check runs over today's Ubuntu 24.04 libraries (bash, WebKitGTK, JavaScriptCore, WebKit web process)",
+"F196": "It passes and reports the highest version it parsed, 2.38, not only that nothing was over the floor",
+"F197": "The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS",
+"F198": "A check that scans nothing and prints a clean summary without a parsed highest version",
+"F199": "The check runs over a binary needing glibc 2.9, 2.39, 2.40 and 2.100 against the written floor, and over a 2.42 binary against floors written as 2.9 and 2.100, and over today's libraries against floors 2.37 and 2.38",
+"F2": "Releases are never blocked by GitHub retiring a runner image, and Linux users on the supported distributions keep a working app",
+"F20": "Formal verification: Quint is installed (probed with which quint) but no claim here is a state machine or temporal property. Every claim is a total comparison over a finite ordered set of dotted versions or a static shape of a workflow file. They are checked by the finite bash oracles, run by the host. No Quint, TLA+ or Agda model is delivered; nothing is waived and nothing is claimed proven.",
+"F200": "2.9 and 2.39 pass, 2.40 and 2.100 fail; a 2.42 binary fails under floor 2.9 and passes under 2.100; today's libraries fail under 2.37 naming 2.38 and pass under 2.38",
+"F201": "A version one step above the minimum stops the release and a version below it never does, however many figures it has",
+"F202": "Versions compared as text, so 2.100 looks older than 2.39 and 2.9 looks newer than 2.39",
+"F203": "The check runs over a directory holding a binary built in Ubuntu 26.04 that needs glibc 2.42",
+"F204": "It fails, naming the binary's path, GLIBC_2.42, the floor 2.39 and the floor file where the minimum is written",
+"F205": "The maintainer sees which binary raised the glibc requirement and where to change the minimum on purpose",
+"F206": "A failure that exits non-zero without naming the file, the version or the floor",
+"F207": "The check runs over a layout with the offender in a nested directory next to passing files, and a symbolic link pointing at the offender",
+"F208": "It fails once, naming the real path of the offender, and names neither the passing files nor the link",
+"F209": "One problem looks like one problem, found at any depth",
+"F210": "A check that only scans the top level, blames passing files, or reports the same library once under its real path and once under the link",
+"F211": "The check runs over an empty directory, a directory with only a shell script, a missing directory, and a runner without readelf",
+"F212": "Each ends as indeterminate with its own non-zero outcome, never as a pass; the missing tool is named",
+"F213": "A broken extraction or missing tool stops the release visibly instead of looking like a clean AppImage",
+"F214": "A check that exits 0 with nothing scanned",
+"F215": "The check runs over a file linked to libc whose version-needs section was removed",
+"F216": "It ends as indeterminate, naming the file and that reading the versions gave no GLIBC versions",
+"F217": "A changed tool output cannot turn into a silent pass",
+"F218": "A check that treats a file with no parsed versions as needing nothing",
+"F219": "The repository is read for the written minimum and the packaging workflow",
+"F22": "Inputs and bounds: floor is a dotted major.minor integer pair; no upper bound beyond integers; the AppImage is any size the Tauri bundler produces and the check reads every ELF in it with no sampling; image digests are sha256 strings. No bound on number of files.",
+"F220": "The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum, and the workflow installs binutils and runs the check after the libssl rejection and before the upload",
+"F221": "The minimum Linux is written down in one place and a build over it cannot be uploaded",
+"F222": "A floor check present in the repository but never run by the packaging job, or run after the upload",
+"F223": "The packaging run scans a library whose file was cut short so that it starts like a program but cannot be read",
+"F224": "The run fails as indeterminate and names the cut-off file, instead of reporting that nothing needed a newer glibc",
+"F225": "The maintainer sees which file could not be read and never gets a false pass",
+"F226": "the file is skipped silently and the run still exits successfully with highest none",
+"F227": "The packaging run scans a folder as an ordinary user who cannot open one of the files in it",
+"F228": "The run fails as indeterminate and names the file it could not open",
+"F229": "The maintainer sees which file was not checked and never gets a false pass",
+"F23": "The libssl rejection step, secrets handling (TAURI_SIGNING_PRIVATE_KEY), artifact names, the if: main condition, the Package and Sign environment and the ci.yml caller stay unchanged.",
+"F230": "the unreadable file is skipped and the run counts only the readable files and exits successfully",
+"F231": "The packaging run is given a floor that is not a dotted number, such as abc or a number ending in a dot",
+"F232": "The run fails as indeterminate with what is wrong, why and how to fix it, naming the refused floor",
+"F233": "A mistyped floor stops the build with a clear message and never lets every file pass",
+"F234": "the bad floor is treated as a number, or as zero, and the run exits successfully or refuses real files against a wrong floor",
+"F24": "The packaging job runs only on main: the real container build and the real AppImage are observable only on the main pipeline or by a maintainer running the container steps by hand. Local oracles prove the floor check, the workflow shape, and that the package install and bundled WebKitGTK library resolve in the pinned image under the floor.",
+"F25": "bash tools/linux-appimage/check-glibc-floor.sh DIR [FLOOR]; bash tools/linux-appimage/check-loads-on.sh IMAGE APPIMAGE; the reusable workflow .github/workflows/ci_package-linux-standalone.yml called from ci.yml",
+"F26": "readelf and file from binutils; docker; the Ubuntu apt archive; GitHub Actions job container",
+"F27": "workflow steps call the scripts; scripts read tools/linux-appimage/glibc-floor and never the workflow; oracles read the workflow, renovate.json and the ADR as files; nothing in the backend or frontend depends on any of it",
+"F28": "Floor check result: exit code, one line per offending ELF naming its path and the highest GLIBC_x.y it needs, and the summary scanned=N over_floor=M",
+"F29": "which symbol inside a file needs the version; libstdc++ or other library versions; whether a file is actually loaded at run time",
+"F3": "The Linux standalone release builds without naming a GitHub runner image that GitHub will retire, or a retirement is announced by an alarm before it blocks a release",
+"F30": "Loader check result per image: exit code and the not found or GLIBC_ not found lines from ldd",
+"F31": "GUI start, dlopen at run time, backend behaviour",
+"F32": "Two runs are equal when exit code and the set of (file path, highest GLIBC version) offenders are equal; line order and the order files are visited are ignored.",
+"F33": "No Linux AppImage that needs glibc newer than 2.39 is uploaded by the release",
+"F34": "Ubuntu 24.04 LTS users cannot start the app after an update",
+"F35": "the extracted AppImage directory and the floor file",
+"F36": "job fails naming the file and GLIBC version; exit 1",
+"F37": "a build that skips the step by editing the workflow; an ELF the file(1) magic test misses (scripts are not ELF); libraries loaded at run time by dlopen",
+"F38": "The Linux build does not depend on a GitHub runner image that GitHub retires",
+"F39": "release blocked when the image is retired",
+"F4": "The minimum glibc and distribution for the Linux AppImage is a written decision, and CI fails a build whose AppImage needs a newer glibc than that floor",
+"F40": "runs-on ubuntu-latest and container ubuntu:24.04 by digest",
+"F41": "workflow file names no versioned ubuntu runner label",
+"F42": "GitHub removes the ubuntu-latest label or the Docker Hub image is withdrawn: every job then fails loudly at job start",
+"F43": "AppImage built in the pinned ubuntu:24.04 container: every ELF needs at most GLIBC 2.39",
+"F44": "A release whose AppImage needs a glibc newer than the floor reaches the upload step",
+"F45": "The floor is a value that differs between the check, the docs page and the ADR without a deliberate change",
+"F46": "Whether the first real Tauri build in the bare container succeeds (missing packages, linuxdeploy without FUSE)",
+"F47": "libstdc++ and other non-glibc library floors of the host",
+"F48": "The floor check: reads GLIBC versions from every ELF and fails above the floor.",
+"F49": "The single written floor value FLOOR=2.39.",
+"F5": "The AppImage still starts on Ubuntu 24.04 LTS",
+"F51": "Linux section states the minimum: Ubuntu 24.04 LTS (glibc 2.39) and newer.",
+"F55": "The oracle repeats the same summary-line and WHAT/WHY/HOW helper shape (pass, fail, setup_failure, summary_and_exit); a convention copy, since bash has no shared library here and the tools are unrelated.",
+"F56": "It already extracts the AppImage to squashfs-root; the floor check follows it and reuses that extraction.",
+"F57": "No file in the repo reads GLIBC versions; code search for GLIBC found only ldd/glibc text in docs.",
+"F58": "No file in the repo holds a glibc floor; it needs one single-line source read by the script.",
+"F59": "The Linux section is the page that lists the platform requirement; the minimum is added there, not in a new page.",
+"F6": "Raising or lowering the supported Linux floor itself: today's floor (the glibc of Ubuntu 24.04) is written down as it is, not changed",
+"F60": "Adds binutils and the floor check step.",
+"F61": "States the Linux minimum.",
+"F62": "Inputs and permissions of the reusable workflow do not change.",
+"F63": "New script; its only caller is the workflow step.",
+"F64": "New floor file; read by the script and checked by the oracle against the docs page and the ADR.",
+"F65": "New single source of the number.",
+"F66": "Reads the number from the floor file.",
+"F67": "Prose states the same number; the ADR is the authority and the oracle checks the number appears in the docs page.",
+"F68": "No dependency or ownership law between modules is touched: scripts and workflow only; the oracle already pins the one boundary that matters (workflow calls script, script reads the floor file).",
+"F69": "Producer and consumer of the floor file change in the same commit and deployable; the primary oracle covers them.",
+"F7": "Moving the macOS and Windows packaging off macos-latest and windows-latest; DESIGN only notes their exposure",
+"F70": "No existing behaviour moves; the floor check is a new step and script.",
+"F71": "bash tools/linux-appimage/check-glibc-floor.sh DIR [FLOOR]; the package-linux-standalone job step that calls it",
+"F72": "readelf and file from binutils",
+"F73": "workflow step calls the script; the script reads tools/linux-appimage/glibc-floor only",
+"F74": "directory missing, readelf absent, or no ELF file found",
+"F75": "exit 2 with a message naming what could not be read; never exit 0",
+"F76": "an ELF needs a version above the floor",
+"F77": "exit 1; one block per file with WHAT (path, GLIBC version), WHY (floor and where it is written), HOW (build in the pinned container or raise the floor by ADR)",
+"F78": "Dotted version comparison is numeric and total: 2.9 < 2.39, 2.39 = 2.39, 2.40 > 2.39, 2.100 > 2.39, and the floor check fails iff some file needs a version greater than the floor",
+"F79": "2.9 vs 2.39",
+"F8": "A Linux packaging run fails, naming the binary and the GLIBC version, when the AppImage needs a newer glibc than the written floor, and passes on today's build",
+"F80": "2.39 vs 2.39",
+"F81": "2.40 vs 2.39",
+"F82": "2.100 vs 2.39",
+"F83": "Closed finite table of version pairs; a generator adds nothing.",
+"F84": "Every ELF file under the directory is scanned, at any depth, and an offender is reported by its path",
+"F85": "offender in a nested lib directory",
+"F86": "offender next to passing files",
+"F87": "directory with no ELF",
+"F88": "Three concrete layouts, built as real ELF files.",
+"F89": "floor check on today build",
+"F9": "The Linux AppImage is built on a build environment whose glibc we choose, on a runner GitHub will not retire, still passes the floor check and still starts on Ubuntu 24.04 LTS",
+"F90": "Total numeric comparison over finite version pairs, three outcomes reach the exit code; checked by the finite oracle, not a model.",
+"F91": "Input: Ubuntu 24.04 archive libraries -> check-glibc-floor.sh -> exit 0 on the shell; constructed in the oracle from real binaries.",
+"F92": "tools/linux-appimage/check-glibc-floor.sh is invoked by a workflow step in ci_package-linux-standalone.yml after extraction (CreateNew step) and by the oracle argv.",
+"F93": "Not applicable: a bounded synchronous scan over a finite directory; no temporal or fairness claim.",
+"F94": "Assumption: every library that matters is an ELF file with a GLIBC version-needs section. Negated: a library loads another through dlopen, or a file is a script.",
+"F95": "No release uploads an AppImage with a statically visible glibc need above the floor",
+"F96": "dlopen-only needs are not seen",
+"F97": "pass on a directory with no ELF; string comparison of versions",
+"F98": "dlopen and non-glibc library needs are covered only by the loader check on two distributions",
+"F99": "Assumption: readelf prints the needs section in the format the parser reads. Negated: binutils changes the format."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_out": [
+"F6",
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F8",
+"promises": [
+"P2"
+]
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F9",
+"promises": [
+"P1",
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6601-linux-standalone-glibc-floor",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

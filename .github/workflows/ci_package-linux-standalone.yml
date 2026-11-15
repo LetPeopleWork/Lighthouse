@@ -74,7 +74,8 @@ jobs:
             gir1.2-webkit2-4.1=2.44.0-2 \
             libappindicator3-dev \
             librsvg2-dev \
-            patchelf
+            patchelf \
+            binutils
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -169,6 +170,10 @@ jobs:
             exit 1
           fi
           echo "No libssl bundled in the AppImage"
+
+      - name: Reject an AppImage that needs a newer glibc than the floor
+        shell: bash
+        run: bash tools/linux-appimage/check-glibc-floor.sh "$RUNNER_TEMP/squashfs-root"
 
       - name: Upload Linux standalone artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
