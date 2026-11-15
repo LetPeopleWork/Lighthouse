@@ -1,0 +1,606 @@
+{
+"counters": {
+"D": 5,
+"E": 4,
+"F": 94,
+"K": 4,
+"P": 3,
+"S": 3,
+"Y": 4
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"closure": [
+{
+"axis": "Safety",
+"basis": "F29",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F28"
+},
+{
+"axis": "Inhabitation",
+"basis": "F31",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F30"
+},
+{
+"axis": "PublicReachability",
+"basis": "F33",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F32"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"slices": [
+"S1"
+],
+"text": "F18"
+},
+{
+"id": "K2",
+"slices": [
+"S3"
+],
+"text": "F19"
+},
+{
+"id": "K3",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F20"
+},
+{
+"id": "K4",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F21"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F13"
+},
+{
+"id": "D2",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F14"
+},
+{
+"id": "D3",
+"slices": [
+"S1",
+"S3"
+],
+"text": "F15"
+},
+{
+"id": "D4",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F16"
+},
+{
+"id": "D5",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F17"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F26"
+},
+{
+"analysis": "contract_tests",
+"reason": "F27"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1",
+"reason": "F22",
+"symbol": "ModuleRules"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarness.cs:20",
+"reason": "F23",
+"symbol": "ServicePortHarness"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:75",
+"reason": "F24",
+"symbol": "forecast-answers-capture.cs"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:437",
+"reason": "F25",
+"symbol": "forecast-triggers-show.cs"
+}
+],
+"risks": [
+{
+"allowed": "F36",
+"forbidden": "F37",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "WorkItemsRulesSeeTheModuleArchUnitTest",
+"preserved": "F35",
+"residue": "F38",
+"source": "F34"
+},
+{
+"allowed": "F41",
+"forbidden": "F42",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "RefreshesStayTheSameTest",
+"preserved": "F40",
+"residue": "F43",
+"source": "F39"
+},
+{
+"allowed": "F36",
+"forbidden": "F46",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "feature-b-crafter",
+"preserved": "F45",
+"residue": "F47",
+"source": "F44"
+},
+{
+"allowed": "F50",
+"forbidden": "F51",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "maintainer",
+"preserved": "F49",
+"residue": "F52",
+"source": "F48"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F67",
+"falsifier": "F68",
+"promises": [
+"P1"
+],
+"stimulus": "F66"
+},
+"records": {
+"decisions": [
+"F69"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:15",
+"reason": "F74"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:40",
+"reason": "F75"
+},
+{
+"decision": "Changed",
+"kind": "test-architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs:149",
+"reason": "F76"
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F61"
+},
+{
+"analysis": "prefactoring",
+"reason": "F77"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:40",
+"reason": "F70",
+"symbol": "DependencySingleDecisionArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:15",
+"reason": "F71",
+"symbol": "WorkItemsSyncPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs:149",
+"reason": "F72",
+"symbol": "TrackerHistoryCutoffs"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs:173",
+"reason": "F73",
+"symbol": "TheOnlyFileNamed"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F63"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs",
+"reason": "F64"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs",
+"reason": "F65"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~WorkItemsRulesSeeTheModuleArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs",
+"public_oracle": {
+"expected": "F54",
+"falsifier": "F55",
+"promises": [
+"P2"
+],
+"stimulus": "F53"
+},
+"records": {
+"decisions": [
+"F56",
+"F57"
+],
+"not_applicable": [
+{
+"analysis": "impact",
+"reason": "F60"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F61"
+},
+{
+"analysis": "prefactoring",
+"reason": "F62"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:1",
+"reason": "F58",
+"symbol": "IlDependencies"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InlineBaseline.cs:1",
+"reason": "F59",
+"symbol": "InlineBaseline"
+}
+]
+},
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~WorkItemsMembershipArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs",
+"public_oracle": {
+"expected": "F81",
+"falsifier": "F82",
+"promises": [
+"P3"
+],
+"stimulus": "F80"
+},
+"records": {
+"decisions": [
+"F83"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "examine-generator",
+"locator": "Scripts/examine/build-examine-commands:1",
+"reason": "F87"
+},
+{
+"decision": "Changed",
+"kind": "examine-declaration",
+"locator": ".nwave/examine.json:1",
+"reason": "F88"
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F89"
+},
+{
+"analysis": "prefactoring",
+"reason": "F90"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:314",
+"reason": "F84",
+"symbol": "forecast-answers-compare"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:436",
+"reason": "F85",
+"symbol": "forecast-triggers-show"
+},
+{
+"decision": "Extend",
+"locator": ".nwave/examine.json:2",
+"reason": "F86",
+"symbol": "commands"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Scripts/examine/build-examine-commands",
+"reason": "F78"
+},
+{
+"change": "Extend",
+"path": ".nwave/examine.json",
+"reason": "F79"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~RefreshesStayTheSameTest",
+"bash Scripts/examine/build-examine-commands",
+"bash Scripts/examine/bin/refresh-answers-compare",
+"bash Scripts/examine/bin/refresh-reactions-show"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F91"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F92"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F93"
+},
+{
+"id": "E4",
+"promises": [
+"P3"
+],
+"text": "F94"
+}
+]
+},
+"facts": {
+"F1": "Story #6360 S03b Package Work Items, nwdes feature A of three (rules first). Before any Work Items type moves into Modules/WorkItems, make every architecture rule that names Work Items' namespaces, folders, paths or types also see Modules/WorkItems, fix the membership list from the compiled code, and add a safety net that shows a refresh gives the same items, transitions, blocks and events. Behaviour-free: routes, DTOs, responses, refresh results and metrics stay the same. Design: docs/feature/story-6360-s03b-package-work-items/feature-delta.md (slices A1-A3, Ratchet design, D-1, D-10).",
+"F10": "A made-up type under Modules/WorkItems is caught by every rule that names Work Items today",
+"F11": "The membership test lists the Work Items types that move, measured from the IL, and fails on a missing or an unlisted type",
+"F12": "A refresh at the service port gives the same items, transitions, blocks and events, and refresh-answers-compare reports identical answers on demo data",
+"F13": "Behaviour-free, test-side and script-side only: no production type moves, no route, DTO, response, schema, refresh result, metrics answer, DI lifetime or handler order changes. Every rule reads the compiled IL through IlDependencies or the ArchUnitNET production architecture; inline lists stay two-way (InlineBaseline); no rule is loosened. DomainEventHandlerOrderPinTest stays green unmodified.",
+"F14": "Shared rules owner: ModuleRules and ModuleWording (Architecture folder) are reused; no rule is copied and no second rules class is created. KernelRules and ApplicationCoreRules already treat Modules as application core and need no change.",
+"F15": "Made-up types live in the test assembly below Lighthouse.Backend.Modules.WorkItems (for example Lighthouse.Backend.Modules.WorkItems.Application.WorkItemsFixtures), with a compliant twin each and a namesake just outside the module (Lighthouse.Backend.Modules.WorkItemsFixtures), the S03c way: the widened patterns end in (\\.|$), so only a type below Modules.WorkItems proves the real widened constant.",
+"F16": "Formal verification: no checker selected, no model written or run. No state, transition, protocol, concurrency or recovery behaviour changes. Rule and membership claims are finite and decided exactly by the compiled IL with a made-up offender as falsifier; the refresh-preservation claim compares the code with itself, so literal expected values at the service port are the honest falsifier. Liveness not applicable: synchronous rule evaluation and a one-shot capture have no progress property. Property-based testing not applicable: every law is a finite enumeration of rules, types, refresh scenarios and named endpoints; the test-writing skill decides test density.",
+"F17": "Carriers, all test-side: rule verdicts are KernelRuleVerdict, InboundVerdict and OutboundVerdict owned by ModuleRules and KernelRules; dependency facts are IlDependent from IlDependencies; per-fixture state is the lazily read Mono.Cecil ModuleDefinition disposed at one-time teardown; the refresh oracle holds a ServicePortHarness per scenario; the compare script holds captured bodies in a temp directory. Layers: application rules only; no adapter, infrastructure or recovery layer changes.",
+"F18": "Fixture types placed under Lighthouse.Backend.Modules in the test assembly must not reach the API, Data or EF Core, nor be domain-event handlers, because ApplicationCoreRulesReachModulesArchUnitTest runs the core rules over the test assembly with the Services-or-Modules pattern.",
+"F19": "Examiner budget about 5 minutes wall and 3 probing calls reading only the output tail: each public command prints compact per-line results and a last VERDICT line, never raw dotnet output.",
+"F2": "The Work Items move (features B and C) can start with every rule already watching the new place, a fixed list of what moves, and a capture that proves a refresh did not change",
+"F20": "One oracle file per slice; a later slice never edits an earlier slice's or an earlier feature's oracle or support files. No nWave scenario tags in code. Arch rule tests assert the rule failure names the offender, not counts. Comments carry no internal ids. New plain fixtures never go under Tests/Contracts.",
+"F21": "IlDependencies misses catch-clause types, event references and named attribute arguments; a rule or membership measurement that depends on one of those says so in its failure text.",
+"F22": "Shared module rules owner from S03c; no second rules class",
+"F23": "Application-service port harness for the refresh oracle",
+"F24": "Template for refresh-answers-compare and its in-process capture driver (2xx and zero-answer guards)",
+"F25": "Template for refresh-reactions-show (user-level observation through the public API on demo data)",
+"F26": "No shared contract changes: rules, membership test, refresh oracle and scripts only observe the production assembly and existing HTTP responses, in one deployable and one commit range.",
+"F27": "No parties change apart: no wire, DTO or route changes; the compare script observes existing endpoints only.",
+"F28": "Widened Work Items rules",
+"F29": "Each widened rule has a made-up offender below Modules.WorkItems that the rule failure must name; host executes per slice",
+"F3": "Every architecture rule that names Work Items' namespaces, folders, paths or types also sees Modules/WorkItems: a made-up type placed there is caught by each rule",
+"F30": "Widened Work Items rules and membership test",
+"F31": "Compliant made-up twins and the real production assembly pass each rule; the real assembly passes the membership lists",
+"F32": "Refresh oracle and public commands",
+"F33": "Oracle drives ITeamDataService and IWorkItemService at the application-service port; commands call the real refresh and read endpoints on demo data",
+"F34": "Assumption negated: a widened pattern also matches the fixture namespace",
+"F35": "Each widened rule sees Modules.WorkItems",
+"F36": "none",
+"F37": "A rule green because the fixture sits outside the pattern",
+"F38": "Fixtures below Modules.WorkItems with a compliant twin and an outside namesake each",
+"F39": "Assumption negated: a refresh is deterministic for the same tracker data and clock",
+"F4": "The list of Work Items types that move is measured from the compiled code and fixed in a test that fails when a listed type is missing or an unlisted Work Items type appears",
+"F40": "Literal items, transitions, blocked periods and events",
+"F41": "Time-stamped fields masked or pinned by FakeLighthouseClock",
+"F42": "A comparison of the code with itself or a capture that compares zero answers or non-2xx answers",
+"F43": "Literal expected values in the oracle; script fails on zero answers and on any non-2xx",
+"F44": "Assumption negated: widening the Dependencies namespace key to Modules.WorkItems keeps the forecast-isolation rule true after the move",
+"F45": "Forecast asks only IWhatTheForecastWaitsFor",
+"F46": "Loosening the rule when feature B moves a type ForecastService reaches",
+"F47": "If B finds ForecastService reaches a moved non-dependency type, B returns it to the architect instead of loosening",
+"F48": "Demo data only on the examiner host",
+"F49": "Refresh answer equality on demo data",
+"F5": "A refresh at the service port gives the same items, transitions, blocked periods and events before and after a move, and public commands capture the refresh answers and show the Work Items reactions firing on demo data",
+"F50": "Production-like comparison run by the maintainer",
+"F51": "Calling EXAMINE indeterminate for a missing production backup",
+"F52": "Maintainer-run comparison on the production-like database",
+"F53": "Read the compiled production assembly with IlDependencies and collect every top-level type in the Work Items namespaces (Services.(Implementation|Interfaces).(WorkItems|TeamData|WorkItemRules|Dependencies|Parents) or Modules.WorkItems) plus the six handlers and admitted candidates by name, compiler-made nested types folded into their writer",
+"F54": "The collected set equals the inline Moves list plus the inline Stays list (each Stays entry names its owner), compared both ways by short type name so it holds before and after the move; a failure names each missing listed type and each unlisted Work Items type",
+"F55": "A made-up type added to a Work Items namespace, or a listed type removed or renamed, and the test stays green",
+"F56": "Membership from D-1: Moves = the 27 core files' types (WorkItemService, IWorkItemService, TeamDataService, ITeamDataService, BlockedItemService, IBlockedItemService, SyncModeResolver, FetchFingerprint, RuleEvaluator<T>, IRuleEvaluator<T>, IRuleFieldProvider<T>, WorkItemFieldProvider, FeatureFieldProvider, DependencyDecision, DependencyHonourPolicy, DependencyReconciler, DependencyRefreshReporter, DependencyCycleDetector, DependencyFacts, FeatureDependencyRendering, WhatTheForecastWaitsFor, the five dependency interfaces, ParentPlacementReport and any further top-level type the IL finds in those files) plus WorkItemBlockedTransitionCaptureHandler, WorkItemBlockedTransitionCloseHandler, FeatureBlockedTransitionCaptureHandler, FeatureBlockedTransitionCloseHandler, TeamDeletedRefreshLogCleanupHandler, ConnectionFetchShapeChangedUpdateTriggerHandler. Stays = DependencySourceSelector, DependencyFieldReferences, ParentSourceSelector (Tracker integration, S03a). Candidate rule: a candidate is admitted when its IL outbound edges reach only Models, repositories, platform settings/logging and Work Items types, no context downstream of Work Items and no EF Core or Data. Source reading (not yet IL): RefreshLogService and IRefreshLogService reach Models, IAppSettingService, repositories and logging only, so admitted; OrphanedFeatureCleanupService reaches Lighthouse.Backend.Data and EF Core directly, so it and IOrphanedFeatureCleanupService stay (owner: the Work Items context, after a repository port exists; not this Story). The S2 crafter confirms from the IL; if the IL disagrees, the IL answer is recorded in the oracle and returned to the architect before feature B.",
+"F57": "Per-type kernel reach of the Work Items Models types (E5) is measured with IlDependencies during S2 and reported in the slice hand-back for the host to record in the feature workspace as the S04b list; it is not a test, because no Models type moves in S03b.",
+"F58": "IL reader for type collection and edges",
+"F59": "Two-way inline list comparison",
+"F6": "Widen every Work Items-keyed architecture rule to see Modules/WorkItems; a membership test from the IL; a refresh oracle at the service port; refresh-answers-compare and refresh-reactions-show commands",
+"F60": "New oracle file only; no existing code, consumer or build metadata changes",
+"F61": "The slice oracle is itself the architectural test over the compiled assembly",
+"F62": "Adds one new test; no existing code to prepare",
+"F63": "WorkItemsSyncPattern gains |^Lighthouse\\.Backend\\.Modules\\.WorkItems(\\.|$); Dependencies and Parents stay out of it because the connectors call the selectors that stay",
+"F64": "Files located by name under the production source instead of fixed Services paths (reconciler, honour policy, decision); the one-folder keys become old-or-module folder; the selector path stays; TheNamespaceThisEpicOwns gains Modules.WorkItems",
+"F65": "The two WorkItemService.cs cutoff entries locate the file by name under the production source, as FastWithManyFeaturesArchUnitTest does",
+"F66": "Run each widened rule, with its own Work Items key read from the rule (pattern constant, file locator or namespace key), over made-up types placed below Lighthouse.Backend.Modules.WorkItems in the test assembly, as subject and as target, and run the path-keyed rules over a made-up relative path under Modules/WorkItems",
+"F67": "For each rule the made-up offender below Modules.WorkItems is named in the rule failure, its compliant twin is not, and a namesake in Modules.WorkItemsFixtures is not treated as Work Items; path-keyed rules find the listed file by name wherever it lives; real-assembly rules stay green",
+"F68": "Any listed rule keeps its old Services-only key or fixed Services path, so the made-up type or file under Modules/WorkItems passes unseen or the rule reports the file as moved or deleted",
+"F69": "Measured rule census (text search plus reading, 2026-11-15): widening needed only in ModuleBoundariesArchUnitTest (WorkItemsSyncPattern, read by the connector leaf rule), DependencySingleDecisionArchUnitTest (fixed Services/Implementation/Dependencies paths, the WhatThisEpicAddedToTheBackend folders and TheNamespaceThisEpicOwns) and CalendarDayAnchorSeamArchUnitTest (two WorkItemService.cs paths). Checked and left unchanged because they key on typeof or short names and see a type wherever it lives (feature B adds only a using): BlockedItemSinglePath, FetchShapingPropertyGuard, InstantsUnaffectedByZone, TimeInStateSeam, RuleEvaluatorPurity, ConnectionFetchShapeChangedSinglePublisher, ConnectionSaveArchitecture, DeliveryRuleServiceApiPreservation, DomainEventHandlerOrderPin, UpdateHoldsAreForecastOnly, UpdateCancellationContextWriter, DependencyAwareForecastSeam, PortGivensGuard, KernelRules (already sees Modules). Full-name baselines rewritten by the move, not widened here: FlowMetricsInboundApplication (R4) and FlowMetricsInboundDomainAndAdapters (R3) in B2, RepositoryLeakRatchet file paths in the move slice that moves WorkItemService.cs or RefreshLogService.cs, TestHostUseGuardTest.HostUsersStillToMove and the Forecasting placement lists in C3 or B2. Configs: only Scripts/test-selection path-classifier.sh and test-path-classifier.sh name a Work Items path (FetchFingerprint.cs); B1 updates them.",
+"F7": "Moving any Work Items type (feature B)",
+"F70": "Existing owner of the one-decision rules; keys widened in place",
+"F71": "Existing owner of the Work Items pattern; widened in place",
+"F72": "Existing cutoff list; file located by name",
+"F73": "Pattern for locating a production file by name; no second rule",
+"F74": "Test project only; pattern widened, real assembly unchanged",
+"F75": "Test project only; same rules, keys see Modules/WorkItems",
+"F76": "Test project only; same cutoffs, located by name",
+"F77": "Widening is the change itself; no preserving move makes it easier",
+"F78": "Committed generator: writes Scripts/examine/bin/refresh-answers-compare with its in-process capture driver, and bin/refresh-reactions-show with its probe program, both inline as forecast-answers-capture.cs is; bin is git-ignored",
+"F79": "Declares refresh-answers-compare and refresh-reactions-show before the first EXAMINE",
+"F8": "Flow metrics reacting to TeamDataRefreshed and Work Items' own module rules (feature C)",
+"F80": "Through ServicePortHarness with FakeLighthouseClock and a CSV-backed tracker, refresh a Team through ITeamDataService and a Portfolio through IWorkItemService, then read stored items, state transitions, blocked periods, parent placements and the published domain events",
+"F81": "Items, transitions, blocked periods, parent placements and published events equal literal values written in the test; refresh-answers-compare with no argument prints one line per answer kind and VERDICT IDENTICAL comparing the pinned base revision with HEAD on demo data, failing on zero answers or any non-2xx; refresh-reactions-show prints one line per observed Work Items reaction after a Team refresh and VERDICT OBSERVED",
+"F82": "A changed transition, a dropped blocked period, a missing or reordered event, or a refresh that writes a different item, and the test or compare stays green",
+"F83": "refresh-answers-compare is built like forecast-answers-compare: an in-process capture driver per revision on seeded demo data, forces a refresh of every Team and Portfolio, captures the bodies of the Team and Portfolio work item, Feature list, dependency and blocked endpoints, masks time-stamped keys, diffs base and candidate. No-argument base is pinned to the main revision the S3 commit is made on (the last revision before any Work Items type moves); feature B and C do not change it. refresh-reactions-show is built like forecast-triggers-show: starts this checkout's backend in-process on a fresh database, loads the smallest demo scenario with Teams, refreshes a Team through the public API and reads public answers (refresh history and blocked history) showing the Work Items reactions ran. Which reactions are observable through the public API without a premium licence: unknown, measured by the S3 crafter; any reaction with no public observation is named in the command output as not observable rather than claimed.",
+"F84": "Template; a new command because no refresh answer comparison exists",
+"F85": "Template for the reactions probe",
+"F86": "Gains two entries beside the existing commands",
+"F87": "Writes two more commands; existing commands unchanged",
+"F88": "Two entries added; existing entries unchanged",
+"F89": "No dependency or owner law changes; the slice adds a behaviour oracle and examine commands",
+"F9": "Any behaviour, route, DTO, schema or response change",
+"F90": "New oracle and scripts only; no existing code to prepare",
+"F91": "When a made-up type is placed in the Work Items module folder (Modules/WorkItems), every architecture rule that applies to Work Items namespaces, folders, paths or types flags it, just as it would for the existing Work Items locations.",
+"F92": "A test fixes the list of Work Items types that move, derived from the compiled code, and that test fails when a listed type is missing from the code and when a Work Items type that is not on the list appears.",
+"F93": "Asking the service port to refresh gives the same items, transitions, blocked periods and events before and after the move, so a user sees no change in their data.",
+"F94": "Public commands let a user capture the refresh answers and watch the Work Items reactions fire on demo data, so the before and after can be compared from outside."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_in": [
+"F6"
+],
+"scope_out": [
+"F7",
+"F8",
+"F9"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F10",
+"promises": [
+"P1"
+]
+},
+{
+"id": "S2",
+"observation": "F11",
+"promises": [
+"P2"
+]
+},
+{
+"id": "S3",
+"observation": "F12",
+"promises": [
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6360-s03b-a-rules-first",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
