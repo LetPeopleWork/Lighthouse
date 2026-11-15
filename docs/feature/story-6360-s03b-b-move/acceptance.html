@@ -402,6 +402,85 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>final reviewer and EXAMINE</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read the compiled production assembly and check where the six Work Items event handlers live
+</code></pre>
+
+<pre><code>All six live in the module&#x27;s Application policies and none is left under Services; a handler left under Services in made-up types fails and is named, a well-placed twin is not
+</code></pre>
+
+<pre><code>Work Items reactions are found in one place in the module and nothing reacts from the old Services folders
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs</p>
+
+<pre><code>A handler left behind in Services or a missing handler would pass if the rule only compared counts or looked at the new namespace alone
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read the compiled assembly and the tracked source for the six handlers files and the types in the policies
+</code></pre>
+
+<pre><code>Each handler file sits only in the policies folder; every type in the policies handles a domain event, a non-handler is named and an empty policies namespace fails; no tracked source names a handler&#x27;s old full name or path
+</code></pre>
+
+<pre><code>Policies hold only reactions and no stale list or path points at the old homes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs</p>
+
+<pre><code>A service dropped into the policies, an empty namespace, or a rule list keeping the old full name would pass if the check looked at file names alone
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<pre><code>Run the existing handler-order pin unmodified after the move
+</code></pre>
+
+<pre><code>The order pin stays green, so handlers still run in the registered order and answers stay the same
+</code></pre>
+
+<pre><code>Refreshes and reactions behave exactly as before the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs</p>
+
+<pre><code>A move that reorders registrations in Program.cs would pass if only the layout rule were checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

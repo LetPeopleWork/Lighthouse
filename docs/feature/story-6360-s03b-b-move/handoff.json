@@ -160,12 +160,63 @@
 "stimulus": "F176",
 "user_result": "F178"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F192",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs"
+},
+"expected": "F190",
+"stimulus": "F189",
+"user_result": "F191"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F196",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs"
+},
+"expected": "F194",
+"stimulus": "F193",
+"user_result": "F195"
+},
+{
+"covers": [
+"P3",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F200",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+},
+"expected": "F198",
+"stimulus": "F197",
+"user_result": "F199"
+}
 ]
 },
 "counters": {
 "D": 5,
 "E": 4,
-"F": 188,
+"F": 200,
 "K": 4,
 "P": 4,
 "S": 3,
@@ -1728,9 +1779,21 @@
 "F186": "Every tracked test and production source file of the backend is scanned for a moved type named at its old home",
 "F187": "No full name or file path in a rule list, registration, comment or cref names a moved type under the old Services namespace or folder; a sample old name is found and a new name or a type that stays is not",
 "F188": "A maintainer sees every rule list and registration name the services where they now live",
+"F189": "Read the compiled production assembly and check where the six Work Items event handlers live",
 "F19": "Behaviour-free: routes, DTOs, serialized responses, refresh results, metrics answers, forecasts, DI lifetimes, handler order and the schema stay the same. No bound on stored or validated inputs changes. Existing API, E2E and response tests stay green and unmodified apart from using lines.",
+"F190": "All six live in the module's Application policies and none is left under Services; a handler left under Services in made-up types fails and is named, a well-placed twin is not",
+"F191": "Work Items reactions are found in one place in the module and nothing reacts from the old Services folders",
+"F192": "A handler left behind in Services or a missing handler would pass if the rule only compared counts or looked at the new namespace alone",
+"F193": "Read the compiled assembly and the tracked source for the six handlers files and the types in the policies",
+"F194": "Each handler file sits only in the policies folder; every type in the policies handles a domain event, a non-handler is named and an empty policies namespace fails; no tracked source names a handler's old full name or path",
+"F195": "Policies hold only reactions and no stale list or path points at the old homes",
+"F196": "A service dropped into the policies, an empty namespace, or a rule list keeping the old full name would pass if the check looked at file names alone",
+"F197": "Run the existing handler-order pin unmodified after the move",
+"F198": "The order pin stays green, so handlers still run in the registered order and answers stay the same",
+"F199": "Refreshes and reactions behave exactly as before the move",
 "F2": "Work Items lives in its own module folder, so feature C can give it its own rules and turn the metrics update into a reaction",
 "F20": "One oracle file per slice; approved oracle and support files of this feature are never edited. Rules are never loosened: full-name rule lists are rewritten to the new names and still compared in both directions. Made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.WorkItemsFixtures. Slice dependencies: S2 after S1, S3 after S2. Per-test and property budgets are the defaults; no derogation.",
+"F200": "A move that reorders registrations in Program.cs would pass if only the layout rule were checked",
 "F21": "Every dotnet command runs under flock -o on the shared lock file; declared commands omit the prefix. Code-fact was not consulted: file lists come from the directory listing and the IL membership test (stated limit). Rule strings, ILogger categories, perf harness, Stryker configs and test-selection scripts are grepped for moved full type names, not only using lines. Jev unauthorized: typesafe unavailable by refusal.",
 "F22": "Layout oracles reuse TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary as the Forecasting layout oracles do; CreateNew would duplicate the layer rules.",
 "F23": "Its Moves and Stays lists are the move list; it compares by short name and stays green through the move.",

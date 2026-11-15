@@ -293,6 +293,97 @@ Behaviour preservation is a completion check on the candidate (RefreshesStayTheS
 
 final reviewer and EXAMINE
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Read the compiled production assembly and check where the six Work Items event handlers live
+```
+
+```text
+All six live in the module's Application policies and none is left under Services; a handler left under Services in made-up types fails and is named, a well-placed twin is not
+```
+
+```text
+Work Items reactions are found in one place in the module and nothing reacts from the old Services folders
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsPoliciesLayoutArchUnitTest\.cs
+
+```text
+A handler left behind in Services or a missing handler would pass if the rule only compared counts or looked at the new namespace alone
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Read the compiled assembly and the tracked source for the six handlers files and the types in the policies
+```
+
+```text
+Each handler file sits only in the policies folder; every type in the policies handles a domain event, a non-handler is named and an empty policies namespace fails; no tracked source names a handler's old full name or path
+```
+
+```text
+Policies hold only reactions and no stale list or path points at the old homes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsPoliciesLayoutArchUnitTest\.cs
+
+```text
+A service dropped into the policies, an empty namespace, or a rule list keeping the old full name would pass if the check looked at file names alone
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+P4
+
+```text
+Run the existing handler-order pin unmodified after the move
+```
+
+```text
+The order pin stays green, so handlers still run in the registered order and answers stay the same
+```
+
+```text
+Refreshes and reactions behave exactly as before the move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventHandlerOrderPinTest\.cs
+
+```text
+A move that reorders registrations in Program.cs would pass if only the layout rule were checked
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
