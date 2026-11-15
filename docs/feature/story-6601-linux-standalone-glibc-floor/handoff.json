@@ -1,0 +1,72 @@
+{
+"counters": {
+"F": 9,
+"P": 3,
+"S": 2
+},
+"facts": {
+"F1": "Story 6601: Linux standalone builds no longer break when GitHub retires a runner image. The AppImage is built on a GitHub-hosted Ubuntu image with WebKitGTK pinned to that image's package version; when ubuntu-latest moved to 26.04 the pins vanished and the release was blocked; the quick fix pins runs-on: ubuntu-24.04, which breaks again when GitHub retires 24.04. Building on a newer image raises the glibc the AppImage needs and stops it starting on Ubuntu 24.04 LTS and Debian 13. Goal: the Linux build no longer depends on which runner images GitHub offers; the minimum glibc and distribution is a written decision changed on purpose. Acceptance: (1) the Linux standalone builds without naming a GitHub runner image that will be retired, or there is a documented, alarmed path for when it is; (2) the minimum glibc and distribution is written down and CI fails if a build exceeds it; (3) the AppImage still starts on Ubuntu 24.04 LTS.",
+"F2": "Releases are never blocked by GitHub retiring a runner image, and Linux users on the supported distributions keep a working app",
+"F3": "The Linux standalone release builds without naming a GitHub runner image that GitHub will retire, or a retirement is announced by an alarm before it blocks a release",
+"F4": "The minimum glibc and distribution for the Linux AppImage is a written decision, and CI fails a build whose AppImage needs a newer glibc than that floor",
+"F5": "The AppImage still starts on Ubuntu 24.04 LTS",
+"F6": "Raising or lowering the supported Linux floor itself: today's floor (the glibc of Ubuntu 24.04) is written down as it is, not changed",
+"F7": "Moving the macOS and Windows packaging off macos-latest and windows-latest; DESIGN only notes their exposure",
+"F8": "A Linux packaging run fails, naming the binary and the GLIBC version, when the AppImage needs a newer glibc than the written floor, and passes on today's build",
+"F9": "The Linux AppImage is built on a build environment whose glibc we choose, on a runner GitHub will not retire, still passes the floor check and still starts on Ubuntu 24.04 LTS"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_out": [
+"F6",
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F8",
+"promises": [
+"P2"
+]
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F9",
+"promises": [
+"P1",
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6601-linux-standalone-glibc-floor",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
