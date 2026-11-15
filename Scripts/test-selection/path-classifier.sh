@@ -10,7 +10,7 @@ BACKEND_REGEX='^(Lighthouse.Backend(/|.Tests/)|Scripts/test-timings/|\.github/ac
 # The parent-source code decides what the Jira connector reads, so a change to it needs the live Jira suite.
 # Its tests and busier neighbours (WorkItemBase, WorkTrackingSystemOptionsOwner) stay out: each run spends live
 # Jira quota, and those change far more often than what the connector reads does.
-JIRA_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Jira/|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(ParentSource[^/]*|ParentReadings|ParentChoice|ParentResolution)\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/Parents/|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/WorkItems/FetchFingerprint\.cs$'
+JIRA_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Jira/|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(ParentSource[^/]*|ParentReadings|ParentChoice|ParentResolution)\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/Parents/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/WorkItems/Domain/FetchFingerprint\.cs$'
 ADO_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/AzureDevOps/'
 LINEAR_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Linear/'
 SERVICENOW_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/ServiceNow/'

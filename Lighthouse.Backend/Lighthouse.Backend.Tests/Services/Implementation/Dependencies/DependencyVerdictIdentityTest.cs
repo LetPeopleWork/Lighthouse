@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
 {

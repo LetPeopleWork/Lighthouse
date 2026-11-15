@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Lighthouse.Backend.Modules.WorkItems.Domain;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

@@ -88,6 +88,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend
 {
@@ -1440,7 +1441,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IFeatureOrderingPolicyProvider, FeatureOrderingPolicyProvider>();
             builder.Services.AddScoped<IFeatureOrdering, FeatureOrdering>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyReconciler, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyReconciler>();
-            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyHonourPolicy, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyHonourPolicy>();
+            builder.Services.AddScoped<IDependencyHonourPolicy, DependencyHonourPolicy>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyDecision, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyDecision>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IWhatTheForecastWaitsFor, Lighthouse.Backend.Services.Implementation.Dependencies.WhatTheForecastWaitsFor>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyRefreshReporter, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyRefreshReporter>();

@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.WorkItems.Domain;
 
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {

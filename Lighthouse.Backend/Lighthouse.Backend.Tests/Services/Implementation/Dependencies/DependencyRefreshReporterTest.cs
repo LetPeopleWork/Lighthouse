@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
 {

@@ -20,6 +20,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {

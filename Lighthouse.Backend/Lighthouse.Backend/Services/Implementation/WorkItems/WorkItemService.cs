@@ -13,6 +13,7 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Modules.WorkItems.Domain;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkItems
 {

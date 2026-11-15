@@ -7,6 +7,7 @@ using NUnit.Framework;
 using Serilog.Events;
 using System.Collections;
 using System.Reflection;
+using Lighthouse.Backend.Modules.WorkItems.Domain;
 
 namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 {

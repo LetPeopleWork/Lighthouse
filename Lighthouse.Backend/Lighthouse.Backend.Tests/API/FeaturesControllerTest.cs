@@ -11,6 +11,7 @@ using Moq;
 using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Text.Json;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -612,7 +613,7 @@ namespace Lighthouse.Backend.Tests.API
                 .ReturnsAsync((ClaimsPrincipal _, IReadOnlyCollection<Feature> requested, ISet<int> _, CancellationToken _) =>
                     requested.ToDictionary(feature => feature.Id, _ => moveVerdict));
 
-            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), featurePositionMapMock.Object, featureMoveAuthorizationMock.Object, featureRankingServiceMock.Object, featureOrderingPolicyProviderMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new Lighthouse.Backend.Services.Implementation.Dependencies.DependencyDecision(new Lighthouse.Backend.Services.Implementation.Dependencies.DependencyHonourPolicy(), Mock.Of<Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService>(licence => licence.CanUsePremiumFeatures())));
+            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), featurePositionMapMock.Object, featureMoveAuthorizationMock.Object, featureRankingServiceMock.Object, featureOrderingPolicyProviderMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new Lighthouse.Backend.Services.Implementation.Dependencies.DependencyDecision(new Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies.DependencyHonourPolicy(), Mock.Of<Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService>(licence => licence.CanUsePremiumFeatures())));
         }
     }
 }

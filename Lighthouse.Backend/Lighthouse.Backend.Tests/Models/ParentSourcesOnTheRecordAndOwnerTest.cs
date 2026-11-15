@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Tests.TestHelpers;
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.WorkItems.Domain;
 
 namespace Lighthouse.Backend.Tests.Models
 {

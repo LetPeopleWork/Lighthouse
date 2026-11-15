@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
+using Lighthouse.Backend.Modules.WorkItems.Domain;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

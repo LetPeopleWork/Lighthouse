@@ -26,6 +26,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 {

@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Linq.Expressions;
 using System.Text.Json;
+using Lighthouse.Backend.Modules.WorkItems.Domain;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {

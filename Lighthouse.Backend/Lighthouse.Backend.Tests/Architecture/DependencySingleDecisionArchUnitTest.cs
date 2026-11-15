@@ -21,6 +21,7 @@ using NUnit.Framework;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

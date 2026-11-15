@@ -13,6 +13,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

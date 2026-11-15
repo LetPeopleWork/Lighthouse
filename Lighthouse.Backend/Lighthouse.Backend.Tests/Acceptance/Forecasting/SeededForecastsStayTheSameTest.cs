@@ -21,6 +21,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Tests.Acceptance.Forecasting
 {

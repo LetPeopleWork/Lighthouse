@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Lighthouse.Backend.Modules.WorkItems.Domain;
 
 namespace Lighthouse.Backend.Services.Implementation.Connections
 {

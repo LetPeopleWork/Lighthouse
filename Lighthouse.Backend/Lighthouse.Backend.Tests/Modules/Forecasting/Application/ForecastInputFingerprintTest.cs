@@ -10,6 +10,7 @@ using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Tests.API;
 using Moq;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {

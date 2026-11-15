@@ -133,7 +133,7 @@ for parent_source_path in \
   Lighthouse.Backend/Lighthouse.Backend/Models/ParentChoice.cs \
   Lighthouse.Backend/Lighthouse.Backend/Models/ParentResolution.cs \
   Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentSourceSelector.cs \
-  Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs
+  Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/FetchFingerprint.cs
 do
   assert "parent sources: jira=true for $parent_source_path"    "$(classify_jira "$parent_source_path")"   "true"
   assert "parent sources: ado=false for $parent_source_path"    "$(classify_ado "$parent_source_path")"    "false"

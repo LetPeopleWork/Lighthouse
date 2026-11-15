@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
+using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 
 namespace Lighthouse.Backend.Services.Implementation.Dependencies
 {
