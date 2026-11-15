@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 
-namespace Lighthouse.Backend.Services.Implementation.TeamData
+namespace Lighthouse.Backend.Modules.WorkItems.Application
 {
     public class TeamDataService(
         ILogger<TeamDataService> logger,

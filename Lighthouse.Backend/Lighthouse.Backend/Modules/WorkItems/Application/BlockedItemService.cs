@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 
-namespace Lighthouse.Backend.Services.Implementation.WorkItems
+namespace Lighthouse.Backend.Modules.WorkItems.Application
 {
     /// <summary>
     /// Thin delegator over <see cref="IRuleEvaluator{T}"/> with Include semantics (matched ⇒ blocked),

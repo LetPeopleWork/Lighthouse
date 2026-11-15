@@ -1,7 +1,7 @@
 using System.Globalization;
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Implementation.Parents
+namespace Lighthouse.Backend.Modules.WorkItems.Application
 {
     /// <summary>
     /// The words a refresh writes about the records whose links named several issues: one line for those it

@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Interfaces.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Application.Dependencies
 {
     /// <summary>
     /// Writes what a Feature waits on. Lighthouse never authors a dependency of its own, so there is

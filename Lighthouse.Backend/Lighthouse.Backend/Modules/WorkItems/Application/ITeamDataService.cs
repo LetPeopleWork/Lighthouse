@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Interfaces.TeamData
+namespace Lighthouse.Backend.Modules.WorkItems.Application
 {
     public interface ITeamDataService
     {

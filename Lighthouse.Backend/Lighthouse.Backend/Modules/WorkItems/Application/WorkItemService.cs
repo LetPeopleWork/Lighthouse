@@ -15,7 +15,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Modules.WorkItems.Domain;
 
-namespace Lighthouse.Backend.Services.Implementation.WorkItems
+namespace Lighthouse.Backend.Modules.WorkItems.Application
 {
 #pragma warning disable S107 // Every parameter is a distinct store or port the refresh drives; bundling them into a parameter object would only hide the arity, not the coupling.
     public class WorkItemService(

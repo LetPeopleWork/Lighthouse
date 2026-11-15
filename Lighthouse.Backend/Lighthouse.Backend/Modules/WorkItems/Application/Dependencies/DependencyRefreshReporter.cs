@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 
-namespace Lighthouse.Backend.Services.Implementation.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Application.Dependencies
 {
     /// <summary>
     /// Says in the log what a refresh found among the dependencies it just read. It asks the one place

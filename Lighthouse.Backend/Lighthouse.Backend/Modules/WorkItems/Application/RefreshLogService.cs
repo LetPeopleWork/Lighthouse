@@ -3,7 +3,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.WorkItems.Application
 {
     public class RefreshLogService(
         IRepository<RefreshLog> repository,

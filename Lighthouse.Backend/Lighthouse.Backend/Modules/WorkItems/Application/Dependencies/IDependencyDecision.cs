@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 
-namespace Lighthouse.Backend.Services.Interfaces.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Application.Dependencies
 {
     /// <summary>
     /// The one place that asks. It turns Features a caller already holds into the facts the decision reads,

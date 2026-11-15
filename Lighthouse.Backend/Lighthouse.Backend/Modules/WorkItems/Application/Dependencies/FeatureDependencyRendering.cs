@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Application.Dependencies
 {
     /// <summary>
     /// Works out, once for a whole page, which Features each of its rows is waiting on and what stands against

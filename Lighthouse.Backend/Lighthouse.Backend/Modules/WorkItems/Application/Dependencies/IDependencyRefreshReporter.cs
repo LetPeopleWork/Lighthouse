@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Interfaces.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Application.Dependencies
 {
     /// <summary>
     /// Tells the operator what a refresh found among the dependencies it just read. Everything reported

@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 
-namespace Lighthouse.Backend.Services.Interfaces.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Application.Dependencies
 {
     /// <summary>
     /// The one thing a forecast asks about dependencies. It exists so the simulation can be handed a plain
