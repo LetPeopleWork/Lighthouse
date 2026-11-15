@@ -143,6 +143,7 @@ here="$(cd -P "$(dirname "$0")" && pwd -P)"
   version_output="$("$here/bin/Runner.Listener" --version 2>&1)" || true
   echo "version=${version_output##*$'\n'}"
 } > /record/run-sh
+chmod 644 /record/run-sh
 exit 0
 STUB
 
@@ -155,6 +156,7 @@ here="$(cd -P "$(dirname "$0")" && pwd -P)"
   echo "realdir=$here"
   for a in "$@"; do echo "arg=$a"; done
 } > /record/config-sh
+chmod 644 /record/config-sh
 printf '{"agentName":"codesign-runner-linux"}' > "$here/.runner"
 printf '{"scheme":"OAuth"}' > "$here/.credentials"
 printf '{}' > "$here/.credentials_rsaparams"
@@ -180,6 +182,7 @@ for a in "$@"; do
   previous="$a"
 done
 if [ ! -t 0 ]; then cat >> /record/curl-inputs; fi
+chmod 644 /record/curl-argv /record/curl-inputs 2>/dev/null
 body='{"token":"AORACLEREGISTRATIONTOKEN","expires_at":"2099-01-01T00:00:00Z"}'
 if [ -n "$out" ] && [ "$out" != "-" ]; then printf '%s' "$body" > "$out"; else printf '%s' "$body"; fi
 exit 0
@@ -189,6 +192,7 @@ STUB
 cat > "$work_dir/stale-run.sh" <<'STUB'
 #!/bin/bash
 echo "stale" > /record/stale-run-sh
+chmod 644 /record/stale-run-sh
 exit 0
 STUB
 chmod 755 "$stubs_dir/run.sh" "$stubs_dir/config.sh" "$path_stubs_dir/curl" "$work_dir/stale-run.sh"
@@ -280,8 +284,14 @@ start_entrypoint() {
 
 recorded() { [ -f "$RECORD_DIR/$1" ]; }
 
+# The entrypoint runs the stand-ins under a strict umask as the container user, and the host running this
+# script can be another uid (as on GitHub's runners). The stand-ins therefore open their records up
+# themselves, and a record that still cannot be read is reported as such so the check fails by name.
 record_of() {
-  if [ -f "$RECORD_DIR/$1" ]; then cat "$RECORD_DIR/$1"; fi
+  if [ -f "$RECORD_DIR/$1" ] && ! cat "$RECORD_DIR/$1" 2>/dev/null; then
+    echo "unreadable=$1"
+    echo "  NOTE: the stand-in record $1 exists but host uid $(id -u) cannot read it" >&2
+  fi
 }
 
 # ---------------------------------------------------------------- the image itself
