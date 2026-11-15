@@ -1,0 +1,39 @@
+# The signing runner on the maintainer's machine. lighthouse-codesign-runner.service starts service
+# runner on boot; service register runs once by hand to register it with GitHub.
+name: lighthouse-codesign
+
+x-runner-image: &runner-image ghcr.io/letpeoplework/lighthouse-codesign-runner:${CODESIGN_RUNNER_TAG:-latest}
+
+services:
+  runner:
+    image: *runner-image
+    command: run
+    restart: unless-stopped
+    # Reaps the smart-card daemon a signing job starts in the background.
+    init: true
+    volumes:
+      - codesign-runner-state:/home/runner/state
+      # The whole USB bus with a rule for USB devices (major 189), so the key is found again after a replug.
+      - type: bind
+        source: /dev/bus/usb
+        target: /dev/bus/usb
+    device_cgroup_rules:
+      - "c 189:* rmw"
+
+  register:
+    image: *runner-image
+    command: register
+    profiles: [register]
+    volumes:
+      - codesign-runner-state:/home/runner/state
+    # Only this one-shot service gets the token; any job on the always-on runner could read a mounted secret.
+    secrets:
+      - github_token
+
+volumes:
+  codesign-runner-state:
+    name: codesign-runner-state
+
+secrets:
+  github_token:
+    file: ${HOME:-/root}/.config/lighthouse-codesign/github-token

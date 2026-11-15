@@ -7,10 +7,10 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F305",
-"test": "tools/codesign/tests/test-runner-image.sh::every build stage starts from debian:trixie-slim pinned by digest"
+"still_passes_if": "F415",
+"test": "tools/codesign/tests/test-runner-image.sh::every build stage starts from ubuntu:26.04 pinned by digest"
 },
-"expected": "F303",
+"expected": "F414",
 "stimulus": "F302",
 "user_result": "F304"
 },
@@ -37,9 +37,9 @@
 "still_passes_if": "F313",
 "test": "tools/codesign/tests/test-runner-image.sh::the image carries the GitHub runner at the version the Dockerfile pins"
 },
-"expected": "F311",
-"stimulus": "F310",
-"user_result": "F312"
+"expected": "F417",
+"stimulus": "F416",
+"user_result": "F418"
 },
 {
 "covers": [
@@ -353,7 +353,7 @@
 "C": 1,
 "D": 18,
 "E": 6,
-"F": 405,
+"F": 418,
 "K": 10,
 "L": 5,
 "N": 5,
@@ -420,7 +420,7 @@
 },
 {
 "id": "K3",
-"text": "F29"
+"text": "F409"
 },
 {
 "id": "K4",
@@ -444,7 +444,7 @@
 },
 {
 "id": "K9",
-"text": "F227"
+"text": "F410"
 },
 {
 "id": "K10",
@@ -474,11 +474,11 @@
 },
 {
 "id": "D3",
-"text": "F263"
+"text": "F406"
 },
 {
 "id": "D4",
-"text": "F17"
+"text": "F407"
 },
 {
 "id": "D5",
@@ -498,7 +498,7 @@
 },
 {
 "id": "D9",
-"text": "F274"
+"text": "F408"
 },
 {
 "id": "D10",
@@ -604,7 +604,7 @@
 "S1": {
 "oracle": "tools/codesign/tests/test-runner-image.sh",
 "public_oracle": {
-"expected": "F284",
+"expected": "F413",
 "falsifier": "F270",
 "promises": [
 "P1",
@@ -823,7 +823,7 @@
 {
 "change": "Create",
 "path": "tools/codesign/Dockerfile",
-"reason": "F75"
+"reason": "F412"
 },
 {
 "change": "Create",
@@ -1353,7 +1353,7 @@
 {
 "change": "Extend",
 "path": "tools/codesign/Dockerfile",
-"reason": "F118"
+"reason": "F411"
 },
 {
 "change": "Create",
@@ -1607,7 +1607,6 @@
 "F115": "Finite configuration facts, each with a named check in the S1 oracle",
 "F116": "runner shows online after reboot",
 "F117": "Path boot -> systemd unit -> compose pull/up -> entrypoint -> run.sh -> GitHub runner list; only the maintainer can observe it on the machine (P1)",
-"F118": "osslsigncode builder stage, pkcs11-provider, opensc, pcscd, libccid, node/npm, reader entry, sudoers line, PKCS11_PROVIDER_MODULE; no pkcs11 engine",
 "F119": "Owns the sign lifecycle: key check, pcscd start, bounded reader wait, provider signing with PIN on stdin, pcscd stop on every exit",
 "F12": "Inside the container, the sign step starts pcscd, finds the key, signs NSIS, MSI and server exe with the pkcs11 provider and stops pcscd; with no key it fails fast with the plug-in message before any PIN is sent.",
 "F120": "Static reader entry usb:1050/0407",
@@ -1659,7 +1658,6 @@
 "F167": "Step exit, message, stand-in call log in the S2 oracle; the signed release at EXAMINE",
 "F168": "Another workflow step calling osslsigncode directly; SIGKILL of the container skipping the trap (next start stops a stale pcscd)",
 "F169": "Signed: three files signed, pcscd stopped",
-"F17": "osslsigncode is built from source in a builder stage, at ARG OSSLSIGNCODE_VERSION (2.16 at design time) with the release tarball sha256 checked, against the trixie OpenSSL 3.5, and copied into the runtime stage. Reason (probed): Debian trixie ships osslsigncode 2.9-2, whose sign command has no -provider option; upstream added it in 2.10 (2025-06-23). This confirms the maintainer target (pkcs11 provider, not engine) with a changed means: the Debian package cannot deliver it.",
 "F170": "Refused: no key or no reader, plug-in message, no PIN sent, pcscd stopped",
 "F171": "Failed during signing: PIN sent, non-zero exit, pcscd stopped, artifacts not uploaded",
 "F172": "PIN sent with no reader; pcscd running after the step; success with fewer than three files; signing through the engine",
@@ -1713,7 +1711,6 @@
 "F223": "Sign step (owner tools/codesign/sign-windows.sh; caller .github/workflows/ci_codesign-windows.yml Sign on Linux step, which shrinks to bash tools/codesign/sign-windows.sh VERSION with YUBI_PIN in env). Lifecycle carrier: shell state in the one script process. The script exports PKCS11_PROVIDER_MODULE=/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so itself, so it does not depend on the image ENV. Order: (1) look for a USB device with idVendor 1050 under the sysfs root (default /sys/bus/usb/devices, overridable by CODESIGN_USB_SYSFS for the oracle); none: print plug in the YubiKey and re-run this job, exit 1, no pcscd, no PIN read. (2) set trap stop_pcscd EXIT INT TERM; stop any stale pcscd (sudo -n /usr/bin/pkill -x pcscd, failure ignored) left by a killed earlier run; start pcscd (sudo -n /usr/sbin/pcscd --disable-polkit) with the static reader entry. (3) wait at most CODESIGN_READER_WAIT seconds (default 10) for opensc-tool --list-readers to list a reader; timeout: the plug-in message plus a hint to run tools/codesign/check-host.sh, exit 1, PIN never read. (4) sign the server exe, the NSIS exe and the MSI, PIN on stdin from YUBI_PIN, never argv, never echoed, no set -x, no retry of a failed file. (5) the trap stops pcscd on every exit. Tools resolved through PATH so the oracle can put recording stand-ins first. Sudoers (tools/codesign/sudoers-pcscd, installed 0440 root:root): exactly runner ALL=(root) NOPASSWD: /usr/sbin/pcscd --disable-polkit, /usr/bin/pkill -x pcscd; no wildcard, no ALL command. Accepted: YUBI_PIN is in the environment of the script children (osslsigncode, opensc-tool) as for any GitHub secret in a step env.",
 "F225": "Secrets: YUBI_PIN only in the step env and on osslsigncode stdin; never in argv, never printed, never in the image (inherited by the script children: accepted). The GitHub PAT only in the host file outside the repo, mounted read-only only into the one-shot register service, passed to curl only from a file, never on argv, never in compose.yaml for the runner service, the image, env or logs. The registration credentials live only in the named state volume and the run directory of the always-on container.",
 "F226": "Manual host steps (maintainer, not CI): once per fresh machine: install compose.yaml and the unit, write the token file (owned by the user with uid RUNNER_UID, mode 0600), run docker compose --profile register run --rm register, enable the unit, add disable-ccid, disable host pcscd. Retirement: stop and remove the host actions-runner service and its registration, delete ~/.local/bin/osslsigncode and the .path entry, docker image rm local/osslsigncode-ossl3:trixie. Ongoing: watchtower keeps the image current; nothing manual after a reboot. The README lists them in order; check-host.sh confirms the result.",
-"F227": "Only the maintainer can check these at EXAMINE, no oracle can: pkcs11-provider 1.0-3 with the PIV key in slot 9c (always-authenticate) across three signs in one run (fallback: pkcs11-provider 1.2.0 from trixie-backports); the static reader entry finding the real key inside the container; /sys/bus/usb showing the plugged key inside the container; growth of /home/runner/work (no volume, so it is reset on every recreate).",
 "F229": "The image can be older than main until the next watchtower run or boot",
 "F230": "ExecStartPre has a leading minus, so the failure shows only as a warning in journalctl; watchtower pulls again on its next run; skew between script and image is accepted by the maintainer because watchtower runs regularly, and the contract test against latest runs after every publish",
 "F231": "A Renovate bump that cannot build merging and leaving the machine on an old image unnoticed",
@@ -1733,14 +1730,12 @@
 "F26": "Formal verification: the only state/temporal claim is the sign-step lifecycle (S2). Checker: Quint 0.33.1 with the Apalache backend for bounded model checking of safety, plus quint run simulation for mutant kills and reachability witnesses. Liveness under fairness is not claimed: the script is one sequential process whose only loop is bounded by a deadline, so termination is stated as the safety invariant protocolStepsBounded (bounded response). TLC is therefore not needed. All other claims (image contents, compose config, registration, Renovate, host state) are finite configuration facts checked by example oracles, not by a model.",
 "F261": "No registration in the state volume (run mode), or no token file (register mode)",
 "F262": "Run mode exits 1 naming docker compose --profile register run --rm register; register mode exits 1 naming /run/secrets/github_token and the host file to create",
-"F263": "Runner image (owner tools/codesign/Dockerfile): a multi-stage build whose every FROM names debian:trixie-slim by tag and sha256 digest. The runtime stage installs from Debian trixie: pkcs11-provider (latchset, 1.0), opensc, opensc-pkcs11, pcscd, libccid, sudo, nodejs and npm (the existing Tauri re-sign steps run npx @tauri-apps/cli@2 on this runner), git, curl and ca-certificates. actions/runner at ARG RUNNER_VERSION (tarball sha256 checked) is unpacked to /opt/runner as the pristine copy each start copies from. User runner has ARG RUNNER_UID (default 1000, matching the host user that owns the token file). The Dockerfile creates /home/runner/state and /home/runner/runtime owned by runner, so a fresh named volume mounted at /home/runner/state takes that ownership and the register copy-back can write. LABEL org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse links the GHCR package to the repository. libengine-pkcs11-openssl (the OpenSSL engine) is deliberately NOT installed.",
 "F264": "Registration carrier (owner tools/codesign/entrypoint.sh, the image ENTRYPOINT). actions/runner keeps its registration in three files (.runner, .credentials, .credentials_rsaparams) in the directory run.sh resolves itself to: run.sh and config.sh follow symlinks (cd -P) and write run-helper.sh and the state files next to the real script, so a symlinked run directory would resolve to /opt/runner. Therefore every start the entrypoint COPIES the runner into the writable run directory: rm -rf /home/runner/runtime/* then cp -a /opt/runner/. /home/runner/runtime/ (a plain copy; no hard links, because /opt/runner is in the image layer and the run directory in the container layer, and hard links would let the runner modify image files through copy-up semantics in ways that are not worth reasoning about). Then it copies the three files from the named volume codesign-runner-state (mounted at /home/runner/state, nothing else) into /home/runner/runtime. The volume never holds binaries, so a new image always runs its own RUNNER_VERSION. Modes: run (default, always-on service): state files present -> exec /home/runner/runtime/run.sh; absent -> exit 1 with WHAT/WHY/HOW naming docker compose --profile register run --rm register. register (one-shot service): after the same copy, reads the PAT from /run/secrets/github_token and passes it to the GitHub API only as an Authorization header that curl reads from a file (curl --config FILE or -H @FILE), never on argv; runs /home/runner/runtime/config.sh --unattended --name codesign-runner-linux --labels linux,codesign --replace --disableupdate; copies the three files back to /home/runner/state; exits. The token is never echoed. --disableupdate because self-update would be lost on every recreate.",
 "F266": "Bounds from authority: P3 says the no-key failure is at once and before any PIN is sent. Design bound (measured from the start of the sign step, which runs inside an already started container): with no USB key the step exits within 5 s (no pcscd start); with a USB key but no reader within CODESIGN_READER_WAIT (10 s) plus 5 s. The authority gives no number; these are design choices. Not covered by these bounds: the container start, where the entrypoint copies the runner (about 670 MB) into the run directory before run.sh; that cost is paid once per container start (boot, watchtower recreate), not per job, and the S1 entrypoint cases get their own bound of 60 s. The job timeout stays timeout-minutes: 15.",
 "F27": "Scope: the Windows signtool branch of ci_codesign-windows.yml stays as it is, including runs-on [self-hosted, codesign]; the container registers with labels linux,codesign so the existing job selector still picks either runner. A cloud signing service is out of scope.",
 "F270": "A tag-only FROM, a missing source label, binaries in the volume, a run directory of symlinks into /opt/runner (run.sh then fails with Permission denied or Must configure), a root-owned state directory, a run mode that runs config.sh, a PAT on curl argv or in output, a secrets entry on the runner service, privileged: true, a fixed devices line, missing restart or init, a pull without the leading minus, or a boolean comparison in the job if each turns one named check red.",
 "F271": "Run tools/codesign/sign-windows.sh VERSION inside the built image (docker run, workdir holding artifacts/server/Lighthouse.exe, artifacts/standalone/Lighthouse-setup.exe and Lighthouse.msi), YUBI_PIN set to a sentinel, with recording stand-ins for sudo/pcscd/pkill, opensc-tool and osslsigncode first on PATH: (a) CODESIGN_USB_SYSFS empty; (b) a fake device with idVendor 1050 and no reader ever listed, CODESIGN_READER_WAIT=2; (c) fake device and a listed reader; (d) as (c) with osslsigncode failing on the second file; (e) as (c) with a stale pcscd reported running before start. In the image without stand-ins: osslsigncode sign --help, openssl list -providers -provider pkcs11, a search for any pkcs11 engine file, and the sudoers file. Real-binary case, test only: a test image derived from the built image adds softhsm2, creates an EC key and self-signed cert with id 01 in a token, sets PKCS11_PROVIDER_MODULE to the SoftHSM module (the provider reads that variable, not -pkcs11module) and runs the image real osslsigncode sign -provider pkcs11 -pkcs11module SOFTHSM -key pkcs11:id=%01;type=private -pkcs11cert pkcs11:id=%01;type=cert -readpass - on a tiny PE fixture, then osslsigncode verify; then the same sign with PKCS11_PROVIDER_MODULE unset.",
 "F272": "(a) exit 1 within 5 s, output contains plug in the YubiKey and re-run this job, pcscd never started, osslsigncode never invoked; (b) exit 1 within 7 s, same message plus the check-host.sh hint, pcscd started then stopped, osslsigncode never invoked; (c) exit 0, osslsigncode invoked exactly three times, once per file, each argv with -provider pkcs11 and -readpass - and without -pkcs11engine, the sentinel on stdin and never on argv, pcscd stopped; (d) non-zero exit, two invocations, no third, pcscd stopped; (e) pkill -x pcscd runs before the pcscd start. The sentinel never appears in stdout or stderr. Tools: help lists -provider, the pkcs11 provider is active, no pkcs11 engine file exists, sudoers is 0440 root:root and allows exactly /usr/sbin/pcscd --disable-polkit and /usr/bin/pkill -x pcscd with no * and no ALL command. Real-binary: with the variable set to the SoftHSM module, sign exits 0 and verify accepts the signature against the test cert; with it unset, sign exits non-zero and writes no signed file. Signing with the real YubiKey and Verify signing coverage: maintainer at EXAMINE (P2).",
-"F274": "Renovate (owner renovate.json): the dockerfile manager finds the FROM digests in tools/codesign/Dockerfile. One new custom regex manager reads lines of the form # renovate: datasource=github-releases depName=OWNER/REPO followed by ARG NAME=VERSION in tools/codesign/Dockerfile (actions/runner, mtrojnar/osslsigncode). ADR-212 automerge stays on. These PRs are gated by the required check Codesign Runner Image / verify (D14): a version bump whose sha256 ARG was not updated fails the image build, stays red and does not merge until a human edits the checksum. That is the intended safe failure.",
 "F276": "ADR-212 is not edited: its consequence that path-filtered workflows are not required checks stays true in general. The ADR of this feature records that for the runner image this gap is closed by the required check Codesign Runner Image / verify, a pull_request workflow without a paths filter.",
 "F277": "Renovate bump PRs must pass the required check Codesign Runner Image / verify, which builds the image; a bump without its sha256 stays red and waits for a human; the weekly rebuild and watchtower carry a merged bump to the machine",
 "F278": "No workflow if: decides on the actor, and every Renovate hold carries a reason (ADR-212 consequences). Covers the codesign runner workflow and the new renovate.json custom manager: a Renovate PR runs the same Codesign Runner Image / verify check as a person.",
@@ -1748,13 +1743,11 @@
 "F280": "Build the image from tools/codesign/Dockerfile (or take IMAGE); run it through its real entrypoint with docker run against a state volume, with recording stand-ins for config.sh and curl first on PATH where a case needs them; run the image real run.sh once with no stand-in; render tools/codesign/compose.yaml with docker compose config (default and --profile register, and once with the token source file missing); read the unit file, the image labels, every FROM line and the jobs of .github/workflows/codesign-runner-image.yml.",
 "F282": "One independent workflow (owner .github/workflows/codesign-runner-image.yml, name Codesign Runner Image); ci.yml and ci_changes.yml are not changed. Triggers: pull_request to main with no paths filter (so it always reports), push to main for paths tools/codesign/** and the workflow file, a weekly schedule, workflow_dispatch. Workflow permissions: contents read. Job changes (ubuntu-latest, checkout with fetch-depth 0): on pull_request it diffs github.event.pull_request.base.sha...github.event.pull_request.head.sha for tools/codesign/ and .github/workflows/codesign-runner-image.yml and writes output codesign as the string true or false (captured file list matched with a here-string, no pipe into grep -q); on push, schedule and dispatch it writes the string true. Job verify (the required check, context Codesign Runner Image / verify): needs changes; if: !cancelled() and (needs.changes.result is not success, or needs.changes.outputs.codesign equals the quoted string true); its first step exits 1 with a clear message (change detection failed, re-run the workflow) when needs.changes.result is not success, so a failed changes job turns the check red, never skipped; then it builds the image once with buildx for linux/amd64 without push or login and runs the three slice oracles. Job publish: needs verify; if github.ref is refs/heads/main and github.event_name is not pull_request and needs.verify.result is success (a dispatch on another branch must never overwrite latest, which watchtower pulls); permissions packages write; rebuilds from the same commit with the buildx cache, logs in to ghcr.io with GITHUB_TOKEN, pushes tags latest and sha-COMMIT, then runs the shared contract test against latest. Every action pinned to a full commit with its release in a comment (ADR-212).",
 "F283": "The required check for PRs is Codesign Runner Image / verify in the independent workflow (D8), not a ci.yml job. The verify job runs if !cancelled() and (needs.changes.result is not success, or needs.changes.outputs.codesign equals the quoted string true), and fails at its first step when changes did not succeed: a changes failure turns the check red, never skipped. a boolean comparison would always be false and skip the job forever, so the S1 oracle checks this string comparison and that the changes job writes the strings true/false. On a pull_request that does not touch tools/codesign/ or the workflow, verify is skipped, which a required status check accepts as passing; otherwise it builds and runs the oracles. The workflow has no paths filter on pull_request, so the check always reports. The root adds Codesign Runner Image / verify to the main ruleset after the first push (outside the repo).",
-"F284": "(1) Every FROM names debian:trixie-slim with an @sha256 digest; the image has label org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse; /opt/runner holds config.sh and run.sh at the RUNNER_VERSION in the Dockerfile; /home/runner/state and /home/runner/runtime exist owned by runner; the default user is runner with uid 1000. (2) Run mode with an empty volume exits 1 within 60 s, names the register command and never starts run.sh or config.sh. (3) Run mode with a volume holding .runner, .credentials and .credentials_rsaparams starts run.sh and never config.sh. (4) A volume left by an older image plus the new image: run.sh executes from /home/runner/runtime (writable, a copy, not a symlink to /opt/runner), the three files sit beside it, and the runner there reports the image RUNNER_VERSION. (5) Real-binary case, no stand-in: with the three fixture files in the volume, the image real run.sh started by the entrypoint under a 60 s timeout prints neither Must configure nor Permission denied (a network or authentication failure is acceptable). (6) Register mode with a token file: curl receives the token only through a file or stdin and never on argv; config.sh runs from /home/runner/runtime with labels linux,codesign and --disableupdate; the three files land in a fresh volume; the token is in no output. Register mode without a token file exits 1 naming /run/secrets/github_token. (7) Rendered compose: service runner has restart unless-stopped, init true, a bind of /dev/bus/usb, device_cgroup_rules c 189:* rmw, no privileged true, no fixed devices entry, the state volume, image ghcr.io/letpeoplework/lighthouse-codesign-runner:latest and NO secrets; service register has profile register and the github_token secret with a source outside the repo; config with a missing token file still renders the runner service. (8) The unit has ExecStartPre=-docker compose pull, ExecStart=docker compose up -d runner, After=docker.service, WantedBy=multi-user.target. (9) codesign-runner-image.yml has a pull_request trigger with no paths filter; its changes job writes codesign as the string true or false; the verify job if contains !cancelled(), a needs.changes.result clause and a comparison of needs.changes.outputs.codesign with the quoted string true, and its first step exits 1 when needs.changes.result is not success; publish needs verify and its if requires github.ref refs/heads/main, an event other than pull_request and needs.verify.result success; ci.yml and ci_changes.yml are not referenced. So the check Codesign Runner Image / verify runs when codesign is true.",
 "F285": "Rollback (owners tools/codesign/compose.yaml and tools/codesign/README.md): the runner service image is ghcr.io/letpeoplework/lighthouse-codesign-runner:${CODESIGN_RUNNER_TAG:-latest}, so it renders as latest unless the maintainer pins a tag. When a new latest breaks signing: (1) find the previous good tag sha-COMMIT (the GHCR package page, or the publish run of the last green release); (2) write CODESIGN_RUNNER_TAG=sha-COMMIT into the .env file beside compose.yaml; (3) docker compose pull runner and docker compose up -d runner; (4) watchtower then compares only that immutable tag, so it stops moving the runner by itself (no watchtower change needed); (5) re-run the failed sign job. To return to latest: remove the line and repeat step 3. The registration volume is untouched by a rollback, so no re-register. The README (S3) carries these steps.",
 "F286": "Health signal (owner tools/codesign/README.md): the signal is the runner list in GitHub (Settings, Actions, Runners: codesign-runner-linux online/offline) and docker compose ps / docker logs on the machine. If the runner is offline, a release run does not fail: the codesign-windows job for [self-hosted, codesign] queues with Waiting for a runner to pick up this job for up to 24 h; timeout-minutes 15 counts only once the job runs, so it does not bound the queue. No earlier alert is added, on purpose: a signing run needs the maintainer at the machine to plug in the YubiKey and he approves the release gate, so he sees the waiting job at once; the weekly image workflow proves the image and the contract, not that the machine is online, and a monitor for a machine that only matters while he is present would cost more than it saves. The README lists what to check when the job waits.",
 "F287": "Usage data (Lighthouse DEVOPS rule): N/A. The change is pipeline-only: it alters how Windows release binaries are signed on the maintainer machine; no Lighthouse user runs, sees or configures it, so no UsageDataEventName is added and docs/settings/usagedata.md is unchanged.",
 "F288": "GHCR unavailable at boot or at a watchtower run",
 "F289": "The cached image keeps running and the runner stays online; journalctl -u lighthouse-codesign-runner shows the failed pull as a warning; watchtower retries on its next run",
-"F29": "Deviation, labelled: pinned are the base image digest, actions/runner (version and sha256) and osslsigncode (version and sha256). Debian packages float within the pinned trixie base at build time on purpose, so the weekly scheduled rebuild picks up Debian security fixes. A package update can therefore change the image between rebuilds, but only through a CI build that runs the oracles before publish, never on the maintainer workstation.",
 "F290": "Runner registration deleted, revoked or expired in GitHub",
 "F291": "run.sh exits with an authentication or registration error and the container restarts repeatedly (unless-stopped); GitHub shows no codesign-runner-linux. Maintainer: docker compose stop runner, docker compose --profile register run --rm register (config.sh --replace overwrites the state files), docker compose up -d runner. README carries it.",
 "F292": "YubiKey PIV PIN blocked after wrong PINs",
@@ -1769,17 +1762,12 @@
 "F300": "After the move, the host has only Docker for signing: start-runner-linux.ps1, the host actions-runner, ~/.local/bin/osslsigncode and the local osslsigncode image are gone, and host scdaemon and pcscd no longer hold the YubiKey.",
 "F301": "I can open tools/codesign/README.md and follow it to set up the signing runner on a fresh Linux machine, and it explains why the host conflicts with scdaemon and pcscd are handled the way they are.",
 "F302": "Build the runner image and read every base line of its Dockerfile",
-"F303": "Every build stage starts from debian:trixie-slim pinned by a sha256 digest",
 "F304": "A rebuild of the same commit cannot pick up a different base, and Renovate can propose base digest bumps",
-"F305": "A digest that is well formed but not a real trixie-slim digest; the digest is not looked up in a registry",
 "F306": "Read the labels of the built image",
 "F307": "The image carries the source label https://github.com/LetPeopleWork/Lighthouse",
 "F308": "The published package appears under the Lighthouse repository in GHCR",
 "F309": "A correct label on an image that is never pushed; publishing is observed only in the workflow definition",
 "F31": "Platform: the signing machine is linux/amd64; module paths are the Debian multiarch paths /usr/lib/x86_64-linux-gnu/... . The image is built for linux/amd64 only.",
-"F310": "Look inside the built image at the pristine runner, the state and run directories and the default user",
-"F311": "The pristine runner has config.sh and run.sh and reports the runner version the Dockerfile pins; the state and run directories belong to runner; the image runs as runner with uid 1000",
-"F312": "The runner GitHub sees is the pinned version, jobs do not run as root, and a fresh state volume can receive the registration",
 "F313": "A runner whose tarball checksum is not verified at build; the checksum check is only exercised by a version bump",
 "F314": "Start the image in run mode against an empty state volume",
 "F315": "It exits with failure within a minute, names docker compose --profile register run --rm register, and starts neither run.sh nor config.sh",
@@ -1882,7 +1870,20 @@
 "F403": "The workflow publishes latest and a sha- tag of ghcr.io/letpeoplework/lighthouse-codesign-runner",
 "F404": "The machine can pull the new image",
 "F405": "Publishing needs a run on main with packages write; only the workflow definition is observable before merge",
+"F406": "Runner image (owner tools/codesign/Dockerfile): a single-stage build FROM ubuntu:26.04 by tag and sha256 digest. It installs from Ubuntu 26.04: osslsigncode (2.13), pkcs11-provider (latchset, 1.2.0), opensc and opensc-pkcs11 (0.27.0~rc1), pcscd (2.4.1), libccid (1.7.1), sudo, nodejs and npm (22; the existing Tauri re-sign steps run npx @tauri-apps/cli@2 on this runner), git, curl and ca-certificates; OpenSSL is 3.5. actions/runner at ARG RUNNER_VERSION (tarball sha256 checked) is unpacked to /opt/runner as the pristine copy each start copies from. User runner keeps uid ARG RUNNER_UID (default 1000, matching the host user that owns the token file): the Ubuntu image already has user ubuntu with uid 1000, so the Dockerfile renames it (usermod -l runner -d /home/runner -m ubuntu and groupmod -n runner ubuntu) instead of adding a second uid-1000 user. The Dockerfile creates /home/runner/state and /home/runner/runtime owned by runner, so a fresh named volume mounted at /home/runner/state takes that ownership and the register copy-back can write. LABEL org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse links the GHCR package to the repository. libengine-pkcs11-openssl (the OpenSSL engine, a separate package) is deliberately NOT installed.",
+"F407": "osslsigncode comes from the Ubuntu 26.04 package (2.13-1, whose sign help lists -provider): no builder stage and no osslsigncode version or sha256 ARG. Reason: Debian trixie ships osslsigncode 2.9-2, which has no -provider option (upstream added it in 2.10), and Debian sid is rolling; Ubuntu 26.04 carries a provider-capable osslsigncode together with pkcs11-provider 1.2.0, so the maintainer target (pkcs11 provider, not engine) needs no source build.",
+"F408": "Renovate (owner renovate.json): the dockerfile manager finds the FROM digest of ubuntu:26.04 in tools/codesign/Dockerfile. One new custom regex manager reads a line of the form # renovate: datasource=github-releases depName=actions/runner followed by ARG RUNNER_VERSION=VERSION in tools/codesign/Dockerfile; Renovate tracks only the base digest and the runner version. ADR-212 automerge stays on. These PRs are gated by the required check Codesign Runner Image / verify (D14): a runner bump whose sha256 ARG was not updated fails the image build, stays red and does not merge until a human edits the checksum. That is the intended safe failure.",
+"F409": "Deviation, labelled: pinned are the base image digest (ubuntu:26.04) and actions/runner (version and sha256). Ubuntu packages, osslsigncode included, float within the pinned base at build time on purpose, so the weekly scheduled rebuild picks up Ubuntu security fixes. A package update can therefore change the image between rebuilds, but only through a CI build that runs the oracles before publish, never on the maintainer workstation.",
 "F41": "Negates: the pkcs11 provider loads and finds the key through opensc",
+"F410": "Only the maintainer can check these at EXAMINE, no oracle can: pkcs11-provider 1.2.0 with the PIV key in slot 9c (always-authenticate) across three signs in one run; opensc-pkcs11 0.27.0~rc1 (a release candidate in Ubuntu 26.04) talking to the real YubiKey; the static reader entry finding the real key inside the container; /sys/bus/usb showing the plugged key inside the container; growth of /home/runner/work (no volume, so it is reset on every recreate).",
+"F411": "Ubuntu packages osslsigncode, pkcs11-provider, opensc, pcscd, libccid, node/npm, reader entry, sudoers line, PKCS11_PROVIDER_MODULE; no pkcs11 engine",
+"F412": "Runner image: digest-pinned ubuntu:26.04 base, actions/runner at pinned version and sha256, user runner with uid 1000 (renamed from ubuntu), entrypoint",
+"F413": "(1) Every FROM names ubuntu:26.04 with an @sha256 digest; the image has label org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse; /opt/runner holds config.sh and run.sh at the RUNNER_VERSION in the Dockerfile; /home/runner/state and /home/runner/runtime exist owned by runner; the default user is runner with uid 1000 and no user ubuntu remains. (2) Run mode with an empty volume exits 1 within 60 s, names the register command and never starts run.sh or config.sh. (3) Run mode with a volume holding .runner, .credentials and .credentials_rsaparams starts run.sh and never config.sh. (4) A volume left by an older image plus the new image: run.sh executes from /home/runner/runtime (writable, a copy, not a symlink to /opt/runner), the three files sit beside it, and the runner there reports the image RUNNER_VERSION. (5) Real-binary case, no stand-in: with the three fixture files in the volume, the image real run.sh started by the entrypoint under a 60 s timeout prints neither Must configure nor Permission denied (a network or authentication failure is acceptable). (6) Register mode with a token file: curl receives the token only through a file or stdin and never on argv; config.sh runs from /home/runner/runtime with labels linux,codesign and --disableupdate; the three files land in a fresh volume; the token is in no output. Register mode without a token file exits 1 naming /run/secrets/github_token. (7) Rendered compose: service runner has restart unless-stopped, init true, a bind of /dev/bus/usb, device_cgroup_rules c 189:* rmw, no privileged true, no fixed devices entry, the state volume, image ghcr.io/letpeoplework/lighthouse-codesign-runner:latest and NO secrets; service register has profile register and the github_token secret with a source outside the repo; config with a missing token file still renders the runner service. (8) The unit has ExecStartPre=-docker compose pull, ExecStart=docker compose up -d runner, After=docker.service, WantedBy=multi-user.target. (9) codesign-runner-image.yml has a pull_request trigger with no paths filter; its changes job writes codesign as the string true or false; the verify job if contains !cancelled(), a needs.changes.result clause and a comparison of needs.changes.outputs.codesign with the quoted string true, and its first step exits 1 when needs.changes.result is not success; publish needs verify and its if requires github.ref refs/heads/main, an event other than pull_request and needs.verify.result success; ci.yml and ci_changes.yml are not referenced. So the check Codesign Runner Image / verify runs when codesign is true.",
+"F414": "Every build stage starts from ubuntu:26.04 pinned by a sha256 digest",
+"F415": "A digest that is well formed but not a real ubuntu:26.04 digest; the digest is not looked up in a registry",
+"F416": "Look inside the built image at the pristine runner, the state and run directories and the users",
+"F417": "The pristine runner has config.sh and run.sh and reports the runner version the Dockerfile pins; the state and run directories belong to runner; the image runs as runner with uid 1000 and no user ubuntu remains",
+"F418": "The runner GitHub sees is the pinned version, jobs do not run as root, uid 1000 has one name, and a fresh state volume can receive the registration",
 "F42": "No file is signed through the engine; the failure names the provider and the step exits non-zero",
 "F43": "The release sign step fails and the release waits",
 "F44": "Silent fallback to the libp11 engine or an unsigned file passing Verify signing coverage",
@@ -1907,7 +1908,6 @@
 "F7": "Nothing signing-related is installed on the host besides Docker: start-runner-linux.ps1, the host actions-runner, ~/.local/bin/osslsigncode and the local osslsigncode image are retired, and host scdaemon/pcscd no longer hold the YubiKey.",
 "F70": "cgroup rule 189:* covers renumbering; unless-stopped covers daemon restarts; the reader-timeout message tells the maintainer to run check-host.sh, which reports scdaemon or host pcscd holding the key; reader.conf is one line to change for a new key model",
 "F71": "Every uses: in .github/workflows and .github/actions, including the new codesign-runner-image.yml, is pinned to a full commit with its release named after it, so Renovate can keep it current (ADR-212 decision 6). Reused existing guard; it scans the real repository.",
-"F75": "Runner image: digest-pinned trixie base, actions/runner at pinned version and sha256, non-root user, entrypoint",
 "F76": "Register once from the token file, then run; refuse loudly without registration and token",
 "F77": "Restart policy, named state volume, token secret, /dev/bus/usb mount, cgroup rule c 189:* rmw",
 "F78": "Pull on boot, then compose up",

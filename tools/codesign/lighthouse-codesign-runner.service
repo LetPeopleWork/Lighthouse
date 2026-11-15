@@ -1,0 +1,17 @@
+[Unit]
+Description=Lighthouse code signing runner (GitHub Actions, in Docker)
+Requires=docker.service
+Wants=network-online.target
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/lighthouse-codesign
+# The leading minus keeps the boot going on the cached image when GHCR cannot be reached.
+ExecStartPre=-/usr/bin/docker compose pull runner
+ExecStart=/usr/bin/docker compose up -d runner
+ExecStop=/usr/bin/docker compose stop runner
+
+[Install]
+WantedBy=multi-user.target

@@ -112,6 +112,13 @@
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker",
       "depTypeTemplate": "postgres-upgrade-source"
+    },
+    {
+      "customType": "regex",
+      "description": "Versions in the code signing runner image that the Dockerfile downloads itself, each on an ARG under a '# renovate:' comment naming its source. The checksum ARG beside it is edited by hand: until it is, the image build fails and the update does not merge.",
+      "managerFilePatterns": ["/^tools/codesign/Dockerfile$/"],
+      "matchStrings": ["# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\nARG [A-Z0-9_]+_VERSION=(?<currentValue>[^\\s]+)"],
+      "extractVersionTemplate": "^v?(?<version>.*)$"
     }
   ],
   "vulnerabilityAlerts": {

@@ -1,0 +1,127 @@
+name: Codesign Runner Image
+
+# The image of the self-hosted runner that signs the Windows binaries. It is built and published here,
+# apart from the main CI, and the signing machine pulls latest on boot.
+on:
+  # No paths filter: verify is a required check, and a required check that never reports blocks the merge.
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'tools/codesign/**'
+      - '.github/workflows/codesign-runner-image.yml'
+  # Weekly, so security fixes in the base packages reach the machine without a code change.
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      codesign: ${{ steps.detect.outputs.codesign }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: '0'
+
+      - name: Detect changes to the runner image
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "codesign=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "$BASE_SHA...$HEAD_SHA" -- tools/codesign/ .github/workflows/codesign-runner-image.yml)"
+          if [ -n "$changed" ]; then
+            echo "codesign=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "codesign=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  verify:
+    name: verify
+    needs: changes
+    # Job outputs are strings, so codesign is compared with the string 'true'. A failed change
+    # detection still runs this job, which then turns red at its first step instead of being skipped.
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.codesign == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Stop when change detection failed
+        if: ${{ needs.changes.result != 'success' }}
+        run: |
+          echo "Change detection did not succeed, so it is unknown whether the runner image changed. Re-run the workflow."
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build the runner image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: tools/codesign
+          platforms: linux/amd64
+          load: true
+          tags: lighthouse-codesign-runner:verify
+          cache-from: type=gha,scope=codesign-runner
+          cache-to: type=gha,scope=codesign-runner,mode=max
+
+      - name: Check the runner image
+        env:
+          IMAGE: lighthouse-codesign-runner:verify
+        run: bash tools/codesign/tests/test-runner-image.sh
+
+  publish:
+    needs: verify
+    # Only main may move latest, which the signing machine pulls; a branch dispatch must never overwrite it.
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.verify.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      IMAGE_NAME: ghcr.io/letpeoplework/lighthouse-codesign-runner
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the runner image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: tools/codesign
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          cache-from: type=gha,scope=codesign-runner
+
+      - name: Check the published image
+        env:
+          IMAGE: ${{ env.IMAGE_NAME }}:latest
+        run: |
+          docker pull --platform linux/amd64 "$IMAGE"
+          bash tools/codesign/tests/test-runner-image.sh
