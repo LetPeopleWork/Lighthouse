@@ -26,6 +26,7 @@ using Serilog.Events;
 using Serilog.Extensions.Logging;
 using System.Net.Http.Json;
 using Lighthouse.Backend.Modules.WorkItems.Domain;
+using Lighthouse.Backend.Modules.WorkItems.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 {

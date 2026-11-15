@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 
 namespace Lighthouse.Backend.Services.Implementation
 {

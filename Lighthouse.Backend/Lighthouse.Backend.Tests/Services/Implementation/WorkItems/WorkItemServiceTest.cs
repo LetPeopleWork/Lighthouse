@@ -4,8 +4,6 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation.WorkItemRules;
-using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -18,6 +16,7 @@ using Moq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using Lighthouse.Backend.Modules.WorkItems.Domain;
+using Lighthouse.Backend.Modules.WorkItems.Application;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {

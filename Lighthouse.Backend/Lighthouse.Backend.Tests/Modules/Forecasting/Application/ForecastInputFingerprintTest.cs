@@ -11,6 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Tests.API;
 using Moq;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
+using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 
 namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {

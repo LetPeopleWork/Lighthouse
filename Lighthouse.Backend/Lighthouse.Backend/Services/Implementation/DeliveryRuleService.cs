@@ -1,9 +1,8 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
+using Lighthouse.Backend.Modules.WorkItems.Application;
 
 namespace Lighthouse.Backend.Services.Implementation
 {

@@ -11,7 +11,6 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDev
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
-using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Microsoft.Extensions.Logging;
@@ -22,6 +21,7 @@ using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
+using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

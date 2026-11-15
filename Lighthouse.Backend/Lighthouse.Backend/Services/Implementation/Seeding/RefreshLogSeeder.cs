@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Modules.WorkItems.Application;
 
 namespace Lighthouse.Backend.Services.Implementation.Seeding
 {

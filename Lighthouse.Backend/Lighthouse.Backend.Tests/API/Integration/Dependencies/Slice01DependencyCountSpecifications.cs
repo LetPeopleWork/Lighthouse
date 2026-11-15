@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
-using Lighthouse.Backend.Services.Interfaces.Dependencies;
+using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using NUnit.Framework;
 using System.Text.Json;
 

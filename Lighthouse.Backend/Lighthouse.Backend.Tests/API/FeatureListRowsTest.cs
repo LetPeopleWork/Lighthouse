@@ -1,9 +1,10 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Tests.TestDoubles;
+using Lighthouse.Backend.Modules.WorkItems.Application;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API

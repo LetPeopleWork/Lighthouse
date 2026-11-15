@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 
 namespace Lighthouse.Backend.Modules.WorkItems.Application
 {

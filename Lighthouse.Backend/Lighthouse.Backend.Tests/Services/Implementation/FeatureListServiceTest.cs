@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Moq;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
+using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {

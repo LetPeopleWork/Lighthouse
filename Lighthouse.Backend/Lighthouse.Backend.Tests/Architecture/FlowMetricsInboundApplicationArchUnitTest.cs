@@ -53,10 +53,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Every other outside type that reached the module's Application when the module was cut out. The list only shrinks.
         private static readonly string[] OtherOutsideTypesReachingTheApplication =
         [
+            "Lighthouse.Backend.Modules.WorkItems.Application.TeamDataService",
+            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService",
             "Lighthouse.Backend.Services.Implementation.DatabaseManagement.DatabaseMaintenanceGate",
             "Lighthouse.Backend.Services.Implementation.FeatureListActiveWork",
-            "Lighthouse.Backend.Services.Implementation.TeamData.TeamDataService",
-            "Lighthouse.Backend.Services.Implementation.WorkItems.WorkItemService",
             "Lighthouse.Backend.Services.Implementation.WriteBackTriggerService",
         ];
 

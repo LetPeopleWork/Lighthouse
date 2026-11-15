@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Modules.Forecasting.Application;
@@ -9,6 +8,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 
 namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 {

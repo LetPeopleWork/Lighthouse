@@ -20,6 +20,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Modules.WorkItems.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
 {

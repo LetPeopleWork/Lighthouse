@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
+using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies

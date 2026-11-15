@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Dependencies;
 
 namespace Lighthouse.Backend.Modules.WorkItems.Application.Dependencies
 {

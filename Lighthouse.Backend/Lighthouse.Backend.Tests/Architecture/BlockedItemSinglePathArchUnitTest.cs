@@ -1,8 +1,6 @@
 using System.Reflection;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkItems;
-using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
-using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using Lighthouse.Backend.Modules.WorkItems.Application;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.Architecture

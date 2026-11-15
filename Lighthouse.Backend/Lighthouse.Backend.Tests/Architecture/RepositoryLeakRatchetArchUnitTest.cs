@@ -40,11 +40,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Modules/FlowMetrics/Application/OverTimeFillTarget.cs",
             "Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs",
             "Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs",
+            "Modules/WorkItems/Application/RefreshLogService.cs",
+            "Modules/WorkItems/Application/WorkItemService.cs",
             "Services/Implementation/Connections/ConnectionSaveService.cs",
             "Services/Implementation/Refinement/RefinementList.cs",
-            "Services/Implementation/RefreshLogService.cs",
             "Services/Implementation/Reports/ReportOwnerLookup.cs",
-            "Services/Implementation/WorkItems/WorkItemService.cs",
             "Services/Implementation/WorkTrackingSystemConnectionUsage.cs",
             "Services/Implementation/WriteBackTriggerService.cs",
         ];

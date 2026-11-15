@@ -3,7 +3,7 @@ namespace Lighthouse.Backend.Models.WorkItemRules
     /// <summary>
     /// Single source of truth for the operators understood by <see cref="WorkItemRuleSet"/>
     /// and surfaced through every schema endpoint. Add a new operator here, wire it into
-    /// <see cref="Services.Implementation.WorkItemRules.RuleEvaluator{T}"/>, and every
+    /// <see cref="Lighthouse.Backend.Modules.WorkItems.Application.RuleEvaluator{T}"/>, and every
     /// consumer of the schema (forecast filter, delivery rules, future surfaces) picks it
     /// up automatically.
     /// </summary>
