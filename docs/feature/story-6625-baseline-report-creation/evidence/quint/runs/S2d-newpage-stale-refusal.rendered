@@ -1,0 +1,36 @@
+[0] Start: today 2026-11-15, kept history starts 2026-06-18; report 1 saved before this Story with Then ending 2026-11-15, Then length 14, Now length 45; migration will change the report version
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+[1] User creates a report in the UI, Then ending today: length 14, Then ending 2026-11-15 -> ok
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[2] User opens Edit for report 1 in the new page (no Now length)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[3] Migration runs once: every saved report's Now length set to its Then length (version bumped)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 2; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[4] Kept history start moves 45 days later, to 2026-08-02
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 2; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[5] 1 day(s) pass; today is now 2026-11-16
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 14, version 2; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[6] 1 day(s) pass; today is now 2026-11-17
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-04..2026-11-17 (14 days), stored Now length 14, version 2; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-04..2026-11-17 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'
+[7] Throughput arrives for report 2: Then total 2, Now total 15
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-04..2026-11-17 (14 days), stored Now length 14, version 2; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-04..2026-11-17 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 2 (0.1/day), Now 15 (1.1/day): ▲ 13 (+650%)
+[8] Kept history start moves 45 days later, to 2026-09-16
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-04..2026-11-17 (14 days), stored Now length 14, version 2; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-04..2026-11-17 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 2 (0.1/day), Now 15 (1.1/day): ▲ 13 (+650%)
+[9] User saves the Edit of report 1: Then ending 2026-11-02, length 30, no Now length -> refused: report changed since the Edit was opened
+  report 1: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-04..2026-11-17 (14 days), stored Now length 14, version 2; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-11-02..2026-11-15 (14 days), Now 2026-11-04..2026-11-17 (14 days), stored Now length 14, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 2 (0.1/day), Now 15 (1.1/day): ▲ 13 (+650%)

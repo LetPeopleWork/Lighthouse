@@ -1,0 +1,29 @@
+[0] Start: today 2026-11-15, kept history starts 2026-07-03; report 1 saved before this Story with Then ending 2026-10-31, Then length 14, Now length 45; migration will not change the report version
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1
+[1] API create request: Then ending 2026-11-16, length 90, Now length 45 -> refused: Then ends after today
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1
+[2] 1 day(s) pass; today is now 2026-11-16
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 45, version 1
+[3] User opens Edit for report 1 in an old browser page that still sends Now length (Now length 45)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 45, version 1
+[4] User creates a report in the UI, Then back to back (default): length 90, Then ending 2026-08-18 -> refused: Then starts before kept history
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 45, version 1
+[5] Migration runs once: every saved report's Now length set to its Then length (version kept)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 14, version 1
+[6] API create request: Then ending 2026-11-01, length 90, Now length 45 -> refused: Now length differs from Then length
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 14, version 1
+[7] 15 day(s) pass; today is now 2026-12-01
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-18..2026-12-01 (14 days), stored Now length 14, version 1
+[8] Kept history start moves 45 days later, to 2026-08-17
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-18..2026-12-01 (14 days), stored Now length 14, version 1
+[9] 45 day(s) pass; today is now 2027-01-15
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2027-01-02..2027-01-15 (14 days), stored Now length 14, version 1
+[10] User saves the Edit of report 1: Then ending 2026-12-01, length 30, Now length 45 -> refused: Now length differs from Then length
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2027-01-02..2027-01-15 (14 days), stored Now length 14, version 1

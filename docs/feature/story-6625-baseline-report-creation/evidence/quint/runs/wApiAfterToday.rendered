@@ -1,0 +1,18 @@
+[0] Start: today 2026-11-15, kept history starts 2026-11-15; report 1 saved before this Story with Then ending 2026-10-01, Then length 14, Now length 45; migration will change the report version
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1
+[1] 1 day(s) pass; today is now 2026-11-16
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 45, version 1
+[2] 15 day(s) pass; today is now 2026-12-01
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2026-11-18..2026-12-01 (14 days), stored Now length 45, version 1
+[3] 45 day(s) pass; today is now 2027-01-15
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2027-01-02..2027-01-15 (14 days), stored Now length 45, version 1
+[4] 1 day(s) pass; today is now 2027-01-16
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2027-01-03..2027-01-16 (14 days), stored Now length 45, version 1
+[5] Kept history start moves 15 days later, to 2026-11-30
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2027-01-03..2027-01-16 (14 days), stored Now length 45, version 1
+[6] Kept history start moves 45 days later, to 2027-01-14
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2027-01-03..2027-01-16 (14 days), stored Now length 45, version 1
+[7] 1 day(s) pass; today is now 2027-01-17
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2027-01-04..2027-01-17 (14 days), stored Now length 45, version 1
+[8] API create request: Then ending 2027-01-18, length 30, Now length 45 -> refused: Then ends after today
+  report 1: Then 2026-09-18..2026-10-01 (14 days), Now 2027-01-04..2027-01-17 (14 days), stored Now length 45, version 1

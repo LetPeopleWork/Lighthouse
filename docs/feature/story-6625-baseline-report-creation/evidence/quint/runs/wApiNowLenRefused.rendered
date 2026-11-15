@@ -1,0 +1,8 @@
+[0] Start: today 2026-11-15, kept history starts 2026-07-03; report 1 saved before this Story with Then ending 2026-10-31, Then length 90, Now length 45; migration will change the report version
+  report 1: Then 2026-08-03..2026-10-31 (90 days), Now 2026-08-18..2026-11-15 (90 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-10-31'
+[1] User opens Edit for report 1 in an old browser page that still sends Now length (Now length 45)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-08-03..2026-10-31 (90 days), Now 2026-08-18..2026-11-15 (90 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-10-31'
+[2] API create request: Then ending 2026-11-15, length 90, Now length 45 -> refused: Now length differs from Then length
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-08-03..2026-10-31 (90 days), Now 2026-08-18..2026-11-15 (90 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-10-31'

@@ -1,0 +1,32 @@
+[0] Start: today 2026-11-15, kept history starts 2026-07-03; report 1 saved before this Story with Then ending 2026-10-01, Then length 30, Now length 30; migration will change the report version
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[1] Kept history start moves 15 days later, to 2026-07-18
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[2] User opens Edit for report 1 in an old browser page that still sends Now length (Now length 30)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[3] User creates a report in the UI, Then back to back (default): length 7, Then ending 2026-11-08 -> refused: Then shorter than 14 days
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[4] Kept history start moves 15 days later, to 2026-08-02
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[5] Kept history start moves 45 days later, to 2026-09-16
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[6] User saves the Edit of report 1: Then ending 2026-10-01, length 30, Now length 30 -> refused: Then starts before kept history
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[7] 1 day(s) pass; today is now 2026-11-16
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1
+[8] User opens Edit for report 1 in an old browser page that still sends Now length (Now length 30)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1
+[9] 45 day(s) pass; today is now 2026-12-31
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-12-02..2026-12-31 (30 days), stored Now length 30, version 1
+[10] Migration runs once: every saved report's Now length set to its Then length (version bumped)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-12-02..2026-12-31 (30 days), stored Now length 30, version 1
+[11] Throughput arrives for report 1: Then total 0, Now total 91
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-09-02..2026-10-01 (30 days), Now 2026-12-02..2026-12-31 (30 days), stored Now length 30, version 1; Total Then 0 (0.0/day), Now 91 (3.0/day): ▲ 91 (Then was 0)

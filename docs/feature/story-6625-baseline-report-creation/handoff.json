@@ -1,0 +1,396 @@
+{
+"counters": {
+"F": 89,
+"P": 14,
+"S": 3
+},
+"facts": {
+"F1": "ADO Story #6625 (unparented, follow-up of Closed Epic #5878 Baseline). Make creating a Baseline Then / Now report intuitive, from user feedback (Nick Brown): Then and Now can differ in length (30 vs 45 days), a Then ending today leaves no room for a Now, delete is hard to find, Throughput is not compared. Maintainer direction: Now always has the same length as Then. Out of scope: the shown metric set (Story #6649). DISCOVER and DIVERGE skipped by the maintainer 2026-11-15.",
+"F10": "she sets Then to end on 15 Nov 2026 with a length of 14 days",
+"F11": "the Then step shows Then 2 Nov - 15 Nov 2026 and Now 2 Nov - 15 Nov 2026 and reads 'Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass.', and she can create the report",
+"F12": "A Then that partly overlaps Now names the last shared day",
+"F13": "she sets Then to end on 31 Oct 2026 with a length of 30 days",
+"F14": "the Then step shows Now 17 Oct - 15 Nov 2026 and reads 'Now overlaps Then until 31 Oct 2026'",
+"F15": "Too little kept history for the chosen length is refused and explained",
+"F16": "Team Lightspeed's kept history starts one day after the first day the back-to-back Then would need",
+"F17": "Elena picks that Then length",
+"F18": "the Then step says Team Lightspeed has too little history for this length, she cannot move on until she picks another length or end date, and nothing is shifted or shortened silently",
+"F19": "Reports created for several owners at once get a Now as long as Then",
+"F2": "A user creates a Then / Now report that is a fair like-for-like comparison without having to understand window rules, can find delete, and sees Throughput compared.",
+"F20": "Elena creates Then & Now reports for several Teams at once from the Reports page",
+"F21": "she sets a Then length of 30 days",
+"F22": "the wizard asks no Now question and every saved report has a 30-day Now ending today",
+"F23": "A saved report with a longer Now compares equal lengths after the update",
+"F24": "a report saved with a Then of 30 days and a Now of 45 days",
+"F25": "Lighthouse is updated to this version",
+"F26": "the report shows a 30-day Now ending today, its Then window and frozen values are unchanged, past PDF exports are untouched, and no notice is shown",
+"F27": "Edit report changes name and shown metrics only",
+"F28": "Elena may edit a Then & Now report",
+"F29": "she opens Edit report",
+"F3": "A {Team} or {Portfolio} Admin creates a Then & Now report whose Now is always exactly as long as its Then, without choosing a Now length or understanding window rules, so every report, new or already saved, is a like-for-like comparison; and the report compares the {Throughput} Total of Then against Now.",
+"F30": "she can change the name and the shown metrics, no Now length is offered, and Then is not checked again against the kept history, so an old report whose Then is now older than the kept history stays editable",
+"F31": "A Now length different from Then is refused",
+"F32": "a request to create or edit a Then & Now report with a Then of 90 days",
+"F33": "it carries a Now length of 45 days",
+"F34": "it is refused with a clear message that Now is always as long as Then; the same request with a Now of 90 days or with no Now length is accepted",
+"F35": "Higher Throughput Total shows its change",
+"F36": "a Then & Now report of 30-day windows with a {Throughput} Total of 52 in Then and 65 in Now",
+"F37": "Martin opens the report",
+"F38": "the Total line shows the change and % change (13 more, +25%) marked as better, per day keeps its own change, and the CHANGE summary judges {Throughput} on its Total line too",
+"F39": "Throughput Total of 0 on both sides reads as no change",
+"F4": "A new report starts with Then and Now back to back",
+"F40": "a Then & Now report whose {Throughput} Total is 0 in Then and 0 in Now",
+"F41": "the Total line reads 'No change (both 0)' with no arrow and no %, and counts as no change in the CHANGE summary",
+"F42": "Throughput Total from a Then of 0",
+"F43": "a 14-day Then & Now report whose {Throughput} Total is 0 in Then and 30 in Now",
+"F44": "the Total line reads '▲ 30 (Then was 0)' with no %",
+"F45": "Equal non-zero Throughput Totals read as no change",
+"F46": "a 30-day Then & Now report whose {Throughput} Total is 91 in Then and 91 in Now",
+"F47": "the Total line shows the existing grey dash mark and 'No change', and counts as no change in the CHANGE summary",
+"F48": "Throughput not captured shows no Total change",
+"F49": "a report created before {Throughput} was captured",
+"F5": "today is 15 Nov 2026 and Elena, a {Team} Admin of Team Lightspeed, creates a Then & Now report",
+"F50": "no Total change is shown and {Throughput} is not judged in the CHANGE summary",
+"F51": "Single-owner Create wizard on the {Team} and {Portfolio} Reports tab: no Now step; back-to-back default; Then step shows both windows by date with the same-days, overlap-until and too-little-history messages.",
+"F52": "Bulk Create wizard on the app-level Reports page: no 'Same as Then / Custom' Now choice; every saved report's Now = Then.",
+"F53": "Every saved report's Now length snapped to its Then length once.",
+"F54": "Edit report: name and shown metrics only.",
+"F55": "The API refuses a create or edit carrying a Now length different from Then's; absent or equal is accepted.",
+"F56": "{Throughput} Total line gains change and % change and counts in the CHANGE summary.",
+"F57": "Which metrics and aggregations a Then & Now report shows (the 'Numberwang' feedback) - ADO Story #6649.",
+"F58": "Finding Edit and Delete in the report list: split out to ADO Story #6650 'Tables: fit the width and show when columns are off screen', which fixes it for every table in the shared DataGridBase.",
+"F59": "Editing Then, or checking Then again against the kept history on Edit.",
+"F6": "she picks a Then length of 30 days and keeps the default end date",
+"F60": "A notice to owners about reports whose Now was snapped to Then's length.",
+"F61": "Usage-data events: answered in DEVOPS, not here.",
+"F62": "Now always has the same length as Then (maintainer reply on ADO #6625). Reverses epic-5878 D43 (Now length chosen and saved separately), D59 and D62 (the Now step), and the Now-length part of D44 (Edit report).",
+"F63": "Q1: new reports default to Then and Now back to back (Then ends the day before the last L days). Ending Then today stays allowed (5878 D38 kept: Now may overlap Then).",
+"F64": "Q1b: when the kept history is too short for the chosen Then, the Then step refuses and explains that the {Team}/{Portfolio} has too little history for this length; the user picks another length or end. No silent shift or shortening.",
+"F65": "Q1c: a Then ending today (identical windows) is allowed with 'Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass.'; a partial overlap reads 'Now overlaps Then until <Then's last day>'; no line when the windows share no day.",
+"F66": "Q2: every saved report's Now is snapped to Then's length once. Then and its frozen values, and past PDF exports, are untouched. No notice to owners, also where a snapped report newly overlaps.",
+"F67": "Q3: the {Throughput} Total line gets change and % change; per day keeps its own; Total counts in CHANGE. Both 0 reads 'No change (both 0)' (no arrow, no %, no change). Then 0 and Now > 0 keeps '▲ N (Then was 0)'. Not captured: no change. % rounding as 5878 defines. Per day showing no change while Total moves by 1 is accepted. Reverses 5878 D53's rule that the Total line carries no change mark and does not count.",
+"F68": "Equal non-zero {Throughput} Totals use 5878's existing equal-value form (grey dash mark and 'No change'), as the maintainer delegated unless a reason to ask appeared; none did.",
+"F69": "Q4/Q6: the list-actions findability problem is split out to ADO Story #6650 (shared DataGridBase, all tables). This feature keeps one value: a like-for-like comparison.",
+"F7": "the Then step shows Then 17 Sep - 16 Oct 2026 and Now 17 Oct - 15 Nov 2026, both 30 days, with no overlap line, asks no Now question, and the saved report has a 30-day Now ending today",
+"F70": "Q5: the API refuses a create or edit whose Now length differs from Then's with a clear message; absent or equal is accepted.",
+"F71": "Edit cannot change Then, so Edit never checks Then against the kept history; an old report whose Then falls before the kept history stays editable (name, shown metrics).",
+"F72": "5878 decisions reversed or reshaped: D43 (separate saved Now length), D59 and D62 (the Now step), D19 (create flow loses its Now step), D44 and AC-10.2 (Now length editable), D63 (Edit opens on Now; now opens on Metrics & name), D53 (Total excluded from CHANGE). D47's per-day comparison stays, its unequal-length reason no longer applies. D21 and D37 Then validation kept; a valid Then always fits a Now of the same length.",
+"F73": "Whether the snap migration bumps the report's concurrency version: with a bump, an Edit open at that moment is refused as stale even if nothing was changed; without it, an old browser page resending Now 45 is refused by the Q5 rule. Also the gap between deploy and migration. (Quint S2 traces.)",
+"F74": "Quint evidence: quint 0.33.1, model baseline.qnt sha256 88a325f5...0477f and s1grid.qnt sha256 f4615960...dac92, quint run --max-steps 12 --max-samples 20000/50000 --seed 6625, deterministic renderer render.py; random simulation, not exhaustive; model day 1000 = 2026-11-15. Invariants held: Now length = Then length after migration; overlap message iff a shared day; until-date = Then's last day; change only when both totals captured; % only when Then > 0; API accepts only equal or absent Now; Then >= 14 days and not after today. Helper assumptions: check order length, after today, kept history, Now rule; per day rounded to tenths (shipped panel uses 2 decimals, so the 41-of-61 'per day unchanged while Total moves' figure overstates the frequency; behaviour accepted either way); % half away from zero.",
+"F75": "DISCUSS checklist: RBAC no change (create/edit/delete stay TeamWrite/PortfolioWrite via useRbac()). Lighthouse-Clients N/A: CLI and MCP only list and read reports, never send a Now length; no client release. Website no change: 'compares it with a window that moves with today' stays true. Context map: Reports context only (reads Flow metrics as today); no new glossary terms; no domain events; UI surfaces = Reports tab of {Team}/{Portfolio} pages (ADR-271) and the app-level Reports page.",
+"F76": "Elena opens the Reports tab of Team Lightspeed and selects Create Report",
+"F77": "Nick: creating a report should be more intuitive and easier to explain to users",
+"F78": "She picks Then's end date and length; the step shows Then and Now by date, the same length, back to back by default",
+"F79": "Nick: confused that a 30-day window could be compared with a 45-day one, and that a Then ending today left no room for a Now",
+"F8": "A Then ending today is allowed and says the windows are the same days",
+"F80": "She picks the shown metrics and a name and creates the report",
+"F81": "None supplied",
+"F82": "Martin opens the report and reads the {Throughput} Total compared between Then and Now",
+"F83": "Nick: expected the Throughput count to be compared",
+"F84": "Creating a Then & Now report (single owner and bulk) asks no Now question, starts back to back, shows both windows by date with the same-days, overlap-until and too-little-history messages, and saves Now = Then",
+"F85": "A new report is always like-for-like and its windows are visible before creating",
+"F86": "Every saved report compares equal lengths: existing reports snapped once, Edit offers name and metrics only, the API refuses an unequal Now",
+"F87": "Old and edited reports are like-for-like too",
+"F88": "The {Throughput} Total line shows its change and % change and counts in the CHANGE summary",
+"F89": "Readers see Throughput compared, safe because every report now has equal windows",
+"F9": "today is 15 Nov 2026 and Elena creates a Then & Now report"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F62"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F63"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F64"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F65"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F66"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F67"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F68"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F69"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F70"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F71"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F72"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F73"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F74"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F75"
+}
+],
+"journey": [
+{
+"emotion": "F77",
+"step": "F76"
+},
+{
+"emotion": "F79",
+"step": "F78"
+},
+{
+"emotion": "F81",
+"step": "F80"
+},
+{
+"emotion": "F83",
+"step": "F82"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"given": "F5",
+"id": "P2",
+"kind": "Scenario",
+"then": "F7",
+"title": "F4",
+"when": "F6"
+},
+{
+"given": "F9",
+"id": "P3",
+"kind": "Scenario",
+"then": "F11",
+"title": "F8",
+"when": "F10"
+},
+{
+"given": "F9",
+"id": "P4",
+"kind": "Scenario",
+"then": "F14",
+"title": "F12",
+"when": "F13"
+},
+{
+"given": "F16",
+"id": "P5",
+"kind": "Scenario",
+"then": "F18",
+"title": "F15",
+"when": "F17"
+},
+{
+"given": "F20",
+"id": "P6",
+"kind": "Scenario",
+"then": "F22",
+"title": "F19",
+"when": "F21"
+},
+{
+"given": "F24",
+"id": "P7",
+"kind": "Scenario",
+"then": "F26",
+"title": "F23",
+"when": "F25"
+},
+{
+"given": "F28",
+"id": "P8",
+"kind": "Scenario",
+"then": "F30",
+"title": "F27",
+"when": "F29"
+},
+{
+"given": "F32",
+"id": "P9",
+"kind": "Scenario",
+"then": "F34",
+"title": "F31",
+"when": "F33"
+},
+{
+"given": "F36",
+"id": "P10",
+"kind": "Scenario",
+"then": "F38",
+"title": "F35",
+"when": "F37"
+},
+{
+"given": "F40",
+"id": "P11",
+"kind": "Scenario",
+"then": "F41",
+"title": "F39",
+"when": "F37"
+},
+{
+"given": "F43",
+"id": "P12",
+"kind": "Scenario",
+"then": "F44",
+"title": "F42",
+"when": "F37"
+},
+{
+"given": "F46",
+"id": "P13",
+"kind": "Scenario",
+"then": "F47",
+"title": "F45",
+"when": "F37"
+},
+{
+"given": "F49",
+"id": "P14",
+"kind": "Scenario",
+"then": "F50",
+"title": "F48",
+"when": "F37"
+}
+],
+"scope_in": [
+"F51",
+"F52",
+"F53",
+"F54",
+"F55",
+"F56"
+],
+"scope_out": [
+"F57",
+"F58",
+"F59",
+"F60",
+"F61"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F84",
+"promises": [
+"P1",
+"P2",
+"P3",
+"P4",
+"P5",
+"P6"
+],
+"work": {
+"size": "S",
+"value": "F85"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F86",
+"promises": [
+"P1",
+"P7",
+"P8",
+"P9"
+],
+"work": {
+"size": "S",
+"value": "F87"
+}
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F88",
+"promises": [
+"P1",
+"P10",
+"P11",
+"P12",
+"P13",
+"P14"
+],
+"work": {
+"size": "S",
+"value": "F89"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6625-baseline-report-creation",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

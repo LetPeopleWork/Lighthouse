@@ -1,0 +1,28 @@
+[0] Start: today 2026-11-15, kept history starts 2026-06-18; report 1 saved before this Story with Then ending 2026-10-31, Then length 14, Now length 45; migration will change the report version
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1
+[1] User opens Edit for report 1 in an old browser page that still sends Now length (Now length 45)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1
+[2] User creates a report in the UI, Then ending today: length 30, Then ending 2026-11-15 -> ok
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1
+  report 2: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[3] Throughput arrives for report 1: Then total 0, Now total 30
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-02..2026-11-15 (14 days), stored Now length 45, version 1; Total Then 0 (0.0/day), Now 30 (2.1/day): ▲ 30 (Then was 0)
+  report 2: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[4] 1 day(s) pass; today is now 2026-11-16
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 45, version 1; Total Then 0 (0.0/day), Now 30 (2.1/day): ▲ 30 (Then was 0)
+  report 2: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[5] Migration runs once: every saved report's Now length set to its Then length (version bumped)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 14, version 2; Total Then 0 (0.0/day), Now 30 (2.1/day): ▲ 30 (Then was 0)
+  report 2: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[6] API create request: Then ending 2026-11-01, length 90, Now length 45 -> refused: Now length differs from Then length
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 14, version 2; Total Then 0 (0.0/day), Now 30 (2.1/day): ▲ 30 (Then was 0)
+  report 2: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[7] User saves the Edit of report 1: Then ending 2026-11-16, length 30, Now length 45 -> refused: report changed since the Edit was opened
+  report 1: Then 2026-10-18..2026-10-31 (14 days), Now 2026-11-03..2026-11-16 (14 days), stored Now length 14, version 2; Total Then 0 (0.0/day), Now 30 (2.1/day): ▲ 30 (Then was 0)
+  report 2: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'

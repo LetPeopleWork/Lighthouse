@@ -1,0 +1,48 @@
+[0] Start: today 2026-11-15, kept history starts 2026-07-03; report 1 saved before this Story with Then ending 2026-11-15, Then length 90, Now length 90; migration will change the report version
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-18..2026-11-15 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'
+[1] API create request: Then ending 2026-10-01, length 30, no Now length -> ok
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-18..2026-11-15 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[2] API create request: Then ending 2026-11-16, length 90, Now length 90 -> refused: Then ends after today
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-18..2026-11-15 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[3] Kept history start moves 15 days later, to 2026-07-18
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-18..2026-11-15 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+[4] User creates a report in the UI, Then ending today: length 30, Then ending 2026-11-15 -> ok
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-18..2026-11-15 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+  report 3: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[5] Throughput arrives for report 1: Then total 1, Now total 31
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-18..2026-11-15 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 1 (0.0/day), Now 31 (0.3/day): ▲ 30 (+3000%)
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1
+  report 3: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[6] 1 day(s) pass; today is now 2026-11-16
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-19..2026-11-16 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 1 (0.0/day), Now 31 (0.3/day): ▲ 30 (+3000%)
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1
+  report 3: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[7] Kept history start moves 15 days later, to 2026-08-02
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-19..2026-11-16 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 1 (0.0/day), Now 31 (0.3/day): ▲ 30 (+3000%)
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1
+  report 3: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[8] Kept history start moves 15 days later, to 2026-08-17
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-19..2026-11-16 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 1 (0.0/day), Now 31 (0.3/day): ▲ 30 (+3000%)
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1
+  report 3: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[9] Throughput arrives for report 1: Then total 30, Now total 45
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-19..2026-11-16 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 30 (0.3/day), Now 45 (0.5/day): ▲ 15 (+50%)
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1
+  report 3: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[10] Migration runs once: every saved report's Now length set to its Then length (version bumped)
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-19..2026-11-16 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 30 (0.3/day), Now 45 (0.5/day): ▲ 15 (+50%)
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1
+  report 3: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[11] Throughput arrives for report 2: Then total 45, Now total 15
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-19..2026-11-16 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 30 (0.3/day), Now 45 (0.5/day): ▲ 15 (+50%)
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; Total Then 45 (1.5/day), Now 15 (0.5/day): ▼ 30 (-67%)
+  report 3: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'
+[12] User opens Edit for report 1 in an old browser page that still sends Now length (Now length 90)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-08-18..2026-11-15 (90 days), Now 2026-08-19..2026-11-16 (90 days), stored Now length 90, version 1; shows 'Now overlaps Then until 2026-11-15'; Total Then 30 (0.3/day), Now 45 (0.5/day): ▲ 15 (+50%)
+  report 2: Then 2026-09-02..2026-10-01 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; Total Then 45 (1.5/day), Now 15 (0.5/day): ▼ 30 (-67%)
+  report 3: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-18..2026-11-16 (30 days), stored Now length 30, version 1; shows 'Now overlaps Then until 2026-11-15'

@@ -1,0 +1,17 @@
+[0] Start: today 2026-11-15, kept history starts 2026-11-15; report 1 saved before this Story with Then ending 2026-11-15, Then length 30, Now length 45; migration will change the report version
+  report 1: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+[1] User opens Edit for report 1 in an old browser page that still sends Now length (Now length 45)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+[2] User creates a report in the UI, Then back to back (default): length 30, Then ending 2026-10-16 -> refused: Then starts before kept history
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+[3] API create request: Then ending 2026-10-01, length 7, no Now length -> refused: Then shorter than 14 days
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+[4] Kept history start moves 45 days later, to 2026-12-30
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+[5] Migration runs once: every saved report's Now length set to its Then length (version bumped)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 30, version 2; shows 'Now overlaps Then until 2026-11-15'

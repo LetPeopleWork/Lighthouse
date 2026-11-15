@@ -1,0 +1,8 @@
+[0] Start: today 2026-11-15, kept history starts 2026-11-15; report 1 saved before this Story with Then ending 2026-11-15, Then length 30, Now length 45; migration will not change the report version
+  report 1: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+[1] User opens Edit for report 1 in the new page (no Now length)
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-17..2026-11-15 (30 days), Now 2026-10-17..2026-11-15 (30 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
+[2] 15 day(s) pass; today is now 2026-11-30
+  (Edit open for report 1, based on version 1)
+  report 1: Then 2026-10-17..2026-11-15 (30 days), Now 2026-11-01..2026-11-30 (30 days), stored Now length 45, version 1; shows 'Now overlaps Then until 2026-11-15'
