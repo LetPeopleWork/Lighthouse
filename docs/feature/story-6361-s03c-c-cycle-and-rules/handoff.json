@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 5,
-"F": 161,
+"E": 6,
+"F": 167,
 "K": 4,
 "P": 5,
 "S": 4,
@@ -786,6 +787,53 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F162"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F163"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F164"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F165"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F166"
+},
+{
+"id": "E6",
+"promises": [
+"P5",
+"P1"
+],
+"text": "F167"
+}
+]
+},
 "facts": {
 "F1": "Story #6361 S03c Package Forecasting, nwdes feature C of three (cycle and rules). First, a public examine command shows forecasts being recomputed after a Team refresh and the start-up forecast seeding firing, on demo data, so the examiner can observe the moved triggers, updater and seeder working. Then break the Flow metrics to Forecasting cycle by inverting Flow metrics' three edges through ports Flow metrics owns (IThroughputFilter, IForecastDataSufficiency, IHowManyForecaster), answered by Forecasting; Forecasting keeps depending on Flow metrics. Give Forecasting its own module rules (types in their layer, Domain reaches only the kernel, outside reaches Domain, Adapters and Application only from the lists, Application outbound) with inline lists, take the Forecasting entries off Flow metrics' inbound list and empty its Forecasting outbound list, and make the shared rule wording a parameter. Move Forecasting's unit tests to Lighthouse.Backend.Tests/Modules/Forecasting with a placement test. Behaviour-free: routes, DTOs, responses, metrics answers, forecast results, handler order, DI lifetimes and the schema stay the same. Design: docs/feature/story-6361-s03c-package-forecasting/feature-delta.md (slices C1-C3, D-3, D-6, D-9, Ratchet design R-F1..R-F6, Notes from the feature B reviews).",
 "F10": "Entities and DTOs in Models and API/DTO, controllers, Delivery forecast publishing, LeafCapacity (Epic 6474 slice 07), an AddForecasting registration extension (S09a)",
@@ -857,6 +905,12 @@
 "F16": "Paradigm object_oriented, ports and adapters. Owners stay: the throughput filter rule is ForecastFilterRuleService's, the sufficiency rule is ForecastDataSufficiencyPolicy's (Forecasting Domain), the How Many forecast is ForecastService's. Flow metrics gains three ports in Modules/FlowMetrics/Application that name what it asks, in its own words; Forecasting answers them. No rule is copied, no new decision is created; the only new class is a delegating adapter in Forecasting's Application. Carriers: decisions stay in ForecastDataSufficiencyPolicy and ForecastFilterRuleService; effects (forecast round, DI) stay in ForecastService, ForecastUpdater and Program.cs; per-process state stays in ForecastLane and the metrics cache. Bound contexts touched: Flow metrics and Forecasting (ADR-270); no new term, no domain event, no UI surface.",
 "F160": "Every S4 target is a git mv of an existing test file; impact is recorded once in the shared impact rows marked S4.",
 "F161": "Forecasting's unit tests sit under Tests/Modules/Forecasting in their layer folder with the folder's namespace, and nowhere else",
+"F162": "A user running the public command on demo data sees that forecasts are recomputed after a Team refresh, and that the start-up forecast seeding fires.",
+"F163": "Flow metrics code depends on no Forecasting type; every question it puts to Forecasting goes through exactly three Flow-metrics-owned ports that Forecasting answers.",
+"F164": "Forecasting has its own module rules with inline lists, Flow metrics' inbound rule list names no Forecasting type, and the shared rule's wording names the module it checks.",
+"F165": "Forecasting's unit tests sit under Lighthouse.Backend.Tests/Modules/Forecasting, and a placement test fails if they are moved elsewhere.",
+"F166": "For the same inputs, metrics answers, forecasts and forecast answers are identical before and after the change.",
+"F167": "After the change, forecasts still refresh after a Team refresh and at start-up.",
 "F17": "Checker mapping: no state, transition, protocol, concurrency, recovery or scheduling behaviour changes, so Quint, TLA+/TLC and Agda cover no claim here (Quint is installed; nothing is modelled). Liveness: not applicable, no progress claim is added or changed. Dependency-direction, layer and placement claims are decided exactly by the IL-reading rules (IlDependencies) in the S2, S3 and S4 oracles, each with a made-up offender as its falsifier. Answer preservation is observed by SeededForecastsStayTheSameTest, forecast-answers-compare and metrics-answers-compare; trigger and seeding firing by the S1 public command. A property test over seeds would compare the code with itself (both sides run the same code), so pinned values and before/after captures are the falsifiers. Types: C# nominal interfaces under the compiler; the claim is that no Flow metrics type names a Forecasting type, checked on the IL, not a proof.",
 "F18": "ForecastUpdater edge into the shared update infrastructure (UpdateServiceBase, UpdateKey in Services.Implementation.BackgroundServices.Update): the shared update code stays where it is, because it also serves TeamUpdater and PortfolioUpdater; moving it is S09a's. S3 adds one Forecasting Adapters outbound rule: Modules.Forecasting.Adapters reaches Services.Implementation.BackgroundServices.Update only through an inline list, compared both ways, whose entries are the ForecastUpdater edges read from the IL in S3 (expected UpdateServiceBase and UpdateKey). The list is a ratchet candidate for S09a and only shrinks. The edges into Services.Interfaces.Update, DomainEvents and Repositories are platform-lane contracts and stay legal by namespace; ForecastUpdater's licence read stays named in prose (R-F6).",
 "F19": "Behaviour-free: same objects answer the same calls through another interface name. Program.cs keeps every existing line and position; the new registrations resolve the existing scoped instances (IThroughputFilter resolves the scoped ForecastFilterRuleService instance already registered for IForecastFilterRuleService; the Forecasting adapter answering IForecastDataSufficiency and IHowManyForecaster is scoped, the lifetime of IForecastService it delegates to). Handler order, routes, DTOs, responses and schema unchanged; BaseMetricsService keeps resolving through the service provider (S07b removes that), now asking for IHowManyForecaster.",
