@@ -1206,3 +1206,63 @@ case "\$action" in
 esac
 EOF
 chmod +x "$out/feature-proof"
+
+# The AppImage the Linux release command examines defaults to the one named at build time (EXAMINE_APPIMAGE), so a
+# probe needs no absolute path; without one, each action that needs an AppImage takes it as an argument.
+appimage_default="${EXAMINE_APPIMAGE:-}"
+cat > "$out/linux-appimage" <<EOF
+#!/usr/bin/env bash
+# Shows how the Linux AppImage release is built and checked: the glibc floor, the build container, the loader check.
+# Usage: linux-appimage <action> [arguments]
+#   decision                 prints the floor file, the packaging workflow, the release job, the Renovate rules and
+#                            the decision record
+#   docs                     prints the install page's minimum-Linux section
+#   floor [floor] [img]      extracts the AppImage and runs the floor check over it; a floor below what the AppImage
+#                            needs (for example 2.35) must fail and name the files and versions
+#   floor-dir <dir> [floor]  runs the floor check over a folder (an empty or missing folder must not pass)
+#   loads-on <ubuntu:24.04|debian:13> [img]  resolves every bundled binary's libraries on that distribution (Docker)
+#   oracles [img]            runs both release-check test suites (needs Docker; takes about 10 minutes)
+# Exit codes of the checks: 0 pass, 1 a binary needs more than the floor or a library is missing, 2 could not tell.
+set -euo pipefail
+export HOME="$home"
+repo="$repo"
+img_default="$appimage_default"
+action="\${1:---help}"; shift || true
+pick_img() {
+  local img="\${1:-\$img_default}"
+  if [ -z "\$img" ]; then echo "no AppImage given and none set at build time" >&2; exit 2; fi
+  echo "\$img"
+}
+digest_for() { grep -oE "\$1@sha256:[0-9a-f]{64}" "\$repo/.github/workflows/ci_package-linux-standalone.yml" | head -1; }
+case "\$action" in
+  -h|--help) sed -n '2,/^set -euo/p' "\$0" | grep '^#' | sed 's/^# \{0,1\}//' ;;
+  decision)
+    echo "== tools/linux-appimage/glibc-floor"; cat "\$repo/tools/linux-appimage/glibc-floor"
+    echo "== .github/workflows/ci_package-linux-standalone.yml"; cat "\$repo/.github/workflows/ci_package-linux-standalone.yml"
+    echo "== .github/workflows/ci.yml, release job"; sed -n '/^  release:/,/^    name:/p' "\$repo/.github/workflows/ci.yml"
+    echo "== renovate.json"; cat "\$repo/renovate.json"
+    echo "== decision record"; cat "\$repo"/docs/product/architecture/adr-284-*.md ;;
+  docs) sed -n '/Minimum Linux version/,/^## /p' "\$repo/docs/Installation/standalone.md" ;;
+  floor)
+    img="\$(pick_img "\${2:-}")"
+    work="\$(mktemp -d)"; trap 'rm -rf "\$work"' EXIT
+    cp "\$img" "\$work/app.AppImage"; chmod +x "\$work/app.AppImage"
+    (cd "\$work" && ./app.AppImage --appimage-extract >/dev/null)
+    bash "\$repo/tools/linux-appimage/check-glibc-floor.sh" "\$work/squashfs-root" \${1:+"\$1"} ;;
+  floor-dir) bash "\$repo/tools/linux-appimage/check-glibc-floor.sh" "\$@" ;;
+  loads-on)
+    case "\${1:-}" in ubuntu:24.04|debian:13) ;; *) echo "name ubuntu:24.04 or debian:13"; exit 2 ;; esac
+    img="\$(pick_img "\${2:-}")"
+    bash "\$repo/tools/linux-appimage/check-loads-on.sh" "\$(digest_for "\$1")" "\$img" ;;
+  oracles)
+    img="\$(pick_img "\${1:-}")"
+    floor_status=0
+    bash "\$repo/tools/linux-appimage/tests/test-glibc-floor.sh" || floor_status=\$?
+    env_status=0
+    APPIMAGE="\$img" bash "\$repo/tools/linux-appimage/tests/test-build-environment.sh" || env_status=\$?
+    echo "test-glibc-floor exit=\$floor_status test-build-environment exit=\$env_status"
+    [ "\$floor_status" -eq 0 ] && [ "\$env_status" -eq 0 ] ;;
+  *) echo "unknown action \$action (try --help)"; exit 2 ;;
+esac
+EOF
+chmod +x "$out/linux-appimage"
