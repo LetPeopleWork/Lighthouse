@@ -110,6 +110,12 @@ Health signal (owner tools/codesign/README.md): the signal is the runner list in
 Usage data (Lighthouse DEVOPS rule): N/A. The change is pipeline-only: it alters how Windows release binaries are signed on the maintainer machine; no Lighthouse user runs, sees or configures it, so no UsageDataEventName is added and docs/settings/usagedata.md is unchanged.
 ```
 
+#### D18
+
+```text
+The durable architecture decision of this feature is recorded in docs/product/architecture/adr-283-windows-code-signing-runs-in-a-pinned-container-image-with-the-pkcs11-provider.md (Accepted). That repository document is the authority; this design references it and declares no ADR of its own.
+```
+
 ### Constraints
 
 #### K1
@@ -2299,4 +2305,4 @@ None.
 
 ## ADRs
 
-- 003 Windows code signing runs in a pinned container image with the pkcs11 provider — Accepted
+None.

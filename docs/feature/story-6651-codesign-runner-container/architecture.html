@@ -242,6 +242,11 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Usage data (Lighthouse DEVOPS rule): N/A. The change is pipeline-only: it alters how Windows release binaries are signed on the maintainer machine; no Lighthouse user runs, sees or configures it, so no UsageDataEventName is added and docs/settings/usagedata.md is unchanged.
 </code></pre>
 
+<h4>D18</h4>
+
+<pre><code>The durable architecture decision of this feature is recorded in docs/product/architecture/adr-283-windows-code-signing-runs-in-a-pinned-container-image-with-the-pkcs11-provider.md (Accepted). That repository document is the authority; this design references it and declares no ADR of its own.
+</code></pre>
+
 <h3>Constraints</h3>
 
 <h4>K1</h4>
@@ -2186,6 +2191,6 @@ actionlint .github/workflows/ci_codesign-windows.yml .github/workflows/codesign-
 
 <h2>ADRs</h2>
 
-<p>- 003 Windows code signing runs in a pinned container image with the pkcs11 provider — Accepted</p>
+<p>None.</p>
 
 </body></html>

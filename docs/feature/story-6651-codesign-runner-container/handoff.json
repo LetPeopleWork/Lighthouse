@@ -2,8 +2,9 @@
 "counters": {
 "B": 11,
 "C": 1,
-"D": 17,
-"F": 294,
+"D": 18,
+"E": 6,
+"F": 301,
 "K": 10,
 "L": 5,
 "N": 5,
@@ -13,13 +14,6 @@
 "Y": 6
 },
 "design": {
-"adrs": [
-{
-"key": "003",
-"status": "Accepted",
-"title": "Windows code signing runs in a pinned container image with the pkcs11 provider"
-}
-],
 "paradigm": "procedural",
 "shared": {
 "architectural_tests": [
@@ -188,6 +182,10 @@
 {
 "id": "D17",
 "text": "F287"
+},
+{
+"id": "D18",
+"text": "F295"
 }
 ],
 "risks": [
@@ -1194,6 +1192,52 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F296"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F297"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F298"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F299"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F300"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F301"
+}
+]
+},
 "facts": {
 "F1": "Story 6651: Windows code signing runs in a pinned container, using the pkcs11 provider. The signing runner is a container image built in GitHub Actions and published to GHCR, started locally on boot with nothing done by hand; the YubiKey is plugged in only when needed; osslsigncode uses the pkcs11 provider, not the engine; the host-installed runner, start-runner-linux.ps1 and the temporary osslsigncode wrapper retire.",
 "F10": "The Windows signtool path in ci_codesign-windows.yml (Windows self-hosted runner) stays as it is.",
@@ -1367,7 +1411,14 @@
 "F292": "YubiKey PIV PIN blocked after wrong PINs",
 "F293": "osslsigncode fails on the first file with a PIN-locked or login error (CKR_PIN_LOCKED); the step never retries a file, so it never spends another PIN attempt. Unblocking with the PUK (ykman piv access unblock-pin) is a manual, out-of-software step; the README says how to recognise it and to never re-run the job before the PIN is fixed and YUBI_PIN checked.",
 "F294": "Rewritten: fresh-machine setup of the container runner incl. the one-time register run and watchtower, the manual retire steps, why disable-ccid and no host pcscd, rollback by pinning CODESIGN_RUNNER_TAG, what to check when the sign job waits for a runner, re-register after a revoked registration, recognising a locked PIN; prose-only, verified by review and EXAMINE",
+"F295": "The durable architecture decision of this feature is recorded in docs/product/architecture/adr-283-windows-code-signing-runs-in-a-pinned-container-image-with-the-pkcs11-provider.md (Accepted). That repository document is the authority; this design references it and declares no ADR of its own.",
+"F296": "After I reboot the machine with the YubiKey unplugged, the signing runner appears online in GitHub's runner list without my doing anything.",
+"F297": "When I run a release with the YubiKey plugged in, the NSIS installer, the MSI and the server exe all come out signed, and the 'Verify signing coverage' step passes.",
+"F298": "When I run a release with no YubiKey plugged in, the sign step fails straight away with the message 'plug in the YubiKey and re-run this job', and no PIN has been sent by then.",
+"F299": "The runner image is built by a GitHub Actions workflow from a digest-pinned base and published to GHCR; it is rebuilt when files under tools/codesign change and on a schedule, and Renovate proposes bumps for the base digest and the runner version.",
 "F3": "After a reboot, with the YubiKey unplugged, the signing runner shows online in GitHub without any manual step.",
+"F300": "After the move, the host has only Docker for signing: start-runner-linux.ps1, the host actions-runner, ~/.local/bin/osslsigncode and the local osslsigncode image are gone, and host scdaemon and pcscd no longer hold the YubiKey.",
+"F301": "I can open tools/codesign/README.md and follow it to set up the signing runner on a fresh Linux machine, and it explains why the host conflicts with scdaemon and pcscd are handled the way they are.",
 "F31": "Platform: the signing machine is linux/amd64; module paths are the Debian multiarch paths /usr/lib/x86_64-linux-gnu/... . The image is built for linux/amd64 only.",
 "F32": "Test substrate: the repository runs bash test scripts (Scripts/test-selection/test-path-classifier.sh) and node --test for .github/scripts; bats and Pester are not used. Each slice oracle is one bash script under tools/codesign/tests/ that needs only Docker and bash, runs on ubuntu-latest and locally, builds the image once (or uses IMAGE=... when given), prints one PASS/FAIL line per check with WHAT/WHY/HOW on failure, and ends with a summary line observed=N assertions_failed=M setup_failed=K; exit 0 only when M and K are 0. After the image exists each oracle finishes well under a minute. No nWave scenario tags in test code or titles. Lighthouse test-writing skill read in full (no stack half applies: no frontend or backend code).",
 "F33": "Shell rules from docs/ci-learnings.md apply to every new script: set -euo pipefail; never pipe a variable or long output into grep -q or head (here-string or capture first); never chain [[ ]] && [[ ]] ||; shellcheck clean at koalaman/shellcheck:v0.9.0. Dockerfile curl calls carry --proto \"=https\" on the same line (ledger rule docker:S6506). tools/ is already in sonar.exclusions.",

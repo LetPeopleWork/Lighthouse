@@ -155,7 +155,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>After I reboot the machine with the YubiKey unplugged, the signing runner appears online in GitHub&#x27;s runner list without my doing anything.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>When I run a release with the YubiKey plugged in, the NSIS installer, the MSI and the server exe all come out signed, and the &#x27;Verify signing coverage&#x27; step passes.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>When I run a release with no YubiKey plugged in, the sign step fails straight away with the message &#x27;plug in the YubiKey and re-run this job&#x27;, and no PIN has been sent by then.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>The runner image is built by a GitHub Actions workflow from a digest-pinned base and published to GHCR; it is rebuilt when files under tools/codesign change and on a schedule, and Renovate proposes bumps for the base digest and the runner version.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>After the move, the host has only Docker for signing: start-runner-linux.ps1, the host actions-runner, ~/.local/bin/osslsigncode and the local osslsigncode image are gone, and host scdaemon and pcscd no longer hold the YubiKey.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>I can open tools/codesign/README.md and follow it to set up the signing runner on a fresh Linux machine, and it explains why the host conflicts with scdaemon and pcscd are handled the way they are.
+</code></pre>
 
 <h2>Charter</h2>
 
