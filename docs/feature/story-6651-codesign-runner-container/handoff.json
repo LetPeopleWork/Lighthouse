@@ -1,10 +1,359 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F305",
+"test": "tools/codesign/tests/test-runner-image.sh::every build stage starts from debian:trixie-slim pinned by digest"
+},
+"expected": "F303",
+"stimulus": "F302",
+"user_result": "F304"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F309",
+"test": "tools/codesign/tests/test-runner-image.sh::the image links its GHCR package to the Lighthouse repository"
+},
+"expected": "F307",
+"stimulus": "F306",
+"user_result": "F308"
+},
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F313",
+"test": "tools/codesign/tests/test-runner-image.sh::the image carries the GitHub runner at the version the Dockerfile pins"
+},
+"expected": "F311",
+"stimulus": "F310",
+"user_result": "F312"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F317",
+"test": "tools/codesign/tests/test-runner-image.sh::a runner that was never registered refuses to start and says how to register"
+},
+"expected": "F315",
+"stimulus": "F314",
+"user_result": "F316"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F321",
+"test": "tools/codesign/tests/test-runner-image.sh::a registered runner starts the runner and does not register again"
+},
+"expected": "F319",
+"stimulus": "F318",
+"user_result": "F320"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F325",
+"test": "tools/codesign/tests/test-runner-image.sh::the runner runs from a writable copy of the image runner, not from the volume"
+},
+"expected": "F323",
+"stimulus": "F322",
+"user_result": "F324"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F329",
+"test": "tools/codesign/tests/test-runner-image.sh::the real runner starts with the registration in place"
+},
+"expected": "F327",
+"stimulus": "F326",
+"user_result": "F328"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F333",
+"test": "tools/codesign/tests/test-runner-image.sh::registration keeps the GitHub token off the command line and out of the output"
+},
+"expected": "F331",
+"stimulus": "F330",
+"user_result": "F332"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F337",
+"test": "tools/codesign/tests/test-runner-image.sh::registration configures the runner with the codesign labels and keeps the result in the volume"
+},
+"expected": "F335",
+"stimulus": "F334",
+"user_result": "F336"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F341",
+"test": "tools/codesign/tests/test-runner-image.sh::registration without a token file refuses and names where the token goes"
+},
+"expected": "F339",
+"stimulus": "F338",
+"user_result": "F340"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F345",
+"test": "tools/codesign/tests/test-runner-image.sh::the always-on runner service restarts, reaches the USB key and holds no token"
+},
+"expected": "F343",
+"stimulus": "F342",
+"user_result": "F344"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F349",
+"test": "tools/codesign/tests/test-runner-image.sh::the one-shot register service alone gets the token, from a file outside the repository"
+},
+"expected": "F347",
+"stimulus": "F346",
+"user_result": "F348"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F353",
+"test": "tools/codesign/tests/test-runner-image.sh::the runner service still renders when the token file is missing"
+},
+"expected": "F351",
+"stimulus": "F350",
+"user_result": "F352"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F357",
+"test": "tools/codesign/tests/test-runner-image.sh::the boot unit pulls the latest image without blocking on a failed pull, then starts the runner"
+},
+"expected": "F355",
+"stimulus": "F354",
+"user_result": "F356"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F361",
+"test": "tools/codesign/tests/test-runner-image.sh::the image workflow reports on every pull request as Codesign Runner Image / verify"
+},
+"expected": "F359",
+"stimulus": "F358",
+"user_result": "F360"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F365",
+"test": "tools/codesign/tests/test-runner-image.sh::the image is rebuilt on changes under tools/codesign on main and on a schedule"
+},
+"expected": "F363",
+"stimulus": "F362",
+"user_result": "F364"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F369",
+"test": "tools/codesign/tests/test-runner-image.sh::the change detection hands verify the string true or false"
+},
+"expected": "F367",
+"stimulus": "F366",
+"user_result": "F368"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F373",
+"test": "tools/codesign/tests/test-runner-image.sh::verify runs when codesign changed and turns red when change detection failed"
+},
+"expected": "F371",
+"stimulus": "F370",
+"user_result": "F372"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F377",
+"test": "tools/codesign/tests/test-runner-image.sh::verify builds and checks the image without publishing it"
+},
+"expected": "F375",
+"stimulus": "F374",
+"user_result": "F376"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F381",
+"test": "tools/codesign/tests/test-runner-image.sh::only a non-pull-request run on main whose verify passed publishes latest and the commit tag"
+},
+"expected": "F379",
+"stimulus": "F378",
+"user_result": "F380"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F385",
+"test": "tools/codesign/tests/test-runner-image.sh::the image workflow stands apart from the main CI workflows"
+},
+"expected": "F383",
+"stimulus": "F382",
+"user_result": "F384"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F389",
+"test": "tools/codesign/tests/test-runner-image.sh::Renovate reads the pinned runner version from the Dockerfile"
+},
+"expected": "F387",
+"stimulus": "F386",
+"user_result": "F388"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F393",
+"test": ".github/scripts/action-pins.test.mjs"
+},
+"expected": "F391",
+"stimulus": "F390",
+"user_result": "F392"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F397",
+"test": ".github/scripts/dependency-bot.test.mjs"
+},
+"expected": "F395",
+"stimulus": "F394",
+"user_result": "F396"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "maintainer",
+"reason": "F401"
+},
+"expected": "F399",
+"stimulus": "F398",
+"user_result": "F400"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "maintainer",
+"reason": "F405"
+},
+"expected": "F403",
+"stimulus": "F402",
+"user_result": "F404"
+}
+]
+},
 "counters": {
 "B": 11,
 "C": 1,
 "D": 18,
 "E": 6,
-"F": 301,
+"F": 405,
 "K": 10,
 "L": 5,
 "N": 5,
@@ -1419,16 +1768,120 @@
 "F3": "After a reboot, with the YubiKey unplugged, the signing runner shows online in GitHub without any manual step.",
 "F300": "After the move, the host has only Docker for signing: start-runner-linux.ps1, the host actions-runner, ~/.local/bin/osslsigncode and the local osslsigncode image are gone, and host scdaemon and pcscd no longer hold the YubiKey.",
 "F301": "I can open tools/codesign/README.md and follow it to set up the signing runner on a fresh Linux machine, and it explains why the host conflicts with scdaemon and pcscd are handled the way they are.",
+"F302": "Build the runner image and read every base line of its Dockerfile",
+"F303": "Every build stage starts from debian:trixie-slim pinned by a sha256 digest",
+"F304": "A rebuild of the same commit cannot pick up a different base, and Renovate can propose base digest bumps",
+"F305": "A digest that is well formed but not a real trixie-slim digest; the digest is not looked up in a registry",
+"F306": "Read the labels of the built image",
+"F307": "The image carries the source label https://github.com/LetPeopleWork/Lighthouse",
+"F308": "The published package appears under the Lighthouse repository in GHCR",
+"F309": "A correct label on an image that is never pushed; publishing is observed only in the workflow definition",
 "F31": "Platform: the signing machine is linux/amd64; module paths are the Debian multiarch paths /usr/lib/x86_64-linux-gnu/... . The image is built for linux/amd64 only.",
+"F310": "Look inside the built image at the pristine runner, the state and run directories and the default user",
+"F311": "The pristine runner has config.sh and run.sh and reports the runner version the Dockerfile pins; the state and run directories belong to runner; the image runs as runner with uid 1000",
+"F312": "The runner GitHub sees is the pinned version, jobs do not run as root, and a fresh state volume can receive the registration",
+"F313": "A runner whose tarball checksum is not verified at build; the checksum check is only exercised by a version bump",
+"F314": "Start the image in run mode against an empty state volume",
+"F315": "It exits with failure within a minute, names docker compose --profile register run --rm register, and starts neither run.sh nor config.sh",
+"F316": "An unregistered machine tells the maintainer the one command to run instead of looping offline",
+"F317": "A message naming the command inside otherwise misleading text; only the command text and exit status are checked",
+"F318": "Start the image in run mode against a state volume holding the three registration files",
+"F319": "run.sh starts, config.sh does not, and the state volume holds no directory or executable afterwards",
 "F32": "Test substrate: the repository runs bash test scripts (Scripts/test-selection/test-path-classifier.sh) and node --test for .github/scripts; bats and Pester are not used. Each slice oracle is one bash script under tools/codesign/tests/ that needs only Docker and bash, runs on ubuntu-latest and locally, builds the image once (or uses IMAGE=... when given), prints one PASS/FAIL line per check with WHAT/WHY/HOW on failure, and ends with a summary line observed=N assertions_failed=M setup_failed=K; exit 0 only when M and K are 0. After the image exists each oracle finishes well under a minute. No nWave scenario tags in test code or titles. Lighthouse test-writing skill read in full (no stack half applies: no frontend or backend code).",
+"F320": "After a reboot the runner comes back from its saved registration without registering again",
+"F321": "An entrypoint that writes extra plain data files into the volume; only directories and executables count as binaries",
+"F322": "Start the image in run mode against a state volume an older image used, which also holds an old run.sh",
+"F323": "run.sh runs from /home/runner/runtime as a real, writable copy with the three registration files beside it, reports the version the Dockerfile pins, and the volume's old run.sh never runs",
+"F324": "An image update always runs the new runner version, and the runner can write its state next to itself",
+"F325": "An entrypoint that copies only part of /opt/runner; the recorded run.sh and the runner binary are checked, not every file of the copy",
+"F326": "Start the image with its real run.sh, no stand-ins and no network, against a volume holding the three registration files",
+"F327": "Within a minute the runner prints neither Must configure nor Permission denied; a network or authentication failure is accepted",
+"F328": "The real runner accepts the saved registration, so on the machine it can connect and show online",
+"F329": "A runner that fails for another reason (for example unreadable fixture credentials) before it would print either phrase",
 "F33": "Shell rules from docs/ci-learnings.md apply to every new script: set -euo pipefail; never pipe a variable or long output into grep -q or head (here-string or capture first); never chain [[ ]] && [[ ]] ||; shellcheck clean at koalaman/shellcheck:v0.9.0. Dockerfile curl calls carry --proto \"=https\" on the same line (ledger rule docker:S6506). tools/ is already in sonar.exclusions.",
+"F330": "Start the image in register mode with a token file mounted where the design puts the secret",
+"F331": "curl receives the token only through a file or stdin and never on its command line; the token appears in no output and not on config.sh's command line",
+"F332": "Registering the runner does not leak the GitHub token to logs or other processes",
+"F333": "A token written to a file inside the container that a later job could read; only argv, output and what curl received are observed",
+"F334": "Start the image in register mode with a token file and a fresh state volume",
+"F335": "config.sh runs from /home/runner/runtime with labels linux,codesign and --disableupdate, and the three registration files land in the fresh volume",
+"F336": "One registration command makes the runner selectable by the release job and survives every reboot",
+"F337": "Wrong --url or --name passed to config.sh; only labels, the update switch, location and the saved files are checked",
+"F338": "Start the image in register mode without a token file",
+"F339": "It exits with failure, names /run/secrets/github_token, and config.sh does not run",
+"F340": "The maintainer learns which file to create instead of getting a half-registered runner",
+"F341": "A message that names the container path but not the host file to create; only the container path is checked",
+"F342": "Render the compose file with a token file present and no profile",
+"F343": "Service runner restarts unless stopped, uses init, binds /dev/bus/usb, has the cgroup rule c 189:* rmw, is not privileged, has no fixed devices, mounts the state volume, uses the latest GHCR image and has no secrets",
+"F344": "The always-on runner restarts by itself, reaches the key when it is plugged in, and no job can read the GitHub token",
+"F345": "A runner service with extra capabilities or host mounts other than the ones checked",
+"F346": "Render the compose file with the register profile",
+"F347": "Service register has profile register and the github_token secret, whose file is an absolute path outside the repository",
+"F348": "Only the one-shot registration ever sees the token, and the token never sits in the checkout",
+"F349": "A token file path outside the repository but in a world-readable place; the location's permissions are not checked",
 "F35": "GitHub Actions job codesign-windows (ci_codesign-windows.yml) dispatched to a runner labelled self-hosted,codesign; locally, docker and systemd on the signing machine",
+"F350": "Render the compose file when the token file does not exist",
+"F351": "The runner service still renders",
+"F352": "The machine starts the runner on boot even after the token file was deleted",
+"F353": "A compose file that renders but whose up would fail for another reason; only rendering is observed",
+"F354": "Read the systemd unit",
+"F355": "It pulls with a leading minus before start, then runs docker compose up -d runner, after docker.service, wanted by multi-user.target",
+"F356": "After a reboot the runner starts by itself, even when GHCR cannot be reached",
+"F357": "A unit that runs compose without pointing at the installed compose file; the working directory or -f path is not checked",
+"F358": "Read the triggers and the verify job of the image workflow",
+"F359": "The workflow is named Codesign Runner Image, triggers on pull_request with no paths filter, and has a job verify",
 "F36": "GitHub REST API (runner registration token) and the Actions service",
+"F360": "The required check Codesign Runner Image / verify reports on every pull request",
+"F361": "A pull_request trigger restricted to other branches; branch filters are not checked",
+"F362": "Read the push and schedule triggers of the image workflow",
+"F363": "It runs on push to main for tools/codesign/** and on a schedule",
+"F364": "Changes to the image files and Debian fixes are rebuilt without anyone starting a run",
+"F365": "A schedule that almost never fires; its frequency is not checked",
+"F366": "Read the change detection job of the image workflow",
+"F367": "Job changes has an output codesign and its steps write codesign= with the strings true and false",
+"F368": "Verify can tell reliably whether the pull request touched the image",
+"F369": "A diff that inspects the wrong paths; the detection logic is not executed",
 "F37": "GHCR (image pull and push)",
+"F370": "Read the condition and first step of the verify job",
+"F371": "verify needs changes; its condition holds !cancelled(), a needs.changes.result clause and a comparison of needs.changes.outputs.codesign with the quoted string true, never the boolean; its first step exits 1 when change detection did not succeed",
+"F372": "The required check runs when the image changed and turns red rather than skipped when change detection broke",
+"F373": "A condition that holds all three parts but joins them with the wrong logic; the expression is matched, not evaluated",
+"F374": "Read the verify job's steps",
+"F375": "verify runs tools/codesign/tests/test-runner-image.sh and neither pushes nor logs in to a registry",
+"F376": "An image that fails its checks never reaches GHCR",
+"F377": "A verify job that runs the oracle against a different image than the one it built",
+"F378": "Read the publish job of the image workflow",
+"F379": "publish needs verify, runs only for refs/heads/main on an event other than pull_request when verify succeeded, and pushes latest and sha- tags of ghcr.io/letpeoplework/lighthouse-codesign-runner",
 "F38": "YubiKey over USB through pcscd, libccid, opensc-pkcs11 and the pkcs11 provider",
+"F380": "Only a verified main build replaces the image the machine pulls",
+"F381": "A publish that pushes before running the contract test; step order inside publish is not checked",
+"F382": "Read the whole image workflow",
+"F383": "It names neither ci.yml nor ci_changes.yml",
+"F384": "The image pipeline runs on its own and the main CI is unaffected",
+"F385": "Edits to ci.yml or ci_changes.yml made in the same change; only references from this workflow are checked",
+"F386": "Apply the Renovate custom managers that match tools/codesign/Dockerfile to the Dockerfile",
+"F387": "One of them extracts datasource github-releases, depName actions/runner and the RUNNER_VERSION the Dockerfile pins",
+"F388": "Renovate proposes runner version bumps instead of the maintainer tracking them",
+"F389": "No manager for the osslsigncode version; only the runner version is checked here",
 "F39": "DigiCert timestamp server",
+"F390": "Scan every action reference in the workflows, including the new image workflow",
+"F391": "Each is pinned to a full commit with its release named after it",
+"F392": "Renovate keeps the image workflow's actions current and no tag can move under it",
+"F393": "A pin to a commit that is not the release it names",
+"F394": "Scan workflow conditions and Renovate rules, including the new workflow and custom manager",
+"F395": "No condition decides on the actor and every Renovate hold carries a reason",
+"F396": "A Renovate bump of the image runs the same required check as a person's change",
+"F397": "A condition that singles out the bot by another field than the actor",
+"F398": "Reboot the signing machine with the YubiKey unplugged and look at the runner list in GitHub",
+"F399": "codesign-runner-linux shows online without any manual step",
 "F4": "A release run with the YubiKey plugged in signs the NSIS installer, the MSI and the server exe through the pkcs11 provider, and 'Verify signing coverage' passes.",
 "F40": "The workflow in the repo depends on the image tool set (osslsigncode with -provider, the pkcs11 provider, pcscd, node); the image depends on nothing in a given repo revision except the files under tools/codesign baked at build. The host depends only on Docker, the compose file, the unit and the token file.",
+"F400": "The maintainer can release without starting anything by hand after a reboot",
+"F401": "Needs the maintainer's machine, its systemd boot and a real registration against GitHub; no oracle can observe it (design closure: public reachability is maintainer-observed)",
+"F402": "Merge a change under tools/codesign to main and look at the GHCR package",
+"F403": "The workflow publishes latest and a sha- tag of ghcr.io/letpeoplework/lighthouse-codesign-runner",
+"F404": "The machine can pull the new image",
+"F405": "Publishing needs a run on main with packages write; only the workflow definition is observable before merge",
 "F41": "Negates: the pkcs11 provider loads and finds the key through opensc",
 "F42": "No file is signed through the engine; the failure names the provider and the step exits non-zero",
 "F43": "The release sign step fails and the release waits",

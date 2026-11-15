@@ -151,7 +151,675 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Build the runner image and read every base line of its Dockerfile
+</code></pre>
+
+<pre><code>Every build stage starts from debian:trixie-slim pinned by a sha256 digest
+</code></pre>
+
+<pre><code>A rebuild of the same commit cannot pick up a different base, and Renovate can propose base digest bumps
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::every build stage starts from debian:trixie-slim pinned by digest</p>
+
+<pre><code>A digest that is well formed but not a real trixie-slim digest; the digest is not looked up in a registry
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the labels of the built image
+</code></pre>
+
+<pre><code>The image carries the source label https://github.com/LetPeopleWork/Lighthouse
+</code></pre>
+
+<pre><code>The published package appears under the Lighthouse repository in GHCR
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the image links its GHCR package to the Lighthouse repository</p>
+
+<pre><code>A correct label on an image that is never pushed; publishing is observed only in the workflow definition
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>Look inside the built image at the pristine runner, the state and run directories and the default user
+</code></pre>
+
+<pre><code>The pristine runner has config.sh and run.sh and reports the runner version the Dockerfile pins; the state and run directories belong to runner; the image runs as runner with uid 1000
+</code></pre>
+
+<pre><code>The runner GitHub sees is the pinned version, jobs do not run as root, and a fresh state volume can receive the registration
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the image carries the GitHub runner at the version the Dockerfile pins</p>
+
+<pre><code>A runner whose tarball checksum is not verified at build; the checksum check is only exercised by a version bump
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Start the image in run mode against an empty state volume
+</code></pre>
+
+<pre><code>It exits with failure within a minute, names docker compose --profile register run --rm register, and starts neither run.sh nor config.sh
+</code></pre>
+
+<pre><code>An unregistered machine tells the maintainer the one command to run instead of looping offline
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::a runner that was never registered refuses to start and says how to register</p>
+
+<pre><code>A message naming the command inside otherwise misleading text; only the command text and exit status are checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Start the image in run mode against a state volume holding the three registration files
+</code></pre>
+
+<pre><code>run.sh starts, config.sh does not, and the state volume holds no directory or executable afterwards
+</code></pre>
+
+<pre><code>After a reboot the runner comes back from its saved registration without registering again
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::a registered runner starts the runner and does not register again</p>
+
+<pre><code>An entrypoint that writes extra plain data files into the volume; only directories and executables count as binaries
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Start the image in run mode against a state volume an older image used, which also holds an old run.sh
+</code></pre>
+
+<pre><code>run.sh runs from /home/runner/runtime as a real, writable copy with the three registration files beside it, reports the version the Dockerfile pins, and the volume&#x27;s old run.sh never runs
+</code></pre>
+
+<pre><code>An image update always runs the new runner version, and the runner can write its state next to itself
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the runner runs from a writable copy of the image runner, not from the volume</p>
+
+<pre><code>An entrypoint that copies only part of /opt/runner; the recorded run.sh and the runner binary are checked, not every file of the copy
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Start the image with its real run.sh, no stand-ins and no network, against a volume holding the three registration files
+</code></pre>
+
+<pre><code>Within a minute the runner prints neither Must configure nor Permission denied; a network or authentication failure is accepted
+</code></pre>
+
+<pre><code>The real runner accepts the saved registration, so on the machine it can connect and show online
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the real runner starts with the registration in place</p>
+
+<pre><code>A runner that fails for another reason (for example unreadable fixture credentials) before it would print either phrase
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Start the image in register mode with a token file mounted where the design puts the secret
+</code></pre>
+
+<pre><code>curl receives the token only through a file or stdin and never on its command line; the token appears in no output and not on config.sh&#x27;s command line
+</code></pre>
+
+<pre><code>Registering the runner does not leak the GitHub token to logs or other processes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::registration keeps the GitHub token off the command line and out of the output</p>
+
+<pre><code>A token written to a file inside the container that a later job could read; only argv, output and what curl received are observed
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Start the image in register mode with a token file and a fresh state volume
+</code></pre>
+
+<pre><code>config.sh runs from /home/runner/runtime with labels linux,codesign and --disableupdate, and the three registration files land in the fresh volume
+</code></pre>
+
+<pre><code>One registration command makes the runner selectable by the release job and survives every reboot
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::registration configures the runner with the codesign labels and keeps the result in the volume</p>
+
+<pre><code>Wrong --url or --name passed to config.sh; only labels, the update switch, location and the saved files are checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Start the image in register mode without a token file
+</code></pre>
+
+<pre><code>It exits with failure, names /run/secrets/github_token, and config.sh does not run
+</code></pre>
+
+<pre><code>The maintainer learns which file to create instead of getting a half-registered runner
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::registration without a token file refuses and names where the token goes</p>
+
+<pre><code>A message that names the container path but not the host file to create; only the container path is checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Render the compose file with a token file present and no profile
+</code></pre>
+
+<pre><code>Service runner restarts unless stopped, uses init, binds /dev/bus/usb, has the cgroup rule c 189:* rmw, is not privileged, has no fixed devices, mounts the state volume, uses the latest GHCR image and has no secrets
+</code></pre>
+
+<pre><code>The always-on runner restarts by itself, reaches the key when it is plugged in, and no job can read the GitHub token
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the always-on runner service restarts, reaches the USB key and holds no token</p>
+
+<pre><code>A runner service with extra capabilities or host mounts other than the ones checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Render the compose file with the register profile
+</code></pre>
+
+<pre><code>Service register has profile register and the github_token secret, whose file is an absolute path outside the repository
+</code></pre>
+
+<pre><code>Only the one-shot registration ever sees the token, and the token never sits in the checkout
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the one-shot register service alone gets the token, from a file outside the repository</p>
+
+<pre><code>A token file path outside the repository but in a world-readable place; the location&#x27;s permissions are not checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Render the compose file when the token file does not exist
+</code></pre>
+
+<pre><code>The runner service still renders
+</code></pre>
+
+<pre><code>The machine starts the runner on boot even after the token file was deleted
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the runner service still renders when the token file is missing</p>
+
+<pre><code>A compose file that renders but whose up would fail for another reason; only rendering is observed
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the systemd unit
+</code></pre>
+
+<pre><code>It pulls with a leading minus before start, then runs docker compose up -d runner, after docker.service, wanted by multi-user.target
+</code></pre>
+
+<pre><code>After a reboot the runner starts by itself, even when GHCR cannot be reached
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the boot unit pulls the latest image without blocking on a failed pull, then starts the runner</p>
+
+<pre><code>A unit that runs compose without pointing at the installed compose file; the working directory or -f path is not checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the triggers and the verify job of the image workflow
+</code></pre>
+
+<pre><code>The workflow is named Codesign Runner Image, triggers on pull_request with no paths filter, and has a job verify
+</code></pre>
+
+<pre><code>The required check Codesign Runner Image / verify reports on every pull request
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the image workflow reports on every pull request as Codesign Runner Image / verify</p>
+
+<pre><code>A pull_request trigger restricted to other branches; branch filters are not checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the push and schedule triggers of the image workflow
+</code></pre>
+
+<pre><code>It runs on push to main for tools/codesign/** and on a schedule
+</code></pre>
+
+<pre><code>Changes to the image files and Debian fixes are rebuilt without anyone starting a run
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the image is rebuilt on changes under tools/codesign on main and on a schedule</p>
+
+<pre><code>A schedule that almost never fires; its frequency is not checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the change detection job of the image workflow
+</code></pre>
+
+<pre><code>Job changes has an output codesign and its steps write codesign= with the strings true and false
+</code></pre>
+
+<pre><code>Verify can tell reliably whether the pull request touched the image
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the change detection hands verify the string true or false</p>
+
+<pre><code>A diff that inspects the wrong paths; the detection logic is not executed
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the condition and first step of the verify job
+</code></pre>
+
+<pre><code>verify needs changes; its condition holds !cancelled(), a needs.changes.result clause and a comparison of needs.changes.outputs.codesign with the quoted string true, never the boolean; its first step exits 1 when change detection did not succeed
+</code></pre>
+
+<pre><code>The required check runs when the image changed and turns red rather than skipped when change detection broke
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::verify runs when codesign changed and turns red when change detection failed</p>
+
+<pre><code>A condition that holds all three parts but joins them with the wrong logic; the expression is matched, not evaluated
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the verify job&#x27;s steps
+</code></pre>
+
+<pre><code>verify runs tools/codesign/tests/test-runner-image.sh and neither pushes nor logs in to a registry
+</code></pre>
+
+<pre><code>An image that fails its checks never reaches GHCR
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::verify builds and checks the image without publishing it</p>
+
+<pre><code>A verify job that runs the oracle against a different image than the one it built
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the publish job of the image workflow
+</code></pre>
+
+<pre><code>publish needs verify, runs only for refs/heads/main on an event other than pull_request when verify succeeded, and pushes latest and sha- tags of ghcr.io/letpeoplework/lighthouse-codesign-runner
+</code></pre>
+
+<pre><code>Only a verified main build replaces the image the machine pulls
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::only a non-pull-request run on main whose verify passed publishes latest and the commit tag</p>
+
+<pre><code>A publish that pushes before running the contract test; step order inside publish is not checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the whole image workflow
+</code></pre>
+
+<pre><code>It names neither ci.yml nor ci_changes.yml
+</code></pre>
+
+<pre><code>The image pipeline runs on its own and the main CI is unaffected
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::the image workflow stands apart from the main CI workflows</p>
+
+<pre><code>Edits to ci.yml or ci_changes.yml made in the same change; only references from this workflow are checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Apply the Renovate custom managers that match tools/codesign/Dockerfile to the Dockerfile
+</code></pre>
+
+<pre><code>One of them extracts datasource github-releases, depName actions/runner and the RUNNER_VERSION the Dockerfile pins
+</code></pre>
+
+<pre><code>Renovate proposes runner version bumps instead of the maintainer tracking them
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-runner-image.sh::Renovate reads the pinned runner version from the Dockerfile</p>
+
+<pre><code>No manager for the osslsigncode version; only the runner version is checked here
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Scan every action reference in the workflows, including the new image workflow
+</code></pre>
+
+<pre><code>Each is pinned to a full commit with its release named after it
+</code></pre>
+
+<pre><code>Renovate keeps the image workflow&#x27;s actions current and no tag can move under it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/scripts/action-pins.test.mjs</p>
+
+<pre><code>A pin to a commit that is not the release it names
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Scan workflow conditions and Renovate rules, including the new workflow and custom manager
+</code></pre>
+
+<pre><code>No condition decides on the actor and every Renovate hold carries a reason
+</code></pre>
+
+<pre><code>A Renovate bump of the image runs the same required check as a person&#x27;s change
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/scripts/dependency-bot.test.mjs</p>
+
+<pre><code>A condition that singles out the bot by another field than the actor
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Reboot the signing machine with the YubiKey unplugged and look at the runner list in GitHub
+</code></pre>
+
+<pre><code>codesign-runner-linux shows online without any manual step
+</code></pre>
+
+<pre><code>The maintainer can release without starting anything by hand after a reboot
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Needs the maintainer&#x27;s machine, its systemd boot and a real registration against GitHub; no oracle can observe it (design closure: public reachability is maintainer-observed)
+</code></pre>
+
+<p>maintainer</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Merge a change under tools/codesign to main and look at the GHCR package
+</code></pre>
+
+<pre><code>The workflow publishes latest and a sha- tag of ghcr.io/letpeoplework/lighthouse-codesign-runner
+</code></pre>
+
+<pre><code>The machine can pull the new image
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Publishing needs a run on main with packages write; only the workflow definition is observable before merge
+</code></pre>
+
+<p>maintainer</p>
 
 <h2>Expectations</h2>
 
