@@ -21,12 +21,12 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         private static readonly DateTime Day5 = new(2026, 4, 5, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime Day19 = new(2026, 4, 19, 0, 0, 0, DateTimeKind.Utc);
 
-        private static IServiceProvider ACacheOnly(IForecastService forecastService)
+        private static IServiceProvider ACacheOnly(IHowManyForecaster forecaster)
         {
             var serviceProvider = new Mock<IServiceProvider>();
             serviceProvider.Setup(sp => sp.GetService(typeof(Lighthouse.Backend.Cache.Cache<string, object>)))
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
-            serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService))).Returns(forecastService);
+            serviceProvider.Setup(sp => sp.GetService(typeof(IHowManyForecaster))).Returns(forecaster);
             return serviceProvider.Object;
         }
 
@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             appSettings.Setup(x => x.GetTeamDataRefreshSettings()).Returns(new RefreshSettings { Interval = 1 });
             var blackouts = new Mock<IBlackoutPeriodService>();
             blackouts.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
-            var filters = new Mock<IForecastFilterRuleService>();
+            var filters = new Mock<IThroughputFilter>();
             filters.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
             var subject = new TeamMetricsService(
@@ -55,9 +55,10 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 workItemRepository.Object,
                 Mock.Of<IFeatureRepository>(),
                 appSettings.Object,
-                ACacheOnly(Mock.Of<IForecastService>()),
+                ACacheOnly(Mock.Of<IHowManyForecaster>()),
                 blackouts.Object,
                 filters.Object,
+                new ForecastingAnswersToFlowMetrics(Mock.Of<IServiceProvider>()),
                 transitionRepository.Object,
                 TestToday.Clock);
 
@@ -95,7 +96,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Mock.Of<ILogger<PortfolioMetricsService>>(),
                 Mock.Of<IFeatureRepository>(),
                 appSettings.Object,
-                ACacheOnly(Mock.Of<IForecastService>()),
+                ACacheOnly(Mock.Of<IHowManyForecaster>()),
                 transitionRepository.Object,
                 TestToday.Clock);
 

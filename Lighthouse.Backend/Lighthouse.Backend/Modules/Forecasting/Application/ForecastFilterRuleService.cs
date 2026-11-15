@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 
@@ -9,7 +10,7 @@ namespace Lighthouse.Backend.Modules.Forecasting.Application
         IRuleEvaluator<WorkItem> ruleEvaluator,
         IRuleFieldProvider<WorkItem> fieldProvider,
         ILicenseService licenseService)
-        : IForecastFilterRuleService
+        : IForecastFilterRuleService, IThroughputFilter
     {
         public WorkItemRuleSchema GetSchema(Team team)
         {

@@ -55,6 +55,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             "Lighthouse.Backend.Services.Implementation.DatabaseManagement.DatabaseMaintenanceGate",
             "Lighthouse.Backend.Services.Implementation.FeatureListActiveWork",
+            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastingAnswersToFlowMetrics",
             "Lighthouse.Backend.Modules.Forecasting.Application.ForecastInputFingerprint",
             "Lighthouse.Backend.Modules.Forecasting.Application.ForecastInputs",
             "Lighthouse.Backend.Modules.Forecasting.Application.ForecastRealityCheckService",

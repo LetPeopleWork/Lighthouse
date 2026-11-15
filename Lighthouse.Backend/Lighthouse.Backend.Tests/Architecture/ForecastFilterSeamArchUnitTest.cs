@@ -12,18 +12,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         [Test]
-        public void OnlyWhitelistedTypes_InvokeForecastFilterRuleServiceFilter()
+        public void OnlyTheMetricsServiceAndTheRuleService_FilterThroughput()
         {
             var filterMethod = MethodMembers().That()
-                .AreDeclaredIn(typeof(IForecastFilterRuleService)).And().HaveNameStartingWith(nameof(IForecastFilterRuleService.Filter) + "(");
+                .AreDeclaredIn(typeof(IThroughputFilter), typeof(IForecastFilterRuleService))
+                .And().HaveNameStartingWith(nameof(IThroughputFilter.Filter) + "(");
 
             Classes().That().AreNot(typeof(TeamMetricsService)).And().AreNot(typeof(ForecastFilterRuleService))
                 .Should().NotCallAny(filterMethod)
                 .Because(
-                    "DDD-4 architectural enforcement: only TeamMetricsService and ForecastFilterRuleService " +
-                    "may invoke IForecastFilterRuleService.Filter directly (single filter seam). Route the call " +
-                    "through TeamMetricsService.GetThroughputForTeam (or another whitelisted seam) instead. If a " +
-                    "new seam is genuinely required, update the architectural decision record first and amend this test.")
+                    "a Team's forecast filter is applied in one place, so every forecast and every metric that respects " +
+                    "the filter counts the same work items: only TeamMetricsService and ForecastFilterRuleService may call " +
+                    "Filter on IThroughputFilter or IForecastFilterRuleService. Ask TeamMetricsService for the filtered " +
+                    "throughput (GetThroughputForTeam or GetForecastThroughputStatus) instead of filtering work items yourself.")
                 .Check(Architecture);
         }
     }

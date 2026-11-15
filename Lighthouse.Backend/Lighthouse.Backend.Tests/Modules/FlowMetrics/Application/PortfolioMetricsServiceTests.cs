@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(forecastServiceMock.Object);
+            serviceProvider.Setup(sp => sp.GetService(typeof(IHowManyForecaster)))
+                .Returns(new ForecastingAnswersToFlowMetrics(serviceProvider.Object));
 
             featureStateTransitionRepository = new Mock<IFeatureStateTransitionRepository>();
             featureStateTransitionRepository.AnswersTransitionReadsFrom([]);

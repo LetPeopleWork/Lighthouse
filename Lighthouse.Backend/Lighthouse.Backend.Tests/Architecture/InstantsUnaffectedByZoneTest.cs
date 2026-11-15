@@ -159,7 +159,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 appSettingService.Object,
                 serviceProvider.Object,
                 Mock.Of<IBlackoutPeriodService>(),
-                Mock.Of<IForecastFilterRuleService>(),
+                Mock.Of<IThroughputFilter>(),
+                new ForecastingAnswersToFlowMetrics(Mock.Of<IServiceProvider>()),
                 Mock.Of<IWorkItemStateTransitionRepository>(),
                 clock);
         }

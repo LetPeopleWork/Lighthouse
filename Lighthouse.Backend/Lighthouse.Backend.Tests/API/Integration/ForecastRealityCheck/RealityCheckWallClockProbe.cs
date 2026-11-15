@@ -258,8 +258,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 .Setup(provider => provider.GetService(typeof(Lighthouse.Backend.Cache.Cache<string, object>)))
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
 
-            var filterRuleService = new Mock<IForecastFilterRuleService>();
-            filterRuleService
+            var throughputFilter = new Mock<IThroughputFilter>();
+            throughputFilter
                 .Setup(service => service.GetEffectiveRuleSet(It.IsAny<Team>()))
                 .Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
@@ -270,7 +270,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 appSettingService.Object,
                 serviceProvider.Object,
                 NoBlackoutPeriods(),
-                filterRuleService.Object,
+                throughputFilter.Object,
+                new ForecastingAnswersToFlowMetrics(Mock.Of<IServiceProvider>()),
                 Mock.Of<IWorkItemStateTransitionRepository>(),
                 TestToday.Clock);
         }

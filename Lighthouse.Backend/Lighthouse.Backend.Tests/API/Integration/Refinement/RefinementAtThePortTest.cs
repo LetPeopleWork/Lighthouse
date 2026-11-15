@@ -296,7 +296,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             services.AddScoped<IRecurringBlackoutRuleService, RecurringBlackoutRuleService>();
             services.AddScoped<IRuleEvaluator<WorkItem>, RuleEvaluator<WorkItem>>();
             services.AddScoped<IRuleFieldProvider<WorkItem>, WorkItemFieldProvider>();
-            services.AddScoped<IForecastFilterRuleService, ForecastFilterRuleService>();
+            services.AddScoped<ForecastFilterRuleService>();
+            services.AddScoped<IForecastFilterRuleService>(provider => provider.GetRequiredService<ForecastFilterRuleService>());
+            services.AddScoped<IThroughputFilter>(provider => provider.GetRequiredService<ForecastFilterRuleService>());
+            services.AddScoped<ForecastingAnswersToFlowMetrics>();
+            services.AddScoped<IForecastDataSufficiency>(provider => provider.GetRequiredService<ForecastingAnswersToFlowMetrics>());
+            services.AddScoped<IHowManyForecaster>(provider => provider.GetRequiredService<ForecastingAnswersToFlowMetrics>());
             services.AddScoped<ITeamMetricsService, TeamMetricsService>();
 
             services.AddScoped<RefinementList>();

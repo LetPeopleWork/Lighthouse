@@ -150,7 +150,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 appSettings.Object,
                 AFreshCache(),
                 Mock.Of<IBlackoutPeriodService>(),
-                Mock.Of<IForecastFilterRuleService>(),
+                Mock.Of<IThroughputFilter>(),
+                new ForecastingAnswersToFlowMetrics(Mock.Of<IServiceProvider>()),
                 Mock.Of<IWorkItemStateTransitionRepository>(),
                 ClockIn(zone));
         }
@@ -186,8 +187,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 .Setup(provider => provider.GetService(typeof(Lighthouse.Backend.Cache.Cache<string, object>)))
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
             serviceProvider
-                .Setup(provider => provider.GetService(typeof(IForecastService)))
-                .Returns(Mock.Of<IForecastService>());
+                .Setup(provider => provider.GetService(typeof(IHowManyForecaster)))
+                .Returns(Mock.Of<IHowManyForecaster>());
             return serviceProvider.Object;
         }
 

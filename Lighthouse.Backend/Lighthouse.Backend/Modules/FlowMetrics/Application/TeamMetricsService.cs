@@ -3,10 +3,8 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
@@ -18,7 +16,8 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         IAppSettingService appSettingService,
         IServiceProvider serviceProvider,
         IBlackoutPeriodService blackoutPeriodService,
-        IForecastFilterRuleService forecastFilterRuleService,
+        IThroughputFilter throughputFilter,
+        IForecastDataSufficiency forecastDataSufficiency,
         IWorkItemStateTransitionRepository workItemStateTransitionRepository,
         ILighthouseClock clock)
 #pragma warning restore S107
@@ -112,7 +111,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             {
                 var unfiltered = ComputeBlackoutAwareThroughput(team);
                 var status = ApplyForecastFilter(team, unfiltered, mode);
-                return status with { HasSufficientData = ForecastDataSufficiencyPolicy.HasEnoughData(status.Throughput) };
+                return status with { HasSufficientData = forecastDataSufficiency.HasEnoughData(status.Throughput) };
             }, logger);
         }
 
@@ -909,14 +908,14 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 return new ForecastThroughputStatus(unfiltered, false, null);
             }
 
-            var effectiveRuleSet = forecastFilterRuleService.GetEffectiveRuleSet(team);
+            var effectiveRuleSet = throughputFilter.GetEffectiveRuleSet(team);
             if (mode == ThroughputFilterMode.RespectTeamSetting && effectiveRuleSet == null || effectiveRuleSet == null)
             {
                 return new ForecastThroughputStatus(unfiltered, false, null);
             }
 
             var allWorkItems = unfiltered.WorkItemsPerUnitOfTime.Values.SelectMany(items => items).OfType<WorkItem>().ToList();
-            var kept = forecastFilterRuleService.Filter(allWorkItems, effectiveRuleSet).ToList();
+            var kept = throughputFilter.Filter(allWorkItems, effectiveRuleSet).ToList();
 
             if (kept.Count == 0 && allWorkItems.Count > 0)
             {

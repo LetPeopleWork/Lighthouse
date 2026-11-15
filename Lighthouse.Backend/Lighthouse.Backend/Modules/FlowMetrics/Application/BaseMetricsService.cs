@@ -5,7 +5,6 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Modules.Forecasting.Application;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
@@ -18,7 +17,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         private Cache<string, object> MetricsCache => field ??= serviceProvider.GetRequiredService<Cache<string, object>>();
 
-        private IForecastService ForecastService => field ??= serviceProvider.GetRequiredService<IForecastService>();
+        private IHowManyForecaster HowManyForecaster => field ??= serviceProvider.GetRequiredService<IHowManyForecaster>();
 
         protected record InfoMetric(int Value);
 
@@ -546,7 +545,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             var numberOfDays = 30;
 
-            var howManyForecast = ForecastService.HowMany(throughput, numberOfDays);
+            var howManyForecast = HowManyForecaster.HowMany(throughput, numberOfDays);
 
             return new ForecastPredictabilityScore(howManyForecast);
         }

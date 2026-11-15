@@ -50,11 +50,11 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             var serviceProvider = new Mock<IServiceProvider>();
             serviceProvider.Setup(sp => sp.GetService(typeof(Lighthouse.Backend.Cache.Cache<string, object>)))
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
-            serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
-                .Returns(Mock.Of<IForecastService>());
+            serviceProvider.Setup(sp => sp.GetService(typeof(IHowManyForecaster)))
+                .Returns(Mock.Of<IHowManyForecaster>());
 
-            var forecastFilterRuleServiceMock = new Mock<IForecastFilterRuleService>();
-            forecastFilterRuleServiceMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
+            var throughputFilterMock = new Mock<IThroughputFilter>();
+            throughputFilterMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
 
@@ -69,7 +69,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 appSettingsServiceMock.Object,
                 serviceProvider.Object,
                 blackoutPeriodServiceMock.Object,
-                forecastFilterRuleServiceMock.Object,
+                throughputFilterMock.Object,
+                new ForecastingAnswersToFlowMetrics(Mock.Of<IServiceProvider>()),
                 stateTransitionRepositoryMock.Object,
                 TestToday.Clock);
 

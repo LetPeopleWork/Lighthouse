@@ -1473,7 +1473,12 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastPublishingService, Lighthouse.Backend.Services.Implementation.DeliverySources.DeliveryForecastPublishingService>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItemRules.IRuleEvaluator<WorkItem>, Lighthouse.Backend.Services.Implementation.WorkItemRules.RuleEvaluator<WorkItem>>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItemRules.IRuleFieldProvider<WorkItem>, Lighthouse.Backend.Services.Implementation.WorkItemRules.WorkItemFieldProvider>();
-            builder.Services.AddScoped<IForecastFilterRuleService, ForecastFilterRuleService>();
+            builder.Services.AddScoped<ForecastFilterRuleService>();
+            builder.Services.AddScoped<IForecastFilterRuleService>(sp => sp.GetRequiredService<ForecastFilterRuleService>());
+            builder.Services.AddScoped<IThroughputFilter>(sp => sp.GetRequiredService<ForecastFilterRuleService>());
+            builder.Services.AddScoped<ForecastingAnswersToFlowMetrics>();
+            builder.Services.AddScoped<IForecastDataSufficiency>(sp => sp.GetRequiredService<ForecastingAnswersToFlowMetrics>());
+            builder.Services.AddScoped<IHowManyForecaster>(sp => sp.GetRequiredService<ForecastingAnswersToFlowMetrics>());
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService, Lighthouse.Backend.Services.Implementation.WorkItems.BlockedItemService>();
             builder.Services.AddScoped<IWriteBackService, WriteBackService>();
             builder.Services.AddScoped<IWriteBackTriggerService, WriteBackTriggerService>();

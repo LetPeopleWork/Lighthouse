@@ -49,12 +49,14 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(forecastServiceMock.Object);
+            serviceProvider.Setup(sp => sp.GetService(typeof(IHowManyForecaster)))
+                .Returns(new ForecastingAnswersToFlowMetrics(serviceProvider.Object));
 
-            var forecastFilterRuleServiceMock = new Mock<IForecastFilterRuleService>();
-            forecastFilterRuleServiceMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
+            var throughputFilterMock = new Mock<IThroughputFilter>();
+            throughputFilterMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
-            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodServiceMock.Object, forecastFilterRuleServiceMock.Object, workItemStateTransitionRepositoryMock.Object, TestToday.Clock);
+            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodServiceMock.Object, throughputFilterMock.Object, new ForecastingAnswersToFlowMetrics(serviceProvider.Object), workItemStateTransitionRepositoryMock.Object, TestToday.Clock);
 
             workItems = new List<WorkItem>();
 

@@ -60,6 +60,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(forecastServiceMock.Object);
+            serviceProvider.Setup(sp => sp.GetService(typeof(IHowManyForecaster)))
+                .Returns(new ForecastingAnswersToFlowMetrics(serviceProvider.Object));
 
             workItems = new List<WorkItem>();
             workItemRepositoryMock.AnswersTeamReadsFrom(workItems);
@@ -72,6 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 serviceProvider.Object,
                 blackoutPeriodServiceMock.Object,
                 forecastFilterRuleService,
+                new ForecastingAnswersToFlowMetrics(serviceProvider.Object),
                 Mock.Of<IWorkItemStateTransitionRepository>(),
                 TestToday.Clock);
         }

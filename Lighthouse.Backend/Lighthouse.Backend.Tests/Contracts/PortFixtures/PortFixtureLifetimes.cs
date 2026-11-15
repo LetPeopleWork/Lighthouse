@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Reports;
@@ -41,6 +42,10 @@ namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
             [typeof(IRepository<Portfolio>)] = typeof(IPortfolioRepository),
             [typeof(IReportReader)] = typeof(ReportRepository),
             [typeof(IReportWriter)] = typeof(ReportRepository),
+            [typeof(IForecastFilterRuleService)] = typeof(ForecastFilterRuleService),
+            [typeof(IThroughputFilter)] = typeof(ForecastFilterRuleService),
+            [typeof(IForecastDataSufficiency)] = typeof(ForecastingAnswersToFlowMetrics),
+            [typeof(IHowManyForecaster)] = typeof(ForecastingAnswersToFlowMetrics),
         };
 
         private IEnumerable<Type?> BuiltOnTheHostForAnyRegistrationOf(Type serviceType)

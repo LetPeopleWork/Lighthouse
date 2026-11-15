@@ -236,8 +236,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns([]);
 
-            var forecastFilterRuleService = new Mock<IForecastFilterRuleService>();
-            forecastFilterRuleService
+            var throughputFilter = new Mock<IThroughputFilter>();
+            throughputFilter
                 .Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>()))
                 .Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
@@ -248,7 +248,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 appSettingService.Object,
                 BuildServiceProvider(),
                 blackoutPeriodService.Object,
-                forecastFilterRuleService.Object,
+                throughputFilter.Object,
+                new ForecastingAnswersToFlowMetrics(Mock.Of<IServiceProvider>()),
                 Mock.Of<IWorkItemStateTransitionRepository>(),
                 clock);
         }
@@ -279,8 +280,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 .Setup(sp => sp.GetService(typeof(Lighthouse.Backend.Cache.Cache<string, object>)))
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
             serviceProvider
-                .Setup(sp => sp.GetService(typeof(IForecastService)))
-                .Returns(Mock.Of<IForecastService>());
+                .Setup(sp => sp.GetService(typeof(IHowManyForecaster)))
+                .Returns(Mock.Of<IHowManyForecaster>());
 
             return serviceProvider.Object;
         }

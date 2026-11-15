@@ -52,13 +52,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string TheLayersBelowTheApplication =
             $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ModuleRules.FlowMetricsAdapters})|(?:{ApplicationCoreRules.TheApi})";
 
-        // Every edge from the module's Application into Forecasting when the module was cut out. The list only shrinks.
-        private static readonly string[] ForecastingEdgesOfTheApplication =
-        [
-            "Lighthouse.Backend.Modules.FlowMetrics.Application.BaseMetricsService -> Lighthouse.Backend.Modules.Forecasting.Application.IForecastService",
-            "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService -> Lighthouse.Backend.Modules.Forecasting.Domain.ForecastDataSufficiencyPolicy",
-            "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService -> Lighthouse.Backend.Modules.Forecasting.Application.IForecastFilterRuleService",
-        ];
+        // Every edge from the module's Application into Forecasting. None is left: the module asks Forecasting through
+        // ports of its own. The empty list stays, so a new edge fails and is named.
+        private static readonly string[] ForecastingEdgesOfTheApplication = [];
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
 

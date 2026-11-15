@@ -6,7 +6,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
     /// The forecast, reality-check and filter-rule services, their ports, the forecast lane and the forecast updater's
-    /// port live in the module's Application, and the two Flow metrics rule lists name them there. The types are named as
+    /// port live in the module's Application, the Flow metrics inbound list names them there, and the outbound list names
+    /// no Forecasting type at all. The types are named as
     /// strings and read from the compiled production assembly, so this class compiles before and after the move, and a
     /// type that has not moved yet is a failure that names it.
     /// </summary>
@@ -56,12 +57,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.Forecasting.Application.ForecastService+GatheredInputs",
         ];
 
-        private static readonly string[] OutboundListMustName =
-        [
-            "Lighthouse.Backend.Modules.FlowMetrics.Application.BaseMetricsService -> Lighthouse.Backend.Modules.Forecasting.Application.IForecastService",
-            "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService -> Lighthouse.Backend.Modules.Forecasting.Application.IForecastFilterRuleService",
-        ];
-
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
 
         [OneTimeTearDown]
@@ -94,11 +89,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheFlowMetricsOutboundList_NamesTheForecastTypesInTheModuleApplication()
+        public void TheFlowMetricsOutboundList_NamesNoForecastingType()
         {
             var list = ListOf(typeof(FlowMetricsApplicationOutboundArchUnitTest), "ForecastingEdgesOfTheApplication");
 
-            ThenTheListNamesTheMovedTypesOnlyInTheirNewPlace(list, OutboundListMustName, "outbound");
+            var forecastingEntries = list.Where(entry => entry.Contains("Forecasting", StringComparison.Ordinal)).ToList();
+
+            Assert.That(
+                forecastingEntries,
+                Is.Empty,
+                $"The outbound Flow metrics list still names Forecasting types: [{string.Join(", ", forecastingEntries)}]. Why it matters: Flow " +
+                "metrics asks Forecasting only through ports it owns, so no edge from its Application into Forecasting is allowed. How to fix: " +
+                "ask through IThroughputFilter, IForecastDataSufficiency or IHowManyForecaster and take the entry off the list.");
         }
 
         private static IReadOnlyList<string> ListOf(Type ruleClass, string fieldName)
