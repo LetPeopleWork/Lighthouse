@@ -33,6 +33,7 @@ import type {
 	IDatabaseOperationStatus,
 } from "../../../models/DatabaseManagement/DatabaseManagementTypes";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { formatLocalDate } from "../../../utils/date/localDate";
 
 const DatabaseManagementSettings: React.FC = () => {
 	const [status, setStatus] = useState<IDatabaseCapabilityStatus | null>(null);
@@ -91,7 +92,7 @@ const DatabaseManagementSettings: React.FC = () => {
 			);
 			downloadBlob(
 				blob,
-				`Lighthouse_Backup_${new Date().toISOString().slice(0, 10)}.zip`,
+				`Lighthouse_Backup_${formatLocalDate(new Date())}.zip`,
 			);
 			setSuccess("Backup created and downloaded successfully.");
 			setBackupPassword("");

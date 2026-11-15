@@ -15,6 +15,7 @@ import {
 } from "../../../models/WorkItemRules";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import { testTheme } from "../../../tests/testTheme";
+import { formatUtcDate } from "../../../utils/date/localDate";
 import FlowMetricsConfigurationComponent from "./FlowMetricsConfigurationComponent";
 
 const testRuleSchema: IWorkItemRuleSchema = {
@@ -1044,15 +1045,17 @@ describe("FlowMetricsConfigurationComponent", () => {
 		});
 
 		it("offers the viewer's own today as the latest baseline end, even where the UTC day is a different one", () => {
-			// Half past midnight in a zone ahead of UTC is still yesterday in UTC.
-			const justAfterLocalMidnight = new Date(2026, 9, 15, 0, 30, 0);
+			// Ahead of UTC, half past midnight is still the day before in UTC; behind it, half past
+			// eleven at night is already the next day there.
+			const aheadOfUtc = new Date(2026, 9, 15).getTimezoneOffset() < 0;
+			const momentOnAnotherUtcDay = aheadOfUtc
+				? new Date(2026, 9, 15, 0, 30, 0)
+				: new Date(2026, 9, 15, 23, 30, 0);
 			vi.useFakeTimers({ toFake: ["Date"] });
-			vi.setSystemTime(justAfterLocalMidnight);
+			vi.setSystemTime(momentOnAnotherUtcDay);
 
 			try {
-				expect(justAfterLocalMidnight.toISOString().slice(0, 10)).not.toBe(
-					"2026-10-15",
-				);
+				expect(formatUtcDate(momentOnAnotherUtcDay)).not.toBe("2026-10-15");
 
 				const settings = {
 					...mockSettings,

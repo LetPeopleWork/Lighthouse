@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import ThroughputQuickSetting from "./ThroughputQuickSetting";
 
 const getMockProps = (
@@ -182,13 +183,39 @@ describe("ThroughputQuickSetting", () => {
 
 		const endInput = screen.getByLabelText(/End Date/i);
 		await user.clear(endInput);
-		await user.type(endInput, tomorrow.toISOString().split("T")[0]);
+		await user.type(endInput, formatLocalDate(tomorrow));
 
 		await user.keyboard("{Enter}");
 
 		await waitFor(() => {
 			expect(screen.getByText(/cannot be in the future/i)).toBeInTheDocument();
 		});
+	});
+
+	it("accepts today as the end date east of UTC, where today's UTC midnight is already past local midnight", async () => {
+		const user = userEvent.setup();
+		const onSave = vi.fn().mockResolvedValue(undefined);
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({
+					useFixedDates: true,
+					startDate: new Date("2024-01-01T00:00:00Z"),
+					endDate: new Date("2024-01-31T00:00:00Z"),
+					onSave,
+				})}
+			/>,
+		);
+
+		await user.click(screen.getByRole("button", { name: /Throughput/i }));
+		const endInput = screen.getByLabelText(/End Date/i);
+		await user.clear(endInput);
+		await user.type(endInput, formatLocalDate(new Date()));
+		await user.keyboard("{Enter}");
+
+		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+		expect(
+			screen.queryByText(/cannot be in the future/i),
+		).not.toBeInTheDocument();
 	});
 
 	it("should reject negative rolling history and not save", async () => {

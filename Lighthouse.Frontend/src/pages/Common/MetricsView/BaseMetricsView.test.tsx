@@ -55,6 +55,7 @@ import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider"
 import { cellText } from "../../../tests/WorkItemsDialogTestKit";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import { BaseMetricsView } from "./BaseMetricsView";
 import { type CategoryKey, getWidgetsForCategory } from "./categoryMetadata";
 
@@ -1901,7 +1902,7 @@ describe("BaseMetricsView component", () => {
 		const dateDaysAgo = (days: number): string => {
 			const date = new Date();
 			date.setDate(date.getDate() - days);
-			return date.toISOString().split("T")[0];
+			return formatLocalDate(date);
 		};
 
 		// One snapshot on/before the previous-period boundary (baseline) and one
