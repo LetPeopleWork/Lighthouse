@@ -598,4 +598,46 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules WorkItems: 17/17 pass incl. connector-leaf rule, forecast-isolation rule (both directions), dependency-folder scans, one-decision files and history-cutoff files found by name wherever they live, made-up type in Work Items namespace named as unlisted with outside namesake not. Limit: filter shows only these rule families; full rule list not enumerated by me.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules Membership: 10/10 pass: TheWorkItemsTypesInTheCompiledCode_AreExactlyTheTypesListedToMoveOrToStay, made-up type named unlisted, renamed listed type named missing plus new name unlisted, no type both Moves and Stays, every Stays names owner. Limit: failure paths seen only via passing tests of those names, not a hand-made counterexample.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+refresh-answers-compare (base 8a785450c vs HEAD eae00ff27, demo data): 297 answers over 9 kinds, 0 different each, VERDICT: IDENTICAL. Covers work-items, blocked today/a week ago/count history, in-progress, finished, feature-list, dependencies. Transitions and events not read directly; service-port literal-equality test not probed by me.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+refresh-answers-compare (base 8a785450c vs HEAD eae00ff27, demo data): 297 answers over 9 kinds, 0 different each, VERDICT: IDENTICAL. Covers work-items, blocked today/a week ago/count history, in-progress, finished, feature-list, dependencies. Transitions and events not read directly; service-port literal-equality test not probed by me.
+```
+
+```text
+refresh-reactions-show: VERDICT OBSERVED; 3 observable reactions seen (team refresh recorded in history; changed download refreshes teams; deleted team clears history); 4 blocked-period reactions reported NOT OBSERVABLE through public API with stated reason (covered at service port). One line per reaction printed. Post-move only, not compared to pre-move.
+```

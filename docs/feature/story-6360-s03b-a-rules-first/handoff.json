@@ -244,7 +244,7 @@
 "counters": {
 "D": 5,
 "E": 4,
-"F": 177,
+"F": 181,
 "K": 4,
 "P": 3,
 "S": 3,
@@ -659,6 +659,33 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F178"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F179"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F180"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F180",
+"F181"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -771,7 +798,11 @@
 "F175": "The first port reaches nothing outside itself, is held back by its implementation by name and is not admitted; the second port is admitted",
 "F176": "An interface never moves into Modules/WorkItems ahead of the implementation it belongs to",
 "F177": "an interface with two implementations of which only one stays; it is admitted, because the amended rule holds a port back only when its only implementation stays",
+"F178": "architecture-rules WorkItems: 17/17 pass incl. connector-leaf rule, forecast-isolation rule (both directions), dependency-folder scans, one-decision files and history-cutoff files found by name wherever they live, made-up type in Work Items namespace named as unlisted with outside namesake not. Limit: filter shows only these rule families; full rule list not enumerated by me.",
+"F179": "architecture-rules Membership: 10/10 pass: TheWorkItemsTypesInTheCompiledCode_AreExactlyTheTypesListedToMoveOrToStay, made-up type named unlisted, renamed listed type named missing plus new name unlisted, no type both Moves and Stays, every Stays names owner. Limit: failure paths seen only via passing tests of those names, not a hand-made counterexample.",
 "F18": "Fixture types placed under Lighthouse.Backend.Modules in the test assembly must not reach the API, Data or EF Core, nor be domain-event handlers, because ApplicationCoreRulesReachModulesArchUnitTest runs the core rules over the test assembly with the Services-or-Modules pattern.",
+"F180": "refresh-answers-compare (base 8a785450c vs HEAD eae00ff27, demo data): 297 answers over 9 kinds, 0 different each, VERDICT: IDENTICAL. Covers work-items, blocked today/a week ago/count history, in-progress, finished, feature-list, dependencies. Transitions and events not read directly; service-port literal-equality test not probed by me.",
+"F181": "refresh-reactions-show: VERDICT OBSERVED; 3 observable reactions seen (team refresh recorded in history; changed download refreshes teams; deleted team clears history); 4 blocked-period reactions reported NOT OBSERVABLE through public API with stated reason (covered at service port). One line per reaction printed. Post-move only, not compared to pre-move.",
 "F19": "Examiner budget about 5 minutes wall and 3 probing calls reading only the output tail: each public command prints compact per-line results and a last VERDICT line, never raw dotnet output.",
 "F2": "The Work Items move (features B and C) can start with every rule already watching the new place, a fixed list of what moves, and a capture that proves a refresh did not change",
 "F20": "One oracle file per slice; a later slice never edits an earlier slice's or an earlier feature's oracle or support files. No nWave scenario tags in code. Arch rule tests assert the rule failure names the offender, not counts. Comments carry no internal ids. New plain fixtures never go under Tests/Contracts.",

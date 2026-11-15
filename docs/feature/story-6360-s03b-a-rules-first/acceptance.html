@@ -671,6 +671,43 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>architecture-rules WorkItems: 17/17 pass incl. connector-leaf rule, forecast-isolation rule (both directions), dependency-folder scans, one-decision files and history-cutoff files found by name wherever they live, made-up type in Work Items namespace named as unlisted with outside namesake not. Limit: filter shows only these rule families; full rule list not enumerated by me.
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>architecture-rules Membership: 10/10 pass: TheWorkItemsTypesInTheCompiledCode_AreExactlyTheTypesListedToMoveOrToStay, made-up type named unlisted, renamed listed type named missing plus new name unlisted, no type both Moves and Stays, every Stays names owner. Limit: failure paths seen only via passing tests of those names, not a hand-made counterexample.
+</code></pre>
+
+<h3>E3</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>refresh-answers-compare (base 8a785450c vs HEAD eae00ff27, demo data): 297 answers over 9 kinds, 0 different each, VERDICT: IDENTICAL. Covers work-items, blocked today/a week ago/count history, in-progress, finished, feature-list, dependencies. Transitions and events not read directly; service-port literal-equality test not probed by me.
+</code></pre>
+
+<h3>E4</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>refresh-answers-compare (base 8a785450c vs HEAD eae00ff27, demo data): 297 answers over 9 kinds, 0 different each, VERDICT: IDENTICAL. Covers work-items, blocked today/a week ago/count history, in-progress, finished, feature-list, dependencies. Transitions and events not read directly; service-port literal-equality test not probed by me.
+</code></pre>
+
+<pre><code>refresh-reactions-show: VERDICT OBSERVED; 3 observable reactions seen (team refresh recorded in history; changed download refreshes teams; deleted team clears history); 4 blocked-period reactions reported NOT OBSERVABLE through public API with stated reason (covered at service port). One line per reaction printed. Post-move only, not compared to pre-move.
+</code></pre>
 
 </body></html>
