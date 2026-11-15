@@ -821,6 +821,608 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>maintainer</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the sign step in the runner image with no YubiKey plugged in (only a USB root hub present)
+</code></pre>
+
+<pre><code>The step exits 1 within 5 seconds with the message plug in the YubiKey and re-run this job; pcscd is never started and osslsigncode is never called
+</code></pre>
+
+<pre><code>The maintainer sees at once that the key is missing and re-runs the job after plugging it in; no PIN was sent
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::with no YubiKey plugged in the step stops at once with the plug-in message</p>
+
+<pre><code>A script that starts no pcscd but still reads YUBI_PIN into a variable before the key check; reading without sending is not observable here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the sign step in the runner image with the key on USB but no reader ever listed, reader wait 2 seconds
+</code></pre>
+
+<pre><code>The step exits 1 within 7 seconds with the plug-in message and a hint to run check-host.sh; pcscd was started; osslsigncode is never called
+</code></pre>
+
+<pre><code>The maintainer learns the key is not usable and that a host process may hold it, and no PIN was sent
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::with the key on USB but no reader the step gives up within its wait and sends no PIN</p>
+
+<pre><code>A script that gives up at once without polling for a reader; only an upper bound on the wait is observed
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Same run as with the key on USB but no reader
+</code></pre>
+
+<pre><code>A pcscd stop follows the last pcscd start and no pcscd runs when the step ends
+</code></pre>
+
+<pre><code>The YubiKey is free for the next run after a refused one
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the key is released when the step ends after no reader appeared</p>
+
+<pre><code>A script that stops pcscd with a direct call instead of a trap, which still stops it on this path
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the sign step in the runner image with the key plugged in and a reader listed, holding the server exe, the NSIS installer and the MSI
+</code></pre>
+
+<pre><code>The step exits 0, osslsigncode is called exactly three times, once for each of the three files, and each file is replaced in place by its signed copy under its own name
+</code></pre>
+
+<pre><code>The release carries the three signed files under the names the upload and the coverage check expect
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::with the key plugged in the step signs the server exe, the NSIS installer and the MSI once each in place</p>
+
+<pre><code>A script that signs the files in a different order; order is not promised
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Same signing run with the key plugged in
+</code></pre>
+
+<pre><code>Every signing call names the pkcs11 provider, the opensc module, the key and certificate of slot id 01, the SSL.com intermediate, the description Lighthouse VERSION, the product URL and the DigiCert timestamp server, reads the password from stdin, receives exactly the PIN there, has no engine and no password argument, and inherits from the script both the provider module setting and the sign step&#x27;s own OpenSSL config
+</code></pre>
+
+<pre><code>Every signature goes through the provider with the PIN never on a command line
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::every signing call uses the pkcs11 provider with the PIN on stdin</p>
+
+<pre><code>A script that passes the right flags but a wrong timestamp scheme the server rejects only at release time; the timestamp server is not contacted
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Same signing run with the key plugged in
+</code></pre>
+
+<pre><code>A pcscd stop follows the last pcscd start and no pcscd runs when the step ends
+</code></pre>
+
+<pre><code>The YubiKey is free again after a successful signing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the key is released when the step ends after signing all files</p>
+
+<pre><code>A script whose trap misses INT or TERM; only the normal exit path is driven
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the sign step with the key and a reader present while the second signing call fails
+</code></pre>
+
+<pre><code>The step exits non-zero after exactly two signing calls for two different files, and its output names the failed file
+</code></pre>
+
+<pre><code>A failed signing stops the release with the file named, and a wrong PIN is never tried twice
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::when signing one file fails the step stops with that file named and retries nothing</p>
+
+<pre><code>A script that names the file only through osslsigncode&#x27;s own message; the stand-in prints only Failed, so the script must name it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Same run with the second signing call failing
+</code></pre>
+
+<pre><code>A pcscd stop follows the last pcscd start and no pcscd runs when the step ends
+</code></pre>
+
+<pre><code>The YubiKey is free again after a failed signing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the key is released when the step ends after a failed signing</p>
+
+<pre><code>A script that stops pcscd in its failure branch rather than a trap, which still stops it here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>All five sign-step runs above, with a sentinel PIN in the environment
+</code></pre>
+
+<pre><code>The sentinel appears in no output and in no recorded command line of sudo, opensc-tool, pcscd, pkill or osslsigncode, and at least one run handed it to a signing call
+</code></pre>
+
+<pre><code>The PIN never shows in the job log or the process list
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the PIN never shows in the step&#x27;s output or on any command line it runs</p>
+
+<pre><code>A script that writes the PIN to a temporary file; files are not searched
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Ask the image&#x27;s osslsigncode for its sign help
+</code></pre>
+
+<pre><code>The help lists the -provider option
+</code></pre>
+
+<pre><code>The image can sign through the provider rather than an engine
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the image&#x27;s osslsigncode can sign through a provider</p>
+
+<pre><code>An osslsigncode that lists -provider but is older than the provider support the PIV key needs; the real-signature check covers the working path
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>List OpenSSL providers in the image with the pkcs11 provider and the opensc module
+</code></pre>
+
+<pre><code>The pkcs11 provider is listed with status active
+</code></pre>
+
+<pre><code>The provider the sign step names loads in the image
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the pkcs11 provider loads in the image</p>
+
+<pre><code>A provider that loads but cannot reach the opensc module on a real key; that is a maintainer check
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Search the image&#x27;s library and config folders for an OpenSSL pkcs11 engine
+</code></pre>
+
+<pre><code>No pkcs11 engine file exists
+</code></pre>
+
+<pre><code>Signing can only go through the provider, never silently through the retired engine
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the image carries no pkcs11 engine</p>
+
+<pre><code>An engine installed outside /usr, /opt and /etc; the unset-module real signing check covers that path
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Ask sudo in the image, as the runner user, which pcscd and other commands it may run, and read the pcscd sudoers file as root
+</code></pre>
+
+<pre><code>Starting pcscd with --disable-polkit and pkill -x pcscd are allowed; pcscd with other or no arguments, pkill of another process or by pattern, a shell and id are refused; the file is 0440 root:root with no wildcard and no ALL command
+</code></pre>
+
+<pre><code>Job code can start and stop the reader daemon and gains no other root right
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::sudo lets the runner start and stop pcscd and nothing else</p>
+
+<pre><code>A second sudoers file granting another narrow command that is not one of the probed ones
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Look in the image for opensc-tool, the opensc module, pcscd, pkill and a reader entry for usb:1050/0407
+</code></pre>
+
+<pre><code>All are present
+</code></pre>
+
+<pre><code>The sign script from any checkout finds what it calls in the image the machine pulled
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the image carries the reader entry and the tools the sign step calls</p>
+
+<pre><code>A reader entry with a wrong driver path; only the real key at EXAMINE shows the entry works
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>In a test image derived from the runner image with SoftHSM holding an EC key and self-signed certificate with id 01, sign a tiny Windows executable with the image&#x27;s osslsigncode through the pkcs11 provider using the image&#x27;s own sign-step OpenSSL config, only the module pointed at SoftHSM, PIN on stdin, then verify it
+</code></pre>
+
+<pre><code>Signing exits 0, writes the signed file, and verify accepts the signature against the test certificate
+</code></pre>
+
+<pre><code>The image&#x27;s signing tools and its own OpenSSL config produce a valid Authenticode signature through the provider and exit cleanly
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the image&#x27;s osslsigncode makes a signature through the pkcs11 provider that verifies against the signing certificate</p>
+
+<pre><code>A provider that signs with SoftHSM but not with the YubiKey PIV slot 9c, or an opensc module that still crashes at exit; that is the maintainer&#x27;s check at EXAMINE
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Same SoftHSM signing with the image&#x27;s sign-step OpenSSL config but the provider&#x27;s module setting unset
+</code></pre>
+
+<pre><code>Signing exits non-zero and writes no signed file, while the same signing with the setting succeeded
+</code></pre>
+
+<pre><code>No engine signs in place of the provider when the provider has no module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::without the provider&#x27;s module setting signing fails and writes no file</p>
+
+<pre><code>An engine that fails for an unrelated reason on this tiny file; the engine-file search covers presence
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the Sign on Linux step of the release signing workflow
+</code></pre>
+
+<pre><code>It runs only on Linux runners, calls tools/codesign/sign-windows.sh with the release version, keeps YUBI_PIN from the secret in its environment, holds no inline osslsigncode, engine, password argument or PIN reference, and Verify signing coverage still runs after it
+</code></pre>
+
+<pre><code>A release run signs through the script and the coverage check still judges the signed files
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the release job&#x27;s Linux sign step runs the sign script with the PIN only in its environment</p>
+
+<pre><code>A run that calls the script with a hard-coded version string containing inputs.version in a comment-like echo
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the jobs of the codesign runner image workflow
+</code></pre>
+
+<pre><code>The verify job runs the sign-step oracle, and the publish job runs it on the pushed commit-tag image before the step that moves latest
+</code></pre>
+
+<pre><code>An image that cannot run the checkout&#x27;s sign script never becomes the image the machine pulls
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the image workflow checks the sign step in the image before it is published and before latest moves</p>
+
+<pre><code>A publish step that runs the oracle without IMAGE set, checking a fresh local build instead of the pushed image
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the existing action-pin guard over every workflow
+</code></pre>
+
+<pre><code>Every uses: is pinned to a full commit with its release named
+</code></pre>
+
+<pre><code>Renovate can keep the actions of the signing workflows current
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/scripts/action-pins.test.mjs</p>
+
+<pre><code>A pinned commit that is not the named release; the guard checks the shape, not the registry
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the existing dependency-bot guard over the workflows and Renovate config
+</code></pre>
+
+<pre><code>No workflow if: decides on the actor and every Renovate hold carries a reason
+</code></pre>
+
+<pre><code>A Renovate pull request runs the same checks as a person
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/scripts/dependency-bot.test.mjs</p>
+
+<pre><code>An actor check written as an environment variable instead of if:
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run a release with the real YubiKey plugged into the signing machine
+</code></pre>
+
+<pre><code>The NSIS installer, the MSI and the server exe are signed through the pkcs11 provider and Verify signing coverage passes
+</code></pre>
+
+<pre><code>Customers download Windows binaries signed with the Lighthouse certificate
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Needs the physical YubiKey, its PIN and the signing machine; the design leaves this to the maintainer at EXAMINE
+</code></pre>
+
+<p>maintainer</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Same signing run with the key plugged in
+</code></pre>
+
+<pre><code>A reader was listed before the first signing call
+</code></pre>
+
+<pre><code>No PIN reaches a token before the key is seen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::no PIN is sent before a reader is listed</p>
+
+<pre><code>A script that lists readers once and ignores the answer, then signs anyway; the separate no-reader run catches that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the sign step with the key and a reader present while a pcscd from an earlier killed run is still running
+</code></pre>
+
+<pre><code>pkill -x pcscd runs before the new pcscd start, and the step goes on to sign all three files
+</code></pre>
+
+<pre><code>A release after a killed run signs without manual cleanup on the machine
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::a pcscd left from an earlier run is stopped before the step starts its own</p>
+
+<pre><code>A script that always kills pcscd twice; extra stops are not refused
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the image&#x27;s sign-step OpenSSL config and the environment the image sets
+</code></pre>
+
+<pre><code>The config file /etc/ssl/openssl-pkcs11.cnf exists and declares pkcs11-module-quirks with no-deinit, and the image environment does not set OPENSSL_CONF
+</code></pre>
+
+<pre><code>Signing does not crash at exit, and other jobs on the runner keep OpenSSL&#x27;s stock config
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/codesign/tests/test-sign-step.sh::the image ships the sign step&#x27;s own OpenSSL config and leaves the stock one to other jobs</p>
+
+<pre><code>A config that sets the quirk but does not include the system config; only the real-signature check shows the default provider still loads
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
