@@ -264,15 +264,22 @@ expect_exit "a floor of 2.100 accepts a binary needing GLIBC_2.42" 0 \
 
 # --- the floor argument moves the line ---------------------------------------------------------
 
-run_check /layouts/real 2.37
-expect_exit "a floor of 2.37 refuses today's libraries" 1 \
-  "today's libraries need GLIBC_2.38, which is newer than 2.37" \
+# The boundary is taken from the highest version readelf reports for today's libraries, one minor below it and equal to it.
+below_highest=""
+if [[ $real_highest =~ ^([0-9]+)\.([0-9]+)$ ]] && [ "${BASH_REMATCH[2]}" -gt 0 ]; then
+  below_highest="${BASH_REMATCH[1]}.$((BASH_REMATCH[2] - 1))"
+else
+  setup_failure "the highest GLIBC version '$real_highest' is not a major.minor pair above minor 0, so no floor one minor below it exists"
+fi
+run_check /layouts/real "$below_highest"
+expect_exit "a floor of $below_highest refuses today's libraries" 1 \
+  "today's libraries need GLIBC_$real_highest, which is newer than $below_highest" \
   "use the floor argument in place of the floor file"
-expect_output_has "a floor of 2.37 refuses today's libraries" "GLIBC_2.38" \
+expect_output_has "a floor of $below_highest refuses today's libraries" "GLIBC_$real_highest" \
   "the maintainer must see which version crossed the lowered floor" \
   "name the highest GLIBC version the file needs"
-run_check /layouts/real 2.38
-expect_exit "a floor of 2.38 accepts today's libraries" 0 \
+run_check /layouts/real "$real_highest"
+expect_exit "a floor of $real_highest accepts today's libraries" 0 \
   "a file needing exactly the floor still starts on the floor distribution" \
   "fail only on versions strictly above the floor"
 
@@ -452,6 +459,7 @@ package_steps_report() {
     function note(text,   i, count, words) {
       if (text ~ /^[[:space:]]*#/) return
       if (index(text, "check-glibc-floor.sh")) { floor_steps[step] = 1 }
+      if (text ~ /(^|[^A-Za-z0-9_.-])squashfs-root($|[^A-Za-z0-9_.-])/) { scans_extracted[step] = 1 }
       if (index(text, "libssl.so") && !ssl) ssl = step
       if (collecting || index(text, "apt-get install")) {
         if (!collecting) sub(/.*apt-get install/, "", text)
@@ -461,6 +469,7 @@ package_steps_report() {
       }
     }
     /^      - / { step++; collecting = 0; in_run = 0; line = "        " substr($0, 9) }
+    step == 0 && /^    continue-on-error:/ { value = $0; sub(/^ +continue-on-error:[[:space:]]*/, "", value); if (value !~ /^false/) job_may_fail = 1 }
     step == 0 { next }
     !/^      - / { line = $0 }
     line ~ /^        [A-Za-z_-]+:/ {
@@ -470,6 +479,7 @@ package_steps_report() {
       if (key == "uses" && index(value, "tauri-apps/tauri-action") && !build) build = step
       if (key == "uses" && index(value, "actions/upload-artifact") && !upload) upload = step
       if (key == "continue-on-error" && value !~ /^false/) { may_fail[step] = 1 }
+      if (key == "if") { conditional[step] = 1 }
       if (in_run && value !~ /^[|>]/) note(value)
       next
     }
@@ -477,7 +487,9 @@ package_steps_report() {
     END {
       for (s in floor_steps) { floor_count++; if (!floor || s < floor) floor = s; if (s in may_fail) floor_may_fail = 1 }
       for (s in has_binutils) if (!install || s < install) install = s
-      printf "build=%d ssl=%d floor=%d upload=%d floor_count=%d floor_may_fail=%d install=%d\n", build, ssl, floor, upload, floor_count, floor_may_fail, install
+      floor_conditional = (floor in conditional) ? 1 : 0
+      floor_scans_extracted = (floor in scans_extracted) ? 1 : 0
+      printf "build=%d ssl=%d floor=%d upload=%d floor_count=%d floor_may_fail=%d install=%d job_may_fail=%d floor_conditional=%d floor_scans_extracted=%d\n", build, ssl, floor, upload, floor_count, floor_may_fail, install, job_may_fail + 0, floor_conditional, floor_scans_extracted
     }' <<< "$package_job"
 }
 
@@ -497,6 +509,9 @@ upload_step="$(step_of upload)"
 floor_steps_count="$(step_of floor_count)"
 floor_step_may_fail="$(step_of floor_may_fail)"
 install_step="$(step_of install)"
+job_may_fail="$(step_of job_may_fail)"
+floor_conditional="$(step_of floor_conditional)"
+floor_scans_extracted="$(step_of floor_scans_extracted)"
 
 if [ "$build_step" -gt 0 ] && [ "$build_step" -lt "$ssl_step" ] && [ "$ssl_step" -lt "$floor_step" ] \
   && [ "$floor_step" -lt "$upload_step" ] && [ "$floor_steps_count" -eq 1 ]; then
@@ -508,13 +523,31 @@ else
     "add one step that runs the floor check on the extracted AppImage between the libssl rejection and the upload"
 fi
 
-if [ "$floor_step" -gt 0 ] && [ "$floor_step_may_fail" -eq 0 ]; then
+if [ "$floor_step" -gt 0 ] && [ "$floor_step_may_fail" -eq 0 ] && [ "$job_may_fail" -eq 0 ]; then
   pass "a failing floor check fails the packaging run"
 else
   fail "a failing floor check fails the packaging run" \
-    "the floor check step is $([ "$floor_step" -gt 0 ] && echo "marked continue-on-error" || echo "missing")" \
+    "the floor check step is $([ "$floor_step" -gt 0 ] && echo "present (step marked continue-on-error: $floor_step_may_fail, whole job marked continue-on-error: $job_may_fail)" || echo "missing")" \
     "a floor check that cannot fail the job lets a too-new AppImage be uploaded" \
-    "remove continue-on-error from the floor check step"
+    "remove continue-on-error from the floor check step and from the package job"
+fi
+
+if [ "$floor_step" -gt 0 ] && [ "$floor_conditional" -eq 0 ]; then
+  pass "the floor check runs whenever the packaging job runs"
+else
+  fail "the floor check runs whenever the packaging job runs" \
+    "the floor check step is $([ "$floor_step" -gt 0 ] && echo "guarded by an if condition" || echo "missing")" \
+    "a floor check that can be skipped lets a too-new AppImage be uploaded" \
+    "remove the if condition from the floor check step"
+fi
+
+if [ "$floor_step" -gt 0 ] && [ "$floor_scans_extracted" -eq 1 ]; then
+  pass "the floor check scans the extracted AppImage"
+else
+  fail "the floor check scans the extracted AppImage" \
+    "the floor check step does not name the extracted AppImage folder squashfs-root as an argument" \
+    "a floor check over another folder passes while the AppImage still needs a newer glibc" \
+    "run the floor check on the squashfs-root folder of the extracted AppImage"
 fi
 
 if [ "$install_step" -gt 0 ] && [ "$floor_step" -gt 0 ] && [ "$install_step" -lt "$floor_step" ]; then
