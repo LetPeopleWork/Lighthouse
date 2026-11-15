@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.11.15.4
 
 ## Access to All Teams and Portfolios in One Rule
 
