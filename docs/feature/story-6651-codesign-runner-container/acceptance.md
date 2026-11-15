@@ -1253,21 +1253,21 @@ Read the Sign on Linux step of the release signing workflow
 ```
 
 ```text
-It runs only on Linux runners, calls tools/codesign/sign-windows.sh with the release version, keeps YUBI_PIN from the secret in its environment, holds no inline osslsigncode, engine, password argument or PIN reference, and Verify signing coverage still runs after it
+It runs only on Linux runners, calls tools/codesign/sign-windows.sh with an environment variable as its version argument, sets that variable in the step environment to exactly the workflow's inputs.version expression, holds no workflow expression anywhere in its run, keeps YUBI_PIN from the secret in its environment, holds no inline osslsigncode, engine, password argument or PIN reference, and Verify signing coverage still runs after it
 ```
 
 ```text
-A release run signs through the script and the coverage check still judges the signed files
+A release run signs through the script, a crafted version cannot run commands on the signing machine, and the coverage check still judges the signed files
 ```
 
 ##### Disposition
 
 Tested
 
-tools\/codesign\/tests\/test\-sign\-step\.sh\:\:the release job\'s Linux sign step runs the sign script with the PIN only in its environment
+tools\/codesign\/tests\/test\-sign\-step\.sh\:\:the release job\'s Linux sign step runs the sign script with the version and the PIN only in its environment
 
 ```text
-A run that calls the script with a hard-coded version string containing inputs.version in a comment-like echo
+A run that passes the version through the environment variable but then evaluates it as code (eval, or a sign script that runs the version as a command)
 ```
 
 ###### Obligations

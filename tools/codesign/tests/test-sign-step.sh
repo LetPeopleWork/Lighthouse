@@ -26,6 +26,8 @@ plug_in_message_lower="${plug_in_message,,}"
 case_limit_seconds=90
 # shellcheck disable=SC2016 # the GitHub expression is the literal text the workflow must carry
 pin_secret_expression='${{ secrets.YUBI_PIN }}'
+# shellcheck disable=SC2016 # the GitHub expression is the literal text the workflow must carry
+version_expression='${{ inputs.version }}'
 
 observed=0
 assertions_failed=0
@@ -868,7 +870,7 @@ fi
 
 # ---------------------------------------------------------------- the workflows
 
-name="the release job's Linux sign step runs the sign script with the PIN only in its environment"
+name="the release job's Linux sign step runs the sign script with the version and the PIN only in its environment"
 if [ ! -f "$sign_workflow" ]; then
   fail "$name" ".github/workflows/ci_codesign-windows.yml does not exist" "the release signs through it" "restore the workflow"
 else
@@ -876,21 +878,34 @@ else
     "step=" + ((.jobs["codesign-windows"].steps // [])[] | (.name // "")),
     ((.jobs["codesign-windows"].steps // [])[] | select(.name == "Sign on Linux") | (
       "linux_if=" + (.["if"] // ""),
-      "linux_calls_script=" + ((.run // "") | test("tools/codesign/sign-windows\\.sh[^\n]*inputs\\.version") | tostring),
+      "linux_run=" + ((.run // "") | sub("\n"; " ")),
       "linux_inline_signing=" + ((.run // "") | test("osslsigncode|pkcs11engine|-pass[[:space:]]|YUBI_PIN") | tostring),
-      "linux_pin_env=" + (.env.YUBI_PIN // "")))' 2>&1 || true)"
+      "linux_pin_env=" + (.env.YUBI_PIN // ""),
+      ((.env // {}) | to_entries | .[] | "linux_env=" + .key + "=" + (.value | tostring))))' 2>&1 || true)"
   steps="$(values_of step "$sign_facts")"
   linux_line="$(line_of "Sign on Linux" "$steps")"
   coverage_line="$(line_of "Verify signing coverage" "$steps")"
-  if [ "$(value_of linux_if "$sign_facts")" = "runner.os == 'Linux'" ] && [ "$(value_of linux_calls_script "$sign_facts")" = true ] \
+  linux_run="$(value_of linux_run "$sign_facts")"
+  # The version reaches the script through an environment variable named right after the script path.
+  script_with_variable='tools/codesign/sign-windows\.sh[[:space:]]+"?\$\{?([A-Za-z_][A-Za-z0-9_]*)'
+  version_variable=""
+  if [[ $linux_run =~ $script_with_variable ]]; then version_variable="${BASH_REMATCH[1]}"; fi
+  version_variable_value=""
+  while IFS= read -r entry; do
+    if [ -n "$version_variable" ] && [[ $entry == "$version_variable="* ]]; then version_variable_value="${entry#*=}"; fi
+  done <<< "$(values_of linux_env "$sign_facts")"
+  run_has_expression=no
+  if [[ $linux_run == *"\${{"* ]]; then run_has_expression=yes; fi
+  if [ "$(value_of linux_if "$sign_facts")" = "runner.os == 'Linux'" ] && [ -n "$version_variable" ] \
+     && [ "$version_variable_value" = "$version_expression" ] && [ "$run_has_expression" = no ] \
      && [ "$(value_of linux_inline_signing "$sign_facts")" = false ] && [ "$(value_of linux_pin_env "$sign_facts")" = "$pin_secret_expression" ] \
      && [ "$linux_line" -gt 0 ] && [ "$coverage_line" -gt "$linux_line" ]; then
     pass "$name"
   else
     fail "$name" \
-      "Sign on Linux if '$(value_of linux_if "$sign_facts")', runs tools/codesign/sign-windows.sh with inputs.version: $(value_of linux_calls_script "$sign_facts"), still signs inline or names YUBI_PIN in its run: $(value_of linux_inline_signing "$sign_facts"), YUBI_PIN env '$(value_of linux_pin_env "$sign_facts")'; Verify signing coverage after it: $(if [ "$coverage_line" -gt "$linux_line" ] && [ "$linux_line" -gt 0 ]; then echo yes; else echo no; fi)" \
-      "the inline loop signs through the engine with the PIN on the command line; the coverage check must still judge the signed files" \
-      "replace the run of Sign on Linux with: bash tools/codesign/sign-windows.sh \"\${{ inputs.version }}\", keep env YUBI_PIN: \${{ secrets.YUBI_PIN }}, and keep Verify signing coverage after it"
+      "Sign on Linux if '$(value_of linux_if "$sign_facts")', run '$linux_run', version variable '${version_variable:-none}' set in env to '$version_variable_value', run holds a workflow expression: $run_has_expression, still signs inline or names YUBI_PIN in its run: $(value_of linux_inline_signing "$sign_facts"), YUBI_PIN env '$(value_of linux_pin_env "$sign_facts")'; Verify signing coverage after it: $(if [ "$coverage_line" -gt "$linux_line" ] && [ "$linux_line" -gt 0 ]; then echo yes; else echo no; fi)" \
+      "a workflow expression written into run is pasted into the shell script before it runs, so a crafted version could run commands on the signing machine; the PIN must stay off the command line and the coverage check must still judge the signed files" \
+      "set the run of Sign on Linux to: bash tools/codesign/sign-windows.sh \"\$VERSION\", add env VERSION: \${{ inputs.version }} next to YUBI_PIN: \${{ secrets.YUBI_PIN }}, keep no \${{ in run, and keep Verify signing coverage after it"
   fi
 fi
 

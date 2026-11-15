@@ -612,12 +612,12 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F483",
-"test": "tools/codesign/tests/test-sign-step.sh::the release job's Linux sign step runs the sign script with the PIN only in its environment"
+"still_passes_if": "F573",
+"test": "tools/codesign/tests/test-sign-step.sh::the release job's Linux sign step runs the sign script with the version and the PIN only in its environment"
 },
-"expected": "F481",
+"expected": "F571",
 "stimulus": "F480",
-"user_result": "F482"
+"user_result": "F572"
 },
 {
 "covers": [
@@ -886,7 +886,7 @@
 "C": 1,
 "D": 18,
 "E": 6,
-"F": 570,
+"F": 573,
 "K": 10,
 "L": 5,
 "N": 5,
@@ -2492,9 +2492,6 @@
 "F478": "No engine signs in place of the provider when the provider has no module",
 "F479": "An engine that fails for an unrelated reason on this tiny file; the engine-file search covers presence",
 "F480": "Read the Sign on Linux step of the release signing workflow",
-"F481": "It runs only on Linux runners, calls tools/codesign/sign-windows.sh with the release version, keeps YUBI_PIN from the secret in its environment, holds no inline osslsigncode, engine, password argument or PIN reference, and Verify signing coverage still runs after it",
-"F482": "A release run signs through the script and the coverage check still judges the signed files",
-"F483": "A run that calls the script with a hard-coded version string containing inputs.version in a comment-like echo",
 "F484": "Read the jobs of the codesign runner image workflow",
 "F485": "The verify job runs the sign-step oracle, and the publish job runs it on the pushed commit-tag image before the step that moves latest",
 "F486": "An image that cannot run the checkout's sign script never becomes the image the machine pulls",
@@ -2583,6 +2580,9 @@
 "F568": "The maintainer sees exactly what is left, also a host runner that is installed but not running, and is not sent after leftovers that are already gone.",
 "F569": "Exit 1, a line saying Docker could not be reached, and no claim that the host is clean.",
 "F570": "the line says Docker could not be reached but gives no step to make it reachable",
+"F571": "It runs only on Linux runners, calls tools/codesign/sign-windows.sh with an environment variable as its version argument, sets that variable in the step environment to exactly the workflow's inputs.version expression, holds no workflow expression anywhere in its run, keeps YUBI_PIN from the secret in its environment, holds no inline osslsigncode, engine, password argument or PIN reference, and Verify signing coverage still runs after it",
+"F572": "A release run signs through the script, a crafted version cannot run commands on the signing machine, and the coverage check still judges the signed files",
+"F573": "A run that passes the version through the environment variable but then evaluates it as code (eval, or a sign script that runs the version as a command)",
 "F6": "The runner image is built in GitHub Actions from a digest-pinned base, published to GHCR, and rebuilt on changes under tools/codesign/** and on a schedule; Renovate bumps the base digest and the runner version.",
 "F61": "One signing machine and one YubiKey",
 "F62": "Unchanged from today",
