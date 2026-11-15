@@ -160,10 +160,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The packaging check runs over today&#x27;s Ubuntu 24.04 libraries (bash, WebKitGTK, JavaScriptCore, WebKit web process)
 </code></pre>
 
-<pre><code>It passes and reports the highest version it parsed, 2.38, not only that nothing was over the floor
+<pre><code>It passes and reports the highest version it parsed, equal to the highest version the version listing of the same files names, not only that nothing was over the floor
 </code></pre>
 
-<pre><code>The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS
+<pre><code>The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS, and a moving archive build does not break the oracle
 </code></pre>
 
 <h5>Disposition</h5>
@@ -172,7 +172,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
 
-<pre><code>A check that scans nothing and prints a clean summary without a parsed highest version
+<pre><code>A check that scans nothing and prints a clean summary without a parsed highest version, or one that reports a different highest version than the files need
 </code></pre>
 
 <h6>Obligations</h6>
@@ -315,7 +315,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The repository is read for the written minimum and the packaging workflow
 </code></pre>
 
-<pre><code>The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum, and the workflow installs binutils and runs the check after the libssl rejection and before the upload
+<pre><code>The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum; in the package job one step runs the floor check after the build and the libssl rejection and before the upload without continue-on-error, and an earlier install step lists binutils
 </code></pre>
 
 <pre><code>The minimum Linux is written down in one place and a build over it cannot be uploaded
@@ -327,7 +327,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
 
-<pre><code>A floor check present in the repository but never run by the packaging job, or run after the upload
+<pre><code>A floor check named only in a comment or a step name, run after the upload, allowed to fail, or binutils named only in a comment or another package such as binutils-dev
 </code></pre>
 
 <h6>Obligations</h6>
@@ -388,13 +388,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>The packaging run is given a floor that is not a dotted number, such as abc or a number ending in a dot
+<pre><code>The packaging run is given a floor that is not a dotted number, such as abc or a number ending in a dot, and floors with three numbers
 </code></pre>
 
-<pre><code>The run fails as indeterminate with what is wrong, why and how to fix it, naming the refused floor
+<pre><code>A bad floor fails as indeterminate with one WHAT/WHY/HOW block whose WHAT line names the refused floor, before any file is judged; a floor of 2.39.1 is accepted and compared number by number
 </code></pre>
 
-<pre><code>A mistyped floor stops the build with a clear message and never lets every file pass
+<pre><code>A mistyped floor stops the build with a clear message and never lets every file pass; a floor with three numbers still works
 </code></pre>
 
 <h5>Disposition</h5>
@@ -403,7 +403,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
 
-<pre><code>the bad floor is treated as a number, or as zero, and the run exits successfully or refuses real files against a wrong floor
+<pre><code>the bad floor is treated as a number, or as zero, or named only outside the WHAT line, or reported as an offending file; or a floor with three numbers is refused
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The packaging run scans a healthy binary that makes the version tool warn but still lists its needs, and a folder holding a shell script, a picture and a clean binary
+</code></pre>
+
+<pre><code>Both pass; the warned binary and the clean binary are the only files scanned, and the script and the picture are skipped
+</code></pre>
+
+<pre><code>Files that are not programs, or a harmless warning, never block a good release
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>tools/linux-appimage/tests/test-glibc-floor.sh</p>
+
+<pre><code>A check that refuses any file that makes the tool warn even when its needs were read, or refuses or counts files that are not ELF programs
 </code></pre>
 
 <h6>Obligations</h6>
