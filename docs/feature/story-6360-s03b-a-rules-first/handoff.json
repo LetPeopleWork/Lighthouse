@@ -164,7 +164,7 @@
 "counters": {
 "D": 5,
 "E": 4,
-"F": 142,
+"F": 143,
 "K": 4,
 "P": 3,
 "S": 3,
@@ -366,7 +366,8 @@
 },
 "records": {
 "decisions": [
-"F69"
+"F69",
+"F143"
 ],
 "impact": [
 {
@@ -658,6 +659,7 @@
 "F140": "One line per Work Items reaction seen in public answers such as refresh history and blocked history, a reaction with no public observation named as not observable, and a last line VERDICT OBSERVED",
 "F141": "A user can watch the Work Items reactions fire after a refresh",
 "F142": "A reaction named not observable that stopped running, since nothing public shows it",
+"F143": "The moved dependency files keep their own sub-folder and namespace inside the module: Modules/WorkItems/Domain/Dependencies/ and Modules/WorkItems/Application/Dependencies/ (whichever layer D-1 and B1 place each in; namespaces Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies and .Application.Dependencies). In DependencySingleDecisionArchUnitTest, WhatThisEpicAddedToTheBackend and TheOnlyPlaceThatMayRecordTheSource name exactly those two sub-folders beside the old Services folders, never a whole module layer, so WorkItemService stays outside the exempt folder and outside the blocked-word scan after the move. Feature B moves the dependency types into these sub-folders, not into the bare layer folder.",
 "F15": "Made-up types live in the test assembly below Lighthouse.Backend.Modules.WorkItems (for example Lighthouse.Backend.Modules.WorkItems.Application.WorkItemsFixtures), with a compliant twin each and a namesake just outside the module (Lighthouse.Backend.Modules.WorkItemsFixtures), the S03c way: the widened patterns end in (\\.|$), so only a type below Modules.WorkItems proves the real widened constant.",
 "F16": "Formal verification: no checker selected, no model written or run. No state, transition, protocol, concurrency or recovery behaviour changes. Rule and membership claims are finite and decided exactly by the compiled IL with a made-up offender as falsifier; the refresh-preservation claim compares the code with itself, so literal expected values at the service port are the honest falsifier. Liveness not applicable: synchronous rule evaluation and a one-shot capture have no progress property. Property-based testing not applicable: every law is a finite enumeration of rules, types, refresh scenarios and named endpoints; the test-writing skill decides test density.",
 "F17": "Carriers, all test-side: rule verdicts are KernelRuleVerdict, InboundVerdict and OutboundVerdict owned by ModuleRules and KernelRules; dependency facts are IlDependent from IlDependencies; per-fixture state is the lazily read Mono.Cecil ModuleDefinition disposed at one-time teardown; the refresh oracle holds a ServicePortHarness per scenario; the compare script holds captured bodies in a temp directory. Layers: application rules only; no adapter, infrastructure or recovery layer changes.",
