@@ -1593,7 +1593,7 @@ None.
 P5
 
 ```text
-The maintainer runs the host check on a machine where exactly one leftover remains, once for each leftover, including pcscd only enabled or only active and scdaemon.conf missing or with disable-ccid commented out.
+The maintainer runs the host check on a machine where exactly one leftover remains, once for each leftover, including a host runner unit that is installed but disabled and inactive, pcscd only enabled or only active, and scdaemon.conf missing or with disable-ccid commented out.
 ```
 
 ```text
@@ -1601,14 +1601,14 @@ Exit 1, one finding naming that leftover with what to do, and no finding for any
 ```
 
 ```text
-The maintainer sees exactly what is left and is not sent after leftovers that are already gone.
+The maintainer sees exactly what is left, also a host runner that is installed but not running, and is not sent after leftovers that are already gone.
 ```
 
 ##### Disposition
 
 Tested
 
-tools\/codesign\/tests\/test\-host\-check\.sh \:\: a host whose only leftover is \.\.\. gets one finding for it\, with what to do\, and exit 1 \(eight cases\)
+tools\/codesign\/tests\/test\-host\-check\.sh \:\: a host whose only leftover is \.\.\. gets one finding for it\, with what to do\, and exit 1 \(nine cases\)
 
 ```text
 the step it prints names the right action but a wrong command or path, for example docker image rm of the wrong tag
@@ -1657,7 +1657,7 @@ The maintainer runs the host check while Docker cannot be reached and the old lo
 ```
 
 ```text
-Exit 1, a line about Docker, and no claim that the host is clean.
+Exit 1, a line saying Docker could not be reached, and no claim that the host is clean.
 ```
 
 ```text
@@ -1671,7 +1671,7 @@ Tested
 tools\/codesign\/tests\/test\-host\-check\.sh \:\: when Docker cannot be asked\, the check says so\, does not call the host clean\, and exits 1
 
 ```text
-the line mentions Docker but gives no step to make Docker reachable
+the line says Docker could not be reached but gives no step to make it reachable
 ```
 
 ###### Obligations

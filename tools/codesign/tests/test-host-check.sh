@@ -120,13 +120,20 @@ case "$sub" in
   is-enabled|is-active)
     any=1
     for pat in "${patterns[@]}"; do
-      line="$(unit_line "$pat")"
-      if [ -z "$line" ]; then
-        state=$([ "$sub" = is-enabled ] && echo not-found || echo inactive)
-      elif [ "$sub" = is-enabled ]; then state="$(awk '{print $2}' <<< "$line")"
-      else state="$(awk '{print $3}' <<< "$line")"; fi
-      if [ "$quiet" -eq 0 ]; then echo "$state"; fi
-      if [ "$state" = enabled ] || [ "$state" = active ]; then any=0; fi
+      states=()
+      while read -r unit enabled active _description; do
+        # shellcheck disable=SC2053 # the pattern is a glob on purpose, as for list-units
+        if [[ $unit == $(full_name "$pat") ]] || [[ $unit == $pat ]]; then
+          if [ "$sub" = is-enabled ]; then states+=("$enabled"); else states+=("$active"); fi
+        fi
+      done < "$units"
+      if [ "${#states[@]}" -eq 0 ]; then
+        if [ "$sub" = is-enabled ]; then states=(not-found); else states=(inactive); fi
+      fi
+      for state in "${states[@]}"; do
+        if [ "$quiet" -eq 0 ]; then echo "$state"; fi
+        if [ "$state" = enabled ] || [ "$state" = active ]; then any=0; fi
+      done
     done
     exit "$any" ;;
   list-units|list-sockets)
@@ -335,10 +342,11 @@ new_fixture() {
   : > "$fixture/state/units"
   : > "$fixture/state/images"
   : > "$fixture/state/processes"
-  local pcscd_socket="disabled inactive" pcscd_service="disabled inactive" runner=0 scdaemon_running=0 leftover
+  local pcscd_socket="disabled inactive" pcscd_service="disabled inactive" runner=0 runner_state="enabled active" scdaemon_running=0 leftover
   for leftover in "$@"; do
     case "$leftover" in
       runner) runner=1 ;;
+      runner-disabled) runner=1; runner_state="disabled inactive" ;;
       wrapper) printf '#!/bin/sh\nexec docker run --rm -i local/osslsigncode-ossl3:trixie "$@"\n' > "$home/.local/bin/osslsigncode"; chmod +x "$home/.local/bin/osslsigncode" ;;
       image) echo "local/osslsigncode-ossl3 trixie 5d2c1f0e9a77" >> "$fixture/state/images" ;;
       pcscd) pcscd_socket="enabled active"; pcscd_service="enabled active" ;;
@@ -355,7 +363,7 @@ new_fixture() {
     echo "lighthouse-codesign-runner.service enabled active Lighthouse code signing runner"
     echo "pcscd.socket $pcscd_socket PC/SC Smart Card Daemon Activation Socket"
     echo "pcscd.service $pcscd_service PC/SC Smart Card Daemon"
-    if [ "$runner" -eq 1 ]; then echo "$host_runner_unit enabled active GitHub Actions Runner (LetPeopleWork-Lighthouse.codesign-runner-linux)"; fi
+    if [ "$runner" -eq 1 ]; then echo "$host_runner_unit $runner_state GitHub Actions Runner (LetPeopleWork-Lighthouse.codesign-runner-linux)"; fi
   } > "$fixture/state/units"
   {
     echo "ghcr.io/letpeoplework/lighthouse-codesign-runner latest 9b1e7c3a4d20"
@@ -364,7 +372,7 @@ new_fixture() {
   {
     echo "812 /usr/bin/dockerd -H fd://"
     echo "4410 /home/runner/runtime/bin/Runner.Listener run"
-    if [ "$runner" -eq 1 ]; then
+    if [ "$runner" -eq 1 ] && [ "$runner_state" = "enabled active" ]; then
       echo "1290 /bin/bash /home/maintainer/Lighthouse/tools/codesign/actions-runner/runsvc.sh"
       echo "1301 /home/maintainer/Lighthouse/tools/codesign/actions-runner/bin/Runner.Listener run --startuptype service"
     fi
@@ -497,6 +505,7 @@ else
 fi
 
 check_single_leftover runner runner "the host actions runner service"
+check_single_leftover runner runner-disabled "a host actions runner unit that is installed but disabled and inactive"
 check_single_leftover wrapper wrapper "the ~/.local/bin/osslsigncode wrapper"
 check_single_leftover image image "the local/osslsigncode-ossl3 image"
 check_single_leftover pcscd pcscd-socket-enabled "a pcscd.socket that is enabled but not active"
@@ -526,11 +535,14 @@ else
     "make tools/codesign/check-host.sh query systemd and Docker, print the line host is clean when nothing is found, and exit 0"
 fi
 
+# A line that says Docker could not be reached; a mere docker command in a remedy does not count.
+unreachable_words="could not|couldn't|cannot|can't|unable|unreachable|not reachable|not running"
+docker_unreachable="docker.*($unreachable_words)|($unreachable_words).*docker"
 blind="$(new_fixture docker-unreachable image docker-down)"
 run_check "$blind"
 blind_code="$(exit_of "$blind")"
 name="when Docker cannot be asked, the check says so, does not call the host clean, and exits 1"
-if [ "$blind_code" = 1 ] && grep -Eiq docker "$blind/output" && ! says_host_is_clean "$blind"; then
+if [ "$blind_code" = 1 ] && grep -Eiq -- "$docker_unreachable" "$blind/output" && ! says_host_is_clean "$blind"; then
   pass "$name"
 else
   fail "$name" \

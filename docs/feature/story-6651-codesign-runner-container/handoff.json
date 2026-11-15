@@ -789,11 +789,11 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F543",
-"test": "tools/codesign/tests/test-host-check.sh :: a host whose only leftover is ... gets one finding for it, with what to do, and exit 1 (eight cases)"
+"test": "tools/codesign/tests/test-host-check.sh :: a host whose only leftover is ... gets one finding for it, with what to do, and exit 1 (nine cases)"
 },
 "expected": "F541",
-"stimulus": "F540",
-"user_result": "F542"
+"stimulus": "F567",
+"user_result": "F568"
 },
 {
 "covers": [
@@ -814,10 +814,10 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F551",
+"still_passes_if": "F570",
 "test": "tools/codesign/tests/test-host-check.sh :: when Docker cannot be asked, the check says so, does not call the host clean, and exits 1"
 },
-"expected": "F549",
+"expected": "F569",
 "stimulus": "F548",
 "user_result": "F550"
 },
@@ -886,7 +886,7 @@
 "C": 1,
 "D": 18,
 "E": 6,
-"F": 566,
+"F": 570,
 "K": 10,
 "L": 5,
 "N": 5,
@@ -2556,18 +2556,14 @@
 "F537": "Exit 1 and a finding for each of the five leftovers, each saying what to do; no claim that the host is clean.",
 "F538": "The maintainer gets one list of everything still to retire, with the step for each.",
 "F539": "one line names two leftovers and only one of them carries a usable step; caught only by the one-leftover cases",
-"F540": "The maintainer runs the host check on a machine where exactly one leftover remains, once for each leftover, including pcscd only enabled or only active and scdaemon.conf missing or with disable-ccid commented out.",
 "F541": "Exit 1, one finding naming that leftover with what to do, and no finding for anything that is not there.",
-"F542": "The maintainer sees exactly what is left and is not sent after leftovers that are already gone.",
 "F543": "the step it prints names the right action but a wrong command or path, for example docker image rm of the wrong tag",
 "F544": "The maintainer runs the host check on a retired machine where the container runner and watchtower run and the container's runner process is visible on the host.",
 "F545": "Exit 0 and the line host is clean, after the check asked systemd and Docker; no finding.",
 "F546": "The maintainer knows the retirement is done and the new setup is not mistaken for a leftover.",
 "F547": "the check asks systemd and Docker about something unrelated and never looks for the leftovers; caught by the old-setup and one-leftover cases",
 "F548": "The maintainer runs the host check while Docker cannot be reached and the old local osslsigncode image is still there.",
-"F549": "Exit 1, a line about Docker, and no claim that the host is clean.",
 "F550": "The maintainer is not told the host is clean when the check could not look at the images.",
-"F551": "the line mentions Docker but gives no step to make Docker reachable",
 "F552": "The maintainer runs the host check on a machine with the whole old setup.",
 "F553": "The check only asks: no systemctl stop, disable or kill, no docker image removal, no gpgconf kill, no sudo, and the home directory is unchanged.",
 "F554": "The maintainer can run the check at any time, also during a release, without it stopping or deleting anything.",
@@ -2583,6 +2579,10 @@
 "F564": "No workflow condition decides on the actor, so a Renovate PR runs the same verify check as a person.",
 "F565": "A dependency update cannot skip the host check oracle.",
 "F566": "the new step is skipped by a condition on the event rather than the actor",
+"F567": "The maintainer runs the host check on a machine where exactly one leftover remains, once for each leftover, including a host runner unit that is installed but disabled and inactive, pcscd only enabled or only active, and scdaemon.conf missing or with disable-ccid commented out.",
+"F568": "The maintainer sees exactly what is left, also a host runner that is installed but not running, and is not sent after leftovers that are already gone.",
+"F569": "Exit 1, a line saying Docker could not be reached, and no claim that the host is clean.",
+"F570": "the line says Docker could not be reached but gives no step to make it reachable",
 "F6": "The runner image is built in GitHub Actions from a digest-pinned base, published to GHCR, and rebuilt on changes under tools/codesign/** and on a schedule; Renovate bumps the base digest and the runner version.",
 "F61": "One signing machine and one YubiKey",
 "F62": "Unchanged from today",
