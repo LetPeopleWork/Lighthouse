@@ -166,6 +166,11 @@ for tag in 2_9 2_39 2_40 2_100; do
   mkdir -p "/layouts/needs-$tag"
   cp "$fx/needs_$tag" "/layouts/needs-$tag/needs"
 done
+mkdir -p /layouts/truncated /layouts/unreadable
+head -c 2000 /usr/bin/bash > /layouts/truncated/cut-short
+cp "$fx/plain" /layouts/unreadable/readable-neighbour
+cp "$fx/plain" /layouts/unreadable/hidden
+chmod 000 /layouts/unreadable/hidden
 # A PATH with every tool except readelf.
 mkdir -p /shadow/bin
 for tool in /usr/bin/*; do
@@ -319,6 +324,36 @@ expect_output_has "a libc-linked file whose versions cannot be read is not a pas
 expect_output_has "a libc-linked file whose versions cannot be read is not a pass" "readelf -V" \
   "the maintainer must see which reading came back empty" \
   "say that readelf -V gave no GLIBC versions"
+
+run_check /layouts/truncated
+expect_exit "a cut-off ELF file is not a pass" 2 \
+  "a file whose body cannot be read says nothing about what glibc it needs" \
+  "exit 2 when a file with ELF magic cannot be parsed by readelf"
+expect_output_has "a cut-off ELF file is not a pass" "/layouts/truncated/cut-short" \
+  "the maintainer must see which file could not be read" \
+  "name the file in the message"
+
+check_output="$(docker exec -u nobody "$check_container" bash /tools/check-glibc-floor.sh /layouts/unreadable 2>&1)"
+check_exit=$?
+expect_exit "a file the scanning user cannot read is not a pass" 2 \
+  "a file skipped for its permissions may be the one that needs a newer glibc" \
+  "exit 2 when a file under the directory cannot be opened"
+expect_output_has "a file the scanning user cannot read is not a pass" "/layouts/unreadable/hidden" \
+  "the maintainer must see which file could not be read" \
+  "name the file in the message"
+
+for bad_floor in abc 2.; do
+  run_check /layouts/real "$bad_floor"
+  expect_exit "a floor of '$bad_floor' is not a version" 2 \
+    "a floor that is not a dotted number cannot be compared, and must not read as every file passing" \
+    "exit 2 when the floor is not a dotted number"
+  expect_output_has "a floor of '$bad_floor' is not a version" "WHAT" \
+    "the maintainer must be told what is wrong, why it matters and how to fix it" \
+    "write a WHAT/WHY/HOW block naming the floor value"
+  expect_output_has "a floor of '$bad_floor' is not a version" "'$bad_floor'" \
+    "the maintainer must see which floor value was refused" \
+    "name the floor value in the message"
+done
 
 # --- the minimum is written down and the workflow runs the check -------------------------------
 

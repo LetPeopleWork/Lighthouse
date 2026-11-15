@@ -213,6 +213,93 @@ A floor check present in the repository but never run by the packaging job, or r
 
 None.
 
+##### Covers
+
+P2
+
+```text
+The packaging run scans a library whose file was cut short so that it starts like a program but cannot be read
+```
+
+```text
+The run fails as indeterminate and names the cut-off file, instead of reporting that nothing needed a newer glibc
+```
+
+```text
+The maintainer sees which file could not be read and never gets a false pass
+```
+
+##### Disposition
+
+Tested
+
+tools\/linux\-appimage\/tests\/test\-glibc\-floor\.sh
+
+```text
+the file is skipped silently and the run still exits successfully with highest none
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The packaging run scans a folder as an ordinary user who cannot open one of the files in it
+```
+
+```text
+The run fails as indeterminate and names the file it could not open
+```
+
+```text
+The maintainer sees which file was not checked and never gets a false pass
+```
+
+##### Disposition
+
+Tested
+
+tools\/linux\-appimage\/tests\/test\-glibc\-floor\.sh
+
+```text
+the unreadable file is skipped and the run counts only the readable files and exits successfully
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The packaging run is given a floor that is not a dotted number, such as abc or a number ending in a dot
+```
+
+```text
+The run fails as indeterminate with what is wrong, why and how to fix it, naming the refused floor
+```
+
+```text
+A mistyped floor stops the build with a clear message and never lets every file pass
+```
+
+##### Disposition
+
+Tested
+
+tools\/linux\-appimage\/tests\/test\-glibc\-floor\.sh
+
+```text
+the bad floor is treated as a number, or as zero, and the run exits successfully or refuses real files against a wrong floor
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

@@ -114,6 +114,54 @@
 "expected": "F220",
 "stimulus": "F219",
 "user_result": "F221"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4"
+],
+"still_passes_if": "F226",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F224",
+"stimulus": "F223",
+"user_result": "F225"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F230",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F228",
+"stimulus": "F227",
+"user_result": "F229"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F234",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F232",
+"stimulus": "F231",
+"user_result": "F233"
 }
 ]
 },
@@ -122,7 +170,7 @@
 "C": 2,
 "D": 14,
 "E": 5,
-"F": 222,
+"F": 234,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -972,7 +1020,19 @@
 "F220": "The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum, and the workflow installs binutils and runs the check after the libssl rejection and before the upload",
 "F221": "The minimum Linux is written down in one place and a build over it cannot be uploaded",
 "F222": "A floor check present in the repository but never run by the packaging job, or run after the upload",
+"F223": "The packaging run scans a library whose file was cut short so that it starts like a program but cannot be read",
+"F224": "The run fails as indeterminate and names the cut-off file, instead of reporting that nothing needed a newer glibc",
+"F225": "The maintainer sees which file could not be read and never gets a false pass",
+"F226": "the file is skipped silently and the run still exits successfully with highest none",
+"F227": "The packaging run scans a folder as an ordinary user who cannot open one of the files in it",
+"F228": "The run fails as indeterminate and names the file it could not open",
+"F229": "The maintainer sees which file was not checked and never gets a false pass",
 "F23": "The libssl rejection step, secrets handling (TAURI_SIGNING_PRIVATE_KEY), artifact names, the if: main condition, the Package and Sign environment and the ci.yml caller stay unchanged.",
+"F230": "the unreadable file is skipped and the run counts only the readable files and exits successfully",
+"F231": "The packaging run is given a floor that is not a dotted number, such as abc or a number ending in a dot",
+"F232": "The run fails as indeterminate with what is wrong, why and how to fix it, naming the refused floor",
+"F233": "A mistyped floor stops the build with a clear message and never lets every file pass",
+"F234": "the bad floor is treated as a number, or as zero, and the run exits successfully or refuses real files against a wrong floor",
 "F24": "The packaging job runs only on main: the real container build and the real AppImage are observable only on the main pipeline or by a maintainer running the container steps by hand. Local oracles prove the floor check, the workflow shape, and that the package install and bundled WebKitGTK library resolve in the pinned image under the floor.",
 "F25": "bash tools/linux-appimage/check-glibc-floor.sh DIR [FLOOR]; bash tools/linux-appimage/check-loads-on.sh IMAGE APPIMAGE; the reusable workflow .github/workflows/ci_package-linux-standalone.yml called from ci.yml",
 "F26": "readelf and file from binutils; docker; the Ubuntu apt archive; GitHub Actions job container",
