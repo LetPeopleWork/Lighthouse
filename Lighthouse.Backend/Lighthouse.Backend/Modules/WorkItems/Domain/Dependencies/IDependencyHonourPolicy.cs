@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Dependencies;
 
-namespace Lighthouse.Backend.Services.Interfaces.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies
 {
     /// <summary>
     /// The one place that decides whether Lighthouse can act on a dependency. Everything it is allowed to

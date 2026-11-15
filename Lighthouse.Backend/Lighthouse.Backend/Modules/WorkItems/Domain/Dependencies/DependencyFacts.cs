@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 
-namespace Lighthouse.Backend.Services.Implementation.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies
 {
     /// <summary>
     /// Turns Features a caller already loaded into the plain facts the decision reads. It exists so the

@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 
-namespace Lighthouse.Backend.Services.Implementation.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies
 {
     /// <summary>
     /// Finds the groups of Features that wait on one another in a circle, over the Features the caller has

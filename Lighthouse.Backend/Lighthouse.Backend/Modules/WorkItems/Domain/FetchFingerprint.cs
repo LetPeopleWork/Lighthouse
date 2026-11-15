@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Implementation.WorkItems
+namespace Lighthouse.Backend.Modules.WorkItems.Domain
 {
     /// <summary>
     /// What the last cycle asked the tracker for, and how it read the answer.

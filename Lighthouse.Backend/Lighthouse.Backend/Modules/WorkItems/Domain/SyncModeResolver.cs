@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Implementation.WorkItems
+namespace Lighthouse.Backend.Modules.WorkItems.Domain
 {
     /// <summary>
     /// How much one refresh has to download. There is no partial mode: everything the

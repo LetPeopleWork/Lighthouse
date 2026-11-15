@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 
-namespace Lighthouse.Backend.Services.Implementation.Dependencies
+namespace Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies
 {
     /// <summary>
     /// Decides, for every dependency among the Features handed in, whether Lighthouse can act on it. It reads
