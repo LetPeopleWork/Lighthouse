@@ -1,8 +1,118 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F197",
+"test": "docs/feature/story-6648-frontend-clean-as-we-go/measurement/measure-slice.sh"
+},
+"expected": "F195",
+"stimulus": "F194",
+"user_result": "F196"
+},
+{
+"covers": [
+"P2",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F201",
+"test": "docs/feature/story-6648-frontend-clean-as-we-go/measurement/deliberate-breaks.sh"
+},
+"expected": "F199",
+"stimulus": "F198",
+"user_result": "F200"
+},
+{
+"covers": [
+"P2",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F205",
+"test": "docs/feature/story-6648-frontend-clean-as-we-go/measurement/check-slice.sh"
+},
+"expected": "F203",
+"stimulus": "F202",
+"user_result": "F204"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L1/F84",
+"L1/F85",
+"L1/F86",
+"L1/F87",
+"L1/F88"
+],
+"still_passes_if": "F209",
+"test": "Lighthouse.Frontend/src/pages/Reports/RemoveSelectedDialog.test.tsx"
+},
+"expected": "F207",
+"stimulus": "F206",
+"user_result": "F208"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F89",
+"L1/F90",
+"L1/F91"
+],
+"still_passes_if": "F213",
+"test": "Lighthouse.Frontend/src/pages/Reports/useBulkReportRemoval.test.tsx"
+},
+"expected": "F211",
+"stimulus": "F210",
+"user_result": "F212"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F92",
+"L1/F93"
+],
+"still_passes_if": "F217",
+"test": "Lighthouse.Frontend/src/pages/Reports/useSelectionActions.test.tsx"
+},
+"expected": "F215",
+"stimulus": "F214",
+"user_result": "F216"
+}
+]
+},
 "counters": {
 "D": 17,
 "E": 5,
-"F": 193,
+"F": 217,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -797,9 +907,33 @@
 "F191": "Every moved rule is shown to fail when its production line is deliberately broken, so the moved test still has teeth.",
 "F192": "Users see and experience Lighthouse exactly as before: no production behaviour change and no pixel change in the rendered views.",
 "F193": "The views that remain keep their loading look and their failure look, so a slow or failed load still shows the same loading and could-not-load states as before.",
+"F194": "A maintainer runs the measure script for the removal slice on a quiet machine: it alternates five before and after pairs of the page test file and runs the new direct tests.",
+"F195": "Exit 0 and a gate line with no failed assertion, a file-alone per-test seconds ratio of at most 0.60 and a combined ratio of at most 0.80 over at least three valid pairs; on the unchanged page file the ratio is 1.0 and the gate reports one failed assertion; on a loaded machine it reports unmeasured and never a pass.",
+"F196": "The removal tests of the Reports page take less time per test than before, so the suite gives its answer sooner.",
+"F197": "The page file was merely renamed or split so one file looks faster while the summed seconds stay the same; the combined ratio over the page file plus the direct tests refuses that.",
+"F198": "The maintainer runs the break script: each listed production line is broken in turn, the named direct tests run, and the line is put back.",
+"F199": "Every listed break turns its named direct test red, every production file is restored, and the gate line shows no surviving break.",
 "F2": "The three slowest frontend page tests run faster while every rule they prove keeps a test that can fail",
 "F20": "Order inside every slice, backstop first: (1) acceptance designer adds the new direct tests, which pass at once against unchanged production (characterisation, GREEN on creation); (2) the measure script is observed RED; (3) a pure move commit if a test only changes file; (4) the crafter then removes or merges the page tests the direct tests replace, one rule family per commit, each with its moved-assertions rows; (5) the measure, check and break scripts are run GREEN; (6) pnpm test --changed and the named files in the loop, pnpm test and pnpm build once at the end. A page test is never removed before its backstop exists and passes.",
+"F200": "Every moved rule is shown to fail when its production line is broken, and no production behaviour is left changed.",
+"F201": "A moved test that asserts a value computed by the code under test; it would stay green after the break.",
+"F202": "The maintainer runs the check script after the page file is rewritten.",
+"F203": "The page file holds exactly the six kept tests, every removed test maps to an existing passing test, nothing is skipped or loosened, and no production file, shared kit or time-budget file differs from the before commit.",
+"F204": "Nothing a user sees changes, and the loading and failure looks the page still pins stay pinned.",
+"F205": "A page file that silently drops a wiring test and keeps the count at six; the kept ids are listed by name.",
+"F206": "A reader presses Remove on picked reports and works through the confirmation dialog alone: the list, the warnings for one, two and none, the headline, already-gone reports, no answer, progress that cannot be closed, the result, Escape and Done.",
+"F207": "Each rule the page tests proved is now proven by a test of the dialog rendered alone, and the check script finds a row and a passing replacement for every removed page test.",
+"F208": "Removing picked reports warns, counts and closes exactly as before.",
+"F209": "A dialog that counts every outcome as removed or lets Escape close it while the removal is under way; the deliberate-break lines turn those tests red.",
 "F21": "Loading and failure looks stay pinned: S1 keeps the permissions-could-not-load tooltip and the disabled Remove on the page, and the under-way dialog (progressbar, cannot close), cannot-confirm and not-removed result move to the dialog alone with the same assertions; S2 keeps the preparing look and the part-of-the-page-failed dialog on the page, plus the dialog alone; S3 keeps one log-cannot-be-read row on the page (the renamed-terms row) and the reading state of the dialog is already pinned in VotesAndCommentsDialog.test.tsx. Nothing visible changes: no UI sketch, no usage-data event.",
+"F210": "The removal hook receives answers for picked reports, in an order other than the picks, including one not removed, one already gone and one lost answer.",
+"F211": "Only the removed and already-gone reports are forgotten, matched by id; every report list is read again also after a failure.",
+"F212": "A removed report disappears from every list and a report that stayed is still shown.",
+"F213": "A hook that forgets every picked report or the report at the same position; the answer order differs from the pick order so those are refused.",
+"F214": "The toolbar Remove button is shown for picks on owners she only reads, for failed and for loading permissions, then pressed when enabled and when disabled.",
+"F215": "It is disabled with the exact reason for one or several owners she only reads, disabled for failed permissions and while loading; an enabled press opens the confirmation and a disabled press opens none.",
+"F216": "Remove is offered only where she may remove, and says why when not.",
+"F217": "A button that counts owners she can edit as not Admin or enables itself while a reason holds it back; the reason and press tests turn red.",
 "F22": "No nWave scenario tags in any test; plain words, Feature and Work Item wording as in the existing tests. Fake clock never real waits: no new setTimeout wait; the existing zero-delay settle stays. No testTimeout, no retry, no raised ceiling: slowTests.ts and the 54 s frontend budget are not touched. Per-test budget stays 2 s for .test.tsx and 0.7 s for .test.ts, no derogation requested; the feature share of the default suite only falls.",
 "F26": "Input bounds: the brief states none beyond the scope list; fixtures are as small as the rule allows (a removal dialog needs 3 reports at most, the page tests at most 2 picks except the one 4-pick leave-out test, a log of at most 4 entries). No bound is widened beyond the existing tests.",
 "F27": "Every removed or shrunk expect( has a moved-assertions row; test ids lost have a row; deleting a test without mapping its rule is refused by check-slice. A merged test keeps the union of the assertions of the tests it replaces.",

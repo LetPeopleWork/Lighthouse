@@ -123,6 +123,11 @@ Frontend per-file budget: 54 s; largest file now 16.6 s, so the budget is not ne
 - **UI sketch review: N/A**, because nothing a user sees changes. No architecture review is owed: the design changed no
   shared decision or ADR (`nwdes delta` printed only `ADDED design`).
 - **No lane:** this item runs in its own isolated worktree, on its own branch at trunk.
+- **Parallel work on the machine (maintainer, 2026-11-15):** no full `pnpm test` or `pnpm build` inside this run.
+  The gates are the touched and new test files run alone (`LIGHTHOUSE_TEST_WORKERS=2`), `pnpm exec tsc -b` and Biome on
+  the touched files; CI runs the full suite after the push. Local timing is judged only on quiet pairs (load at most 6),
+  so a slice may record "unmeasured, machine loaded" and is then judged by CI after the push.
+- **No push** until the maintainer says so.
 
 ## Checklist
 

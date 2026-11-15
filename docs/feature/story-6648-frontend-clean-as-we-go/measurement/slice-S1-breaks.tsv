@@ -1,0 +1,11 @@
+# production file	sed expression (basic regex)	direct test file	test name pattern (vitest -t)	what is broken
+Lighthouse.Frontend/src/pages/Reports/RemoveSelectedDialog.tsx	s/if (lost === 0) return undefined;//	src/pages/Reports/RemoveSelectedDialog.test.tsx	carries no warning	warning returned when nothing is lost
+Lighthouse.Frontend/src/pages/Reports/RemoveSelectedDialog.tsx	s/return lost === 1/return lost !== 1/	src/pages/Reports/RemoveSelectedDialog.test.tsx	warns (when|in the plural)	singular and plural wording swapped
+Lighthouse.Frontend/src/pages/Reports/RemoveSelectedDialog.tsx	s/(outcome) => outcome.status === "removed",/() => true,/	src/pages/Reports/RemoveSelectedDialog.test.tsx	result counts only the reports removed	headline counts every outcome
+Lighthouse.Frontend/src/pages/Reports/RemoveSelectedDialog.tsx	s/if (isPending) return;//	src/pages/Reports/RemoveSelectedDialog.test.tsx	cannot be closed	close without the under-way guard
+Lighthouse.Frontend/src/pages/Reports/RemoveSelectedDialog.tsx	s/if (isAnswered) onDone();/if (!isAnswered) onDone();/	src/pages/Reports/RemoveSelectedDialog.test.tsx	Escape	cancel after an answer, done before one
+Lighthouse.Frontend/src/pages/Reports/useBulkReportRemoval.ts	s/if (outcome.status !== "removed") continue;//	src/pages/Reports/useBulkReportRemoval.test.tsx	forgets each report removed	a not-removed report is forgotten
+Lighthouse.Frontend/src/pages/Reports/useBulkReportRemoval.ts	s/reports.find((picked) => picked.id === outcome.reportId)/reports[outcomes.indexOf(outcome)]/	src/pages/Reports/useBulkReportRemoval.test.tsx	forgets the report that was removed	report matched by position, not by id
+Lighthouse.Frontend/src/pages/Reports/useBulkReportRemoval.ts	s/queryClient.invalidateQueries(/Promise.resolve(/	src/pages/Reports/useBulkReportRemoval.test.tsx	reads every report list again	lists not read again after a failure
+Lighthouse.Frontend/src/pages/Reports/useSelectionActions.tsx	s/!mayEdit(ownerOfReport(report))/mayEdit(ownerOfReport(report))/	src/pages/Reports/useSelectionActions.test.tsx	only reads	owners she can edit counted as not Admin
+Lighthouse.Frontend/src/pages/Reports/useSelectionActions.tsx	s/ || blockedBecause !== ""//	src/pages/Reports/useSelectionActions.test.tsx	pressing a disabled Remove	Remove enabled while a reason holds it back
