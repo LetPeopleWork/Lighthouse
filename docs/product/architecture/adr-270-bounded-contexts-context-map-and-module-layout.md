@@ -14,9 +14,11 @@
 > features (Epic 6455 "deeper hierarchies" first). They are **not** refactoring work: no packaging Story builds
 > Signals, the promise lifecycle events, levels above the Feature, or organisation-wide defaults for SLE and staleness.
 >
-> **Moved so far (2026-11-09):** Flow metrics, by the pilot Story 6358. For Flow metrics this ADR describes today's
-> code, apart from what is still marked target only (per-level granularity, and the entities and DTOs that stay in
-> `Models`). Every other context is still where §4 places it.
+> **Moved so far (2026-11-15):** Flow metrics, by the pilot Story 6358, and Forecasting, by Story 6361. For these two
+> contexts this ADR describes today's code, apart from what is still marked target only (per-level granularity,
+> forecasts composed over more than one level above the leaf, the leaf unit's capacity inputs in Forecasting's own
+> extension, and the entities and DTOs that stay in `Models` and `API/DTO`). Every other context is still where §4
+> places it.
 
 ## Context
 
@@ -60,7 +62,7 @@ set-up, the Deliveries go to Promises. RBAC/Identity splits into Access and Lice
 | **Tracker integration** | supporting | The anti-corruption layer in front of Jira (Cloud, Server, Data Center), Azure DevOps, Linear, CSV and ServiceNow. Connections, credentials and OAuth, connection health, and the **translation** of each tracker record into a Work Item or Feature during a fetch, applying the mapping it is given. Nobody outside it sees a tracker's model. | Connections and their credentials, connectors, connection health, the shared category-crossing rule that dates started and finished work | WorkTracking-Integration (minus the mapping, which moves to Organisation set-up) | **Packaged** |
 | **Work Items** | supporting | Owns Lighthouse's copy of the work mirrored from the trackers and keeps it current; the refresh process itself is still called sync. The items of every level, leaf and non-leaf alike, are **one item model with a level**, not separate contexts for leaf and non-leaf items. Refreshes (scheduled and forced), the sync mode (full or sweep), parent links (placing Work Items under Features), rolling work up onto Features including the default-size guess for a Feature with no children, dependencies, blocked and state-transition capture. Its outward facts are "this unit's data was refreshed" and "a refresh failed", not its internal steps. | The items (today's Work Items and Features), their state transitions, blocked periods, parent links, the roll-up and the default-size guess, the refresh log, the Team and Portfolio refresh pipelines | WorkItems/Sync, plus the refresh half of Portfolio/Delivery (the Team and Portfolio updaters) | **Packaged** |
 | **Flow metrics** | **core** | One flow calculation at every level: throughput, cycle time, Work Item Age, WIP, percentiles, cumulative state time, process behaviour, blocked history, the day-keyed history snapshots. Granularity differs by level (a Team per day, a strategic level per week or month), which is a property of the level. SLE risk stays here until the first Signals feature. | The metric calculations and caches, the over-time snapshot tables and the history filler | Metrics / Time-in-state | **Packaged** in `Modules/FlowMetrics` by the pilot, Story 6358 (2026-11-09). Its entities and `Models/Metrics` DTOs still sit in `Models`. Per-level granularity is **target only** |
-| **Forecasting** | **core** | Answers "when" and "how many" at every level. It forecasts the items directly above the leaf from the leaf unit's throughput (Monte Carlo), then composes "all children done" upwards level by level. It owns the forecasting inputs of the leaf unit (Feature WIP, throughput window): Organisation set-up owns the unit's identity, structure and way-of-working overrides, Forecasting owns how the leaf unit behaves as capacity, stored as Forecasting's own extension keyed by the unit's id (today both live on `Team`; they move when Forecasting is packaged, an expand-only schema change). A forecast is an answer that is recomputed and replaced; it is a planning aid, not a tracked promise. | Forecasts (completion and start), the forecast round and its fingerprint, manual forecasts, backtests and the reality check, the forecast filter rules | Forecasting, plus the forecast half of Portfolio/Delivery (the forecast updater) | **Packaged**; composing forecasts over more than one level above the leaf is target |
+| **Forecasting** | **core** | Answers "when" and "how many" at every level. It forecasts the items directly above the leaf from the leaf unit's throughput (Monte Carlo), then composes "all children done" upwards level by level. It owns the forecasting inputs of the leaf unit (Feature WIP, throughput window): Organisation set-up owns the unit's identity, structure and way-of-working overrides, Forecasting owns how the leaf unit behaves as capacity, stored as Forecasting's own extension keyed by the unit's id (today both live on `Team`; Epic 6474 moves them in its slice 07, an expand-only schema change). A forecast is an answer that is recomputed and replaced; it is a planning aid, not a tracked promise. | Forecasts (completion and start), the forecast round and its fingerprint, manual forecasts, backtests and the reality check, the forecast filter rules | Forecasting, plus the forecast half of Portfolio/Delivery (the forecast updater) | **Packaged** in `Modules/Forecasting` by Story 6361 (2026-11-15). Its entities, the types the kernel entities reach and its wire DTOs still sit in `Models` and `API/DTO`. The leaf unit's capacity inputs move with Epic 6474, not with the packaging. Composing forecasts over more than one level above the leaf is target |
 | **Promises** | **core** | A promise is a target date someone committed to for a set of items on one level, compared against the forecast, with a history of how it ended (kept, missed, renegotiated by moving the target or cutting scope). It includes planning: deciding what fits before committing ("what can we promise by the end of the PI?"). In the user's language one promise is a **Delivery**. A Delivery holds items of the level it hangs off; today's Deliveries are this rule on the Feature level. | Deliveries, their rules, sources (Jira Releases), notes, closure pins and metric snapshots | The Delivery half of Portfolio/Delivery | **Packaged** (today's Deliveries). Promise lifecycle events and Deliveries on levels above the Feature are **target only** |
 | **Signals** | supporting | Turns state into attention: red, amber and green on two levels, the health of a unit or level (for example how many of its items are blocked or stale) and the promise (a Feature's or Delivery's likelihood of hitting its date). It owns thresholds, the current state and the history of when a signal changed, and it suggests when a promise should be renegotiated. One context so that the threshold-and-history mechanism is built once, not twice in Metrics and Promises. | Signal thresholds, current states, change history | None | **Target only.** Nothing to package; SLE risk stays in Flow metrics until the first Signals feature |
 | **Refinement** | supporting | At the leaf, a way of working: which Work Items are in refinement, how many more the Team needs, sizing votes and stages. On levels above the leaf a different form may come, sizing items approximately for reference-class forecasting, where it would feed Forecasting. | The Refinement settings, the sizing log, stage resolution, the need band | Refinement | **Packaged** (the leaf form). Refinement above the leaf is target |
@@ -92,7 +94,7 @@ context records its choice (see "Left open" at the end).
   │ Work Items        │──────────────┬─────────────┬───────────┼──────────────┐
   └───────────────────┘              ▼             ▼           ▼              ▼
                             ┌──────────────┐ ┌─────────────┐ ┌────────────┐ ┌─────────┐
-                            │ Flow metrics │ │ Forecasting │◄│ Refinement │ │ Signals │ (target)
+                            │ Flow metrics │►│ Forecasting │◄│ Refinement │ │ Signals │ (target)
                             └──────┬───────┘ └──────┬──────┘ └────────────┘ └────▲────┘
                                    │ conformist     │ customer/supplier          │ events from Work Items,
                                    ▼                ▼                            │ Metrics, Forecasting,
@@ -135,6 +137,7 @@ flowchart TB
   ORG -->|open host: structure| SYNC
   SYNC -->|events| MET
   SYNC -->|events| FC
+  MET -->|customer/supplier: throughput| FC
   SYNC -->|events| REF
   SYNC -.->|events| SIG
   REF -.->|feeds sizing above the leaf| FC
@@ -152,6 +155,8 @@ flowchart TB
 ```
 
 Dashed arrows are target only. Licensing → Work Items is derived by this ADR, not drawn on the board, and was accepted with it.
+Flow metrics → Forecasting was derived from the code by Story 6358 and made a legal edge by Story 6361 (2026-11-15),
+which also removed the edges in the other direction.
 
 **An acknowledged cycle: Organisation set-up and Tracker integration.** Today the two depend on each other. Set-up
 validates a Team's or Portfolio's query and suggests types and states by asking the tracker, while the ACL conforms
@@ -165,7 +170,7 @@ one of meaning, not of code: there is no compile-time cycle.
 The first column reads upstream → downstream (the downstream depends on the upstream). The "Legal today" column
 uses §4's opposite, **depends-on** direction: it names the §4 edge "downstream module depends on upstream module" and
 checks it against the cross-module edges ARCHITECTURE.md §4 draws (WorkItems/Sync depends on WorkTracking-Integration;
-Portfolio/Delivery depends on WorkItems/Sync and Forecasting; Forecasting depends on WorkItems/Sync; Refinement depends on WorkItems/Sync,
+Portfolio/Delivery depends on WorkItems/Sync and Forecasting; Forecasting depends on WorkItems/Sync and Metrics (since Story 6361); Refinement depends on WorkItems/Sync,
 Forecasting and Metrics; Reports depends on Metrics and RBAC; everything depends on the `Models` kernel), with each
 context read as the §4 module it comes from. Edges marked **Derived** were not drawn on the board; this ADR derived
 them from the code or the walk, and the maintainer accepted them with the ADR.
@@ -179,10 +184,10 @@ them from the code or the walk, and the maintainer accepted them with the ADR.
 | Organisation set-up → every other context | open host: everyone conforms to its structure (units, levels, names, defaults, calendar) | Queries through its contract; reactions to its events | Today through the kernel. New edges | |
 | Work Items → Flow metrics | upstream publishes, downstream reacts (domain events) | Reacts to the refresh events; reads stored history through read ports | Not drawn in §4. Works today only because the events sit in the kernel. Becomes a legal edge once event types move to Work Items | |
 | Flow metrics → Work Items (Work Items calls Flow metrics, beyond the event) | none designed; a direct call | `TeamDataService` calls `ITeamMetricsService.UpdateTeamMetrics` after a Team refresh (ratchet candidate 1); `WorkItemService` uses `IPortfolioMetricsService` and the Domain's `PercentileCalculator` | **Not legal** (WorkItems/Sync may not depend on Metrics). Measured 2026-11-09 and ratcheted in the R3 and R4 lists | **Derived** (from code, Story 6358) |
-| Forecasting → Flow metrics (Flow metrics calls Forecasting) | none designed | Three edges from the module's Application: `BaseMetricsService` → `IForecastService` (resolved through the service locator; the generic argument is visible in the IL), `TeamMetricsService` → `IForecastFilterRuleService`, `TeamMetricsService` → `ForecastDataSufficiencyPolicy` | **Not legal** (Metrics may not depend on Forecasting). Ratcheted in the R5 list, which only shrinks | **Derived** (from code, Story 6358) |
-| Flow metrics → Forecasting (Forecasting calls Flow metrics) | customer/supplier, undeclared | `ForecastService`, `ForecastService+GatheredInputs`, `ForecastInputs`, `ForecastInputFingerprint` and `ForecastRealityCheckService` read `ITeamMetricsService` and `ForecastThroughputStatus` | **Not legal** (Forecasting depends only on WorkItems/Sync). Ratcheted in the R4 list. With the row above, the two contexts depend on each other: a cycle to break before S09b | **Derived** (from code, Story 6358) |
+| Forecasting → Flow metrics (Flow metrics calls Forecasting) | none | **Removed by Story 6361 (2026-11-15).** Flow metrics asks three ports of its own, in its Application: `IThroughputFilter`, `IForecastDataSufficiency` and `IHowManyForecaster`. Forecasting implements them (`ForecastFilterRuleService`, `ForecastingAnswersToFlowMetrics`), so Flow metrics names no Forecasting type | **Not legal** (Metrics may not depend on Forecasting). The R5 list is empty and stays, compared both ways, so a new edge fails | **Derived** (from code, Story 6358) |
+| Flow metrics → Forecasting (Forecasting calls Flow metrics) | customer/supplier | Forecasting reads throughput and `ForecastThroughputStatus` through Flow metrics' Application (`ITeamMetricsService`), and implements Flow metrics' three ports (row above) | **Yes**, decided by Story 6361 (2026-11-15): a forecast is made from throughput, and throughput is a flow metric. Forecasting is a legal caller of Flow metrics' Application by namespace, so it left the R4 list | **Derived** (from code, Story 6358; made legal by Story 6361) |
 | Flow metrics → Platform lane | none designed | `DatabaseMaintenanceGate` reaches the module's Application | Platform is the composition root's infrastructure, not a context; ratcheted in the R4 list until S03f decides | **Derived** (from code, Story 6358) |
-| Work Items → Forecasting | customer/supplier, by events | Reacts to the refresh events; reads Features and throughput through Work Items' contract | Yes (Forecasting depends on WorkItems/Sync) | |
+| Work Items → Forecasting | customer/supplier, by events | Reacts to the refresh events; reads Features through Work Items' contract | Yes (Forecasting depends on WorkItems/Sync) | |
 | Work Items → Refinement | customer/supplier | Reads Work Items in refinement | Yes (Refinement depends on WorkItems/Sync) | **Derived** |
 | Forecasting → Refinement (today) | customer/supplier | Refinement reads the Team's manual How Many forecast | Yes (Refinement depends on Forecasting) | |
 | Refinement → Forecasting (target, above the leaf) | supplier of sizes | Refinement above the leaf sizes items that Forecasting consumes | Target only. It would make Forecasting depend on Refinement, the reverse of today; see "Left open" | |
@@ -225,6 +230,44 @@ The legal R4 callers seen on 2026-11-09: the controllers `ForecastController`, `
 `PortfolioReportMetricSeries` and `TeamReportMetricSeries`; Refinement's `RefinementNeedCalculator` and
 `SleYardstickResolver`.
 
+### Edges measured by packaging Forecasting (2026-11-15)
+
+Story 6361 moved Forecasting into `Modules/Forecasting` and measured every edge into and out of it from the compiled
+IL, in the same way as the pilot. Each list is inline, fails on a newcomer and on a stale entry, and only shrinks
+(ADR-268). The inbound rules and the Application and Adapters outbound rules live in
+`Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs`, the Domain outbound rule in
+`ForecastingDomainLayoutArchUnitTest.cs`, and the rule that Flow metrics reaches Forecasting only through its own
+ports in `FlowMetricsDoesNotReachForecastingArchUnitTest.cs`. Both modules' rules call one shared class,
+`ModuleRules`, with the module's namespaces as parameters. A `ModuleWording` parameter makes a failing rule name the
+module it checked and the callers that module allows; Flow metrics' wording is the default.
+
+| Rule | What it allows | Baseline (outside types, or edges) |
+|---|---|---|
+| Domain outbound | Forecasting's `Domain` depends only on the kernel (`Models`) and the .NET base library | empty |
+| Domain inbound | Outside types reach `Domain` only from the list | 1: `Program` (it registers the draw-stream factory and the simulation) |
+| Adapters inbound | Only the composition root reaches `Adapters` | `Program` only, no list |
+| Application inbound | `API`, the composition root and Refinement by namespace (legal), plus the list | 1: `BackgroundServices.Update.PortfolioUpdater` (ratchet candidate 4) |
+| Application outbound | No EF Core, `Data`, `API` or module `Adapters` type; the licence only through the list. Flow metrics' Application is a legal target | 1: `ForecastFilterRuleService` → `ILicenseService` (ratchet candidate 2) |
+| Adapters into the shared update code | `Adapters` reach `Services.Implementation.BackgroundServices.Update`, which the Team and Portfolio updaters use too, only through the list | 3: `ForecastUpdater` → `UpdateCancellationContext`, `UpdateKey`, `UpdateServiceBase<T>`. It stays until the update code is split by module; a candidate for the context-contracts Story (S09a) |
+| Flow metrics R4, Application inbound | Forecasting is now a legal caller by namespace | 10 → 12 → **5**: the port change first added `ForecastFilterRuleService` and `ForecastingAnswersToFlowMetrics`, then all seven Forecasting entries left. Left: `TeamDataService`, `WorkItemService`, `WriteBackTriggerService`, `FeatureListActiveWork`, `DatabaseMaintenanceGate` |
+| Flow metrics R5, Application outbound to Forecasting | Forecasting only through the list | 3 → **0**. The list stays, empty and compared both ways |
+
+How the cycle was removed, with the same objects answering the same calls:
+
+- `IThroughputFilter` has the two members `TeamMetricsService` used before: `GetEffectiveRuleSet` and `Filter`.
+  `ForecastFilterRuleService` implements it next to `IForecastFilterRuleService`.
+- `ForecastingAnswersToFlowMetrics` answers `IForecastDataSufficiency` (it calls `ForecastDataSufficiencyPolicy`) and
+  `IHowManyForecaster` (it calls `IForecastService`). It looks the forecast service up on first use, through the
+  service provider, because taking it in the constructor closes a cycle in the container: the forecast service needs
+  the team metrics service, which needs this answer. That service-locator call goes when the metrics services are
+  composed differently (S07b).
+- `Program.cs` registers each implementing class once and forwards its interfaces to it, so one instance per scope
+  answers all of them, as before.
+- The rules skip a generic parameter: a type built on a generic base would otherwise count its own type parameter
+  as a second type of the base's namespace.
+- Known gap of the IL reader: a type used only in a catch clause, an event or a named attribute argument is not seen.
+  No current code depends on it.
+
 ### Ratchet candidates
 
 Each of these is an edge today's code takes that §4 does not allow, or one that points the wrong way once its two
@@ -241,6 +284,10 @@ guard (ADR-268) or removes it.
    Portfolio/Delivery → RBAC/Identity is not a legal edge. In the target these become Work Items and Forecasting reacting to
    Licensing's facts. The three different limits (2 at create, 3 Teams and 1 Portfolio in the updaters) belong to the
    same hot spot.
+   *Since 2026-11-15 `ForecastUpdater` sits in `Modules/Forecasting/Adapters/Background` (the read is at
+   `ForecastUpdater.cs:293`). `ForecastFilterRuleService` → `ILicenseService` is the one entry of the Forecasting
+   Application's outbound list. The updater's own licence read is in no list: the Adapters rule checks only the
+   shared update code.*
 3. **Deliveries talk to the tracker without the ACL's contract.** `Services/Implementation/DeliverySources/DeliverySourceResolver.cs:9`
    and `DeliveryForecastPublishingService.cs:12` take `IWorkTrackingConnectorFactory`. Portfolio/Delivery →
    WorkTracking-Integration is not a legal edge, and the board's map has no edge from Tracker integration to Promises.
@@ -248,6 +295,8 @@ guard (ADR-268) or removes it.
    recomputes rule-based Deliveries and `PortfolioUpdater.cs:106` resyncs Deliveries from their source, and
    `PortfolioUpdater.cs:124` is a direct trigger of the forecast updater (it enqueues work), bypassing an event. Legal
    while the updater sits in Portfolio/Delivery; once it moves to Work Items, both point from upstream to downstream.
+   *Since 2026-11-15 `PortfolioUpdater` is the one listed outside caller of the Forecasting Application (through
+   `IForecastUpdater`).*
 5. **A domain event published by a controller.** `TeamDeleted` is published from `API/TeamController.cs:115`, not from
    the context that owns the Team; Portfolio deletion has no event and cleans the refresh log inline
    (`API/PortfolioController.cs:77-89`).
@@ -258,6 +307,8 @@ guard (ADR-268) or removes it.
    *Correction, 2026-11-09:* the generic call `GetRequiredService<T>()` is not hidden from the IL. `IlDependencies`
    reports `T` as a dependency of the caller, as the Flow metrics pilot found for `BaseMetricsService` →
    `IForecastService`. Whether the updaters' calls are all generic has not been checked; S03b and S03c measure them.
+   *Story 6361:* every service-locator call in Forecasting (`ForecastUpdater`, `ForecastingAnswersToFlowMetrics`) is
+   generic, so the IL shows each of them.
 
 ## Decision 3: domain events are the default way contexts react to each other
 
@@ -411,7 +462,7 @@ the maintainer). The refresh process itself is still called sync.
 | Term | Meaning | Code name today | Drift |
 |---|---|---|---|
 | Forecast | An answer to "when" or "how many" with a likelihood, recomputed and replaced | four meanings: the stored completion histogram per Feature (`WhenForecast`), the stored start histogram (`StartForecast`), the unstored manual Team answer, the replay of past forecasts (reality check, backtest) | **Overloaded.** Qualify every use: completion forecast, start forecast, manual forecast, reality check |
-| Feature WIP | How many Features the leaf unit works on at once; the simulation's parallelism | `FeatureWIP` on `Team` | Leaf only. Moves to Forecasting's own extension keyed by the unit's id, with the throughput window, when Forecasting is packaged |
+| Feature WIP | How many Features the leaf unit works on at once; the simulation's parallelism | `FeatureWIP` on `Team` | Leaf only. Moves to Forecasting's own extension keyed by the unit's id, with the throughput window, in Epic 6474 (its slice 07). Packaging Forecasting changed no schema |
 
 ### Promises
 
@@ -488,6 +539,11 @@ Other precise names that already say their role (`SyncModeResolver`, `StageRuleM
 - Flow metrics today: `Domain` (4 files), `Application` (27), `Application/Policies` (7), `Adapters/Background` (1),
   `Adapters/Persistence` (3). The entities and `Models/Metrics` DTOs stay in `Models` until S12c and S04b, because the
   EF model snapshots of both providers carry the entity names.
+- Forecasting today (Story 6361, 2026-11-15): `Domain` (16 files), `Application` (10, with the class that answers
+  Flow metrics' ports), `Application/Policies` (4, the forecast triggers), `Adapters/Background` (2, the forecast
+  updater and the start-up seeder). No `Adapters/Persistence`: Forecasting has no repository of its own yet. Its
+  entities, the types the kernel entities reach and its wire DTOs stay in `Models` and `API/DTO`, for the same reason.
+  Its unit tests: `Domain` (3), `Application` (15), `Application/Policies` (4), `Adapters/Background` (2).
 
 Chosen over:
 - **Flat, role-named folders** per module: the layers are not visible, so the dependency rule cannot be read off the
@@ -531,7 +587,7 @@ ownership is logical only (no database per module).
   | Context | Owns | Today |
   |---|---|---|
   | Forecasting | Forecasts (completion and start) | Still on the item: `Feature.Forecasts` and `Feature.StartForecasts`; the Story on aggregate boundaries in persistence (S13) moves them out, as its pilot |
-  | Forecasting | The leaf unit's capacity inputs (Feature WIP, throughput window), keyed by the unit's id | On `Team`. Moves when Forecasting is packaged (expand-only schema change) |
+  | Forecasting | The leaf unit's capacity inputs (Feature WIP, throughput window), keyed by the unit's id | On `Team`. Epic 6474 moves them in its slice 07 (expand-only schema change); packaging Forecasting changed no schema |
   | Flow metrics | Its daily snapshots | Already separate tables; their repositories sit in `Modules/FlowMetrics/Adapters/Persistence` since 2026-11-09, the entities still in `Models` |
   | Promises | Deliveries and their history (closure pins, metric snapshots, notes) | Already separate tables |
   | Signals | Signal history | Target only |
@@ -709,11 +765,19 @@ of the map need a decision. The changes:
    the namespaces as parameters; the Application inbound and outbound rules are still private to their oracle files.
    Lift them there too, and give the class a name that fits any module, before an S03* copies them.
    *Decided:* the next Story that touches these rules does the lift, as its first step.
+   *Done (Story 6361, 2026-11-15):* the class is `ModuleRules`, with the Application inbound and outbound rules lifted
+   into it and a `ModuleWording` parameter for the text of a failing rule. Flow metrics and Forecasting both use it.
 4. Each S03* declares its EXAMINE commands up front (lesson 8), and uses "no file lower than its baseline" as the
    mutation bar of a move (lesson 9).
+   *Changed (maintainer, 2026-11-14):* the bar of a move is "no survivor or no-coverage mutant added in the moved
+   code". "No file lower than its baseline" fails when better-covered code moves out of a file, which Story 6374
+   found.
 5. The map decides the two undeclared edges: **Flow metrics ↔ Forecasting** is a cycle (R4 and R5), and **Work Items
    → Flow metrics** is a direct call beyond the event (R3 and R4). Both stay ratcheted. Which side moves is for S03b
    (Work Items, ratchet candidate 1) and S03c (Forecasting) to decide, and it must be decided before S09b.
    *Decided:* S03b decides the Work Items edge and S03c the Forecasting cycle, each in its own DESIGN.
+   *Done for Forecasting (Story 6361, 2026-11-15):* the cycle is broken. Forecasting depends on Flow metrics; Flow
+   metrics asks through three ports of its own, which Forecasting implements (see "Every edge" and "Edges measured by
+   packaging Forecasting").
 
 Changes 1, 2 and 4 apply to every S03* Story from its start.

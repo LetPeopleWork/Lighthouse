@@ -11312,3 +11312,91 @@ the Portfolio answers' count yet.
 ### ADR references
 
 ADR-270 Decision 8 (reads go through the owner's contract), ADR-268 (ratchet convention), ADR-163.
+
+## Application Architecture — story-6361 s03c package forecasting
+
+Feature: S03c Package Forecasting, Epic 6510. Waves: DESIGN to DELIVER and finalize. Dates: 2026-11-14 to 2026-11-15.
+Paradigm: OOP, behaviour-free refactoring. Workspaces: `docs/feature/story-6361-s03c-package-forecasting/` (design),
+`story-6361-s03c-a-rules-first`, `story-6361-s03c-b-move`, `story-6361-s03c-c-cycle-and-rules`.
+
+### Module layout (as shipped)
+
+Root `Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/`, inside the one assembly. Namespace = folder.
+
+| Layer (namespace under `Lighthouse.Backend.Modules.Forecasting`) | Files | What it holds |
+|---|---:|---|
+| `Domain` | 16 | `ForecastSimulation` and its trial types, the draw streams and their factory, `ForecastRunPlan`, `DayCounts`, `ForecastRunOutcome`, `ForecastDataSufficiencyPolicy`, `RealityCheckVerdictPolicy`. Pure; the kernel and the .NET base library only |
+| `Application` | 10 | `IForecastService` and `ForecastService` (with `ForecastInputs` and `ForecastInputFingerprint`), the reality-check service and port, the filter-rule service and port, `ForecastLane`, `IForecastUpdater`, and `ForecastingAnswersToFlowMetrics` |
+| `Application.Policies` | 4 | The forecast triggers: Team data refreshed, Team deleted, Feature rank changed, Feature ordering policy changed. Registration order unchanged |
+| `Adapters.Background` | 2 | `ForecastUpdater` and `ForecastInputsForgottenAtStartSeeder` |
+
+Unit tests mirror it: `Lighthouse.Backend.Tests/Modules/Forecasting/{Domain (3), Application (15), Application/Policies (4),
+Adapters/Background (2)}`, 24 files, each class in the namespace of its folder; `ForecastingUnitTestPlacementTest` keeps
+them there.
+
+Outside the module, unchanged: the `Models/Forecast` types (entities named in the EF model snapshots, types the kernel
+entities reach, wire DTOs, and types Flow metrics returns), the `API/DTO` forecast DTOs, `ForecastController` and
+`ForecastRealityCheckController` (`API`), Delivery forecast publishing (Promises), `WhatTheForecastWaitsFor` (Work
+Items), `PortfolioForecastsUpdated` (`Models/Events`). Feature WIP, the throughput window and the filter rules stay
+on `Team`: no schema change; Epic 6474 moves them into Forecasting's own extension.
+
+### The cycle with Flow metrics
+
+Forecasting depends on Flow metrics, and not the other way. Forecasting reads throughput and
+`ForecastThroughputStatus` through Flow metrics' Application, now a legal edge. Flow metrics asked Forecasting three
+questions; it now asks them through ports it owns, in its Application, named in its own words:
+
+| Port (Flow metrics) | Members | Implemented by (Forecasting) |
+|---|---|---|
+| `IThroughputFilter` | `GetEffectiveRuleSet`, `Filter` | `ForecastFilterRuleService` (also `IForecastFilterRuleService`) |
+| `IForecastDataSufficiency` | `HasEnoughData` | `ForecastingAnswersToFlowMetrics`, calling `ForecastDataSufficiencyPolicy` |
+| `IHowManyForecaster` | `HowMany` | `ForecastingAnswersToFlowMetrics`, calling `IForecastService` |
+
+`Program.cs` registers each implementing class once and forwards its interfaces to it, so the same scoped instance
+answers as before. `ForecastingAnswersToFlowMetrics` looks `IForecastService` up on first use, because constructor
+injection closes a cycle in the container (forecast service → team metrics service → this class); `BaseMetricsService`
+still resolves `IHowManyForecaster` through the service provider. Both service-locator calls go with S07b.
+
+Rejected: a domain event (all three are synchronous queries), moving the filter or sufficiency rules into Flow metrics
+(they are Forecasting's data and rules), reversing the direction (the same dependency renamed, twice the call sites),
+and a ratchet only (leaves the cycle).
+
+### Rule shapes
+
+Every rule reads the compiled IL through `IlDependencies`; every list is inline and compared both ways (ADR-268), with
+made-up types that prove a newcomer and a stale entry fail and a compliant twin passes. Both modules call one shared
+class, `ModuleRules` (lifted from `FlowMetricsModuleRules`), with the module's namespaces as parameters and a
+`ModuleWording` for the text of a failing rule; Flow metrics' wording is the default. The rules skip a generic
+parameter, so a type on a generic base does not count its own type parameter as a type of the base's namespace.
+
+| Rule | Shape | Baseline |
+|---|---|---|
+| Layout | Each named type lives in its layer namespace and folder, none left under `Services` | the type lists |
+| Domain outbound | `Domain` → kernel and base library only | empty |
+| Domain inbound | Outside → `Domain` only from the list | 1: `Program` |
+| Adapters inbound | Outside → `Adapters` only from `Program` | no list |
+| Application inbound | Outside → `Application` only from `API`, `Program`, Refinement, or the list | 1: `PortfolioUpdater` |
+| Application outbound | No EF Core, `Data`, `API` or module `Adapters`; the licence only through the list | 1: `ForecastFilterRuleService` → `ILicenseService` |
+| Adapters outbound | The shared update code (`Services.Implementation.BackgroundServices.Update`) only through the list | 3: `ForecastUpdater` → `UpdateCancellationContext`, `UpdateKey`, `UpdateServiceBase<T>` |
+| Flow metrics → Forecasting | Flow metrics names no Forecasting type; its three questions go through its own ports | R5 list empty (was 3) |
+| Flow metrics R4 | Forecasting a legal caller by namespace | 5 (was 10, then 12 while the ports landed) |
+| Test placement | Each Forecasting unit-test file sits in its layer folder, its classes in the folder's namespace | the file list |
+
+The rules widened before the move (`ModuleBoundariesArchUnitTest`'s Forecasting pattern, the simulated-run isolation,
+the read-only reality check, the dependency-aware forecast seam, the many-Features speed rule, Refinement's "no
+background update" rule) see both the old and the module namespaces. The handler-order pin also covers the Feature
+ordering policy, Feature rank and Team deletion handlers.
+
+### Behaviour-free proof
+
+A port-level check with a pinned starting number compares the forecast percentiles with values written out in the test,
+before and after the move. Public commands for the examiner: `forecast-answers-compare` (128 forecast answers on demo
+data identical), `metrics-answers-compare` (366 answers and 3 snapshot tables identical), `forecast-triggers-show` (a
+Team refresh makes its Portfolios forecast again; after a restart the start-up seeding makes the next forecast compute
+again), `architecture-rules`, `ef-model-unchanged`, `backend-tests`. Log categories change with the namespace to
+`Lighthouse.Backend.Modules.Forecasting.*`; no configuration names the old ones.
+
+### ADR references
+
+ADR-270 (Decision 1 Forecasting row, "Every edge", "Edges measured by packaging Forecasting", Decision 6, gate
+changes 3 to 5), ADR-268 (ratchet convention).

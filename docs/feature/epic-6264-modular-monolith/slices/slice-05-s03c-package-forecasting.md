@@ -1,6 +1,6 @@
 # Slice 05 — S03c Package Forecasting
 
-Epic #6264 · `@infrastructure` · job_id: infrastructure-only · **Size M**
+Epic #6264 · `@infrastructure` · job_id: infrastructure-only · **Size L** (re-sized at DESIGN, 2026-11-14; first estimate M)
 
 ## Goal
 
@@ -44,3 +44,5 @@ Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN.
 ## Update after S01 (2026-11-01, ADR-270 accepted)
 
 ADR-270: Feature WIP and the throughput window move into Forecasting's own table keyed by unit id (schema change, expand-only, via `CreateMigration`); Organisation set-up keeps the unit itself. Forecasts leave `Feature` in S13.
+
+*Corrected (maintainer, 2026-11-14):* not in this Story. S03c changes no schema; Feature WIP, the throughput window and the filter rules stay on `Team`, and Epic 6474 slice 07 moves them into Forecasting's own extension keyed by unit id.
