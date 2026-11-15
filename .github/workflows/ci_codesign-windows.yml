@@ -59,38 +59,7 @@ jobs:
       - name: Sign on Linux
         if: runner.os == 'Linux'
         shell: bash
-        run: |
-          INTERMEDIATE_CERT="./tools/codesign/SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt"
-
-          sign_file() {
-            local file="$1"
-            echo "Signing ${file} with osslsigncode"
-            osslsigncode sign \
-              -pkcs11engine /usr/lib/engines-3/pkcs11.so \
-              -pkcs11module /usr/lib/opensc-pkcs11.so \
-              -key "pkcs11:id=%01;type=private" \
-              -pkcs11cert "pkcs11:id=%01;type=cert" \
-              -ac "$INTERMEDIATE_CERT" \
-              -pass "$YUBI_PIN" \
-              -n "Lighthouse ${{ inputs.version }}" \
-              -i "https://letpeople.work/lighthouse" \
-              -t http://timestamp.digicert.com \
-              -in "$file" \
-              -out "${file}.signed"
-            mv "${file}.signed" "$file"
-          }
-
-          for file in ./artifacts/server/Lighthouse*.exe; do
-            [ -f "$file" ] && sign_file "$file"
-          done
-
-          for file in ./artifacts/standalone/Lighthouse*.exe; do
-            [ -f "$file" ] && sign_file "$file"
-          done
-
-          for file in ./artifacts/standalone/*.msi; do
-            [ -f "$file" ] && [[ "$file" != *.msi.zip ]] && sign_file "$file"
-          done
+        run: bash tools/codesign/sign-windows.sh "${{ inputs.version }}"
         env:
           YUBI_PIN: ${{ secrets.YUBI_PIN }}
 

@@ -1,0 +1,12 @@
+# OpenSSL config for the sign step only; sign-windows.sh points OPENSSL_CONF here, other jobs keep the
+# stock config. It takes the system config and adds settings for the pkcs11 provider, which osslsigncode
+# loads with -provider pkcs11. The provider stays inactive here so the stock default provider still loads.
+.include /etc/ssl/openssl.cnf
+
+[provider_sect]
+pkcs11 = pkcs11_sect
+
+[pkcs11_sect]
+# Finalizing the PKCS#11 module at process exit crashes osslsigncode after a good signature. Skipping it
+# is harmless: signing is a short process, and the sign step stops pcscd right after.
+pkcs11-module-quirks = no-deinit
