@@ -91,8 +91,38 @@ Frontend per-file budget: 54 s; largest file now 16.6 s, so the budget is not ne
 | # | Question | Recommendation | Needs the maintainer |
 |---|---|---|---|
 | Q-6648-1 | The maintainer named the brief's top 3. Today's top 3 is `removal`, `RefinementView.comments`, `ReportsTab.test`; `OverviewDashboard` is 9th | Keep the two Reports page files (T13's slice B is designed and ready); decide the third: today's rank 2 or 3, or Overview as named | **Answered 2026-11-15:** `ReportsPage.removal`, `ReportsPage.combinedPdf` and `RefinementView.comments`. Overview and `ReportsTab.test` are out of this item; Q6 falls away with Overview |
-| Q7 (T13) | One `refactor(reports)` commit extracting `failedAmong` and `leaveOutPlanOf` from `useReportsPdfExport` into `printFailures.ts` | Ask at DESIGN; without it, `combinedPdf`'s cut rests on a cheaper `rowOf` and two merges (T13's "Skip-path plan") | Yes, at DESIGN |
-| Q6 (T13) | Overview fallback: a pure function out of the page for the header gating | Only if Overview stays in scope and its spike saves too little | Only then |
+| Q7 (T13), Q-6648-2 in the design | One `refactor(reports)` commit extracting `failedAmong` and the leave-out decision from `useReportsPdfExport` into a pure `printFailures.ts` | The architect recommended no (about 0.4 s of 10.7 s) | **Answered 2026-11-15: yes, extract.** S2 opens with the move commit (no test change), then `printFailures.test.ts`; Stryker on `printFailures.ts`, floor 80 % |
+| Q-6648-3 | Slice order | S1, S3, S2 | **Answered 2026-11-15: S1, then S3, then S2** |
+| Q6 (T13) | Overview fallback | Falls away: Overview is out of scope | No |
+
+## Wave: DESIGN / [REF] Maintainer review at hold 1 (2026-11-15)
+
+- The three slices are accepted as designed (`architecture.md`): S1 `ReportsPage.removal`, S2 `ReportsPage.combinedPdf`,
+  S3 `RefinementView.comments`, delivered in the order S1, S3, S2.
+- The extraction is taken (Q-6648-2), against the architect's recommendation. That makes `printFailures.ts` and
+  `useReportsPdfExport.ts` the only production files, so mutation testing applies to `printFailures.ts`.
+
+## Wave: DEVOPS / [REF] Platform and usage data (2026-11-15)
+
+- **Platform risk: none.** Test files plus one behaviour-free move in `src/pages/Reports/` (`printFailures.ts` out of
+  `useReportsPdfExport.ts`). No deployment, environment, configuration, migration, CI workflow or observability change.
+  The CI test step and `check_budget.py --stack frontend` run unchanged; the budget only goes down.
+- **Usage-data event: N/A**, because the item is behaviour-free and adds no user action; nothing is appended to
+  `UsageDataEventName` and `docs/settings/usagedata.md` does not change.
+- **Mutation testing:** StrykerJS on `src/pages/Reports/printFailures.ts` only, floor 80 %, run last on frozen code in S2.
+  Model the config on `Lighthouse.Frontend/stryker.6536.frontend.json` (whole-file `mutate` entry, an explicit Vitest
+  include of `printFailures.test.ts` and the combinedPdf tests only, `disableTypeChecks` off). Record it under
+  `mutation/` in this workspace. `useReportsPdfExport.ts` loses code and gains none, so it is not mutated.
+- **CI judgement after the push:** the per-file medians over at least 4 `main` runs that ran the frontend tests (method
+  of the baseline re-count), and the 54 s budget lowered with run ids only if the new slowest file allows.
+
+## Wave: DELIVER / [REF] Maintainer decisions at DELIVER start (2026-11-15)
+
+- **Rigor `standard` for S1, S3 and S2:** Sonnet for the acceptance designer and the crafter, Haiku for the reviewers
+  and EXAMINE. `model` is passed on every dispatch.
+- **UI sketch review: N/A**, because nothing a user sees changes. No architecture review is owed: the design changed no
+  shared decision or ADR (`nwdes delta` printed only `ADDED design`).
+- **No lane:** this item runs in its own isolated worktree, on its own branch at trunk.
 
 ## Checklist
 
