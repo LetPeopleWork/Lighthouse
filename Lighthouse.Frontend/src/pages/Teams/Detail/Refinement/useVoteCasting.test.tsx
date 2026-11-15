@@ -202,6 +202,97 @@ describe("casting a vote from the tab", () => {
 	});
 });
 
+describe("casting a 'Yes, if…' from the tab", () => {
+	it("asks for its condition and casts nothing until it is given, then casts once with it as the comment", async () => {
+		const { result, sizingLogService } = renderTheCasting(() =>
+			Promise.resolve(theRow),
+		);
+
+		act(() => {
+			result.current.onVote({ referenceId: "GR-073", answer: "YesBut" });
+		});
+
+		expect(result.current.conditionAskedOn).toBe("GR-073");
+		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+
+		act(() => {
+			result.current.voteWithCondition("the API is stable");
+		});
+
+		expect(result.current.conditionAskedOn).toBeNull();
+		await waitFor(() =>
+			expect(sizingLogService.castVote).toHaveBeenCalledExactlyOnceWith(
+				7,
+				"GR-073",
+				{
+					answer: "YesBut",
+					channel: "Web",
+					voterName: JONAS.name,
+					comment: "the API is stable",
+				},
+				JONAS.key,
+			),
+		);
+	});
+
+	it("casts nothing when its condition is cancelled", () => {
+		const { result, sizingLogService } = renderTheCasting(() =>
+			Promise.resolve(theRow),
+		);
+
+		act(() => {
+			result.current.onVote({ referenceId: "GR-073", answer: "YesBut" });
+		});
+		act(() => {
+			result.current.cancelCondition();
+		});
+
+		expect(result.current.conditionAskedOn).toBeNull();
+		act(() => {
+			result.current.voteWithCondition("the API is stable");
+		});
+		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+	});
+
+	it("asks a browser without a name for the name first and for the condition second", async () => {
+		const { result, sizingLogService } = renderTheCasting(
+			() => Promise.resolve(theRow),
+			{ asksForName: true },
+		);
+
+		act(() => {
+			result.current.onVote({ referenceId: "GR-073", answer: "YesBut" });
+		});
+		expect(result.current.isAskingForName).toBe(true);
+		expect(result.current.conditionAskedOn).toBeNull();
+
+		act(() => {
+			result.current.voteUnderName("Ana");
+		});
+		expect(result.current.isAskingForName).toBe(false);
+		expect(result.current.conditionAskedOn).toBe("GR-073");
+		expect(sizingLogService.castVote).not.toHaveBeenCalled();
+
+		act(() => {
+			result.current.voteWithCondition("the API is stable");
+		});
+
+		await waitFor(() =>
+			expect(sizingLogService.castVote).toHaveBeenCalledExactlyOnceWith(
+				7,
+				"GR-073",
+				{
+					answer: "YesBut",
+					channel: "Web",
+					voterName: "Ana",
+					comment: "the API is stable",
+				},
+				JONAS.key,
+			),
+		);
+	});
+});
+
 describe("taking one's own vote back from the tab", () => {
 	it("takes it back on the Team the tab shows now, not the one it opened on", async () => {
 		const { result, rerender, sizingLogService } = renderTheCasting(() =>

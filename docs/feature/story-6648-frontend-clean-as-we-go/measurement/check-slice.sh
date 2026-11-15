@@ -24,7 +24,13 @@ gate() { echo "gate: slice=$slice observed=$1 assertions_failed=$2 setup_failed=
 [ -f "$data" ] || { echo "no data file $data"; gate 0 0 1 setup-failed; exit 3; }
 
 work="$(mktemp -d)"
-trap 'rm -rf "$work"' EXIT
+before_copy=""
+# The before commit's test ids come from a run of its page file, so any title style and it.each give the same ids.
+cleanup() {
+	[ -n "$before_copy" ] && rm -f "$frontend/$before_copy"
+	rm -rf "$work"
+}
+trap cleanup EXIT
 
 field() { sed -n "s/^- $1: *//p" "$data" | head -1 | sed 's/[[:space:]]*$//'; }
 before_sha="$(field "Before commit")"
@@ -32,6 +38,14 @@ page="$(field "Page test file")"
 direct_list="$(field "Direct test files")"
 allow="$(field "Production allow-list")"
 
+before_copy="${page%.test.tsx}.measuredBefore.test.tsx"
+before_report="$work/before.json"
+if git show "$before_sha:$frontend/$page" >"$frontend/$before_copy" 2>/dev/null; then
+	rm -f "$frontend/test-results.json"
+	pnpm --dir "$frontend" exec cross-env TZ=Europe/Zurich vitest run "$before_copy" >"$work/before.log" 2>&1
+	mv -f "$frontend/test-results.json" "$before_report" 2>/dev/null
+	rm -f "$frontend/$before_copy"
+fi
 started="$(date +%s)"
 report="$work/report.json"
 rm -f "$frontend/test-results.json"
@@ -40,7 +54,7 @@ pnpm --dir "$frontend" exec cross-env TZ=Europe/Zurich vitest run \
 	"$page" $direct_list >"$work/run.log" 2>&1
 mv -f "$frontend/test-results.json" "$report" 2>/dev/null
 
-python3 -I - "$data" "$report" "$started" "$before_sha" "$page" "$direct_list" "$allow" "$frontend" "$work/result" <<'PY'
+python3 -I - "$data" "$report" "$started" "$before_sha" "$page" "$direct_list" "$allow" "$frontend" "$work/result" "$before_report" <<'PY'
 import json, os, re, subprocess, sys
 
 data, report_path, started, before_sha, page, direct_list, allow, frontend = sys.argv[1:9]
@@ -66,12 +80,15 @@ for line in open(data, encoding="utf-8"):
     elif section == "added ids" and line.startswith("- "):
         added.append(line[2:].strip())
 
-# The ids of the page file at the before commit, read from its source.
-source = git("show", f"{before_sha}:{frontend}/{page}")
+# The ids of the page file at the before commit, read from a vitest run of that file.
 before_ids = set()
-for describe in re.finditer(r'^describe\("([^"]+)", \(\) => \{$(.*?)^\}\);$', source, re.S | re.M):
-    for test in re.finditer(r"^\tit\(`([^`]+)`", describe.group(2), re.M):
-        before_ids.add(f"{page} :: {describe.group(1)} {test.group(1)}")
+before_report = sys.argv[10]
+if not os.path.exists(before_report):
+    setup.append("the vitest run of the before-commit page file left no JSON report")
+else:
+    for suite in json.load(open(before_report))["testResults"]:
+        for test in suite["assertionResults"]:
+            before_ids.add(f"{page} :: {test['fullName']}")
 row_ids = {r[0] for r in rows}
 for gone in sorted(before_ids - row_ids):
     failures.append(f"test of the before commit with no row: {gone}")

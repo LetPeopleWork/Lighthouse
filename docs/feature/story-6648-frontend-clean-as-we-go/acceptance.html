@@ -315,6 +315,215 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A reader asked for the condition of a Yes, if leaves it blank, pastes it padded or cancels
+</code></pre>
+
+<pre><code>Vote stays disabled for a blank condition, a padded condition is confirmed trimmed once, Cancel confirms nothing
+</code></pre>
+
+<pre><code>Nothing is cast without a usable condition
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/ConditionPrompt.test.tsx</p>
+
+<pre><code>Vote enabled for spaces, or the untrimmed draft confirmed
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The open Work Item changes, a reader key arrives, or a read is asked for a Work Item no longer open
+</code></pre>
+
+<pre><code>Nothing is read for a Work Item no longer open, a new key alone does not read again and the next read carries it, the open read carries the key
+</code></pre>
+
+<pre><code>The log shown is always that of the Work Item now open
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/useSizingLog.test.tsx</p>
+
+<pre><code>A late read replaces the open log, or a new key triggers a second read
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A comment is refused, or sent by a browser without a name
+</code></pre>
+
+<pre><code>The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; the name is asked and the comment sent once under it
+</code></pre>
+
+<pre><code>A refused comment keeps its text and can be sent again
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/useCommentAdding.test.tsx</p>
+
+<pre><code>A refusal is swallowed or the comment is sent without asking for a name
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A reader opens the votes and comments of a Work Item with votes, comments, revocations and open questions, and writes a comment
+</code></pre>
+
+<pre><code>Only entries with words are listed in log order, open questions marked only where the log says so, counts from the log voters with tooltip; Send disabled for blank and while sending, trimmed text sent, draft kept until onSent
+</code></pre>
+
+<pre><code>Everybody reads the same split, names and comments; a comment is never sent twice by the box
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.test.tsx</p>
+
+<pre><code>Votes without words listed, marker inverted, counts from the row, Send enabled while sending
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A Work Item&#x27;s log cannot be read: not found with renamed terms, or any other error
+</code></pre>
+
+<pre><code>Not found names the renamed terms; any other error returns its message; one page row keeps the 404 wording
+</code></pre>
+
+<pre><code>The reader sees why the log is missing, in their own words
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/sizingLogWording.test.ts</p>
+
+<pre><code>Every refusal worded as left refinement
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>measure-slice.sh S3 alternates 5 before and after pairs
+</code></pre>
+
+<pre><code>Exit 0 with file-alone ratio at most 0.60 and combined at most 0.80; observed on the unchanged page file: exit 1, ratios 1.038 and 1.251, assertions_failed=1
+</code></pre>
+
+<pre><code>The comments tests run faster per test
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6648-frontend-clean-as-we-go/measurement/measure-slice.sh</p>
+
+<pre><code>A timeout added instead of making tests smaller
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>check-slice.sh S3 derives the before commit&#x27;s test ids from a Vitest run of its page file and compares the changed files with the before commit
+</code></pre>
+
+<pre><code>No production, kit, budget or end-to-end file differs, every removed page test maps to a passing test, no skip or weaker matcher; observed on the unchanged page file: exit 1 with exactly the 17 page tests that are not kept rows
+</code></pre>
+
+<pre><code>Lighthouse behaves and looks as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6648-frontend-clean-as-we-go/measurement/check-slice.sh</p>
+
+<pre><code>A page test dropped without a row
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A reader votes Yes, if
+</code></pre>
+
+<pre><code>The vote is held and nothing is cast until its condition is given, then cast once with it as the comment; cancelling casts nothing; a browser without a name is asked the name first
+</code></pre>
+
+<pre><code>A Yes, if never counts without its condition
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/useVoteCasting.test.tsx</p>
+
+<pre><code>A Yes, if cast at once
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

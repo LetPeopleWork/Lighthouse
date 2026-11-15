@@ -190,6 +190,247 @@ A button that counts owners she can edit as not Admin or enables itself while a 
 
 
 
+### S3
+
+##### Covers
+
+P2
+
+```text
+A reader asked for the condition of a Yes, if leaves it blank, pastes it padded or cancels
+```
+
+```text
+Vote stays disabled for a blank condition, a padded condition is confirmed trimmed once, Cancel confirms nothing
+```
+
+```text
+Nothing is cast without a usable condition
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/Refinement\/ConditionPrompt\.test\.tsx
+
+```text
+Vote enabled for spaces, or the untrimmed draft confirmed
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+The open Work Item changes, a reader key arrives, or a read is asked for a Work Item no longer open
+```
+
+```text
+Nothing is read for a Work Item no longer open, a new key alone does not read again and the next read carries it, the open read carries the key
+```
+
+```text
+The log shown is always that of the Work Item now open
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/Refinement\/useSizingLog\.test\.tsx
+
+```text
+A late read replaces the open log, or a new key triggers a second read
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+A comment is refused, or sent by a browser without a name
+```
+
+```text
+The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; the name is asked and the comment sent once under it
+```
+
+```text
+A refused comment keeps its text and can be sent again
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/Refinement\/useCommentAdding\.test\.tsx
+
+```text
+A refusal is swallowed or the comment is sent without asking for a name
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A reader opens the votes and comments of a Work Item with votes, comments, revocations and open questions, and writes a comment
+```
+
+```text
+Only entries with words are listed in log order, open questions marked only where the log says so, counts from the log voters with tooltip; Send disabled for blank and while sending, trimmed text sent, draft kept until onSent
+```
+
+```text
+Everybody reads the same split, names and comments; a comment is never sent twice by the box
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/Refinement\/VotesAndCommentsDialog\.test\.tsx
+
+```text
+Votes without words listed, marker inverted, counts from the row, Send enabled while sending
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+A Work Item's log cannot be read: not found with renamed terms, or any other error
+```
+
+```text
+Not found names the renamed terms; any other error returns its message; one page row keeps the 404 wording
+```
+
+```text
+The reader sees why the log is missing, in their own words
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/Refinement\/sizingLogWording\.test\.ts
+
+```text
+Every refusal worded as left refinement
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+measure-slice.sh S3 alternates 5 before and after pairs
+```
+
+```text
+Exit 0 with file-alone ratio at most 0.60 and combined at most 0.80; observed on the unchanged page file: exit 1, ratios 1.038 and 1.251, assertions_failed=1
+```
+
+```text
+The comments tests run faster per test
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6648\-frontend\-clean\-as\-we\-go\/measurement\/measure\-slice\.sh
+
+```text
+A timeout added instead of making tests smaller
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+check-slice.sh S3 derives the before commit's test ids from a Vitest run of its page file and compares the changed files with the before commit
+```
+
+```text
+No production, kit, budget or end-to-end file differs, every removed page test maps to a passing test, no skip or weaker matcher; observed on the unchanged page file: exit 1 with exactly the 17 page tests that are not kept rows
+```
+
+```text
+Lighthouse behaves and looks as before
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6648\-frontend\-clean\-as\-we\-go\/measurement\/check\-slice\.sh
+
+```text
+A page test dropped without a row
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+A reader votes Yes, if
+```
+
+```text
+The vote is held and nothing is cast until its condition is given, then cast once with it as the comment; cancelling casts nothing; a browser without a name is asked the name first
+```
+
+```text
+A Yes, if never counts without its condition
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/Refinement\/useVoteCasting\.test\.tsx
+
+```text
+A Yes, if cast at once
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

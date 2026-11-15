@@ -77,6 +77,88 @@ const renderTheLog = (
 	);
 };
 
+const ANAS_KEY = "a".repeat(64);
+
+interface ShownTo {
+	referenceId: string | null;
+	readerKey: string | null;
+}
+
+const renderTheLogShownTo = (
+	getLog: ISizingLogService["getLog"],
+	initialProps: ShownTo,
+) => {
+	const sizingLogService = {
+		castVote: vi.fn(),
+		addComment: vi.fn(),
+		takeBackMyVote: vi.fn(),
+		getLog,
+	} satisfies ISizingLogService;
+	const wrapper = ({ children }: { children: React.ReactNode }) => (
+		<ApiServiceContext.Provider
+			value={createMockApiServiceContext({ sizingLogService })}
+		>
+			{children}
+		</ApiServiceContext.Provider>
+	);
+	return renderHook(
+		({ referenceId, readerKey }: ShownTo) =>
+			useSizingLog(7, referenceId, readerKey),
+		{ wrapper, initialProps },
+	);
+};
+
+describe("which Work Item's log is read again, and for whom", () => {
+	it("reads nothing for a Work Item that is no longer the one open", () => {
+		const { getLog } = aServerHoldingEveryRead();
+		const { result, rerender } = renderTheLogShownTo(getLog, {
+			referenceId: ADVANCED_REPORTING,
+			readerKey: null,
+		});
+		rerender({ referenceId: API_VERSIONING, readerKey: null });
+		getLog.mockClear();
+
+		act(() => {
+			result.current.readAgain(ADVANCED_REPORTING);
+		});
+
+		expect(getLog).not.toHaveBeenCalled();
+	});
+
+	it("reads the open Work Item's log with the key of the browser that opened it", () => {
+		const { getLog } = aServerHoldingEveryRead();
+
+		renderTheLogShownTo(getLog, {
+			referenceId: ADVANCED_REPORTING,
+			readerKey: ANAS_KEY,
+		});
+
+		expect(getLog).toHaveBeenCalledExactlyOnceWith(
+			7,
+			ADVANCED_REPORTING,
+			ANAS_KEY,
+		);
+	});
+
+	it("does not read again for a key that arrives while the log is open, and sends it with the next read", () => {
+		const { getLog } = aServerHoldingEveryRead();
+		const { result, rerender } = renderTheLogShownTo(getLog, {
+			referenceId: ADVANCED_REPORTING,
+			readerKey: null,
+		});
+		expect(getLog).toHaveBeenCalledExactlyOnceWith(7, ADVANCED_REPORTING, null);
+
+		rerender({ referenceId: ADVANCED_REPORTING, readerKey: ANAS_KEY });
+		expect(getLog).toHaveBeenCalledTimes(1);
+
+		act(() => {
+			result.current.readAgain(ADVANCED_REPORTING);
+		});
+		expect(getLog).toHaveBeenCalledTimes(2);
+		expect(getLog).toHaveBeenLastCalledWith(7, ADVANCED_REPORTING, ANAS_KEY);
+	});
+});
+
 describe("the log of the Work Item whose votes and comments are open", () => {
 	it("drops an answer for the Work Item open before, even while the new one is still being read", async () => {
 		const { getLog, reads } = aServerHoldingEveryRead();

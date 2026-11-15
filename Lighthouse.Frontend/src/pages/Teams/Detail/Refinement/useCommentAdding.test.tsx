@@ -62,6 +62,91 @@ const aComment = (comment: string) => ({
 	onSent: vi.fn(),
 });
 
+const renderTheCommentingAs = (
+	addComment: ISizingLogService["addComment"],
+	{ asksForName }: { asksForName: boolean },
+) => {
+	const sizingLogService = {
+		castVote: vi.fn(),
+		addComment: vi.fn(addComment),
+		takeBackMyVote: vi.fn(),
+		getLog: vi.fn(),
+	} satisfies ISizingLogService;
+	const onAnswered = vi.fn();
+	const onFailure = vi.fn();
+	const wrapper = ({ children }: { children: React.ReactNode }) => (
+		<ApiServiceContext.Provider
+			value={createMockApiServiceContext({ sizingLogService })}
+		>
+			{children}
+		</ApiServiceContext.Provider>
+	);
+	const commenter = {
+		voter: asksForName ? null : JONAS,
+		asksForName,
+		declareName: vi.fn((name: string) => ({ ...JONAS, name })),
+		commentFor: vi.fn((comment: string, declared: IStoredVoter | null) => ({
+			comment: { comment, channel: "Web" as const, voterName: declared?.name },
+			voterKey: declared?.key ?? null,
+		})),
+	};
+	const hook = renderHook(
+		() => useCommentAdding(7, commenter, onAnswered, onFailure),
+		{ wrapper },
+	);
+	return { ...hook, sizingLogService, onAnswered, onFailure };
+};
+
+describe("a comment the server refuses, and a comment from a browser without a name", () => {
+	it("reports a refused comment, never says it was sent, and stops counting it as being sent", async () => {
+		const refusal = new Error("Network Error");
+		const { result, onFailure, onAnswered } = renderTheCommentingAs(
+			() => Promise.reject(refusal),
+			{ asksForName: false },
+		);
+		const comment = aComment("Which API version?");
+
+		act(() => {
+			result.current.addComment(comment);
+		});
+		expect(result.current.commentsBeingSent.has(ADVANCED_REPORTING)).toBe(true);
+
+		await waitFor(() =>
+			expect(onFailure).toHaveBeenCalledExactlyOnceWith(refusal),
+		);
+		await waitFor(() => expect(result.current.commentsBeingSent.size).toBe(0));
+		expect(comment.onSent).not.toHaveBeenCalled();
+		expect(onAnswered).not.toHaveBeenCalled();
+	});
+
+	it("asks a browser without a name for it and sends the comment under it once", async () => {
+		const { result, sizingLogService } = renderTheCommentingAs(
+			() => Promise.resolve(theRow),
+			{ asksForName: true },
+		);
+		const comment = aComment("Which API version?");
+
+		act(() => {
+			result.current.addComment(comment);
+		});
+		expect(result.current.isAskingForName).toBe(true);
+		expect(sizingLogService.addComment).not.toHaveBeenCalled();
+
+		act(() => {
+			result.current.commentUnderName("Ana");
+		});
+
+		expect(result.current.isAskingForName).toBe(false);
+		await waitFor(() => expect(comment.onSent).toHaveBeenCalledOnce());
+		expect(sizingLogService.addComment).toHaveBeenCalledExactlyOnceWith(
+			7,
+			ADVANCED_REPORTING,
+			{ comment: "Which API version?", channel: "Web", voterName: "Ana" },
+			JONAS.key,
+		);
+	});
+});
+
 describe("adding a comment to a Work Item without voting", () => {
 	it("sends a second comment on a Work Item only once the first has been answered", async () => {
 		let answer: (row: IRefinementRow) => void = () => {};

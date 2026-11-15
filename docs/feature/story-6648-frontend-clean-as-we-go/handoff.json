@@ -107,12 +107,141 @@
 "stimulus": "F221",
 "user_result": "F216"
 }
+],
+"S3": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F143",
+"L3/F144"
+],
+"still_passes_if": "F229",
+"test": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/ConditionPrompt.test.tsx"
+},
+"expected": "F227",
+"stimulus": "F226",
+"user_result": "F228"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F146",
+"L3/F147"
+],
+"still_passes_if": "F233",
+"test": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/useSizingLog.test.tsx"
+},
+"expected": "F231",
+"stimulus": "F230",
+"user_result": "F232"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F148"
+],
+"still_passes_if": "F237",
+"test": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/useCommentAdding.test.tsx"
+},
+"expected": "F235",
+"stimulus": "F234",
+"user_result": "F236"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F149",
+"L3/F150",
+"L3/F151",
+"L3/F152"
+],
+"still_passes_if": "F241",
+"test": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/VotesAndCommentsDialog.test.tsx"
+},
+"expected": "F239",
+"stimulus": "F238",
+"user_result": "F240"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F153"
+],
+"still_passes_if": "F245",
+"test": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/sizingLogWording.test.ts"
+},
+"expected": "F243",
+"stimulus": "F242",
+"user_result": "F244"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F249",
+"test": "docs/feature/story-6648-frontend-clean-as-we-go/measurement/measure-slice.sh"
+},
+"expected": "F247",
+"stimulus": "F246",
+"user_result": "F248"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F253",
+"test": "docs/feature/story-6648-frontend-clean-as-we-go/measurement/check-slice.sh"
+},
+"expected": "F259",
+"stimulus": "F258",
+"user_result": "F252"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F145"
+],
+"still_passes_if": "F257",
+"test": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/useVoteCasting.test.tsx"
+},
+"expected": "F255",
+"stimulus": "F254",
+"user_result": "F256"
+}
 ]
 },
 "counters": {
 "D": 17,
 "E": 5,
-"F": 225,
+"F": 259,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -935,6 +1064,38 @@
 "F223": "A button that counts owners she can edit as not Admin or enables itself while a reason holds it back; both reason tests now turn red under the inverted count.",
 "F224": "Every listed break turns its named test red, including the two that name a kept page test (Cancel at the confirmation; Done clearing the picks, caught by the not-removed report that stays listed and must read zero selected), every production file is restored, and the gate line shows no surviving break once the page file is rewritten.",
 "F225": "A moved test that asserts a value computed by the code under test, or a kept page test rewritten without its Cancel click or its zero-selected assertion after Done; the break lines turn those red.",
+"F226": "A reader asked for the condition of a Yes, if leaves it blank, pastes it padded or cancels",
+"F227": "Vote stays disabled for a blank condition, a padded condition is confirmed trimmed once, Cancel confirms nothing",
+"F228": "Nothing is cast without a usable condition",
+"F229": "Vote enabled for spaces, or the untrimmed draft confirmed",
+"F230": "The open Work Item changes, a reader key arrives, or a read is asked for a Work Item no longer open",
+"F231": "Nothing is read for a Work Item no longer open, a new key alone does not read again and the next read carries it, the open read carries the key",
+"F232": "The log shown is always that of the Work Item now open",
+"F233": "A late read replaces the open log, or a new key triggers a second read",
+"F234": "A comment is refused, or sent by a browser without a name",
+"F235": "The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; the name is asked and the comment sent once under it",
+"F236": "A refused comment keeps its text and can be sent again",
+"F237": "A refusal is swallowed or the comment is sent without asking for a name",
+"F238": "A reader opens the votes and comments of a Work Item with votes, comments, revocations and open questions, and writes a comment",
+"F239": "Only entries with words are listed in log order, open questions marked only where the log says so, counts from the log voters with tooltip; Send disabled for blank and while sending, trimmed text sent, draft kept until onSent",
+"F240": "Everybody reads the same split, names and comments; a comment is never sent twice by the box",
+"F241": "Votes without words listed, marker inverted, counts from the row, Send enabled while sending",
+"F242": "A Work Item's log cannot be read: not found with renamed terms, or any other error",
+"F243": "Not found names the renamed terms; any other error returns its message; one page row keeps the 404 wording",
+"F244": "The reader sees why the log is missing, in their own words",
+"F245": "Every refusal worded as left refinement",
+"F246": "measure-slice.sh S3 alternates 5 before and after pairs",
+"F247": "Exit 0 with file-alone ratio at most 0.60 and combined at most 0.80; observed on the unchanged page file: exit 1, ratios 1.038 and 1.251, assertions_failed=1",
+"F248": "The comments tests run faster per test",
+"F249": "A timeout added instead of making tests smaller",
+"F252": "Lighthouse behaves and looks as before",
+"F253": "A page test dropped without a row",
+"F254": "A reader votes Yes, if",
+"F255": "The vote is held and nothing is cast until its condition is given, then cast once with it as the comment; cancelling casts nothing; a browser without a name is asked the name first",
+"F256": "A Yes, if never counts without its condition",
+"F257": "A Yes, if cast at once",
+"F258": "check-slice.sh S3 derives the before commit's test ids from a Vitest run of its page file and compares the changed files with the before commit",
+"F259": "No production, kit, budget or end-to-end file differs, every removed page test maps to a passing test, no skip or weaker matcher; observed on the unchanged page file: exit 1 with exactly the 17 page tests that are not kept rows",
 "F26": "Input bounds: the brief states none beyond the scope list; fixtures are as small as the rule allows (a removal dialog needs 3 reports at most, the page tests at most 2 picks except the one 4-pick leave-out test, a log of at most 4 entries). No bound is widened beyond the existing tests.",
 "F27": "Every removed or shrunk expect( has a moved-assertions row; test ids lost have a row; deleting a test without mapping its rule is refused by check-slice. A merged test keeps the union of the assertions of the tests it replaces.",
 "F28": "Direct tests drive the public port of the unit: the dialog by its props, the hook by renderHook with its real collaborators (QueryClient, ApiServiceContext with a mocked service), the function by call. They never import a private symbol; lostForGoodWarningOf stays private and is reached by rendering the dialog.",
