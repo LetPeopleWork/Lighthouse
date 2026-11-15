@@ -11,7 +11,8 @@ host_token_file='the file .config/lighthouse-codesign/github-token in your home 
 register_command='docker compose --profile register run --rm register'
 repository_url=https://github.com/LetPeopleWork/Lighthouse
 registration_token_url=https://api.github.com/repos/LetPeopleWork/Lighthouse/actions/runners/registration-token
-runner_name=codesign-runner-linux
+# Registration replaces a runner of the same name, so a second machine or a test run passes its own.
+runner_name="${CODESIGN_RUNNER_NAME:-codesign-runner-linux}"
 runner_labels=linux,codesign
 registration_files=(.runner .credentials .credentials_rsaparams)
 
