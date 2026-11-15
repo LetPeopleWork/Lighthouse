@@ -149,6 +149,150 @@ A classifier keeping the old path, or matching any Domain file, would pass a tex
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+The compiled backend is read for where the Work Item, Team data, blocked, rule, parent-placement and refresh-log services and their ports live, and for copies left under the old service folders
+```
+
+```text
+Every one lives in the Work Items Application layer folder and namespace and none remains under Services; a made-up type left under the old folder is named
+```
+
+```text
+A maintainer sees the Work Items use cases in the Work Items module and none left in the old Services area
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsApplicationLayoutArchUnitTest\.cs
+
+```text
+A service stays under Services in a copy while the right namespace exists is caught; a type in the right namespace but wrong source folder is caught by the file check row, not this one
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The compiled backend and the source folders are read for where the dependency services and their ports live
+```
+
+```text
+They sit in the Application Dependencies sub-folder and namespace, never flat in the Application, and no file of theirs remains elsewhere
+```
+
+```text
+A maintainer finds the dependency decision, reconciler, reporter and rendering together in one dependencies folder
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsApplicationLayoutArchUnitTest\.cs
+
+```text
+A dependency type is flat in the Application and the layout is otherwise right
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The Work Items Application is checked for reaching EF Core, the data layer, the API or module Adapters, on the real code and on a made-up offender with a compliant twin
+```
+
+```text
+The real Application reaches none; the made-up offender is named with what it reached and its twin is not; an Application that holds no type fails
+```
+
+```text
+A maintainer is told if a use case starts to depend on storage or the web layer
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsApplicationLayoutArchUnitTest\.cs
+
+```text
+A reach into Services or another module that is not in the forbidden list is not caught here
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Every architecture rule list and Stryker config of the test project is scanned for a moved type named at its old home
+```
+
+```text
+No full-name string or file path names a moved type under the old Services namespace or folder; a sample old name is found and a new name or a type that stays is not
+```
+
+```text
+A maintainer sees every rule list and mutation config name the services where they now live
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsApplicationLayoutArchUnitTest\.cs
+
+```text
+A list names the new home but drops the type, or a rule is loosened: both-direction comparison stays with the rules own tests
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Refresh, metrics and forecast answers are compared before and after the move
+```
+
+```text
+Identical answers
+```
+
+```text
+Users see the same refresh results, metrics and forecasts
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Behaviour preservation is a completion check on the candidate (RefreshesStayTheSameTest and the answers-compare commands), not an architecture-layout observation
+```
+
+final reviewer and EXAMINE
+
 ## Expectations
 
 ### Rows

@@ -278,6 +278,130 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The compiled backend is read for where the Work Item, Team data, blocked, rule, parent-placement and refresh-log services and their ports live, and for copies left under the old service folders
+</code></pre>
+
+<pre><code>Every one lives in the Work Items Application layer folder and namespace and none remains under Services; a made-up type left under the old folder is named
+</code></pre>
+
+<pre><code>A maintainer sees the Work Items use cases in the Work Items module and none left in the old Services area
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>A service stays under Services in a copy while the right namespace exists is caught; a type in the right namespace but wrong source folder is caught by the file check row, not this one
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The compiled backend and the source folders are read for where the dependency services and their ports live
+</code></pre>
+
+<pre><code>They sit in the Application Dependencies sub-folder and namespace, never flat in the Application, and no file of theirs remains elsewhere
+</code></pre>
+
+<pre><code>A maintainer finds the dependency decision, reconciler, reporter and rendering together in one dependencies folder
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>A dependency type is flat in the Application and the layout is otherwise right
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The Work Items Application is checked for reaching EF Core, the data layer, the API or module Adapters, on the real code and on a made-up offender with a compliant twin
+</code></pre>
+
+<pre><code>The real Application reaches none; the made-up offender is named with what it reached and its twin is not; an Application that holds no type fails
+</code></pre>
+
+<pre><code>A maintainer is told if a use case starts to depend on storage or the web layer
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>A reach into Services or another module that is not in the forbidden list is not caught here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Every architecture rule list and Stryker config of the test project is scanned for a moved type named at its old home
+</code></pre>
+
+<pre><code>No full-name string or file path names a moved type under the old Services namespace or folder; a sample old name is found and a new name or a type that stays is not
+</code></pre>
+
+<pre><code>A maintainer sees every rule list and mutation config name the services where they now live
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>A list names the new home but drops the type, or a rule is loosened: both-direction comparison stays with the rules own tests
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Refresh, metrics and forecast answers are compared before and after the move
+</code></pre>
+
+<pre><code>Identical answers
+</code></pre>
+
+<pre><code>Users see the same refresh results, metrics and forecasts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Behaviour preservation is a completion check on the candidate (RefreshesStayTheSameTest and the answers-compare commands), not an architecture-layout observation
+</code></pre>
+
+<p>final reviewer and EXAMINE</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
