@@ -152,12 +152,12 @@
 "obligations": [
 "L3/F148"
 ],
-"still_passes_if": "F237",
+"still_passes_if": "F263",
 "test": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/useCommentAdding.test.tsx"
 },
-"expected": "F235",
-"stimulus": "F234",
-"user_result": "F236"
+"expected": "F261",
+"stimulus": "F260",
+"user_result": "F262"
 },
 {
 "covers": [
@@ -241,7 +241,7 @@
 "counters": {
 "D": 17,
 "E": 5,
-"F": 259,
+"F": 263,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -1072,10 +1072,6 @@
 "F231": "Nothing is read for a Work Item no longer open, a new key alone does not read again and the next read carries it, the open read carries the key",
 "F232": "The log shown is always that of the Work Item now open",
 "F233": "A late read replaces the open log, or a new key triggers a second read",
-"F234": "A comment is refused, or sent by a browser without a name",
-"F235": "The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; the name is asked and the comment sent once under it",
-"F236": "A refused comment keeps its text and can be sent again",
-"F237": "A refusal is swallowed or the comment is sent without asking for a name",
 "F238": "A reader opens the votes and comments of a Work Item with votes, comments, revocations and open questions, and writes a comment",
 "F239": "Only entries with words are listed in log order, open questions marked only where the log says so, counts from the log voters with tooltip; Send disabled for blank and while sending, trimmed text sent, draft kept until onSent",
 "F240": "Everybody reads the same split, names and comments; a comment is never sent twice by the box",
@@ -1097,6 +1093,10 @@
 "F258": "check-slice.sh S3 derives the before commit's test ids from a Vitest run of its page file and compares the changed files with the before commit",
 "F259": "No production, kit, budget or end-to-end file differs, every removed page test maps to a passing test, no skip or weaker matcher; observed on the unchanged page file: exit 1 with exactly the 17 page tests that are not kept rows",
 "F26": "Input bounds: the brief states none beyond the scope list; fixtures are as small as the rule allows (a removal dialog needs 3 reports at most, the page tests at most 2 picks except the one 4-pick leave-out test, a log of at most 4 entries). No bound is widened beyond the existing tests.",
+"F260": "A comment is refused, sent twice while on its way, or sent by a browser without a name",
+"F261": "The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; a second send of the same Work Item's comment waits for the first answer; the name is asked and the comment sent once under it",
+"F262": "A refused comment keeps its text and a comment is never sent twice",
+"F263": "A refusal is swallowed, a second send goes out, or the comment is sent without asking for a name",
 "F27": "Every removed or shrunk expect( has a moved-assertions row; test ids lost have a row; deleting a test without mapping its rule is refused by check-slice. A merged test keeps the union of the assertions of the tests it replaces.",
 "F28": "Direct tests drive the public port of the unit: the dialog by its props, the hook by renderHook with its real collaborators (QueryClient, ApiServiceContext with a mocked service), the function by call. They never import a private symbol; lostForGoodWarningOf stays private and is reached by rendering the dialog.",
 "F29": "Trunk safety: Story 6535 changes report panels (not these files) and T12 may touch test order; re-read each file at slice start, stop on a conflict, never rebase autonomously.",

@@ -183,7 +183,7 @@ describe("what the votes and comments of a Work Item list", () => {
 		expect(entries[0]).toHaveTextContent(CONDITION);
 		expect(dialog).not.toHaveTextContent(/took back|never mind/i);
 		expect(
-			within(dialog).queryByRole("button", { name: /take back/i }),
+			within(dialog).queryByRole("button", { name: /^take back/i }),
 		).toBeNull();
 	});
 

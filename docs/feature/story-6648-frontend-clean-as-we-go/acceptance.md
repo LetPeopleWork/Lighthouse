@@ -257,15 +257,15 @@ A late read replaces the open log, or a new key triggers a second read
 P2
 
 ```text
-A comment is refused, or sent by a browser without a name
+A comment is refused, sent twice while on its way, or sent by a browser without a name
 ```
 
 ```text
-The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; the name is asked and the comment sent once under it
+The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; a second send of the same Work Item's comment waits for the first answer; the name is asked and the comment sent once under it
 ```
 
 ```text
-A refused comment keeps its text and can be sent again
+A refused comment keeps its text and a comment is never sent twice
 ```
 
 ##### Disposition
@@ -275,7 +275,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/Refinement\/useCommentAdding\.test\.tsx
 
 ```text
-A refusal is swallowed or the comment is sent without asking for a name
+A refusal is swallowed, a second send goes out, or the comment is sent without asking for a name
 ```
 
 ###### Obligations

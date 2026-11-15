@@ -373,13 +373,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>A comment is refused, or sent by a browser without a name
+<pre><code>A comment is refused, sent twice while on its way, or sent by a browser without a name
 </code></pre>
 
-<pre><code>The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; the name is asked and the comment sent once under it
+<pre><code>The refusal reaches onFailure, onSent never runs and the comment is no longer counted as being sent; a second send of the same Work Item&#x27;s comment waits for the first answer; the name is asked and the comment sent once under it
 </code></pre>
 
-<pre><code>A refused comment keeps its text and can be sent again
+<pre><code>A refused comment keeps its text and a comment is never sent twice
 </code></pre>
 
 <h5>Disposition</h5>
@@ -388,7 +388,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/useCommentAdding.test.tsx</p>
 
-<pre><code>A refusal is swallowed or the comment is sent without asking for a name
+<pre><code>A refusal is swallowed, a second send goes out, or the comment is sent without asking for a name
 </code></pre>
 
 <h6>Obligations</h6>
