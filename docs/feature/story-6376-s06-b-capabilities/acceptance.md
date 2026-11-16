@@ -2,7 +2,98 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Read the built backend for the write-back capability by its full name and for the connector base
+```
+
+```text
+The write-back capability exists as an interface declaring the write-back of a connection's field updates with one result per update, and the connector base no longer declares it
+```
+
+```text
+No connector claims to write back merely by being a connector
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackTargetCapabilityArchUnitTest\.cs\:\:WritingBackIsItsOwnCapability\_AndNoLongerAskedOfEveryConnector
+
+```text
+The member kept on both the capability and the base would fail; it still passes if the capability's member had a different parameter name
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Read every concrete connector class in the built backend and which of them take on the write-back capability
+```
+
+```text
+All five connectors are read, and exactly Jira and Azure DevOps take on the capability; CSV, Linear and ServiceNow do not
+```
+
+```text
+Only Jira and Azure DevOps connections are write-back targets
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackTargetCapabilityArchUnitTest\.cs\:\:OnlyJiraAndAzureDevOpsAreWriteBackTargets
+
+```text
+A connector added later that writes back by another means without the capability; that is outside this capability's promise
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Write back two changed field values for a Feature and a Work Item on a CSV connection through the write-back service with the real CSV connector
+```
+
+```text
+Two item results come back, each failed for its own work item and field; neither stored value changes and nothing is saved
+```
+
+```text
+A write-back to a CSV connection fails each update as it does today and stores nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackTargetCapabilityArchUnitTest\.cs\:\:AWriteBackToACsvConnection\_FailsEachUpdateAndStoresNothing
+
+```text
+Linear or ServiceNow write-backs succeeding or being skipped; covered only through their absence from the capability
+```
+
+###### Obligations
+
+
 
 ## Expectations
 

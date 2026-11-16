@@ -1,10 +1,66 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F223",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs::WritingBackIsItsOwnCapability_AndNoLongerAskedOfEveryConnector"
+},
+"expected": "F221",
+"stimulus": "F220",
+"user_result": "F222"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"T1",
+"L3/F156",
+"L3/F157"
+],
+"still_passes_if": "F227",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs::OnlyJiraAndAzureDevOpsAreWriteBackTargets"
+},
+"expected": "F225",
+"stimulus": "F224",
+"user_result": "F226"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F157"
+],
+"still_passes_if": "F231",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs::AWriteBackToACsvConnection_FailsEachUpdateAndStoresNothing"
+},
+"expected": "F229",
+"stimulus": "F228",
+"user_result": "F230"
+}
+]
+},
 "counters": {
 "B": 2,
 "C": 1,
 "D": 9,
 "E": 4,
-"F": 219,
+"F": 231,
 "K": 4,
 "L": 5,
 "N": 4,
@@ -1879,7 +1935,19 @@
 "F217": "A Portfolio refresh reads Features for Jira, Azure DevOps, Linear and CSV; a ServiceNow Portfolio refresh still fails as before and ServiceNow is not reported as reading Portfolio Features; connector-throws-count lists no Feature-reading throw in the ServiceNow folder.",
 "F219": "Only Jira and Azure DevOps report incremental sync, with the same per-connection answer as before; CSV, Linear and ServiceNow Teams and Portfolios take the full refresh as before; connector-throws-count shows 0 for the Csv, Linear and ServiceNow folders, and the ratchet test (backend-tests ConnectorsDeclareNoUnsupportedMembers) passes with only its two genuine entries.",
 "F22": "Connectors stay in Services/Implementation/WorkTrackingConnectors; interfaces stay in Services/Interfaces/WorkTrackingConnectors; the connector leaf rule and WorkTrackingConnectors_DoNotDependOnAnyRepository keep holding; no new package; the new port signatures use only Models kernel types.",
+"F220": "Read the built backend for the write-back capability by its full name and for the connector base",
+"F221": "The write-back capability exists as an interface declaring the write-back of a connection's field updates with one result per update, and the connector base no longer declares it",
+"F222": "No connector claims to write back merely by being a connector",
+"F223": "The member kept on both the capability and the base would fail; it still passes if the capability's member had a different parameter name",
+"F224": "Read every concrete connector class in the built backend and which of them take on the write-back capability",
+"F225": "All five connectors are read, and exactly Jira and Azure DevOps take on the capability; CSV, Linear and ServiceNow do not",
+"F226": "Only Jira and Azure DevOps connections are write-back targets",
+"F227": "A connector added later that writes back by another means without the capability; that is outside this capability's promise",
+"F228": "Write back two changed field values for a Feature and a Work Item on a CSV connection through the write-back service with the real CSV connector",
+"F229": "Two item results come back, each failed for its own work item and field; neither stored value changes and nothing is saved",
 "F23": "Each slice has one new oracle file whose RED is an assertion: the capability interface, found by full name through reflection on the built Lighthouse.Backend assembly, is absent or implemented by the wrong connector types; never a compile error. No nWave tags in test code. Never edit an earlier slice's oracle.",
+"F230": "A write-back to a CSV connection fails each update as it does today and stores nothing",
+"F231": "Linear or ServiceNow write-backs succeeding or being skipped; covered only through their absence from the capability",
 "F24": "Existing capability-by-type idiom with a probe on the capability and is-tests at callers; the new interfaces copy its shape.",
 "F25": "The port stays and is reduced to the members all five connectors serve; replacing or renaming it would touch 9 production and 40 test files for no glossary gain.",
 "F26": "Returns the base; callers type-test. A generic capability lookup would be a second way to do what is does.",
