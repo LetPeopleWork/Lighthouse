@@ -631,3 +631,17 @@ Not verified at DESIGN (each named with the slice that measures it): IL edges (a
   save and usage stay for S03i; the write-back round stays with its publisher.
 - **UI sketch**: N/A, nothing a user sees changes. Loading and failure looks: N/A, no view.
 - **Slice wrap-up**: refactor + review per slice; mutation once at the end on frozen code.
+
+## Wave: DESIGN / [REF] D-2 amended (A3 oracle review, 2026-11-16)
+
+The A3 oracle review found D-2's admission rule too wide. Amended, recommended and taken in AFK mode: a `Models`
+type moves to Tracker integration only if it is (a) not an EF entity, (b) not on the wire, (c) not reached by a kernel
+type, **and (d) not used by any code that stays outside the module** (staying services, controllers, other contexts,
+events consumed elsewhere). Consequences:
+
+- `ConnectionFetchShapeChanged` stays in `Models/Events`: the staying save service publishes it, Work Items handles it.
+- The write-back vocabulary (`WriteBackFieldUpdate`, `WriteBackItemResult`, `WriteBackResult`, `WriteBackValueSources`)
+  stays in the kernel as the connector port's shared vocabulary (port signatures use only kernel types, S06 D-8).
+- `OAuthCompleteResult` stays: `OAuthController` (which stays) reads it from `IOAuthService.CompleteAsync`.
+
+A3's oracle and its membership rule check all four conditions.

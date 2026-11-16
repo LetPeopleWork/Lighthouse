@@ -222,9 +222,9 @@
 ]
 },
 "counters": {
-"D": 10,
+"D": 11,
 "E": 5,
-"F": 205,
+"F": 209,
 "K": 5,
 "P": 4,
 "S": 3,
@@ -371,6 +371,13 @@
 {
 "id": "D10",
 "text": "F44"
+},
+{
+"id": "D11",
+"slices": [
+"S3"
+],
+"text": "F206"
 }
 ],
 "not_applicable": [
@@ -920,8 +927,8 @@
 "S3": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs",
 "public_oracle": {
-"expected": "F103",
-"falsifier": "F104",
+"expected": "F207",
+"falsifier": "F208",
 "promises": [
 "P1",
 "P4"
@@ -933,7 +940,7 @@
 {
 "command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~TrackerIntegrationMembershipArchUnitTest\"",
 "id": "T1",
-"obligation": "F109",
+"obligation": "F209",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs"
 }
 ],
@@ -1013,13 +1020,10 @@
 "F100": "Reading those as regressions",
 "F101": "Coordinate S03d through the lists, each only shrinks",
 "F102": "The maintainer runs the membership test: the D-1 membership list of Tracker integration (102 production types) and its D-2 Models admissions, measured from the compiled IL, compared both ways with the inline list; the inbound and outbound IL edges E5-E8 confirmed.",
-"F103": "Passes on today code; D-2 admits only Models candidates that are not EF entities, not serialized by a controller and not reached by any Models type (expected: the OAuth flow/state/token value types).",
-"F104": "Fails when a listed type is missing from the IL or the list names a type that does not exist (RED first with a made-up name); a Models candidate that is an entity, wire type or reached by a kernel type must not be admitted.",
 "F105": "No production target; the oracle reuses the WorkItemsMembershipArchUnitTest shape (shared reuse).",
 "F106": "No production or support target changes; only the new oracle file is added by the acceptance designer.",
 "F107": "No shared contract touched.",
 "F108": "No code target.",
-"F109": "The Tracker integration membership list equals the measured IL set both ways, and each admitted Models type is neither an EF entity, nor controller-serialized, nor reached by a Models type.",
 "F11": "it selects that tracker's live connector suite (all live suites for a shared path), as it does for the same change under the old path; and the connector-throws-count examine command and the test-time budgets find the module path instead of reporting folder not found",
 "F110": "JIRA/ADO/LINEAR/SERVICENOW regexes also match Modules/TrackerIntegration/Adapters/Connectors/<Tracker>/ (production and tests), Jira also Modules/TrackerIntegration/Domain/ParentSourceSelector.cs; SHARED_REGEX also Adapters/Connectors/(Auth|OAuth)/, Modules/TrackerIntegration/Application/, Modules/TrackerIntegration/Domain/, Adapters/OAuth/.",
 "F111": "Its own copies of the tracker regexes widened identically.",
@@ -1127,6 +1131,10 @@
 "F203": "The Jira connector references the delivery-forecast block renderer, connection health references the concrete verdict repository, the connection save references the fetch fingerprint and the fetch-shape event, and connection health does not reference the Jira connector; the two demo back-fill handlers carry the CSV option name as text and hold no reference to the CSV option names type",
 "F204": "The edges the module rules will list are confirmed from the compiled code, and the CSV edge is known to be a copied constant the compiled code cannot see",
 "F205": "an edge reached only through a type named in a catch clause or an event is not seen",
+"F206": "D-2 Models admission: a Models type moves to Tracker integration only if it is (a) not an EF entity, (b) not on the wire, (c) not reached by a kernel (Models) type, and (d) not used by any code that stays outside the module (staying services, controllers, other contexts, events consumed elsewhere). So ConnectionFetchShapeChanged stays in Models/Events (published by the staying save service, handled by Work Items); WriteBackFieldUpdate, WriteBackItemResult, WriteBackResult and WriteBackValueSources stay in the kernel as the connector port's shared vocabulary (port signatures use only kernel types); OAuthCompleteResult stays, because the staying OAuthController reads it from IOAuthService.CompleteAsync.",
+"F207": "Passes on today code; D-2 admits only Models candidates that are not EF entities, not on the wire, not reached by any Models type and not used by any code that stays outside the module (expected admitted: the OAuth flow/state/token value types; staying: ConnectionFetchShapeChanged, the WriteBack vocabulary, OAuthCompleteResult).",
+"F208": "Fails when a listed type is missing from the IL or the list names a type that does not exist (RED first with a made-up name); a Models candidate that is an entity, a wire type, reached by a kernel type or used by staying code outside the module must not be admitted.",
+"F209": "The Tracker integration membership list equals the measured IL set both ways, and each admitted Models type is neither an EF entity, nor on the wire, nor reached by a Models type, nor used by any type that stays outside the module.",
 "F21": "Any behaviour a user sees: nothing changes; UI sketch and loading/failure looks are N/A.",
 "F22": "Rigor thorough for feature A: crafter, acceptance designer and architect on opus; reviewers sonnet; EXAMINE on sonnet.",
 "F23": "Push per slice, CI watched per push; rebase allowed when trunk moved (maintainer, 2026-11-16).",

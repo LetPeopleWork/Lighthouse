@@ -68,6 +68,13 @@ Paradigm object_oriented (CLAUDE.md, repository). The rule carriers are the exis
 Rigor thorough for feature A (crafter, acceptance designer, architect on opus; reviewers and EXAMINE on sonnet); push per slice with CI watched; rebase allowed when trunk moved.
 ```
 
+#### D11
+
+```text
+D-2 Models admission: a Models type moves to Tracker integration only if it is (a) not an EF entity, (b) not on the wire, (c) not reached by a kernel (Models) type, and (d) not used by any code that stays outside the module (staying services, controllers, other contexts, events consumed elsewhere). So ConnectionFetchShapeChanged stays in Models/Events (published by the staying save service, handled by Work Items); WriteBackFieldUpdate, WriteBackItemResult, WriteBackResult and WriteBackValueSources stay in the kernel as the connector port's shared vocabulary (port signatures use only kernel types); OAuthCompleteResult stays, because the staying OAuthController reads it from IOAuthService.CompleteAsync.
+```
+Governed slices: S3
+
 ### Constraints
 
 #### K1
@@ -1390,11 +1397,11 @@ The maintainer runs the membership test: the D-1 membership list of Tracker inte
 ```
 
 ```text
-Passes on today code; D-2 admits only Models candidates that are not EF entities, not serialized by a controller and not reached by any Models type (expected: the OAuth flow/state/token value types).
+Passes on today code; D-2 admits only Models candidates that are not EF entities, not on the wire, not reached by any Models type and not used by any code that stays outside the module (expected admitted: the OAuth flow/state/token value types; staying: ConnectionFetchShapeChanged, the WriteBack vocabulary, OAuthCompleteResult).
 ```
 
 ```text
-Fails when a listed type is missing from the IL or the list names a type that does not exist (RED first with a made-up name); a Models candidate that is an entity, wire type or reached by a kernel type must not be admitted.
+Fails when a listed type is missing from the IL or the list names a type that does not exist (RED first with a made-up name); a Models candidate that is an entity, a wire type, reached by a kernel type or used by staying code outside the module must not be admitted.
 ```
 
 ##### Promises
@@ -1504,7 +1511,7 @@ None.
 ###### T1
 
 ```text
-The Tracker integration membership list equals the measured IL set both ways, and each admitted Models type is neither an EF entity, nor controller-serialized, nor reached by a Models type.
+The Tracker integration membership list equals the measured IL set both ways, and each admitted Models type is neither an EF entity, nor on the wire, nor reached by a Models type, nor used by any type that stays outside the module.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationMembershipArchUnitTest\.cs
