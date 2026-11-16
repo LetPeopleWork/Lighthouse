@@ -1,6 +1,6 @@
 # ADR-139: Incremental sync is a per-connection capability on `IWorkTrackingConnector`, not a connector type
 
-**Status**: Accepted
+**Status**: Accepted. Amended by ADR-285 (2026-11-16)
 **Date**: 2026-08-08
 **Feature**: `epic-5687-faster-updates` (ADO Epic #5687 "Faster Updates")
 **Decider**: Morgan (Solution Architect), DESIGN application layer, interaction mode = PROPOSE
@@ -124,3 +124,11 @@ either way.
   [ADR-015](./adr-015-work-item-state-transition-placement.md).
 - Per-connector capability matrix (Jira / ADO / ServiceNow / Linear / CSV):
   `docs/feature/epic-5687-faster-updates/feature-delta.md` → Connector Capability Matrix.
+
+## Note, 2026-11-16 (amended by ADR-285)
+
+Jira Data Center sweeps too, since its pagination probe passed; Cloud and Data Center no longer answer differently.
+The remaining runtime case is "deployment not yet known": Jira's probe says no while the connection's deployment has
+not yet been learned in this process. The probe now lives on the incremental-sync capability, `IIncrementalSource`,
+which only Jira and Azure DevOps implement; CSV, Linear and ServiceNow no longer carry sweep members that throw. See
+[ADR-285](./adr-285-connector-capabilities-are-interfaces-and-per-connection-variance-is-a-probe-on-the-capability.md).

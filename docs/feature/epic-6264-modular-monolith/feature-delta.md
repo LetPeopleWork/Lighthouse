@@ -616,7 +616,7 @@ Anyone opening the repo can see the nine bounded contexts, what each one owns an
 | 4 | Files calling `GetAllByPredicate` outside persistence adapters | brief 12 → **14** (52 calls; 2026-10-22 counted a comment) → **15** at landing (Epic 6350 added `ReportOwnerLookup`) | **0**, then `protected` | S05a guard list length | S05a–g |
 | 5 | `API` types depending on `IRepository<>` / `I*Repository` | brief 5 → ≈20 → **23** (20 controllers + 3 API helpers, verified 2026-10-27) | **0** | S05a sibling-rule list length | S05c–e, S12* |
 | 6 | Production `S107` suppressions | brief 18 → **17** (8 API + 9 others; StubOAuthProvider is S1075) | **0** | `grep -rln "disable S107" --include=*.cs Lighthouse.Backend/Lighthouse.Backend` | S07*, S12* |
-| 7 | Connector `NotSupportedException` from members of implemented interfaces | brief 5 (CSV) → **20** (CSV 6, Linear 6, ServiceNow 8) | **0** | `grep -rn "throw new NotSupportedException" …/WorkTrackingConnectors/{Csv,Linear,ServiceNow}` | S06 |
+| 7 | Connector `NotSupportedException` from members of implemented interfaces | brief 5 (CSV) → **20** (CSV 6, Linear 6, ServiceNow 8) → **0** in the CSV, Linear and ServiceNow folders (2026-11-16, Story 6376; 2 genuine runtime cases stay in Jira and Azure DevOps, listed by `ConnectorsDeclareNoUnsupportedMembersArchUnitTest`) | **0** | `grep -rn "throw new NotSupportedException" …/WorkTrackingConnectors/{Csv,Linear,ServiceNow}` | S06 |
 | 8 | Frontend import-boundary violations | **16** (survey) → **21 file pairs in 16 files**, guarded by FE1 since 2026-10-29 (Fallow, 2026-10-29; FE1 lists importing-file → imported-file pairs, not files or import statements) | **0** | FE1 allow-list length | FE1, FE2, FE3 |
 | 9 | `useContext(ApiServiceContext)` production consumers | **75** files | **0** (per-module ports) | `grep -rln "useContext(ApiServiceContext)" src \| grep -v test \| wc -l` | FE4 |
 | 10 | Production files where "Project" means Portfolio | **≈21** (survey) | **0** (documented exceptions excluded) | grep per FE6 AC | FE6 |
@@ -903,6 +903,16 @@ item changes the plan for the others.
   - Lesson: oracle scripts that name a before commit by SHA break on the first rebase; name it by commit subject.
   - Lesson for EXAMINE: a test-only story needs its mapping notes and breaks reachable through a public examine command (`feature-proof` only knows the `s<N>_compare_ids.py` layout), otherwise every expectation ends as an observation gap.
   - Lesson: StrykerJS's initial run can time out a page test under heavy machine load; rerun with lower `--concurrency` before suspecting the test.
+
+### 2026-11-16 — S06 #6376 Connector capability interfaces — Delivered
+- Commits: `2bfe80bc4` (pick-up) `..7feabab6f` (mutation record), in two nwdes features: A the ratchet and the rename, B the capabilities · workspaces: `docs/feature/story-6376-s06-connector-capability-interfaces/` (design), `story-6376-s06-a-ratchet-and-rename`, `story-6376-s06-b-capabilities` · record: `docs/evolution/story-6376-s06-connector-capability-interfaces/evolution.md` · ADR-285 (amends ADR-139).
+- Ratchet: `ConnectorsDeclareNoUnsupportedMembersArchUnitTest` reads the compiled code of every connector-port type and fails on any method that creates a `NotSupportedException` unless listed; list 22 → **2** genuine cases (Jira's sweep before the deployment is known, Azure DevOps' unknown authorization header). The base port keeps 6 members all five connectors serve; `IWriteBackTarget` (Jira, Azure DevOps), `IFeatureSource` (Jira, Azure DevOps, Linear, CSV), `IIncrementalSource` with its per-connection probe (Jira, Azure DevOps).
+- KPIs re-measured: KPI 7 20 → **0** in the CSV, Linear and ServiceNow folders (`connector-throws-count`). KPI 10's backend part: `GetFeaturesForProject` is now `GetFeaturesForPortfolio`. KPI 12: the lines this Story changed, 3 of 3 killable mutants killed; the whole files score below 80 % on old code.
+- Changes the plan:
+  - One incremental capability, not one per level (maintainer): Epic 6474 makes Teams and Portfolios units, and the port must not fix a two-level shape that Epic undoes.
+  - The S06 brief's "Jira Cloud vs Data Center" is outdated: Data Center sweeps too, and the runtime case is "deployment not yet known".
+  - Lesson: Stryker.NET cannot mutate a guard that declares a pattern variable (`is not IIncrementalSource source`); it reports CompileError and tests none. Hand-mutate such guards. Doing so found that no test checked the probe was honoured, older than this Story; three service-port tests now do.
+  - Later, not this Story: the S07a pick-ups (Portfolio parameters still named `project` in `WorkItemService`, two oracle files to move), the port leaks for S03a/S09a (`IBoardInformationProvider`'s implementation types, the factory's split namespaces), a read refusal with a user sentence for a ServiceNow Portfolio, `SupportsDeliveryForecastPublishing`.
 
 ## Wave: DISCUSS / [REF] Split into improvement Epics (2026-11-03)
 

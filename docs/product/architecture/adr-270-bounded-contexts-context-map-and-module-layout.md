@@ -464,7 +464,7 @@ class, table or wire field. The glossary lists only terms that matter or drift.
 | Unit | A group of people or a board that owns work on a level | `Team`, `Portfolio` | Target word; today two unrelated types |
 | Team (leaf unit) | The unit that generates throughput; the only one with forecasting inputs | `Team` | Name open; the role is fixed |
 | Portfolio | Today's unit above the Team. Users model with it a product with release tracking, an ART or a value stream | `Portfolio` | **Overloaded** (three meanings). Becomes a unit on a non-leaf level |
-| Project | No meaning of its own: an old name for Portfolio | `GetFeaturesForProject`, `UpdateForecastForProject`, `ModifyProjectSettings`, the `/projects` suggestion routes, the wire field `Feature.projects`, the variable `project` in `PortfolioUpdater` | **Drift**: rename to Portfolio (the connector port rename is planned with the connector-capability Story) |
+| Project | No meaning of its own: an old name for Portfolio | `UpdateForecastForProject`, `ModifyProjectSettings`, the `/projects` suggestion routes, the wire field `Feature.projects`, the variable `project` in `PortfolioUpdater` | **Drift**: rename to Portfolio. The connector port is renamed (`GetFeaturesForPortfolio`, Story 6376) |
 | Mapping | Which tracker types, states and fields count as Work Item, Feature, In Progress, Done, blocked, and the parent source order | Team, Portfolio and connection settings | Today split over three places |
 | Parent sources | The ordered list of places a record's parent is read from, one to five entries. Each entry is the tracker's own parent or an Additional Field, which on Jira may name a link type. The first entry that yields a parent wins; the tracker's own parent is read only when it is in the list (ADR-279) | `ParentSources`, `ParentSourcesForTeams`, `ParentSourcesForPortfolios` | The source column and the wire members keep the old name: `ParentOverrideSource`, `parentOverride*` |
 | Connection mapping | The mapping of one connection: per level, its item types and later its parent sources, dependencies and shared defaults | none | Target only; first step in Epic 6474 (ADR-274) |
@@ -481,6 +481,7 @@ class, table or wire field. The glossary lists only terms that matter or drift.
 | Parent source | One place a connector can read a parent from: the tracker's own parent, a field, or on Jira a link type. Read per record and ordered by the shared selector | `ParentSourceEntry`, `ParentReading`, `ParentSourceSelector` | |
 | Connection stopped working | One fact about the connection, whatever the cause | health verdict per refresh, `UnreadableSecretException` | Target event |
 | Read refusal | A tracker read that failed, carrying the sentence the user reads, and never an empty answer | `WorkTrackingReadException`, `JiraReadException`, `AzureDevOpsReadException` | |
+| Capability | What a connector can do for a connection: read Features, sweep, write back. A connector that cannot do something does not offer it; where the answer depends on the connection, the capability asks the connection (ADR-285) | `IFeatureSource`, `IIncrementalSource` (its probe `SupportsIncrementalSync`), `IWriteBackTarget` | |
 
 ### Work Items
 

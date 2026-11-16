@@ -11499,3 +11499,61 @@ Team-refresh metrics scenarios, the order pin, the module rules, the Flow metric
 
 ADR-270 (Decision 1 Work Items row, "Every edge", "Edges measured by packaging Work Items", ratchet candidates 1, 4
 and 7, Decision 6, gate change 5), ADR-268 (ratchet convention), ADR-276 (one refresh per unit, Epic 6474).
+
+## Application Architecture — story-6376 s06 connector capability interfaces
+
+Feature: S06 Connector capability interfaces, Story 6376, Epic 6508. Waves: DESIGN to DELIVER and finalize. Date:
+2026-11-16. Paradigm: OOP, behaviour-free refactoring. Workspaces:
+`docs/feature/story-6376-s06-connector-capability-interfaces/` (design), `story-6376-s06-a-ratchet-and-rename`,
+`story-6376-s06-b-capabilities`. Decision record: ADR-285 (amends ADR-139).
+
+### Shape (as shipped)
+
+The connector port of Tracker integration, in `Services/Interfaces/WorkTrackingConnectors`, one file per interface.
+Before, `IWorkTrackingConnector` had 16 members and CSV, Linear and ServiceNow threw `NotSupportedException` from 20
+of them. Now the base port holds the 6 members every connector serves, and each thing some connector cannot do is a
+capability interface.
+
+| Interface | Members | Jira | Azure DevOps | Linear | ServiceNow | CSV |
+|---|---|:-:|:-:|:-:|:-:|:-:|
+| `IWorkTrackingConnector` | transition-history probe, predefined fields, full Team read, three validations | yes | yes | yes | yes | yes |
+| `IFeatureSource` | `GetFeaturesForPortfolio`, `GetParentFeaturesDetails` | yes | yes | yes | — | yes |
+| `IIncrementalSource` | probe `SupportsIncrementalSync(connection)`, Team, Portfolio and parent-Feature sweeps, Team and Portfolio fetches by id | yes | yes | — | — | — |
+| `IWriteBackTarget` | `WriteFieldsToWorkItems` | yes | yes | — | — | — |
+
+The per-system markers (`IJira…`, `IAzureDevOps…`, `ILinear…`, `IServiceNow…WorkTrackingConnector`) list their
+capabilities; CSV declares `IFeatureSource` on its class. `Program.cs` and the factory are unchanged. Jira's probe says
+no while the connection's deployment is not yet known in this process (no longer Cloud versus Data Center: Data
+Center sweeps too); Azure DevOps says yes. Incremental sync is one capability, not one per level, because Epic 6474
+makes Teams and Portfolios units. `GetFeaturesForProject` is renamed `GetFeaturesForPortfolio`.
+
+### Caller rule
+
+Callers test the type: `WorkItemService` sweeps only when `connector is IIncrementalSource` and its probe says yes for
+the connection (Team, Portfolio and parent-Feature scans), and reads Features through `FeatureSourceFor`, which asks
+for `IFeatureSource`. `WriteBackService.WriteUpdates` asks for `IWriteBackTarget`. A missing capability fails where
+the old throw did, with the log-only sentence "… is not supported for {system}". Validation and Promises callers are
+unchanged.
+
+### Ratchet
+
+`ConnectorsDeclareNoUnsupportedMembersArchUnitTest` (with `ConnectorUnsupportedMembers`, Mono.Cecil) reads every type
+that implements a connector-port interface and fails on any method whose code creates a `NotSupportedException`, a
+type derived from it included, and on lambdas, local functions and async bodies counted against the method that
+wrote them. The inline list went from 22 entries to 2: the 20 of CSV, Linear and ServiceNow are gone, and 2 genuine
+cases stay: Jira
+`SweepIdentities` (deployment not yet known) and Azure DevOps `ConvertAuthorizationHeaderToVssCredentials` (unknown
+authorization scheme). Made-up connectors prove each case. Capability oracles: `WriteBackTargetCapabilityArchUnitTest`,
+`FeatureSourceCapabilityArchUnitTest`, `IncrementalSourceCapabilityTest`, `ConnectorPortSpeaksPortfolioArchUnitTest`.
+Examiner command: `connector-throws-count` (Csv 0, Linear 0, ServiceNow 0).
+
+### Left
+
+A wrapper around connectors must forward the capability interfaces, or refreshes fall back to the full path (ADR-285,
+consequences). `IBoardInformationProvider` takes types from the implementation namespace, and the factory interface
+and class sit in different namespaces: both for S03a and S09a.
+
+### ADR references
+
+ADR-285 (new), ADR-139 (amended), ADR-138 (two-phase sync), ADR-268 (ratchet convention), ADR-270 (Tracker
+integration glossary: Capability; the Project drift row).

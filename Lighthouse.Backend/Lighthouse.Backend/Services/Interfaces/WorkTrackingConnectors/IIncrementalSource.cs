@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
     {
         /// <summary>
         /// Whether this connection can answer a sweep now. Asked per connection rather than per connector, because
-        /// Jira Cloud and Jira Data Center are one connector and do not answer the same way.
+        /// one Jira connector serves Cloud and Data Center and cannot sweep a site until it knows which one it is.
         /// </summary>
         bool SupportsIncrementalSync(WorkTrackingSystemConnection connection);
 
