@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // the Jira connector.
         private const string JiraLatestApiMarker = "api/latest/";
 
-
         // The production project has hundreds of source files. Far fewer means the scan is reading the
         // wrong directory and would pass on anything.
         private const int FewestSourceFilesAPlausibleScanReads = 100;
