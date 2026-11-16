@@ -1036,7 +1036,7 @@ Backend paths under `Lighthouse.Backend/Lighthouse.Backend/`; frontend under `Li
 | `LicenseGuardAttribute` | `Services/Implementation/Licensing/LicenseGuardAttribute.cs` | MODIFY (count per level through `IUnitReader`) | 13a |
 | RBAC scope resolution | `Services/Implementation/Authorization/RbacAdministrationService.cs` | MODIFY (scope type → level; unchanged wire values) | 13a |
 | Reports, snapshots owners | `Services/Implementation/Reports/*`, snapshot recording handlers | MODIFY (address the unit) | 13b |
-| `UnitUpdater`, step strategies, `UnitRefreshEligibility` | `Services/Implementation/BackgroundServices/Update/` | CREATE; `TeamUpdater`/`PortfolioUpdater` become facades | 12a, 12b |
+| `UnitUpdater`, step strategies, `UnitRefreshEligibility` | `Services/Implementation/BackgroundServices/Update/` *(amended 2026-11-16: `Modules/WorkItems`; see "Amendment after S03b" at the end of this file)* | CREATE; `TeamUpdater`/`PortfolioUpdater` become facades | 12a, 12b |
 | Event handlers (`UnitCreated…`, `UnitDeleted…`, `LevelItemTypesChanged…`, `LevelSwitched…`) | `Services/Implementation/DomainEvents/`, `…/Update/` | CREATE; `TeamDeleted*` handlers re-subscribe | 03, 08, 15 |
 | `LeafCapacity` + store (Forecasting) | `Models/Forecast/`, `Services/…/Forecast/` | CREATE | 07 |
 | `DefaultSizeGuess` (Work Items), `ForecastInputFingerprint` (Forecasting) | `Models/`, matching services | CREATE | 10 |
@@ -1949,3 +1949,31 @@ for any number of levels, so the Story no longer waits for #6455. Start Delay le
 DELIVER.
 
 Slices are now 17. Delivery order: as in "Final slice list", with 16 right after 12.
+
+### Amendment after S03b: `UnitUpdater` goes in `Modules/WorkItems` (maintainer, 2026-11-15; recorded 2026-11-16)
+
+S03b Package Work Items (#6360), the second prerequisite, is delivered. Its DESIGN hold (2026-11-15) decided that the
+Team and Portfolio refresh pipelines stay in the update code for now and that this Epic's slice 12 builds the one
+refresh per unit in the Work Items module. This amends the component table above (the `UnitUpdater` row):
+
+- Create `UnitUpdater`, its step strategies and `UnitRefreshEligibility` in `Modules/WorkItems/Adapters/Background`
+  (the hosted updater) and `Modules/WorkItems/Application` (the steps and the eligibility rule), not in
+  `Services/Implementation/BackgroundServices/Update/`. ADR-276's facades `ITeamUpdater` and `IPortfolioUpdater` stay
+  in the update folder.
+- Do the steps that cross into another context as domain events there: today `PortfolioUpdater` recomputes and
+  resyncs Deliveries and triggers the forecast updater directly (ADR-270 ratchet candidate 4). Moving the updaters in
+  S03b would have made Work Items reach Promises and Forecasting until this slice, so S03b left them.
+- The seams the slices write into, after S03b:
+
+  | Slice | Seam |
+  |---|---|
+  | 04 (a unit reads its subset of types) | the fetch shape inside `Modules.WorkItems.Application.WorkItemService` and `Modules.WorkItems.Domain.FetchFingerprint` |
+  | 10 (`DefaultSizeGuess`) | `WorkItemService`'s default-size guess and its two Flow metrics queries, listed in Work Items' outbound list; building `DefaultSizeGuess` is the natural place to remove them |
+  | 12 (one refresh per unit) | `ITeamDataService` and `IWorkItemService` in `Modules.WorkItems.Application`, called by the updaters |
+  | 03 (`UnitDeleted`) | `TeamDeletedRefreshLogCleanupHandler` in `Modules/WorkItems/Application/Policies` re-subscribes in place |
+  | 08, 15 (`LevelItemTypesChanged`, `LevelSwitched*`) | new handlers next to `ConnectionFetchShapeChangedUpdateTriggerHandler` in `Application/Policies` |
+
+- A Team's metrics are now updated by a Flow metrics handler of `TeamDataRefreshed`, registered first among that
+  event's handlers and pinned in `DomainEventHandlerOrderPinTest`. Slice 12's event-order test must keep it first.
+
+Record: `docs/evolution/2026-11-16-story-6360-s03b-package-work-items/evolution.md`.

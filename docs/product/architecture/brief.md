@@ -11400,3 +11400,102 @@ again), `architecture-rules`, `ef-model-unchanged`, `backend-tests`. Log categor
 
 ADR-270 (Decision 1 Forecasting row, "Every edge", "Edges measured by packaging Forecasting", Decision 6, gate
 changes 3 to 5), ADR-268 (ratchet convention).
+
+## Application Architecture — story-6360 s03b package work items
+
+Feature: S03b Package Work Items, Epic 6510. Waves: DESIGN to DELIVER and finalize. Dates: 2026-11-15 to 2026-11-16.
+Paradigm: OOP, behaviour-free refactoring apart from one accepted change of a failure path. Workspaces:
+`docs/feature/story-6360-s03b-package-work-items/` (design), `story-6360-s03b-a-rules-first`, `story-6360-s03b-b-move`,
+`story-6360-s03b-c-edge-and-rules`.
+
+### Module layout (as shipped)
+
+Root `Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/`, inside the one assembly. Namespace = folder.
+
+| Layer (namespace under `Lighthouse.Backend.Modules.WorkItems`) | Files | What it holds |
+|---|---:|---|
+| `Domain` | 2 | `SyncModeResolver`, `FetchFingerprint`. Pure; the kernel and the .NET base library only |
+| `Domain.Dependencies` | 4 | `DependencyHonourPolicy` and its port and input types, `DependencyCycleDetector`, `DependencyFacts` |
+| `Application` | 14 | `IWorkItemService` and `WorkItemService` (moved whole), `ITeamDataService` and `TeamDataService`, `IBlockedItemService` and `BlockedItemService`, `IRefreshLogService` and `RefreshLogService`, `IRuleEvaluator<T>` and `RuleEvaluator<T>` with `IRuleFieldProvider<T>` and the Work Item and Feature field providers, `ParentPlacementReport` |
+| `Application.Dependencies` | 9 | The dependency decision, reconciler, refresh reporter and rendering, `IWhatTheForecastWaitsFor` and `WhatTheForecastWaitsFor`, with their ports |
+| `Application.Policies` | 6 | The blocked-transition capture and close handlers for Work Items and Features, the refresh-log clean-up on Team deletion, the update trigger on a changed fetch shape. Registration order unchanged |
+
+The rule evaluator sits in `Application`, not `Domain`: its public `Match` signature takes `IRuleFieldProvider<T>`, an
+Application port, and the Domain rule rejects it.
+
+Unit tests mirror it: `Lighthouse.Backend.Tests/Modules/WorkItems/{Domain (8), Application (17), Application/Policies
+(4)}`, 29 files, each class in the namespace of its folder; `WorkItemsUnitTestPlacementTest` keeps them there.
+
+Outside the module, unchanged: the entities, rule types, parent and dependency value types and events in `Models`, the
+DTOs in `Models` and `API/DTO`, the Team, Portfolio, Features and Feature list controllers (`API`), `TeamUpdater` and
+`PortfolioUpdater` in the update code (Epic 6474 slice 12 replaces them with one `UnitUpdater` in this module), the
+three source selectors the connectors call (`ParentSourceSelector`, `DependencySourceSelector`,
+`DependencyFieldReferences`, for Tracker integration), and the orphan clean-up pair (it reaches the database context
+directly). No schema change.
+
+### The edge to Flow metrics
+
+Work Items no longer commands Flow metrics. Before, `TeamDataService` saved the items, called
+`ITeamMetricsService.UpdateTeamMetrics` and then published `TeamDataRefreshed`. Now it saves the items and publishes
+the event; a Flow metrics handler, `TeamDataRefreshedTeamMetricsUpdateHandler` in
+`Modules/FlowMetrics/Application/Policies`, loads the Team and calls the same `UpdateTeamMetrics`. It is registered
+first among the `TeamDataRefreshed` handlers, so the forecast trigger and the snapshot recorders still read fresh
+metrics; `DomainEventHandlerOrderPinTest` fails on a swapped registration.
+
+| Path | Before | After |
+|---|---|---|
+| Success | metrics updated, then every reaction | the same; metrics, refresh and forecast answers compared identical |
+| Metrics save fails | the refresh fails; no reaction runs | the dispatcher logs the handler error; the refresh is reported and logged as succeeded; `UpdateTime` and `FeatureWIP` keep their old values, so the Team is due again; the other reactions run in order; the cache was already dropped, so no stale metrics are read |
+
+The maintainer accepted the new failure path on 2026-11-16, after a Quint model of the reactions showed it
+(`docs/feature/story-6360-s03b-c-edge-and-rules/models/team_refresh_reactions.qnt`). A port scenario,
+`TeamMetricsFollowTheTeamRefreshTest`, pins both paths.
+
+Left: `WorkItemService` queries `IPortfolioMetricsService` and `PercentileCalculator` for the default-size guess
+(listed; Epic 6474 slice 10 or S07a), and `UpdateTeamMetrics` saves through Work Items' `IWorkItemRepository` (S07b).
+
+Rejected: a port owned by Work Items for the update (still a command, only renamed); a ratchet only (leaves the
+command); turning the Portfolio refresh's calls into Promises and Forecasting into events now (ADR-276 owns that, with
+an event-order test); moving the updaters into the module (two cycles listed until slice 12 removes them); moving the
+selectors in (connectors may not reach Work Items).
+
+### Rule shapes
+
+Every rule reads the compiled IL through `IlDependencies` and calls the shared `ModuleRules` with Work Items'
+namespaces and its own `ModuleWording`; every list is inline and compared both ways (ADR-268), with made-up types that
+prove a newcomer and a stale entry fail and a compliant twin passes.
+
+| Rule | Shape | Baseline |
+|---|---|---|
+| Layout | Each named type lives in its layer namespace, none left under `Services` | the type lists |
+| Domain outbound | `Domain` → kernel and base library only | empty |
+| Domain inbound | Outside → `Domain` only from the list | 3: `Program`, `ConnectionSaveService`, `WorkTrackingSystemOptionsOwnerExtensions` |
+| Application inbound | Outside → `Application` only from `API`, `Program`, Flow metrics, Forecasting, Refinement, or the list | 7: `TeamUpdater`, `PortfolioUpdater`, `UpdateNotificationHub`, `DeliveryRuleService`, `FeatureListService`, `FeatureListRead`, `RefreshLogSeeder` |
+| Application outbound | No EF Core, `Data`, `API` or module `Adapters` | empty |
+| Application → Flow metrics | Only through the list | 2: `WorkItemService` → `IPortfolioMetricsService`, `PercentileCalculator` |
+| Application → Access, Licensing, Organisation set-up, update queue | Only through the list | 6 (the design expected 4): the licence, RBAC, `UpdateCancellationContext`, `IFeatureOrdering`, `ILighthouseClock`, `IAppSettingService`. Organisation set-up has no namespace yet, so the settings and the clock beside `IFeatureOrdering` are listed too |
+| Policies | `Application.Policies` holds only domain-event handlers | the six handlers |
+| Leaf | No connector reaches a Work Items type | empty |
+| Flow metrics R4 | `TeamDataService` no longer a caller | 4 (was 5) |
+| Test placement | Each Work Items unit-test file sits in its layer folder, its classes in the folder's namespace | the file list |
+
+The rules widened before the move (`ModuleBoundariesArchUnitTest`'s Work Items pattern, the single dependency
+decision, the calendar-day anchor seam and the others keyed on Work Items' paths or names) see both the old and the
+module namespaces; `WorkItemsMembershipArchUnitTest` fixes the membership measured from the IL.
+
+### Behaviour-free proof
+
+`RefreshesStayTheSameTest` refreshes a CSV-backed Team and Portfolio at the service port and compares items,
+transitions, blocked periods, parent placements and events with values written out in the test. Public commands for
+the examiner: `refresh-answers-compare` (297 refresh answers over 9 scenarios identical), `refresh-reactions-show` and
+`refresh-reactions-compare` (the Work Items reactions fire, identical before and after), `metrics-answers-compare`
+(366 answers and 3 snapshot tables identical), `forecast-answers-compare` (128 identical), `workitems-edge-show` (the
+Team-refresh metrics scenarios, the order pin, the module rules, the Flow metrics list and the placement test),
+`architecture-rules`, `ef-model-unchanged`, `backend-tests`. Log categories change with the namespace to
+`Lighthouse.Backend.Modules.WorkItems.*`; no configuration names the old ones. The CI test selection follows
+`FetchFingerprint` to its new path.
+
+### ADR references
+
+ADR-270 (Decision 1 Work Items row, "Every edge", "Edges measured by packaging Work Items", ratchet candidates 1, 4
+and 7, Decision 6, gate change 5), ADR-268 (ratchet convention), ADR-276 (one refresh per unit, Epic 6474).
