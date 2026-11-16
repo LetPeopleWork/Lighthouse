@@ -1,0 +1,2858 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: story-6376-s06-b-capabilities</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Capability set (D-1 b, confirmed; supersedes the by-level split and the names IIncrementalWorkItemSource and IIncrementalFeatureSource). Base IWorkTrackingConnector keeps SupportsTransitionHistory, GetPredefinedAdditionalFields, GetWorkItemsForTeam(team, ct), ValidateConnection, ValidateTeamSettings, ValidatePortfolioSettings (all five connectors). IWriteBackTarget: WriteFieldsToWorkItems (Jira, Azure DevOps). IFeatureSource: GetFeaturesForPortfolio(portfolio, ct), GetParentFeaturesDetails (Jira, Azure DevOps, Linear, CSV). IIncrementalSource: SupportsIncrementalSync(connection), SweepWorkItemsForTeam, GetWorkItemsForTeam(team, ids, ct), SweepFeaturesForPortfolio, GetFeaturesForPortfolio(portfolio, ids, ct), SweepParentFeatures (Jira, Azure DevOps). One file per interface in Services/Interfaces/WorkTrackingConnectors, namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors. IIncrementalSource does not inherit IFeatureSource: the Portfolio refresh already holds its IFeatureSource and tests IIncrementalSource on the same connector, so no level or second capability is baked into the port Epic 6474 will make unit-generic. Markers: IJiraWorkTrackingConnector and IAzureDevOpsWorkTrackingConnector list all three; ILinearWorkTrackingConnector lists IFeatureSource; IServiceNowWorkTrackingConnector lists none; CsvWorkTrackingConnector declares IFeatureSource itself. Jira and Azure DevOps connector classes are unchanged; Program.cs registrations unchanged.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D2</h4>
+
+<pre><code>Static versus runtime (D-2, confirmed): the type says what a connector can ever do; the probe SupportsIncrementalSync, moved from the base onto IIncrementalSource with the same name and meaning, says what it can do for this connection now. Jira answers false while its deployment is not yet known in this process (its process-wide deployment cache, unchanged), Azure DevOps answers true. SupportsTransitionHistory stays on the base: it gates no member. Jira SweepIdentities keeps its NotSupportedException as the assertion that a caller honoured the probe and keeps its ratchet entry.
+</code></pre>
+<p>Governed slices: S3</p>
+
+<h4>D3</h4>
+
+<pre><code>Caller side (D-5, confirmed): IWorkTrackingConnectorFactory.GetWorkTrackingConnector keeps returning IWorkTrackingConnector; callers test the type with is, the idiom DeliverySourceResolver and DeliveryForecastPublishingService already use; no generic capability lookup on the factory. A missing capability fails where the member threw: WriteBackService throws NotSupportedException(Write-back is not supported for {system}.) inside the existing per-batch try, so each update becomes a failed WriteBackItemResult as today; WorkItemService throws NotSupportedException naming the connection&#x27;s system at the Portfolio Feature read, before any write, so the refresh outcome is the same. The message text is log-only today and is outside the preserved observation. Scans use connector is IIncrementalSource source and source.SupportsIncrementalSync(connection), else the same IdentityScan fallback, and their by-id fetches go through that same source.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D4</h4>
+
+<pre><code>Carriers and owners: no new data carrier, record or state. Decision carrier = the connector&#x27;s compiled type (capability interfaces) plus the bool probe, owned by Services/Interfaces/WorkTrackingConnectors (Tracker integration). Effect carriers unchanged: WriteBackResult and WriteBackItemResult (Models.WriteBack) for write-back, IdentityScan (private record in WorkItemService) for the sync path. Error carrier: NotSupportedException, log-only on both paths. Per-process state: Jira&#x27;s deployment cache in JiraWorkTrackingConnector, unchanged. Models (domain) untouched.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D5</h4>
+
+<pre><code>Cross-layer algebra. Domain: none affected. Application: WorkItemService route per (connector type, request, deployment known) in {SweepPath, FullPath} for Team, Portfolio and parent scans and {Served, FailsNotSupported} for Feature reads; WriteBackService per-update result in {Served, FailsNotSupported}. Adapter: the set of capability interfaces each of the five connector types implements, and the probe on IIncrementalSource. Infrastructure and recovery: none affected (no persistence, retry or timeout change).
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D6</h4>
+
+<pre><code>Formal verification: Quint for the route-equivalence state model (connectors, requests and Jira&#x27;s unknown-to-known deployment transition as state), verified with quint verify on Apalache and discriminated by four behavioural mutants; the executable projection is each slice&#x27;s reflection oracle plus the existing WorkItemServiceTest, FasterUpdatesAcceptanceTest and WriteBackServiceTest. No Agda: no proof obligation beyond the finite 5 x 6 x 2 table. No TLA+/TLC: no temporal claim. Liveness is not applicable: every changed decision is a synchronous pure choice inside one call; the only state transition (deployment unknown to known) is unchanged code with no progress promise added. No property-based test: the domain is closed and finite, so finite reflection cases pin it row by row.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D7</h4>
+
+<pre><code>Ratchet: Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs (Listed) is a crafter target in every slice, never an oracle or support; the approved ConnectorsDeclareNoUnsupportedMembersArchUnitTest checks it both ways, so each slice removes exactly the entries its deleted throws leave: 22 to 19 (S1), 17 (S2), 2 (S3: Jira SweepIdentities and Azure DevOps ConvertAuthorizationHeaderToVssCredentials).
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D8</h4>
+
+<pre><code>Test migration (D-10, confirmed): Moq set-ups of moved members go to mock.As&lt;Capability&gt;() before .Object is first read; compile errors find every one. Tests asserting a removed throw are deleted in the slice that removes the member (ServiceNowWorkTrackingConnectorTest write-back case in S1; its Feature-read cases and ConnectorsWithoutDependenciesTest GetFeaturesForPortfolio_ServiceNowStillRefusesToReturnFeaturesAtAll in S2). As&lt;&gt;-only and deletion-only test edits are waived from improve the tests you touch. Out of scope, confirmed: other Supports* flags (D-4), rename (delivered in feature A), ADR-285, ADR-139 note, ADR-270 glossary and ARCHITECTURE.md written at finalize (D-9), packaging (S03a).
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D9</h4>
+
+<pre><code>OO smell targeted: Refused Bequest (RPP L6, Liskov and interface segregation): CSV, Linear and ServiceNow claim members they refuse. The cure is segregated capability interfaces, not a guard. No prefactoring move is needed: the rename that makes the split mechanical shipped in feature A.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Behaviour-free: no schema, route, DTO, serialized response, UI, event, registration or Program.cs change; the same sync path per connector and connection, the same validation verdicts (ServiceNow keeps portfolio_not_supported), the same per-update write-back results and the same Portfolio refresh outcome.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K2</h4>
+
+<pre><code>No stored or validated input changes, so no input bound, range or size applies; the closed domain is the five connector types, six request kinds and Jira deployment known or not.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K3</h4>
+
+<pre><code>Connectors stay in Services/Implementation/WorkTrackingConnectors; interfaces stay in Services/Interfaces/WorkTrackingConnectors; the connector leaf rule and WorkTrackingConnectors_DoNotDependOnAnyRepository keep holding; no new package; the new port signatures use only Models kernel types.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K4</h4>
+
+<pre><code>Each slice has one new oracle file whose RED is an assertion: the capability interface, found by full name through reflection on the built Lighthouse.Backend assembly, is absent or implemented by the wrong connector types; never a compile error. No nWave tags in test code. Never edit an earlier slice&#x27;s oracle.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h3>Reuse</h3>
+
+<p>IDeliveryForecastPublisher</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IDeliveryForecastPublisher.cs:11</p>
+
+<p>Reuse</p>
+
+<pre><code>Existing capability-by-type idiom with a probe on the capability and is-tests at callers; the new interfaces copy its shape.
+</code></pre>
+
+<p>IWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>The port stays and is reduced to the members all five connectors serve; replacing or renaming it would touch 9 production and 40 test files for no glossary gain.
+</code></pre>
+
+<p>GetWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/IWorkTrackingConnectorFactory.cs:8</p>
+
+<p>Reuse</p>
+
+<pre><code>Returns the base; callers type-test. A generic capability lookup would be a second way to do what is does.
+</code></pre>
+
+<p>Listed</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:20</p>
+
+<p>Extend</p>
+
+<pre><code>The ratchet list feature A shipped; each slice shrinks it, never loosens it.
+</code></pre>
+
+<p>WorkTrackingReadException</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/WorkTrackingReadException.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Considered for the absent Feature read and not used there: it would show a refresh reason the user does not see today. Left unchanged.
+</code></pre>
+
+<h3>Impact</h3>
+
+<p>factory</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/WorkTrackingConnectorFactory.cs:17</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Returns the concrete connector as the base type; capabilities stay visible to is-tests.
+</code></pre>
+
+<p>composition-root</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1491</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Registrations by marker; the markers carry the capabilities.
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs:46</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Type-tests an unchanged capability interface; DeliverySourcesController and DeliveryForecastPublishingService likewise.
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Validation and predefined-field callers (TeamsController, PortfoliosController, the two connection controllers, ConnectionHealthService) use base members only.
+</code></pre>
+
+<p>architecture-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:105</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>New interfaces sit in the same namespace; the leaf rule keeps holding.
+</code></pre>
+
+<p>architecture-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs:17</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Approved oracle of feature A; its inline list file changes, its bytes do not.
+</code></pre>
+
+<p>client-surface</p>
+
+<p>Lighthouse.Frontend/package.json:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No wire change: frontend, E2E, Lighthouse-Clients and package manifests untouched.
+</code></pre>
+
+<h3>Agreement</h3>
+
+<p>Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs:24</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Implements every capability through its marker; members unchanged.
+</code></pre>
+
+<p>Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs:32</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Implements every capability through its marker; members unchanged.
+</code></pre>
+
+<p>Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:18</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Implements IFeatureSource only; throwing members deleted.
+</code></pre>
+
+<p>Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:15</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Declares IFeatureSource; throwing members deleted.
+</code></pre>
+
+<p>Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:18</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Implements the base only; throwing members deleted.
+</code></pre>
+
+<p>Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:327</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Type-tests IFeatureSource and IIncrementalSource in the same commits as the producers.
+</code></pre>
+
+<p>Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:157</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Type-tests IWriteBackTarget in the same commit as the producers.
+</code></pre>
+
+<p>Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs:46</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Uses base members and unchanged capability interfaces only; so do the validation callers.
+</code></pre>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Producers and consumers of the connector port ship in one deployable and change in the same commit; the slice oracles and existing service tests cover them.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>Application services IWorkItemService (Team and Portfolio refresh) and IWriteBackService (write-back); capability facts are observed on compiled types through reflection
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>IWorkTrackingConnectorFactory returning IWorkTrackingConnector
+</code></pre>
+
+<pre><code>Capability interfaces IWriteBackTarget, IFeatureSource, IIncrementalSource in Services/Interfaces/WorkTrackingConnectors
+</code></pre>
+
+<pre><code>Application services depend on the port namespace; connectors implement it and stay a leaf: no connector reaches Modules.WorkItems or a repository
+</code></pre>
+
+<h4>Failures</h4>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<pre><code>Reflection over the built Lighthouse.Backend assembly: which concrete connector types implement a capability interface found by full name, and which members the base and the capability declare
+</code></pre>
+
+<p>set of type full names and member signatures</p>
+
+<pre><code>whether a member body throws (the ratchet covers it) or whether a caller tests the type (behaviour tests cover it)
+</code></pre>
+
+<pre><code>Ratchet: connector methods whose IL creates a NotSupportedException, compared both ways with the inline list
+</code></pre>
+
+<p>set of Type.Method(ParameterTypes)</p>
+
+<pre><code>an exception constructed in another type and thrown from a connector
+</code></pre>
+
+<pre><code>Behaviour through IWorkItemService and IWriteBackService: sweep or full path chosen per connector and connection; per-update write-back result; Portfolio refresh failing before any write
+</code></pre>
+
+<p>path choice, WriteBackResult, refresh exception</p>
+
+<pre><code>the log-only exception sentence
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>route</p>
+
+<pre><code>Two implementations agree when, for every connector type, request kind and Jira deployment-known value, they choose the same outcome among Served, FailsNotSupported, SweepPath and FullPath; exception text is not observed.
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>For every connector type, request kind and deployment-known value, the type-tested route after the split equals the flag-and-throw route before it
+</code></pre>
+
+<p>Refinement</p>
+
+<p>Application</p>
+
+<p>WorkItemService</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>write-back: Jira, Azure DevOps served; CSV, Linear, ServiceNow fail each update
+</code></pre>
+
+<pre><code>Portfolio and parent Feature read: Jira, Azure DevOps, Linear, CSV served; ServiceNow fails
+</code></pre>
+
+<pre><code>Team, Portfolio, parent scan: Azure DevOps sweep; Jira sweep only when deployment known; CSV, Linear, ServiceNow full path
+</code></pre>
+
+<pre><code>Closed 5 x 6 x 2 domain; quint verify covers it exhaustively and slice oracles pin it row by row
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6376-s06-b-capabilities/models/capability_routing.qnt</p>
+
+<h4>L2</h4>
+
+<pre><code>No connector type creates a NotSupportedException from a member of an interface it implements, apart from the two listed genuine cases
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>ConnectorUnsupportedMembers</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>after S1: 19 listed
+</code></pre>
+
+<pre><code>after S2: 17 listed
+</code></pre>
+
+<pre><code>after S3: 2 listed
+</code></pre>
+
+<pre><code>Finite set of compiled connector methods, decided exactly by the IL ratchet
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<pre><code>Jira Data Center cannot sweep; incremental sync varies by Cloud versus Data Center
+</code></pre>
+
+<pre><code>Law scope: the probe varies by whether the deployment is known in this process, not by deployment kind
+</code></pre>
+
+<pre><code>A Data Center connection whose deployment was learned earlier answers SupportsIncrementalSync true (JiraIncrementalSyncTest SupportsIncrementalSync_IsTrueForDataCenterOnceTheDeploymentIsKnown)
+</code></pre>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>A connector type that implements a capability interface serves every member of it without NotSupportedException; a connector that cannot do something does not implement the interface
+</code></pre>
+
+<pre><code>A refresh or write-back routed to a member that only refuses, behind a type that claims it
+</code></pre>
+
+<p>Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors</p>
+
+<pre><code>WorkTrackingSystems value of a connection
+</code></pre>
+
+<p>WorkTrackingConnectorFactory.GetWorkTrackingConnector</p>
+
+<p>WorkItemService, WriteBackService</p>
+
+<pre><code>Reflection oracle per slice plus the IL ratchet
+</code></pre>
+
+<pre><code>A decorator or proxy wrapping a connector hides its capabilities (safe: falls back to full path or failure); Moq mocks (compile errors force As&lt;&gt;); a NotSupportedException constructed elsewhere and thrown here (ratchet blind; review and the KPI 7 grep cover it); reflection or casts by other code
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Jira and Azure DevOps implement IWriteBackTarget, IFeatureSource, IIncrementalSource; Linear and CSV implement IFeatureSource only; ServiceNow implements the base only
+</code></pre>
+
+<p>None.</p>
+
+<p>Admitted</p>
+
+<pre><code>Jira implements IIncrementalSource and its probe answers false while the deployment is unknown
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>CSV, Linear or ServiceNow implementing IWriteBackTarget or IIncrementalSource; ServiceNow implementing IFeatureSource; any capability member that throws NotSupportedException outside the two listed cases
+</code></pre>
+
+<p>None.</p>
+
+<p>Unknown</p>
+
+<pre><code>A future wrapper around a connector that does not forward capability interfaces
+</code></pre>
+
+<p>S03a-S09a</p>
+
+<h3>Models</h3>
+
+<p>Quint</p>
+
+<p>docs/feature/story-6376-s06-b-capabilities/models/capability_routing.qnt</p>
+
+<h5>Properties</h5>
+
+<p>sameRoute</p>
+
+<p>Invariant</p>
+
+<pre><code>newRoute equals oldRoute in every reachable state
+</code></pre>
+
+<p>WorkItemService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:327</p>
+
+<p>sweepOnlyThroughCapability</p>
+
+<p>Invariant</p>
+
+<pre><code>A sweep path is chosen only for an IIncrementalSource
+</code></pre>
+
+<p>IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs:1</p>
+
+<p>noThrowFromClaimedMember</p>
+
+<p>Invariant</p>
+
+<pre><code>Write-back and Feature reads are served whenever the connector implements their capability
+</code></pre>
+
+<p>WriteBackService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:157</p>
+
+<h5>Atoms</h5>
+
+<p>State</p>
+
+<p>jiraDeploymentKnown</p>
+
+<p>JiraWorkTrackingConnector.SupportsIncrementalSync</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs:131</p>
+
+<pre><code>Process-wide cache read inside one probe call; unchanged code
+</code></pre>
+
+<p>Action</p>
+
+<p>step</p>
+
+<p>WorkItemService.UpdateFeaturesForPortfolio</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1139</p>
+
+<pre><code>One refresh or write-back call asks one connector; the route is a pure choice inside it
+</code></pre>
+
+<p>Constant</p>
+
+<p>isIncrementalSource</p>
+
+<p>IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs:1</p>
+
+<p>None.</p>
+
+<h5>Assumptions</h5>
+
+<pre><code>Connector types and capability sets are closed at compile time
+</code></pre>
+
+<pre><code>Jira deployment knowledge only grows within a process
+</code></pre>
+
+<pre><code>Exception text is not observed
+</code></pre>
+
+<h5>Mutants</h5>
+
+<h6>N1</h6>
+
+<pre><code>Linear made an IIncrementalSource
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>sameRoute</p>
+
+<h6>N2</h6>
+
+<pre><code>Scan routes on the type alone, dropping the per-connection probe
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>sameRoute</p>
+
+<h6>N3</h6>
+
+<pre><code>ServiceNow made an IFeatureSource
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>sameRoute</p>
+
+<h6>N4</h6>
+
+<pre><code>CSV made an IWriteBackTarget
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>sameRoute</p>
+
+<h3>Closure</h3>
+
+<pre><code>route equivalence and capability set
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>quint verify of sameRoute, sweepOnlyThroughCapability, noThrowFromClaimedMember at max-steps 4, exit 0; four mutants killed by quint run
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6376-s06-b-capabilities/models/capability_routing.receipts.txt</p>
+
+<pre><code>sweep path through IIncrementalSource
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>quint run found a reachable SweepPath state (Azure DevOps, or Jira once known); the real Jira and Azure DevOps connectors already serve every member
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6376-s06-b-capabilities/models/capability_routing.receipts.txt</p>
+
+<pre><code>capability reaches the application service
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>WorkTrackingConnectorFactory.GetWorkTrackingConnector -&gt; is-test in WorkItemService and WriteBackService -&gt; IWorkItemService and IWriteBackService; acyclic, no new constructor
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: capability is static per type (a connector can do X only for some connections)
+</code></pre>
+
+<pre><code>No member throws for a claimed capability
+</code></pre>
+
+<pre><code>The capability gains a Supports probe as IIncrementalSource has
+</code></pre>
+
+<pre><code>A throw from a claimed member
+</code></pre>
+
+<pre><code>Pattern documented in ADR-285 at finalize; the ratchet catches a throw
+</code></pre>
+
+<p>whoever adds the capability</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: Jira&#x27;s deployment is known
+</code></pre>
+
+<pre><code>Full path as today
+</code></pre>
+
+<pre><code>Probe false
+</code></pre>
+
+<pre><code>A half sweep
+</code></pre>
+
+<pre><code>Jira SweepIdentities stays listed with its reason
+</code></pre>
+
+<p>JiraWorkTrackingConnector</p>
+
+<h4>Y3</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>Negates: the factory hands out the concrete connector
+</code></pre>
+
+<pre><code>Correct results
+</code></pre>
+
+<pre><code>A wrapper hides capabilities: Teams fall back to the full path, write-back fails
+</code></pre>
+
+<pre><code>A wrong sweep result
+</code></pre>
+
+<pre><code>A future wrapper must forward the capability interfaces
+</code></pre>
+
+<p>S03a-S09a</p>
+
+<h4>Y4</h4>
+
+<p>Bypass</p>
+
+<pre><code>A NotSupportedException constructed in another type and thrown from a connector
+</code></pre>
+
+<pre><code>Ratchet still reads construction sites
+</code></pre>
+
+<pre><code>Not reported by the ratchet
+</code></pre>
+
+<pre><code>Silent acceptance in review
+</code></pre>
+
+<pre><code>Accepted gap; review and the connector-throws-count EXAMINE command cover it
+</code></pre>
+
+<p>reviewer</p>
+
+<h4>Y5</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: every ServiceNow Portfolio is validated before refresh (direct API save)
+</code></pre>
+
+<pre><code>Refresh fails as today
+</code></pre>
+
+<pre><code>Success false with no reason
+</code></pre>
+
+<pre><code>A partial write
+</code></pre>
+
+<pre><code>A read refusal with a user sentence is a later behaviour change
+</code></pre>
+
+<p>maintainer</p>
+
+<h4>Y6</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set, walkthrough only: two refreshes of one connection at once; a Jira instance switching Data Center to Cloud while running; a stale test build
+</code></pre>
+
+<pre><code>No new shared state; probe reads the same cache; IL rules read the built assembly
+</code></pre>
+
+<pre><code>Same answers as today
+</code></pre>
+
+<pre><code>A route differing from today
+</code></pre>
+
+<pre><code>none found
+</code></pre>
+
+<p>architect</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWriteBackTarget.cs</p>
+
+<p>Create</p>
+
+<pre><code>New capability interface
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WriteFieldsToWorkItems leaves the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Marker lists IWriteBackTarget
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Marker lists IWriteBackTarget
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Throwing WriteFieldsToWorkItems deleted
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Throwing WriteFieldsToWorkItems deleted
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Throwing WriteFieldsToWorkItems deleted
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Type test for IWriteBackTarget inside the existing try
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Remove the three WriteFieldsToWorkItems entries (22 to 19)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Delete the case asserting the removed write-back throw
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move WriteFieldsToWorkItems mock set-ups to As&lt;IWriteBackTarget&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move WriteFieldsToWorkItems mock set-ups to As&lt;IWriteBackTarget&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move WriteFieldsToWorkItems mock set-ups to As&lt;IWriteBackTarget&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move WriteFieldsToWorkItems mock set-ups to As&lt;IWriteBackTarget&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move WriteFieldsToWorkItems mock set-ups to As&lt;IWriteBackTarget&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move WriteFieldsToWorkItems mock set-ups to As&lt;IWriteBackTarget&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move WriteFieldsToWorkItems mock set-ups to As&lt;IWriteBackTarget&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~WriteBackTargetCapabilityArchUnitTest&quot;
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~ConnectorsDeclareNoUnsupportedMembersArchUnitTest|FullyQualifiedName~WriteBackServiceTest|FullyQualifiedName~WriteBackSuppressionWarningTest|FullyQualifiedName~QuietWriteBackAcceptanceTest|FullyQualifiedName~ServiceNowWorkTrackingConnectorTest&quot;
+dotnet build Lighthouse.Backend/Lighthouse.sln
+dotnet test Lighthouse.Backend/Lighthouse.sln --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Load the built Lighthouse.Backend assembly, resolve Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.IWriteBackTarget by full name and enumerate every concrete class implementing IWorkTrackingConnector; then drive IWriteBackService.WriteFieldsToWorkItems for a CSV connection whose connector factory returns the real CsvWorkTrackingConnector, with two field updates
+</code></pre>
+
+<pre><code>The interface exists and declares Task&lt;WriteBackResult&gt; WriteFieldsToWorkItems(WorkTrackingSystemConnection, IReadOnlyList&lt;WriteBackFieldUpdate&gt;); IWorkTrackingConnector no longer declares it; the concrete connectors implementing it are exactly JiraWorkTrackingConnector and AzureDevOpsWorkTrackingConnector; the CSV write-back returns one failed item result per update and stores no written value
+</code></pre>
+
+<pre><code>Today the full-name lookup finds no type, so the oracle fails on an assertion; a set still holding CSV, Linear or ServiceNow, or missing Jira or Azure DevOps, fails; a WriteBackService that skips or succeeds the CSV updates instead of failing each one fails the behaviour case
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>IWriteBackTarget</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:76</p>
+
+<p>CreateNew</p>
+
+<pre><code>No existing capability owns write-back; the member moves off the base into its own interface, shaped like IDeliveryForecastPublisher
+</code></pre>
+
+<p>WriteFieldsToWorkItems</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:157</p>
+
+<p>Extend</p>
+
+<pre><code>The one write-back caller; its try already turns a connector failure into failed item results
+</code></pre>
+
+<p>IWriteBackTarget</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWriteBackTarget.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New capability interface; no existing interface owns this capability
+</code></pre>
+
+<p>IJiraWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>IAzureDevOpsWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>CsvWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>LinearWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>ServiceNowWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>ServiceNowWorkTrackingConnectorTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>WriteBackServiceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>WriteBackSuppressionWarningTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>QuietWriteBackAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>FasterUpdatesAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>Slice00OneForecastPerBatchScenarios</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>TaskManagerHarness</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>ConnectionFieldChangeAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWriteBackTarget.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New interface
+</code></pre>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:76</p>
+
+<p>Changed</p>
+
+<pre><code>Member removed
+</code></pre>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:6</p>
+
+<p>Changed</p>
+
+<pre><code>Marker base list
+</code></pre>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:3</p>
+
+<p>Changed</p>
+
+<pre><code>Marker base list
+</code></pre>
+
+<p>adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:551</p>
+
+<p>Changed</p>
+
+<pre><code>Member deleted
+</code></pre>
+
+<p>adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:902</p>
+
+<p>Changed</p>
+
+<pre><code>Member deleted
+</code></pre>
+
+<p>adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:979</p>
+
+<p>Changed</p>
+
+<pre><code>Member deleted
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:157</p>
+
+<p>Migrated</p>
+
+<pre><code>Type test
+</code></pre>
+
+<p>test-list</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:20</p>
+
+<p>Changed</p>
+
+<pre><code>Three entries removed
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs:26</p>
+
+<p>Migrated</p>
+
+<pre><code>Mocks move to As&lt;IWriteBackTarget&gt;(); same for the other listed mock files
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>No preserving move precedes the behaviour: the rename that makes the split mechanical shipped in feature A, and the slice itself is a behaviour-free type move proven by the existing service tests.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>Application services IWorkItemService and IWriteBackService; capability facts observed on compiled types through reflection
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>IWorkTrackingConnectorFactory returning IWorkTrackingConnector, tested for the slice capability
+</code></pre>
+
+<pre><code>Application services depend on the port namespace; connectors implement it and stay a leaf
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>####### B1</p>
+
+<pre><code>Write-back to a connection whose connector is not an IWriteBackTarget
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>One failed WriteBackItemResult per update, logged; nothing stored
+</code></pre>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L3</h6>
+
+<pre><code>The set of concrete connector types implementing IWriteBackTarget equals {Jira, Azure DevOps}, and a write-back to any other connection fails each update
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>IWriteBackTarget</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Jira, Azure DevOps implement it
+</code></pre>
+
+<pre><code>CSV, Linear, ServiceNow do not, and their write-back fails each update
+</code></pre>
+
+<pre><code>Five closed connector types
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>Every concrete type, present or added later, implementing IWriteBackTarget is JiraWorkTrackingConnector or AzureDevOpsWorkTrackingConnector, and both implement it
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~WriteBackTargetCapabilityArchUnitTest&quot;
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IFeatureSource.cs</p>
+
+<p>Create</p>
+
+<pre><code>New capability interface
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>GetFeaturesForPortfolio(portfolio, ct) and GetParentFeaturesDetails leave the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Marker lists IFeatureSource
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Marker lists IFeatureSource
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/ILinearWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Marker lists IFeatureSource
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Class declares IFeatureSource
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Two throwing Feature-read members deleted
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Resolve IFeatureSource at the Portfolio Feature read and parent reads; absent fails at the same point
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Remove the two ServiceNow Feature-read entries (19 to 17)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Delete the cases asserting the removed Feature-read throws
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Delete GetFeaturesForPortfolio_ServiceNowStillRefusesToReturnFeaturesAtAll
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move Feature-read mock set-ups to As&lt;IFeatureSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~FeatureSourceCapabilityArchUnitTest&quot;
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~ConnectorsDeclareNoUnsupportedMembersArchUnitTest|FullyQualifiedName~WorkItemServiceTest|FullyQualifiedName~FasterUpdatesAcceptanceTest|FullyQualifiedName~ServiceNowWorkTrackingConnectorTest|FullyQualifiedName~ConnectorsWithoutDependenciesTest&quot;
+dotnet build Lighthouse.Backend/Lighthouse.sln
+dotnet test Lighthouse.Backend/Lighthouse.sln --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Load the built Lighthouse.Backend assembly, resolve Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.IFeatureSource by full name and enumerate every concrete class implementing IWorkTrackingConnector; then drive IWorkItemService.UpdateFeaturesForPortfolio for a Portfolio on a ServiceNow connection whose connector factory returns the real ServiceNowWorkTrackingConnector
+</code></pre>
+
+<pre><code>The interface exists and declares GetFeaturesForPortfolio(Portfolio, CancellationToken) and GetParentFeaturesDetails(Portfolio, IEnumerable&lt;string&gt;, CancellationToken); IWorkTrackingConnector no longer declares either; the concrete connectors implementing it are exactly Jira, Azure DevOps, Linear and CSV; the ServiceNow Portfolio refresh ends in a NotSupportedException and leaves the Portfolio&#x27;s Features unchanged
+</code></pre>
+
+<pre><code>Today the full-name lookup finds no type, so the oracle fails on an assertion; ServiceNow in the set, or any of the four missing, fails; a refresh that completes with an empty Feature list for ServiceNow instead of failing fails the behaviour case
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>IFeatureSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:40</p>
+
+<p>CreateNew</p>
+
+<pre><code>No existing capability owns Portfolio Feature reading; IDeliverySourceProvider reads Delivery sources, a different question
+</code></pre>
+
+<p>FetchEveryFeature</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:970</p>
+
+<p>Extend</p>
+
+<pre><code>The Portfolio Feature read site; resolving the capability there keeps the failure point and outcome
+</code></pre>
+
+<p>IFeatureSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IFeatureSource.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New capability interface; no existing interface owns this capability
+</code></pre>
+
+<p>IJiraWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>IAzureDevOpsWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>ILinearWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/ILinearWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>CsvWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>ServiceNowWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>ServiceNowWorkTrackingConnectorTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>ConnectorsWithoutDependenciesTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>PortfolioBlockedHistoryAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>ManualSortingAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>FasterUpdatesAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>DependenciesAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>Slice00OneForecastPerBatchScenarios</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>BehaviourSettingsAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>TaskManagerHarness</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>ConnectionFieldChangeAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>ConnectionDefaultsAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>FastWithManyFeaturesAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>WorkItemServiceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>WorkItemServiceFeatureTransitionIntegrationTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IFeatureSource.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New interface
+</code></pre>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:40</p>
+
+<p>Changed</p>
+
+<pre><code>Two members removed
+</code></pre>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/ILinearWorkTrackingConnector.cs:3</p>
+
+<p>Changed</p>
+
+<pre><code>Marker base list; Jira and Azure DevOps markers likewise
+</code></pre>
+
+<p>adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:15</p>
+
+<p>Changed</p>
+
+<pre><code>Declares IFeatureSource
+</code></pre>
+
+<p>adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:758</p>
+
+<p>Changed</p>
+
+<pre><code>Two members deleted
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:972</p>
+
+<p>Migrated</p>
+
+<pre><code>Type test at the Feature read and the parent reads
+</code></pre>
+
+<p>test-list</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:20</p>
+
+<p>Changed</p>
+
+<pre><code>Two entries removed
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mocks move to As&lt;IFeatureSource&gt;(); same for the other listed mock files
+</code></pre>
+
+<p>port-or-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Capability list or members change in this slice
+</code></pre>
+
+<p>port-or-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Capability list or members change in this slice
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>No preserving move precedes the behaviour: the rename that makes the split mechanical shipped in feature A, and the slice itself is a behaviour-free type move proven by the existing service tests.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>Application services IWorkItemService and IWriteBackService; capability facts observed on compiled types through reflection
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>IWorkTrackingConnectorFactory returning IWorkTrackingConnector, tested for the slice capability
+</code></pre>
+
+<pre><code>Application services depend on the port namespace; connectors implement it and stay a leaf
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>####### B2</p>
+
+<pre><code>Portfolio refresh on a connection whose connector is not an IFeatureSource
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>UpdateFeaturesForPortfolio ends in NotSupportedException before any write; the updater records Success false with no reason, as today
+</code></pre>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L4</h6>
+
+<pre><code>The set of concrete connector types implementing IFeatureSource equals {Jira, Azure DevOps, Linear, CSV}, and a ServiceNow Portfolio refresh fails before any write
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>IFeatureSource</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Jira, Azure DevOps, Linear, CSV implement it
+</code></pre>
+
+<pre><code>ServiceNow does not; its Portfolio refresh fails and its validation still answers portfolio_not_supported
+</code></pre>
+
+<pre><code>Five closed connector types
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T2</h6>
+
+<pre><code>Every concrete type, present or added later, implementing IFeatureSource is Jira, Azure DevOps, Linear or CSV connector, all four implement it, and ServiceNow does not
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~FeatureSourceCapabilityArchUnitTest&quot;
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs</p>
+
+<p>Create</p>
+
+<pre><code>New capability interface with the per-connection probe
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Probe, three sweeps and two by-id fetches leave the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Marker lists IIncrementalSource
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Marker lists IIncrementalSource
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Five throwing members and the probe deleted
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Five throwing members and the probe deleted
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Five throwing members, the probe and the misnamed unavailable-reading message deleted
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Three scan sites type-test IIncrementalSource plus its probe; by-id fetches use the same source
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Remove the fifteen sweep and by-id entries (17 to 2)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move probe, sweep and by-id mock set-ups to As&lt;IIncrementalSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move probe, sweep and by-id mock set-ups to As&lt;IIncrementalSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move probe, sweep and by-id mock set-ups to As&lt;IIncrementalSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move probe, sweep and by-id mock set-ups to As&lt;IIncrementalSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move probe, sweep and by-id mock set-ups to As&lt;IIncrementalSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move probe, sweep and by-id mock set-ups to As&lt;IIncrementalSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Move probe, sweep and by-id mock set-ups to As&lt;IIncrementalSource&gt;() where the mock is of the base
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~IncrementalSourceCapabilityTest&quot;
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~ConnectorsDeclareNoUnsupportedMembersArchUnitTest|FullyQualifiedName~WorkItemServiceTest|FullyQualifiedName~FasterUpdatesAcceptanceTest|FullyQualifiedName~JiraIncrementalSyncTest&quot;
+dotnet build Lighthouse.Backend/Lighthouse.sln
+dotnet test Lighthouse.Backend/Lighthouse.sln --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Load the built Lighthouse.Backend assembly and resolve Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.IIncrementalSource by full name; enumerate every concrete class implementing IWorkTrackingConnector; through the interface&#x27;s SupportsIncrementalSync method (invoked by reflection), ask a real Jira connector built with a stubbed HTTP handler as JiraIncrementalSyncTest does, once for a site this process already reached and once for a site address no test has reached, and a real Azure DevOps connector
+</code></pre>
+
+<pre><code>The interface exists and declares SupportsIncrementalSync(WorkTrackingSystemConnection), SweepWorkItemsForTeam, GetWorkItemsForTeam(Team, IReadOnlyCollection&lt;string&gt;, CancellationToken), SweepFeaturesForPortfolio, GetFeaturesForPortfolio(Portfolio, IReadOnlyCollection&lt;string&gt;, CancellationToken) and SweepParentFeatures; IWorkTrackingConnector declares exactly SupportsTransitionHistory, GetPredefinedAdditionalFields, GetWorkItemsForTeam(Team, CancellationToken), ValidateConnection, ValidateTeamSettings, ValidatePortfolioSettings; the implementing concrete connectors are exactly Jira and Azure DevOps; CSV, Linear and ServiceNow are not of the type; the probe answers true for the reached Jira site, false for the unreached one, true for Azure DevOps
+</code></pre>
+
+<pre><code>Today the full-name lookup finds no type, so the oracle fails on an assertion; any of CSV, Linear, ServiceNow in the set, or Jira or Azure DevOps missing, fails; a probe dropped or made constant true fails the unreached-Jira case; a base still declaring a sweep or by-id member fails
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>SupportsIncrementalSync</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:21</p>
+
+<p>Extend</p>
+
+<pre><code>Same name and meaning, moved onto the capability that it qualifies
+</code></pre>
+
+<p>IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:38</p>
+
+<p>CreateNew</p>
+
+<pre><code>No existing capability owns sweeping; one interface for all levels because Epic 6474 makes fetching unit-generic
+</code></pre>
+
+<p>IdentityScan</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:327</p>
+
+<p>Extend</p>
+
+<pre><code>The three scan sites keep their fallback; only the condition changes
+</code></pre>
+
+<p>IIncrementalSource</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New capability interface; no existing interface owns this capability
+</code></pre>
+
+<p>IJiraWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>IAzureDevOpsWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>CsvWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>LinearWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>ServiceNowWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this capability membership; extended rather than replaced
+</code></pre>
+
+<p>FasterUpdatesAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>Slice00OneForecastPerBatchScenarios</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>DeliverySourcesAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>TaskManagerHarness</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>ConnectionFieldChangeAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>ConnectionDefaultsAcceptanceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<p>WorkItemServiceTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New interface
+</code></pre>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:21</p>
+
+<p>Changed</p>
+
+<pre><code>Six members removed; six remain
+</code></pre>
+
+<p>port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:6</p>
+
+<p>Changed</p>
+
+<pre><code>Marker base list; Azure DevOps likewise
+</code></pre>
+
+<p>adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:30</p>
+
+<p>Changed</p>
+
+<pre><code>Members and message deleted; CSV and Linear likewise
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1139</p>
+
+<p>Migrated</p>
+
+<pre><code>Type test plus probe at lines 327, 1139, 1423; by-id fetches at 381, 1186
+</code></pre>
+
+<p>test-list</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:20</p>
+
+<p>Changed</p>
+
+<pre><code>Fifteen entries removed; two genuine remain
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mocks move to As&lt;IIncrementalSource&gt;(); same for the other listed mock files
+</code></pre>
+
+<p>examine-metadata</p>
+
+<p>.nwave/examine.json:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>connector-throws-count prints 0 0 0 after this slice; the command itself is owned by the host EXAMINE set-up
+</code></pre>
+
+<p>port-or-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Capability list or members change in this slice
+</code></pre>
+
+<p>port-or-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Capability list or members change in this slice
+</code></pre>
+
+<p>port-or-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Capability list or members change in this slice
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<p>tests</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mock set-ups move to As&lt;Capability&gt;() or a removed-throw assertion is deleted
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>No preserving move precedes the behaviour: the rename that makes the split mechanical shipped in feature A, and the slice itself is a behaviour-free type move proven by the existing service tests.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>Application services IWorkItemService and IWriteBackService; capability facts observed on compiled types through reflection
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>IWorkTrackingConnectorFactory returning IWorkTrackingConnector, tested for the slice capability
+</code></pre>
+
+<pre><code>Application services depend on the port namespace; connectors implement it and stay a leaf
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L5</h6>
+
+<pre><code>A Team, Portfolio or parent-Feature scan takes the sweep path exactly when the connector is an IIncrementalSource and its probe answers true for the connection; otherwise the full path, as today
+</code></pre>
+
+<p>Refinement</p>
+
+<p>Application</p>
+
+<p>WorkItemService</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Azure DevOps: sweep
+</code></pre>
+
+<pre><code>Jira reached: sweep
+</code></pre>
+
+<pre><code>Jira not yet reached: full path
+</code></pre>
+
+<pre><code>CSV, Linear, ServiceNow: full path, not of the type
+</code></pre>
+
+<pre><code>Closed table; WorkItemServiceTest and FasterUpdatesAcceptanceTest pin probe to path, the oracle pins type and probe
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>docs/feature/story-6376-s06-b-capabilities/models/capability_routing.qnt</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T3</h6>
+
+<pre><code>Every concrete type, present or added later, implementing IIncrementalSource is Jira or Azure DevOps connector, both implement it, and the base IWorkTrackingConnector declares exactly the six members all five connectors serve
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~IncrementalSourceCapabilityTest&quot;
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>

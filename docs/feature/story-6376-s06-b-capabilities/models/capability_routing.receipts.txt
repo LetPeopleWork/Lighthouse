@@ -1,0 +1,43 @@
+model: capability_routing.qnt sha256 fa5c10d1707bb71f24cc83c94b925851189c9d8b0dab138bd269df6ff90d6828
+quint 0.33.1; java openjdk 27.0.1; backend ~/.quint/apalache-dist-0.62.4 (QUINT_HOME unset); runs on an outside-repo copy in the session scratchpad
+
+run 1 argv: quint typecheck capability_routing.qnt -> exit 0
+
+run 2 argv: timeout 180 quint verify capability_routing.qnt --init=init --step=step --invariant=sameRoute,sweepOnlyThroughCapability,noThrowFromClaimedMember --max-steps=4 -> exit 0
+The outcome is: NoError                                           I@13:11:01.743
+[ok] No violation found (5282ms).
+You may increase --max-steps.
+Use --verbosity to produce more (or less) output.
+
+run 3 (inhabitation witness, simulation) argv: timeout 180 quint run capability_routing.qnt --invariant=sweepReachable --max-steps=4 --max-samples=2000 -> exit 1 (SweepPath reachable)
+Use --verbosity=3 to show executions.
+Use --seed=0xdbfac78fa516db29 --backend=rust to reproduce.
+error: Invariant violated
+
+mutant m1: >   pure def isIncrementalSource(c: Connector): bool = Set(Jira, AzureDevOps, Linear).contains(c)
+argv: timeout 180 quint run m1.qnt --invariant=sameRoute --max-steps=4 --max-samples=5000 --seed=7 -> exit 1 (simulation kill)
+[violation] Found an issue (13ms at 77 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x7 --backend=rust to reproduce.
+error: Invariant violated
+
+mutant m2: >       | _ => if (isIncrementalSource(c)) SweepPath else FullPath
+argv: timeout 180 quint run m2.qnt --invariant=sameRoute --max-steps=4 --max-samples=5000 --seed=7 -> exit 1 (simulation kill)
+[violation] Found an issue (13ms at 154 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x15 --backend=rust to reproduce.
+error: Invariant violated
+
+mutant m3: >   pure def isFeatureSource(c: Connector): bool = Set(Jira, AzureDevOps, Linear, Csv, ServiceNow).contains(c)
+argv: timeout 180 quint run m3.qnt --invariant=sameRoute --max-steps=4 --max-samples=5000 --seed=7 -> exit 1 (simulation kill)
+[violation] Found an issue (13ms at 154 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x15 --backend=rust to reproduce.
+error: Invariant violated
+
+mutant m4: >   pure def isWriteBackTarget(c: Connector): bool = Set(Jira, AzureDevOps, Csv).contains(c)
+argv: timeout 180 quint run m4.qnt --invariant=sameRoute --max-steps=4 --max-samples=5000 --seed=7 -> exit 1 (simulation kill)
+[violation] Found an issue (13ms at 1154 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0xcb --backend=rust to reproduce.
+error: Invariant violated

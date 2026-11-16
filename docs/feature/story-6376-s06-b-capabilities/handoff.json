@@ -1,0 +1,2026 @@
+{
+"counters": {
+"B": 2,
+"C": 1,
+"D": 9,
+"E": 4,
+"F": 219,
+"K": 4,
+"L": 5,
+"N": 4,
+"P": 3,
+"S": 3,
+"T": 3,
+"Y": 6
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"agreement": [
+{
+"contract": "Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs:24",
+"party": "Producer",
+"reason": "F36"
+},
+{
+"contract": "Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs:32",
+"party": "Producer",
+"reason": "F36"
+},
+{
+"contract": "Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:18",
+"party": "Producer",
+"reason": "F37"
+},
+{
+"contract": "Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:15",
+"party": "Producer",
+"reason": "F38"
+},
+{
+"contract": "Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:18",
+"party": "Producer",
+"reason": "F39"
+},
+{
+"contract": "Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:327",
+"party": "Consumer",
+"reason": "F40"
+},
+{
+"contract": "Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:157",
+"party": "Consumer",
+"reason": "F41"
+},
+{
+"contract": "Connector port: IWorkTrackingConnector plus IWriteBackTarget, IFeatureSource, IIncrementalSource",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs:46",
+"party": "Consumer",
+"reason": "F42"
+}
+],
+"boundaries": {
+"dependency_direction": "F47",
+"driven_ports": [
+"F45",
+"F46"
+],
+"driving_port": "F44"
+},
+"claims": [
+{
+"admitted_input": "F70",
+"bypass": "F72",
+"constructor": "WorkTrackingConnectorFactory.GetWorkTrackingConnector",
+"consumer": "WorkItemService, WriteBackService",
+"harm": "F69",
+"id": "C1",
+"owner": "Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors",
+"proposition": "F68",
+"public_observation": "F71"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F90",
+"design": "Pass",
+"evidence": [
+"docs/feature/story-6376-s06-b-capabilities/models/capability_routing.receipts.txt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F89"
+},
+{
+"axis": "Inhabitation",
+"basis": "F92",
+"design": "Pass",
+"evidence": [
+"docs/feature/story-6376-s06-b-capabilities/models/capability_routing.receipts.txt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F91"
+},
+{
+"axis": "PublicReachability",
+"basis": "F94",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F93"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F20"
+},
+{
+"id": "K2",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F21"
+},
+{
+"id": "K3",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F22"
+},
+{
+"id": "K4",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F23"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F11"
+},
+{
+"id": "D2",
+"slices": [
+"S3"
+],
+"text": "F12"
+},
+{
+"id": "D3",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F13"
+},
+{
+"id": "D4",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F14"
+},
+{
+"id": "D5",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F15"
+},
+{
+"id": "D6",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F16"
+},
+{
+"id": "D7",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F17"
+},
+{
+"id": "D8",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F18"
+},
+{
+"id": "D9",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F19"
+}
+],
+"equality": [
+{
+"definition": "F54",
+"under": "route"
+}
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "factory",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Factories/WorkTrackingConnectorFactory.cs:17",
+"reason": "F29"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1491",
+"reason": "F30"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs:46",
+"reason": "F31"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs:1",
+"reason": "F32"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:105",
+"reason": "F33"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs:17",
+"reason": "F34"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "client-surface",
+"locator": "Lighthouse.Frontend/package.json:1",
+"reason": "F35"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/story-6376-s06-b-capabilities/models/capability_routing.qnt"
+],
+"id": "L1",
+"kind": "Refinement",
+"layer": "Application",
+"owner": "WorkItemService",
+"statement": "F55",
+"treatment": {
+"cases": [
+"F56",
+"F57",
+"F58"
+],
+"kind": "Finite",
+"reason": "F59"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ConnectorUnsupportedMembers",
+"statement": "F60",
+"treatment": {
+"cases": [
+"F61",
+"F62",
+"F63"
+],
+"kind": "Finite",
+"reason": "F64"
+}
+}
+],
+"models": [
+{
+"assumptions": [
+"F82",
+"F83",
+"F84"
+],
+"atoms": [
+{
+"atomicity": "F80",
+"kind": "State",
+"name": "jiraDeploymentKnown",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs:131",
+"symbol": "JiraWorkTrackingConnector.SupportsIncrementalSync"
+},
+{
+"atomicity": "F81",
+"kind": "Action",
+"name": "step",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1139",
+"symbol": "WorkItemService.UpdateFeaturesForPortfolio"
+},
+{
+"kind": "Constant",
+"name": "isIncrementalSource",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs:1",
+"symbol": "IIncrementalSource"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F85",
+"id": "N1",
+"kills": [
+"sameRoute"
+]
+},
+{
+"description": "F86",
+"id": "N2",
+"kills": [
+"sameRoute"
+]
+},
+{
+"description": "F87",
+"id": "N3",
+"kills": [
+"sameRoute"
+]
+},
+{
+"description": "F88",
+"id": "N4",
+"kills": [
+"sameRoute"
+]
+}
+],
+"path": "docs/feature/story-6376-s06-b-capabilities/models/capability_routing.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "sameRoute",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:327",
+"statement": "F77",
+"symbol": "WorkItemService"
+},
+{
+"kind": "Invariant",
+"name": "sweepOnlyThroughCapability",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs:1",
+"statement": "F78",
+"symbol": "IIncrementalSource"
+},
+{
+"kind": "Invariant",
+"name": "noThrowFromClaimedMember",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:157",
+"statement": "F79",
+"symbol": "WriteBackService"
+}
+]
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F43"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F49",
+"description": "F48",
+"result_type": "set of type full names and member signatures"
+},
+{
+"cannot_distinguish": "F51",
+"description": "F50",
+"result_type": "set of Type.Method(ParameterTypes)"
+},
+{
+"cannot_distinguish": "F53",
+"description": "F52",
+"result_type": "path choice, WriteBackResult, refresh exception"
+}
+],
+"refuted": [
+{
+"cause": "F66",
+"counterexample": "F67",
+"statement": "F65"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IDeliveryForecastPublisher.cs:11",
+"reason": "F24",
+"symbol": "IDeliveryForecastPublisher"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:12",
+"reason": "F25",
+"symbol": "IWorkTrackingConnector"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Factories/IWorkTrackingConnectorFactory.cs:8",
+"reason": "F26",
+"symbol": "GetWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:20",
+"reason": "F27",
+"symbol": "Listed"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/WorkTrackingReadException.cs:1",
+"reason": "F28",
+"symbol": "WorkTrackingReadException"
+}
+],
+"risks": [
+{
+"allowed": "F97",
+"forbidden": "F98",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "whoever adds the capability",
+"preserved": "F96",
+"residue": "F99",
+"source": "F95"
+},
+{
+"allowed": "F102",
+"forbidden": "F103",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "JiraWorkTrackingConnector",
+"preserved": "F101",
+"residue": "F104",
+"source": "F100"
+},
+{
+"allowed": "F107",
+"forbidden": "F108",
+"id": "Y3",
+"kind": "SinglePointOfFailure",
+"owner": "S03a-S09a",
+"preserved": "F106",
+"residue": "F109",
+"source": "F105"
+},
+{
+"allowed": "F112",
+"forbidden": "F113",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "reviewer",
+"preserved": "F111",
+"residue": "F114",
+"source": "F110"
+},
+{
+"allowed": "F117",
+"forbidden": "F118",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "maintainer",
+"preserved": "F116",
+"residue": "F119",
+"source": "F115"
+},
+{
+"allowed": "F122",
+"forbidden": "F123",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "architect",
+"preserved": "F121",
+"residue": "F124",
+"source": "F120"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"state": "F73"
+},
+{
+"kind": "Admitted",
+"state": "F74"
+},
+{
+"kind": "Excluded",
+"state": "F75"
+},
+{
+"kind": "Unknown",
+"owner": "S03a-S09a",
+"state": "F76"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs",
+"public_oracle": {
+"expected": "F134",
+"falsifier": "F135",
+"promises": [
+"P1"
+],
+"stimulus": "F133"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~WriteBackTargetCapabilityArchUnitTest\"",
+"id": "T1",
+"obligation": "F159",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F152",
+"driven_ports": [
+"F151"
+],
+"driving_port": "F150",
+"failures": [
+{
+"condition": "F153",
+"id": "B1",
+"observation": "F154",
+"outcome": "Refusal"
+}
+]
+},
+"impact": [
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWriteBackTarget.cs:1",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:76",
+"reason": "F142"
+},
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:6",
+"reason": "F143"
+},
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:3",
+"reason": "F143"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:551",
+"reason": "F144"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:902",
+"reason": "F144"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:979",
+"reason": "F144"
+},
+{
+"decision": "Migrated",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:157",
+"reason": "F145"
+},
+{
+"decision": "Changed",
+"kind": "test-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:20",
+"reason": "F146"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs:26",
+"reason": "F147"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1",
+"reason": "F148"
+}
+],
+"laws": [
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "IWriteBackTarget",
+"statement": "F155",
+"treatment": {
+"cases": [
+"F156",
+"F157"
+],
+"kind": "Finite",
+"reason": "F158"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F149"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:76",
+"reason": "F136",
+"symbol": "IWriteBackTarget"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:157",
+"reason": "F137",
+"symbol": "WriteFieldsToWorkItems"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWriteBackTarget.cs:1",
+"reason": "F138",
+"symbol": "IWriteBackTarget"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "IJiraWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "IAzureDevOpsWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "CsvWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "LinearWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "ServiceNowWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:1",
+"reason": "F140",
+"symbol": "ServiceNowWorkTrackingConnectorTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs:1",
+"reason": "F140",
+"symbol": "WriteBackServiceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs:1",
+"reason": "F140",
+"symbol": "WriteBackSuppressionWarningTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "QuietWriteBackAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "FasterUpdatesAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1",
+"reason": "F140",
+"symbol": "Slice00OneForecastPerBatchScenarios"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1",
+"reason": "F140",
+"symbol": "TaskManagerHarness"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "ConnectionFieldChangeAcceptanceTest"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWriteBackTarget.cs",
+"reason": "F125"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs",
+"reason": "F126"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs",
+"reason": "F127"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs",
+"reason": "F127"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+"reason": "F128"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+"reason": "F128"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+"reason": "F128"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs",
+"reason": "F129"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
+"reason": "F131"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs",
+"reason": "F132"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs",
+"reason": "F132"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs",
+"reason": "F132"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs",
+"reason": "F132"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+"reason": "F132"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs",
+"reason": "F132"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs",
+"reason": "F132"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~WriteBackTargetCapabilityArchUnitTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~ConnectorsDeclareNoUnsupportedMembersArchUnitTest|FullyQualifiedName~WriteBackServiceTest|FullyQualifiedName~WriteBackSuppressionWarningTest|FullyQualifiedName~QuietWriteBackAcceptanceTest|FullyQualifiedName~ServiceNowWorkTrackingConnectorTest\"",
+"dotnet build Lighthouse.Backend/Lighthouse.sln",
+"dotnet test Lighthouse.Backend/Lighthouse.sln --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs",
+"public_oracle": {
+"expected": "F170",
+"falsifier": "F171",
+"promises": [
+"P2"
+],
+"stimulus": "F169"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~FeatureSourceCapabilityArchUnitTest\"",
+"id": "T2",
+"obligation": "F187",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F152",
+"driven_ports": [
+"F151"
+],
+"driving_port": "F150",
+"failures": [
+{
+"condition": "F182",
+"id": "B2",
+"observation": "F183",
+"outcome": "Refusal"
+}
+]
+},
+"impact": [
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IFeatureSource.cs:1",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:40",
+"reason": "F174"
+},
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/ILinearWorkTrackingConnector.cs:3",
+"reason": "F175"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:15",
+"reason": "F176"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:758",
+"reason": "F177"
+},
+{
+"decision": "Migrated",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:972",
+"reason": "F178"
+},
+{
+"decision": "Changed",
+"kind": "test-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:20",
+"reason": "F179"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1",
+"reason": "F180"
+},
+{
+"decision": "Changed",
+"kind": "port-or-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:1",
+"reason": "F181"
+},
+{
+"decision": "Changed",
+"kind": "port-or-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1",
+"reason": "F181"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs:1",
+"reason": "F148"
+}
+],
+"laws": [
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "IFeatureSource",
+"statement": "F184",
+"treatment": {
+"cases": [
+"F185",
+"F186"
+],
+"kind": "Finite",
+"reason": "F158"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F149"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:40",
+"reason": "F172",
+"symbol": "IFeatureSource"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:970",
+"reason": "F173",
+"symbol": "FetchEveryFeature"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IFeatureSource.cs:1",
+"reason": "F138",
+"symbol": "IFeatureSource"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "IJiraWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "IAzureDevOpsWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/ILinearWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "ILinearWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "CsvWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "ServiceNowWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:1",
+"reason": "F140",
+"symbol": "ServiceNowWorkTrackingConnectorTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs:1",
+"reason": "F140",
+"symbol": "ConnectorsWithoutDependenciesTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "PortfolioBlockedHistoryAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "ManualSortingAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "FasterUpdatesAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "DependenciesAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1",
+"reason": "F140",
+"symbol": "Slice00OneForecastPerBatchScenarios"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "BehaviourSettingsAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1",
+"reason": "F140",
+"symbol": "TaskManagerHarness"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "ConnectionFieldChangeAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "ConnectionDefaultsAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "FastWithManyFeaturesAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1",
+"reason": "F140",
+"symbol": "WorkItemServiceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs:1",
+"reason": "F140",
+"symbol": "WorkItemServiceFeatureTransitionIntegrationTest"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IFeatureSource.cs",
+"reason": "F125"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/ILinearWorkTrackingConnector.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+"reason": "F163"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs",
+"reason": "F164"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs",
+"reason": "F165"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
+"reason": "F166"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs",
+"reason": "F167"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs",
+"reason": "F168"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~FeatureSourceCapabilityArchUnitTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~ConnectorsDeclareNoUnsupportedMembersArchUnitTest|FullyQualifiedName~WorkItemServiceTest|FullyQualifiedName~FasterUpdatesAcceptanceTest|FullyQualifiedName~ServiceNowWorkTrackingConnectorTest|FullyQualifiedName~ConnectorsWithoutDependenciesTest\"",
+"dotnet build Lighthouse.Backend/Lighthouse.sln",
+"dotnet test Lighthouse.Backend/Lighthouse.sln --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs",
+"public_oracle": {
+"expected": "F197",
+"falsifier": "F198",
+"promises": [
+"P3"
+],
+"stimulus": "F196"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~IncrementalSourceCapabilityTest\"",
+"id": "T3",
+"obligation": "F215",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F152",
+"driven_ports": [
+"F151"
+],
+"driving_port": "F150"
+},
+"impact": [
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs:1",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:21",
+"reason": "F202"
+},
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:6",
+"reason": "F203"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:30",
+"reason": "F204"
+},
+{
+"decision": "Migrated",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1139",
+"reason": "F205"
+},
+{
+"decision": "Changed",
+"kind": "test-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:20",
+"reason": "F206"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1",
+"reason": "F207"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "examine-metadata",
+"locator": ".nwave/examine.json:1",
+"reason": "F208"
+},
+{
+"decision": "Changed",
+"kind": "port-or-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1",
+"reason": "F181"
+},
+{
+"decision": "Changed",
+"kind": "port-or-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1",
+"reason": "F181"
+},
+{
+"decision": "Changed",
+"kind": "port-or-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:1",
+"reason": "F181"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:1",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1",
+"reason": "F148"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/story-6376-s06-b-capabilities/models/capability_routing.qnt"
+],
+"id": "L5",
+"kind": "Refinement",
+"layer": "Application",
+"owner": "WorkItemService",
+"statement": "F209",
+"treatment": {
+"cases": [
+"F210",
+"F211",
+"F212",
+"F213"
+],
+"kind": "Finite",
+"reason": "F214"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F149"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:21",
+"reason": "F199",
+"symbol": "SupportsIncrementalSync"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:38",
+"reason": "F200",
+"symbol": "IIncrementalSource"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:327",
+"reason": "F201",
+"symbol": "IdentityScan"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs:1",
+"reason": "F138",
+"symbol": "IIncrementalSource"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "IJiraWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "IAzureDevOpsWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "CsvWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "LinearWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:1",
+"reason": "F139",
+"symbol": "ServiceNowWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "FasterUpdatesAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:1",
+"reason": "F140",
+"symbol": "Slice00OneForecastPerBatchScenarios"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "DeliverySourcesAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1",
+"reason": "F140",
+"symbol": "TaskManagerHarness"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "ConnectionFieldChangeAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:1",
+"reason": "F140",
+"symbol": "ConnectionDefaultsAcceptanceTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1",
+"reason": "F140",
+"symbol": "WorkItemServiceTest"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs",
+"reason": "F188"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs",
+"reason": "F189"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs",
+"reason": "F190"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs",
+"reason": "F190"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+"reason": "F191"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+"reason": "F191"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+"reason": "F192"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs",
+"reason": "F193"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs",
+"reason": "F194"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs",
+"reason": "F195"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+"reason": "F195"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs",
+"reason": "F195"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs",
+"reason": "F195"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs",
+"reason": "F195"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs",
+"reason": "F195"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs",
+"reason": "F195"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~IncrementalSourceCapabilityTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~ConnectorsDeclareNoUnsupportedMembersArchUnitTest|FullyQualifiedName~WorkItemServiceTest|FullyQualifiedName~FasterUpdatesAcceptanceTest|FullyQualifiedName~JiraIncrementalSyncTest\"",
+"dotnet build Lighthouse.Backend/Lighthouse.sln",
+"dotnet test Lighthouse.Backend/Lighthouse.sln --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F216"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F217"
+},
+{
+"id": "E4",
+"promises": [
+"P3"
+],
+"text": "F219"
+}
+]
+},
+"facts": {
+"F1": "Story #6376 S06 Connector capability interfaces, nwdes feature B of two (capabilities). Split IWorkTrackingConnector so that no connector claims a member it cannot serve: the base keeps the members all five connectors implement; IWriteBackTarget (Jira, Azure DevOps), IFeatureSource (Jira, Azure DevOps, Linear, CSV) and one IIncrementalSource (Jira, Azure DevOps) holding the Team, Portfolio and parent-Feature sweep and by-id members with the per-connection probe. Callers test the type; a missing capability ends in the same outcome as today. Each slice removes its throws and their entries from the ratchet list feature A added. Behaviour-free: same sync path per connector and connection, same validation and write-back answers, same responses. Design: docs/feature/story-6376-s06-connector-capability-interfaces/feature-delta.md (Decisions, D-1 changed to b, Slices B1-B3, Ratchet design).",
+"F10": "Only Jira and Azure DevOps offer incremental sync for Teams, Portfolios and parent Features, with the same per-connection answer; the others take the full path as before",
+"F100": "Negates: Jira's deployment is known",
+"F101": "Full path as today",
+"F102": "Probe false",
+"F103": "A half sweep",
+"F104": "Jira SweepIdentities stays listed with its reason",
+"F105": "Negates: the factory hands out the concrete connector",
+"F106": "Correct results",
+"F107": "A wrapper hides capabilities: Teams fall back to the full path, write-back fails",
+"F108": "A wrong sweep result",
+"F109": "A future wrapper must forward the capability interfaces",
+"F11": "Capability set (D-1 b, confirmed; supersedes the by-level split and the names IIncrementalWorkItemSource and IIncrementalFeatureSource). Base IWorkTrackingConnector keeps SupportsTransitionHistory, GetPredefinedAdditionalFields, GetWorkItemsForTeam(team, ct), ValidateConnection, ValidateTeamSettings, ValidatePortfolioSettings (all five connectors). IWriteBackTarget: WriteFieldsToWorkItems (Jira, Azure DevOps). IFeatureSource: GetFeaturesForPortfolio(portfolio, ct), GetParentFeaturesDetails (Jira, Azure DevOps, Linear, CSV). IIncrementalSource: SupportsIncrementalSync(connection), SweepWorkItemsForTeam, GetWorkItemsForTeam(team, ids, ct), SweepFeaturesForPortfolio, GetFeaturesForPortfolio(portfolio, ids, ct), SweepParentFeatures (Jira, Azure DevOps). One file per interface in Services/Interfaces/WorkTrackingConnectors, namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors. IIncrementalSource does not inherit IFeatureSource: the Portfolio refresh already holds its IFeatureSource and tests IIncrementalSource on the same connector, so no level or second capability is baked into the port Epic 6474 will make unit-generic. Markers: IJiraWorkTrackingConnector and IAzureDevOpsWorkTrackingConnector list all three; ILinearWorkTrackingConnector lists IFeatureSource; IServiceNowWorkTrackingConnector lists none; CsvWorkTrackingConnector declares IFeatureSource itself. Jira and Azure DevOps connector classes are unchanged; Program.cs registrations unchanged.",
+"F110": "A NotSupportedException constructed in another type and thrown from a connector",
+"F111": "Ratchet still reads construction sites",
+"F112": "Not reported by the ratchet",
+"F113": "Silent acceptance in review",
+"F114": "Accepted gap; review and the connector-throws-count EXAMINE command cover it",
+"F115": "Negates: every ServiceNow Portfolio is validated before refresh (direct API save)",
+"F116": "Refresh fails as today",
+"F117": "Success false with no reason",
+"F118": "A partial write",
+"F119": "A read refusal with a user sentence is a later behaviour change",
+"F12": "Static versus runtime (D-2, confirmed): the type says what a connector can ever do; the probe SupportsIncrementalSync, moved from the base onto IIncrementalSource with the same name and meaning, says what it can do for this connection now. Jira answers false while its deployment is not yet known in this process (its process-wide deployment cache, unchanged), Azure DevOps answers true. SupportsTransitionHistory stays on the base: it gates no member. Jira SweepIdentities keeps its NotSupportedException as the assertion that a caller honoured the probe and keeps its ratchet entry.",
+"F120": "Second set, walkthrough only: two refreshes of one connection at once; a Jira instance switching Data Center to Cloud while running; a stale test build",
+"F121": "No new shared state; probe reads the same cache; IL rules read the built assembly",
+"F122": "Same answers as today",
+"F123": "A route differing from today",
+"F124": "none found",
+"F125": "New capability interface",
+"F126": "WriteFieldsToWorkItems leaves the base",
+"F127": "Marker lists IWriteBackTarget",
+"F128": "Throwing WriteFieldsToWorkItems deleted",
+"F129": "Type test for IWriteBackTarget inside the existing try",
+"F13": "Caller side (D-5, confirmed): IWorkTrackingConnectorFactory.GetWorkTrackingConnector keeps returning IWorkTrackingConnector; callers test the type with is, the idiom DeliverySourceResolver and DeliveryForecastPublishingService already use; no generic capability lookup on the factory. A missing capability fails where the member threw: WriteBackService throws NotSupportedException(Write-back is not supported for {system}.) inside the existing per-batch try, so each update becomes a failed WriteBackItemResult as today; WorkItemService throws NotSupportedException naming the connection's system at the Portfolio Feature read, before any write, so the refresh outcome is the same. The message text is log-only today and is outside the preserved observation. Scans use connector is IIncrementalSource source and source.SupportsIncrementalSync(connection), else the same IdentityScan fallback, and their by-id fetches go through that same source.",
+"F130": "Remove the three WriteFieldsToWorkItems entries (22 to 19)",
+"F131": "Delete the case asserting the removed write-back throw",
+"F132": "Move WriteFieldsToWorkItems mock set-ups to As<IWriteBackTarget>() where the mock is of the base",
+"F133": "Load the built Lighthouse.Backend assembly, resolve Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.IWriteBackTarget by full name and enumerate every concrete class implementing IWorkTrackingConnector; then drive IWriteBackService.WriteFieldsToWorkItems for a CSV connection whose connector factory returns the real CsvWorkTrackingConnector, with two field updates",
+"F134": "The interface exists and declares Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection, IReadOnlyList<WriteBackFieldUpdate>); IWorkTrackingConnector no longer declares it; the concrete connectors implementing it are exactly JiraWorkTrackingConnector and AzureDevOpsWorkTrackingConnector; the CSV write-back returns one failed item result per update and stores no written value",
+"F135": "Today the full-name lookup finds no type, so the oracle fails on an assertion; a set still holding CSV, Linear or ServiceNow, or missing Jira or Azure DevOps, fails; a WriteBackService that skips or succeeds the CSV updates instead of failing each one fails the behaviour case",
+"F136": "No existing capability owns write-back; the member moves off the base into its own interface, shaped like IDeliveryForecastPublisher",
+"F137": "The one write-back caller; its try already turns a connector failure into failed item results",
+"F138": "New capability interface; no existing interface owns this capability",
+"F139": "Existing owner of this capability membership; extended rather than replaced",
+"F14": "Carriers and owners: no new data carrier, record or state. Decision carrier = the connector's compiled type (capability interfaces) plus the bool probe, owned by Services/Interfaces/WorkTrackingConnectors (Tracker integration). Effect carriers unchanged: WriteBackResult and WriteBackItemResult (Models.WriteBack) for write-back, IdentityScan (private record in WorkItemService) for the sync path. Error carrier: NotSupportedException, log-only on both paths. Per-process state: Jira's deployment cache in JiraWorkTrackingConnector, unchanged. Models (domain) untouched.",
+"F140": "Existing test owner of the moved mock set-ups or removed-throw assertions; edited, not replaced",
+"F141": "New interface",
+"F142": "Member removed",
+"F143": "Marker base list",
+"F144": "Member deleted",
+"F145": "Type test",
+"F146": "Three entries removed",
+"F147": "Mocks move to As<IWriteBackTarget>(); same for the other listed mock files",
+"F148": "Mock set-ups move to As<Capability>() or a removed-throw assertion is deleted",
+"F149": "No preserving move precedes the behaviour: the rename that makes the split mechanical shipped in feature A, and the slice itself is a behaviour-free type move proven by the existing service tests.",
+"F15": "Cross-layer algebra. Domain: none affected. Application: WorkItemService route per (connector type, request, deployment known) in {SweepPath, FullPath} for Team, Portfolio and parent scans and {Served, FailsNotSupported} for Feature reads; WriteBackService per-update result in {Served, FailsNotSupported}. Adapter: the set of capability interfaces each of the five connector types implements, and the probe on IIncrementalSource. Infrastructure and recovery: none affected (no persistence, retry or timeout change).",
+"F150": "Application services IWorkItemService and IWriteBackService; capability facts observed on compiled types through reflection",
+"F151": "IWorkTrackingConnectorFactory returning IWorkTrackingConnector, tested for the slice capability",
+"F152": "Application services depend on the port namespace; connectors implement it and stay a leaf",
+"F153": "Write-back to a connection whose connector is not an IWriteBackTarget",
+"F154": "One failed WriteBackItemResult per update, logged; nothing stored",
+"F155": "The set of concrete connector types implementing IWriteBackTarget equals {Jira, Azure DevOps}, and a write-back to any other connection fails each update",
+"F156": "Jira, Azure DevOps implement it",
+"F157": "CSV, Linear, ServiceNow do not, and their write-back fails each update",
+"F158": "Five closed connector types",
+"F159": "Every concrete type, present or added later, implementing IWriteBackTarget is JiraWorkTrackingConnector or AzureDevOpsWorkTrackingConnector, and both implement it",
+"F16": "Formal verification: Quint for the route-equivalence state model (connectors, requests and Jira's unknown-to-known deployment transition as state), verified with quint verify on Apalache and discriminated by four behavioural mutants; the executable projection is each slice's reflection oracle plus the existing WorkItemServiceTest, FasterUpdatesAcceptanceTest and WriteBackServiceTest. No Agda: no proof obligation beyond the finite 5 x 6 x 2 table. No TLA+/TLC: no temporal claim. Liveness is not applicable: every changed decision is a synchronous pure choice inside one call; the only state transition (deployment unknown to known) is unchanged code with no progress promise added. No property-based test: the domain is closed and finite, so finite reflection cases pin it row by row.",
+"F160": "GetFeaturesForPortfolio(portfolio, ct) and GetParentFeaturesDetails leave the base",
+"F161": "Marker lists IFeatureSource",
+"F162": "Class declares IFeatureSource",
+"F163": "Two throwing Feature-read members deleted",
+"F164": "Resolve IFeatureSource at the Portfolio Feature read and parent reads; absent fails at the same point",
+"F165": "Remove the two ServiceNow Feature-read entries (19 to 17)",
+"F166": "Delete the cases asserting the removed Feature-read throws",
+"F167": "Delete GetFeaturesForPortfolio_ServiceNowStillRefusesToReturnFeaturesAtAll",
+"F168": "Move Feature-read mock set-ups to As<IFeatureSource>() where the mock is of the base",
+"F169": "Load the built Lighthouse.Backend assembly, resolve Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.IFeatureSource by full name and enumerate every concrete class implementing IWorkTrackingConnector; then drive IWorkItemService.UpdateFeaturesForPortfolio for a Portfolio on a ServiceNow connection whose connector factory returns the real ServiceNowWorkTrackingConnector",
+"F17": "Ratchet: Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs (Listed) is a crafter target in every slice, never an oracle or support; the approved ConnectorsDeclareNoUnsupportedMembersArchUnitTest checks it both ways, so each slice removes exactly the entries its deleted throws leave: 22 to 19 (S1), 17 (S2), 2 (S3: Jira SweepIdentities and Azure DevOps ConvertAuthorizationHeaderToVssCredentials).",
+"F170": "The interface exists and declares GetFeaturesForPortfolio(Portfolio, CancellationToken) and GetParentFeaturesDetails(Portfolio, IEnumerable<string>, CancellationToken); IWorkTrackingConnector no longer declares either; the concrete connectors implementing it are exactly Jira, Azure DevOps, Linear and CSV; the ServiceNow Portfolio refresh ends in a NotSupportedException and leaves the Portfolio's Features unchanged",
+"F171": "Today the full-name lookup finds no type, so the oracle fails on an assertion; ServiceNow in the set, or any of the four missing, fails; a refresh that completes with an empty Feature list for ServiceNow instead of failing fails the behaviour case",
+"F172": "No existing capability owns Portfolio Feature reading; IDeliverySourceProvider reads Delivery sources, a different question",
+"F173": "The Portfolio Feature read site; resolving the capability there keeps the failure point and outcome",
+"F174": "Two members removed",
+"F175": "Marker base list; Jira and Azure DevOps markers likewise",
+"F176": "Declares IFeatureSource",
+"F177": "Two members deleted",
+"F178": "Type test at the Feature read and the parent reads",
+"F179": "Two entries removed",
+"F18": "Test migration (D-10, confirmed): Moq set-ups of moved members go to mock.As<Capability>() before .Object is first read; compile errors find every one. Tests asserting a removed throw are deleted in the slice that removes the member (ServiceNowWorkTrackingConnectorTest write-back case in S1; its Feature-read cases and ConnectorsWithoutDependenciesTest GetFeaturesForPortfolio_ServiceNowStillRefusesToReturnFeaturesAtAll in S2). As<>-only and deletion-only test edits are waived from improve the tests you touch. Out of scope, confirmed: other Supports* flags (D-4), rename (delivered in feature A), ADR-285, ADR-139 note, ADR-270 glossary and ARCHITECTURE.md written at finalize (D-9), packaging (S03a).",
+"F180": "Mocks move to As<IFeatureSource>(); same for the other listed mock files",
+"F181": "Capability list or members change in this slice",
+"F182": "Portfolio refresh on a connection whose connector is not an IFeatureSource",
+"F183": "UpdateFeaturesForPortfolio ends in NotSupportedException before any write; the updater records Success false with no reason, as today",
+"F184": "The set of concrete connector types implementing IFeatureSource equals {Jira, Azure DevOps, Linear, CSV}, and a ServiceNow Portfolio refresh fails before any write",
+"F185": "Jira, Azure DevOps, Linear, CSV implement it",
+"F186": "ServiceNow does not; its Portfolio refresh fails and its validation still answers portfolio_not_supported",
+"F187": "Every concrete type, present or added later, implementing IFeatureSource is Jira, Azure DevOps, Linear or CSV connector, all four implement it, and ServiceNow does not",
+"F188": "New capability interface with the per-connection probe",
+"F189": "Probe, three sweeps and two by-id fetches leave the base",
+"F19": "OO smell targeted: Refused Bequest (RPP L6, Liskov and interface segregation): CSV, Linear and ServiceNow claim members they refuse. The cure is segregated capability interfaces, not a guard. No prefactoring move is needed: the rename that makes the split mechanical shipped in feature A.",
+"F190": "Marker lists IIncrementalSource",
+"F191": "Five throwing members and the probe deleted",
+"F192": "Five throwing members, the probe and the misnamed unavailable-reading message deleted",
+"F193": "Three scan sites type-test IIncrementalSource plus its probe; by-id fetches use the same source",
+"F194": "Remove the fifteen sweep and by-id entries (17 to 2)",
+"F195": "Move probe, sweep and by-id mock set-ups to As<IIncrementalSource>() where the mock is of the base",
+"F196": "Load the built Lighthouse.Backend assembly and resolve Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.IIncrementalSource by full name; enumerate every concrete class implementing IWorkTrackingConnector; through the interface's SupportsIncrementalSync method (invoked by reflection), ask a real Jira connector built with a stubbed HTTP handler as JiraIncrementalSyncTest does, once for a site this process already reached and once for a site address no test has reached, and a real Azure DevOps connector",
+"F197": "The interface exists and declares SupportsIncrementalSync(WorkTrackingSystemConnection), SweepWorkItemsForTeam, GetWorkItemsForTeam(Team, IReadOnlyCollection<string>, CancellationToken), SweepFeaturesForPortfolio, GetFeaturesForPortfolio(Portfolio, IReadOnlyCollection<string>, CancellationToken) and SweepParentFeatures; IWorkTrackingConnector declares exactly SupportsTransitionHistory, GetPredefinedAdditionalFields, GetWorkItemsForTeam(Team, CancellationToken), ValidateConnection, ValidateTeamSettings, ValidatePortfolioSettings; the implementing concrete connectors are exactly Jira and Azure DevOps; CSV, Linear and ServiceNow are not of the type; the probe answers true for the reached Jira site, false for the unreached one, true for Azure DevOps",
+"F198": "Today the full-name lookup finds no type, so the oracle fails on an assertion; any of CSV, Linear, ServiceNow in the set, or Jira or Azure DevOps missing, fails; a probe dropped or made constant true fails the unreached-Jira case; a base still declaring a sweep or by-id member fails",
+"F199": "Same name and meaning, moved onto the capability that it qualifies",
+"F2": "A connector implements only what it can do, so the CSV, Linear and ServiceNow connectors throw no 'not supported' from a member they claim, and S03a packages the final connector port",
+"F20": "Behaviour-free: no schema, route, DTO, serialized response, UI, event, registration or Program.cs change; the same sync path per connector and connection, the same validation verdicts (ServiceNow keeps portfolio_not_supported), the same per-update write-back results and the same Portfolio refresh outcome.",
+"F200": "No existing capability owns sweeping; one interface for all levels because Epic 6474 makes fetching unit-generic",
+"F201": "The three scan sites keep their fallback; only the condition changes",
+"F202": "Six members removed; six remain",
+"F203": "Marker base list; Azure DevOps likewise",
+"F204": "Members and message deleted; CSV and Linear likewise",
+"F205": "Type test plus probe at lines 327, 1139, 1423; by-id fetches at 381, 1186",
+"F206": "Fifteen entries removed; two genuine remain",
+"F207": "Mocks move to As<IIncrementalSource>(); same for the other listed mock files",
+"F208": "connector-throws-count prints 0 0 0 after this slice; the command itself is owned by the host EXAMINE set-up",
+"F209": "A Team, Portfolio or parent-Feature scan takes the sweep path exactly when the connector is an IIncrementalSource and its probe answers true for the connection; otherwise the full path, as today",
+"F21": "No stored or validated input changes, so no input bound, range or size applies; the closed domain is the five connector types, six request kinds and Jira deployment known or not.",
+"F210": "Azure DevOps: sweep",
+"F211": "Jira reached: sweep",
+"F212": "Jira not yet reached: full path",
+"F213": "CSV, Linear, ServiceNow: full path, not of the type",
+"F214": "Closed table; WorkItemServiceTest and FasterUpdatesAcceptanceTest pin probe to path, the oracle pins type and probe",
+"F215": "Every concrete type, present or added later, implementing IIncrementalSource is Jira or Azure DevOps connector, both implement it, and the base IWorkTrackingConnector declares exactly the six members all five connectors serve",
+"F216": "Updating a work item through a CSV, Linear or ServiceNow connection still fails each update as before, while Jira and Azure DevOps updates still write back; the connector-throws-count output no longer lists any write-back throw in the Csv, Linear or ServiceNow folders.",
+"F217": "A Portfolio refresh reads Features for Jira, Azure DevOps, Linear and CSV; a ServiceNow Portfolio refresh still fails as before and ServiceNow is not reported as reading Portfolio Features; connector-throws-count lists no Feature-reading throw in the ServiceNow folder.",
+"F219": "Only Jira and Azure DevOps report incremental sync, with the same per-connection answer as before; CSV, Linear and ServiceNow Teams and Portfolios take the full refresh as before; connector-throws-count shows 0 for the Csv, Linear and ServiceNow folders, and the ratchet test (backend-tests ConnectorsDeclareNoUnsupportedMembers) passes with only its two genuine entries.",
+"F22": "Connectors stay in Services/Implementation/WorkTrackingConnectors; interfaces stay in Services/Interfaces/WorkTrackingConnectors; the connector leaf rule and WorkTrackingConnectors_DoNotDependOnAnyRepository keep holding; no new package; the new port signatures use only Models kernel types.",
+"F23": "Each slice has one new oracle file whose RED is an assertion: the capability interface, found by full name through reflection on the built Lighthouse.Backend assembly, is absent or implemented by the wrong connector types; never a compile error. No nWave tags in test code. Never edit an earlier slice's oracle.",
+"F24": "Existing capability-by-type idiom with a probe on the capability and is-tests at callers; the new interfaces copy its shape.",
+"F25": "The port stays and is reduced to the members all five connectors serve; replacing or renaming it would touch 9 production and 40 test files for no glossary gain.",
+"F26": "Returns the base; callers type-test. A generic capability lookup would be a second way to do what is does.",
+"F27": "The ratchet list feature A shipped; each slice shrinks it, never loosens it.",
+"F28": "Considered for the absent Feature read and not used there: it would show a refresh reason the user does not see today. Left unchanged.",
+"F29": "Returns the concrete connector as the base type; capabilities stay visible to is-tests.",
+"F3": "Only Jira and Azure DevOps are write-back targets; a write-back to a CSV, Linear or ServiceNow connection fails each update as it does today; their write-back throws are gone from the ratchet list",
+"F30": "Registrations by marker; the markers carry the capabilities.",
+"F31": "Type-tests an unchanged capability interface; DeliverySourcesController and DeliveryForecastPublishingService likewise.",
+"F32": "Validation and predefined-field callers (TeamsController, PortfoliosController, the two connection controllers, ConnectionHealthService) use base members only.",
+"F33": "New interfaces sit in the same namespace; the leaf rule keeps holding.",
+"F34": "Approved oracle of feature A; its inline list file changes, its bytes do not.",
+"F35": "No wire change: frontend, E2E, Lighthouse-Clients and package manifests untouched.",
+"F36": "Implements every capability through its marker; members unchanged.",
+"F37": "Implements IFeatureSource only; throwing members deleted.",
+"F38": "Declares IFeatureSource; throwing members deleted.",
+"F39": "Implements the base only; throwing members deleted.",
+"F4": "Jira, Azure DevOps, Linear and CSV read Portfolio Features; ServiceNow does not claim to; a ServiceNow Portfolio refresh fails as it does today; ServiceNow's Feature-reading throws are gone from the ratchet list",
+"F40": "Type-tests IFeatureSource and IIncrementalSource in the same commits as the producers.",
+"F41": "Type-tests IWriteBackTarget in the same commit as the producers.",
+"F42": "Uses base members and unchanged capability interfaces only; so do the validation callers.",
+"F43": "Producers and consumers of the connector port ship in one deployable and change in the same commit; the slice oracles and existing service tests cover them.",
+"F44": "Application services IWorkItemService (Team and Portfolio refresh) and IWriteBackService (write-back); capability facts are observed on compiled types through reflection",
+"F45": "IWorkTrackingConnectorFactory returning IWorkTrackingConnector",
+"F46": "Capability interfaces IWriteBackTarget, IFeatureSource, IIncrementalSource in Services/Interfaces/WorkTrackingConnectors",
+"F47": "Application services depend on the port namespace; connectors implement it and stay a leaf: no connector reaches Modules.WorkItems or a repository",
+"F48": "Reflection over the built Lighthouse.Backend assembly: which concrete connector types implement a capability interface found by full name, and which members the base and the capability declare",
+"F49": "whether a member body throws (the ratchet covers it) or whether a caller tests the type (behaviour tests cover it)",
+"F5": "Only Jira and Azure DevOps offer incremental sync, with the same per-connection answer as today; CSV, Linear and ServiceNow Teams and Portfolios take the full refresh path as today; the base connector port has no member any connector throws 'not supported' from, and the ratchet list holds only the two genuine entries",
+"F50": "Ratchet: connector methods whose IL creates a NotSupportedException, compared both ways with the inline list",
+"F51": "an exception constructed in another type and thrown from a connector",
+"F52": "Behaviour through IWorkItemService and IWriteBackService: sweep or full path chosen per connector and connection; per-update write-back result; Portfolio refresh failing before any write",
+"F53": "the log-only exception sentence",
+"F54": "Two implementations agree when, for every connector type, request kind and Jira deployment-known value, they choose the same outcome among Served, FailsNotSupported, SweepPath and FullPath; exception text is not observed.",
+"F55": "For every connector type, request kind and deployment-known value, the type-tested route after the split equals the flag-and-throw route before it",
+"F56": "write-back: Jira, Azure DevOps served; CSV, Linear, ServiceNow fail each update",
+"F57": "Portfolio and parent Feature read: Jira, Azure DevOps, Linear, CSV served; ServiceNow fails",
+"F58": "Team, Portfolio, parent scan: Azure DevOps sweep; Jira sweep only when deployment known; CSV, Linear, ServiceNow full path",
+"F59": "Closed 5 x 6 x 2 domain; quint verify covers it exhaustively and slice oracles pin it row by row",
+"F6": "The three capability interfaces, the connectors implementing them, the callers testing the type, the ratchet list shrinking, ADR-285 written at finalize",
+"F60": "No connector type creates a NotSupportedException from a member of an interface it implements, apart from the two listed genuine cases",
+"F61": "after S1: 19 listed",
+"F62": "after S2: 17 listed",
+"F63": "after S3: 2 listed",
+"F64": "Finite set of compiled connector methods, decided exactly by the IL ratchet",
+"F65": "Jira Data Center cannot sweep; incremental sync varies by Cloud versus Data Center",
+"F66": "Law scope: the probe varies by whether the deployment is known in this process, not by deployment kind",
+"F67": "A Data Center connection whose deployment was learned earlier answers SupportsIncrementalSync true (JiraIncrementalSyncTest SupportsIncrementalSync_IsTrueForDataCenterOnceTheDeploymentIsKnown)",
+"F68": "A connector type that implements a capability interface serves every member of it without NotSupportedException; a connector that cannot do something does not implement the interface",
+"F69": "A refresh or write-back routed to a member that only refuses, behind a type that claims it",
+"F7": "Implementing missing capabilities (sweeps for Linear or ServiceNow, write-back for CSV); the other Supports* flags (additional fields, write-back mappings, delivery publishing); moving connectors into Modules (S03a); a unit-generic fetch (Epic 6474)",
+"F70": "WorkTrackingSystems value of a connection",
+"F71": "Reflection oracle per slice plus the IL ratchet",
+"F72": "A decorator or proxy wrapping a connector hides its capabilities (safe: falls back to full path or failure); Moq mocks (compile errors force As<>); a NotSupportedException constructed elsewhere and thrown here (ratchet blind; review and the KPI 7 grep cover it); reflection or casts by other code",
+"F73": "Jira and Azure DevOps implement IWriteBackTarget, IFeatureSource, IIncrementalSource; Linear and CSV implement IFeatureSource only; ServiceNow implements the base only",
+"F74": "Jira implements IIncrementalSource and its probe answers false while the deployment is unknown",
+"F75": "CSV, Linear or ServiceNow implementing IWriteBackTarget or IIncrementalSource; ServiceNow implementing IFeatureSource; any capability member that throws NotSupportedException outside the two listed cases",
+"F76": "A future wrapper around a connector that does not forward capability interfaces",
+"F77": "newRoute equals oldRoute in every reachable state",
+"F78": "A sweep path is chosen only for an IIncrementalSource",
+"F79": "Write-back and Feature reads are served whenever the connector implements their capability",
+"F8": "Only Jira and Azure DevOps are write-back targets, and a write-back to another connection fails as before",
+"F80": "Process-wide cache read inside one probe call; unchanged code",
+"F81": "One refresh or write-back call asks one connector; the route is a pure choice inside it",
+"F82": "Connector types and capability sets are closed at compile time",
+"F83": "Jira deployment knowledge only grows within a process",
+"F84": "Exception text is not observed",
+"F85": "Linear made an IIncrementalSource",
+"F86": "Scan routes on the type alone, dropping the per-connection probe",
+"F87": "ServiceNow made an IFeatureSource",
+"F88": "CSV made an IWriteBackTarget",
+"F89": "route equivalence and capability set",
+"F9": "ServiceNow no longer claims to read Portfolio Features; the other four do; a ServiceNow Portfolio refresh fails as before",
+"F90": "quint verify of sameRoute, sweepOnlyThroughCapability, noThrowFromClaimedMember at max-steps 4, exit 0; four mutants killed by quint run",
+"F91": "sweep path through IIncrementalSource",
+"F92": "quint run found a reachable SweepPath state (Azure DevOps, or Jira once known); the real Jira and Azure DevOps connectors already serve every member",
+"F93": "capability reaches the application service",
+"F94": "WorkTrackingConnectorFactory.GetWorkTrackingConnector -> is-test in WorkItemService and WriteBackService -> IWorkItemService and IWriteBackService; acyclic, no new constructor",
+"F95": "Negates: capability is static per type (a connector can do X only for some connections)",
+"F96": "No member throws for a claimed capability",
+"F97": "The capability gains a Supports probe as IIncrementalSource has",
+"F98": "A throw from a claimed member",
+"F99": "Pattern documented in ADR-285 at finalize; the ratchet catches a throw"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_in": [
+"F6"
+],
+"scope_out": [
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F8",
+"promises": [
+"P1"
+]
+},
+{
+"id": "S2",
+"observation": "F9",
+"promises": [
+"P2"
+]
+},
+{
+"id": "S3",
+"observation": "F10",
+"promises": [
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6376-s06-b-capabilities",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
