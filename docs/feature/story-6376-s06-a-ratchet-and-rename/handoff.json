@@ -1,9 +1,82 @@
 {
+"acceptance": {
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F117",
+"L3/F118",
+"T2"
+],
+"still_passes_if": "F154",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs::ThePortAndEveryConnectorNameAPortfolioAsAPortfolio"
+},
+"expected": "F152",
+"stimulus": "F151",
+"user_result": "F153"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F119",
+"T2"
+],
+"still_passes_if": "F158",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs::AConnectorAddedLaterThatNamesAPortfolioProject_IsNamedByTheCheck"
+},
+"expected": "F156",
+"stimulus": "F155",
+"user_result": "F157"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"T2"
+],
+"still_passes_if": "F162",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs::AConnectorThatSaysProjectOnlyForATrackerProject_PassesTheCheck"
+},
+"expected": "F160",
+"stimulus": "F159",
+"user_result": "F161"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F122",
+"L4/F145"
+],
+"still_passes_if": "F166",
+"test": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration; pwsh Lighthouse.Backend/Test-Fast.ps1"
+},
+"expected": "F164",
+"stimulus": "F163",
+"user_result": "F165"
+}
+]
+},
 "counters": {
 "C": 2,
 "D": 6,
 "E": 4,
-"F": 150,
+"F": 166,
 "K": 4,
 "L": 4,
 "P": 2,
@@ -1546,7 +1619,23 @@
 "F148": "Removing the not-supported throw from a listed connector method (or deleting the method) makes the check fail naming that listed method as stale; the unchanged codebase passes.",
 "F149": "No member or parameter of the connector port or its implementations names a Portfolio as Project; Portfolio terminology appears instead, visible in the public connector surface.",
 "F150": "After the rename, refreshes, validations and responses behave exactly as before: the existing connector backend tests pass with unchanged outcomes and response shapes.",
+"F151": "Read the names of the connector port, of every connector that implements it, and of every Portfolio parameter on their methods, private ones included",
+"F152": "Nothing says Project for a Portfolio; today it names GetFeaturesForProject on the port and the five connectors and every Portfolio parameter named project, including the CSV connector's private dependency reader",
+"F153": "A reader of the connector port and the connectors sees Portfolio wherever a Portfolio is meant",
+"F154": "A Portfolio passed inside a wrapper type, such as a list of Portfolios, still named project; or a Portfolio constructor parameter named project",
+"F155": "Run the same check over a made-up connector that has a private helper taking a Portfolio named project",
+"F156": "The check names exactly that helper's parameter",
+"F157": "A connector added later, or a new private helper, cannot bring the wrong word back unseen",
+"F158": "A helper moved into a separate static class that implements no port interface",
+"F159": "Run the same check over a made-up connector whose method is named for a tracker's own project and takes a text named project next to a Portfolio named portfolio",
 "F16": "Behaviour-free: no route, DTO, serialized response, schema, registration, event, sync path, validation verdict or refresh result changes. Program.cs is not edited. Existing tests stay green; they change only by the mechanical rename of S2.",
+"F160": "The check names nothing on that connector",
+"F161": "Names for a tracker's own project, such as a Linear project that becomes a Feature, stay as they are",
+"F162": "A check that ignores every member name and parameter of a connector that does not implement a port member itself",
+"F163": "Run the existing backend suite outside the live connector categories before and after the rename, and the fast loop after it",
+"F164": "The same tests pass before and after",
+"F165": "Refreshes, validations and answers behave exactly as before the rename",
+"F166": "A behaviour change in a path that only the live connector categories reach",
 "F17": "No nWave scenario tags in test code; comments are rare and never cite internal ids such as D-7, A1 or ADR numbers as the explanation.",
 "F18": "dotnet build ends with zero warnings (TreatWarningsAsErrors, SonarAnalyzer). Never run the live connector categories (JiraIntegration, LinearIntegration, AdoIntegration, ServiceNowIntegration, GithubIntegration) inside a slice.",
 "F19": "Out of scope: removing any NotSupportedException throw, splitting the port into capability interfaces (feature B), moving connectors into Modules (S03a), rewriting doc-comment prose that cites internal ids (the edit commits of feature B do that).",

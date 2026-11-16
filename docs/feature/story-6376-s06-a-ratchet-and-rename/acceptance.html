@@ -151,7 +151,112 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the names of the connector port, of every connector that implements it, and of every Portfolio parameter on their methods, private ones included
+</code></pre>
+
+<pre><code>Nothing says Project for a Portfolio; today it names GetFeaturesForProject on the port and the five connectors and every Portfolio parameter named project, including the CSV connector&#x27;s private dependency reader
+</code></pre>
+
+<pre><code>A reader of the connector port and the connectors sees Portfolio wherever a Portfolio is meant
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs::ThePortAndEveryConnectorNameAPortfolioAsAPortfolio</p>
+
+<pre><code>A Portfolio passed inside a wrapper type, such as a list of Portfolios, still named project; or a Portfolio constructor parameter named project
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the same check over a made-up connector that has a private helper taking a Portfolio named project
+</code></pre>
+
+<pre><code>The check names exactly that helper&#x27;s parameter
+</code></pre>
+
+<pre><code>A connector added later, or a new private helper, cannot bring the wrong word back unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs::AConnectorAddedLaterThatNamesAPortfolioProject_IsNamedByTheCheck</p>
+
+<pre><code>A helper moved into a separate static class that implements no port interface
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the same check over a made-up connector whose method is named for a tracker&#x27;s own project and takes a text named project next to a Portfolio named portfolio
+</code></pre>
+
+<pre><code>The check names nothing on that connector
+</code></pre>
+
+<pre><code>Names for a tracker&#x27;s own project, such as a Linear project that becomes a Feature, stay as they are
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs::AConnectorThatSaysProjectOnlyForATrackerProject_PassesTheCheck</p>
+
+<pre><code>A check that ignores every member name and parameter of a connector that does not implement a port member itself
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the existing backend suite outside the live connector categories before and after the rename, and the fast loop after it
+</code></pre>
+
+<pre><code>The same tests pass before and after
+</code></pre>
+
+<pre><code>Refreshes, validations and answers behave exactly as before the rename
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration; pwsh Lighthouse.Backend/Test-Fast.ps1</p>
+
+<pre><code>A behaviour change in a path that only the live connector categories reach
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 
 <h2>Expectations</h2>
 
