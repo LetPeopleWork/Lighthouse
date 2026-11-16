@@ -151,6 +151,141 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the connector ratchet over today&#x27;s compiled backend
+</code></pre>
+
+<pre><code>The connector methods found that create a NotSupportedException are exactly the listed ones (today 22: Csv 6, Linear 6, ServiceNow 8, Jira&#x27;s identity sweep and Azure DevOps&#x27; credential conversion), and every listed entry carries a reason
+</code></pre>
+
+<pre><code>A developer sees one test that names every connector method that says it cannot do what its interface asks
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::EveryConnectorMethodThatCreatesANotSupportedException_IsOnTheListWithItsReason</p>
+
+<pre><code>A list holding a different set that the rule also finds; the count of 22 is held by review of the list and the connector-throws-count EXAMINE command, not pinned here, because feature B shrinks the list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the rule over made-up connectors that refuse directly, from a private helper, after an await in an async member, inside a lambda, and with an exception derived from NotSupportedException
+</code></pre>
+
+<pre><code>Each is reported with its exact entry: the member itself, the helper Refuse rather than its caller, the async member rather than its state machine, the member that wrote the lambda, and the member throwing the derived exception
+</code></pre>
+
+<pre><code>A refusal hidden in a helper, an async body or a lambda is still caught and named by the method a developer wrote
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::AMadeUpConnectorThatRefuses_IsReportedByName</p>
+
+<pre><code>A rule that folds a lambda written in one overload into another overload of the same name; no made-up connector has overloads
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the rule over a made-up type shaped like a connector but implementing an interface outside the port, and over a made-up connector throwing InvalidOperationException
+</code></pre>
+
+<pre><code>Neither is reported
+</code></pre>
+
+<pre><code>Types that are no connectors and other exceptions do not make the ratchet fail
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::AMadeUpTypeOutsideTheRule_IsNotReported</p>
+
+<pre><code>A rule that skips a connector type nested inside another type; no made-up case nests a connector
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Compare today&#x27;s backend with the list missing one entry
+</code></pre>
+
+<pre><code>The test fails naming that connector method as not on the list, followed by the fix hint, and asks to delete nothing
+</code></pre>
+
+<pre><code>A developer who adds a refusing connector method is told which one and to remove the interface instead
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::AConnectorMethodThatIsNotOnTheList_FailsNamedWithTheFixHint</p>
+
+<pre><code>A fix hint whose wording drifts from the design text while still naming the method
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Compare today&#x27;s backend with the list holding one extra entry for a method that no longer refuses
+</code></pre>
+
+<pre><code>The test fails naming that entry for deletion and names no newcomer
+</code></pre>
+
+<pre><code>When a connector stops refusing, the developer is told to delete its entry so the list only shrinks
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::AListedConnectorMethodThatNoLongerRefuses_FailsNamedForDeletion</p>
+
+<pre><code>Nothing plausible beyond the shared two-way comparison other ratchets already use
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h3>S2</h3>
 
 <h5>Covers</h5>

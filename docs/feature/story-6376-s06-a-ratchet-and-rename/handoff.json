@@ -1,5 +1,95 @@
 {
 "acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F54",
+"T1"
+],
+"still_passes_if": "F170",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::EveryConnectorMethodThatCreatesANotSupportedException_IsOnTheListWithItsReason"
+},
+"expected": "F168",
+"stimulus": "F167",
+"user_result": "F169"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F46",
+"L1/F47",
+"L1/F48",
+"L1/F49",
+"L1",
+"T1"
+],
+"still_passes_if": "F174",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::AMadeUpConnectorThatRefuses_IsReportedByName"
+},
+"expected": "F172",
+"stimulus": "F171",
+"user_result": "F173"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F50",
+"L1/F51",
+"T1"
+],
+"still_passes_if": "F178",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::AMadeUpTypeOutsideTheRule_IsNotReported"
+},
+"expected": "F176",
+"stimulus": "F175",
+"user_result": "F177"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F182",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::AConnectorMethodThatIsNotOnTheList_FailsNamedWithTheFixHint"
+},
+"expected": "F180",
+"stimulus": "F179",
+"user_result": "F181"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F55"
+],
+"still_passes_if": "F186",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::AListedConnectorMethodThatNoLongerRefuses_FailsNamedForDeletion"
+},
+"expected": "F184",
+"stimulus": "F183",
+"user_result": "F185"
+}
+],
 "S2": [
 {
 "covers": [
@@ -76,7 +166,7 @@
 "C": 2,
 "D": 6,
 "E": 4,
-"F": 166,
+"F": 186,
 "K": 4,
 "L": 4,
 "P": 2,
@@ -1636,8 +1726,28 @@
 "F164": "The same tests pass before and after",
 "F165": "Refreshes, validations and answers behave exactly as before the rename",
 "F166": "A behaviour change in a path that only the live connector categories reach",
+"F167": "Run the connector ratchet over today's compiled backend",
+"F168": "The connector methods found that create a NotSupportedException are exactly the listed ones (today 22: Csv 6, Linear 6, ServiceNow 8, Jira's identity sweep and Azure DevOps' credential conversion), and every listed entry carries a reason",
+"F169": "A developer sees one test that names every connector method that says it cannot do what its interface asks",
 "F17": "No nWave scenario tags in test code; comments are rare and never cite internal ids such as D-7, A1 or ADR numbers as the explanation.",
+"F170": "A list holding a different set that the rule also finds; the count of 22 is held by review of the list and the connector-throws-count EXAMINE command, not pinned here, because feature B shrinks the list",
+"F171": "Run the rule over made-up connectors that refuse directly, from a private helper, after an await in an async member, inside a lambda, and with an exception derived from NotSupportedException",
+"F172": "Each is reported with its exact entry: the member itself, the helper Refuse rather than its caller, the async member rather than its state machine, the member that wrote the lambda, and the member throwing the derived exception",
+"F173": "A refusal hidden in a helper, an async body or a lambda is still caught and named by the method a developer wrote",
+"F174": "A rule that folds a lambda written in one overload into another overload of the same name; no made-up connector has overloads",
+"F175": "Run the rule over a made-up type shaped like a connector but implementing an interface outside the port, and over a made-up connector throwing InvalidOperationException",
+"F176": "Neither is reported",
+"F177": "Types that are no connectors and other exceptions do not make the ratchet fail",
+"F178": "A rule that skips a connector type nested inside another type; no made-up case nests a connector",
+"F179": "Compare today's backend with the list missing one entry",
 "F18": "dotnet build ends with zero warnings (TreatWarningsAsErrors, SonarAnalyzer). Never run the live connector categories (JiraIntegration, LinearIntegration, AdoIntegration, ServiceNowIntegration, GithubIntegration) inside a slice.",
+"F180": "The test fails naming that connector method as not on the list, followed by the fix hint, and asks to delete nothing",
+"F181": "A developer who adds a refusing connector method is told which one and to remove the interface instead",
+"F182": "A fix hint whose wording drifts from the design text while still naming the method",
+"F183": "Compare today's backend with the list holding one extra entry for a method that no longer refuses",
+"F184": "The test fails naming that entry for deletion and names no newcomer",
+"F185": "When a connector stops refusing, the developer is told to delete its entry so the list only shrinks",
+"F186": "Nothing plausible beyond the shared two-way comparison other ratchets already use",
 "F19": "Out of scope: removing any NotSupportedException throw, splitting the port into capability interfaces (feature B), moving connectors into Modules (S03a), rewriting doc-comment prose that cites internal ids (the edit commits of feature B do that).",
 "F2": "The connector port's unsupported members are counted by a test that names each one, and the port speaks the glossary's Portfolio, so feature B can remove the throws one capability at a time",
 "F20": "The connector port, its five connectors and every caller ship in one deployable (Lighthouse.Backend) and change in the same commit; the parties cannot change apart, so the primary oracles and the compiler cover the agreement.",

@@ -2,6 +2,161 @@
 
 ## Slices
 
+### S1
+
+##### Covers
+
+P1
+
+```text
+Run the connector ratchet over today's compiled backend
+```
+
+```text
+The connector methods found that create a NotSupportedException are exactly the listed ones (today 22: Csv 6, Linear 6, ServiceNow 8, Jira's identity sweep and Azure DevOps' credential conversion), and every listed entry carries a reason
+```
+
+```text
+A developer sees one test that names every connector method that says it cannot do what its interface asks
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ConnectorsDeclareNoUnsupportedMembersArchUnitTest\.cs\:\:EveryConnectorMethodThatCreatesANotSupportedException\_IsOnTheListWithItsReason
+
+```text
+A list holding a different set that the rule also finds; the count of 22 is held by review of the list and the connector-throws-count EXAMINE command, not pinned here, because feature B shrinks the list
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the rule over made-up connectors that refuse directly, from a private helper, after an await in an async member, inside a lambda, and with an exception derived from NotSupportedException
+```
+
+```text
+Each is reported with its exact entry: the member itself, the helper Refuse rather than its caller, the async member rather than its state machine, the member that wrote the lambda, and the member throwing the derived exception
+```
+
+```text
+A refusal hidden in a helper, an async body or a lambda is still caught and named by the method a developer wrote
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ConnectorsDeclareNoUnsupportedMembersArchUnitTest\.cs\:\:AMadeUpConnectorThatRefuses\_IsReportedByName
+
+```text
+A rule that folds a lambda written in one overload into another overload of the same name; no made-up connector has overloads
+```
+
+###### Obligations
+
+
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the rule over a made-up type shaped like a connector but implementing an interface outside the port, and over a made-up connector throwing InvalidOperationException
+```
+
+```text
+Neither is reported
+```
+
+```text
+Types that are no connectors and other exceptions do not make the ratchet fail
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ConnectorsDeclareNoUnsupportedMembersArchUnitTest\.cs\:\:AMadeUpTypeOutsideTheRule\_IsNotReported
+
+```text
+A rule that skips a connector type nested inside another type; no made-up case nests a connector
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Compare today's backend with the list missing one entry
+```
+
+```text
+The test fails naming that connector method as not on the list, followed by the fix hint, and asks to delete nothing
+```
+
+```text
+A developer who adds a refusing connector method is told which one and to remove the interface instead
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ConnectorsDeclareNoUnsupportedMembersArchUnitTest\.cs\:\:AConnectorMethodThatIsNotOnTheList\_FailsNamedWithTheFixHint
+
+```text
+A fix hint whose wording drifts from the design text while still naming the method
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Compare today's backend with the list holding one extra entry for a method that no longer refuses
+```
+
+```text
+The test fails naming that entry for deletion and names no newcomer
+```
+
+```text
+When a connector stops refusing, the developer is told to delete its entry so the list only shrinks
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ConnectorsDeclareNoUnsupportedMembersArchUnitTest\.cs\:\:AListedConnectorMethodThatNoLongerRefuses\_FailsNamedForDeletion
+
+```text
+Nothing plausible beyond the shared two-way comparison other ratchets already use
+```
+
+###### Obligations
+
+
 ### S2
 
 ##### Covers
