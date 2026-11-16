@@ -1992,3 +1992,10 @@ maintainer prefers waiting to doing S09a twice. This changes the prerequisites a
   levels and the terminology split inside that module; it no longer creates the module.
 - The Portfolio-as-unit half of S03d stays with this Epic. S03d keeps Deliveries only.
 - All slices still wait for the prerequisites, slice 01 included.
+
+### Note for the connector port (maintainer, 2026-11-16)
+
+Once Teams and Portfolios are units, the connector port should stop telling Portfolio from Work Items fetching and
+fetch the items for a unit more generically (e.g. "the work items for this unit"). Story #6376 (S06) keeps one
+incremental-sync capability rather than one per level so that this step only removes per-level members. Not built
+by S06; a candidate for slice 04 or 12 here, or a follow-up Story.

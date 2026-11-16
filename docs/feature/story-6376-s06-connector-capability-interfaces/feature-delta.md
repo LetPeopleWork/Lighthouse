@@ -588,3 +588,14 @@ the maintainer to revisit at the hold:
 |---|---|---|---|---|
 | A `story-6376-s06-a-ratchet-and-rename` | A1, A2 | `thorough` | opus | sonnet |
 | B `story-6376-s06-b-capabilities` | B1–B4 | `thorough` | opus | sonnet |
+
+## Wave: DESIGN / [REF] D-1 changed to b (maintainer note, 2026-11-16, AFK)
+
+The maintainer noted that once Teams and Portfolios become units (Epic #6474), the connector will no longer tell
+Portfolio from Work Items fetching: it will fetch the items for a unit, more generically. Splitting incremental sync
+by level (D-1 a) would put the two-level shape into the port's types, and the 6474 prerequisites must not fix a
+shape that Epic reverses. So **D-1 is now b**: one capability, `IIncrementalSource` ("this connector can sweep"),
+implemented by Jira and Azure DevOps, holding the Team, Portfolio and parent-Feature sweep and by-id members, with
+the per-connection probe. Feature B becomes **B1 write-back target, B2 Feature source, B3 incremental source (both
+levels)**, about 4 days in total for S06. The reason D-1 a gave ("a connector that can sweep only one level")
+returns, if ever, as a unit-level question in 6474, not as a second type now. Taken in AFK mode; revisit at the hold.
