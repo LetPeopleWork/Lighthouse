@@ -139,6 +139,140 @@
 "stimulus": "F248",
 "user_result": "F250"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F255",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs::SweepingIsItsOwnCapability_AndEveryConnectorIsAskedOnlyForWhatAllFiveServe"
+},
+"expected": "F253",
+"stimulus": "F252",
+"user_result": "F254"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L5/F213"
+],
+"still_passes_if": "F259",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs::OnlyJiraAndAzureDevOpsCanSweep_CsvLinearAndServiceNowDownloadEverythingAsBefore"
+},
+"expected": "F257",
+"stimulus": "F256",
+"user_result": "F258"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F211",
+"L5/F212"
+],
+"still_passes_if": "F263",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs::AJiraSiteIsSweptOnlyOnceLighthouseHasReachedIt"
+},
+"expected": "F261",
+"stimulus": "F260",
+"user_result": "F262"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F210"
+],
+"still_passes_if": "F267",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs::AnAzureDevOpsConnectionIsAlwaysSwept"
+},
+"expected": "F265",
+"stimulus": "F264",
+"user_result": "F266"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F61",
+"L2/F62",
+"L2/F63"
+],
+"still_passes_if": "F271",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs"
+},
+"expected": "F269",
+"stimulus": "F268",
+"user_result": "F270"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F56"
+],
+"still_passes_if": "F275",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs"
+},
+"expected": "F273",
+"stimulus": "F272",
+"user_result": "F274"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F57"
+],
+"still_passes_if": "F279",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs"
+},
+"expected": "F277",
+"stimulus": "F276",
+"user_result": "F278"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F58"
+],
+"still_passes_if": "F283",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs::OnlyJiraAndAzureDevOpsCanSweep_CsvLinearAndServiceNowDownloadEverythingAsBefore"
+},
+"expected": "F281",
+"stimulus": "F280",
+"user_result": "F282"
+}
 ]
 },
 "counters": {
@@ -146,7 +280,7 @@
 "C": 1,
 "D": 9,
 "E": 4,
-"F": 251,
+"F": 283,
 "K": 4,
 "L": 5,
 "N": 4,
@@ -2056,9 +2190,41 @@
 "F25": "The port stays and is reduced to the members all five connectors serve; replacing or renaming it would touch 9 production and 40 test files for no glossary gain.",
 "F250": "ServiceNow's Feature-reading refusals no longer exist",
 "F251": "Throws and list entries removed together for a different pair of members; the Feature-read members' absence is pinned by the capability rows above",
+"F252": "Read the built backend and look up the sweeping capability and the general connector port",
+"F253": "The sweeping capability exists and holds the per-connection probe, the Team, Portfolio and parent-Feature sweeps and the two fetches by id; the general connector port holds exactly the six members all five connectors serve",
+"F254": "No connector claims a sweep it can only refuse; refreshes are unchanged",
+"F255": "A member is moved with a changed signature that no caller can tell apart, such as a parameter swapped for an equal-meaning type",
+"F256": "Enumerate every connector in the built backend and ask which ones take on the sweeping capability",
+"F257": "All five connectors are found; exactly Jira and Azure DevOps take it on; CSV, Linear and ServiceNow do not",
+"F258": "Only Jira and Azure DevOps offer incremental sync; CSV, Linear and ServiceNow Teams and Portfolios take the full refresh as before",
+"F259": "The refresh service ignores the type and keeps sweeping through some other path; held by the existing refresh-service tests that pin probe to path",
 "F26": "Returns the base; callers type-test. A generic capability lookup would be a second way to do what is does.",
+"F260": "Ask a real Jira connector, through the sweeping capability, about a site it has already downloaded from and about a site nobody has reached",
+"F261": "Yes for the reached site, no for the unreached one",
+"F262": "A Jira Team or Portfolio is swept once Lighthouse knows the site, and fully downloaded before that, as today",
+"F263": "The probe answers from some other per-site fact that happens to coincide with a first download",
+"F264": "Ask a real Azure DevOps connector, through the sweeping capability, about a connection",
+"F265": "Yes",
+"F266": "Azure DevOps Teams and Portfolios are swept on every refresh, as today",
+"F267": "Azure DevOps answers yes but the refresh service does not consult it; held by the existing refresh-service tests",
+"F268": "Read every connector's compiled members for a not-supported refusal and compare with the listed genuine cases",
+"F269": "Only Jira SweepIdentities and the Azure DevOps credential conversion still refuse; the list holds exactly those two",
 "F27": "The ratchet list feature A shipped; each slice shrinks it, never loosens it.",
+"F270": "No connector claims a member it refuses",
+"F271": "A refusal moved into a helper the reading does not follow",
+"F272": "Ask which connectors take on write-back",
+"F273": "Exactly Jira and Azure DevOps",
+"F274": "Write-back answers as before",
+"F275": "The write-back service ignores the type",
+"F276": "Ask which connectors read Portfolio Features",
+"F277": "Jira, Azure DevOps, Linear and CSV; ServiceNow refresh fails as before",
+"F278": "Portfolio refreshes answer as before",
+"F279": "A parent read routed elsewhere",
 "F28": "Considered for the absent Feature read and not used there: it would show a refresh reason the user does not see today. Left unchanged.",
+"F280": "Ask which connectors take on sweeping and what the probe answers per connection",
+"F281": "Azure DevOps sweeps; Jira only once reached; CSV, Linear, ServiceNow are not of the type",
+"F282": "Each refresh takes the same sweep or full path as today",
+"F283": "The refresh service ignores the probe; held by WorkItemServiceTest",
 "F29": "Returns the concrete connector as the base type; capabilities stay visible to is-tests.",
 "F3": "Only Jira and Azure DevOps are write-back targets; a write-back to a CSV, Linear or ServiceNow connection fails each update as it does today; their write-back throws are gone from the ratchet list",
 "F30": "Registrations by marker; the markers carry the capabilities.",

@@ -246,6 +246,244 @@ Throws and list entries removed together for a different pair of members; the Fe
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Read the built backend and look up the sweeping capability and the general connector port
+```
+
+```text
+The sweeping capability exists and holds the per-connection probe, the Team, Portfolio and parent-Feature sweeps and the two fetches by id; the general connector port holds exactly the six members all five connectors serve
+```
+
+```text
+No connector claims a sweep it can only refuse; refreshes are unchanged
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/WorkTrackingConnectors\/IncrementalSourceCapabilityTest\.cs\:\:SweepingIsItsOwnCapability\_AndEveryConnectorIsAskedOnlyForWhatAllFiveServe
+
+```text
+A member is moved with a changed signature that no caller can tell apart, such as a parameter swapped for an equal-meaning type
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Enumerate every connector in the built backend and ask which ones take on the sweeping capability
+```
+
+```text
+All five connectors are found; exactly Jira and Azure DevOps take it on; CSV, Linear and ServiceNow do not
+```
+
+```text
+Only Jira and Azure DevOps offer incremental sync; CSV, Linear and ServiceNow Teams and Portfolios take the full refresh as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/WorkTrackingConnectors\/IncrementalSourceCapabilityTest\.cs\:\:OnlyJiraAndAzureDevOpsCanSweep\_CsvLinearAndServiceNowDownloadEverythingAsBefore
+
+```text
+The refresh service ignores the type and keeps sweeping through some other path; held by the existing refresh-service tests that pin probe to path
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Ask a real Jira connector, through the sweeping capability, about a site it has already downloaded from and about a site nobody has reached
+```
+
+```text
+Yes for the reached site, no for the unreached one
+```
+
+```text
+A Jira Team or Portfolio is swept once Lighthouse knows the site, and fully downloaded before that, as today
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/WorkTrackingConnectors\/IncrementalSourceCapabilityTest\.cs\:\:AJiraSiteIsSweptOnlyOnceLighthouseHasReachedIt
+
+```text
+The probe answers from some other per-site fact that happens to coincide with a first download
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Ask a real Azure DevOps connector, through the sweeping capability, about a connection
+```
+
+```text
+Yes
+```
+
+```text
+Azure DevOps Teams and Portfolios are swept on every refresh, as today
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/WorkTrackingConnectors\/IncrementalSourceCapabilityTest\.cs\:\:AnAzureDevOpsConnectionIsAlwaysSwept
+
+```text
+Azure DevOps answers yes but the refresh service does not consult it; held by the existing refresh-service tests
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Read every connector's compiled members for a not-supported refusal and compare with the listed genuine cases
+```
+
+```text
+Only Jira SweepIdentities and the Azure DevOps credential conversion still refuse; the list holds exactly those two
+```
+
+```text
+No connector claims a member it refuses
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ConnectorsDeclareNoUnsupportedMembersArchUnitTest\.cs
+
+```text
+A refusal moved into a helper the reading does not follow
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Ask which connectors take on write-back
+```
+
+```text
+Exactly Jira and Azure DevOps
+```
+
+```text
+Write-back answers as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WriteBackTargetCapabilityArchUnitTest\.cs
+
+```text
+The write-back service ignores the type
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Ask which connectors read Portfolio Features
+```
+
+```text
+Jira, Azure DevOps, Linear and CSV; ServiceNow refresh fails as before
+```
+
+```text
+Portfolio refreshes answer as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FeatureSourceCapabilityArchUnitTest\.cs
+
+```text
+A parent read routed elsewhere
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Ask which connectors take on sweeping and what the probe answers per connection
+```
+
+```text
+Azure DevOps sweeps; Jira only once reached; CSV, Linear, ServiceNow are not of the type
+```
+
+```text
+Each refresh takes the same sweep or full path as today
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/WorkTrackingConnectors\/IncrementalSourceCapabilityTest\.cs\:\:OnlyJiraAndAzureDevOpsCanSweep\_CsvLinearAndServiceNowDownloadEverythingAsBefore
+
+```text
+The refresh service ignores the probe; held by WorkItemServiceTest
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
