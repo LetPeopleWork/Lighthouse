@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
@@ -8,13 +9,32 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Modules.WorkItems.Application;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 {
-    public class WorkItemServiceTransitionFallbackIntegrationTest : IntegrationTestBase
+    public class WorkItemServiceTransitionFallbackIntegrationTest
     {
+        private ServicePortHarness harness = null!;
+
+        private LighthouseAppContext DatabaseContext { get; set; } = null!;
+
+        [SetUp]
+        public void GiveTheScenarioItsOwnDatabase()
+        {
+            harness = new ServicePortHarness();
+            DatabaseContext = harness.NewScope().ServiceProvider.GetRequiredService<LighthouseAppContext>();
+        }
+
+        [TearDown]
+        public void RemoveTheScenariosDatabase()
+        {
+            DatabaseContext.Dispose();
+            harness.Dispose();
+        }
+
         [Test]
         public async Task UpdateWorkItemsForTeam_CsvConnectorWithoutHistory_StateChangesAcrossSyncs_DerivesCurrentStateEnteredAtFromSyncDelta()
         {
