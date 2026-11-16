@@ -159,6 +159,98 @@ A metrics reaction that is not registered at all; the order pin and the refresh 
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Run the Work Items module rules over the compiled product and over made-up offenders: a Work Items type left under Services, a Domain type asking the licence, outside types off the list reaching the Domain or the Application, Application types holding a DbSet, reading the database context, shaping an API type, commanding Team metrics in Flow metrics or reading a second licence type, a non-handler in the policies, a connector reaching a Work Items type; and delete each list entry or add one with no edge.
+```
+
+```text
+On the product every rule passes with its list compared both ways: layers hold the named types, the Domain reaches only the kernel and the base library, three outside types reach the Domain, seven reach the Application besides its legal callers, the Application reaches no storage, API or adapter type, Flow metrics only through the two query edges and Access, Licensing, Organisation set-up and the update queue only through six listed edges, the policies hold only handlers, no connector reaches Work Items. Each made-up offender is named and its compliant twin is not; every deleted entry is named as offending and an entry with no edge is named for deletion.
+```
+
+```text
+A developer who adds a dependency that breaks a Work Items boundary sees a failing rule that names the type to undo; a list can only shrink.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs
+
+```text
+A new outside caller placed in a namespace counted as a legal caller, or a reference seen only in a catch clause, an event or a named attribute argument, which the IL reader does not see.
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Read Flow metrics' list of outside callers of its Application, compare it with the compiled code, then put TeamDataService back on it.
+```
+
+```text
+The list holds four entries and no TeamDataService and matches the code both ways; with TeamDataService put back the rule fails and names it for deletion.
+```
+
+```text
+Work Items only announces that a Team was refreshed; nobody can quietly restore the old command from Work Items to Flow metrics.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs
+
+```text
+A different Work Items type that calls Flow metrics' Application and is added to the list together with its call.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Compare Flow metrics' list of outside types that reach its Domain with the compiled code.
+```
+
+```text
+The list keeps its six entries, the Work Items query of Flow metrics among them, and matches the code both ways.
+```
+
+```text
+The two Work Items queries of Flow metrics stay named until Flow metrics answers them itself.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundDomainAndAdaptersArchUnitTest\.cs
+
+```text
+An entry renamed in both the code and the list at once.
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

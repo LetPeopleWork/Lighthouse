@@ -90,6 +90,59 @@
 "stimulus": "F290",
 "user_result": "F292"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1",
+"L1/F41",
+"L1/F42"
+],
+"still_passes_if": "F297",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs"
+},
+"expected": "F295",
+"stimulus": "F294",
+"user_result": "F296"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F301",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs"
+},
+"expected": "F299",
+"stimulus": "F298",
+"user_result": "F300"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F305",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs"
+},
+"expected": "F303",
+"stimulus": "F302",
+"user_result": "F304"
+}
 ]
 },
 "counters": {
@@ -97,7 +150,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 293,
+"F": 305,
 "K": 7,
 "L": 6,
 "N": 4,
@@ -1668,8 +1721,20 @@
 "F291": "No Team metrics are saved, no reaction failure is logged, and the seven other reactions run in their order.",
 "F292": "Deleting a Team while it refreshes leaves no error in the log and no metrics behind.",
 "F293": "A metrics reaction that is not registered at all; the order pin and the refresh scenarios catch that.",
+"F294": "Run the Work Items module rules over the compiled product and over made-up offenders: a Work Items type left under Services, a Domain type asking the licence, outside types off the list reaching the Domain or the Application, Application types holding a DbSet, reading the database context, shaping an API type, commanding Team metrics in Flow metrics or reading a second licence type, a non-handler in the policies, a connector reaching a Work Items type; and delete each list entry or add one with no edge.",
+"F295": "On the product every rule passes with its list compared both ways: layers hold the named types, the Domain reaches only the kernel and the base library, three outside types reach the Domain, seven reach the Application besides its legal callers, the Application reaches no storage, API or adapter type, Flow metrics only through the two query edges and Access, Licensing, Organisation set-up and the update queue only through six listed edges, the policies hold only handlers, no connector reaches Work Items. Each made-up offender is named and its compliant twin is not; every deleted entry is named as offending and an entry with no edge is named for deletion.",
+"F296": "A developer who adds a dependency that breaks a Work Items boundary sees a failing rule that names the type to undo; a list can only shrink.",
+"F297": "A new outside caller placed in a namespace counted as a legal caller, or a reference seen only in a catch clause, an event or a named attribute argument, which the IL reader does not see.",
+"F298": "Read Flow metrics' list of outside callers of its Application, compare it with the compiled code, then put TeamDataService back on it.",
+"F299": "The list holds four entries and no TeamDataService and matches the code both ways; with TeamDataService put back the rule fails and names it for deletion.",
 "F3": "Work Items no longer commands Flow metrics: TeamDataService makes no UpdateTeamMetrics call, and a Flow metrics reaction updates a Team's metrics when it hears TeamDataRefreshed, running first among that event's handlers, with the handler-failure behaviour pinned",
 "F30": "ITeamMetricsService.UpdateTeamMetrics (Flow metrics)",
+"F300": "Work Items only announces that a Team was refreshed; nobody can quietly restore the old command from Work Items to Flow metrics.",
+"F301": "A different Work Items type that calls Flow metrics' Application and is added to the list together with its call.",
+"F302": "Compare Flow metrics' list of outside types that reach its Domain with the compiled code.",
+"F303": "The list keeps its six entries, the Work Items query of Flow metrics among them, and matches the code both ways.",
+"F304": "The two Work Items queries of Flow metrics stay named until Flow metrics answers them itself.",
+"F305": "An entry renamed in both the code and the list at once.",
 "F31": "Work Items publishes a kernel event; Flow metrics, its downstream, reacts. After S1 Work Items Application references no Flow metrics command; the two WorkItemService query edges remain listed.",
 "F32": "Run the Work Items module rules over the compiled product assembly and over made-up offender types in the test assembly's fixture namespaces: a Work Items Domain type reaching a Services type, an outside type reaching Domain or Application off the list, an Application type reaching EF Core, Data, API or an unlisted Flow metrics type, a non-handler class in Modules.WorkItems.Application.Policies, a connector type reaching Modules.WorkItems.",
 "F33": "On the product: every rule passes with its inline baseline (R-W1 the D-1 lists; R-W2 empty; R-W3 and R-W5 the lists measured from the IL in this slice; R-W6 Flow metrics IPortfolioMetricsService and PercentileCalculator plus one entry each for IRbacAdministrationService, ILicenseService, IFeatureOrdering, UpdateCancellationContext; leaf rule empty), each compared both ways, and Flow metrics R4 has 4 entries with no TeamDataService. On each made-up offender: the rule's failure names that offender type.",
