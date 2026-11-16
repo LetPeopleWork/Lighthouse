@@ -267,8 +267,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
 
         /// <summary>
         /// The step every Team refresh ends with once the Team's Work Items are synced:
-        /// <c>TeamDataService.UpdateTeamData</c> calls <c>ITeamMetricsService.UpdateTeamMetrics</c>
-        /// right after <c>UpdateWorkItemsForTeam</c>, which forgets the Team's remembered metrics and
+        /// Flow metrics reacts to <c>TeamDataRefreshed</c> by calling <c>ITeamMetricsService.UpdateTeamMetrics</c>,
+        /// before any other reaction to that event, which forgets the Team's remembered metrics and
         /// moves its last update. The sync before it reaches the work tracking system, which this host
         /// does not have, so the scenarios start from this step.
         /// </summary>
