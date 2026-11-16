@@ -114,20 +114,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         /// from what this answers with, and a Feature no portfolio claims is deleted outright by the
         /// orphaned-Feature cleanup.
         /// </summary>
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
+        public async Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
         {
-            logger.LogInformation("Getting Features for Project {ProjectName} - retrieving all Linear projects as features", project.Name);
+            logger.LogInformation("Getting Features for Project {ProjectName} - retrieving all Linear projects as features", portfolio.Name);
 
             var features = new List<Feature>();
-            var projects = await GetAllProjects(project.WorkTrackingSystemConnection, cancellationToken);
+            var projects = await GetAllProjects(portfolio.WorkTrackingSystemConnection, cancellationToken);
 
             if (projects.Count == 0)
             {
-                logger.LogInformation("No projects found in workspace for portfolio {ProjectName}", project.Name);
+                logger.LogInformation("No projects found in workspace for portfolio {ProjectName}", portfolio.Name);
                 return features;
             }
 
-            var states = project.AllStates.ToList();
+            var states = portfolio.AllStates.ToList();
             var featuresWithInitiative = 0;
 
             foreach (var linearProject in projects)
@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                     continue;
                 }
 
-                var feature = CreateFeatureFromProject(linearProject, project);
+                var feature = CreateFeatureFromProject(linearProject, portfolio);
                 features.Add(feature);
 
                 if (!string.IsNullOrEmpty(feature.ParentReferenceId))
@@ -150,20 +150,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
             logger.LogInformation(
                 "Created {Count} features from Linear projects for portfolio {ProjectName} ({WithInitiative} linked to initiatives)",
-                features.Count, project.Name, featuresWithInitiative);
+                features.Count, portfolio.Name, featuresWithInitiative);
 
             return features;
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
+        public Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("Linear does not fetch Features by reference id on this port yet - Epic #5687 names it in a later slice.");
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
             => throw new NotSupportedException("Linear does not sweep Features yet - Epic #5687 names it in a later slice.");
 
-        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
-            logger.LogInformation("Getting Parent Features (initiatives) for Linear portfolio {ProjectName}", project.Name);
+            logger.LogInformation("Getting Parent Features (initiatives) for Linear portfolio {ProjectName}", portfolio.Name);
 
             var parentFeatures = new List<Feature>();
             var parentIdList = parentFeatureIds.ToList();
@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
                 try
                 {
-                    var initiative = await GetInitiativeById(project.WorkTrackingSystemConnection, parentFeatureId, cancellationToken);
+                    var initiative = await GetInitiativeById(portfolio.WorkTrackingSystemConnection, parentFeatureId, cancellationToken);
 
                     if (initiative != null)
                     {
@@ -185,7 +185,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                             ReferenceId = initiative.Id,
                             Name = initiative.Name,
                             Type = InitiativeTypeIdentifier,
-                            State = project.MapRawStateToMappedName(initiative.Status ?? UnknownStateIdentifier),
+                            State = portfolio.MapRawStateToMappedName(initiative.Status ?? UnknownStateIdentifier),
                             StateCategory = StateCategories.Unknown,
                             Url = initiative.Url ?? string.Empty,
                             ParentReferenceId = string.Empty,
@@ -200,7 +200,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                     }
                     else
                     {
-                        logger.LogDebug("Initiative {InitiativeId} not found or inaccessible for portfolio {ProjectName}", parentFeatureId, project.Name);
+                        logger.LogDebug("Initiative {InitiativeId} not found or inaccessible for portfolio {ProjectName}", parentFeatureId, portfolio.Name);
                         initiativesFailed++;
                     }
                 }
@@ -212,19 +212,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 }
                 catch (Exception ex)
                 {
-                    logger.LogDebug(ex, "Failed to fetch initiative {InitiativeId} for portfolio {ProjectName}", parentFeatureId, project.Name);
+                    logger.LogDebug(ex, "Failed to fetch initiative {InitiativeId} for portfolio {ProjectName}", parentFeatureId, portfolio.Name);
                     initiativesFailed++;
                 }
             }
 
             logger.LogInformation(
                 "Initiative hydration for portfolio {ProjectName}: {Total} requested, {Hydrated} resolved, {Failed} failed",
-                project.Name, parentIdList.Count, initiativesHydrated, initiativesFailed);
+                portfolio.Name, parentIdList.Count, initiativesHydrated, initiativesFailed);
 
             return parentFeatures;
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("Linear does not sweep parent Features yet - Epic #5687 names it in a later slice.");
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)

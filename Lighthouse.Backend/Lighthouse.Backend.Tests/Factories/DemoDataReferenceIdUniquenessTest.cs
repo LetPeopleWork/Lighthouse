@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.Factories
             var portfolio = subject.CreateDemoProject(portfolioName);
             portfolio.WorkTrackingSystemConnection = subject.CreateDemoWorkTrackingSystemConnection();
 
-            var features = await CreateConnector().GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await CreateConnector().GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             AssertUnique(portfolioName, features.Select(feature => feature.ReferenceId));
         }

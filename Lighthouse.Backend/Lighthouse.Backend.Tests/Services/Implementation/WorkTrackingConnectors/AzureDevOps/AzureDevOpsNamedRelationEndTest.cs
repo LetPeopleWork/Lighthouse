@@ -219,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheNamedEndIsCarried_ReadsThatEndAloneAsALinkDrawnInTheTracker()
+        public async Task GetFeaturesForPortfolio_WhenTheNamedEndIsCarried_ReadsThatEndAloneAsALinkDrawnInTheTracker()
         {
             var organisation = new Organisation(relations: new()
             {
@@ -227,7 +227,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [TheOtherFeature] = [ARelation(Related, TheItemItWaitsOn)],
             });
 
-            var features = await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == $"{TheFeature}");
             using (Assert.EnterMultipleScope())
@@ -241,7 +241,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenNoFeatureCarriesTheNamedEnd_SaysSoNamingOnlyTheWorkItemLinksSeen()
+        public async Task GetFeaturesForPortfolio_WhenNoFeatureCarriesTheNamedEnd_SaysSoNamingOnlyTheWorkItemLinksSeen()
         {
             var organisation = new Organisation(relations: new()
             {
@@ -259,7 +259,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [TheOtherFeature] = [ARelation("system.linktypes.related", TheItemItWaitsOn)],
             });
 
-            var features = await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
 
             var expected = new RefreshFinding(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, DependsOnForward, TheOnlyWorkItemLinkItCarries);
             using (Assert.EnterMultipleScope())
@@ -276,32 +276,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheFeaturesCarryNoRelationsAtAll_SaysNothing()
+        public async Task GetFeaturesForPortfolio_WhenTheFeaturesCarryNoRelationsAtAll_SaysNothing()
         {
             var organisation = new Organisation(relations: []);
 
-            var features = await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
 
             Assert.That(features.SelectMany(f => f.RefreshFindings), Is.Empty,
                 "Having no dependencies is the ordinary case, and says nothing about the setting.");
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenNoRelationEndIsNamed_SaysNothingAboutThePredecessorLinkGoingUnmatched()
+        public async Task GetFeaturesForPortfolio_WhenNoRelationEndIsNamed_SaysNothingAboutThePredecessorLinkGoingUnmatched()
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(Related, TheItemItWaitsOn)] });
 
-            var features = await organisation.Connector.GetFeaturesForProject(APortfolio(), CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(APortfolio(), CancellationToken.None);
 
             Assert.That(features.SelectMany(f => f.RefreshFindings), Is.Empty);
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheBaseNameIsNamed_ReadsNothingAndNamesBothEnds()
+        public async Task GetFeaturesForPortfolio_WhenTheBaseNameIsNamed_ReadsNothingAndNamesBothEnds()
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
 
-            var feature = (await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOn), CancellationToken.None))
+            var feature = (await organisation.Connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOn), CancellationToken.None))
                 .Single(f => f.ReferenceId == $"{TheFeature}");
 
             using (Assert.EnterMultipleScope())
@@ -316,11 +316,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenARelationTypeWithoutDirectionIsNamed_ReadsNothingAndSaysWhy()
+        public async Task GetFeaturesForPortfolio_WhenARelationTypeWithoutDirectionIsNamed_ReadsNothingAndSaysWhy()
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(Related, TheItemItWaitsOn)] });
 
-            var feature = (await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(Related), CancellationToken.None))
+            var feature = (await organisation.Connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(Related), CancellationToken.None))
                 .Single(f => f.ReferenceId == $"{TheFeature}");
 
             using (Assert.EnterMultipleScope())
@@ -333,20 +333,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheParentComesFromAFieldAndTheDependencyFieldReadsNothing_ReadsNoRelations()
+        public async Task GetFeaturesForPortfolio_WhenTheParentComesFromAFieldAndTheDependencyFieldReadsNothing_ReadsNoRelations()
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
             var portfolio = APortfolioWhoseDependencyFieldNames(DependsOn);
             portfolio.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(TheRealFieldId)]).List!);
 
-            await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(organisation.PayloadReads.Select(read => read.Expand), Has.None.EqualTo(WorkItemExpand.Relations),
                 "The relations would be read for nothing: the parent comes from a field and the Dependency Field reads no end.");
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenSettingsThatReadAFieldNameARelationType_SaysSoForEachAndListsTheTypesOnce()
+        public async Task GetFeaturesForPortfolio_WhenSettingsThatReadAFieldNameARelationType_SaysSoForEachAndListsTheTypesOnce()
         {
             var organisation = new Organisation();
             var portfolio = APortfolio();
@@ -359,7 +359,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.OwnFeatureOwnerField(12);
             portfolio.OwningEstimationField(12);
 
-            var feature = (await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
+            var feature = (await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
 
             using (Assert.EnterMultipleScope())
             {
@@ -374,14 +374,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheParentOverrideFieldNamesARelationTypeWithoutItsEnd_SaysItReadsNoParentFromIt()
+        public async Task GetFeaturesForPortfolio_WhenTheParentOverrideFieldNamesARelationTypeWithoutItsEnd_SaysItReadsNoParentFromIt()
         {
             var organisation = new Organisation();
             var portfolio = APortfolio();
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Parent", Reference = DependsOn });
             portfolio.OwnParentOverride(10);
 
-            var feature = (await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
+            var feature = (await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
 
             Assert.That(feature.RefreshFindings.Select(finding => (finding.Kind, finding.Setting, finding.Named)), Is.EqualTo(new[]
             {
@@ -390,27 +390,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenOnlyAnUnusedDefinitionNamesNoField_DoesNotListTheRelationTypes()
+        public async Task GetFeaturesForPortfolio_WhenOnlyAnUnusedDefinitionNamesNoField_DoesNotListTheRelationTypes()
         {
             var organisation = new Organisation();
             var portfolio = APortfolio();
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(
                 new AdditionalFieldDefinition { Id = 10, DisplayName = "Stale", Reference = NotAnythingAtAll });
 
-            await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             organisation.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never,
                 "No setting of this Portfolio names the stale entry, so nothing it reads depends on what it is.");
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheDependencyFieldCannotBeLookedUp_StopsWithASentenceAnOperatorCanActOn()
+        public async Task GetFeaturesForPortfolio_WhenTheDependencyFieldCannotBeLookedUp_StopsWithASentenceAnOperatorCanActOn()
         {
             var organisation = new Organisation(listingFailure: new VssServiceException(ARefusal));
             var portfolio = APortfolioWhoseDependencyFieldNames(DependsOnForward);
 
             var stopped = await Assert.ThrowsAsync<AzureDevOpsReadException>(
-                async () => await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None));
+                async () => await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
             {
@@ -424,13 +424,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenParentSourcesMatchNothing_SaysSoForEachAndWhetherASourceCameAfterIt()
+        public async Task GetFeaturesForPortfolio_WhenParentSourcesMatchNothing_SaysSoForEachAndWhetherASourceCameAfterIt()
         {
             var organisation = new Organisation();
             var portfolio = APortfolioListing(
                 (10, "Stale", NotAnythingAtAll), (TheRealFieldId, "Size", ARealField), (11, "Also stale", AlsoNotAnything));
 
-            var feature = (await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
+            var feature = (await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
 
             Assert.That(feature.RefreshFindings.Select(finding => (finding.Kind, finding.Setting, finding.Named, finding.HadANextSource)), Is.EqualTo(new[]
             {
@@ -440,24 +440,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheRelationTypesCouldNotBeListed_DoesNotClaimAParentSourceMatchedNothing()
+        public async Task GetFeaturesForPortfolio_WhenTheRelationTypesCouldNotBeListed_DoesNotClaimAParentSourceMatchedNothing()
         {
             var organisation = new Organisation(listingFailure: new VssServiceException(ARefusal));
             var portfolio = APortfolioListing((10, "Stale", NotAnythingAtAll));
 
-            var features = await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(features.SelectMany(feature => feature.RefreshFindings), Is.Empty,
                 "A name no field carries may still be a relation type nobody could list.");
         }
 
         [Test]
-        public async Task GetFeaturesForProject_TheOwnParentReadsAsTheTrackersOnlyWhereTheItemHasOne()
+        public async Task GetFeaturesForPortfolio_TheOwnParentReadsAsTheTrackersOnlyWhereTheItemHasOne()
         {
             var relations = new Dictionary<int, List<WorkItemRelation>> { [TheFeature] = [AParentRelation(TheItemItWaitsOn)] };
             var organisation = new Organisation(relations: relations);
 
-            var features = await organisation.Connector.GetFeaturesForProject(APortfolio(), CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(APortfolio(), CancellationToken.None);
 
             var theFeature = features.Single(feature => feature.ReferenceId == $"{TheFeature}");
             var theOther = features.Single(feature => feature.ReferenceId == $"{TheOtherFeature}");
@@ -471,19 +471,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_ARelationTypeCannotBeReadWhereAnEmptyFieldReadsNoValue()
+        public async Task GetFeaturesForPortfolio_ARelationTypeCannotBeReadWhereAnEmptyFieldReadsNoValue()
         {
             var organisation = new Organisation();
             var portfolio = APortfolioListing((10, "Depends", DependsOnForward), (TheRealFieldId, "Size", ARealField));
 
-            var features = await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             var theReadings = features.Single(feature => feature.ReferenceId == $"{TheFeature}").ParentReadings.Positions.Select(position => position.Reading);
             Assert.That(theReadings, Is.EqualTo(new[] { ParentReading.CannotBeRead, ParentReading.NoValue }));
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheReverseEndIsNamed_ReadsTheOtherDirection()
+        public async Task GetFeaturesForPortfolio_WhenTheReverseEndIsNamed_ReadsTheOtherDirection()
         {
             var organisation = new Organisation(relations: new()
             {
@@ -491,7 +491,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [TheOtherFeature] = [ARelation(DependsOnReverse, TheFeature)],
             });
 
-            var features = await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnReverse), CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnReverse), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -501,7 +501,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenAParentOverrideFieldIsAlsoSet_StillReadsTheNamedRelationEnd()
+        public async Task GetFeaturesForPortfolio_WhenAParentOverrideFieldIsAlsoSet_StillReadsTheNamedRelationEnd()
         {
             var organisation = new Organisation(
                 fieldsItDefines: [ARemoteParentField],
@@ -511,7 +511,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Remote", Reference = ARemoteParentField });
             portfolio.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(10)]).List!);
 
-            var features = await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -523,7 +523,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheFeaturesCarryOnlyTheirHierarchy_SaysNothingAboutTheNamedEnd()
+        public async Task GetFeaturesForPortfolio_WhenTheFeaturesCarryOnlyTheirHierarchy_SaysNothingAboutTheNamedEnd()
         {
             var organisation = new Organisation(relations: new()
             {
@@ -531,19 +531,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [TheOtherFeature] = [ARelation(HierarchyForward, TheFeature)],
             });
 
-            var features = await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
 
             Assert.That(features.SelectMany(feature => feature.RefreshFindings), Is.Empty, "Having no dependencies is the ordinary case.");
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenARelationEndIsNamed_CostsOneRelationTypeListingAndNothingPerWorkItem()
+        public async Task GetFeaturesForPortfolio_WhenARelationEndIsNamed_CostsOneRelationTypeListingAndNothingPerWorkItem()
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
 
-            await organisation.Connector.GetFeaturesForProject(APortfolio(), CancellationToken.None);
+            await organisation.Connector.GetFeaturesForPortfolio(APortfolio(), CancellationToken.None);
             var namingNothing = organisation.Client.Invocations.Count;
-            await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
+            await organisation.Connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
             var namingTheEnd = organisation.Client.Invocations.Count - namingNothing;
 
             using (Assert.EnterMultipleScope())
@@ -554,14 +554,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_TwoOrganisationsOnOneSharedConnector_EachAnswerWithTheirOwnRelationTypes()
+        public async Task GetFeaturesForPortfolio_TwoOrganisationsOnOneSharedConnector_EachAnswerWithTheirOwnRelationTypes()
         {
             var contoso = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
             var fabrikam = AFabrikamOrganisation();
             var connector = new SharedConnector(contoso, fabrikam);
 
-            var contosoFeatures = await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward, contoso), CancellationToken.None);
-            var fabrikamFeatures = await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(FabrikamNeedsForward, fabrikam), CancellationToken.None);
+            var contosoFeatures = await connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnForward, contoso), CancellationToken.None);
+            var fabrikamFeatures = await connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(FabrikamNeedsForward, fabrikam), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -573,15 +573,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_RefreshingTheFirstOrganisationAgain_ListsItsRelationTypesAgain()
+        public async Task GetFeaturesForPortfolio_RefreshingTheFirstOrganisationAgain_ListsItsRelationTypesAgain()
         {
             var contoso = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
             var fabrikam = AFabrikamOrganisation();
             var connector = new SharedConnector(contoso, fabrikam);
 
-            await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward, contoso), CancellationToken.None);
-            await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(FabrikamNeedsForward, fabrikam), CancellationToken.None);
-            var again = await connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward, contoso), CancellationToken.None);
+            await connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnForward, contoso), CancellationToken.None);
+            await connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(FabrikamNeedsForward, fabrikam), CancellationToken.None);
+            var again = await connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnForward, contoso), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -657,11 +657,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheDependencyFieldNamesARelationEnd_DoesNotSayAFieldIsMissing()
+        public async Task GetFeaturesForPortfolio_WhenTheDependencyFieldNamesARelationEnd_DoesNotSayAFieldIsMissing()
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
 
-            var features = await organisation.Connector.GetFeaturesForProject(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(APortfolioWhoseDependencyFieldNames(DependsOnForward), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -673,14 +673,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheParentOverrideFieldNamesARelationEnd_KeepsTheTrackersParentAndSaysWhy()
+        public async Task GetFeaturesForPortfolio_WhenTheParentOverrideFieldNamesARelationEnd_KeepsTheTrackersParentAndSaysWhy()
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [AParentRelation(TheItemItWaitsOn)] });
             var portfolio = APortfolio();
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Parent", Reference = DependsOnForward });
             portfolio.OwnParentOverride(10);
 
-            var feature = (await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
+            var feature = (await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
 
             using (Assert.EnterMultipleScope())
             {
@@ -695,7 +695,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(RefreshFindingSetting.SizeEstimateField)]
         [TestCase(RefreshFindingSetting.FeatureOwnerField)]
         [TestCase(RefreshFindingSetting.EstimationField)]
-        public async Task GetFeaturesForProject_WhenOnlyAnotherSettingNamesARelationType_ReadsNothingNamedAndSaysWhy(RefreshFindingSetting setting)
+        public async Task GetFeaturesForPortfolio_WhenOnlyAnotherSettingNamesARelationType_ReadsNothingNamedAndSaysWhy(RefreshFindingSetting setting)
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
             var portfolio = APortfolio();
@@ -713,7 +713,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     break;
             }
 
-            var features = await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == $"{TheFeature}");
             using (Assert.EnterMultipleScope())
@@ -812,11 +812,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenNoRelationEndIsNamed_ReadsThePredecessorLinkWithoutListingRelationTypes()
+        public async Task GetFeaturesForPortfolio_WhenNoRelationEndIsNamed_ReadsThePredecessorLinkWithoutListingRelationTypes()
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(Predecessor, TheItemItWaitsOn), ARelation(DependsOnForward, TheItemItsPredecessorLinkPointsAt)] });
 
-            var features = await organisation.Connector.GetFeaturesForProject(APortfolio(), CancellationToken.None);
+            var features = await organisation.Connector.GetFeaturesForPortfolio(APortfolio(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {

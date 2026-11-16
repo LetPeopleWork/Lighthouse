@@ -131,12 +131,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void GetFeaturesForProject_RefusesWhenTheTrackerWillNotRunTheQuery()
+        public void GetFeaturesForPortfolio_RefusesWhenTheTrackerWillNotRunTheQuery()
         {
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
             ado.RejectTheQuery = true;
 
-            Assert.That(async () => await subject.GetFeaturesForProject(portfolio, CancellationToken.None),
+            Assert.That(async () => await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None),
                 Throws.TypeOf<VssServiceException>(),
                 "On the portfolio half an empty answer strips every Feature's portfolio claim, and the "
                 + "orphaned-Feature cleanup then deletes outright whatever no portfolio still claims.");

@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
             var connectorMock = new Mock<IWorkTrackingConnector>();
             connectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => []);
             connectorMock
                 .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))

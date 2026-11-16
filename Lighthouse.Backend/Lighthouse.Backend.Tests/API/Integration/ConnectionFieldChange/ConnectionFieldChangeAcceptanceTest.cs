@@ -597,10 +597,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
                 .Returns<Team, CancellationToken>(async (team, _) => await StampsFor(team));
 
             connector
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, CancellationToken>(async (portfolio, _) => await TheFeatureOf(portfolio));
             connector
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, IReadOnlyCollection<string>, CancellationToken>(async (portfolio, wanted, _) => [.. (await TheFeatureOf(portfolio)).Where(feature => wanted.Contains(feature.ReferenceId))]);
             connector
                 .Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))

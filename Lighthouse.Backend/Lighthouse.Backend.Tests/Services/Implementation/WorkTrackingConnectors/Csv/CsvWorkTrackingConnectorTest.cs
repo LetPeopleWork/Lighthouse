@@ -275,12 +275,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_NoOptionalRows_LoadsCorrect()
+        public async Task GetFeaturesForPortfolio_NoOptionalRows_LoadsCorrect()
         {
             var subject = CreateSubject();
             var project = CreateProject("project-valid-required-only.csv");
 
-            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
+            var features = (await subject.GetFeaturesForPortfolio(project, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -293,12 +293,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_OptionalRows_LoadsCorrect()
+        public async Task GetFeaturesForPortfolio_OptionalRows_LoadsCorrect()
         {
             var subject = CreateSubject();
             var project = CreateProject("project-valid-all-optional.csv");
 
-            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
+            var features = (await subject.GetFeaturesForPortfolio(project, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -311,12 +311,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_DependsOnColumn_ReadsEveryReferenceTheRowNames()
+        public async Task GetFeaturesForPortfolio_DependsOnColumn_ReadsEveryReferenceTheRowNames()
         {
             var subject = CreateSubject();
             var project = CreateProject("project-valid-depends-on.csv");
 
-            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
+            var features = (await subject.GetFeaturesForPortfolio(project, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -328,35 +328,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_DependsOnColumnRead_ReferenceComesFromTheTrackersOwnLink()
+        public async Task GetFeaturesForPortfolio_DependsOnColumnRead_ReferenceComesFromTheTrackersOwnLink()
         {
             var subject = CreateSubject();
             var project = CreateProject("project-valid-depends-on.csv");
 
-            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
+            var features = (await subject.GetFeaturesForPortfolio(project, CancellationToken.None)).ToList();
 
             Assert.That(features[1].DependsOnReferences.Single().Source, Is.EqualTo(DependencySource.TrackerLink));
         }
 
         [Test]
-        public async Task GetFeaturesForProject_NoDependsOnColumnConfigured_ReadsNothingEvenWhenTheFileHasOne()
+        public async Task GetFeaturesForPortfolio_NoDependsOnColumnConfigured_ReadsNothingEvenWhenTheFileHasOne()
         {
             var subject = CreateSubject();
             var project = CreateProject("project-valid-depends-on.csv");
             AdjustWorkTrackingSystemOption(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.DependsOnHeader, string.Empty);
 
-            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
+            var features = (await subject.GetFeaturesForPortfolio(project, CancellationToken.None)).ToList();
 
             Assert.That(features.SelectMany(feature => feature.DependsOnReferences), Is.Empty);
         }
 
         [Test]
-        public async Task GetFeaturesForProject_SomeOptionalRows_LoadsCorrect()
+        public async Task GetFeaturesForPortfolio_SomeOptionalRows_LoadsCorrect()
         {
             var subject = CreateSubject();
             var project = CreateProject("project-valid-with-optional.csv");
 
-            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
+            var features = (await subject.GetFeaturesForPortfolio(project, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -544,27 +544,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WrongType_Ignores()
+        public async Task GetFeaturesForPortfolio_WrongType_Ignores()
         {
             var subject = CreateSubject();
             var project = CreateProject("project-valid-required-only.csv");
 
             project.WorkItemTypes.Remove("Feature");
 
-            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
+            var features = (await subject.GetFeaturesForPortfolio(project, CancellationToken.None)).ToList();
 
             Assert.That(features, Has.Count.EqualTo(4));
         }
 
         [Test]
-        public async Task TaskGetFeaturesForProject_WrongState_Ignores()
+        public async Task TaskGetFeaturesForPortfolio_WrongState_Ignores()
         {
             var subject = CreateSubject();
             var project = CreateProject("project-valid-required-only.csv");
 
             project.ToDoStates = ["New"];
 
-            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
+            var features = (await subject.GetFeaturesForPortfolio(project, CancellationToken.None)).ToList();
 
             Assert.That(features, Has.Count.EqualTo(4));
         }

@@ -134,7 +134,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
                 .Setup(connector => connector.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Team team, CancellationToken _) => tracker.WorkItemsOf(team));
             ConnectorMock
-                .Setup(connector => connector.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(connector => connector.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Portfolio portfolio, CancellationToken _) => tracker.FeaturesOf(portfolio));
 
             connectionId = 0;
@@ -263,7 +263,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
                 .Setup(connector => connector.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Portfolio portfolio, CancellationToken _) => Tracker.StampsOfTheFeaturesOf(portfolio));
             ConnectorMock
-                .Setup(connector => connector.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(connector => connector.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken _) => [.. Tracker.FeaturesOf(portfolio).Where(feature => referenceIds.Contains(feature.ReferenceId))]);
         }
 

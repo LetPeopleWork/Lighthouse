@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         private void GivenTheTrackerReturnsFeatures(int count)
         {
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([.. Enumerable.Range(1, count).Select(index => new Feature(new WorkItemBase
                 {
                     ReferenceId = $"NW-{index}",

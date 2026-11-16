@@ -23,14 +23,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string TheFilterTheOperatorConfigured = "project = PROJ";
 
         [Test]
-        public async Task GetFeaturesForProject_DataCenterRefusesTheQuery_WarnsWithTheQueryAndJirasWholeAnswer()
+        public async Task GetFeaturesForPortfolio_DataCenterRefusesTheQuery_WarnsWithTheQueryAndJirasWholeAnswer()
         {
             var loggerMock = new Mock<ILogger<JiraWorkTrackingConnector>>();
             var subject = JiraConnectorTestSetup.AConnectorOver(ARefusingJiraDataCenter(), loggerMock.Object);
             var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
 
             await Assert.ThrowsAsync<JiraQueryRejectedException>(
-                () => subject.GetFeaturesForProject(portfolio, CancellationToken.None));
+                () => subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None));
 
             var warning = ReadWarning(loggerMock);
             using (Assert.EnterMultipleScope())

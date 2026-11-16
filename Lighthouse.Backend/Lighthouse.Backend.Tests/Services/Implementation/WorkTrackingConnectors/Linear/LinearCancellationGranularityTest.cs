@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             [.. Enumerable.Range(1, 10).Select(initiative => $"INITIATIVE-{initiative}")];
 
         [Test]
-        public async Task GetFeaturesForProject_CancelledBeforeItStarts_NeverAsksTheWorkspaceAnything()
+        public async Task GetFeaturesForPortfolio_CancelledBeforeItStarts_NeverAsksTheWorkspaceAnything()
         {
             var workspace = new AWorkspaceThatAlwaysHasAnotherPage();
             var subject = ALinearReading(workspace);
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(
-                    async () => await subject.GetFeaturesForProject(APortfolioOnLinear(), alreadyCancelled.Token),
+                    async () => await subject.GetFeaturesForPortfolio(APortfolioOnLinear(), alreadyCancelled.Token),
                     Throws.InstanceOf<OperationCanceledException>());
 
                 Assert.That(workspace.Queries, Is.Zero,
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void GetFeaturesForProject_CancelledWhileItPages_StopsWithinOnePageRoundTrip()
+        public void GetFeaturesForPortfolio_CancelledWhileItPages_StopsWithinOnePageRoundTrip()
         {
             using var stopAfterTheThirdPage = new CancellationTokenSource();
 
@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(
-                    async () => await subject.GetFeaturesForProject(APortfolioOnLinear(), stopAfterTheThirdPage.Token),
+                    async () => await subject.GetFeaturesForPortfolio(APortfolioOnLinear(), stopAfterTheThirdPage.Token),
                     Throws.InstanceOf<OperationCanceledException>());
 
                 Assert.That(workspace.Queries, Is.EqualTo(3),

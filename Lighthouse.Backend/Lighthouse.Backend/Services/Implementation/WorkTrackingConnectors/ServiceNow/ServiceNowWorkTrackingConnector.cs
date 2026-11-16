@@ -755,23 +755,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return $"{query}{OrderByClause}{StableOrderField}{OrderByClause}{TieBreakerField}";
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
+        public Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
         {
             throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
+        public Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException(WorkItemReadingUnavailableMessage);
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
             => throw new NotSupportedException("ServiceNow does not sweep Features yet - Epic #5687 names it in a later slice.");
 
-        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
             throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("ServiceNow does not sweep parent Features yet - Epic #5687 names it in a later slice.");
 
         // Two pre-flight rules the instance is never asked about, then everything that needs it.

@@ -152,11 +152,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return workItems.Select(workItem => new LighthouseWorkItem(workItem, team));
         }
 
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
+        public async Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
         {
-            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
+            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", portfolio.WorkItemTypes), portfolio.DataRetrievalValue);
 
-            var features = await GetFeaturesForProjectByQuery(project, TheQueryAPortfolioIsFetchedBy(project), cancellationToken);
+            var features = await GetFeaturesForPortfolioByQuery(portfolio, TheQueryAPortfolioIsFetchedBy(portfolio), cancellationToken);
 
             logger.LogInformation("Found Features with IDs {FeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
 
@@ -166,28 +166,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// <summary>
         /// Phase two for a portfolio: the Features the sweep reported as moved, and no others.
         /// </summary>
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
+        public async Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
-            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsById(project, referenceIds, cancellationToken);
+            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsById(portfolio, referenceIds, cancellationToken);
 
-            return await ThePortfoliosFeaturesFrom(project, adoWorkItems, additionalFieldResolution, cancellationToken);
+            return await ThePortfoliosFeaturesFrom(portfolio, adoWorkItems, additionalFieldResolution, cancellationToken);
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
-            => SweepIdentities(project, TheQueryAPortfolioIsFetchedBy(project), $"Portfolio {project.Name}", cancellationToken);
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
+            => SweepIdentities(portfolio, TheQueryAPortfolioIsFetchedBy(portfolio), $"Portfolio {portfolio.Name}", cancellationToken);
 
-        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
-            logger.LogInformation("Getting Parent Features with IDs {ParentFeatureIds} for Project {ProjectName}", string.Join(", ", parentFeatureIds), project.Name);
+            logger.LogInformation("Getting Parent Features with IDs {ParentFeatureIds} for Project {ProjectName}", string.Join(", ", parentFeatureIds), portfolio.Name);
 
-            var features = await GetFeaturesForProjectByQuery(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), cancellationToken);
+            var features = await GetFeaturesForPortfolioByQuery(portfolio, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), cancellationToken);
 
             logger.LogInformation("Found Parent Features with IDs {ParentFeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
             return features;
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
-            => SweepIdentities(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), $"Parent Features of Portfolio {project.Name}", cancellationToken);
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+            => SweepIdentities(portfolio, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), $"Parent Features of Portfolio {portfolio.Name}", cancellationToken);
 
         /// <summary>
         /// The one sweep every caller goes through. A WIQL answers with ids alone, so the stamps cost a second
@@ -681,7 +681,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return allProjects;
         }
 
-        private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query, CancellationToken cancellationToken)
+        private async Task<List<Feature>> GetFeaturesForPortfolioByQuery(Portfolio portfolio, string query, CancellationToken cancellationToken)
         {
             var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsByQuery(portfolio, query, cancellationToken);
 

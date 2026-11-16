@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         private void GivenTheTrackerAnswersNormally()
         {
             ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
             ConnectorMock
                 .Setup(c => c.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>()))
                 .ReturnsAsync(ConnectionValidationResult.Success());

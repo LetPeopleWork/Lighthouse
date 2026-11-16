@@ -47,14 +47,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_ProjectHistorySupplied_MapsProjectStatusTransitionsToMappedStates()
+        public async Task GetFeaturesForPortfolio_ProjectHistorySupplied_MapsProjectStatusTransitionsToMappedStates()
         {
             var handler = HandlerReturning(_ => ProjectsResponseWithStatusHistory());
 
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
             var transition = feature.SyncedTransitions.Single();
@@ -92,14 +92,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_HistoryNodesNull_YieldsFeatureWithoutTransitions()
+        public async Task GetFeaturesForPortfolio_HistoryNodesNull_YieldsFeatureWithoutTransitions()
         {
             var handler = HandlerReturning(_ => ProjectsResponseWithNullHistoryNodes());
 
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
 
@@ -107,14 +107,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_HistoryNodeEntriesNull_YieldsFeatureWithoutTransitions()
+        public async Task GetFeaturesForPortfolio_HistoryNodeEntriesNull_YieldsFeatureWithoutTransitions()
         {
             var handler = HandlerReturning(_ => ProjectsResponseWithNullEntries());
 
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
 
@@ -122,14 +122,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_StatusEntryMissingOneEndpoint_DropsThatTransition()
+        public async Task GetFeaturesForPortfolio_StatusEntryMissingOneEndpoint_DropsThatTransition()
         {
             var handler = HandlerReturning(_ => ProjectsResponseWithPartialAndCompleteStatusEntries());
 
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
             var transition = feature.SyncedTransitions.Single();
@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_ProjectHistoryQueryRejected_ReQueriesWithoutHistoryAndYieldsEmptySyncedTransitions()
+        public async Task GetFeaturesForPortfolio_ProjectHistoryQueryRejected_ReQueriesWithoutHistoryAndYieldsEmptySyncedTransitions()
         {
             var requestBodies = new List<string>();
             var handler = HandlerReturning(body =>
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).ToList();
+            var features = (await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).ToList();
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
 

@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = AnInstanceDefining([StockBlocks], AFeatureThatBlocksOneAndIsBlockedByAnother());
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField(typed), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField(typed), CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = AnInstanceDefining([StockBlocks], AFeatureThatBlocksOneAndIsBlockedByAnother());
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField(typed), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField(typed), CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = AnInstanceDefining([StockBlocks], AFeatureThatBlocksOneAndIsBlockedByAnother());
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Blocks"), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("Blocks"), CancellationToken.None)).Single();
 
             Assert.That(feature.RefreshFindings.Single().Seen, Is.EqualTo(TheStockBlocksPhrasesOutwardFirst));
         }
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [StockBlocks, Gate],
                 JiraWireFormat.AnEpic(TheFeature, StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt), Gate.LinkWhoseInwardIssueIs(WhatGatesIt)));
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("is blocked by"), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("is blocked by"), CancellationToken.None)).Single();
 
             Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatBlocksIt }));
         }
@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = AnInstanceDefining([StockBlocks, Relates], JiraWireFormat.AnEpic(TheFeature, Relates.LinkWhoseInwardIssueIs(WhatGatesIt)), log);
             var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
 
-            var feature = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -145,7 +145,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ],
                 new RecordingLogger<JiraWorkTrackingConnector>());
 
-            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None);
             var findings = features.SelectMany(feature => feature.RefreshFindings).Distinct().ToList();
 
             using (Assert.EnterMultipleScope())
@@ -173,7 +173,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(AnInstanceAnswering(request, [AFeatureThatBlocksOneAndIsBlockedByAnother()])) };
             }));
 
-            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(features.Select(feature => feature.ReferenceId), Is.EqualTo(new List<string> { TheFeature }));
         }
@@ -196,8 +196,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 log);
             var portfolio = APortfolioNamingAsItsDependencyField("blocks");
 
-            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
-            await subject.GetFeaturesForProject(portfolio, [TheFeature, WhatItBlocks], CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, [TheFeature, WhatItBlocks], CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -219,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = AnInstanceDefining([StockBlocks, Gate], AFeatureThatBlocksOneAndIsBlockedByAnother(), log);
             var portfolio = APortfolioNamingAsItsDependencyField("blocks");
 
-            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(log.Warnings, Has.One.Contains("which more than one Jira link type uses (Blocks, Gate)"));
         }
@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = AnInstanceDefining([StockBlocks], AFeatureThatBlocksOneAndIsBlockedByAnother());
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Blocks"), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("Blocks"), CancellationToken.None)).Single();
 
             Assert.That(feature.RefreshFindings.Single().Named, Is.EqualTo("Blocks"));
         }
@@ -251,7 +251,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 JiraWireFormat.AnEpic(TheFeature, Relates.LinkWhoseInwardIssueIs(WhatGatesIt)),
                 log);
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -272,7 +272,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = AnInstanceAnsweringTheLinkTypeListWith(status, [AFeatureThatBlocksOneAndIsBlockedByAnother()]);
 
             var stopped = await Assert.ThrowsAsync<JiraReadException>(
-                () => subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None));
+                () => subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None));
 
             Assert.That(stopped?.Message, Does.Contain($"answered its issue link type list with {howJiraAnswered}, so the refresh was stopped"));
         }
@@ -295,7 +295,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             });
             portfolio.OwnParentOverride(TheDependencyFieldId + 1);
 
-            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(features.Select(feature => feature.ReferenceId), Is.EqualTo(new List<string> { TheFeature }));
         }
@@ -321,7 +321,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     TheFeature, "Epic", $",\"{JiraWireFormat.TheCustomFieldIdAt(0)}\":\"{WhatGatesIt}\"", StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt))]);
             }), new RecordingLogger<JiraWorkTrackingConnector>());
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField(theField), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField(theField), CancellationToken.None)).Single();
 
             Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatGatesIt }));
         }
@@ -341,7 +341,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ],
                 new RecordingLogger<JiraWorkTrackingConnector>());
 
-            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -362,7 +362,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [JiraWireFormat.AnEpic(TheFeature), JiraWireFormat.AnEpic(WhatItBlocks)],
                 new RecordingLogger<JiraWorkTrackingConnector>());
 
-            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None);
 
             Assert.That(features.SelectMany(feature => feature.RefreshFindings), Is.Empty);
         }
@@ -378,7 +378,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = AnInstanceDefiningFieldsAndLinkTypes(
                 ["Blocked By Keys"], [Relates], [JiraWireFormat.AnEpic(TheFeature, Relates.LinkWhoseInwardIssueIs(WhatBlocksIt))], log);
 
-            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Blocked By Keys"), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("Blocked By Keys"), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -402,7 +402,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ],
                 new RecordingLogger<JiraWorkTrackingConnector>());
 
-            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Dependency"), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("Dependency"), CancellationToken.None);
             var findings = features.SelectMany(feature => feature.RefreshFindings).Distinct().ToList();
 
             using (Assert.EnterMultipleScope())
@@ -430,7 +430,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ],
                 new RecordingLogger<JiraWorkTrackingConnector>());
 
-            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("relates to"), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("relates to"), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -457,7 +457,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ],
                 new RecordingLogger<JiraWorkTrackingConnector>());
 
-            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Waits For"), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("Waits For"), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -480,7 +480,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     TheFeature, "Epic", $",\"{JiraWireFormat.TheCustomFieldIdAt(0)}\":\"{WhatGatesIt}\"", Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks))],
                 new RecordingLogger<JiraWorkTrackingConnector>());
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None)).Single();
 
             Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatGatesIt }));
         }
@@ -496,7 +496,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [Dependency, StockBlocks],
                 JiraWireFormat.AnEpic(TheFeature, Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks), StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt)));
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None)).Single();
 
             Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatItBlocks }));
         }
@@ -511,7 +511,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [Dependency, StockBlocks],
                 JiraWireFormat.AnEpic(TheFeature, Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks), StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt)));
 
-            var feature = (await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None)).Single();
 
             Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatBlocksIt }));
         }
@@ -530,7 +530,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     TheFeature, "Epic", $",\"{JiraWireFormat.TheCustomFieldIdAt(0)}\":\"{WhatGatesIt}; {WhatBlocksIt}\"", Dependency.LinkWhoseOutwardIssueIs(WhatItBlocks))],
                 new RecordingLogger<JiraWorkTrackingConnector>());
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("Blocked By Keys"), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioNamingAsItsDependencyField("Blocked By Keys"), CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -558,8 +558,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Reference = "depends on",
             });
 
-            await AnInstanceCountingItsRequests([Dependency], feature, askedWithTheLinkNamed).GetFeaturesForProject(named, CancellationToken.None);
-            await AnInstanceCountingItsRequests([Dependency], feature, askedWithNothingNamed).GetFeaturesForProject(notNamed, CancellationToken.None);
+            await AnInstanceCountingItsRequests([Dependency], feature, askedWithTheLinkNamed).GetFeaturesForPortfolio(named, CancellationToken.None);
+            await AnInstanceCountingItsRequests([Dependency], feature, askedWithNothingNamed).GetFeaturesForPortfolio(notNamed, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {

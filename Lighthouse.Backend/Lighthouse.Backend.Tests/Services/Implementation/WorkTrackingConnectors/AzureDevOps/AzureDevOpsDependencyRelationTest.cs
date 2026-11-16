@@ -173,11 +173,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_APortfolioThatAlreadyNamesItsOwnParentFieldStillGetsItsDependencies()
+        public async Task GetFeaturesForPortfolio_APortfolioThatAlreadyNamesItsOwnParentFieldStillGetsItsDependencies()
         {
             var (subject, portfolio) = APortfolioWhoseParentComesFromACustomField();
 
-            var feature = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -211,11 +211,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_ReadingTheDependenciesCostsTheRefreshNoRequestOfItsOwn()
+        public async Task GetFeaturesForPortfolio_ReadingTheDependenciesCostsTheRefreshNoRequestOfItsOwn()
         {
             var (subject, payloadReads) = AnAzureDevOpsHoldingOneItemOfType("Feature");
 
-            var feature = (await subject.GetFeaturesForProject(APortfolio(), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolio(), CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -233,11 +233,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheDependenciesComeFromANamedField_YieldsOneEdgePerReferenceInIt()
+        public async Task GetFeaturesForPortfolio_WhenTheDependenciesComeFromANamedField_YieldsOneEdgePerReferenceInIt()
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1801;1799");
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -254,24 +254,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// say where an edge on the screen came from, or how to remove one.
         /// </summary>
         [Test]
-        public async Task GetFeaturesForProject_WhenTheDependenciesComeFromANamedField_IgnoresTheTrackersOwnLink()
+        public async Task GetFeaturesForPortfolio_WhenTheDependenciesComeFromANamedField_IgnoresTheTrackersOwnLink()
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1799");
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None)).Single();
 
             Assert.That(feature.DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(TheOtherItemItWaitsOn),
                 $"The relations name {TheItemTheFeatureWaitsOn} as a predecessor, and the named field does not.");
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenBothTheParentAndTheDependenciesComeFromNamedFields_ReadsNoRelationsAtAll()
+        public async Task GetFeaturesForPortfolio_WhenBothTheParentAndTheDependenciesComeFromNamedFields_ReadsNoRelationsAtAll()
         {
             var (subject, payloadReads) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1799");
             var portfolio = APortfolioReadingItsDependenciesFromAField();
             portfolio.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(1)]).List!);
 
-            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(payloadReads.Select(read => read.Expand), Has.None.EqualTo(WorkItemExpand.Relations),
                 "The relations carry the parent link and the dependency links and nothing else a refresh wants. "
@@ -284,46 +284,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// answer with nothing about it that looks wrong.
         /// </summary>
         [Test]
-        public async Task GetFeaturesForProject_WhenOnlyTheDependenciesComeFromANamedField_StillReadsTheRelationsForTheParent()
+        public async Task GetFeaturesForPortfolio_WhenOnlyTheDependenciesComeFromANamedField_StillReadsTheRelationsForTheParent()
         {
             var (subject, payloadReads) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1799");
 
-            await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None);
 
             Assert.That(payloadReads.Count(read => read.Expand == WorkItemExpand.Relations), Is.EqualTo(1),
                 "The relations are still the only place the parent link can be read from.");
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheNamedFieldIsEmpty_YieldsNoDependenciesAndNoError()
+        public async Task GetFeaturesForPortfolio_WhenTheNamedFieldIsEmpty_YieldsNoDependenciesAndNoError()
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "");
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None)).Single();
 
             Assert.That(feature.DependsOnReferences, Is.Empty);
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheDependencyFieldNamesNoFieldAndTheRelationTypesCannotBeListed_StopsTheRefresh()
+        public async Task GetFeaturesForPortfolio_WhenTheDependencyFieldNamesNoFieldAndTheRelationTypesCannotBeListed_StopsTheRefresh()
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", refusesToListTheRelationTypes: true);
 
             var stopped = await Assert.ThrowsAsync<AzureDevOpsReadException>(
-                async () => await subject.GetFeaturesForProject(APortfolioNamingARelationEndAsItsDependencyField(), CancellationToken.None));
+                async () => await subject.GetFeaturesForPortfolio(APortfolioNamingARelationEndAsItsDependencyField(), CancellationToken.None));
 
             Assert.That(stopped!.Message, Does.Contain("relation types could not be listed"),
                 "Every Feature would otherwise be stored as waiting on nothing, overwriting what was read before.");
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WhenTheRelationTypesCannotBeListedButThePortfolioIgnoresDependencies_StillCompletes()
+        public async Task GetFeaturesForPortfolio_WhenTheRelationTypesCannotBeListedButThePortfolioIgnoresDependencies_StillCompletes()
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", refusesToListTheRelationTypes: true);
             var portfolio = APortfolioNamingARelationEndAsItsDependencyField();
             portfolio.IgnoreDependencies = true;
 
-            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(features, Has.Count.EqualTo(1));
         }

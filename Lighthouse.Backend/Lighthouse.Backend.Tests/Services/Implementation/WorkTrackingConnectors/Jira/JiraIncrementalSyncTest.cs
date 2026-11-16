@@ -179,14 +179,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_LeavesOutAnOrderingThePortfoliosOwnQueryCarries()
+        public async Task GetFeaturesForPortfolio_LeavesOutAnOrderingThePortfoliosOwnQueryCarries()
         {
             var jira = new JiraStub(Cloud);
             var subject = CreateSubject(jira.Handler);
             var portfolio = CreatePortfolio(CreateTeam());
             portfolio.DataRetrievalValue = AQueryTheOperatorOrdered;
 
-            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             var jql = jira.SearchRequests.Last().Value("jql");
 
@@ -209,14 +209,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_LeavesNoEmptyFilterWhenThePortfoliosQueryIsNothingButAnOrdering()
+        public async Task GetFeaturesForPortfolio_LeavesNoEmptyFilterWhenThePortfoliosQueryIsNothingButAnOrdering()
         {
             var jira = new JiraStub(Cloud);
             var subject = CreateSubject(jira.Handler);
             var portfolio = CreatePortfolio(CreateTeam());
             portfolio.DataRetrievalValue = AnOrderingAndNothingElse;
 
-            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             AssertJiraCanParseTheWholeFilter(jira.SearchRequests.Last().Value("jql"));
         }
@@ -581,7 +581,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             jira.QueueSweepPage(SweepIssue("PROJ-1", StampTwoHoursAheadOfUtc), nextPageToken: null);
 
             var stamps = await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
-            var stored = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).Single();
+            var stored = (await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Single();
 
             Assert.That(stamps.Single().ChangedAt, Is.EqualTo(stored.LastChangedRemote),
                 "The swept stamp is compared against the stored one Feature by Feature. Two different parses of "
@@ -606,11 +606,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProjectByReferenceId_NamesOnlyTheKeysItWasAskedFor()
+        public async Task GetFeaturesForPortfolioByReferenceId_NamesOnlyTheKeysItWasAskedFor()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Last().Value("jql"), Is.EqualTo(TheKeyedQuery),
                 "Phase 2 downloads what moved and nothing else - re-applying the portfolio filter would let the cutoff "
@@ -618,13 +618,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProjectByReferenceId_AsksTheTrackerNothingWhenNoKeysAreNamed()
+        public async Task GetFeaturesForPortfolioByReferenceId_AsksTheTrackerNothingWhenNoKeysAreNamed()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
             var searchesBefore = jira.SearchRequests.Count();
             var requestsBefore = jira.Requests.Count;
 
-            var features = await subject.GetFeaturesForProject(portfolio, [], CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, [], CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -640,13 +640,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProjectByReferenceId_SplitsALargeSetAcrossSeveralRequests()
+        public async Task GetFeaturesForPortfolioByReferenceId_SplitsALargeSetAcrossSeveralRequests()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
             var requestsBefore = jira.SearchRequests.Count();
             var manyKeys = Enumerable.Range(1, 250).Select(number => $"PROJ-{number}").ToList();
 
-            await subject.GetFeaturesForProject(portfolio, manyKeys, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, manyKeys, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
                 "250 keys are split so that one round trip asks for, and hands back, a bounded amount; the batch is chunked the way "
@@ -654,12 +654,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProjectByReferenceId_DownloadsTheFullPayloadIncludingAPagedChangelog()
+        public async Task GetFeaturesForPortfolioByReferenceId_DownloadsTheFullPayloadIncludingAPagedChangelog()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
             jira.ChangelogEntryCount = 31;
 
-            var features = await subject.GetFeaturesForProject(portfolio, ["PROJ-1"], CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, ["PROJ-1"], CancellationToken.None);
 
             var byKeyRequest = jira.SearchRequests.Last();
 
@@ -951,11 +951,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProjectByReferenceId_OnDataCenter_NamesOnlyTheKeysItWasAskedFor()
+        public async Task GetFeaturesForPortfolioByReferenceId_OnDataCenter_NamesOnlyTheKeysItWasAskedFor()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
 
-            var features = await subject.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1118,7 +1118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             // Same reason as the team-side helper: the deployment is discovered by asking the instance, so the
             // capability probe only answers once a first cycle has run - and that first cycle is a full download.
-            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             return (subject, portfolio, jira);
         }

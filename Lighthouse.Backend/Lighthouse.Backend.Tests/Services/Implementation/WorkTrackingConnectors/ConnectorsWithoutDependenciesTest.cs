@@ -20,12 +20,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     public class ConnectorsWithoutDependenciesTest : IntegrationTestBase
     {
         [Test]
-        public async Task GetFeaturesForProject_ACsvFeatureIsWaitingOnNothingAndSaysSoWithoutComplaint()
+        public async Task GetFeaturesForPortfolio_ACsvFeatureIsWaitingOnNothingAndSaysSoWithoutComplaint()
         {
             var subject = ServiceProvider.GetService<CsvWorkTrackingConnector>()
                 ?? throw new InvalidOperationException("Could not resolve the CSV connector");
 
-            var features = await subject.GetFeaturesForProject(APortfolioReadFromCsv(), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioReadFromCsv(), CancellationToken.None);
 
             Assert.That(features.TrueForAll(feature => feature.DependsOnReferences.Count == 0), Is.True);
         }
@@ -36,14 +36,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// clear "this connector has no Features" into some other failure.
         /// </summary>
         [Test]
-        public void GetFeaturesForProject_ServiceNowStillRefusesToReturnFeaturesAtAll()
+        public void GetFeaturesForPortfolio_ServiceNowStillRefusesToReturnFeaturesAtAll()
         {
             var subject = new ServiceNowWorkTrackingConnector(
                 Mock.Of<ILogger<ServiceNowWorkTrackingConnector>>(),
                 Mock.Of<IWorkTrackingAuthStrategyFactory>());
 
             Assert.That(
-                async () => await subject.GetFeaturesForProject(new Portfolio(), CancellationToken.None),
+                async () => await subject.GetFeaturesForPortfolio(new Portfolio(), CancellationToken.None),
                 Throws.TypeOf<NotSupportedException>());
         }
 

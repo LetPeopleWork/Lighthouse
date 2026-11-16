@@ -79,11 +79,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_RemembersWhenTheFeatureLastChangedRemotely()
+        public async Task GetFeaturesForPortfolio_RemembersWhenTheFeatureLastChangedRemotely()
         {
             var (subject, portfolio, _) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
 
-            var feature = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).Single();
+            var feature = (await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Single();
 
             Assert.That(feature.LastChangedRemote, Is.EqualTo(WhenTheTrackerSaysItLastChanged),
                 "The portfolio half stores its own stamps; a Feature without one keeps the portfolio on full "
@@ -253,7 +253,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
 
-            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
             var whatTheDownloadAsked = ado.WiqlQueries[^1];
             ado.WiqlQueries.Clear();
 
@@ -348,11 +348,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_ByReferenceId_DownloadsExactlyTheIdsItWasAskedFor()
+        public async Task GetFeaturesForPortfolio_ByReferenceId_DownloadsExactlyTheIdsItWasAskedFor()
         {
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheItemThatMoved, TheItemThatDidNot, 3);
 
-            var features = await subject.GetFeaturesForProject(portfolio, TheTwoIdsAskedFor.Select(id => $"{id}").ToList(), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(portfolio, TheTwoIdsAskedFor.Select(id => $"{id}").ToList(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {

@@ -34,11 +34,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_ReadsEachFeaturesHistoryOnce()
+        public async Task GetFeaturesForPortfolio_ReadsEachFeaturesHistoryOnce()
         {
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(ThreeItems);
 
-            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(ado.RevisionReads, Has.Count.EqualTo(ThreeItems.Length),
                 "The portfolio half converts through the same path as the team half, so it pays the same "

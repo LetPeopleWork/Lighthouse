@@ -969,7 +969,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
 
         private async Task<RemoteFeatureFetch> FetchEveryFeature(IWorkTrackingConnector connector, Portfolio portfolio, CancellationToken stopping)
         {
-            var recordsFromTracker = (await connector.GetFeaturesForProject(portfolio, stopping)).ToList();
+            var recordsFromTracker = (await connector.GetFeaturesForPortfolio(portfolio, stopping)).ToList();
             var actualFeatures = DeduplicateByReferenceId(recordsFromTracker, portfolio.Name, feature => feature.ReferenceId);
 
             return new RemoteFeatureFetch(
@@ -1183,7 +1183,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
 
             List<Feature> downloaded = movedReferenceIds.Count == 0
                 ? []
-                : DeduplicateByReferenceId((await connector.GetFeaturesForProject(portfolio, movedReferenceIds, Stopping)).ToList(), portfolio.Name, feature => feature.ReferenceId);
+                : DeduplicateByReferenceId((await connector.GetFeaturesForPortfolio(portfolio, movedReferenceIds, Stopping)).ToList(), portfolio.Name, feature => feature.ReferenceId);
 
             return new RemoteFeatureFetch(
                 downloaded,

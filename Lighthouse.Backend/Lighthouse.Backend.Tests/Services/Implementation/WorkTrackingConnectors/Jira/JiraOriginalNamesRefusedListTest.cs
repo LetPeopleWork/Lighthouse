@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceRefusing(statusList, answer, body);
 
             var stopped = await Assert.ThrowsAsync<JiraReadException>(
-                () => JiraConnectorTestSetup.AConnectorOver(instance.Handler()).GetFeaturesForProject(APortfolio(), CancellationToken.None));
+                () => JiraConnectorTestSetup.AConnectorOver(instance.Handler()).GetFeaturesForPortfolio(APortfolio(), CancellationToken.None));
 
             Assert.That(
                 stopped!.Verdict.Message,
@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     await connector.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
                     break;
                 case "Portfolio":
-                    await connector.GetFeaturesForProject(APortfolio(), CancellationToken.None);
+                    await connector.GetFeaturesForPortfolio(APortfolio(), CancellationToken.None);
                     break;
                 default:
                     var verdict = await connector.ValidateTeamSettings(ATeam());

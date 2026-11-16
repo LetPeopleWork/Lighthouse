@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string Zeta797 = "00c1acac-f18e-4bd8-9919-25099d648011";
 
         [Test]
-        public async Task GetFeaturesForProject_ReadsTheDependenciesTheDemoWorkspaceReallyHas()
+        public async Task GetFeaturesForPortfolio_ReadsTheDependenciesTheDemoWorkspaceReallyHas()
         {
             var waitedOnBy = await WhatEachDemoProjectWaitsOn();
 
@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// exactly like one that has no dependencies.
         /// </summary>
         [Test]
-        public async Task GetFeaturesForProject_EveryReferenceNamesAProjectTheWorkspaceAlsoReturned()
+        public async Task GetFeaturesForPortfolio_EveryReferenceNamesAProjectTheWorkspaceAlsoReturned()
         {
             var features = await TheDemoProjectsAsLighthouseReadsThem();
 
@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = new LinearWorkTrackingConnector(
                 Mock.Of<ILogger<LinearWorkTrackingConnector>>(), new FakeCryptoService());
 
-            return await subject.GetFeaturesForProject(TheDemoPortfolio(), CancellationToken.None);
+            return await subject.GetFeaturesForPortfolio(TheDemoPortfolio(), CancellationToken.None);
         }
 
         private static Portfolio TheDemoPortfolio()

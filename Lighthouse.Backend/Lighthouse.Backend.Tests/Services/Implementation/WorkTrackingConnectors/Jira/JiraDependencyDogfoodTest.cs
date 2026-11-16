@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string TrendSpotterInsights = "LGHTHSDMO-10";
 
         [Test]
-        public async Task GetFeaturesForProject_ReadsTheBlocksLinksTheDemoProjectReallyHas()
+        public async Task GetFeaturesForPortfolio_ReadsTheBlocksLinksTheDemoProjectReallyHas()
         {
             var features = await TheDemoEpicsAsLighthouseReadsThem();
 
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_TheLinkNameTheMapperLooksForIsTheOneThisInstanceUses()
+        public async Task GetFeaturesForPortfolio_TheLinkNameTheMapperLooksForIsTheOneThisInstanceUses()
         {
             var features = await TheDemoEpicsAsLighthouseReadsThem();
 
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new Lighthouse.Backend.Cache.Cache<string, object>(),
                 new DeliveryForecastBlockRenderer(), TimeProvider.System);
 
-            return await subject.GetFeaturesForProject(TheDemoPortfolio(), CancellationToken.None);
+            return await subject.GetFeaturesForPortfolio(TheDemoPortfolio(), CancellationToken.None);
         }
 
         private static Portfolio TheDemoPortfolio()

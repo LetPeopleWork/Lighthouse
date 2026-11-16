@@ -65,27 +65,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload is read whole - there is no by-reference-id fetch (Epic #5687, D11).");
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
+        public Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var features = new List<Feature>();
 
-            using var csv = ReadCsv(project);
-            var knownStates = KnownStatesOf(project);
+            using var csv = ReadCsv(portfolio);
+            var knownStates = KnownStatesOf(portfolio);
 
             while (csv.Read())
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var workItemBase = CreateWorkItemBaseForRow(csv, project, knownStates);
+                var workItemBase = CreateWorkItemBaseForRow(csv, portfolio, knownStates);
 
                 if (workItemBase != null)
                 {
-                    var feature = new Feature(workItemBase, TheDependenciesOf(csv, project));
+                    var feature = new Feature(workItemBase, TheDependenciesOf(csv, portfolio));
 
-                    var owningTeam = FieldIn(csv, GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
-                    var estimatedSizeString = FieldIn(csv, GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
+                    var owningTeam = FieldIn(csv, GetOptionByKey(portfolio.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
+                    var estimatedSizeString = FieldIn(csv, GetOptionByKey(portfolio.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
                     var estimatedSize = 0;
 
                     if (!string.IsNullOrEmpty(estimatedSizeString) && int.TryParse(estimatedSizeString, out var parsedEstimatedSize))
@@ -103,10 +103,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(features);
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
+        public Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload is read whole - there is no by-reference-id fetch (Epic #5687, D11).");
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload carries no remote change stamp to sweep (Epic #5687, D11).");
 
         /// <summary>
@@ -114,14 +114,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         /// to stop when told to. Answering normally lets the refresh walk on to its next step, which is the
         /// one thing a cancelled refresh must not do.
         /// </summary>
-        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             return Task.FromResult(new List<Feature>());
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload carries no remote change stamp to sweep (Epic #5687, D11).");
 
         public Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
@@ -529,9 +529,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         /// nothing rather than throwing - so an older upload keeps working and simply waits on nothing. Nothing here has been saved yet, so every reference names Feature nought
         /// until the reconciler keys it to the row the Feature lands on.
         /// </summary>
-        private static List<FeatureDependencyReference> TheDependenciesOf(CsvReader csv, Portfolio project)
+        private static List<FeatureDependencyReference> TheDependenciesOf(CsvReader csv, Portfolio portfolio)
         {
-            var column = GetDependsOnColumn(project.WorkTrackingSystemConnection);
+            var column = GetDependsOnColumn(portfolio.WorkTrackingSystemConnection);
 
             if (string.IsNullOrWhiteSpace(column))
             {

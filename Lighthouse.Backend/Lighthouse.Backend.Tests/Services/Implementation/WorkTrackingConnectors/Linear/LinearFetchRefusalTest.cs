@@ -53,22 +53,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void GetFeaturesForProject_RefusesWhenLinearWillNotAnswer()
+        public void GetFeaturesForPortfolio_RefusesWhenLinearWillNotAnswer()
         {
             var subject = ALinearThat(WillNotAnswer());
 
-            Assert.That(async () => await subject.GetFeaturesForProject(APortfolioOnLinear(), CancellationToken.None),
+            Assert.That(async () => await subject.GetFeaturesForPortfolio(APortfolioOnLinear(), CancellationToken.None),
                 Throws.Exception,
                 "On the portfolio half an empty answer strips every Feature's portfolio claim, and the "
                 + "orphaned-Feature cleanup then deletes outright whatever no portfolio still claims.");
         }
 
         [Test]
-        public async Task GetFeaturesForProject_StillAnswersWithNoRecordsWhenTheWorkspaceGenuinelyHasNoProjects()
+        public async Task GetFeaturesForPortfolio_StillAnswersWithNoRecordsWhenTheWorkspaceGenuinelyHasNoProjects()
         {
             var subject = ALinearThat(AnsweringWith(NoProjects()));
 
-            var features = await subject.GetFeaturesForProject(APortfolioOnLinear(), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioOnLinear(), CancellationToken.None);
 
             Assert.That(features, Is.Empty,
                 "The distinction is the whole point. A portfolio whose workspace really holds no projects has "
@@ -150,11 +150,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_NoStatesMapped_ReadsThePortfoliosProjectsRatherThanNoneOfThem()
+        public async Task GetFeaturesForPortfolio_NoStatesMapped_ReadsThePortfoliosProjectsRatherThanNoneOfThem()
         {
             var subject = ALinearThat(AnsweringWith(TwoIssuesAndTwoProjects()));
 
-            var features = await subject.GetFeaturesForProject(APortfolioOnLinearWithNoStatesMapped(), CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(APortfolioOnLinearWithNoStatesMapped(), CancellationToken.None);
 
             Assert.That(features.Select(f => f.ReferenceId), Is.EquivalentTo(BothProjects),
                 "The portfolio half already reads an unmapped state list as 'no opinion'. Both halves share "

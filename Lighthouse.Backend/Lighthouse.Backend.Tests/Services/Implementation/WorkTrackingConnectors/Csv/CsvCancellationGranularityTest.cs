@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_CancelledBeforeItStarts_NeverOpensTheUpload()
+        public async Task GetFeaturesForPortfolio_CancelledBeforeItStarts_NeverOpensTheUpload()
         {
             var subject = AConnectorReadingAnUpload();
 
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(
-                    async () => await subject.GetFeaturesForProject(APortfolioWithAnUpload(), alreadyCancelled.Token),
+                    async () => await subject.GetFeaturesForPortfolio(APortfolioWithAnUpload(), alreadyCancelled.Token),
                     Throws.InstanceOf<OperationCanceledException>());
 
                 Assert.That(subject.Uploads, Is.Empty,
@@ -93,14 +93,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void GetFeaturesForProject_CancelledWhileItParses_StopsWithoutReadingTheRest()
+        public void GetFeaturesForPortfolio_CancelledWhileItParses_StopsWithoutReadingTheRest()
         {
             using var stopPartWayIn = new CancellationTokenSource();
             var subject = AConnectorReadingAnUpload();
             subject.OnBite = () => StopOnceParsingIsUnderWay(subject, stopPartWayIn);
 
             Assert.That(
-                async () => await subject.GetFeaturesForProject(APortfolioWithAnUpload(), stopPartWayIn.Token),
+                async () => await subject.GetFeaturesForPortfolio(APortfolioWithAnUpload(), stopPartWayIn.Token),
                 Throws.InstanceOf<OperationCanceledException>());
 
             AssertItStoppedMidUpload(subject);

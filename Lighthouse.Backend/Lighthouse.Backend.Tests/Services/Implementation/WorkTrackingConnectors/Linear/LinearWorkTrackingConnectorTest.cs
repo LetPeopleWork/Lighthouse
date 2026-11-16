@@ -180,13 +180,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_ReturnsProjectsAsFeatures()
+        public async Task GetFeaturesForPortfolio_ReturnsProjectsAsFeatures()
         {
             var project = CreatePortfolio();
 
             var subject = CreateSubject();
 
-            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(project, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -198,7 +198,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_WithNonMatchingStates_ReturnsNoFeatures()
+        public async Task GetFeaturesForPortfolio_WithNonMatchingStates_ReturnsNoFeatures()
         {
             var project = CreatePortfolio();
             project.ToDoStates.Clear();
@@ -208,19 +208,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var subject = CreateSubject();
 
-            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(project, CancellationToken.None);
 
             Assert.That(features, Has.Count.EqualTo(0));
         }
 
         [Test]
-        public async Task GetFeaturesForProject_FeaturesHaveStableProjectIdReference()
+        public async Task GetFeaturesForPortfolio_FeaturesHaveStableProjectIdReference()
         {
             var project = CreatePortfolio();
 
             var subject = CreateSubject();
 
-            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(project, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -231,13 +231,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_ProjectsLinkedToInitiatives_HaveParentReferenceId()
+        public async Task GetFeaturesForPortfolio_ProjectsLinkedToInitiatives_HaveParentReferenceId()
         {
             var project = CreatePortfolio();
 
             var subject = CreateSubject();
 
-            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(project, CancellationToken.None);
 
             // At least verify the ParentReferenceId is set for projects that have initiatives
             // Not all projects may be linked to initiatives, so we just check the field is populated when present
@@ -260,7 +260,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
 
             // First get features to find any initiative references
-            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(project, CancellationToken.None);
             var initiativeIds = features
                 .Where(f => !string.IsNullOrEmpty(f.ParentReferenceId))
                 .Select(f => f.ParentReferenceId)
@@ -298,7 +298,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = CreatePortfolio();
             var subject = CreateSubject();
             
-            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
+            var features = await subject.GetFeaturesForPortfolio(project, CancellationToken.None);
 
             var featureWithParent = features.Single(x => x.Name == "Integration Test Project");
             Assert.That(featureWithParent.ParentReferenceId, Is.EqualTo("b87bc74b-cb77-4c45-84a5-4dd7460c6873"));

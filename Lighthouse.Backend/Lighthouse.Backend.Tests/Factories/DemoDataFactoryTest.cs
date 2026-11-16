@@ -307,7 +307,7 @@ namespace Lighthouse.Backend.Tests.Factories
             portfolio.WorkTrackingSystemConnection = subject.CreateDemoWorkTrackingSystemConnection();
 
             var connector = new CsvWorkTrackingConnector(Mock.Of<ILogger<CsvWorkTrackingConnector>>());
-            var features = await connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             return features.ToDictionary(
                 feature => feature.ReferenceId,

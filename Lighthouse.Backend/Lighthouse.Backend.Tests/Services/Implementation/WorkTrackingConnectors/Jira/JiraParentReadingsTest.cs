@@ -255,7 +255,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var connector = JiraConnectorTestSetup.AConnectorOver(AJiraServing(JiraWireFormat.AnIssueCarrying(Item, "Epic", furtherFields, links)));
 
-            var features = await connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            var features = await connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             return features.Single().ParentReadings;
         }

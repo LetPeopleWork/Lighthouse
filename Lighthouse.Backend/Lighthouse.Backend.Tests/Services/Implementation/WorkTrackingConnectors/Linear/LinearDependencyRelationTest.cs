@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string AThirdProjectId = "33333333-3333-3333-3333-333333333333";
 
         [Test]
-        public async Task GetFeaturesForProject_AProjectWaitsOnTheOneThatBlocksIt()
+        public async Task GetFeaturesForPortfolio_AProjectWaitsOnTheOneThatBlocksIt()
         {
             var features = await FeaturesFrom(ProjectsWithOneDependency());
 
@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_TheProjectDoingTheBlockingWaitsOnNothing()
+        public async Task GetFeaturesForPortfolio_TheProjectDoingTheBlockingWaitsOnNothing()
         {
             var features = await FeaturesFrom(ProjectsWithOneDependency());
 
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_OneRelationBetweenTwoProjectsIsOneEdgeAndNotTwo()
+        public async Task GetFeaturesForPortfolio_OneRelationBetweenTwoProjectsIsOneEdgeAndNotTwo()
         {
             var features = await FeaturesFrom(ProjectsWithOneDependency());
 
@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_TheReferenceIsTheProjectIdExactlyAsLinearReturnedIt()
+        public async Task GetFeaturesForPortfolio_TheReferenceIsTheProjectIdExactlyAsLinearReturnedIt()
         {
             var features = await FeaturesFrom(ProjectsWithOneDependency());
 
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_EveryReferenceIsMarkedAsHavingComeFromTheTracker()
+        public async Task GetFeaturesForPortfolio_EveryReferenceIsMarkedAsHavingComeFromTheTracker()
         {
             var features = await FeaturesFrom(ProjectsWithOneDependency());
 
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_AProjectWaitingOnSeveralCarriesOneReferenceEach()
+        public async Task GetFeaturesForPortfolio_AProjectWaitingOnSeveralCarriesOneReferenceEach()
         {
             var features = await FeaturesFrom(AProjectBlockedByTwo());
 
@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("{\"nodes\": [{\"project\": null}]}")]
         [TestCase("{\"nodes\": [{\"project\": {\"id\": null}}]}")]
         [TestCase("{\"nodes\": [{\"project\": {\"id\": \"\"}}]}")]
-        public async Task GetFeaturesForProject_APayloadItCannotReadYieldsNothingAndThrowsNothing(string inverseRelations)
+        public async Task GetFeaturesForPortfolio_APayloadItCannotReadYieldsNothingAndThrowsNothing(string inverseRelations)
         {
             var features = await FeaturesFrom(ProjectsResponse(
                 AProject(BlockedProjectId, "Blocked", inverseRelations)));
@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_AProjectWithNoRelationsAtAllIsUnchangedInEveryOtherRespect()
+        public async Task GetFeaturesForPortfolio_AProjectWithNoRelationsAtAllIsUnchangedInEveryOtherRespect()
         {
             var features = await FeaturesFrom(ProjectsResponse(AProject(BlockedProjectId, "Blocked", "null")));
 
@@ -129,7 +129,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// wrong direction one careless line away from being read.
         /// </summary>
         [Test]
-        public async Task GetFeaturesForProject_TheProjectsQueryAsksForTheFarSideOnlyAndAsksOnce()
+        public async Task GetFeaturesForPortfolio_TheProjectsQueryAsksForTheFarSideOnlyAndAsksOnce()
         {
             var sentQueries = new List<string>();
             await FeaturesFrom(ProjectsWithOneDependency(), sentQueries.Add);
@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// clock in a unit test measures the machine it ran on.
         /// </summary>
         [Test]
-        public async Task GetFeaturesForProject_ReadingTheRelationsCostsTheRefreshNoRequestOfItsOwn()
+        public async Task GetFeaturesForPortfolio_ReadingTheRelationsCostsTheRefreshNoRequestOfItsOwn()
         {
             var withoutRelations = new List<string>();
             await FeaturesFrom(
@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject(HandlerReturning(projectsResponse, recordQuery));
 
-            return await subject.GetFeaturesForProject(CreatePortfolio(), CancellationToken.None);
+            return await subject.GetFeaturesForPortfolio(CreatePortfolio(), CancellationToken.None);
         }
 
         private static string ProjectsWithOneDependency()

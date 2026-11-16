@@ -253,7 +253,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         {
             var connector = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
 
-            return await connector.GetFeaturesForProject(APortfolioCarryingTheOverride(), CancellationToken.None);
+            return await connector.GetFeaturesForPortfolio(APortfolioCarryingTheOverride(), CancellationToken.None);
         }
 
         /// <summary>
@@ -266,7 +266,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             var portfolio = APortfolioCarryingTheOverride();
             var connector = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
 
-            await connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await connector.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
             await connector.GetParentFeaturesDetails(portfolio, [TheLevelAboveTheFeature], CancellationToken.None);
         }
 

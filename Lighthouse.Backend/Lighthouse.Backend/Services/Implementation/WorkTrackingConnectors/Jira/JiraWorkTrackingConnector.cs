@@ -341,15 +341,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return workItems;
         }
 
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
+        public async Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
         {
-            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
+            logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", portfolio.WorkItemTypes), portfolio.DataRetrievalValue);
 
-            var query = PrepareQuery(project);
-            var issues = await GetIssuesByQuery(project, query, cancellationToken);
-            var (features, theDependencyField) = await ReadFeaturesFromIssues(project, issues);
+            var query = PrepareQuery(portfolio);
+            var issues = await GetIssuesByQuery(portfolio, query, cancellationToken);
+            var (features, theDependencyField) = await ReadFeaturesFromIssues(portfolio, issues);
 
-            ReportLinksThatMeantNothingHere(project, issues, features, theDependencyField);
+            ReportLinksThatMeantNothingHere(portfolio, issues, features, theDependencyField);
 
             return features;
         }
@@ -359,14 +359,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The portfolio's own filter is deliberately not re-applied - the sweep already decided what belongs to
         /// the query, and a second cutoff evaluation could drop a Feature the sweep just reported as changed.
         /// </summary>
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
+        public async Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
             if (referenceIds.Count == 0)
             {
                 return [];
             }
 
-            logger.LogDebug("Updating {Count} Feature(s) by reference id for Portfolio {PortfolioName}", referenceIds.Count, project.Name);
+            logger.LogDebug("Updating {Count} Feature(s) by reference id for Portfolio {PortfolioName}", referenceIds.Count, portfolio.Name);
 
             var issues = new List<Issue>();
 
@@ -375,23 +375,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             foreach (var chunk in referenceIds.Chunk(ReferenceIdsPerQuery))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                issues.AddRange(await GetIssuesByQuery(project, PrepareIssueKeyQuery(chunk), cancellationToken));
+                issues.AddRange(await GetIssuesByQuery(portfolio, PrepareIssueKeyQuery(chunk), cancellationToken));
             }
 
-            return await CreateFeaturesFromIssues(project, issues);
+            return await CreateFeaturesFromIssues(portfolio, issues);
         }
 
         /// <summary>
-        /// The sweep half of the two-phase fetch: the very query <see cref="GetFeaturesForProject(Portfolio)"/>
+        /// The sweep half of the two-phase fetch: the very query <see cref="GetFeaturesForPortfolio(Portfolio)"/>
         /// issues, narrowed to identity plus the change stamp.
         /// </summary>
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
-            => SweepIdentities(project, [PrepareQuery(project)], $"Portfolio {project.Name}", cancellationToken);
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
+            => SweepIdentities(portfolio, [PrepareQuery(portfolio)], $"Portfolio {portfolio.Name}", cancellationToken);
 
-        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
             var keys = parentFeatureIds.ToList();
-            logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", project.Name, string.Join(", ", keys));
+            logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", portfolio.Name, string.Join(", ", keys));
 
             var issues = new List<Issue>();
 
@@ -401,21 +401,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                issues.AddRange(await GetIssuesByQuery(project, PrepareIssueKeyQuery(chunk), cancellationToken));
+                issues.AddRange(await GetIssuesByQuery(portfolio, PrepareIssueKeyQuery(chunk), cancellationToken));
             }
 
-            return await CreateFeaturesFromIssues(project, issues);
+            return await CreateFeaturesFromIssues(portfolio, issues);
         }
 
         /// <summary>
         /// Phase 1 for the parent Features: the very keys <see cref="GetParentFeaturesDetails"/> asks for,
         /// chunked the same way, narrowed to identity plus the change stamp.
         /// </summary>
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
             => SweepIdentities(
-                project,
+                portfolio,
                 parentFeatureIds.Chunk(ReferenceIdsPerQuery).Select(PrepareIssueKeyQuery),
-                $"the parent Features of Portfolio {project.Name}",
+                $"the parent Features of Portfolio {portfolio.Name}",
                 cancellationToken);
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)

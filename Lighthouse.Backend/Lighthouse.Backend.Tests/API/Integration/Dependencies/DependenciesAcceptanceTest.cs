@@ -127,7 +127,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             ConnectorMock = new Mock<IWorkTrackingConnector>();
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => []);
             ConnectorMock
                 .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
@@ -312,7 +312,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             var payload = await TheTracker.Map(rowsFromTheTracker);
 
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => payload);
 
             using var scope = Factory.Services.CreateScope();

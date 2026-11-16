@@ -754,10 +754,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 .Returns<Team, CancellationToken>((team, _) => Task.FromResult<IReadOnlyList<RemoteRecordStamp>>([new RemoteRecordStamp(TheItemOf(team.Name), TheItemLastChangedAt)]));
 
             connector
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, CancellationToken>((portfolio, _) => Task.FromResult(TheFeatureOf(portfolio)));
             connector
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, IReadOnlyCollection<string>, CancellationToken>((portfolio, wanted, _) => Task.FromResult<List<Feature>>([.. TheFeatureOf(portfolio).Where(feature => wanted.Contains(feature.ReferenceId))]));
             connector
                 .Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
