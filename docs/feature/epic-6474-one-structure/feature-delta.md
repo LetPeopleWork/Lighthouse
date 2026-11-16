@@ -1977,3 +1977,17 @@ refresh per unit in the Work Items module. This amends the component table above
   event's handlers and pinned in `DomainEventHandlerOrderPinTest`. Slice 12's event-order test must keep it first.
 
 Record: `docs/evolution/2026-11-16-story-6360-s03b-package-work-items/evolution.md`.
+
+### Plan update: all S03* become prerequisites, and S03i creates the module (maintainer, 2026-11-16)
+
+S09a (#6382) keeps its hard dependency on **all S03\***, S03i included, and stays a prerequisite of this Epic. The
+maintainer prefers waiting to doing S09a twice. This changes the prerequisites above and amends A-D1, MA1 and
+"What does not change":
+
+- Prerequisites, in backlog order (ADO, all Next): S03c ✓, S03b ✓, S03a #6359, S03d #6362 (Deliveries half),
+  S03e #6363, S03f #6364, S03g #6365, S03h #6366, S03i #6468, S09a #6382.
+- **S03i creates `Modules/OrganisationSetup/`** and moves Team, Portfolio, their settings, Terminology, connection
+  defaults, blackouts, refresh cadence and ordering policy into it, as they are. This Epic then builds units,
+  levels and the terminology split inside that module; it no longer creates the module.
+- The Portfolio-as-unit half of S03d stays with this Epic. S03d keeps Deliveries only.
+- All slices still wait for the prerequisites, slice 01 included.

@@ -30,3 +30,14 @@ Team and Portfolio make this move smaller).
 
 Keep the context to structure and defaults, with no behaviour: ADR-270 names the god-context risk. Read ADR-270
 Decisions 1, 2 (the acknowledged cycle with Tracker integration and how it is broken) and 8.
+
+## Update: S03i runs before Epic 6474 again (maintainer, 2026-11-16)
+
+S09a (#6382) keeps its hard dependency on all S03*, and S09a stays a prerequisite of Epic #6474. So S03i runs
+**before** 6474 and creates `Modules/OrganisationSetup/` itself, with the full scope under IN: Team and Portfolio
+as they are today, their settings, Terminology, connection-default inheritance, blackouts, refresh cadence and
+Feature ordering policy. Size M–L again. 6474 then builds units, levels and the terminology split inside the
+existing module and creates no module of its own.
+
+Condition from 6474: move the code as it is. Do not fix a shape that 6474 reverses (Team and Portfolio become
+units on levels; ADR-274). Read `docs/feature/epic-6474-one-structure/feature-delta.md` at this Story's DESIGN.
