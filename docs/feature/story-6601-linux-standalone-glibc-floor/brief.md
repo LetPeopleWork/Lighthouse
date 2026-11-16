@@ -67,6 +67,15 @@ The maintainer (2026-11-15) narrowed 'the AppImage still starts on Ubuntu 24.04 
 Confirmed
 
 
+```text
+The maintainer (2026-11-15) recorded the alarm branch of the first promise as not applicable: the promise reads 'builds without naming a retired runner image, or a retirement is announced by an alarm', and the first branch is met, because the job runs on ubuntu-latest (an alias GitHub moves forward and does not retire) inside a digest-pinned Ubuntu 24.04 container; if that label ever disappeared, every job would fail loudly at job start rather than break silently
+```
+
+#### Status
+
+Confirmed
+
+
 ## Journey
 
 None.

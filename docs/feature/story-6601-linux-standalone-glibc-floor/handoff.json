@@ -10,12 +10,12 @@
 "obligations": [
 "L1"
 ],
-"still_passes_if": "F198",
+"still_passes_if": "F261",
 "test": "tools/linux-appimage/tests/test-glibc-floor.sh"
 },
-"expected": "F196",
+"expected": "F259",
 "stimulus": "F195",
-"user_result": "F197"
+"user_result": "F260"
 },
 {
 "covers": [
@@ -108,10 +108,10 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F222",
+"still_passes_if": "F263",
 "test": "tools/linux-appimage/tests/test-glibc-floor.sh"
 },
-"expected": "F220",
+"expected": "F262",
 "stimulus": "F219",
 "user_result": "F221"
 },
@@ -156,12 +156,28 @@
 "obligations": [
 "L1"
 ],
-"still_passes_if": "F234",
+"still_passes_if": "F267",
 "test": "tools/linux-appimage/tests/test-glibc-floor.sh"
 },
-"expected": "F232",
-"stimulus": "F231",
-"user_result": "F233"
+"expected": "F265",
+"stimulus": "F264",
+"user_result": "F266"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F271",
+"test": "tools/linux-appimage/tests/test-glibc-floor.sh"
+},
+"expected": "F269",
+"stimulus": "F268",
+"user_result": "F270"
 }
 ],
 "S2": [
@@ -239,7 +255,7 @@
 "C": 2,
 "D": 14,
 "E": 6,
-"F": 258,
+"F": 272,
 "K": 4,
 "L": 4,
 "P": 3,
@@ -936,13 +952,6 @@
 "text": "F190"
 },
 {
-"id": "E2",
-"promises": [
-"P1"
-],
-"text": "F191"
-},
-{
 "id": "E3",
 "promises": [
 "P2"
@@ -1054,13 +1063,9 @@
 "F189": "accepted: first seen on main; rollback is reverting the S2 commit; no cheap local full build exists because the sidecar artifact is built by the pipeline",
 "F19": "Exposure noted only: macOS and Windows packaging still name macos-latest and windows-latest; they have no glibc floor and are out of scope. The verify jobs on ubuntu-latest ship nothing and have no glibc exposure.",
 "F190": "The Linux standalone release build runs on a CI runner image that is not retired, so a release is never blocked by a retired image.",
-"F191": "Before a runner image is retired, a visible alarm reports it, early enough that a release is not blocked by the retirement unannounced.",
 "F192": "A written decision states the minimum glibc version and Linux distribution that the AppImage requires.",
 "F193": "A build whose AppImage needs a newer glibc than the written floor fails in CI, so such an AppImage is never released.",
 "F195": "The packaging check runs over today's Ubuntu 24.04 libraries (bash, WebKitGTK, JavaScriptCore, WebKit web process)",
-"F196": "It passes and reports the highest version it parsed, 2.38, not only that nothing was over the floor",
-"F197": "The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS",
-"F198": "A check that scans nothing and prints a clean summary without a parsed highest version",
 "F199": "The check runs over a binary needing glibc 2.9, 2.39, 2.40 and 2.100 against the written floor, and over a 2.42 binary against floors written as 2.9 and 2.100, and over today's libraries against floors 2.37 and 2.38",
 "F2": "Releases are never blocked by GitHub retiring a runner image, and Linux users on the supported distributions keep a working app",
 "F20": "Formal verification: Quint is installed (probed with which quint) but no claim here is a state machine or temporal property. Every claim is a total comparison over a finite ordered set of dotted versions or a static shape of a workflow file. They are checked by the finite bash oracles, run by the host. No Quint, TLA+ or Agda model is delivered; nothing is waived and nothing is claimed proven.",
@@ -1085,9 +1090,7 @@
 "F218": "A check that treats a file with no parsed versions as needing nothing",
 "F219": "The repository is read for the written minimum and the packaging workflow",
 "F22": "Inputs and bounds: floor is a dotted major.minor integer pair; no upper bound beyond integers; the AppImage is any size the Tauri bundler produces and the check reads every ELF in it with no sampling; image digests are sha256 strings. No bound on number of files.",
-"F220": "The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum, and the workflow installs binutils and runs the check after the libssl rejection and before the upload",
 "F221": "The minimum Linux is written down in one place and a build over it cannot be uploaded",
-"F222": "A floor check present in the repository but never run by the packaging job, or run after the upload",
 "F223": "The packaging run scans a library whose file was cut short so that it starts like a program but cannot be read",
 "F224": "The run fails as indeterminate and names the cut-off file, instead of reporting that nothing needed a newer glibc",
 "F225": "The maintainer sees which file could not be read and never gets a false pass",
@@ -1097,10 +1100,6 @@
 "F229": "The maintainer sees which file was not checked and never gets a false pass",
 "F23": "The libssl rejection step, secrets handling (TAURI_SIGNING_PRIVATE_KEY), artifact names, the if: main condition, the Package and Sign environment and the ci.yml caller stay unchanged.",
 "F230": "the unreadable file is skipped and the run counts only the readable files and exits successfully",
-"F231": "The packaging run is given a floor that is not a dotted number, such as abc or a number ending in a dot",
-"F232": "The run fails as indeterminate with what is wrong, why and how to fix it, naming the refused floor",
-"F233": "A mistyped floor stops the build with a clear message and never lets every file pass",
-"F234": "the bad floor is treated as a number, or as zero, and the run exits successfully or refuses real files against a wrong floor",
 "F235": "The maintainer reads the Linux packaging workflow, its runner label, its build container and its steps",
 "F239": "The maintainer reads the Renovate configuration for the Linux packaging workflow",
 "F24": "The packaging job runs only on main: the real container build and the real AppImage are observable only on the main pipeline or by a maintainer running the container steps by hand. Local oracles prove the floor check, the workflow shape, and that the package install and bundled WebKitGTK library resolve in the pinned image under the floor.",
@@ -1123,8 +1122,22 @@
 "F256": "The maintainer (2026-11-15) narrowed 'the AppImage still starts on Ubuntu 24.04 LTS' to library and glibc resolution of every bundled binary on Ubuntu 24.04 and Debian 13, checked in CI; a real window start is the maintainer's one manual desktop start before the release, because a headless start probe of a WebKit app with a backend sidecar is slow and flaky in CI",
 "F257": "The Linux AppImage is built on a build environment whose glibc we choose, on a runner GitHub will not retire, still passes the floor check, and every bundled binary resolves its libraries on Ubuntu 24.04 LTS and Debian 13",
 "F258": "Every binary bundled in the AppImage resolves its libraries and glibc versions on Ubuntu 24.04 LTS and on Debian 13, and the maintainer has started the AppImage once on a desktop before the release.",
+"F259": "It passes and reports the highest version it parsed, equal to the highest version the version listing of the same files names, not only that nothing was over the floor",
 "F26": "readelf and file from binutils; docker; the Ubuntu apt archive; GitHub Actions job container",
+"F260": "The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS, and a moving archive build does not break the oracle",
+"F261": "A check that scans nothing and prints a clean summary without a parsed highest version, or one that reports a different highest version than the files need",
+"F262": "The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum; in the package job one step runs the floor check after the build and the libssl rejection and before the upload without continue-on-error, and an earlier install step lists binutils",
+"F263": "A floor check named only in a comment or a step name, run after the upload, allowed to fail, or binutils named only in a comment or another package such as binutils-dev",
+"F264": "The packaging run is given a floor that is not a dotted number, such as abc or a number ending in a dot, and floors with three numbers",
+"F265": "A bad floor fails as indeterminate with one WHAT/WHY/HOW block whose WHAT line names the refused floor, before any file is judged; a floor of 2.39.1 is accepted and compared number by number",
+"F266": "A mistyped floor stops the build with a clear message and never lets every file pass; a floor with three numbers still works",
+"F267": "the bad floor is treated as a number, or as zero, or named only outside the WHAT line, or reported as an offending file; or a floor with three numbers is refused",
+"F268": "The packaging run scans a healthy binary that makes the version tool warn but still lists its needs, and a folder holding a shell script, a picture and a clean binary",
+"F269": "Both pass; the warned binary and the clean binary are the only files scanned, and the script and the picture are skipped",
 "F27": "workflow steps call the scripts; scripts read tools/linux-appimage/glibc-floor and never the workflow; oracles read the workflow, renovate.json and the ADR as files; nothing in the backend or frontend depends on any of it",
+"F270": "Files that are not programs, or a harmless warning, never block a good release",
+"F271": "A check that refuses any file that makes the tool warn even when its needs were read, or refuses or counts files that are not ELF programs",
+"F272": "The maintainer (2026-11-15) recorded the alarm branch of the first promise as not applicable: the promise reads 'builds without naming a retired runner image, or a retirement is announced by an alarm', and the first branch is met, because the job runs on ubuntu-latest (an alias GitHub moves forward and does not retire) inside a digest-pinned Ubuntu 24.04 container; if that label ever disappeared, every job would fail loudly at job start rather than break silently",
 "F28": "Floor check result: exit code, one line per offending ELF naming its path and the highest GLIBC_x.y it needs, and the summary scanned=N over_floor=M",
 "F29": "which symbol inside a file needs the version; libstdc++ or other library versions; whether a file is actually loaded at run time",
 "F3": "The Linux standalone release builds without naming a GitHub runner image that GitHub will retire, or a retirement is announced by an alarm before it blocks a release",
@@ -1206,6 +1219,12 @@
 "kind": "Confirmed"
 },
 "text": "F256"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F272"
 }
 ],
 "promises": [

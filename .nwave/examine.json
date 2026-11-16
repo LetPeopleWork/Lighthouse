@@ -43,6 +43,10 @@
     {
       "name": "feature-proof",
       "path": "Scripts/examine/bin/feature-proof"
+    },
+    {
+      "name": "linux-appimage",
+      "path": "Scripts/examine/bin/linux-appimage"
     }
   ],
   "build": "Scripts/examine/build-examine-commands"

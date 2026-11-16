@@ -13,11 +13,11 @@ The packaging check runs over today's Ubuntu 24.04 libraries (bash, WebKitGTK, J
 ```
 
 ```text
-It passes and reports the highest version it parsed, 2.38, not only that nothing was over the floor
+It passes and reports the highest version it parsed, equal to the highest version the version listing of the same files names, not only that nothing was over the floor
 ```
 
 ```text
-The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS
+The release keeps uploading an AppImage that starts on Ubuntu 24.04 LTS, and a moving archive build does not break the oracle
 ```
 
 ##### Disposition
@@ -27,7 +27,7 @@ Tested
 tools\/linux\-appimage\/tests\/test\-glibc\-floor\.sh
 
 ```text
-A check that scans nothing and prints a clean summary without a parsed highest version
+A check that scans nothing and prints a clean summary without a parsed highest version, or one that reports a different highest version than the files need
 ```
 
 ###### Obligations
@@ -192,7 +192,7 @@ The repository is read for the written minimum and the packaging workflow
 ```
 
 ```text
-The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum, and the workflow installs binutils and runs the check after the libssl rejection and before the upload
+The floor file holds the single value 2.39, the Linux install page and the decision record state the same minimum; in the package job one step runs the floor check after the build and the libssl rejection and before the upload without continue-on-error, and an earlier install step lists binutils
 ```
 
 ```text
@@ -206,7 +206,7 @@ Tested
 tools\/linux\-appimage\/tests\/test\-glibc\-floor\.sh
 
 ```text
-A floor check present in the repository but never run by the packaging job, or run after the upload
+A floor check named only in a comment or a step name, run after the upload, allowed to fail, or binutils named only in a comment or another package such as binutils-dev
 ```
 
 ###### Obligations
@@ -276,15 +276,15 @@ the unreadable file is skipped and the run counts only the readable files and ex
 P2
 
 ```text
-The packaging run is given a floor that is not a dotted number, such as abc or a number ending in a dot
+The packaging run is given a floor that is not a dotted number, such as abc or a number ending in a dot, and floors with three numbers
 ```
 
 ```text
-The run fails as indeterminate with what is wrong, why and how to fix it, naming the refused floor
+A bad floor fails as indeterminate with one WHAT/WHY/HOW block whose WHAT line names the refused floor, before any file is judged; a floor of 2.39.1 is accepted and compared number by number
 ```
 
 ```text
-A mistyped floor stops the build with a clear message and never lets every file pass
+A mistyped floor stops the build with a clear message and never lets every file pass; a floor with three numbers still works
 ```
 
 ##### Disposition
@@ -294,7 +294,36 @@ Tested
 tools\/linux\-appimage\/tests\/test\-glibc\-floor\.sh
 
 ```text
-the bad floor is treated as a number, or as zero, and the run exits successfully or refuses real files against a wrong floor
+the bad floor is treated as a number, or as zero, or named only outside the WHAT line, or reported as an offending file; or a floor with three numbers is refused
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The packaging run scans a healthy binary that makes the version tool warn but still lists its needs, and a folder holding a shell script, a picture and a clean binary
+```
+
+```text
+Both pass; the warned binary and the clean binary are the only files scanned, and the script and the picture are skipped
+```
+
+```text
+Files that are not programs, or a harmless warning, never block a good release
+```
+
+##### Disposition
+
+Tested
+
+tools\/linux\-appimage\/tests\/test\-glibc\-floor\.sh
+
+```text
+A check that refuses any file that makes the tool warn even when its needs were read, or refuses or counts files that are not ELF programs
 ```
 
 ###### Obligations
@@ -433,16 +462,6 @@ P1
 
 ```text
 The Linux standalone release build runs on a CI runner image that is not retired, so a release is never blocked by a retired image.
-```
-
-#### E2
-
-##### Promises
-
-P1
-
-```text
-Before a runner image is retired, a visible alarm reports it, early enough that a release is not blocked by the retirement unannounced.
 ```
 
 #### E3

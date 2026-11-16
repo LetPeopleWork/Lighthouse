@@ -77,9 +77,6 @@ shown_output() {
 
 # --- reading the workflow ----------------------------------------------------------------------
 
-workflow_text=""
-if [ -f "$workflow_file" ]; then workflow_text="$(cat "$workflow_file")"; fi
-
 job_block() {
   awk -v job="$1" '
     $0 ~ "^  " job ":[[:space:]]*$" { inside = 1; print; next }

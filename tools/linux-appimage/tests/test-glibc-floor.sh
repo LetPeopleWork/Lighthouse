@@ -71,12 +71,6 @@ count_lines_with() {
   echo "$count"
 }
 
-line_number_of() {
-  local wanted=$1 file=$2 found
-  found="$(grep -n -m1 -F -- "$wanted" "$file" 2>/dev/null)" || true
-  echo "${found%%:*}"
-}
-
 # Runs the floor check inside the pinned container; sets check_exit and check_output (both streams).
 run_check() {
   check_output="$(docker exec "$check_container" bash /tools/check-glibc-floor.sh "$@" 2>&1)"
@@ -103,6 +97,23 @@ expect_output_has() {
   else
     fail "$label" "output does not contain '$wanted'. Output: $(shown_output)" "$why" "$how"
   fi
+}
+
+expect_failure_block() {
+  local label=$1 line label_name found=0
+  for label_name in WHAT WHY HOW; do
+    found=0
+    while IFS= read -r line; do
+      if [[ $line == "$label_name:"* ]]; then found=1; fi
+    done <<< "$check_output"
+    if [ "$found" -eq 1 ]; then
+      pass "$label: carries a $label_name line"
+    else
+      fail "$label" "the output has no line starting with $label_name:. Output: $(shown_output)" \
+        "a refusal without WHAT, WHY and HOW does not tell the maintainer what to do" \
+        "write the failure as a WHAT, a WHY and a HOW line"
+    fi
+  done
 }
 
 expect_output_lacks() {
@@ -132,6 +143,10 @@ printf '#define _GNU_SOURCE\n#include <pthread.h>\nint main(void){return (int)pt
 gcc plain.c -o plain
 gcc offender.c -o offender
 objcopy --remove-section .gnu.version_r plain no-version-needs
+# A healthy program whose ELF header points at a missing string table: readelf warns, yet still lists the needs.
+cp plain warns-but-readable
+printf '\377\377' | dd of=warns-but-readable bs=1 seek=62 conv=notrunc 2>/dev/null
+printf '\211PNG\r\n\032\nnot really a picture' > picture.png
 # One program per glibc version: a stand-in libc.so.6 defines exactly one symbol version, so the
 # program needs exactly that version and nothing else.
 for version in 2.9 2.39 2.40 2.100; do
@@ -166,6 +181,15 @@ for tag in 2_9 2_39 2_40 2_100; do
   mkdir -p "/layouts/needs-$tag"
   cp "$fx/needs_$tag" "/layouts/needs-$tag/needs"
 done
+mkdir -p /layouts/warns /layouts/mixed
+cp "$fx/warns-but-readable" /layouts/warns/warns-but-readable
+printf '#!/bin/sh\necho hello\n' > /layouts/mixed/launcher.sh
+cp "$fx/picture.png" /layouts/mixed/picture.png
+cp "$fx/plain" /layouts/mixed/plain
+# The highest GLIBC version the staged real libraries need, read straight from readelf -V.
+for lib in /layouts/real/*; do readelf -V "$lib" 2>/dev/null; done \
+  | awk '/^Version needs section/ { n = 1; next } /^Version (symbols|definition) section/ { n = 0 } n && match($0, /Name: GLIBC_[0-9][0-9.]*/) { print substr($0, RSTART + 12, RLENGTH - 12) }' \
+  | sort -V | tail -n 1 > /layouts/real-highest
 mkdir -p /layouts/truncated /layouts/unreadable
 head -c 2000 /usr/bin/bash > /layouts/truncated/cut-short
 cp "$fx/plain" /layouts/unreadable/readable-neighbour
@@ -198,6 +222,30 @@ if [ "$setup_failed" -eq 0 ]; then
   fi
 fi
 
+# The cases rely on what each fixture needs from glibc, so read it back with readelf -V before trusting them.
+fixture_glibc_needs() {
+  docker exec "$check_container" bash -c 'readelf -V "$1" 2>/dev/null | grep -o "Name: GLIBC_[0-9][0-9.]*" | sort -u | tr "\n" " "' _ "$1"
+}
+self_check_fixture() {
+  local name=$1 path=$2 wanted=$3 seen
+  seen="$(fixture_glibc_needs "$path")"
+  if [ "$seen" != "$wanted" ]; then
+    setup_failure "fixture $name should need '$wanted' by readelf -V but needs '$seen'"
+  fi
+}
+if [ "$setup_failed" -eq 0 ]; then
+  for tag in 2_9 2_39 2_40 2_100; do
+    self_check_fixture "needs_$tag" "/work/fx/needs_$tag" "Name: GLIBC_${tag//_/.} "
+  done
+  if ! docker exec "$check_container" bash -c 'readelf -V /work/fx/offender | grep -q "Name: GLIBC_2.42"'; then
+    setup_failure "fixture offender does not need GLIBC_2.42 by readelf -V"
+  fi
+  self_check_fixture "no-version-needs" /work/fx/no-version-needs ""
+  if ! docker exec "$check_container" bash -c 'readelf -d /work/fx/no-version-needs | grep -q "libc.so.6"'; then
+    setup_failure "fixture no-version-needs does not link libc.so.6 by readelf -d"
+  fi
+fi
+
 if [ "$setup_failed" -ne 0 ]; then summary_and_exit; fi
 
 # --- the packaging run on today's build -------------------------------------------------------
@@ -206,9 +254,13 @@ run_check /layouts/real
 expect_exit "today's libraries pass the written floor" 0 \
   "the release must keep uploading an AppImage whose libraries the floor distribution can load" \
   "make the floor check exit 0 when every file needs at most the floor"
-expect_output_has "today's libraries pass the written floor" "highest=GLIBC_2.38" \
+real_highest="$(docker exec "$check_container" cat /layouts/real-highest 2>/dev/null)"
+if [ -z "$real_highest" ]; then
+  setup_failure "readelf -V found no GLIBC version in the staged libraries, so there is nothing to compare the check against"
+fi
+expect_output_has "today's libraries pass the written floor" "highest=GLIBC_$real_highest " \
   "an exit 0 without the parsed highest version cannot be told from a check that read nothing" \
-  "print the highest GLIBC version found in the summary line"
+  "print the highest GLIBC version found, as readelf -V lists it, in the summary line"
 
 # --- refusal: a file needs a newer glibc than the floor ---------------------------------------
 
@@ -253,17 +305,50 @@ expect_exit "a floor of 2.100 accepts a binary needing GLIBC_2.42" 0 \
 
 # --- the floor argument moves the line ---------------------------------------------------------
 
-run_check /layouts/real 2.37
-expect_exit "a floor of 2.37 refuses today's libraries" 1 \
-  "today's libraries need GLIBC_2.38, which is newer than 2.37" \
+# The boundary is taken from the highest version readelf reports for today's libraries, one minor below it and equal to it.
+below_highest=""
+if [[ $real_highest =~ ^([0-9]+)\.([0-9]+)$ ]] && [ "${BASH_REMATCH[2]}" -gt 0 ]; then
+  below_highest="${BASH_REMATCH[1]}.$((BASH_REMATCH[2] - 1))"
+else
+  setup_failure "the highest GLIBC version '$real_highest' is not a major.minor pair above minor 0, so no floor one minor below it exists"
+fi
+run_check /layouts/real "$below_highest"
+expect_exit "a floor of $below_highest refuses today's libraries" 1 \
+  "today's libraries need GLIBC_$real_highest, which is newer than $below_highest" \
   "use the floor argument in place of the floor file"
-expect_output_has "a floor of 2.37 refuses today's libraries" "GLIBC_2.38" \
+expect_output_has "a floor of $below_highest refuses today's libraries" "GLIBC_$real_highest" \
   "the maintainer must see which version crossed the lowered floor" \
   "name the highest GLIBC version the file needs"
-run_check /layouts/real 2.38
-expect_exit "a floor of 2.38 accepts today's libraries" 0 \
+run_check /layouts/real "$real_highest"
+expect_exit "a floor of $real_highest accepts today's libraries" 0 \
   "a file needing exactly the floor still starts on the floor distribution" \
   "fail only on versions strictly above the floor"
+
+run_check /layouts/real 2.39.1
+expect_exit "a floor of 2.39.1 accepts today's libraries" 0 \
+  "a floor may carry a third number, and today's libraries are older than it" \
+  "accept a floor of dotted numbers of any length"
+run_check /layouts/needs-2_40 2.39.1
+expect_exit "a floor of 2.39.1 refuses a binary needing GLIBC_2.40" 1 \
+  "2.40 is newer than 2.39.1" \
+  "compare every number of the dotted versions"
+
+# --- files that are not a problem ----------------------------------------------------------------
+
+run_check /layouts/warns
+expect_exit "a healthy binary that makes readelf warn still passes" 0 \
+  "the needs were read, so a warning about something else must not stop a good build" \
+  "refuse only when no GLIBC version was parsed from the file"
+expect_output_has "a healthy binary that makes readelf warn still passes" "scanned=1 " \
+  "the file must have been scanned, not skipped" \
+  "count every ELF file that was read"
+run_check /layouts/mixed
+expect_exit "a text file and a picture beside a clean binary are skipped" 0 \
+  "only ELF files can need glibc, so other files must not fail the check" \
+  "skip files that do not start with the ELF magic"
+expect_output_has "a text file and a picture beside a clean binary are skipped" "scanned=1 " \
+  "only the binary is an ELF file, so exactly one file was scanned" \
+  "count only ELF files"
 
 # --- every file at any depth, each offender once ----------------------------------------------
 
@@ -302,10 +387,18 @@ run_check /layouts/no-elf
 expect_exit "a directory with no ELF file is not a pass" 2 \
   "a check that looked at nothing cannot say the AppImage is within the floor" \
   "exit 2 when no ELF file was scanned"
+expect_output_has "a directory with no ELF file is not a pass" "/layouts/no-elf" \
+  "the maintainer must see which directory held nothing to check" \
+  "name the directory in the message"
+expect_failure_block "a directory with no ELF file is not a pass"
 run_check /layouts/does-not-exist
 expect_exit "a missing directory is not a pass" 2 \
   "an extraction that failed must not read as a clean AppImage" \
   "exit 2 and name the directory that could not be read"
+expect_output_has "a missing directory is not a pass" "/layouts/does-not-exist" \
+  "the maintainer must see which directory could not be read" \
+  "name the directory in the message"
+expect_failure_block "a missing directory is not a pass"
 check_output="$(docker exec "$check_container" env PATH=/shadow/bin /usr/bin/bash /tools/check-glibc-floor.sh /layouts/real 2>&1)"
 check_exit=$?
 expect_exit "a runner without readelf is not a pass" 2 \
@@ -350,9 +443,23 @@ for bad_floor in abc 2.; do
   expect_output_has "a floor of '$bad_floor' is not a version" "WHAT" \
     "the maintainer must be told what is wrong, why it matters and how to fix it" \
     "write a WHAT/WHY/HOW block naming the floor value"
-  expect_output_has "a floor of '$bad_floor' is not a version" "'$bad_floor'" \
-    "the maintainer must see which floor value was refused" \
-    "name the floor value in the message"
+  what_line="$(grep -m1 '^WHAT' <<< "$check_output")"
+  if has_text "'$bad_floor'" "$what_line"; then
+    pass "a floor of '$bad_floor' is not a version: the WHAT line names it"
+  else
+    fail "a floor of '$bad_floor' is not a version" \
+      "the WHAT line is '${what_line:-none}', it does not name '$bad_floor'. Output: $(shown_output)" \
+      "the maintainer must see which floor value was refused" \
+      "name the floor value in the WHAT line"
+  fi
+  if [ "$(count_lines_with "WHAT" "$check_output")" -eq 1 ] && ! has_text "scanned=" "$check_output"; then
+    pass "a floor of '$bad_floor' is refused before any file is judged"
+  else
+    fail "a floor of '$bad_floor' is refused before any file is judged" \
+      "the output holds more than the floor refusal, or a scan summary. Output: $(shown_output)" \
+      "a bad floor must not be reported as an offending file" \
+      "refuse the floor value and stop before scanning"
+  fi
 done
 
 # --- the minimum is written down and the workflow runs the check -------------------------------
@@ -386,26 +493,127 @@ else
     "keep the three numbers equal and change them only by a new decision"
 fi
 
-libssl_line="$(line_number_of "Reject an AppImage that bundles libssl" "$workflow_file")"
-floor_line="$(line_number_of "check-glibc-floor.sh" "$workflow_file")"
-upload_line="$(line_number_of "Upload Linux standalone artifact" "$workflow_file")"
-if [ -n "$libssl_line" ] && [ -n "$floor_line" ] && [ -n "$upload_line" ] \
-  && [ "$libssl_line" -lt "$floor_line" ] && [ "$floor_line" -lt "$upload_line" ]; then
-  pass "the packaging run checks the floor after the libssl rejection and before the upload"
+# The package job of the workflow, as the lines between its key and the next job.
+package_job="$(awk '
+  /^  package-linux-standalone:[[:space:]]*$/ { inside = 1; print; next }
+  inside && /^  [A-Za-z0-9_-]+:/ { exit }
+  inside { print }' "$workflow_file" 2>/dev/null)"
+
+# One line about the package job's steps, in order: the first step that builds the AppImage, rejects
+# libssl, runs the floor check and uploads, the number of steps that run the floor check, whether one of
+# them may fail without failing the job, and the first step whose apt-get install list holds binutils.
+# A step is read by its keys, so a name, a comment or another package that mentions a word counts for nothing.
+package_steps_report() {
+  awk '
+    function note(text,   i, count, words) {
+      if (text ~ /^[[:space:]]*#/) return
+      if (index(text, "check-glibc-floor.sh")) {
+        floor_steps[step] = 1
+        argument = substr(text, index(text, "check-glibc-floor.sh") + 20)
+        sub(/[;&|].*/, "", argument)
+        if (argument ~ /(^|[^A-Za-z0-9_.-])squashfs-root($|[^A-Za-z0-9_.-])/) { scans_extracted[step] = 1 }
+        continued = (text ~ /\\[[:space:]]*$/)
+      } else if (continued) {
+        if (text ~ /(^|[^A-Za-z0-9_.-])squashfs-root($|[^A-Za-z0-9_.-])/) { scans_extracted[step] = 1 }
+        continued = (text ~ /\\[[:space:]]*$/)
+      }
+      if (index(text, "libssl.so") && !ssl) ssl = step
+      if (collecting || index(text, "apt-get install")) {
+        if (!collecting) sub(/.*apt-get install/, "", text)
+        count = split(text, words, /[[:space:]]+/)
+        for (i = 1; i <= count; i++) if (words[i] == "binutils") has_binutils[step] = 1
+        collecting = (text ~ /\\[[:space:]]*$/)
+      }
+    }
+    /^      - / { step++; collecting = 0; in_run = 0; continued = 0; line = "        " substr($0, 9) }
+    /^    continue-on-error:/ { value = $0; sub(/^ +continue-on-error:[[:space:]]*/, "", value); if (value !~ /^false/) job_may_fail = 1 }
+    step == 0 { next }
+    !/^      - / { line = $0 }
+    line ~ /^        [A-Za-z_-]+:/ {
+      key = line; sub(/^ +/, "", key); sub(/:.*/, "", key)
+      value = line; sub(/^ +[A-Za-z_-]+:[[:space:]]*/, "", value)
+      in_run = (key == "run"); collecting = 0
+      if (key == "uses" && index(value, "tauri-apps/tauri-action") && !build) build = step
+      if (key == "uses" && index(value, "actions/upload-artifact") && !upload) upload = step
+      if (key == "continue-on-error" && value !~ /^false/) { may_fail[step] = 1 }
+      if (key == "if") { conditional[step] = 1 }
+      if (in_run && value !~ /^[|>]/) note(value)
+      next
+    }
+    in_run && line ~ /[^[:space:]]/ { note(line) }
+    END {
+      for (s in floor_steps) { floor_count++; if (!floor || s < floor) floor = s; if (s in may_fail) floor_may_fail = 1 }
+      for (s in has_binutils) if (!install || s < install) install = s
+      floor_conditional = (floor in conditional) ? 1 : 0
+      floor_scans_extracted = (floor in scans_extracted) ? 1 : 0
+      printf "build=%d ssl=%d floor=%d upload=%d floor_count=%d floor_may_fail=%d install=%d job_may_fail=%d floor_conditional=%d floor_scans_extracted=%d\n", build, ssl, floor, upload, floor_count, floor_may_fail, install, job_may_fail + 0, floor_conditional, floor_scans_extracted
+    }' <<< "$package_job"
+}
+
+report="$(package_steps_report)"
+read -r -a report_words <<< "$report"
+step_of() {
+  local word
+  for word in "${report_words[@]}"; do
+    if [[ $word == "$1="* ]]; then echo "${word#*=}"; return; fi
+  done
+  echo 0
+}
+build_step="$(step_of build)"
+ssl_step="$(step_of ssl)"
+floor_step="$(step_of floor)"
+upload_step="$(step_of upload)"
+floor_steps_count="$(step_of floor_count)"
+floor_step_may_fail="$(step_of floor_may_fail)"
+install_step="$(step_of install)"
+job_may_fail="$(step_of job_may_fail)"
+floor_conditional="$(step_of floor_conditional)"
+floor_scans_extracted="$(step_of floor_scans_extracted)"
+
+if [ "$build_step" -gt 0 ] && [ "$build_step" -lt "$ssl_step" ] && [ "$ssl_step" -lt "$floor_step" ] \
+  && [ "$floor_step" -lt "$upload_step" ] && [ "$floor_steps_count" -eq 1 ]; then
+  pass "the packaging run checks the floor once, after the build and the libssl rejection and before the upload"
 else
-  fail "the packaging run checks the floor after the libssl rejection and before the upload" \
-    "line numbers in the workflow: libssl rejection '${libssl_line:-none}', floor check '${floor_line:-none}', upload '${upload_line:-none}'" \
+  fail "the packaging run checks the floor once, after the build and the libssl rejection and before the upload" \
+    "step positions in the package job (0 means not found): build $build_step, libssl rejection $ssl_step, floor check $floor_step, upload $upload_step, steps that run the floor check $floor_steps_count" \
     "a build that needs a newer glibc must stop before it is uploaded" \
-    "add a step that runs the floor check on the extracted AppImage between those two steps"
+    "add one step that runs the floor check on the extracted AppImage between the libssl rejection and the upload"
 fi
 
-if grep -q -F -- "binutils" "$workflow_file" 2>/dev/null; then
-  pass "the packaging run installs the tool that reads glibc versions"
+if [ "$floor_step" -gt 0 ] && [ "$floor_step_may_fail" -eq 0 ] && [ "$job_may_fail" -eq 0 ]; then
+  pass "a failing floor check fails the packaging run"
 else
-  fail "the packaging run installs the tool that reads glibc versions" \
-    "the workflow does not install binutils" \
+  fail "a failing floor check fails the packaging run" \
+    "the floor check step is $([ "$floor_step" -gt 0 ] && echo "present (step marked continue-on-error: $floor_step_may_fail, whole job marked continue-on-error: $job_may_fail)" || echo "missing")" \
+    "a floor check that cannot fail the job lets a too-new AppImage be uploaded" \
+    "remove continue-on-error from the floor check step and from the package job"
+fi
+
+if [ "$floor_step" -gt 0 ] && [ "$floor_conditional" -eq 0 ]; then
+  pass "the floor check runs whenever the packaging job runs"
+else
+  fail "the floor check runs whenever the packaging job runs" \
+    "the floor check step is $([ "$floor_step" -gt 0 ] && echo "guarded by an if condition" || echo "missing")" \
+    "a floor check that can be skipped lets a too-new AppImage be uploaded" \
+    "remove the if condition from the floor check step"
+fi
+
+if [ "$floor_step" -gt 0 ] && [ "$floor_scans_extracted" -eq 1 ]; then
+  pass "the floor check scans the extracted AppImage"
+else
+  fail "the floor check scans the extracted AppImage" \
+    "the floor check step does not name the extracted AppImage folder squashfs-root as an argument" \
+    "a floor check over another folder passes while the AppImage still needs a newer glibc" \
+    "run the floor check on the squashfs-root folder of the extracted AppImage"
+fi
+
+if [ "$install_step" -gt 0 ] && [ "$floor_step" -gt 0 ] && [ "$install_step" -lt "$floor_step" ]; then
+  pass "the packaging run installs the tool that reads glibc versions before the floor check"
+else
+  fail "the packaging run installs the tool that reads glibc versions before the floor check" \
+    "the first step whose apt-get install list holds binutils is step $install_step (0 means none), the floor check is step $floor_step" \
     "without readelf the floor check can only report that it could not read anything" \
-    "install binutils before the floor check runs"
+    "add binutils to the apt-get install list of a step before the floor check"
 fi
 
 summary_and_exit
