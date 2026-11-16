@@ -496,4 +496,72 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules TrackerIntegration: 42/42 passed; Membership: 48/48 passed on today's code (incl. admitted OAuth Models types, staying WriteBack types, exact-list-vs-IL test).
+```
+
+```text
+bash Scripts/test-selection/test-path-classifier.sh (own run): passed 94, failed 0; script holds module-path scenarios. Per-scenario output not individually inspected.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+backend-tests TrackerIntegrationRulesSeeTheModule: 4/4 pass; made-up connector under the module reaching DB/WorkItems/Forecasting/update code named by repository and leaf rules; Services.Factories case too. RulesSeeTheModule: 18/18.
+```
+
+```text
+architecture-rules TrackerIntegration: 42/42 passed; Membership: 48/48 passed on today's code (incl. admitted OAuth Models types, staying WriteBack types, exact-list-vs-IL test).
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+connector-throws-count ran without folder-not-found (Csv 0, Linear 0, ServiceNow 0, total 0); script lists the module Adapters/Connectors path beside the old one, but no connector folders exist under the module yet and test-time budgets were not probed, so module-folder discovery is only partly observed.
+```
+
+```text
+bash Scripts/test-selection/test-path-classifier.sh (own run): passed 94, failed 0; script holds module-path scenarios. Per-scenario output not individually inspected.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+bash Scripts/test-selection/test-path-classifier.sh (own run): passed 94, failed 0; script holds module-path scenarios. Per-scenario output not individually inspected.
+```
+
+```text
+connector-throws-count ran without folder-not-found (Csv 0, Linear 0, ServiceNow 0, total 0); script lists the module Adapters/Connectors path beside the old one, but no connector folders exist under the module yet and test-time budgets were not probed, so module-folder discovery is only partly observed.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+architecture-rules TrackerIntegration: 42/42 passed; Membership: 48/48 passed on today's code (incl. admitted OAuth Models types, staying WriteBack types, exact-list-vs-IL test).
+```
+
+```text
+backend-tests TrackerIntegrationRulesSeeTheModule: 4/4 pass; made-up connector under the module reaching DB/WorkItems/Forecasting/update code named by repository and leaf rules; Services.Factories case too. RulesSeeTheModule: 18/18.
+```
