@@ -554,4 +554,32 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe connector-throws-count: Csv 0, Linear 0, ServiceNow 0, total 0. architecture-rules ConnectorsDeclareNoUnsupportedMembers: 10/10 passed. backend-tests Capability: 21/21 pass; WriteBackService: 22/22 pass (incl. connector-failure wrapped in failed result). Not probed: live Jira/ADO write, ServiceNow Portfolio refresh, incremental-sync per-connection answers directly; relies on suite tests only.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe connector-throws-count: Csv 0, Linear 0, ServiceNow 0, total 0. architecture-rules ConnectorsDeclareNoUnsupportedMembers: 10/10 passed. backend-tests Capability: 21/21 pass; WriteBackService: 22/22 pass (incl. connector-failure wrapped in failed result). Not probed: live Jira/ADO write, ServiceNow Portfolio refresh, incremental-sync per-connection answers directly; relies on suite tests only.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Probe connector-throws-count: Csv 0, Linear 0, ServiceNow 0, total 0. architecture-rules ConnectorsDeclareNoUnsupportedMembers: 10/10 passed. backend-tests Capability: 21/21 pass; WriteBackService: 22/22 pass (incl. connector-failure wrapped in failed result). Not probed: live Jira/ADO write, ServiceNow Portfolio refresh, incremental-sync per-connection answers directly; relies on suite tests only.
+```

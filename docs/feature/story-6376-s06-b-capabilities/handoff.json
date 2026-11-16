@@ -297,7 +297,7 @@
 "C": 1,
 "D": 9,
 "E": 4,
-"F": 287,
+"F": 288,
 "K": 4,
 "L": 5,
 "N": 4,
@@ -2012,6 +2012,26 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F288"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F288"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F288"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -2246,6 +2266,7 @@
 "F285": "Each refresh asks once for the full download (work items, Features, parent Features) and never for a sweep or a fetch by id",
 "F286": "CSV, Linear and ServiceNow Teams and Portfolios take the full refresh path as before",
 "F287": "The service consults a probe on a connector that cannot sweep and only falls back after; guarded by no sweep or by-id call, not by the probe itself",
+"F288": "Probe connector-throws-count: Csv 0, Linear 0, ServiceNow 0, total 0. architecture-rules ConnectorsDeclareNoUnsupportedMembers: 10/10 passed. backend-tests Capability: 21/21 pass; WriteBackService: 22/22 pass (incl. connector-failure wrapped in failed result). Not probed: live Jira/ADO write, ServiceNow Portfolio refresh, incremental-sync per-connection answers directly; relies on suite tests only.",
 "F29": "Returns the concrete connector as the base type; capabilities stay visible to is-tests.",
 "F3": "Only Jira and Azure DevOps are write-back targets; a write-back to a CSV, Linear or ServiceNow connection fails each update as it does today; their write-back throws are gone from the ratchet list",
 "F30": "Registrations by marker; the markers carry the capabilities.",
