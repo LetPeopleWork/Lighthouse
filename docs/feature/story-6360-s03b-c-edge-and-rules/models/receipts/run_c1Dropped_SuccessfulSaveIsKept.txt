@@ -1,10 +1,16 @@
+checker: quint 0.33.1
+backend: simulator (default)
+argv: timeout 180 quint run team_refresh_reactions.qnt --main=c1Dropped --init=init --step=step --invariant=SuccessfulSaveIsKept --seed=7 --max-steps=12 --max-samples=10000
+model: docs/feature/story-6360-s03b-c-edge-and-rules/models/team_refresh_reactions.qnt sha256 5466c930f8d832ec7accf2650e5c27bf1a8843e7604f332f1a06ae40a3ddebf1
+exit: 1
+--- stdout
 An example execution:
 
 [State 0]
 {
   c1Dropped::refreshPass::idx: 0,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "running",
   c1Dropped::refreshPass::pc: "fetch",
@@ -16,7 +22,7 @@ An example execution:
 {
   c1Dropped::refreshPass::idx: 0,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "running",
   c1Dropped::refreshPass::pc: "publish",
@@ -28,7 +34,7 @@ An example execution:
 {
   c1Dropped::refreshPass::idx: 1,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "running",
   c1Dropped::refreshPass::pc: "publish",
@@ -40,7 +46,7 @@ An example execution:
 {
   c1Dropped::refreshPass::idx: 2,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "running",
   c1Dropped::refreshPass::pc: "publish",
@@ -52,7 +58,7 @@ An example execution:
 {
   c1Dropped::refreshPass::idx: 3,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "running",
   c1Dropped::refreshPass::pc: "publish",
@@ -64,7 +70,7 @@ An example execution:
 {
   c1Dropped::refreshPass::idx: 4,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "running",
   c1Dropped::refreshPass::pc: "publish",
@@ -77,7 +83,7 @@ An example execution:
 {
   c1Dropped::refreshPass::idx: 5,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "running",
   c1Dropped::refreshPass::pc: "publish",
@@ -90,7 +96,7 @@ An example execution:
 {
   c1Dropped::refreshPass::idx: 6,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "running",
   c1Dropped::refreshPass::pc: "publish",
@@ -110,7 +116,7 @@ An example execution:
 {
   c1Dropped::refreshPass::idx: 7,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "running",
   c1Dropped::refreshPass::pc: "publish",
@@ -131,7 +137,7 @@ An example execution:
 {
   c1Dropped::refreshPass::idx: 7,
   c1Dropped::refreshPass::invalidated: false,
-  c1Dropped::refreshPass::metricsFails: true,
+  c1Dropped::refreshPass::metricsFails: false,
   c1Dropped::refreshPass::metricsSaved: false,
   c1Dropped::refreshPass::outcome: "ok",
   c1Dropped::refreshPass::pc: "done",
@@ -148,7 +154,8 @@ An example execution:
   c1Dropped::refreshPass::readerSawStale: true
 }
 
-[violation] Found an issue (13ms at 154 traces/second).
+[violation] Found an issue (14ms at 71 traces/second).
 Use --verbosity=3 to show executions.
-Use --seed=0x44 --backend=rust to reproduce.
+Use --seed=0x7 --backend=rust to reproduce.
+--- stderr
 error: Invariant violated

@@ -560,3 +560,16 @@ stand, and D-8 and D-9 are read this way from here on:
 - **D-9:** two controller tests (`DeliveryRulesControllerTest`, `FeaturesControllerTest`) named `IBlockedItemService`
   by its full name inside `Mock.Of<…>`. A `using` line cannot fix a full name, so they were retargeted to the new
   full name. No expectation changed.
+
+## Wave: DESIGN / [REF] Feature C — maintainer decision: D-2 a with its failure path (2026-11-16)
+
+Feature C's design (code facts and the Quint model `docs/feature/story-6360-s03b-c-edge-and-rules/models/team_refresh_reactions.qnt`)
+showed that the success path does not change but the failure path does. When saving a Team's metrics fails today,
+the refresh fails and no `TeamDataRefreshed` reaction runs. Under D-2 a, `DomainEventDispatcher` catches and logs
+the handler error.
+
+**Decision (maintainer): D-2 a, and the new failure behaviour is accepted.** The fallback to D-2 e is withdrawn.
+When the metrics save fails, the refresh is reported and logged as succeeded and the handler error is logged. The
+Team's `UpdateTime` and `FeatureWIP` keep their old values, so the Team looks due for a refresh again. The other
+reactions run in order. The metrics cache was already dropped, so readers never see stale metrics. C1's oracle pins
+this behaviour, the order, and the unchanged success path.

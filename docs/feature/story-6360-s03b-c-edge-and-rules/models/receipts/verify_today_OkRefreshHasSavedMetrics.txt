@@ -1,139 +1,146 @@
+checker: quint 0.33.1
+backend: apalache (default verify backend)
+argv: timeout 180 quint verify team_refresh_reactions.qnt --main=today --init=init --step=step --invariant=OkRefreshHasSavedMetrics --max-steps=12
+model: docs/feature/story-6360-s03b-c-edge-and-rules/models/team_refresh_reactions.qnt sha256 5466c930f8d832ec7accf2650e5c27bf1a8843e7604f332f1a06ae40a3ddebf1
+exit: 0
+--- stdout
 # Usage statistics is OFF. We care about your privacy.
 # If you want to help our project, consider enabling statistics with config --enable-stats=true.
 
-Output directory: /tmp/claude-1000/-storage-repos-Lighthouse/c2bcb3c2-926d-49c2-9e04-24ca1e837739/scratchpad/qnt/_apalache-out/server/2026-11-15T17-23-32_11188996628392477175
-# APALACHE version: 0.62.4 | build: 7954daf                       I@17:23:32.717
-Starting checker server on port 8822...                           I@17:23:32.720
+Output directory: /tmp/claude-1000/-storage-repos-Lighthouse/89bb3417-8f31-4976-b202-0480854095b4/scratchpad/quintwork/_apalache-out/server/2026-11-16T07-39-10_9498368444605638009
+# APALACHE version: 0.62.4 | build: 7954daf                       I@07:39:10.068
+Starting checker server on port 8822...                           I@07:39:10.071
 The Apalache server is running on port 8822. Press Ctrl-C to stop.
-Nov 15, 2026 5:23:34 PM com.google.protobuf.GeneratedMessage warnPre22Gencode
-WARNING: Vulnerable protobuf generated type in use: io.grpc.reflection.v1alpha.ServerReflectionRequest
-As of 2022/09/29 (release 21.7) makeExtensionsImmutable should not be called from protobuf gencode. If you are seeing this message, your gencode is vulnerable to a denial of service attack. You should regenerate your code using protobuf 25.6 or later. Use the latest version that meets your needs. However, if you understand the risks and wish to continue with vulnerable gencode, you can set the system property `-Dcom.google.protobuf.use_unsafe_pre22_gencode` on the command line to silence this warning. You also can set `-Dcom.google.protobuf.error_on_unsafe_pre22_gencode` to throw an error instead. See security vulnerability: https://github.com/protocolbuffers/protobuf/security/advisories/GHSA-h4h5-3hr4-j3g2
-PASS #0: SanyParser                                               I@17:23:35.345
-PASS #1: TypeCheckerSnowcat                                       I@17:23:35.664
- > Running Snowcat .::.                                           I@17:23:35.665
- > Your types are purrfect!                                       I@17:23:35.895
- > All expressions are typed                                      I@17:23:35.895
-PASS #2: ConfigurationPass                                        I@17:23:35.896
-  > Set the initialization predicate to q::init                   I@17:23:35.898
-  > Set the transition predicate to q::step                       I@17:23:35.898
-  > Set an invariant to q::inv                                    I@17:23:35.899
-PASS #3: DesugarerPass                                            I@17:23:35.902
-  > Desugaring...                                                 I@17:23:35.902
-PASS #4: InlinePass                                               I@17:23:35.910
-Leaving only relevant operators: CInitPrimed, q::init, q::initPrimed, q::inv, q::step I@17:23:35.911
-PASS #5: TemporalPass                                             I@17:23:35.943
-  > Rewriting temporal operators...                               I@17:23:35.943
-  > No temporal property specified, nothing to encode             I@17:23:35.943
-PASS #6: InlinePass                                               I@17:23:35.943
-Leaving only relevant operators: CInitPrimed, q::init, q::initPrimed, q::inv, q::step I@17:23:35.944
-PASS #7: PrimingPass                                              I@17:23:35.947
-  > Introducing q::initPrimed for q::init'                        I@17:23:35.949
-PASS #8: VCGen                                                    I@17:23:35.950
-  > Producing verification conditions from the invariant q::inv   I@17:23:35.950
-  > VCGen produced 1 verification condition(s)                    I@17:23:35.954
-PASS #9: PreprocessingPass                                        I@17:23:35.956
-  > Before preprocessing: unique renaming                         I@17:23:35.956
- > Applying standard transformations:                             I@17:23:35.962
-  > PrimePropagation                                              I@17:23:35.963
-  > Desugarer                                                     I@17:23:35.964
-  > UniqueRenamer                                                 I@17:23:35.965
-  > Normalizer                                                    I@17:23:35.967
-  > SetMembershipSimplifier                                       I@17:23:35.969
-  > Keramelizer                                                   I@17:23:35.971
-  > After preprocessing: UniqueRenamer                            I@17:23:35.978
-PASS #10: TransitionFinderPass                                    I@17:23:35.981
-  > Found 1 initializing transitions                              I@17:23:35.995
-  > Found 5 transitions                                           I@17:23:36.003
-  > No constant initializer                                       I@17:23:36.003
-  > Applying unique renaming                                      I@17:23:36.004
-PASS #11: OptimizationPass                                        I@17:23:36.006
- > Applying optimizations:                                        I@17:23:36.009
-  > ConstSimplifier                                               I@17:23:36.010
-  > ExprOptimizer                                                 I@17:23:36.013
-  > SetMembershipSimplifier                                       I@17:23:36.014
-  > ConstSimplifier                                               I@17:23:36.015
-PASS #12: AnalysisPass                                            I@17:23:36.017
- > Marking skolemizable existentials and sets to be expanded...   I@17:23:36.018
-  > Skolemization                                                 I@17:23:36.019
-  > Expansion                                                     I@17:23:36.020
-  > Remove unused let-in defs                                     I@17:23:36.021
- > Running analyzers...                                           I@17:23:36.024
-  > Introduced expression grades                                  I@17:23:36.026
-PASS #13: BoundedChecker                                          I@17:23:36.026
-State 0: Checking 1 state invariants                              I@17:23:36.297
-State 0: state invariant 0 holds.                                 I@17:23:36.302
-Step 0: picking a transition out of 1 transition(s)               I@17:23:36.306
-Step 1: Transition #1 is disabled                                 I@17:23:36.317
-Step 1: Transition #2 is disabled                                 I@17:23:36.325
-Step 1: Transition #3 is disabled                                 I@17:23:36.327
-Step 1: Transition #4 is disabled                                 I@17:23:36.350
-Step 1: picking a transition out of 1 transition(s)               I@17:23:36.351
-Step 2: Transition #0 is disabled                                 I@17:23:36.352
-State 2: Checking 1 state invariants                              I@17:23:36.360
-State 2: state invariant 0 holds.                                 I@17:23:36.362
-Step 2: Transition #2 is disabled                                 I@17:23:36.366
-Step 2: Transition #3 is disabled                                 I@17:23:36.367
-Step 2: Transition #4 is disabled                                 I@17:23:36.378
-Step 2: picking a transition out of 1 transition(s)               I@17:23:36.379
-Step 3: Transition #0 is disabled                                 I@17:23:36.381
-Step 3: Transition #1 is disabled                                 I@17:23:36.385
-Step 3: Transition #2 is disabled                                 I@17:23:36.389
-State 3: Checking 1 state invariants                              I@17:23:36.400
-State 3: state invariant 0 holds.                                 I@17:23:36.401
-Step 3: picking a transition out of 2 transition(s)               I@17:23:36.401
-Step 4: Transition #0 is disabled                                 I@17:23:36.412
-Step 4: Transition #1 is disabled                                 I@17:23:36.415
-Step 4: Transition #2 is disabled                                 I@17:23:36.416
-State 4: Checking 1 state invariants                              I@17:23:36.424
-State 4: state invariant 0 holds.                                 I@17:23:36.425
-Step 4: picking a transition out of 2 transition(s)               I@17:23:36.425
-Step 5: Transition #0 is disabled                                 I@17:23:36.431
-Step 5: Transition #1 is disabled                                 I@17:23:36.434
-Step 5: Transition #2 is disabled                                 I@17:23:36.436
-State 5: Checking 1 state invariants                              I@17:23:36.444
-State 5: state invariant 0 holds.                                 I@17:23:36.445
-Step 5: picking a transition out of 2 transition(s)               I@17:23:36.445
-Step 6: Transition #0 is disabled                                 I@17:23:36.450
-Step 6: Transition #1 is disabled                                 I@17:23:36.452
-Step 6: Transition #2 is disabled                                 I@17:23:36.454
-State 6: Checking 1 state invariants                              I@17:23:36.461
-State 6: state invariant 0 holds.                                 I@17:23:36.462
-Step 6: picking a transition out of 2 transition(s)               I@17:23:36.463
-Step 7: Transition #0 is disabled                                 I@17:23:36.469
-Step 7: Transition #1 is disabled                                 I@17:23:36.472
-Step 7: Transition #2 is disabled                                 I@17:23:36.473
-State 7: Checking 1 state invariants                              I@17:23:36.480
-State 7: state invariant 0 holds.                                 I@17:23:36.482
-Step 7: picking a transition out of 2 transition(s)               I@17:23:36.482
-Step 8: Transition #0 is disabled                                 I@17:23:36.489
-Step 8: Transition #1 is disabled                                 I@17:23:36.492
-Step 8: Transition #2 is disabled                                 I@17:23:36.493
-State 8: Checking 1 state invariants                              I@17:23:36.500
-State 8: state invariant 0 holds.                                 I@17:23:36.501
-Step 8: picking a transition out of 2 transition(s)               I@17:23:36.502
-Step 9: Transition #0 is disabled                                 I@17:23:36.509
-Step 9: Transition #1 is disabled                                 I@17:23:36.511
-Step 9: Transition #2 is disabled                                 I@17:23:36.513
-State 9: Checking 1 state invariants                              I@17:23:36.521
-State 9: state invariant 0 holds.                                 I@17:23:36.522
-Step 9: picking a transition out of 2 transition(s)               I@17:23:36.522
-Step 10: Transition #0 is disabled                                I@17:23:36.529
-Step 10: Transition #1 is disabled                                I@17:23:36.531
-State 10: Checking 1 state invariants                             I@17:23:36.533
-State 10: state invariant 0 holds.                                I@17:23:36.534
-Step 10: Transition #4 is disabled                                I@17:23:36.541
-Step 10: picking a transition out of 2 transition(s)              I@17:23:36.541
-Step 11: Transition #0 is disabled                                I@17:23:36.543
-Step 11: Transition #1 is disabled                                I@17:23:36.545
-Step 11: Transition #2 is disabled                                I@17:23:36.546
-Step 11: Transition #4 is disabled                                I@17:23:36.552
-Step 11: picking a transition out of 1 transition(s)              I@17:23:36.553
-Step 12: Transition #0 is disabled                                I@17:23:36.553
-Step 12: Transition #1 is disabled                                I@17:23:36.555
-Step 12: Transition #2 is disabled                                I@17:23:36.556
-Step 12: Transition #4 is disabled                                I@17:23:36.565
-Step 12: picking a transition out of 1 transition(s)              I@17:23:36.565
-The outcome is: NoError                                           I@17:23:36.568
-[ok] No violation found (4704ms).
+PASS #0: SanyParser                                               I@07:39:12.776
+PASS #1: TypeCheckerSnowcat                                       I@07:39:13.098
+ > Running Snowcat .::.                                           I@07:39:13.098
+ > Your types are purrfect!                                       I@07:39:13.343
+ > All expressions are typed                                      I@07:39:13.343
+PASS #2: ConfigurationPass                                        I@07:39:13.343
+  > Set the initialization predicate to q::init                   I@07:39:13.346
+  > Set the transition predicate to q::step                       I@07:39:13.346
+  > Set an invariant to q::inv                                    I@07:39:13.346
+PASS #3: DesugarerPass                                            I@07:39:13.350
+  > Desugaring...                                                 I@07:39:13.350
+PASS #4: InlinePass                                               I@07:39:13.356
+Leaving only relevant operators: CInitPrimed, q::init, q::initPrimed, q::inv, q::step I@07:39:13.356
+PASS #5: TemporalPass                                             I@07:39:13.393
+  > Rewriting temporal operators...                               I@07:39:13.393
+  > No temporal property specified, nothing to encode             I@07:39:13.393
+PASS #6: InlinePass                                               I@07:39:13.394
+Leaving only relevant operators: CInitPrimed, q::init, q::initPrimed, q::inv, q::step I@07:39:13.394
+PASS #7: PrimingPass                                              I@07:39:13.399
+  > Introducing q::initPrimed for q::init'                        I@07:39:13.400
+PASS #8: VCGen                                                    I@07:39:13.401
+  > Producing verification conditions from the invariant q::inv   I@07:39:13.401
+  > VCGen produced 1 verification condition(s)                    I@07:39:13.404
+PASS #9: PreprocessingPass                                        I@07:39:13.407
+  > Before preprocessing: unique renaming                         I@07:39:13.407
+ > Applying standard transformations:                             I@07:39:13.412
+  > PrimePropagation                                              I@07:39:13.413
+  > Desugarer                                                     I@07:39:13.414
+  > UniqueRenamer                                                 I@07:39:13.415
+  > Normalizer                                                    I@07:39:13.417
+  > SetMembershipSimplifier                                       I@07:39:13.419
+  > Keramelizer                                                   I@07:39:13.422
+  > After preprocessing: UniqueRenamer                            I@07:39:13.425
+PASS #10: TransitionFinderPass                                    I@07:39:13.428
+  > Found 1 initializing transitions                              I@07:39:13.440
+  > Found 5 transitions                                           I@07:39:13.447
+  > No constant initializer                                       I@07:39:13.448
+  > Applying unique renaming                                      I@07:39:13.448
+PASS #11: OptimizationPass                                        I@07:39:13.450
+ > Applying optimizations:                                        I@07:39:13.454
+  > ConstSimplifier                                               I@07:39:13.454
+  > ExprOptimizer                                                 I@07:39:13.457
+  > SetMembershipSimplifier                                       I@07:39:13.459
+  > ConstSimplifier                                               I@07:39:13.460
+PASS #12: AnalysisPass                                            I@07:39:13.463
+ > Marking skolemizable existentials and sets to be expanded...   I@07:39:13.465
+  > Skolemization                                                 I@07:39:13.465
+  > Expansion                                                     I@07:39:13.466
+  > Remove unused let-in defs                                     I@07:39:13.467
+ > Running analyzers...                                           I@07:39:13.470
+  > Introduced expression grades                                  I@07:39:13.472
+PASS #13: BoundedChecker                                          I@07:39:13.472
+State 0: Checking 1 state invariants                              I@07:39:13.707
+State 0: state invariant 0 holds.                                 I@07:39:13.710
+Step 0: picking a transition out of 1 transition(s)               I@07:39:13.712
+Step 1: Transition #1 is disabled                                 I@07:39:13.720
+Step 1: Transition #2 is disabled                                 I@07:39:13.726
+Step 1: Transition #3 is disabled                                 I@07:39:13.728
+Step 1: Transition #4 is disabled                                 I@07:39:13.745
+Step 1: picking a transition out of 1 transition(s)               I@07:39:13.746
+Step 2: Transition #0 is disabled                                 I@07:39:13.748
+State 2: Checking 1 state invariants                              I@07:39:13.752
+State 2: state invariant 0 holds.                                 I@07:39:13.753
+Step 2: Transition #2 is disabled                                 I@07:39:13.757
+Step 2: Transition #3 is disabled                                 I@07:39:13.759
+Step 2: Transition #4 is disabled                                 I@07:39:13.771
+Step 2: picking a transition out of 1 transition(s)               I@07:39:13.771
+Step 3: Transition #0 is disabled                                 I@07:39:13.773
+Step 3: Transition #1 is disabled                                 I@07:39:13.778
+Step 3: Transition #2 is disabled                                 I@07:39:13.782
+State 3: Checking 1 state invariants                              I@07:39:13.793
+State 3: state invariant 0 holds.                                 I@07:39:13.794
+Step 3: picking a transition out of 2 transition(s)               I@07:39:13.794
+Step 4: Transition #0 is disabled                                 I@07:39:13.804
+Step 4: Transition #1 is disabled                                 I@07:39:13.807
+Step 4: Transition #2 is disabled                                 I@07:39:13.808
+State 4: Checking 1 state invariants                              I@07:39:13.816
+State 4: state invariant 0 holds.                                 I@07:39:13.817
+Step 4: picking a transition out of 2 transition(s)               I@07:39:13.817
+Step 5: Transition #0 is disabled                                 I@07:39:13.822
+Step 5: Transition #1 is disabled                                 I@07:39:13.825
+Step 5: Transition #2 is disabled                                 I@07:39:13.826
+State 5: Checking 1 state invariants                              I@07:39:13.833
+State 5: state invariant 0 holds.                                 I@07:39:13.834
+Step 5: picking a transition out of 2 transition(s)               I@07:39:13.834
+Step 6: Transition #0 is disabled                                 I@07:39:13.840
+Step 6: Transition #1 is disabled                                 I@07:39:13.843
+Step 6: Transition #2 is disabled                                 I@07:39:13.844
+State 6: Checking 1 state invariants                              I@07:39:13.851
+State 6: state invariant 0 holds.                                 I@07:39:13.852
+Step 6: picking a transition out of 2 transition(s)               I@07:39:13.852
+Step 7: Transition #0 is disabled                                 I@07:39:13.857
+Step 7: Transition #1 is disabled                                 I@07:39:13.860
+Step 7: Transition #2 is disabled                                 I@07:39:13.861
+State 7: Checking 1 state invariants                              I@07:39:13.868
+State 7: state invariant 0 holds.                                 I@07:39:13.868
+Step 7: picking a transition out of 2 transition(s)               I@07:39:13.869
+Step 8: Transition #0 is disabled                                 I@07:39:13.876
+Step 8: Transition #1 is disabled                                 I@07:39:13.879
+Step 8: Transition #2 is disabled                                 I@07:39:13.880
+State 8: Checking 1 state invariants                              I@07:39:13.887
+State 8: state invariant 0 holds.                                 I@07:39:13.888
+Step 8: picking a transition out of 2 transition(s)               I@07:39:13.888
+Step 9: Transition #0 is disabled                                 I@07:39:13.895
+Step 9: Transition #1 is disabled                                 I@07:39:13.897
+Step 9: Transition #2 is disabled                                 I@07:39:13.899
+State 9: Checking 1 state invariants                              I@07:39:13.905
+State 9: state invariant 0 holds.                                 I@07:39:13.906
+Step 9: picking a transition out of 2 transition(s)               I@07:39:13.906
+Step 10: Transition #0 is disabled                                I@07:39:13.913
+Step 10: Transition #1 is disabled                                I@07:39:13.915
+State 10: Checking 1 state invariants                             I@07:39:13.917
+State 10: state invariant 0 holds.                                I@07:39:13.918
+Step 10: Transition #4 is disabled                                I@07:39:13.924
+Step 10: picking a transition out of 2 transition(s)              I@07:39:13.924
+Step 11: Transition #0 is disabled                                I@07:39:13.926
+Step 11: Transition #1 is disabled                                I@07:39:13.928
+Step 11: Transition #2 is disabled                                I@07:39:13.929
+Step 11: Transition #4 is disabled                                I@07:39:13.935
+Step 11: picking a transition out of 1 transition(s)              I@07:39:13.936
+Step 12: Transition #0 is disabled                                I@07:39:13.937
+Step 12: Transition #1 is disabled                                I@07:39:13.939
+Step 12: Transition #2 is disabled                                I@07:39:13.940
+Step 12: Transition #4 is disabled                                I@07:39:13.947
+Step 12: picking a transition out of 1 transition(s)              I@07:39:13.947
+The outcome is: NoError                                           I@07:39:13.950
+[ok] No violation found (4647ms).
 You may increase --max-steps.
 Use --verbosity to produce more (or less) output.
+--- stderr
+Nov 16, 2026 7:39:12 AM com.google.protobuf.GeneratedMessage warnPre22Gencode
+WARNING: Vulnerable protobuf generated type in use: io.grpc.reflection.v1alpha.ServerReflectionRequest
+As of 2022/09/29 (release 21.7) makeExtensionsImmutable should not be called from protobuf gencode. If you are seeing this message, your gencode is vulnerable to a denial of service attack. You should regenerate your code using protobuf 25.6 or later. Use the latest version that meets your needs. However, if you understand the risks and wish to continue with vulnerable gencode, you can set the system property `-Dcom.google.protobuf.use_unsafe_pre22_gencode` on the command line to silence this warning. You also can set `-Dcom.google.protobuf.error_on_unsafe_pre22_gencode` to throw an error instead. See security vulnerability: https://github.com/protocolbuffers/protobuf/security/advisories/GHSA-h4h5-3hr4-j3g2
