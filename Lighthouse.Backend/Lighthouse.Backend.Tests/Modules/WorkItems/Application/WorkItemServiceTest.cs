@@ -1276,6 +1276,37 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
         }
 
         /// <summary>
+        /// A connector that can sweep is asked, per connection, whether it can sweep this one. When the answer
+        /// is no, the refresh downloads the whole query: it neither sweeps nor asks for records by key.
+        /// </summary>
+        [Test]
+        public async Task UpdateWorkItemsForTeam_ConnectorCannotSweepThisConnection_DownloadsTheWholeQueryWithoutSweeping()
+        {
+            var whenEveryStoredRecordLastChanged = TheFirstReadingDay.AddDays(-30);
+
+            var team = CreateTeam();
+            team.FetchFingerprint = FetchFingerprint.For(team);
+            AddStampedWorkItemForTeam(team, TheRecordThatSatStill, whenEveryStoredRecordLastChanged);
+
+            TheTrackerCannotBeScannedOnThisConnection();
+
+            var incrementalSource = workTrackingConnectorMock.As<IIncrementalSource>();
+            incrementalSource
+                .Setup(connector => connector.SweepWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new RemoteRecordStamp(TheRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([ARecordWithNoLinks(TheRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
+
+            var outcome = await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Full));
+            incrementalSource.Verify(connector => connector.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()), Times.Never);
+            incrementalSource.Verify(connector => connector.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+            workTrackingConnectorMock.Verify(connector => connector.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        /// <summary>
         /// A lone link is judged against the stored Features like several are, but nobody is told about it:
         /// the counts and the warning lines say links named more than one issue, and these did not.
         /// </summary>
@@ -1720,6 +1751,40 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 
             featureRepositoryMock.Verify(repository => repository.GetStoredFeatureCreatedDates(), Times.Once,
                 "One read of the stored Features answers every Feature the cheap refresh downloaded.");
+        }
+
+        /// <summary>
+        /// The Portfolio's Features follow the same answer: a connection the connector cannot sweep gets the
+        /// whole Feature query, and no Feature is asked for by key.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_ConnectorCannotSweepThisConnection_DownloadsTheWholeQueryWithoutSweeping()
+        {
+            var whenEveryStoredRecordLastChanged = TheFirstReadingDay.AddDays(-30);
+
+            var portfolio = CreatePortfolio();
+            portfolio.FetchFingerprint = FetchFingerprint.For(portfolio);
+            portfolio.UpdateFeatures([AStampedFeature(TheFeatureThatSatStill, whenEveryStoredRecordLastChanged)]);
+
+            TheTrackerCannotBeScannedOnThisConnection();
+
+            var incrementalSource = workTrackingConnectorMock.As<IIncrementalSource>();
+            incrementalSource
+                .Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new RemoteRecordStamp(TheFeatureThatSatStill, whenEveryStoredRecordLastChanged)]);
+            var featureSource = workTrackingConnectorMock.As<IFeatureSource>();
+            featureSource
+                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([AStampedFeature(TheFeatureThatSatStill, whenEveryStoredRecordLastChanged)]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            var outcome = await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Full));
+            incrementalSource.Verify(connector => connector.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()), Times.Never);
+            incrementalSource.Verify(connector => connector.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+            featureSource.Verify(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         /// <summary>
@@ -2354,6 +2419,50 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                     "positive control: the issue above moved, so the cheap refresh downloaded it and updated the stored one.");
                 TheIssueAboveWasPlacedAndNotCounted(outcome, theStoredIssueAbove);
             }
+        }
+
+        /// <summary>
+        /// The issues above the Features follow the same answer. Their sweep would have said nothing moved
+        /// and asked for nothing, so only a refresh that skips the sweep downloads the issue above again.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_ConnectorCannotSweepThisConnection_DownloadsEveryIssueAboveWithoutSweeping()
+        {
+            var whenEveryStoredRecordLastChanged = TheFirstReadingDay.AddDays(-30);
+
+            var portfolio = CreatePortfolio();
+            portfolio.OwnParentOverride(TheFieldThatNamesTheLinkType);
+            portfolio.FetchFingerprint = FetchFingerprint.For(portfolio);
+            var theStoredFeature = AFeatureUnderTheIssueAbove(whenEveryStoredRecordLastChanged);
+            portfolio.UpdateFeatures([theStoredFeature]);
+            var theStoredIssueAbove = AStampedFeature(TheIssueAbove, whenEveryStoredRecordLastChanged);
+            theStoredIssueAbove.IsParentFeature = true;
+            List<Feature> everythingStored = [theStoredFeature, theStoredIssueAbove];
+            featureRepositoryMock
+                .Setup(repository => repository.GetByPredicate(It.IsAny<Func<Feature, bool>>()))
+                .Returns((Func<Feature, bool> predicate) => everythingStored.SingleOrDefault(predicate));
+
+            TheTrackerCannotBeScannedOnThisConnection();
+
+            var incrementalSource = workTrackingConnectorMock.As<IIncrementalSource>();
+            incrementalSource
+                .Setup(connector => connector.SweepParentFeatures(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new RemoteRecordStamp(TheIssueAbove, whenEveryStoredRecordLastChanged)]);
+            var featureSource = workTrackingConnectorMock.As<IFeatureSource>();
+            featureSource
+                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([AFeatureUnderTheIssueAbove(whenEveryStoredRecordLastChanged)]);
+            featureSource
+                .Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([TheIssueAboveAsDownloaded()]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(theStoredIssueAbove.LastChangedRemote, Is.EqualTo(TheFirstReadingDay),
+                "The issue above was downloaded in full, so the stored one carries the downloaded stamp.");
+            incrementalSource.Verify(connector => connector.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+            featureSource.Verify(connector => connector.GetParentFeaturesDetails(portfolio, new[] { TheIssueAbove }, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         /// <summary>
@@ -3194,6 +3303,20 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             => workTrackingConnectorMock
                 .As<IIncrementalSource>().Setup(connector => connector.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>()))
                 .Returns(true);
+
+        private void TheTrackerCannotBeScannedOnThisConnection()
+            => workTrackingConnectorMock
+                .As<IIncrementalSource>().Setup(connector => connector.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>()))
+                .Returns(false);
+
+        private static WorkItem ARecordWithNoLinks(string referenceId, DateTime lastChangedRemote)
+            => new()
+            {
+                ReferenceId = referenceId,
+                State = "To Do",
+                StateCategory = StateCategories.ToDo,
+                LastChangedRemote = lastChangedRemote,
+            };
 
         private Team CreateTeam()
         {
