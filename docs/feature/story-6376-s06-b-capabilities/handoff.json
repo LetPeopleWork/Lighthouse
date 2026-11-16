@@ -53,6 +53,92 @@
 "stimulus": "F228",
 "user_result": "F230"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"T2"
+],
+"still_passes_if": "F235",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs::ReadingPortfolioFeaturesIsItsOwnCapability_AndNoLongerAskedOfEveryConnector"
+},
+"expected": "F233",
+"stimulus": "F232",
+"user_result": "F234"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F185",
+"T2",
+"L1/F57"
+],
+"still_passes_if": "F239",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs::OnlyJiraAzureDevOpsLinearAndCsvReadPortfolioFeatures"
+},
+"expected": "F237",
+"stimulus": "F236",
+"user_result": "F238"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F186",
+"L1/F57"
+],
+"still_passes_if": "F243",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs::APortfolioRefreshOnAServiceNowConnection_FailsAndLeavesItsFeaturesAsTheyWere"
+},
+"expected": "F241",
+"stimulus": "F240",
+"user_result": "F242"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F186"
+],
+"still_passes_if": "F247",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs::PointingAPortfolioAtServiceNow_IsRefusedWithAnActionableReason"
+},
+"expected": "F245",
+"stimulus": "F244",
+"user_result": "F246"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F62"
+],
+"still_passes_if": "F251",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::EveryConnectorMethodThatCreatesANotSupportedException_IsOnTheListWithItsReason"
+},
+"expected": "F249",
+"stimulus": "F248",
+"user_result": "F250"
+}
 ]
 },
 "counters": {
@@ -60,7 +146,7 @@
 "C": 1,
 "D": 9,
 "E": 4,
-"F": 231,
+"F": 251,
 "K": 4,
 "L": 5,
 "N": 4,
@@ -1948,8 +2034,28 @@
 "F23": "Each slice has one new oracle file whose RED is an assertion: the capability interface, found by full name through reflection on the built Lighthouse.Backend assembly, is absent or implemented by the wrong connector types; never a compile error. No nWave tags in test code. Never edit an earlier slice's oracle.",
 "F230": "A write-back to a CSV connection fails each update as it does today and stores nothing",
 "F231": "Linear or ServiceNow write-backs succeeding or being skipped; covered only through their absence from the capability",
+"F232": "Read the built backend for the Feature-reading capability by its full name and for the connector base",
+"F233": "The Feature-reading capability exists as an interface declaring the read of every Portfolio Feature and the read of named parent Features, and the connector base declares neither any more",
+"F234": "No connector claims to read Portfolio Features merely by being a connector",
+"F235": "The capability members had different parameter names; the read-by-named-Features overload stays on the base, which a later slice moves",
+"F236": "Read every concrete connector class in the built backend and which of them take on the Feature-reading capability",
+"F237": "All five connectors are read, and exactly Jira, Azure DevOps, Linear and CSV take on the capability; ServiceNow does not",
+"F238": "Jira, Azure DevOps, Linear and CSV connections read Portfolio Features; ServiceNow does not claim to",
+"F239": "A connector added later that reads Features by another means without the capability; that is outside this capability's promise",
 "F24": "Existing capability-by-type idiom with a probe on the capability and is-tests at callers; the new interfaces copy its shape.",
+"F240": "Refresh a Portfolio holding one stored Feature on a ServiceNow connection through the Work Item service with the real ServiceNow connector",
+"F241": "The refresh ends in a not-supported failure; the Portfolio still holds exactly its stored Feature, its last refresh time is unchanged and nothing is saved",
+"F242": "A ServiceNow Portfolio refresh fails as it does today and the Portfolio keeps what it showed before",
+"F243": "A different failure message; the message is log-only and outside the preserved observation",
+"F244": "Validate a Portfolio's settings on a ServiceNow connection",
+"F245": "The validation refuses with portfolio_not_supported, as today",
+"F246": "Pointing a Portfolio at ServiceNow is still refused with an actionable reason",
+"F247": "A change to the explanation text; only the refusal code is the contract",
+"F248": "Read every connector method in the built backend that creates a not-supported failure and compare with the listed exceptions",
+"F249": "ServiceNow's two Feature-read refusals are gone from the connectors and from the list, which holds 17 entries",
 "F25": "The port stays and is reduced to the members all five connectors serve; replacing or renaming it would touch 9 production and 40 test files for no glossary gain.",
+"F250": "ServiceNow's Feature-reading refusals no longer exist",
+"F251": "Throws and list entries removed together for a different pair of members; the Feature-read members' absence is pinned by the capability rows above",
 "F26": "Returns the base; callers type-test. A generic capability lookup would be a second way to do what is does.",
 "F27": "The ratchet list feature A shipped; each slice shrinks it, never loosens it.",
 "F28": "Considered for the absent Feature read and not used there: it would show a refresh reason the user does not see today. Left unchanged.",

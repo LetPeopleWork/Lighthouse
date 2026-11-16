@@ -232,6 +232,137 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the built backend for the Feature-reading capability by its full name and for the connector base
+</code></pre>
+
+<pre><code>The Feature-reading capability exists as an interface declaring the read of every Portfolio Feature and the read of named parent Features, and the connector base declares neither any more
+</code></pre>
+
+<pre><code>No connector claims to read Portfolio Features merely by being a connector
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs::ReadingPortfolioFeaturesIsItsOwnCapability_AndNoLongerAskedOfEveryConnector</p>
+
+<pre><code>The capability members had different parameter names; the read-by-named-Features overload stays on the base, which a later slice moves
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read every concrete connector class in the built backend and which of them take on the Feature-reading capability
+</code></pre>
+
+<pre><code>All five connectors are read, and exactly Jira, Azure DevOps, Linear and CSV take on the capability; ServiceNow does not
+</code></pre>
+
+<pre><code>Jira, Azure DevOps, Linear and CSV connections read Portfolio Features; ServiceNow does not claim to
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs::OnlyJiraAzureDevOpsLinearAndCsvReadPortfolioFeatures</p>
+
+<pre><code>A connector added later that reads Features by another means without the capability; that is outside this capability&#x27;s promise
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Refresh a Portfolio holding one stored Feature on a ServiceNow connection through the Work Item service with the real ServiceNow connector
+</code></pre>
+
+<pre><code>The refresh ends in a not-supported failure; the Portfolio still holds exactly its stored Feature, its last refresh time is unchanged and nothing is saved
+</code></pre>
+
+<pre><code>A ServiceNow Portfolio refresh fails as it does today and the Portfolio keeps what it showed before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs::APortfolioRefreshOnAServiceNowConnection_FailsAndLeavesItsFeaturesAsTheyWere</p>
+
+<pre><code>A different failure message; the message is log-only and outside the preserved observation
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Validate a Portfolio&#x27;s settings on a ServiceNow connection
+</code></pre>
+
+<pre><code>The validation refuses with portfolio_not_supported, as today
+</code></pre>
+
+<pre><code>Pointing a Portfolio at ServiceNow is still refused with an actionable reason
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs::PointingAPortfolioAtServiceNow_IsRefusedWithAnActionableReason</p>
+
+<pre><code>A change to the explanation text; only the refusal code is the contract
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read every connector method in the built backend that creates a not-supported failure and compare with the listed exceptions
+</code></pre>
+
+<pre><code>ServiceNow&#x27;s two Feature-read refusals are gone from the connectors and from the list, which holds 17 entries
+</code></pre>
+
+<pre><code>ServiceNow&#x27;s Feature-reading refusals no longer exist
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs::EveryConnectorMethodThatCreatesANotSupportedException_IsOnTheListWithItsReason</p>
+
+<pre><code>Throws and list entries removed together for a different pair of members; the Feature-read members&#x27; absence is pinned by the capability rows above
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

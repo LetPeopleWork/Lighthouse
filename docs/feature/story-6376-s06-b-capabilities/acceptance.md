@@ -95,6 +95,157 @@ Linear or ServiceNow write-backs succeeding or being skipped; covered only throu
 
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Read the built backend for the Feature-reading capability by its full name and for the connector base
+```
+
+```text
+The Feature-reading capability exists as an interface declaring the read of every Portfolio Feature and the read of named parent Features, and the connector base declares neither any more
+```
+
+```text
+No connector claims to read Portfolio Features merely by being a connector
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FeatureSourceCapabilityArchUnitTest\.cs\:\:ReadingPortfolioFeaturesIsItsOwnCapability\_AndNoLongerAskedOfEveryConnector
+
+```text
+The capability members had different parameter names; the read-by-named-Features overload stays on the base, which a later slice moves
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Read every concrete connector class in the built backend and which of them take on the Feature-reading capability
+```
+
+```text
+All five connectors are read, and exactly Jira, Azure DevOps, Linear and CSV take on the capability; ServiceNow does not
+```
+
+```text
+Jira, Azure DevOps, Linear and CSV connections read Portfolio Features; ServiceNow does not claim to
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FeatureSourceCapabilityArchUnitTest\.cs\:\:OnlyJiraAzureDevOpsLinearAndCsvReadPortfolioFeatures
+
+```text
+A connector added later that reads Features by another means without the capability; that is outside this capability's promise
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Refresh a Portfolio holding one stored Feature on a ServiceNow connection through the Work Item service with the real ServiceNow connector
+```
+
+```text
+The refresh ends in a not-supported failure; the Portfolio still holds exactly its stored Feature, its last refresh time is unchanged and nothing is saved
+```
+
+```text
+A ServiceNow Portfolio refresh fails as it does today and the Portfolio keeps what it showed before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FeatureSourceCapabilityArchUnitTest\.cs\:\:APortfolioRefreshOnAServiceNowConnection\_FailsAndLeavesItsFeaturesAsTheyWere
+
+```text
+A different failure message; the message is log-only and outside the preserved observation
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Validate a Portfolio's settings on a ServiceNow connection
+```
+
+```text
+The validation refuses with portfolio_not_supported, as today
+```
+
+```text
+Pointing a Portfolio at ServiceNow is still refused with an actionable reason
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/WorkTrackingConnectors\/ServiceNow\/ServiceNowWorkTrackingConnectorTest\.cs\:\:PointingAPortfolioAtServiceNow\_IsRefusedWithAnActionableReason
+
+```text
+A change to the explanation text; only the refusal code is the contract
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Read every connector method in the built backend that creates a not-supported failure and compare with the listed exceptions
+```
+
+```text
+ServiceNow's two Feature-read refusals are gone from the connectors and from the list, which holds 17 entries
+```
+
+```text
+ServiceNow's Feature-reading refusals no longer exist
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ConnectorsDeclareNoUnsupportedMembersArchUnitTest\.cs\:\:EveryConnectorMethodThatCreatesANotSupportedException\_IsOnTheListWithItsReason
+
+```text
+Throws and list entries removed together for a different pair of members; the Feature-read members' absence is pinned by the capability rows above
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
