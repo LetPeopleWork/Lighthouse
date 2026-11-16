@@ -35,3 +35,7 @@ After S03*, cross-context references are few and concentrated. **Disproved if** 
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN (one context per slice).
+
+## Update after S03b (#6360, 2026-11-16)
+
+Work Items' `Program.cs` registrations stayed in place (no `AddWorkItems` extension yet; that is this Story). Order matters: the Flow metrics reaction `TeamDataRefreshedTeamMetricsUpdateHandler` must stay **first** among the `TeamDataRefreshed` handlers, because the forecast trigger and the snapshot recorders read the metrics it refreshes. `DomainEventHandlerOrderPinTest` fails on any other order, so move registrations as a block and keep cross-module handler order explicit.

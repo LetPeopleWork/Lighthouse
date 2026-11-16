@@ -33,3 +33,7 @@ The dependencies cluster by use case. **Disproved if** most dependencies are nee
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN (one use case per slice).
+
+## Update after S03b (#6360, 2026-11-16)
+
+`WorkItemService` keeps two query edges into Flow metrics for the default-size guess: `IPortfolioMetricsService` and the Flow metrics Domain's `PercentileCalculator`. They are ratcheted by name in Flow metrics' R3 and R4 lists and in Work Items' own outbound list (`WorkItemsModuleBoundariesArchUnitTest`). Splitting the service is the place to remove them (or Epic 6474 slice 10, whichever comes first); every list compares both ways, so each removed edge must leave its entry in the same commit.

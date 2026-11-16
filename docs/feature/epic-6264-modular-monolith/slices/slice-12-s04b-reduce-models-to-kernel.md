@@ -36,3 +36,7 @@ Decide whether domain-event records stay in the kernel or move to each publisher
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN.
+
+## Update after S03b (#6360, 2026-11-16)
+
+S03b moved no `Models` type. The Work Items types still in `Models` (the entities `WorkItem`, `Feature`, `WorkItemBase`, `FeatureWork`, the transition and blocked-transition tables, `RefreshLog`, `FeatureDependencyReference`; the `WorkItemRules`, `Parent*`, sync and staleness types) land on this Story's per-type list: kernel, or Work Items. Entities move with S12c/S13, not here. Work Items' R-W6 list holds 6 entries instead of 4 only because `IAppSettingService` and `ILighthouseClock` share the top-level `Services` namespaces with Organisation set-up's `IFeatureOrdering`; once Organisation set-up has its own namespace, those two entries leave the list.

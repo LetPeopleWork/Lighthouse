@@ -36,3 +36,7 @@ The frontend mirror (FE4's `BaseMetricsService` split) should follow the same sh
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN.
+
+## Update after S03b (#6360, 2026-11-16)
+
+A Team's metrics are now updated by the Flow metrics reaction `TeamDataRefreshedTeamMetricsUpdateHandler`, registered first among the `TeamDataRefreshed` handlers; `TeamDataService` no longer calls `ITeamMetricsService`. `UpdateTeamMetrics` still saves through `IWorkItemRepository.Save` (left for this Story). Since the update became a reaction, a failed metrics save is caught and logged by the dispatcher: the refresh succeeds, the Team's `UpdateTime` and `FeatureWIP` keep their old values so the Team is due again, and the other reactions run. The maintainer accepted this. Any change to how metrics are composed or saved must keep `TeamMetricsFollowTheTeamRefreshTest` (including its failing-save scenario) and `DomainEventHandlerOrderPinTest` green.

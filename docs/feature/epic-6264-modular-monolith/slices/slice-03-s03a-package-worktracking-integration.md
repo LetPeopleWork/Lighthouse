@@ -45,3 +45,7 @@ Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN (e.g. one
 ## Update after S01 (2026-11-01, ADR-270 accepted)
 
 Retitled **Package Tracker integration (ACL)**. ADR-270: the connectors translate; the mapping comes from Organisation set-up as data with each fetch. Ratchet candidate: Deliveries call the connectors directly (`DeliverySourceResolver.cs:9`, `DeliveryForecastPublishingService.cs:12` take `IWorkTrackingConnectorFactory`); route them through the ACL port.
+
+## Update after S03b (#6360, 2026-11-16)
+
+The parent and dependency **source selectors** (`ParentSourceSelector`, `DependencySourceSelector` and their tests) stayed outside `Modules/WorkItems`: the connectors call them, and Work Items' leaf rule forbids a connector from reaching into the module. They belong to this Story. Moving them removes the selector entries from Work Items' outbound list and keeps the leaf rule clean.
