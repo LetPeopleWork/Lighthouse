@@ -8,23 +8,18 @@ namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
     /// The dispatcher runs the handlers of an event one after the other, in the order the start-up code
-    /// registers them, so that order is behaviour: the metrics cache of a portfolio must be dropped before
-    /// the recorders read the metrics again, or they record what the previous refresh knew. Moving a
+    /// registers them, so that order is behaviour: the metrics cache of a team or a portfolio must be dropped
+    /// before the recorders read the metrics again, or they record what the previous refresh knew. Moving a
     /// registration, or gathering several into one extension method, can change the order without any
     /// other test noticing. The expected orders below are written out by hand on purpose: a list computed
     /// from the registrations would follow any reordering and could never fail.
-    ///
-    /// No web host is started. The start-up code's own registration method fills a service collection,
-    /// and the handlers of an event are read from it in the order the container hands them out, which is
-    /// the order they were registered in. A handler registered through a factory is asked for its type by
-    /// running that factory. The handlers themselves are not built: their dependencies reach the database
-    /// and the key ring, which only a started host sets up, and the order does not depend on them.
     /// </summary>
     [TestFixture]
     public class DomainEventHandlerOrderPinTest
     {
         private static readonly string[] TeamDataRefreshedOrder =
         [
+            "TeamDataRefreshedTeamMetricsUpdateHandler",
             "ReconstructionMemo",
             "TeamDataRefreshedForecastTriggerHandler",
             "BlockedCountSnapshotRecordingHandler",
@@ -61,31 +56,30 @@ namespace Lighthouse.Backend.Tests.Architecture
             "TeamDeletedForecastRetriggerHandler",
         ];
 
-        private IServiceCollection registrations = null!;
-        private ServiceProvider services = null!;
+        private StartUpDomainEventHandlers handlers = null!;
 
         [OneTimeSetUp]
-        public void FillTheStartUpRegistrations()
+        public void ReadTheStartUpRegistrations()
         {
-            registrations = TheStartUpRegistrations();
-            services = registrations.BuildServiceProvider();
-        }
-
-        [OneTimeTearDown]
-        public void DisposeTheRegistrations()
-        {
-            services.Dispose();
+            handlers = StartUpDomainEventHandlers.Read(
+                typeof(TeamDataRefreshed),
+                typeof(PortfolioFeaturesRefreshed),
+                typeof(FeatureOrderingPolicyChanged),
+                typeof(FeatureRankChanged),
+                typeof(TeamDeleted));
         }
 
         [Test]
-        public void HandlersOfATeamRefresh_RunInTheRegisteredOrder()
+        public void HandlersOfATeamRefresh_UpdateTheTeamMetricsBeforeAnyOtherReaction()
         {
             var handedOut = HandlersInTheOrderTheContainerHandsThemOut<TeamDataRefreshed>();
 
             Assert.That(handedOut, Is.EqualTo(TeamDataRefreshedOrder),
-                "The handlers of a team refresh no longer come in the order the start-up code registers them today. " +
-                "The dispatcher runs them in this order, so a new order changes what happens after every team refresh. " +
-                "Put the registrations back in their old order, or, if the new order is intended, change the list in this test in the same commit and say why.");
+                "The handlers of a team refresh do not come in the order written out here, with the Flow metrics reaction that updates the team's metrics first. " +
+                "That reaction drops the team's metrics cache and saves its update time and Feature WIP; a reaction that runs before it, such as a snapshot recorder, " +
+                "reads the metrics the previous refresh knew and records them as today's. " +
+                "Register the team metrics reaction on its own line immediately before the other team refresh handlers and keep their order; " +
+                "if another order is intended, change the list in this test in the same commit and say why.");
         }
 
         [Test]
@@ -133,11 +127,46 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         private List<string> HandlersInTheOrderTheContainerHandsThemOut<TEvent>() where TEvent : IDomainEvent
+            => [.. handlers.Of<TEvent>().Select(handler => handler.Name)];
+    }
+
+    /// <summary>
+    /// The domain-event handlers the start-up code registers, per event, in the order the container hands them out,
+    /// which is the order they were registered in. No web host is started: the start-up code's own registration
+    /// method fills a service collection. A handler registered through a factory is asked for its type by running
+    /// that factory. The handlers themselves are not built: their dependencies reach the database and the key ring,
+    /// which only a started host sets up, and the order does not depend on them.
+    /// </summary>
+    internal sealed class StartUpDomainEventHandlers
+    {
+        private readonly Dictionary<Type, IReadOnlyList<Type>> handlersByEvent;
+
+        private StartUpDomainEventHandlers(Dictionary<Type, IReadOnlyList<Type>> handlersByEvent)
         {
+            this.handlersByEvent = handlersByEvent;
+        }
+
+        public IReadOnlyList<Type> Of<TEvent>() where TEvent : IDomainEvent
+            => handlersByEvent.TryGetValue(typeof(TEvent), out var handlers)
+                ? handlers
+                : throw new InvalidOperationException($"The handlers of {typeof(TEvent).Name} were not read. Name the event when reading the start-up registrations.");
+
+        public static StartUpDomainEventHandlers Read(params Type[] events)
+        {
+            var registrations = TheStartUpRegistrations();
+            using var services = registrations.BuildServiceProvider();
             using var scope = services.CreateScope();
-            return [.. registrations
-                .Where(registration => registration.ServiceType == typeof(IDomainEventHandler<TEvent>))
-                .Select(registration => HandlerTypeOf(registration, scope.ServiceProvider).Name)];
+
+            var handlersByEvent = new Dictionary<Type, IReadOnlyList<Type>>();
+            foreach (var domainEvent in events)
+            {
+                var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(domainEvent);
+                handlersByEvent[domainEvent] = [.. registrations
+                    .Where(registration => registration.ServiceType == handlerType)
+                    .Select(registration => HandlerTypeOf(registration, scope.ServiceProvider))];
+            }
+
+            return new StartUpDomainEventHandlers(handlersByEvent);
         }
 
         private static Type HandlerTypeOf(ServiceDescriptor registration, IServiceProvider scope)
