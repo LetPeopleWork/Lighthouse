@@ -287,6 +287,155 @@ A command that finds the folders only when both the old and the module folder of
 
 None.
 
+### S3
+
+##### Covers
+
+P4
+
+P1
+
+```text
+The maintainer runs the membership test on the compiled code
+```
+
+```text
+Every top-level type of the connector, OAuth, connection-health and factory namespaces, old or module, plus the source selectors and the health prober, is on the moving or staying list, and every listed name exists; the demo-data types are the only ones that stay, each with its owner, and no type is on two lists
+```
+
+```text
+The maintainer sees exactly which types feature B moves; a forgotten or made-up type is named in the failure
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationMembershipArchUnitTest\.cs\:\:TheTrackerIntegrationTypesInTheCompiledCode\_AreExactlyTheTypesListed\, OnlyTheDemoDataTypesStay\_AndEachTypeThatStaysNamesTheContextThatKeepsIt\, NoTypeIsOnTwoLists
+
+```text
+a type referenced only in a catch clause or an event, which the compiled-code reading does not see, is not judged
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+The membership check is given the compiled code plus made-up types in the module namespace and the old connector namespace, a namesake namespace and a nested type; and separately the compiled code with the Jira connector renamed
+```
+
+```text
+The made-up types in both namespaces are named as unlisted, the namesake and the nested type are not, no real listed type looks missing; the renamed connector is named as missing and its new name as unlisted
+```
+
+```text
+A type added, renamed or dropped during the move fails the membership test by name until the list follows it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationMembershipArchUnitTest\.cs\:\:AMadeUpTypeInTheModuleOrAnOldNamespace\_IsNamedAsUnlisted\_AndANamesakeOutsideIsNot\, AListedTypeRenamedInTheCode\_IsNamedAsMissing\_AndItsNewNameAsUnlisted
+
+```text
+a rename to a name already listed elsewhere is reported only as the old name missing
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+The maintainer runs the Models admission check over the shared Models candidates of the context (OAuth, connection health, validation, write-back and the connection option types)
+```
+
+```text
+The list of Models types that move equals exactly the candidates the database context does not store, no controller sends (signature, value handed to a result, or reached through its public properties) and no staying Models type reaches; the stored OAuth credential, health verdict and connection, the sent health answer and validation result, and the credential status reached by the credential stay; the OAuth flow, refresh, state and token values are admitted
+```
+
+```text
+Feature B moves only the shared Models types that can leave the kernel without changing the stored model, the wire format or making the kernel reach the module
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationMembershipArchUnitTest\.cs\:\:TheModelsTypesListedToMove\_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorReachedByTheKernel\, ASharedModelsTypeOfTheContext\_IsJudgedAsTheDesignExpects
+
+```text
+a type sent through a variable typed object or built by a helper the controller does not call directly is judged not sent
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+The admission check judges made-up Models types: one in a database set, one configured on the model builder, one in a controller signature, one handed to a status result, one reached through a sent envelope's property, one reached by a staying Models record, and a flow with its token that a controller only reads to redirect
+```
+
+```text
+The two records are stored, the three answers are on the wire, the reached value is reached by the kernel, the flow and its token are admitted
+```
+
+```text
+The admission rule refuses an entity, a wire type or a kernel-reached type, and does not refuse a value a controller only reads
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationMembershipArchUnitTest\.cs\:\:AMadeUpModelsType\_IsJudgedByWhatTheCompiledCodeShows
+
+```text
+an entity configured only through an owned-type call or a separate configuration class is judged not stored
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+The maintainer runs the edge check on the inbound and outbound edges named at design
+```
+
+```text
+The Jira connector references the delivery-forecast block renderer, connection health references the concrete verdict repository, the connection save references the fetch fingerprint and the fetch-shape event, and connection health does not reference the Jira connector; the two demo back-fill handlers carry the CSV option name as text and hold no reference to the CSV option names type
+```
+
+```text
+The edges the module rules will list are confirmed from the compiled code, and the CSV edge is known to be a copied constant the compiled code cannot see
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationMembershipArchUnitTest\.cs\:\:AnEdgeNamedAtDesign\_IsInTheCompiledCode\, ADemoBackfillHandler\_CarriesTheCsvOptionNameAsText\_AndNoReferenceToTheCsvConnector
+
+```text
+an edge reached only through a type named in a catch clause or an event is not seen
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

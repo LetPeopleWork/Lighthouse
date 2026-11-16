@@ -136,12 +136,95 @@
 "stimulus": "F182",
 "user_result": "F184"
 }
+],
+"S3": [
+{
+"covers": [
+"P4",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F189",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::TheTrackerIntegrationTypesInTheCompiledCode_AreExactlyTheTypesListed, OnlyTheDemoDataTypesStay_AndEachTypeThatStaysNamesTheContextThatKeepsIt, NoTypeIsOnTwoLists"
+},
+"expected": "F187",
+"stimulus": "F186",
+"user_result": "F188"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F193",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::AMadeUpTypeInTheModuleOrAnOldNamespace_IsNamedAsUnlisted_AndANamesakeOutsideIsNot, AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted"
+},
+"expected": "F191",
+"stimulus": "F190",
+"user_result": "F192"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F197",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::TheModelsTypesListedToMove_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorReachedByTheKernel, ASharedModelsTypeOfTheContext_IsJudgedAsTheDesignExpects"
+},
+"expected": "F195",
+"stimulus": "F194",
+"user_result": "F196"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F201",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::AMadeUpModelsType_IsJudgedByWhatTheCompiledCodeShows"
+},
+"expected": "F199",
+"stimulus": "F198",
+"user_result": "F200"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F205",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::AnEdgeNamedAtDesign_IsInTheCompiledCode, ADemoBackfillHandler_CarriesTheCsvOptionNameAsText_AndNoReferenceToTheCsvConnector"
+},
+"expected": "F203",
+"stimulus": "F202",
+"user_result": "F204"
+}
 ]
 },
 "counters": {
 "D": 10,
 "E": 5,
-"F": 185,
+"F": 205,
 "K": 5,
 "P": 4,
 "S": 3,
@@ -1021,9 +1104,29 @@
 "F183": "It prints one count per connector folder and the total, ignoring commented-out code, and succeeds, instead of reporting folder not found",
 "F184": "The examiner can still count what each connector cannot do after the move",
 "F185": "A command that finds the folders only when both the old and the module folder of a connector exist at once",
+"F186": "The maintainer runs the membership test on the compiled code",
+"F187": "Every top-level type of the connector, OAuth, connection-health and factory namespaces, old or module, plus the source selectors and the health prober, is on the moving or staying list, and every listed name exists; the demo-data types are the only ones that stay, each with its owner, and no type is on two lists",
+"F188": "The maintainer sees exactly which types feature B moves; a forgotten or made-up type is named in the failure",
+"F189": "a type referenced only in a catch clause or an event, which the compiled-code reading does not see, is not judged",
 "F19": "Moving any file of the context: feature B (story-6359-s03a-b-move).",
+"F190": "The membership check is given the compiled code plus made-up types in the module namespace and the old connector namespace, a namesake namespace and a nested type; and separately the compiled code with the Jira connector renamed",
+"F191": "The made-up types in both namespaces are named as unlisted, the namesake and the nested type are not, no real listed type looks missing; the renamed connector is named as missing and its new name as unlisted",
+"F192": "A type added, renamed or dropped during the move fails the membership test by name until the list follows it",
+"F193": "a rename to a name already listed elsewhere is reported only as the old name missing",
+"F194": "The maintainer runs the Models admission check over the shared Models candidates of the context (OAuth, connection health, validation, write-back and the connection option types)",
+"F195": "The list of Models types that move equals exactly the candidates the database context does not store, no controller sends (signature, value handed to a result, or reached through its public properties) and no staying Models type reaches; the stored OAuth credential, health verdict and connection, the sent health answer and validation result, and the credential status reached by the credential stay; the OAuth flow, refresh, state and token values are admitted",
+"F196": "Feature B moves only the shared Models types that can leave the kernel without changing the stored model, the wire format or making the kernel reach the module",
+"F197": "a type sent through a variable typed object or built by a helper the controller does not call directly is judged not sent",
+"F198": "The admission check judges made-up Models types: one in a database set, one configured on the model builder, one in a controller signature, one handed to a status result, one reached through a sent envelope's property, one reached by a staying Models record, and a flow with its token that a controller only reads to redirect",
+"F199": "The two records are stored, the three answers are on the wire, the reached value is reached by the kernel, the flow and its token are admitted",
 "F2": "The packaging moves of Tracker integration stay under every existing guard: rules, CI live-suite selection and examine commands keep working on the new paths.",
 "F20": "The module's own boundary rules, the unit-test placement rule and retiring the old leaf pattern and old classifier alternatives: feature C.",
+"F200": "The admission rule refuses an entity, a wire type or a kernel-reached type, and does not refuse a value a controller only reads",
+"F201": "an entity configured only through an owned-type call or a separate configuration class is judged not stored",
+"F202": "The maintainer runs the edge check on the inbound and outbound edges named at design",
+"F203": "The Jira connector references the delivery-forecast block renderer, connection health references the concrete verdict repository, the connection save references the fetch fingerprint and the fetch-shape event, and connection health does not reference the Jira connector; the two demo back-fill handlers carry the CSV option name as text and hold no reference to the CSV option names type",
+"F204": "The edges the module rules will list are confirmed from the compiled code, and the CSV edge is known to be a copied constant the compiled code cannot see",
+"F205": "an edge reached only through a type named in a catch clause or an event is not seen",
 "F21": "Any behaviour a user sees: nothing changes; UI sketch and loading/failure looks are N/A.",
 "F22": "Rigor thorough for feature A: crafter, acceptance designer and architect on opus; reviewers sonnet; EXAMINE on sonnet.",
 "F23": "Push per slice, CI watched per push; rebase allowed when trunk moved (maintainer, 2026-11-16).",

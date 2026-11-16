@@ -400,6 +400,135 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<p>P1</p>
+
+<pre><code>The maintainer runs the membership test on the compiled code
+</code></pre>
+
+<pre><code>Every top-level type of the connector, OAuth, connection-health and factory namespaces, old or module, plus the source selectors and the health prober, is on the moving or staying list, and every listed name exists; the demo-data types are the only ones that stay, each with its owner, and no type is on two lists
+</code></pre>
+
+<pre><code>The maintainer sees exactly which types feature B moves; a forgotten or made-up type is named in the failure
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::TheTrackerIntegrationTypesInTheCompiledCode_AreExactlyTheTypesListed, OnlyTheDemoDataTypesStay_AndEachTypeThatStaysNamesTheContextThatKeepsIt, NoTypeIsOnTwoLists</p>
+
+<pre><code>a type referenced only in a catch clause or an event, which the compiled-code reading does not see, is not judged
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The membership check is given the compiled code plus made-up types in the module namespace and the old connector namespace, a namesake namespace and a nested type; and separately the compiled code with the Jira connector renamed
+</code></pre>
+
+<pre><code>The made-up types in both namespaces are named as unlisted, the namesake and the nested type are not, no real listed type looks missing; the renamed connector is named as missing and its new name as unlisted
+</code></pre>
+
+<pre><code>A type added, renamed or dropped during the move fails the membership test by name until the list follows it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::AMadeUpTypeInTheModuleOrAnOldNamespace_IsNamedAsUnlisted_AndANamesakeOutsideIsNot, AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted</p>
+
+<pre><code>a rename to a name already listed elsewhere is reported only as the old name missing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The maintainer runs the Models admission check over the shared Models candidates of the context (OAuth, connection health, validation, write-back and the connection option types)
+</code></pre>
+
+<pre><code>The list of Models types that move equals exactly the candidates the database context does not store, no controller sends (signature, value handed to a result, or reached through its public properties) and no staying Models type reaches; the stored OAuth credential, health verdict and connection, the sent health answer and validation result, and the credential status reached by the credential stay; the OAuth flow, refresh, state and token values are admitted
+</code></pre>
+
+<pre><code>Feature B moves only the shared Models types that can leave the kernel without changing the stored model, the wire format or making the kernel reach the module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::TheModelsTypesListedToMove_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorReachedByTheKernel, ASharedModelsTypeOfTheContext_IsJudgedAsTheDesignExpects</p>
+
+<pre><code>a type sent through a variable typed object or built by a helper the controller does not call directly is judged not sent
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The admission check judges made-up Models types: one in a database set, one configured on the model builder, one in a controller signature, one handed to a status result, one reached through a sent envelope&#x27;s property, one reached by a staying Models record, and a flow with its token that a controller only reads to redirect
+</code></pre>
+
+<pre><code>The two records are stored, the three answers are on the wire, the reached value is reached by the kernel, the flow and its token are admitted
+</code></pre>
+
+<pre><code>The admission rule refuses an entity, a wire type or a kernel-reached type, and does not refuse a value a controller only reads
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::AMadeUpModelsType_IsJudgedByWhatTheCompiledCodeShows</p>
+
+<pre><code>an entity configured only through an owned-type call or a separate configuration class is judged not stored
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The maintainer runs the edge check on the inbound and outbound edges named at design
+</code></pre>
+
+<pre><code>The Jira connector references the delivery-forecast block renderer, connection health references the concrete verdict repository, the connection save references the fetch fingerprint and the fetch-shape event, and connection health does not reference the Jira connector; the two demo back-fill handlers carry the CSV option name as text and hold no reference to the CSV option names type
+</code></pre>
+
+<pre><code>The edges the module rules will list are confirmed from the compiled code, and the CSV edge is known to be a copied constant the compiled code cannot see
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::AnEdgeNamedAtDesign_IsInTheCompiledCode, ADemoBackfillHandler_CarriesTheCsvOptionNameAsText_AndNoReferenceToTheCsvConnector</p>
+
+<pre><code>an edge reached only through a type named in a catch clause or an event is not seen
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
