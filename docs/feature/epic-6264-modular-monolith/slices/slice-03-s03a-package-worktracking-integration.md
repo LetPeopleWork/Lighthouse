@@ -49,3 +49,10 @@ Retitled **Package Tracker integration (ACL)**. ADR-270: the connectors translat
 ## Update after S03b (#6360, 2026-11-16)
 
 The parent and dependency **source selectors** (`ParentSourceSelector`, `DependencySourceSelector` and their tests) stayed outside `Modules/WorkItems`: the connectors call them, and Work Items' leaf rule forbids a connector from reaching into the module. They belong to this Story. Moving them removes the selector entries from Work Items' outbound list and keeps the leaf rule clean.
+
+## Update: S06 runs first (maintainer, 2026-11-16)
+
+S06 Connector capability interfaces (#6376) runs before this Story, so S03a moves the final connector port and writes
+its leaf rule against it. S05e (#6373, connection ports) stays a soft dependency, decided at this Story's DESIGN.
+Scope note for DESIGN: ADR-270 gives Tracker integration more than the brief's IN list: connections and their
+credentials, OAuth, connection health and write-back translation. Re-count against ADR-270, not the brief.

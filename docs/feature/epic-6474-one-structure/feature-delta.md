@@ -1984,7 +1984,8 @@ S09a (#6382) keeps its hard dependency on **all S03\***, S03i included, and stay
 maintainer prefers waiting to doing S09a twice. This changes the prerequisites above and amends A-D1, MA1 and
 "What does not change":
 
-- Prerequisites, in backlog order (ADO, all Next): S03c ✓, S03b ✓, S03a #6359, S03d #6362 (Deliveries half),
+- Prerequisites, in backlog order (ADO, all Next): S03c ✓, S03b ✓, S06 #6376 (added the same day: S03a then
+  packages the final connector port), S03a #6359, S03d #6362 (Deliveries half),
   S03e #6363, S03f #6364, S03g #6365, S03h #6366, S03i #6468, S09a #6382.
 - **S03i creates `Modules/OrganisationSetup/`** and moves Team, Portfolio, their settings, Terminology, connection
   defaults, blackouts, refresh cadence and ordering policy into it, as they are. This Epic then builds units,

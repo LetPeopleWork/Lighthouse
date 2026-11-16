@@ -43,5 +43,5 @@ Work Items' `Program.cs` registrations stayed in place (no `AddWorkItems` extens
 ## Update: no early start; all S03* first (maintainer, 2026-11-16)
 
 The hard dependency on all S03* stands, S03i included. S09a is not cut down to the three packaged modules to start
-early: it runs once, over every context. Backlog order in ADO (all Next): S03a, S03d (Deliveries), S03e, S03f,
+early: it runs once, over every context. Backlog order in ADO (all Next): S06 (before S03a), S03a, S03d (Deliveries), S03e, S03f,
 S03g, S03h, S03i, then S09a. Epic #6474 waits for S09a.
