@@ -1211,6 +1211,27 @@ dotnet test "$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backen
 EOF
 chmod +x "$out/backend-tests"
 
+cat > "$out/connector-throws-count" <<EOF
+#!/usr/bin/env bash
+# Prints how many NotSupportedException the CSV, Linear and ServiceNow connectors create in their source: one line
+# per connector folder, then the total. Each one is a connector method saying it cannot do what its interface asks;
+# the goal is 0 for every folder. Comment lines are not counted. The architecture rule
+# ConnectorsDeclareNoUnsupportedMembersArchUnitTest reads the compiled code and names each such method.
+# Usage: connector-throws-count
+set -euo pipefail
+connectors="$repo/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors"
+total=0
+for folder in Csv Linear ServiceNow; do
+  [ -d "\$connectors/\$folder" ] || { echo "\$folder: folder not found at \$connectors/\$folder"; exit 1; }
+  count=\$(grep -rhE --include='*.cs' 'new +(System\.)?NotSupportedException *\(' "\$connectors/\$folder" \\
+    | grep -cvE '^ *(//|\*)' || true)
+  echo "\$folder: \$count"
+  total=\$((total + count))
+done
+echo "total: \$total"
+EOF
+chmod +x "$out/connector-throws-count"
+
 node_bin="$(dirname "$(command -v node)")"
 cat > "$out/frontend-tests" <<EOF
 #!/usr/bin/env bash

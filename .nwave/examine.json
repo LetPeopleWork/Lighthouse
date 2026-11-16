@@ -41,6 +41,10 @@
       "path": "Scripts/examine/bin/backend-tests"
     },
     {
+      "name": "connector-throws-count",
+      "path": "Scripts/examine/bin/connector-throws-count"
+    },
+    {
       "name": "frontend-tests",
       "path": "Scripts/examine/bin/frontend-tests"
     },
