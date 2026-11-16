@@ -251,6 +251,247 @@ An entry renamed in both the code and the list at once.
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P4
+
+```text
+Run the moved Work Items unit tests under their new namespace with the slice's verification filter.
+```
+
+```text
+Every moved test keeps its name apart from the namespace and passes as it did before the move.
+```
+
+```text
+The refresh, metrics and forecast answers these tests guard stay the same for the user.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/WorkItems
+
+```text
+A moved test whose body was weakened during the move; the pure-move commit, reviewed apart from edits, guards that.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Read the test project's files on disk and its compiled classes, and check each of the 29 listed Work Items unit-test files.
+```
+
+```text
+Each listed file sits only in its layer folder under Modules/WorkItems (8 Domain, 17 Application, 4 Application/Policies), no copy is left in its old place, and its class keeps its name in that folder's namespace; otherwise the row for that file names the missing path, the copy left behind or the stale class.
+```
+
+```text
+A developer finds every Work Items unit test next to the module, in the folder of the layer it tests, under its old class name.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsUnitTestPlacementTest\.cs\:\:AWorkItemsUnitTestFile\_SitsOnlyInItsModuleLayerFolder\_AndKeepsItsClassInThatLayer
+
+```text
+The list itself assigns a file to the wrong layer for its subject; that choice is judged by review, not by the rule.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Read the test project's files on disk in the three folders that held only Work Items tests.
+```
+
+```text
+The work items, work item rules and team data folders hold no test file; otherwise the test names each file still there.
+```
+
+```text
+A new Work Items test written into an old folder is named at once, so the tests stay next to the module later too.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsUnitTestPlacementTest\.cs\:\:TheFoldersTheWorkItemsTestsLeft\_HoldNoTestFile
+
+```text
+A new Work Items test written into a mixed folder the tests partly left, such as the dependencies or parents folder, is not named.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Read every compiled class that comes from a file under Modules/WorkItems or is declared in its namespace.
+```
+
+```text
+At least one such class exists, and each one has the namespace of the folder its file sits in; otherwise the class and its folder are named.
+```
+
+```text
+A test filter by the module namespace finds exactly the tests in the module folders.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsUnitTestPlacementTest\.cs\:\:EveryClassOfTheWorkItemsModuleTests\_HasTheNamespaceOfItsFolder
+
+```text
+A helper class beside a moved test whose namespace matches its own folder.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Run the file rule on made-up trees: a test left in its old place, moved with a copy left behind, moved into the wrong layer, moved into the policies folder, and moved correctly beside the shared helper, a selector test of another module and an API integration test.
+```
+
+```text
+The left-behind file, the copy and the wrong-layer files are each named, with the missing expected path where it is missing; the correctly moved tree names nothing, not the shared helper, the other module's test or the integration test.
+```
+
+```text
+The rule tells a finished move from an unfinished one, and leaves alone the tests that are meant to stay.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsUnitTestPlacementTest\.cs\:\:AMadeUpTestFileOutsideItsLayerFolder\_IsReported\_AndOneThatSitsThereIsNot
+
+```text
+A misplaced Work Items test with a file name not on the list; the left-folder rule covers that case.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Run the left-folder rule on made-up trees: a newcomer in the work items folder, a newcomer in the work item rules folder, a newcomer in a subfolder of the team data folder, and tests only in other folders, one with a similar folder name.
+```
+
+```text
+Each newcomer is named; the tree with tests only in other folders, including the similarly named one, the selector test that stays and the integration test, names nothing.
+```
+
+```text
+A test added later to a folder the Work Items tests left is caught; tests elsewhere are not.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsUnitTestPlacementTest\.cs\:\:AMadeUpTestFileInAFolderTheWorkItemsTestsLeft\_IsReported\_AndOneElsewhereIsNot
+
+```text
+A newcomer in a mixed folder the tests partly left (dependencies, parents).
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Run the class rule on made-up classes compiled from a moved file: kept name and layer namespace with a helper beside it, a stale old namespace, another layer's namespace, a renamed class, and a file that compiled into no class.
+```
+
+```text
+The compliant case names nothing; the stale namespace and the other layer's namespace are named with the expected class name; the renamed class names the expected class; the empty file is named.
+```
+
+```text
+A moved test keeps the name a developer and a test filter know it by.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsUnitTestPlacementTest\.cs\:\:AMadeUpTestFileWhoseClassLostItsNameOrLayerNamespace\_IsReported\_AndOneThatKeptThemIsNot
+
+```text
+A class with the right name and namespace whose test methods were renamed.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Read the compiled classes of the placement test's own file, which holds a compliant twin and a made-up class declared in a Work Items module namespace from outside the module folder.
+```
+
+```text
+Both made-up classes are tied to that file; only the made-up module-namespace class is taken as a module test and named as a namespace and folder mismatch; the twin is not.
+```
+
+```text
+A test that claims the module's namespace from another folder cannot slip past the folder rule.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsUnitTestPlacementTest\.cs\:\:AMadeUpClassDeclaredInTheModuleNamespaceOutsideItsFolder\_IsReported\_AndItsCompliantTwinIsNot
+
+```text
+A class in the module namespace compiled without symbols, which ties it to no file.
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows

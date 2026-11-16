@@ -143,6 +143,143 @@
 "stimulus": "F302",
 "user_result": "F304"
 }
+],
+"S3": [
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T5"
+],
+"still_passes_if": "F309",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems"
+},
+"expected": "F307",
+"stimulus": "F306",
+"user_result": "F308"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F262",
+"T5"
+],
+"still_passes_if": "F313",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs::AWorkItemsUnitTestFile_SitsOnlyInItsModuleLayerFolder_AndKeepsItsClassInThatLayer"
+},
+"expected": "F311",
+"stimulus": "F310",
+"user_result": "F312"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F262",
+"T5"
+],
+"still_passes_if": "F317",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs::TheFoldersTheWorkItemsTestsLeft_HoldNoTestFile"
+},
+"expected": "F315",
+"stimulus": "F314",
+"user_result": "F316"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F262",
+"T5"
+],
+"still_passes_if": "F321",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs::EveryClassOfTheWorkItemsModuleTests_HasTheNamespaceOfItsFolder"
+},
+"expected": "F319",
+"stimulus": "F318",
+"user_result": "F320"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F263",
+"T5"
+],
+"still_passes_if": "F325",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs::AMadeUpTestFileOutsideItsLayerFolder_IsReported_AndOneThatSitsThereIsNot"
+},
+"expected": "F323",
+"stimulus": "F322",
+"user_result": "F324"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F263",
+"T5"
+],
+"still_passes_if": "F329",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs::AMadeUpTestFileInAFolderTheWorkItemsTestsLeft_IsReported_AndOneElsewhereIsNot"
+},
+"expected": "F327",
+"stimulus": "F326",
+"user_result": "F328"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F263",
+"T5"
+],
+"still_passes_if": "F333",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs::AMadeUpTestFileWhoseClassLostItsNameOrLayerNamespace_IsReported_AndOneThatKeptThemIsNot"
+},
+"expected": "F331",
+"stimulus": "F330",
+"user_result": "F332"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F263",
+"T5"
+],
+"still_passes_if": "F337",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs::AMadeUpClassDeclaredInTheModuleNamespaceOutsideItsFolder_IsReported_AndItsCompliantTwinIsNot"
+},
+"expected": "F335",
+"stimulus": "F334",
+"user_result": "F336"
+}
 ]
 },
 "counters": {
@@ -150,7 +287,7 @@
 "C": 1,
 "D": 8,
 "E": 4,
-"F": 305,
+"F": 337,
 "K": 7,
 "L": 6,
 "N": 4,
@@ -1735,9 +1872,41 @@
 "F303": "The list keeps its six entries, the Work Items query of Flow metrics among them, and matches the code both ways.",
 "F304": "The two Work Items queries of Flow metrics stay named until Flow metrics answers them itself.",
 "F305": "An entry renamed in both the code and the list at once.",
+"F306": "Run the moved Work Items unit tests under their new namespace with the slice's verification filter.",
+"F307": "Every moved test keeps its name apart from the namespace and passes as it did before the move.",
+"F308": "The refresh, metrics and forecast answers these tests guard stay the same for the user.",
+"F309": "A moved test whose body was weakened during the move; the pure-move commit, reviewed apart from edits, guards that.",
 "F31": "Work Items publishes a kernel event; Flow metrics, its downstream, reacts. After S1 Work Items Application references no Flow metrics command; the two WorkItemService query edges remain listed.",
+"F310": "Read the test project's files on disk and its compiled classes, and check each of the 29 listed Work Items unit-test files.",
+"F311": "Each listed file sits only in its layer folder under Modules/WorkItems (8 Domain, 17 Application, 4 Application/Policies), no copy is left in its old place, and its class keeps its name in that folder's namespace; otherwise the row for that file names the missing path, the copy left behind or the stale class.",
+"F312": "A developer finds every Work Items unit test next to the module, in the folder of the layer it tests, under its old class name.",
+"F313": "The list itself assigns a file to the wrong layer for its subject; that choice is judged by review, not by the rule.",
+"F314": "Read the test project's files on disk in the three folders that held only Work Items tests.",
+"F315": "The work items, work item rules and team data folders hold no test file; otherwise the test names each file still there.",
+"F316": "A new Work Items test written into an old folder is named at once, so the tests stay next to the module later too.",
+"F317": "A new Work Items test written into a mixed folder the tests partly left, such as the dependencies or parents folder, is not named.",
+"F318": "Read every compiled class that comes from a file under Modules/WorkItems or is declared in its namespace.",
+"F319": "At least one such class exists, and each one has the namespace of the folder its file sits in; otherwise the class and its folder are named.",
 "F32": "Run the Work Items module rules over the compiled product assembly and over made-up offender types in the test assembly's fixture namespaces: a Work Items Domain type reaching a Services type, an outside type reaching Domain or Application off the list, an Application type reaching EF Core, Data, API or an unlisted Flow metrics type, a non-handler class in Modules.WorkItems.Application.Policies, a connector type reaching Modules.WorkItems.",
+"F320": "A test filter by the module namespace finds exactly the tests in the module folders.",
+"F321": "A helper class beside a moved test whose namespace matches its own folder.",
+"F322": "Run the file rule on made-up trees: a test left in its old place, moved with a copy left behind, moved into the wrong layer, moved into the policies folder, and moved correctly beside the shared helper, a selector test of another module and an API integration test.",
+"F323": "The left-behind file, the copy and the wrong-layer files are each named, with the missing expected path where it is missing; the correctly moved tree names nothing, not the shared helper, the other module's test or the integration test.",
+"F324": "The rule tells a finished move from an unfinished one, and leaves alone the tests that are meant to stay.",
+"F325": "A misplaced Work Items test with a file name not on the list; the left-folder rule covers that case.",
+"F326": "Run the left-folder rule on made-up trees: a newcomer in the work items folder, a newcomer in the work item rules folder, a newcomer in a subfolder of the team data folder, and tests only in other folders, one with a similar folder name.",
+"F327": "Each newcomer is named; the tree with tests only in other folders, including the similarly named one, the selector test that stays and the integration test, names nothing.",
+"F328": "A test added later to a folder the Work Items tests left is caught; tests elsewhere are not.",
+"F329": "A newcomer in a mixed folder the tests partly left (dependencies, parents).",
 "F33": "On the product: every rule passes with its inline baseline (R-W1 the D-1 lists; R-W2 empty; R-W3 and R-W5 the lists measured from the IL in this slice; R-W6 Flow metrics IPortfolioMetricsService and PercentileCalculator plus one entry each for IRbacAdministrationService, ILicenseService, IFeatureOrdering, UpdateCancellationContext; leaf rule empty), each compared both ways, and Flow metrics R4 has 4 entries with no TeamDataService. On each made-up offender: the rule's failure names that offender type.",
+"F330": "Run the class rule on made-up classes compiled from a moved file: kept name and layer namespace with a helper beside it, a stale old namespace, another layer's namespace, a renamed class, and a file that compiled into no class.",
+"F331": "The compliant case names nothing; the stale namespace and the other layer's namespace are named with the expected class name; the renamed class names the expected class; the empty file is named.",
+"F332": "A moved test keeps the name a developer and a test filter know it by.",
+"F333": "A class with the right name and namespace whose test methods were renamed.",
+"F334": "Read the compiled classes of the placement test's own file, which holds a compliant twin and a made-up class declared in a Work Items module namespace from outside the module folder.",
+"F335": "Both made-up classes are tied to that file; only the made-up module-namespace class is taken as a module test and named as a namespace and folder mismatch; the twin is not.",
+"F336": "A test that claims the module's namespace from another folder cannot slip past the folder rule.",
+"F337": "A class in the module namespace compiled without symbols, which ties it to no file.",
 "F34": "Deleting any baseline entry, or adding an entry with no IL edge, fails the both-ways comparison; a rule that ignores the offender namespace passes a made-up offender and fails its row; putting TeamDataService back into R4 fails R4.",
 "F35": "S2 creates only its oracle file; no production or existing test target. The rules reuse ModuleRules (Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15) unchanged, recorded as a shared decision.",
 "F36": "No code target: the new rule file only reads the compiled IL; no production, export or build file changes.",
