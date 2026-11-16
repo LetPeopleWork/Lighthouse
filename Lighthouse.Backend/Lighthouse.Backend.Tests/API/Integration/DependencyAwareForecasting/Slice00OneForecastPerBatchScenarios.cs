@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 
             var connectorMock = new Mock<IWorkTrackingConnector>();
             connectorMock.Setup(c => c.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
-            connectorMock.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
+            connectorMock.As<IIncrementalSource>().Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
             connectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>())).Returns([]);
             connectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
             connectorMock.As<IFeatureSource>().Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);

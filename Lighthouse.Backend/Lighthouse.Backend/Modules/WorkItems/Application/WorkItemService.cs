@@ -179,8 +179,8 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
                 scan.Succeeded,
                 fetchShapeChanged);
 
-            var fetch = mode == SyncMode.Delta
-                ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
+            var fetch = mode == SyncMode.Delta && scan.Source is { } source
+                ? await FetchOnlyWhatMoved(source, team, storedWorkItems, scan.Stamps)
                 : await FetchEverything(connector, team);
 
             var placements = PlaceWhatTheLinksLeftOpen(team, ParentPlacementReport.Team(team.Name), ParentNarrowing.Narrow, fetch.WorkItems);
@@ -319,19 +319,28 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
         /// </summary>
         private sealed record RemoteFetch(List<WorkItem> WorkItems, HashSet<string> StillOnTheTracker, SyncOutcome Outcome);
 
-        private sealed record IdentityScan(bool TrackerCanBeScanned, bool Succeeded, List<RemoteRecordStamp> Stamps);
+        /// <summary>
+        /// What a scan learned, and the source that answered it, so the records that moved are fetched from that same source.
+        /// A scan has no source when the connector cannot sweep, or cannot sweep this connection yet.
+        /// </summary>
+        private sealed record IdentityScan(IIncrementalSource? Source, bool Succeeded, List<RemoteRecordStamp> Stamps)
+        {
+            public bool TrackerCanBeScanned => Source is not null;
+
+            public static IdentityScan NotScannable { get; } = new(Source: null, Succeeded: false, Stamps: []);
+        }
 
         /// <summary>The scan: the same query, asking only for identity plus the remote change stamp.</summary>
         private async Task<IdentityScan> ScanRemoteIdentities(IWorkTrackingConnector connector, Team team)
         {
-            if (!connector.SupportsIncrementalSync(team.WorkTrackingSystemConnection))
+            if (connector is not IIncrementalSource source || !source.SupportsIncrementalSync(team.WorkTrackingSystemConnection))
             {
-                return new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+                return IdentityScan.NotScannable;
             }
 
             try
             {
-                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepWorkItemsForTeam(team, Stopping)]);
+                return new IdentityScan(source, Succeeded: true, Stamps: [.. await source.SweepWorkItemsForTeam(team, Stopping)]);
             }
             // A half-scanned query is the one answer never allowed, so any scan failure falls back to the
             // whole query - loudly, or nobody learns the cheap path stopped working.
@@ -353,7 +362,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
                     "Identity scan failed for Team {TeamName} - downloading the whole query instead.",
                     team.Name);
 
-                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: false, Stamps: []);
+                return new IdentityScan(source, Succeeded: false, Stamps: []);
             }
         }
 
@@ -369,7 +378,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
         }
 
         /// <summary>The download: full payloads for the records whose stamp moved, and for nothing else.</summary>
-        private async Task<RemoteFetch> FetchOnlyWhatMoved(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems, List<RemoteRecordStamp> sweptRecords)
+        private async Task<RemoteFetch> FetchOnlyWhatMoved(IIncrementalSource source, Team team, List<WorkItem> storedWorkItems, List<RemoteRecordStamp> sweptRecords)
         {
             var sweptOnce = DeduplicateByReferenceId(sweptRecords, team.Name, record => record.ReferenceId);
             var movedReferenceIds = sweptOnce
@@ -378,7 +387,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
 
             List<WorkItem> downloaded = movedReferenceIds.Count == 0
                 ? []
-                : DeduplicateByReferenceId((await connector.GetWorkItemsForTeam(team, movedReferenceIds, Stopping)).ToList(), team.Name, workItem => workItem.ReferenceId);
+                : DeduplicateByReferenceId((await source.GetWorkItemsForTeam(team, movedReferenceIds, Stopping)).ToList(), team.Name, workItem => workItem.ReferenceId);
 
             return new RemoteFetch(
                 downloaded,
@@ -994,8 +1003,8 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
                 scan.Succeeded,
                 fetchShapeChanged);
 
-            var fetch = mode == SyncMode.Delta
-                ? await FetchOnlyTheFeaturesThatMoved(connector, portfolio, storedFeatures, scan.Stamps)
+            var fetch = mode == SyncMode.Delta && scan.Source is { } source
+                ? await FetchOnlyTheFeaturesThatMoved(source, portfolio, storedFeatures, scan.Stamps)
                 : await FetchEveryFeature(connector, portfolio, Stopping);
 
             var placements = PlaceWhatTheLinksLeftOpen(portfolio, ParentPlacementReport.Portfolio(portfolio.Name), ParentNarrowing.DoNotNarrow, fetch.Features);
@@ -1136,14 +1145,14 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
         /// <summary>The scan for the portfolio: the same Feature query, asking only for identity plus the remote change stamp.</summary>
         private async Task<IdentityScan> ScanRemoteFeatureIdentities(IWorkTrackingConnector connector, Portfolio portfolio)
         {
-            if (!connector.SupportsIncrementalSync(portfolio.WorkTrackingSystemConnection))
+            if (connector is not IIncrementalSource source || !source.SupportsIncrementalSync(portfolio.WorkTrackingSystemConnection))
             {
-                return new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+                return IdentityScan.NotScannable;
             }
 
             try
             {
-                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepFeaturesForPortfolio(portfolio, Stopping)]);
+                return new IdentityScan(source, Succeeded: true, Stamps: [.. await source.SweepFeaturesForPortfolio(portfolio, Stopping)]);
             }
             // A half-scanned query is the one answer never allowed, so any scan failure falls back to the
             // whole query - loudly, or nobody learns the cheap path stopped working.
@@ -1165,7 +1174,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
                     "Identity scan failed for Portfolio {PortfolioName} - downloading the whole query instead.",
                     portfolio.Name);
 
-                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: false, Stamps: []);
+                return new IdentityScan(source, Succeeded: false, Stamps: []);
             }
         }
 
@@ -1174,7 +1183,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
         /// for nothing else. A cycle in which nothing moved asks for nothing - a keyed query for an empty
         /// key set is still a remote round trip.
         /// </summary>
-        private async Task<RemoteFeatureFetch> FetchOnlyTheFeaturesThatMoved(IWorkTrackingConnector connector, Portfolio portfolio, List<Feature> storedFeatures, List<RemoteRecordStamp> sweptRecords)
+        private async Task<RemoteFeatureFetch> FetchOnlyTheFeaturesThatMoved(IIncrementalSource source, Portfolio portfolio, List<Feature> storedFeatures, List<RemoteRecordStamp> sweptRecords)
         {
             var sweptOnce = DeduplicateByReferenceId(sweptRecords, portfolio.Name, record => record.ReferenceId);
             var movedReferenceIds = sweptOnce
@@ -1183,7 +1192,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
 
             List<Feature> downloaded = movedReferenceIds.Count == 0
                 ? []
-                : DeduplicateByReferenceId((await connector.GetFeaturesForPortfolio(portfolio, movedReferenceIds, Stopping)).ToList(), portfolio.Name, feature => feature.ReferenceId);
+                : DeduplicateByReferenceId((await source.GetFeaturesForPortfolio(portfolio, movedReferenceIds, Stopping)).ToList(), portfolio.Name, feature => feature.ReferenceId);
 
             return new RemoteFeatureFetch(
                 downloaded,
@@ -1420,14 +1429,14 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
         /// <summary>The scan for the parent half: the same keyed query, asking only for identity plus the remote change stamp.</summary>
         private async Task<IdentityScan> ScanRemoteParentFeatureIdentities(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds)
         {
-            if (!connector.SupportsIncrementalSync(portfolio.WorkTrackingSystemConnection))
+            if (connector is not IIncrementalSource source || !source.SupportsIncrementalSync(portfolio.WorkTrackingSystemConnection))
             {
-                return new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+                return IdentityScan.NotScannable;
             }
 
             try
             {
-                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepParentFeatures(portfolio, parentFeatureIds, Stopping)]);
+                return new IdentityScan(source, Succeeded: true, Stamps: [.. await source.SweepParentFeatures(portfolio, parentFeatureIds, Stopping)]);
             }
             // Same rule again: a half-scanned key list falls back to downloading every parent, and says so.
             // A cancel is not a tracker failure. Caught below it is logged as a scan that broke, and the
@@ -1448,7 +1457,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
                     "Parent Feature identity scan failed for Portfolio {PortfolioName} - downloading every parent instead.",
                     portfolio.Name);
 
-                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: false, Stamps: []);
+                return new IdentityScan(source, Succeeded: false, Stamps: []);
             }
         }
 

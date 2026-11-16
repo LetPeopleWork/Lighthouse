@@ -253,18 +253,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// </summary>
         protected void GivenTheTrackerCanBeScanned()
         {
-            ConnectorMock.Setup(connector => connector.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
+            ConnectorMock.As<IIncrementalSource>().Setup(connector => connector.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
             ConnectorMock
-                .Setup(connector => connector.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Team team, CancellationToken _) => Tracker.StampsOfTheItemsOf(team));
             ConnectorMock
-                .Setup(connector => connector.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Team team, IReadOnlyCollection<string> referenceIds, CancellationToken _) => Tracker.WorkItemsOf(team).Where(item => referenceIds.Contains(item.ReferenceId)));
             ConnectorMock
-                .Setup(connector => connector.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Portfolio portfolio, CancellationToken _) => Tracker.StampsOfTheFeaturesOf(portfolio));
             ConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken _) => [.. Tracker.FeaturesOf(portfolio).Where(feature => referenceIds.Contains(feature.ReferenceId))]);
         }
 

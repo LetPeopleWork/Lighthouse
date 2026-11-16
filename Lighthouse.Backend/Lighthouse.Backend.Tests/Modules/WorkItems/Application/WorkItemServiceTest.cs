@@ -1166,13 +1166,13 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             TheTrackerCanBeScanned();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.SweepWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SweepWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([
                     new RemoteRecordStamp(theRecordThatMoved, whenTheRecordThatMovedChanged),
                     new RemoteRecordStamp(theRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([ADownloadThatNobodyCouldPlace(theRecordThatMoved, whenTheRecordThatMovedChanged)]);
 
             featureRepositoryMock
@@ -1248,13 +1248,13 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             TheTrackerCanBeScanned();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.SweepWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SweepWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([
                     .. EveryKindOfRecord.Select(referenceId => new RemoteRecordStamp(referenceId, TheFirstReadingDay)),
                     new RemoteRecordStamp(TheRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ADownloadOfEveryKindOfRecord(TheFirstReadingDay));
             TheStoredFeaturesAre(TheStoredFeature);
 
@@ -1693,13 +1693,13 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             TheTrackerCanBeScanned();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([
                     .. EveryKindOfFeature.Select(referenceId => new RemoteRecordStamp(referenceId, TheFirstReadingDay)),
                     new RemoteRecordStamp(TheFeatureThatSatStill, whenEveryStoredRecordLastChanged)]);
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ADownloadOfEveryKindOfFeature(TheFirstReadingDay));
             TheStoredFeaturesAre(TheStoredFeature);
 
@@ -2174,11 +2174,11 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             TheTrackerCanBeScanned();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => new RemoteRecordStamp(referenceId, TheFirstReadingDay))]);
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => AFeatureWhoseDependencyFieldPointsBothWays(referenceId, "Dependency", BothDependencyPhrases, TheFirstReadingDay))]);
 
             NothingAboveTheFeaturesIsDownloaded();
@@ -2232,7 +2232,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
         private void NothingAboveTheFeaturesIsDownloaded()
         {
             workTrackingConnectorMock
-                .Setup(connector => connector.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([]);
             workTrackingConnectorMock
                 .As<IFeatureSource>().Setup(connector => connector.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
@@ -2332,10 +2332,10 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             TheTrackerCanBeScanned();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new RemoteRecordStamp(TheFeatureWithOneLink, whenEveryStoredRecordLastChanged)]);
             workTrackingConnectorMock
-                .Setup(connector => connector.SweepParentFeatures(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SweepParentFeatures(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new RemoteRecordStamp(TheIssueAbove, TheFirstReadingDay)]);
             workTrackingConnectorMock
                 .As<IFeatureSource>().Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
@@ -3192,7 +3192,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 
         private void TheTrackerCanBeScanned()
             => workTrackingConnectorMock
-                .Setup(connector => connector.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>()))
+                .As<IIncrementalSource>().Setup(connector => connector.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>()))
                 .Returns(true);
 
         private Team CreateTeam()

@@ -1,6 +1,6 @@
 namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
-    public interface IAzureDevOpsWorkTrackingConnector : IWorkTrackingConnector, IBoardInformationProvider, IWriteBackTarget, IFeatureSource
+    public interface IAzureDevOpsWorkTrackingConnector : IWorkTrackingConnector, IBoardInformationProvider, IWriteBackTarget, IFeatureSource, IIncrementalSource
     {
     }
 }

@@ -20,15 +20,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return !string.IsNullOrWhiteSpace(GetStateEnteredDateColumn(connection));
         }
 
-        /// <summary>
-        /// Permanently false. A CSV fetch is a file the user already uploaded; there is
-        /// no remote call for an identity sweep to save.
-        /// </summary>
-        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
-
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken)
-            => throw new NotSupportedException("A CSV upload is not swept - it has no remote query to sweep (Epic #5687, D11).");
-
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
 
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken)
@@ -60,9 +51,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
             return Task.FromResult(workItems.AsEnumerable());
         }
-
-        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
-            => throw new NotSupportedException("A CSV upload is read whole - there is no by-reference-id fetch (Epic #5687, D11).");
 
         public Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
         {
@@ -102,12 +90,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(features);
         }
 
-        public Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
-            => throw new NotSupportedException("A CSV upload is read whole - there is no by-reference-id fetch (Epic #5687, D11).");
-
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
-            => throw new NotSupportedException("A CSV upload carries no remote change stamp to sweep (Epic #5687, D11).");
-
         /// <summary>
         /// A CSV upload has no parent features to go and fetch, so this answers with none - but it still has
         /// to stop when told to. Answering normally lets the refresh walk on to its next step, which is the
@@ -119,9 +101,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
             return Task.FromResult(new List<Feature>());
         }
-
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
-            => throw new NotSupportedException("A CSV upload carries no remote change stamp to sweep (Epic #5687, D11).");
 
         public Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {

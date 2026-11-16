@@ -26,11 +26,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         private readonly HttpMessageHandler? httpMessageHandlerForTesting = httpMessageHandlerForTesting;
 
-        private const string WorkItemReadingUnavailableMessage =
-            "Reading portfolio work from ServiceNow is not supported. ServiceNow's ITSM tables carry no parent " +
-            "record Lighthouse could roll a portfolio up over, so this direction is declined rather than " +
-            "half-built. Team-level work is read normally.";
-
         /// <summary>The header the Table API reports the size of the whole result set in.</summary>
         private const string TotalCountHeader = "X-Total-Count";
 
@@ -107,12 +102,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             return observedAvailability == ServiceNowHistoryAvailability.Available;
         }
-
-        /// <summary>Epic #5687 slice 07 turns this on for ServiceNow; until then the sweep is unreachable.</summary>
-        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
-
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken)
-            => throw new NotSupportedException("ServiceNow does not sweep yet - Epic #5687 slice 07 implements it.");
 
         // ADR-125. A stock instance's Visual Task Boards already carry the two things a Lighthouse
         // team needs — the table its work sits in and the filter that scopes it to this team.
@@ -244,9 +233,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return UnreachableInstance(exception, instanceUrl);
             }
         }
-
-        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
-            => throw new NotSupportedException("ServiceNow does not fetch by reference id yet - Epic #5687 slice 07 implements it.");
 
         // AC1. The query the flow coach wrote is the query that gets asked, and a team that has not
         // written one reads nothing rather than everything: asking the Table API with no query at
@@ -749,15 +735,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             return $"{query}{OrderByClause}{StableOrderField}{OrderByClause}{TieBreakerField}";
         }
-
-        public Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
-            => throw new NotSupportedException(WorkItemReadingUnavailableMessage);
-
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
-            => throw new NotSupportedException("ServiceNow does not sweep Features yet - Epic #5687 names it in a later slice.");
-
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
-            => throw new NotSupportedException("ServiceNow does not sweep parent Features yet - Epic #5687 names it in a later slice.");
 
         // Two pre-flight rules the instance is never asked about, then everything that needs it.
         public async Task<ConnectionValidationResult> ValidateTeamSettings(Team team)

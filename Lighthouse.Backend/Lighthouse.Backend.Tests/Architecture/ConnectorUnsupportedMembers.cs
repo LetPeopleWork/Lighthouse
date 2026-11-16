@@ -19,36 +19,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// </summary>
         public static IReadOnlyDictionary<string, string> Listed { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["CsvWorkTrackingConnector.SweepWorkItemsForTeam(Team, CancellationToken)"] =
-                "A CSV upload has no remote query to sweep for changed work items.",
-            ["CsvWorkTrackingConnector.GetWorkItemsForTeam(Team, IReadOnlyCollection`1, CancellationToken)"] =
-                "A CSV upload is read whole; it cannot fetch single work items by their reference ids.",
-            ["CsvWorkTrackingConnector.GetFeaturesForPortfolio(Portfolio, IReadOnlyCollection`1, CancellationToken)"] =
-                "A CSV upload is read whole; it cannot fetch single features by their reference ids.",
-            ["CsvWorkTrackingConnector.SweepFeaturesForPortfolio(Portfolio, CancellationToken)"] =
-                "A CSV upload carries no remote change stamp to sweep features by.",
-            ["CsvWorkTrackingConnector.SweepParentFeatures(Portfolio, IEnumerable`1, CancellationToken)"] =
-                "A CSV upload carries no remote change stamp to sweep parent features by.",
-            ["LinearWorkTrackingConnector.SweepWorkItemsForTeam(Team, CancellationToken)"] =
-                "The Linear connector does not sweep work items for changes yet.",
-            ["LinearWorkTrackingConnector.GetWorkItemsForTeam(Team, IReadOnlyCollection`1, CancellationToken)"] =
-                "The Linear connector does not fetch single work items by their reference ids yet.",
-            ["LinearWorkTrackingConnector.GetFeaturesForPortfolio(Portfolio, IReadOnlyCollection`1, CancellationToken)"] =
-                "The Linear connector does not fetch single features by their reference ids yet.",
-            ["LinearWorkTrackingConnector.SweepFeaturesForPortfolio(Portfolio, CancellationToken)"] =
-                "The Linear connector does not sweep features for changes yet.",
-            ["LinearWorkTrackingConnector.SweepParentFeatures(Portfolio, IEnumerable`1, CancellationToken)"] =
-                "The Linear connector does not sweep parent features for changes yet.",
-            ["ServiceNowWorkTrackingConnector.SweepWorkItemsForTeam(Team, CancellationToken)"] =
-                "The ServiceNow connector does not sweep work items for changes yet.",
-            ["ServiceNowWorkTrackingConnector.GetWorkItemsForTeam(Team, IReadOnlyCollection`1, CancellationToken)"] =
-                "The ServiceNow connector does not fetch single work items by their reference ids yet.",
-            ["ServiceNowWorkTrackingConnector.GetFeaturesForPortfolio(Portfolio, IReadOnlyCollection`1, CancellationToken)"] =
-                "ServiceNow's tables carry no parent record a portfolio could roll up over, so it fetches no features by reference id.",
-            ["ServiceNowWorkTrackingConnector.SweepFeaturesForPortfolio(Portfolio, CancellationToken)"] =
-                "The ServiceNow connector does not sweep features for changes yet.",
-            ["ServiceNowWorkTrackingConnector.SweepParentFeatures(Portfolio, IEnumerable`1, CancellationToken)"] =
-                "The ServiceNow connector does not sweep parent features for changes yet.",
             ["JiraWorkTrackingConnector.SweepIdentities(IWorkItemQueryOwner, IEnumerable`1, String, CancellationToken)"] =
                 "A private helper, no interface member: a sweep cannot start before the connection has learned whether it talks " +
                 "to Jira Cloud or Data Center, because the two page their search results differently.",

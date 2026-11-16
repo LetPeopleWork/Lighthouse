@@ -583,33 +583,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         {
             var connector = new Mock<IWorkTrackingConnector>();
             connector.Setup(c => c.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
-            connector.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
+            connector.As<IIncrementalSource>().Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
             connector.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>())).Returns([]);
 
             connector
                 .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .Returns<Team, CancellationToken>(async (team, _) => await TheWorkItemOf(team));
             connector
-                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .Returns<Team, IReadOnlyCollection<string>, CancellationToken>(async (team, wanted, _) => [.. (await TheWorkItemOf(team)).Where(item => wanted.Contains(item.ReferenceId))]);
             connector
-                .Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .Returns<Team, CancellationToken>(async (team, _) => await StampsFor(team));
 
             connector
                 .As<IFeatureSource>().Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, CancellationToken>(async (portfolio, _) => await TheFeatureOf(portfolio));
             connector
-                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, IReadOnlyCollection<string>, CancellationToken>(async (portfolio, wanted, _) => [.. (await TheFeatureOf(portfolio)).Where(feature => wanted.Contains(feature.ReferenceId))]);
             connector
-                .Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, CancellationToken>(async (portfolio, _) => await StampsFor(portfolio));
             connector
                 .As<IFeatureSource>().Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, IEnumerable<string>, CancellationToken>(async (_, _, _) => await NoParentFeatures());
             connector
-                .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .As<IIncrementalSource>().Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, IEnumerable<string>, CancellationToken>(async (_, _, _) => await NoParentStamps());
             connector.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
