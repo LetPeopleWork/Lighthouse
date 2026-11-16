@@ -1,0 +1,1687 @@
+{
+"counters": {
+"C": 2,
+"D": 6,
+"E": 4,
+"F": 150,
+"K": 4,
+"L": 4,
+"P": 2,
+"S": 2,
+"T": 2,
+"Y": 3
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"constraints": [
+{
+"id": "K1",
+"text": "F16"
+},
+{
+"id": "K2",
+"text": "F17"
+},
+{
+"id": "K3",
+"text": "F18"
+},
+{
+"id": "K4",
+"text": "F19"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F10"
+},
+{
+"id": "D2",
+"text": "F11"
+},
+{
+"id": "D3",
+"text": "F12"
+},
+{
+"id": "D4",
+"text": "F13"
+},
+{
+"id": "D5",
+"text": "F14"
+},
+{
+"id": "D6",
+"text": "F142"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F20"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs",
+"public_oracle": {
+"expected": "F25",
+"falsifier": "F26",
+"promises": [
+"P1"
+],
+"stimulus": "F24"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ConnectorsDeclareNoUnsupportedMembersArchUnitTest",
+"id": "T1",
+"obligation": "F79",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F41",
+"driving_port": "F40"
+},
+"claims": [
+{
+"admitted_input": "F59",
+"bypass": "F61",
+"constructor": "ConnectorUnsupportedMembers.FindIn",
+"consumer": "InlineBaseline.AssertMatches",
+"harm": "F58",
+"id": "C1",
+"owner": "ConnectorUnsupportedMembers",
+"proposition": "F57",
+"public_observation": "F60"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F66",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F65"
+},
+{
+"axis": "Inhabitation",
+"basis": "F67",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F65"
+},
+{
+"axis": "PublicReachability",
+"basis": "F68",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F65"
+}
+],
+"constructors": [
+{
+"name": "ConnectorUnsupportedMembers.FindIn",
+"signature": "static IReadOnlyList<string> FindIn(ModuleDefinition module, string typeNamespacePattern, string portNamespacePattern)"
+}
+],
+"decisions": [
+"F146"
+],
+"equality": [
+{
+"definition": "F44",
+"under": "ordinal string equality, as sets"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:1",
+"reason": "F33"
+},
+{
+"decision": "Changed",
+"kind": "examine-command",
+"locator": "Scripts/examine/bin/connector-throws-count:1",
+"reason": "F34"
+},
+{
+"decision": "Changed",
+"kind": "verify-metadata",
+"locator": ".nwave/examine.json:1",
+"reason": "F35"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production-assembly",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:12",
+"reason": "F36"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "sibling-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:13",
+"reason": "F37"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "ConnectorUnsupportedMembers",
+"statement": "F45",
+"treatment": {
+"cases": [
+"F46",
+"F47",
+"F48",
+"F49",
+"F50",
+"F51"
+],
+"kind": "Finite",
+"reason": "F52"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "InlineBaseline",
+"statement": "F53",
+"treatment": {
+"cases": [
+"F54",
+"F55"
+],
+"kind": "Finite",
+"reason": "F56"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F38"
+},
+{
+"analysis": "prefactoring",
+"reason": "F39"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F43",
+"description": "F42",
+"result_type": "NUnit outcome plus InlineBaseline failure message"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:13",
+"reason": "F27",
+"symbol": "IlDependencies"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs:27",
+"reason": "F28",
+"symbol": "ModuleRulesCatchANewOffenderArchUnitTest"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs:1",
+"reason": "F29",
+"symbol": "ConnectorUnsupportedMembers"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InlineBaseline.cs:9",
+"reason": "F30",
+"symbol": "InlineBaseline"
+},
+{
+"decision": "CreateNew",
+"locator": "Scripts/examine/bin/connector-throws-count:1",
+"reason": "F31",
+"symbol": "connector-throws-count"
+},
+{
+"decision": "Extend",
+"locator": ".nwave/examine.json:2",
+"reason": "F32",
+"symbol": "commands"
+}
+],
+"risks": [
+{
+"allowed": "F71",
+"forbidden": "F72",
+"id": "Y1",
+"kind": "Bypass",
+"owner": "ConnectorUnsupportedMembers",
+"preserved": "F70",
+"residue": "F73",
+"source": "F69"
+},
+{
+"allowed": "F76",
+"forbidden": "F77",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "acceptance-designer",
+"preserved": "F75",
+"residue": "F78",
+"source": "F74"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "InlineBaseline",
+"state": "F62"
+},
+{
+"kind": "Excluded",
+"owner": "ConnectorUnsupportedMembers",
+"state": "F63"
+},
+{
+"kind": "Unknown",
+"owner": "reviewer-and-kpi7-grep",
+"state": "F64"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorRatchetFixtures.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorUnsupportedMembers.cs",
+"reason": "F21"
+},
+{
+"change": "Create",
+"path": "Scripts/examine/bin/connector-throws-count",
+"reason": "F22"
+},
+{
+"change": "Extend",
+"path": ".nwave/examine.json",
+"reason": "F23"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ConnectorsDeclareNoUnsupportedMembersArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj -c Release --filter FullyQualifiedName~ConnectorsDeclareNoUnsupportedMembersArchUnitTest"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs",
+"public_oracle": {
+"expected": "F86",
+"falsifier": "F87",
+"promises": [
+"P2"
+],
+"stimulus": "F85"
+},
+"records": {
+"agreement": [
+{
+"contract": "IWorkTrackingConnector.GetFeaturesForPortfolio and Portfolio parameter names",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:40",
+"party": "Producer",
+"reason": "F105"
+},
+{
+"contract": "IWorkTrackingConnector.GetFeaturesForPortfolio and Portfolio parameter names",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs:1",
+"party": "Producer",
+"reason": "F106"
+},
+{
+"contract": "IWorkTrackingConnector.GetFeaturesForPortfolio and Portfolio parameter names",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs:1",
+"party": "Producer",
+"reason": "F106"
+},
+{
+"contract": "IWorkTrackingConnector.GetFeaturesForPortfolio and Portfolio parameter names",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:1",
+"party": "Producer",
+"reason": "F106"
+},
+{
+"contract": "IWorkTrackingConnector.GetFeaturesForPortfolio and Portfolio parameter names",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1",
+"party": "Producer",
+"reason": "F106"
+},
+{
+"contract": "IWorkTrackingConnector.GetFeaturesForPortfolio and Portfolio parameter names",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:1",
+"party": "Producer",
+"reason": "F106"
+},
+{
+"contract": "IWorkTrackingConnector.GetFeaturesForPortfolio and Portfolio parameter names",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:972",
+"party": "Consumer",
+"reason": "F107"
+},
+{
+"contract": "IWorkTrackingConnector.GetFeaturesForPortfolio and Portfolio parameter names",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1",
+"party": "Consumer",
+"reason": "F108"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ConnectorPortSpeaksPortfolioArchUnitTest",
+"id": "T2",
+"obligation": "F141",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F112",
+"driven_ports": [
+"F111"
+],
+"driving_port": "F110"
+},
+"claims": [
+{
+"admitted_input": "F127",
+"bypass": "F129",
+"constructor": "reflection over typeof(IWorkTrackingConnector) and its implementers",
+"consumer": "ConnectorPortSpeaksPortfolioArchUnitTest",
+"harm": "F126",
+"id": "C2",
+"owner": "IWorkTrackingConnector",
+"proposition": "F125",
+"public_observation": "F128"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F133",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F132"
+},
+{
+"axis": "Inhabitation",
+"basis": "F134",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F132"
+},
+{
+"axis": "PublicReachability",
+"basis": "F135",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F132"
+}
+],
+"constraints": [
+"F90",
+"F91"
+],
+"decisions": [
+"F88",
+"F143"
+],
+"equality": [
+{
+"definition": "F115",
+"under": "set of offending names"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:40",
+"reason": "F97"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs:1",
+"reason": "F98"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs:1",
+"reason": "F98"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:1",
+"reason": "F98"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:1",
+"reason": "F98"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:1",
+"reason": "F98"
+},
+{
+"decision": "Migrated",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:972",
+"reason": "F99"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1",
+"reason": "F100"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "factory",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Factories/WorkTrackingConnectorFactory.cs:1",
+"reason": "F102"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "wire",
+"locator": "Lighthouse.Frontend/src:1",
+"reason": "F103"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs:106",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:97",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:757",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:600",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs:130",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:112",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:183",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs:184",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06SizeWarningInTheLogScenarios.cs:129",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs:100",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs:256",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs:137",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice02SeeWhatIsRunningSpecifications.cs:102",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice05AnyBrokenCredentialSaysSoSpecifications.cs:147",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs:236",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:87",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs:310",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataReferenceIdUniquenessTest.cs:37",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs:170",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs:176",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs:134",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsHistoryReadTest.cs:37",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs:82",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs:222",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs:83",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWriteBackTest.cs:549",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs:23",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvCancellationGranularityTest.cs:60",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnectorTest.cs:278",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyDogfoodTest.cs:32",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyLinkTest.cs:209",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs:182",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraNamedDependencyLinkTest.cs:53",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs:60",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentReadingsTest.cs:258",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshRefusalTest.cs:26",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs:157",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWriteBackTest.cs:543",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearCancellationGranularityTest.cs:40",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyDogfoodTest.cs:26",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyRelationTest.cs:27",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearFetchRefusalTest.cs:56",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorHistoryParsingTest.cs:50",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorTest.cs:183",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:163",
+"reason": "F104"
+},
+{
+"decision": "Migrated",
+"kind": "tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerPayloadSources.cs:71",
+"reason": "F104"
+}
+],
+"laws": [
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "IWorkTrackingConnector",
+"statement": "F116",
+"treatment": {
+"cases": [
+"F117",
+"F118",
+"F119"
+],
+"kind": "Finite",
+"reason": "F120"
+}
+},
+{
+"id": "L4",
+"kind": "Refinement",
+"layer": "Adapter",
+"owner": "IWorkTrackingConnector",
+"statement": "F144",
+"treatment": {
+"cases": [
+"F122",
+"F145"
+],
+"kind": "Finite",
+"reason": "F124"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F109"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F114",
+"description": "F113",
+"result_type": "NUnit outcome plus failure message"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:12",
+"reason": "F92",
+"symbol": "IWorkTrackingConnector"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:972",
+"reason": "F93",
+"symbol": "WorkItemService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs:344",
+"reason": "F94",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs:155",
+"reason": "F94",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:117",
+"reason": "F94",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs:68",
+"reason": "F94",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:758",
+"reason": "F94",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs:106",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs:97",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs:757",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs:600",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs:130",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs:112",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs:183",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs:184",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06SizeWarningInTheLogScenarios.cs:129",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs:100",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs:256",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs:137",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice02SeeWhatIsRunningSpecifications.cs:102",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice05AnyBrokenCredentialSaysSoSpecifications.cs:147",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs:236",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:87",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs:310",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataReferenceIdUniquenessTest.cs:37",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs:170",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:99",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs:176",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs:134",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsHistoryReadTest.cs:37",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs:82",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs:222",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs:83",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWriteBackTest.cs:549",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs:23",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvCancellationGranularityTest.cs:60",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnectorTest.cs:278",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyDogfoodTest.cs:32",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyLinkTest.cs:209",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs:182",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraNamedDependencyLinkTest.cs:53",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs:60",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentReadingsTest.cs:258",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshRefusalTest.cs:26",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs:157",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWriteBackTest.cs:543",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearCancellationGranularityTest.cs:40",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyDogfoodTest.cs:26",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyRelationTest.cs:27",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearFetchRefusalTest.cs:56",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorHistoryParsingTest.cs:50",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorTest.cs:183",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs:163",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerPayloadSources.cs:71",
+"reason": "F96",
+"symbol": "GetFeaturesForProject"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "IWorkTrackingConnector",
+"state": "F130"
+},
+{
+"kind": "Excluded",
+"owner": "ConnectorPortSpeaksPortfolioArchUnitTest",
+"state": "F131"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs",
+"reason": "F80"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+"reason": "F81"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+"reason": "F81"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+"reason": "F81"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+"reason": "F81"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+"reason": "F81"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs",
+"reason": "F82"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06SizeWarningInTheLogScenarios.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice02SeeWhatIsRunningSpecifications.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice05AnyBrokenCredentialSaysSoSpecifications.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataReferenceIdUniquenessTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsHistoryReadTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWriteBackTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvCancellationGranularityTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnectorTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyDogfoodTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyLinkTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraNamedDependencyLinkTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentReadingsTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshRefusalTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWriteBackTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearCancellationGranularityTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyDogfoodTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyRelationTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearFetchRefusalTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorHistoryParsingTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
+"reason": "F84"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerPayloadSources.cs",
+"reason": "F84"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ConnectorPortSpeaksPortfolioArchUnitTest",
+"pwsh Lighthouse.Backend/Test-Fast.ps1"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F147"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F148"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F149"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F150"
+}
+]
+},
+"facts": {
+"F1": "Story #6376 S06 Connector capability interfaces, nwdes feature A of two (ratchet and rename). Make KPI 7 a test: no connector type creates a NotSupportedException apart from an inline list, read from the compiled IL so throws in private helpers and async bodies count, with made-up connectors as falsifiers. Rename the connector port's GetFeaturesForProject to GetFeaturesForPortfolio and its project parameters to portfolio, as a pure rename commit. Behaviour-free: routes, DTOs, responses, sync paths and refresh results stay the same. Design: docs/feature/story-6376-s06-connector-capability-interfaces/feature-delta.md (slices A1-A2, Ratchet design, D-6, D-7).",
+"F10": "Paradigm object_oriented (CLAUDE.md). Both slices are behaviour-free: S1 adds an architecture rule over compiled IL in the test project, S2 renames identifiers on the connector port and its five connectors. No domain decision moves, so no new domain owner, value object or aggregate is introduced; the rule core is a test-side static rule class like IlDependencies and ModuleRules.",
+"F100": "47 test files set up or verify GetFeaturesForProject on Mock<IWorkTrackingConnector> or call it on real connectors; renamed only",
+"F102": "Returns the port; no renamed member used",
+"F103": "No route, DTO or response changes; the frontend name with the same spelling is a different symbol",
+"F104": "Mock set-up, verification or call of the renamed member; renamed only",
+"F105": "Port declares the new name",
+"F106": "Implements the renamed member in the same commit",
+"F107": "Calls the renamed member in the same commit",
+"F108": "Test mocks and connector tests renamed in the same commit",
+"F109": "The slice is itself the behaviour-preserving rename; every existing test that names the member changes with it, so no unchanged existing oracle can witness a separate move. Preservation is witnessed by the compiler, the full gate and the S1 oracle staying green. The rename makes feature B easier: its IFeatureSource names GetFeaturesForPortfolio.",
+"F11": "Confirmed from the DESIGN authority (feature-delta.md, AFK decisions 2026-11-16): D-0 behaviour-free scope, D-1 option a (two nwdes features, this is A), D-6 rename, D-7 ratchet from the compiled IL with an inline two-way list, D-10 mechanical test edits, D-11 EXAMINE adds connector-throws-count. Removing throws and the capability interfaces stay in feature B.",
+"F110": "NUnit dotnet test over the built Lighthouse.Backend assembly through reflection (in-process architecture-test boundary); behaviour preservation through the existing suite driving IWorkItemService and the connectors",
+"F111": "IWorkTrackingConnector (connector port), implemented by the Jira, Azure DevOps, Linear, CSV and ServiceNow connectors",
+"F112": "WorkItemService depends on the port; connectors implement it; the port names only kernel Models types",
+"F113": "Names of the port members, of the members implementing them on the five connectors, and of every Portfolio-typed parameter on any method declared by the port or those connectors (compiler-generated excluded), read by reflection; the failure lists each offending member or parameter",
+"F114": "A tracker project legitimately named Project in a method without a Portfolio parameter; local variable names; comment prose",
+"F115": "Two answers are equal when they list the same Type.Member or Type.Member(parameter) strings, order ignored; GREEN is the empty set.",
+"F116": "For IWorkTrackingConnector and every concrete type in Lighthouse.Backend that implements it: no port member and no member implementing a port member has Project in its name, and no Portfolio-typed parameter of any method declared on those types (compiler-generated excluded) has a name containing project, ordinal ignoring case.",
+"F117": "current main: fails naming GetFeaturesForProject on the port and five connectors and the project parameters",
+"F118": "after the rename: empty answer",
+"F119": "a connector added later with a Portfolio project parameter: fails naming it",
+"F12": "Formal verification: quint 0.33.1 is installed, but no claim selects a checker. The S1 claim (no population method creates a NotSupportedException outside the list) is decided exactly by an executed scan of the finite compiled IL; the S2 claim (no Project name for a Portfolio on the port and its implementers) by reflection over the finite built types; behaviour preservation of a pure rename by the compiler plus the unchanged existing suite. No state, transition, ordering, concurrency or recovery is added, so no Quint, TLA+ or Agda model is written. Liveness: not applicable, both slices add no process that must make progress; every check is a single synchronous pass over a loaded assembly.",
+"F120": "Closed set of types in one built assembly, reflected exhaustively",
+"F122": "filtered full dotnet test green before and after",
+"F124": "A pure rename is checked by the compiler and the unchanged existing suite",
+"F125": "The connector port and its implementations name a Portfolio as a Portfolio",
+"F126": "Feature B and S03a would publish the glossary drift Project for Portfolio into the capability interfaces and the module contract",
+"F127": "Built Lighthouse.Backend assembly",
+"F128": "dotnet test outcome and failure message naming offending members and parameters",
+"F129": "Explicit interface implementations are still reflected by interface map; dynamic proxies or test doubles outside Lighthouse.Backend are not in the population",
+"F13": "Property-based testing: not applicable. Both populations are closed and finite (types of one compiled assembly), so the laws are checked exhaustively over the real assembly plus named made-up falsifier types, not sampled.",
+"F130": "Port and connector members named ForPortfolio, Portfolio parameters named portfolio; tracker-project names on methods without a Portfolio parameter",
+"F131": "A port or implementing member with Project in its name, or a Portfolio parameter named project on the port or a connector",
+"F132": "Portfolio naming on the connector port",
+"F133": "Excluded names are refused by the reflection oracle over every implementer, including later ones",
+"F134": "After the rename the port, five connectors and WorkItemService compile and the existing suite constructs and calls them",
+"F135": "built assembly -> reflection over IWorkTrackingConnector implementers -> dotnet test outcome; behaviour through IWorkItemService refresh paths in the existing suite",
+"F14": "Cross-layer algebra. Adapter layer only (connector adapters and their driven port): states are the set of methods of port-implementing types and, per method, whether its IL (with compiler-made nested types folded in) creates a NotSupportedException; operation is the scan; observation is the set of entries Type.Method(ParameterTypes) compared with the inline list. Domain, application and infrastructure layers are untouched: no model, service outcome, timeout or recovery path changes.",
+"F141": "No member or Portfolio parameter of the connector port or of any type implementing it says Project for a Portfolio",
+"F142": "Second stressor walk over the finished design (walkthrough, not executed): a Release build compiles async bodies differently, so S1 also runs its oracle in Release; a connector throwing from a static helper class that implements no port interface is outside the population and is named as an accepted gap; a stale test build reads an old Lighthouse.Backend.dll, but dotnet test builds first; the rename would change S1 list entries, so S2 is delivered before S1.",
+"F143": "Delivery order: S2 (rename) is delivered first and depends on nothing; S1 (ratchet) is delivered after S2 is GREEN, so the S1 inline list names GetFeaturesForPortfolio from the start and no S2 edit touches the S1 oracle.",
+"F144": "The rename preserves behaviour: every existing test outside the live connector categories has the same outcome before and after.",
+"F145": "Test-Fast green after",
+"F146": "S1 is delivered after S2 is GREEN: its inline list names the renamed GetFeaturesForPortfolio entries from the start.",
+"F147": "A connector-throws check lists every connector method that throws a not-supported error, per connector folder; adding a new throwing method not on the list makes the check fail naming that method.",
+"F148": "Removing the not-supported throw from a listed connector method (or deleting the method) makes the check fail naming that listed method as stale; the unchanged codebase passes.",
+"F149": "No member or parameter of the connector port or its implementations names a Portfolio as Project; Portfolio terminology appears instead, visible in the public connector surface.",
+"F150": "After the rename, refreshes, validations and responses behave exactly as before: the existing connector backend tests pass with unchanged outcomes and response shapes.",
+"F16": "Behaviour-free: no route, DTO, serialized response, schema, registration, event, sync path, validation verdict or refresh result changes. Program.cs is not edited. Existing tests stay green; they change only by the mechanical rename of S2.",
+"F17": "No nWave scenario tags in test code; comments are rare and never cite internal ids such as D-7, A1 or ADR numbers as the explanation.",
+"F18": "dotnet build ends with zero warnings (TreatWarningsAsErrors, SonarAnalyzer). Never run the live connector categories (JiraIntegration, LinearIntegration, AdoIntegration, ServiceNowIntegration, GithubIntegration) inside a slice.",
+"F19": "Out of scope: removing any NotSupportedException throw, splitting the port into capability interfaces (feature B), moving connectors into Modules (S03a), rewriting doc-comment prose that cites internal ids (the edit commits of feature B do that).",
+"F2": "The connector port's unsupported members are counted by a test that names each one, and the port speaks the glossary's Portfolio, so feature B can remove the throws one capability at a time",
+"F20": "The connector port, its five connectors and every caller ship in one deployable (Lighthouse.Backend) and change in the same commit; the parties cannot change apart, so the primary oracles and the compiler cover the agreement.",
+"F21": "Rule core reached by the oracle through its full type name Lighthouse.Backend.Tests.Architecture.ConnectorUnsupportedMembers; RED is the assertion that it is missing",
+"F22": "EXAMINE command printing the KPI 7 count per folder Csv Linear ServiceNow",
+"F23": "Register connector-throws-count",
+"F24": "Run the oracle: it reaches ConnectorUnsupportedMembers.FindIn by full type name, runs it over Lighthouse.Backend.dll with the port namespace and over the made-up fixture namespace, and compares each answer with its inline list through InlineBaseline",
+"F25": "Real assembly: exactly the 22 listed entries. Fixtures: the direct throw, the private helper Refuse, the async member and the PlatformNotSupportedException member are reported with their exact entries; the non-port type and the InvalidOperationException member are not; a list with one extra entry fails naming it as stale and a list missing one fails naming the newcomer with the fix hint",
+"F26": "A rule that scans only top-level method bodies misses the async case; one that matches only the exact type misses PlatformNotSupportedException; one that reports the helper against its caller names the wrong method; a one-way comparison lets a stale entry pass; a rule over all types reports the negative control",
+"F27": "Already reads compiled IL with Mono.Cecil (ReadModule, ResidesInNamespaceMatching, NamespaceOf); the ratchet reuses its reader rather than adding a second one. Unchanged: its folding is per type, the ratchet folds per method in its own core.",
+"F28": "Pattern reused, file unchanged: made-up offender types in a test-only namespace, and a rule core reached by its full type name through reflection so that a missing core is an assertion failure, not a compile error.",
+"F29": "No rule reports per method whether its IL creates an exception; IlDependencies answers type-to-type references only and ArchUnitNET drops async edges in Release. One static rule class owns the population, the instruction scan and the folding of compiler-made nested types into the method that wrote them.",
+"F3": "A test lists every connector method that creates a NotSupportedException by name, fails naming any connector method that creates one and is not on the list, and fails naming any listed method that no longer creates one",
+"F30": "Owns the two-way inline-list comparison with the fix hint (newcomer fails named, stale entry fails named, never loosened); the ratchet passes its entries and fix hint to AssertMatches unchanged.",
+"F31": "No EXAMINE command prints the KPI 7 count per connector folder; architecture-rules runs tests and cannot print it. The new command follows the shape of architecture-rules (bare environment, compact lines).",
+"F32": "The one EXAMINE command registry; gains one entry.",
+"F33": "New rule core: FindIn(module, typeNamespacePattern, portNamespacePattern).",
+"F34": "New EXAMINE command printing the NotSupportedException count for the Csv, Linear and ServiceNow connector folders (6 6 8 today).",
+"F35": "Registers connector-throws-count beside the existing commands.",
+"F36": "Read only by the rule; no production byte changes in S1.",
+"F37": "Connector leaf rule and repository rule keep holding; no rule is loosened.",
+"F38": "S1 changes no shared contract: it adds a test-side rule and an EXAMINE command; the connector port and every caller are untouched.",
+"F39": "S1 adds a rule and edits no production code, so there is no move to prepare.",
+"F4": "The connector port names a Portfolio as a Portfolio: no member or parameter of the connector port or its implementations says Project for a Portfolio, and refreshes, validations and responses are unchanged",
+"F40": "NUnit dotnet test over the compiled Lighthouse.Backend.dll (in-process architecture-test boundary; no web host): the oracle loads the module with IlDependencies.ReadModule and calls the rule core",
+"F41": "Test project reads the production assembly; production code does not know the rule",
+"F42": "Set of entries Type.Method(ParameterTypes) for population methods whose IL creates System.NotSupportedException or a derived type, compared two ways with the inline list; the failure names each newcomer with the fix hint and each stale entry",
+"F43": "An exception constructed in a type outside the population and thrown inside a connector; a caught exception rethrown; an exception created through reflection or Activator; whether the throw is reachable at run time",
+"F44": "Two rule answers are equal when they hold the same entries Type.Method(ParameterTypes) under ordinal comparison, ignoring order and repeats. Type is the declaring type simple name; parameter types are Cecil TypeReference.Name values joined by comma and space (generic arity as Cecil gives it, for example IReadOnlyCollection`1).",
+"F45": "For every type written in typeNamespacePattern that implements at least one interface whose namespace matches portNamespacePattern, FindIn reports exactly the methods whose IL, with compiler-made nested types (async state machines, lambdas, display classes) folded into the method that wrote them, contains newobj of System.NotSupportedException or a type derived from it; types implementing no such interface are never reported.",
+"F46": "port member throws NotSupportedException directly: reported against that member",
+"F47": "port member calls a private helper that throws it: reported against the helper",
+"F48": "async port member throws it after an await: reported against the async member (state machine folded)",
+"F49": "port member throws PlatformNotSupportedException: reported (derived type)",
+"F5": "The KPI 7 ratchet test over the compiled connector types, and the GetFeaturesForProject rename across the port, the five connectors, their callers and tests",
+"F50": "type implementing no port interface throws it: not reported",
+"F51": "port member throws InvalidOperationException: not reported",
+"F52": "Closed finite population: six made-up falsifier types plus the real compiled assembly",
+"F53": "Over Lighthouse.Backend.dll with portNamespacePattern Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors, the rule answer equals the inline list of 22 entries: Csv 6, Linear 6 and ServiceNow 8 member methods, JiraWorkTrackingConnector.SweepIdentities and AzureDevOpsWorkTrackingConnector.ConvertAuthorizationHeaderToVssCredentials, each listed with its reason; an unlisted offender fails named with the fix hint, a listed entry that stops offending fails named.",
+"F54": "current main: answer equals the 22-entry list",
+"F55": "a listed entry removed from the code: stale entry fails named",
+"F56": "One finite compiled assembly; two-way comparison through InlineBaseline",
+"F57": "Every connector-population method that creates a NotSupportedException is on the inline list, by name",
+"F58": "Feature B or a new connector could add a member that says it cannot do what its interface asks, unseen, and KPI 7 would silently grow",
+"F59": "Compiled Lighthouse.Backend.dll built by dotnet test (Debug and Release)",
+"F6": "Removing any throw or splitting the port into capability interfaces (feature B)",
+"F60": "dotnet test outcome of ConnectorsDeclareNoUnsupportedMembersArchUnitTest and its failure message",
+"F61": "A static helper type outside the population that creates and throws the exception; reflection or Activator creation; a rethrown caught exception; editing the inline list in review",
+"F62": "Population method creating NotSupportedException that is on the inline list with its reason",
+"F63": "Population method creating NotSupportedException that is not on the list, or a listed entry that no longer creates one",
+"F64": "Exception created in a non-population helper type and thrown from a connector",
+"F65": "connector ratchet",
+"F66": "Excluded states are refused by the two-way inline comparison over the real assembly; observed only when the oracle runs at GREEN",
+"F67": "The made-up fixture types construct each admitted and excluded case; the real assembly inhabits the 22-entry list today",
+"F68": "compiled assembly -> IlDependencies.ReadModule -> ConnectorUnsupportedMembers.FindIn -> InlineBaseline.AssertMatches -> dotnet test outcome and message; also reachable through Scripts/examine/bin/architecture-rules ConnectorsDeclareNoUnsupportedMembers",
+"F69": "Assumption: every throw is created inside a population type",
+"F7": "Moving connectors into Modules (S03a #6359)",
+"F70": "Throws created in connectors, auth strategies and their nested compiler types are caught",
+"F71": "A helper type outside the population creates and throws the exception unseen",
+"F72": "A population method creating it unlisted passes",
+"F73": "Accepted gap, stated in the rule summary; the KPI 7 grep (connector-throws-count) and review cover it",
+"F74": "Assumption: Debug and Release compile async bodies alike",
+"F75": "Cecil walks MoveNext of state machines in both configurations",
+"F76": "none",
+"F77": "A Release-only miss of an async throw",
+"F78": "Verified by running the oracle in Release as a second verification command",
+"F79": "No type implementing a connector-port interface creates a NotSupportedException outside the inline list, over every such type including ones added later; falsified by six made-up types",
+"F8": "A made-up connector method that throws NotSupportedException, directly, from a private helper or inside an async body, and is not on the inline list, fails the ratchet test with its name; a listed method that stops throwing also fails it",
+"F80": "Rename on the port",
+"F81": "Rename on the implementation",
+"F82": "Call sites",
+"F84": "Mechanical rename of GetFeaturesForProject",
+"F85": "Run the oracle: reflect over IWorkTrackingConnector and every concrete Lighthouse.Backend type implementing it, collecting port and implementing members whose name contains Project and Portfolio-typed parameters of their declared methods whose name contains project",
+"F86": "Empty answer after the rename; on current main it fails naming GetFeaturesForProject on the port and the five connectors and each Portfolio project parameter, including CsvWorkTrackingConnector.TheDependenciesOf",
+"F87": "A rename of the interface only leaves implementation parameters named project; a check over port members only misses connector private Portfolio parameters; a check on every Project name flags Linear tracker projects",
+"F88": "Rename GetFeaturesForProject to GetFeaturesForPortfolio (both overloads) on IWorkTrackingConnector and the five connectors, every Portfolio-typed parameter named project on the port and on any method of the five connector types to portfolio (Sonar S927 wants implementation names to match), the Azure DevOps private GetFeaturesForProjectByQuery to GetFeaturesForPortfolioByQuery, and the cref in the port doc comment. One commit: refactor(connectors): rename GetFeaturesForProject to GetFeaturesForPortfolio.",
+"F9": "No member or parameter of the connector port or of the five connectors names a Portfolio as a Project",
+"F90": "Pure rename: identifiers and crefs only; no logic, order, comment prose, signature shape or file move changes. Names where Project means a tracker project stay (Linear CreateFeatureFromProject, Jira and Azure DevOps project reads).",
+"F91": "Callers outside the port and the five connectors change only at the call sites; WorkItemService private parameters, PortfolioUpdater and API helpers keep their local names (outside the promise).",
+"F92": "The port owns the member names; renamed in place, not replaced (D-1 d keeps the interface name).",
+"F93": "Only consumer of the renamed member (two call sites).",
+"F94": "Implements the port member; renamed in place with its Portfolio parameters.",
+"F96": "Existing test that names the renamed member; renamed only.",
+"F97": "Two overloads renamed; five Portfolio parameters renamed; cref updated",
+"F98": "Implementing members and Portfolio parameters renamed",
+"F99": "Call sites follow the rename"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+}
+],
+"scope_in": [
+"F5"
+],
+"scope_out": [
+"F6",
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F8",
+"promises": [
+"P1"
+]
+},
+{
+"id": "S2",
+"observation": "F9",
+"promises": [
+"P2"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6376-s06-a-ratchet-and-rename",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

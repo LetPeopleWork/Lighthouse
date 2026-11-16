@@ -575,3 +575,16 @@ the maintainer to revisit at the hold:
   The connector paths change, so CI's path-based selection runs the live connector categories on push (expected; the
   Linear key is shared with CI, so local live runs are done once, deliberately, before the push of the B feature).
 - **Usage-data event:** N/A, because the Story is behaviour-free: nothing becomes usable or is used differently.
+
+## Wave: DELIVER / [REF] Start of DELIVER (2026-11-16, AFK)
+
+- **UI sketches: N/A, because nothing a user sees changes** (behaviour-free; the only text change is log-only, D-5).
+- **Architecture review owed: none beyond DESIGN's self-falsification**; ADR-285 is written at finalize.
+- **AFK options (maintainer, on entry):** slice wrap-up = refactor + review; push per slice with CI watched; no
+  5-minute review window (improvement work).
+- **Rigor profile (maintainer, on entry):** `thorough` for every slice.
+
+| nwdes feature | Slices | Profile | Crafter, acceptance designer, architect | Reviewers, EXAMINE |
+|---|---|---|---|---|
+| A `story-6376-s06-a-ratchet-and-rename` | A1, A2 | `thorough` | opus | sonnet |
+| B `story-6376-s06-b-capabilities` | B1–B4 | `thorough` | opus | sonnet |
