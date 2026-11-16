@@ -33,7 +33,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Factories/DemoDataFactory.cs",
 
             // Fills a board description handed back to the settings page (not an owner) with the states it found.
-            "Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            // Named without its folder, so the allowance follows the connector into the Tracker integration module.
+            "JiraWorkTrackingConnector.cs",
         ];
 
         // Catches a call with the list inline. A call through a variable or a parameter (the metrics service passes a
@@ -66,6 +67,26 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") && !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"));
         }
 
+        // An entry with a folder is read as written; an entry naming only a file finds the one file of that name.
+        private static string TheOnlyPathOf(string listed, string productionRoot)
+        {
+            if (listed.Contains('/', StringComparison.Ordinal))
+            {
+                return listed;
+            }
+
+            var found = ProductionSources()
+                .Where(file => Path.GetFileName(file) == listed)
+                .Select(file => Path.GetRelativePath(productionRoot, file).Replace(Path.DirectorySeparatorChar, '/'))
+                .ToList();
+
+            Assert.That(found, Has.Count.EqualTo(1),
+                $"The allowance finds {listed} by its name alone, so the production project must hold exactly one file of that name, " +
+                "or the allowance would cover the wrong file. Found: " + string.Join(", ", found));
+
+            return found.Count == 1 ? found[0] : listed;
+        }
+
         [Test]
         public void NoCodeExpandsACategoryList()
         {
@@ -86,7 +107,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Select(file => Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/'))
                 .ToList();
 
-            Assert.That(writers.Except(FilesThatWriteTheCategoryLists), Is.Empty, "These files put a To Do, Doing or Done list on an owner without the classifier.");
+            Assert.That(writers.Except(FilesThatWriteTheCategoryLists.Select(listed => TheOnlyPathOf(listed, root))), Is.Empty, "These files put a To Do, Doing or Done list on an owner without the classifier.");
         }
 
         [Test]

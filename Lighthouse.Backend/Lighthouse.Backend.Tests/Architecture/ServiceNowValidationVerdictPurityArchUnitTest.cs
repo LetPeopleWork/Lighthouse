@@ -1,35 +1,35 @@
 using ArchUnitNET.NUnit;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
-    // Story #5574 / ADR-114, widened by #5611. The verdict ladders are the only interesting logic in
-    // the connection and team-settings slices and the only place the "denial wearing a success
-    // costume" bug can be caught. Keeping them pure functions is what makes every rung reachable
-    // without an HttpMessageHandler mock — which is in turn what makes the Stryker density of the
-    // DoD affordable. The moment one acquires a client, a logger or a DbContext, the rungs stop
+    // The verdict ladders are the only interesting logic in the connection and team-settings checks
+    // and the only place the "denial wearing a success costume" bug can be caught. Keeping them pure
+    // functions is what makes every rung reachable without an HttpMessageHandler mock — which is in
+    // turn what makes mutation testing them affordable. The moment one acquires a client, a logger or a DbContext, the rungs stop
     // being unit-testable and the ladder rots.
     [TestFixture]
     public class ServiceNowValidationVerdictPurityArchUnitTest
     {
-        private const string Namespace = "Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow";
+        // Read from the type, so the rule follows the ServiceNow connector wherever its namespace moves.
+        private static readonly string Namespace = typeof(ServiceNowValidationVerdict).Namespace!;
 
-        private const string Verdict = Namespace + ".ServiceNowValidationVerdict";
+        private static readonly string Verdict = Namespace + ".ServiceNowValidationVerdict";
 
-        // Story #5611 / ADR-124 decision 4. The team-settings ladder answers the same question in the
-        // same vocabulary and was never covered here; the class rungs are what make that a gap worth
-        // closing. ServiceNowReadScope joins it as the slice's new core.
-        private const string TeamQueryVerdict = Namespace + ".ServiceNowTeamQueryVerdict";
+        // The team-settings ladder answers the same question in the same vocabulary, and the read
+        // scope sits beside it as a decision of its own.
+        private static readonly string TeamQueryVerdict = Namespace + ".ServiceNowTeamQueryVerdict";
 
-        private const string ReadScope = Namespace + ".ServiceNowReadScope";
+        private static readonly string ReadScope = Namespace + ".ServiceNowReadScope";
 
-        // Story #5610 / ADR-125, ADR-126 decision 3. The board picker's two new cores: the one rung a
-        // board list must NOT inherit (an empty list is not a failure) and the board-row-to-Board
-        // translation. Both are decisions, so both stay reachable without a transport mock.
-        private const string BoardVerdict = Namespace + ".ServiceNowBoardVerdict";
+        // The board picker's two cores: the one rung a board list must NOT inherit (an empty list is
+        // not a failure) and the board-row-to-Board translation. Both are decisions, so both stay
+        // reachable without a transport mock.
+        private static readonly string BoardVerdict = Namespace + ".ServiceNowBoardVerdict";
 
-        private const string BoardMapper = Namespace + ".ServiceNowBoardMapper";
+        private static readonly string BoardMapper = Namespace + ".ServiceNowBoardMapper";
 
         private const string PersistencePattern = @"^Lighthouse\.Backend\.Data($|\..*)";
         private const string LoggingPattern = @"^Microsoft\.Extensions\.Logging($|\..*)";

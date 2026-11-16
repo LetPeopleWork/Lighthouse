@@ -1,25 +1,26 @@
 using ArchUnitNET.NUnit;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
-    // Story #5577 / ADR-118. Slice 04's three cores follow ADR-114's shape for the same reason the
-    // verdict ladder does: the interesting decisions — how spans become moves, when work started,
-    // which of two causes stopped the history — all have to be reachable without an
-    // HttpMessageHandler mock, or the DoD's mutation density stops being affordable.
+    // The three history cores stay pure for the same reason the validation verdict ladder does: the
+    // interesting decisions — how spans become moves, when work started, which of two causes stopped
+    // the history — all have to be reachable without an HttpMessageHandler mock, or mutation testing them stops being affordable.
     //
-    // There is a second reason here. ADR-118 decision 6 says `end` and `duration` are never read,
+    // There is a second reason here. The history never reads `end` and `duration`,
     // and the Glide duration is an epoch offset that reads as a plausible timestamp when parsed
     // wrongly. `ServiceNowStateSpan` not carrying those fields is what keeps that structural.
     [TestFixture]
     public class ServiceNowHistoryPurityArchUnitTest
     {
-        private const string Namespace = "Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow";
+        // Read from the type, so the rule follows the ServiceNow connector wherever its namespace moves.
+        private static readonly string Namespace = typeof(ServiceNowHistoryVerdict).Namespace!;
 
-        private const string SpanMapper = Namespace + ".ServiceNowStateSpanMapper";
-        private const string HistoryQuery = Namespace + ".ServiceNowHistoryQuery";
-        private const string HistoryVerdict = Namespace + ".ServiceNowHistoryVerdict";
+        private static readonly string SpanMapper = Namespace + ".ServiceNowStateSpanMapper";
+        private static readonly string HistoryQuery = Namespace + ".ServiceNowHistoryQuery";
+        private static readonly string HistoryVerdict = Namespace + ".ServiceNowHistoryVerdict";
 
         private const string PersistencePattern = @"^Lighthouse\.Backend\.Data($|\..*)";
         private const string LoggingPattern = @"^Microsoft\.Extensions\.Logging($|\..*)";

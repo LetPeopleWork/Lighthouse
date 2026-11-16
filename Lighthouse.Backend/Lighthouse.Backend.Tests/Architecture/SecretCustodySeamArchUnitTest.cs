@@ -26,7 +26,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string SecretStateFullName = "Lighthouse.Backend.Models.Encryption.SecretState";
 
-        private const string AuthStrategyNamespacePattern = @"^Lighthouse\.Backend\.Services\.Implementation\.WorkTrackingConnectors\.Auth($|\..*)";
+        private const string AuthStrategyNamespacePattern =
+            @"^Lighthouse\.Backend\.(Services\.Implementation\.WorkTrackingConnectors|Modules\.TrackerIntegration\.Adapters\.Connectors)\.Auth($|\..*)";
 
         private const string ConfigurationNamespace = "Microsoft.Extensions.Configuration.";
 

@@ -157,11 +157,11 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "var startDate = endDate.AddDays(",
                 "percentile history window start"),
             new(
-                "Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+                "AzureDevOpsWorkTrackingConnector.cs",
                 "var cutoffDate = timeProvider.GetUtcNow().UtcDateTime.AddDays(",
                 "Azure DevOps history cutoff"),
             new(
-                "Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+                "JiraWorkTrackingConnector.cs",
                 "var cutoffDate = timeProvider.GetUtcNow().UtcDateTime.AddDays(",
                 "Jira history cutoff"),
         ];

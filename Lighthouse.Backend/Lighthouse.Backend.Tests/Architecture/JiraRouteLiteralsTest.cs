@@ -12,7 +12,11 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
-        private const string RoutesRelativePath = "Services/Implementation/WorkTrackingConnectors/Jira/JiraRestRoutes.cs";
+        // Found by file name, and the Jira connector's folder is the one it lives in, so the scan keeps
+        // reading the right files when the connector moves into the Tracker integration module.
+        private const string RoutesFileName = "JiraRestRoutes.cs";
+
+        private static readonly Lazy<string> RoutesRelativePathOnce = new(TheOnlyProductionFileNamedTheRoutes);
 
         private const string JiraRestRouteMarker = "rest/api/";
 
@@ -24,7 +28,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // the Jira connector.
         private const string JiraLatestApiMarker = "api/latest/";
 
-        private const string JiraConnectorDirectory = "Services/Implementation/WorkTrackingConnectors/Jira/";
 
         // The production project has hundreds of source files. Far fewer means the scan is reading the
         // wrong directory and would pass on anything.
@@ -34,7 +37,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] PlantedLiteralLocation = ["Services/Implementation/Somewhere/NewJiraCall.cs:5"];
 
-        private static readonly string[] PlantedLatestLiteralLocation = ["Services/Implementation/WorkTrackingConnectors/Jira/NewJiraCall.cs:5"];
+        private static string RoutesRelativePath => RoutesRelativePathOnce.Value;
+
+        private static string JiraConnectorDirectory => RoutesRelativePath[..(RoutesRelativePath.LastIndexOf('/') + 1)];
 
         [Test]
         public void NoProductionSource_OtherThanTheRoutesObject_WritesAJiraRestRoute()
@@ -83,10 +88,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheScan_FindsALatestRouteSplitAcrossTwoStringsInsideTheJiraConnector()
         {
             var planted = new SourceFile(
-                "Services/Implementation/WorkTrackingConnectors/Jira/NewJiraCall.cs",
+                $"{JiraConnectorDirectory}NewJiraCall.cs",
                 "namespace Somewhere;\n\npublic class NewJiraCall\n{\n    private const string Url = \"rest/\" + \"api/latest/search\";\n}\n");
 
-            Assert.That(RouteLiteralsIn([planted]), Is.EqualTo(PlantedLatestLiteralLocation));
+            Assert.That(RouteLiteralsIn([planted]), Is.EqualTo(new[] { $"{JiraConnectorDirectory}NewJiraCall.cs:5" }));
         }
 
         [Test]
@@ -125,6 +130,21 @@ namespace Lighthouse.Backend.Tests.Architecture
                 })
                 .Where(file => !DirectoriesThatAreNotSource.Any(directory => ("/" + file.RelativePath).Contains(directory, StringComparison.Ordinal)))
                 .Select(file => new SourceFile(file.RelativePath, File.ReadAllText(file.FullPath)))];
+        }
+
+        private static string TheOnlyProductionFileNamedTheRoutes()
+        {
+            var productionRoot = ProductionRoot();
+            var found = Directory.EnumerateFiles(productionRoot, RoutesFileName, SearchOption.AllDirectories)
+                .Select(file => Path.GetRelativePath(productionRoot, file).Replace('\\', '/'))
+                .Where(relativePath => !DirectoriesThatAreNotSource.Any(directory => ("/" + relativePath).Contains(directory, StringComparison.Ordinal)))
+                .ToList();
+
+            Assert.That(found, Has.Count.EqualTo(1),
+                $"The scan finds {RoutesFileName} by its name alone, so the production project must hold exactly one file of that name, " +
+                "or the scan would treat the wrong folder as the Jira connector. Found: " + string.Join(", ", found));
+
+            return found[0];
         }
 
         // Anchored on the solution file rather than on a relative hop out of the test binary: the depth from

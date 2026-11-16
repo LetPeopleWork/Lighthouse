@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class FeatureSourceCapabilityArchUnitTest
     {
-        private const string FeatureSourceCapabilityName = "Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.IFeatureSource";
+        private static readonly string FeatureSourceCapabilityName = typeof(IFeatureSource).FullName!;
 
         private const string FeatureReadMember = "GetFeaturesForPortfolio";
 

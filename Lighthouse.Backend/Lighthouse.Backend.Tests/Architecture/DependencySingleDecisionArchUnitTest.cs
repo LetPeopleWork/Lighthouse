@@ -55,13 +55,14 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs";
 
         // The trackers that return Features and can carry something for one to wait on. ServiceNow returns
-        // no Features at all, so a dependency has nothing to run between there and it is not listed.
+        // no Features at all, so a dependency has nothing to run between there and it is not listed. Found by
+        // file name, so the rule keeps reading the connectors when they move into the Tracker integration module.
         private static readonly string[] TrackersThatCarryDependencies =
         [
-            "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+            "AzureDevOpsWorkTrackingConnector.cs",
+            "JiraWorkTrackingConnector.cs",
+            "LinearWorkTrackingConnector.cs",
+            "CsvWorkTrackingConnector.cs",
         ];
 
         private const string TheWordThatIsAlreadyTaken = "blocked";
@@ -521,8 +522,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// </summary>
         private static List<SourceFile> TheTrackersThatCarryDependencies()
         {
+            var trackerPaths = TrackersThatCarryDependencies.Select(TheOnlyBackendFileNamed).ToHashSet(StringComparer.Ordinal);
             var trackers = TheWholeBackendSource()
-                .Where(file => TrackersThatCarryDependencies.Contains(file.RelativePath))
+                .Where(file => trackerPaths.Contains(file.RelativePath))
                 .ToList();
 
             Assert.That(trackers, Has.Count.EqualTo(TrackersThatCarryDependencies.Length),

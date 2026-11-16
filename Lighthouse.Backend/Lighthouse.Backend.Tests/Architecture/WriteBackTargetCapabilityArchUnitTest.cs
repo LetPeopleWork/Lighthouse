@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class WriteBackTargetCapabilityArchUnitTest
     {
-        private const string WriteBackCapabilityName = "Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.IWriteBackTarget";
+        private static readonly string WriteBackCapabilityName = typeof(IWriteBackTarget).FullName!;
 
         private const string WriteBackMember = "WriteFieldsToWorkItems";
 

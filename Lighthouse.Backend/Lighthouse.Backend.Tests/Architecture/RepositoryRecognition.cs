@@ -30,9 +30,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         public const string StoredRecordsPattern =
             @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.Repositories|Modules\.\w+\.Adapters\.Persistence)($|\..*)";
 
-        /// <summary>The namespaces of the persistence platform: the stored records and what keeps them.</summary>
+        /// <summary>The namespaces of the persistence platform: the stored records and what keeps them, the connectors' OAuth tokens included.</summary>
         public const string PlatformPersistencePattern =
-            @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.(Repositories|DatabaseManagement|DomainEvents|Seeding|OAuth)|Modules\.\w+\.Adapters\.Persistence)($|\..*)";
+            @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.(Repositories|DatabaseManagement|DomainEvents|Seeding|OAuth)|Modules\.TrackerIntegration\.(Application|Adapters)\.OAuth|Modules\.\w+\.Adapters\.Persistence)($|\..*)";
 
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 

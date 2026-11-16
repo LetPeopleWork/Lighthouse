@@ -11,7 +11,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     public class ModuleBoundariesArchUnitTest
     {
         internal const string WorkTrackingIntegrationPattern =
-            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.WorkTrackingConnectors($|\..*)|^Lighthouse\.Backend\.Factories($|\..*)";
+            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.WorkTrackingConnectors($|\..*)|^Lighthouse\.Backend\.Factories($|\..*)" +
+            @"|^Lighthouse\.Backend\.Services\.Factories$|^Lighthouse\.Backend\.Modules\.TrackerIntegration(\.|$)";
         private const string WorkItemsSyncPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(WorkItems|TeamData|WorkItemRules)($|\..*)|^Lighthouse\.Backend\.Modules\.WorkItems(\.|$)";
         internal const string ForecastingPattern =
