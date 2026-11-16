@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         protected Mock<ITeamDataService> TeamDataServiceMock = null!;
 
         /// <summary>
-        /// Every <see cref="IWorkTrackingConnector.WriteFieldsToWorkItems"/> call the refresh made, in
+        /// Every <see cref="IWriteBackTarget.WriteFieldsToWorkItems"/> call the refresh made, in
         /// order, each captured as an immutable snapshot. The count IS what a quiet write-back promises.
         /// </summary>
         protected List<ConnectorWrite> ConnectorWrites = null!;
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
 
             ConnectorMock = new Mock<IWorkTrackingConnector>();
-            ConnectorMock
+            ConnectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .Returns((WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates) =>
                 {

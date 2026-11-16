@@ -167,16 +167,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        // D8, permanently out of scope. Linear sets the precedent.
-        [Test]
-        public void WritingBackToServiceNow_IsDeclaredUnsupported()
-        {
-            var subject = CreateSubject(RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord));
-
-            Assert.That(async () => await subject.WriteFieldsToWorkItems(CreateConnection(), []),
-                Throws.InstanceOf<NotSupportedException>());
-        }
-
         // Slice 02 (#5575) replaced the blanket team refusal this fixture used to assert with a
         // verdict about the team's own query. Its successors are the ValidatingATeam… tests in
         // ServiceNowTeamSyncTest.

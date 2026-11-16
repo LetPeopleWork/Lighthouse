@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ConnectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
             ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
             ConnectorMock.Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-            ConnectorMock
+            ConnectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult());
 

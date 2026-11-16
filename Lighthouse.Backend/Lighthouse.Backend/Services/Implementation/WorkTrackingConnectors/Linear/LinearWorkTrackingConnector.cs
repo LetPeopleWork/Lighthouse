@@ -5,7 +5,6 @@ using GraphQL.Client.Serializer.Newtonsoft;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
-using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -897,11 +896,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                             }}
                         }}
                     }}";
-        }
-
-        public Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
-        {
-            throw new NotSupportedException("Write-back is not supported for Linear.");
         }
 
         public async Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)

@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
@@ -154,8 +155,12 @@ namespace Lighthouse.Backend.Services.Implementation
                 return new WriteBackResult();
             }
 
-            var connector = connectorFactory.GetWorkTrackingConnector(connection.WorkTrackingSystem);
-            var result = await connector.WriteFieldsToWorkItems(connection, [.. changes.Select(change => change.Update)]);
+            if (connectorFactory.GetWorkTrackingConnector(connection.WorkTrackingSystem) is not IWriteBackTarget target)
+            {
+                throw new NotSupportedException($"Write-back is not supported for {connection.WorkTrackingSystem}.");
+            }
+
+            var result = await target.WriteFieldsToWorkItems(connection, [.. changes.Select(change => change.Update)]);
 
             await PersistWrittenValues(changes, result);
 

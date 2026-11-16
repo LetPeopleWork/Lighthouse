@@ -611,7 +611,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
             connector
                 .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, IEnumerable<string>, CancellationToken>(async (_, _, _) => await NoParentStamps());
-            connector
+            connector.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult());
 

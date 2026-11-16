@@ -221,7 +221,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         private List<WriteBackFieldUpdate> TheValuesTheTrackerReceived()
             => ConnectorMock.Invocations
-                .Where(call => call.Method.Name == nameof(IWorkTrackingConnector.WriteFieldsToWorkItems))
+                .Where(call => call.Method.Name == nameof(IWriteBackTarget.WriteFieldsToWorkItems))
                 .SelectMany(call => call.Arguments[1] as IReadOnlyList<WriteBackFieldUpdate> ?? [])
                 .ToList();
 

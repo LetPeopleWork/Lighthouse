@@ -2,7 +2,6 @@ using CsvHelper;
 using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
-using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -546,11 +545,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         private static string GetDependsOnColumn(WorkTrackingSystemConnection connection)
         {
             return connection.Options.SingleOrDefault(o => o.Key == CsvWorkTrackingOptionNames.DependsOnHeader)?.Value ?? string.Empty;
-        }
-
-        public Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
-        {
-            throw new NotSupportedException("Write-back is not supported for CSV.");
         }
     }
 }

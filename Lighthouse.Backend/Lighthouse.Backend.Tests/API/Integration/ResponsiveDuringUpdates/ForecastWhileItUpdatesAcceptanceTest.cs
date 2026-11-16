@@ -318,7 +318,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         /// <summary>Every forecast date the tracker was sent for the mapped field, as the tracker received them.</summary>
         protected IReadOnlyList<WriteBackFieldUpdate> TheForecastDatesTheTrackerReceived()
             => ConnectorMock.Invocations
-                .Where(call => call.Method.Name == nameof(IWorkTrackingConnector.WriteFieldsToWorkItems))
+                .Where(call => call.Method.Name == nameof(IWriteBackTarget.WriteFieldsToWorkItems))
                 .SelectMany(call => call.Arguments[1] as IReadOnlyList<WriteBackFieldUpdate> ?? [])
                 .Where(update => update.TargetFieldReference == TheForecastFieldInTheTracker)
                 .ToList();

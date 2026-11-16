@@ -29,8 +29,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "A CSV upload carries no remote change stamp to sweep features by.",
             ["CsvWorkTrackingConnector.SweepParentFeatures(Portfolio, IEnumerable`1, CancellationToken)"] =
                 "A CSV upload carries no remote change stamp to sweep parent features by.",
-            ["CsvWorkTrackingConnector.WriteFieldsToWorkItems(WorkTrackingSystemConnection, IReadOnlyList`1)"] =
-                "A CSV upload is a file, not a system Lighthouse can write fields back to.",
             ["LinearWorkTrackingConnector.SweepWorkItemsForTeam(Team, CancellationToken)"] =
                 "The Linear connector does not sweep work items for changes yet.",
             ["LinearWorkTrackingConnector.GetWorkItemsForTeam(Team, IReadOnlyCollection`1, CancellationToken)"] =
@@ -41,8 +39,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "The Linear connector does not sweep features for changes yet.",
             ["LinearWorkTrackingConnector.SweepParentFeatures(Portfolio, IEnumerable`1, CancellationToken)"] =
                 "The Linear connector does not sweep parent features for changes yet.",
-            ["LinearWorkTrackingConnector.WriteFieldsToWorkItems(WorkTrackingSystemConnection, IReadOnlyList`1)"] =
-                "Lighthouse does not write fields back to Linear.",
             ["ServiceNowWorkTrackingConnector.SweepWorkItemsForTeam(Team, CancellationToken)"] =
                 "The ServiceNow connector does not sweep work items for changes yet.",
             ["ServiceNowWorkTrackingConnector.GetWorkItemsForTeam(Team, IReadOnlyCollection`1, CancellationToken)"] =
@@ -57,8 +53,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "ServiceNow's tables carry no parent record a portfolio could roll up over, so it reads no parent features.",
             ["ServiceNowWorkTrackingConnector.SweepParentFeatures(Portfolio, IEnumerable`1, CancellationToken)"] =
                 "The ServiceNow connector does not sweep parent features for changes yet.",
-            ["ServiceNowWorkTrackingConnector.WriteFieldsToWorkItems(WorkTrackingSystemConnection, IReadOnlyList`1)"] =
-                "Lighthouse reads from ServiceNow only and does not write fields back to it.",
             ["JiraWorkTrackingConnector.SweepIdentities(IWorkItemQueryOwner, IEnumerable`1, String, CancellationToken)"] =
                 "A private helper, no interface member: a sweep cannot start before the connection has learned whether it talks " +
                 "to Jira Cloud or Data Center, because the two page their search results differently.",

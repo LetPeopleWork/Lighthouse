@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorMock = new Mock<IWorkTrackingConnector>();
+            connectorMock.As<IWriteBackTarget>();
             loggerMock = new Mock<ILogger<WriteBackService>>();
 
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
@@ -52,7 +53,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -76,7 +77,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateBackFieldUpdate("PROJ-2", "customfield_10001", "3", null, connection),
             };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -91,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             _ = await service.WriteFieldsToWorkItems(connection, updates);
 
-            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Once);
+            connectorMock.As<IWriteBackTarget>().Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Once);
         }
 
         [Test]
@@ -113,7 +114,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ]
             };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(expectedResult);
 
@@ -138,7 +139,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateBackFieldUpdate("42", "Custom.Age", "5", "3", connection),
             };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -169,7 +170,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result.FailureCount, Is.Zero);
             }
 
-            connectorMock.Verify(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()), Times.Never);
+            connectorMock.As<IWriteBackTarget>().Verify(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()), Times.Never);
             AssertInformationLoggedContaining("with 0 updates");
         }
 
@@ -182,7 +183,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ThrowsAsync(new HttpRequestException("Service unavailable"));
 
@@ -208,7 +209,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -247,7 +248,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -280,7 +281,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection),
             };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ThrowsAsync(new HttpRequestException("Service unavailable"));
 
@@ -311,7 +312,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             connection.AdditionalFieldDefinitions.Clear();
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -322,7 +323,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             _ = await service.WriteFieldsToWorkItems(connection, updates);
 
-            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Never);
+            connectorMock.As<IWriteBackTarget>().Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Never);
         }
 
         [Test]
@@ -336,7 +337,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             workItems.Single().AdditionalFieldValues.Clear();
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -347,7 +348,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             _ = await service.WriteFieldsToWorkItems(connection, updates);
 
-            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Never);
+            connectorMock.As<IWriteBackTarget>().Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Never);
         }
 
         [Test]
@@ -361,7 +362,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             connection.AdditionalFieldDefinitions.Clear();
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -372,7 +373,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             _ = await service.WriteFieldsToWorkItems(connection, updates);
 
-            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Never);
+            connectorMock.As<IWriteBackTarget>().Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Never);
         }
 
         [Test]
@@ -386,7 +387,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateBackFieldUpdate("42", "Custom.Age", "5", null, connection, isFeature),
             };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, updates))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -397,7 +398,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             _ = await service.WriteFieldsToWorkItems(connection, updates);
 
-            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Once);
+            connectorMock.As<IWriteBackTarget>().Verify(c => c.WriteFieldsToWorkItems(connection, updates), Times.Once);
         }
 
         [Test]
@@ -410,7 +411,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var updates = new List<WriteBackFieldUpdate> { update };
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult { ItemResults = [] });
 
@@ -418,7 +419,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await service.WriteFieldsToWorkItems(connection, updates);
 
-            connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, It.Is<IReadOnlyList<WriteBackFieldUpdate>>(u => u.Count == 1 && u[0].WorkItemId == "FWUP-3")), Times.Once);
+            connectorMock.As<IWriteBackTarget>().Verify(c => c.WriteFieldsToWorkItems(connection, It.Is<IReadOnlyList<WriteBackFieldUpdate>>(u => u.Count == 1 && u[0].WorkItemId == "FWUP-3")), Times.Once);
         }
 
         [Test]
@@ -429,7 +430,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var update = CreateBackFieldUpdate("FWUP-9", "Custom.Age", "5", "3", connection);
             AddItem("FWUP-9", connection.AdditionalFieldDefinitions.Single(f => f.Reference == "Custom.Age").Id, "3");
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult { ItemResults = [] });
 
@@ -444,7 +445,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
             var update = CreateBackFieldUpdate("FWUP-10", "Custom.Age", "5", "3", connection);
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult { ItemResults = [] });
 
@@ -463,7 +464,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = await CreateService().WriteFieldsToWorkItems(connection, [update]);
 
-            connectorMock.Verify(
+            connectorMock.As<IWriteBackTarget>().Verify(
                 c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
                 Times.Never,
                 "AC-04.3: a cycle in which no mapped value changed makes no connector call at all - not an empty one.");
@@ -481,7 +482,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var update = CreateBackFieldUpdate("42", "Custom.Age", "5", "3", connection);
             var fieldId = connection.AdditionalFieldDefinitions.Single(f => f.Reference == "Custom.Age").Id;
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -502,7 +503,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var update = CreateBackFieldUpdate("42", "Custom.Age", "5", "3", connection);
             var fieldId = connection.AdditionalFieldDefinitions.Single(f => f.Reference == "Custom.Age").Id;
 
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult
                 {
@@ -532,7 +533,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = await CreateService().WriteFieldsToWorkItems(connection, [update]);
 
-            connectorMock.Verify(
+            connectorMock.As<IWriteBackTarget>().Verify(
                 c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
                 Times.Never);
             Assert.That(result.ItemResults, Is.Empty);

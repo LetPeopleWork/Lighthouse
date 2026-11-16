@@ -42,6 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorMock = new Mock<IWorkTrackingConnector>();
+            connectorMock.As<IWriteBackTarget>();
             loggerMock = new Mock<ILogger<WriteBackService>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
@@ -203,7 +204,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private void GivenTheTrackerAnswers(params WriteBackItemResult[] answers)
         {
-            connectorMock
+            connectorMock.As<IWriteBackTarget>()
                 .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult { ItemResults = answers });
         }

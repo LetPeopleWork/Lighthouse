@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
-using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using System.Diagnostics.CodeAnalysis;
@@ -31,10 +30,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             "Reading portfolio work from ServiceNow is not supported. ServiceNow's ITSM tables carry no parent " +
             "record Lighthouse could roll a portfolio up over, so this direction is declined rather than " +
             "half-built. Team-level work is read normally.";
-
-        private const string WriteBackUnsupportedMessage =
-            "Lighthouse does not write back to ServiceNow, and will not. Reading work data is the only " +
-            "supported direction for this connection.";
 
         /// <summary>The header the Table API reports the size of the whole result set in.</summary>
         private const string TotalCountHeader = "X-Total-Count";
@@ -974,11 +969,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 "Rather than show you a portfolio forecast it cannot compute, Lighthouse declines. Point this " +
                 "portfolio at another work tracking system."));
             // Stryker restore String
-        }
-
-        public Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
-        {
-            throw new NotSupportedException(WriteBackUnsupportedMessage);
         }
 
         /// <summary>
