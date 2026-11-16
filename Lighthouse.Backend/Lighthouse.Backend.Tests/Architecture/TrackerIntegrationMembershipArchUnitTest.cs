@@ -10,8 +10,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// are read from the compiled code: every top-level type in the connector, OAuth, connection-health and factory
     /// namespaces, old or new, plus the source selectors and the health prober found by name. Each is on the lists in
     /// TrackerIntegrationMembership, and a listed name the code no longer holds fails. A shared Models type may go with
-    /// the context only when it is not stored by the database context, not sent by a controller and not reached by a
-    /// Models type that stays, because the shared kernel may not reach into a module.
+    /// the context only when it is not stored by the database context, not sent by a controller, not reached by a
+    /// Models type that stays and not used by any other code that stays outside the module, because nothing left
+    /// behind may have to reach into the module for it.
     /// </summary>
     [TestFixture]
     public class TrackerIntegrationMembershipArchUnitTest
@@ -29,6 +30,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string Stored = "stored";
         private const string OnTheWire = "on the wire";
         private const string ReachedByTheKernel = "reached by the kernel";
+        private const string UsedByCodeThatStays = "used by code that stays";
 
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 
@@ -51,6 +53,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(BaseMetricsService).Assembly));
 
         private static readonly Lazy<ModuleDefinition> TestModule = new(() => IlDependencies.ReadModule(typeof(TrackerIntegrationMembershipArchUnitTest).Assembly));
+
+        // Judging reads every type of a module, so each module is judged once per run.
+        private static readonly Lazy<Dictionary<string, CandidateJudgement>> ProductionJudgement =
+            new(() => WhenTheCandidatesAreJudged(ProductionModule.Value, CandidatesIn(ProductionModule.Value, CandidateModelsNamespaces)));
+
+        private static readonly Lazy<Dictionary<string, CandidateJudgement>> MadeUpJudgement =
+            new(() => WhenTheCandidatesAreJudged(TestModule.Value, CandidatesIn(TestModule.Value, MadeUpCandidateNamespaces)));
 
         [OneTimeTearDown]
         public void DisposeModules()
@@ -99,9 +108,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheModelsTypesListedToMove_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorReachedByTheKernel()
+        public void TheModelsTypesListedToMove_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule()
         {
-            var judged = WhenTheCandidatesAreJudged(ProductionModule.Value, CandidatesIn(ProductionModule.Value, CandidateModelsNamespaces));
+            var judged = ProductionJudgement.Value;
 
             ThenTheAdmittedOnesAreListed(judged);
         }
@@ -112,13 +121,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase("ConnectionHealthDto", OnTheWire)]
         [TestCase("ConnectionValidationResult", OnTheWire)]
         [TestCase("OAuthCredentialStatus", ReachedByTheKernel)]
+        [TestCase("ConnectionFetchShapeChanged", UsedByCodeThatStays)]
+        [TestCase("OAuthCompleteResult", UsedByCodeThatStays)]
+        [TestCase("WriteBackResult", UsedByCodeThatStays)]
+        [TestCase("WriteBackItemResult", UsedByCodeThatStays)]
+        [TestCase("WriteBackFieldUpdate", UsedByCodeThatStays)]
+        [TestCase("WriteBackValueSources", UsedByCodeThatStays)]
         [TestCase("OAuthFlowContext", Admitted)]
         [TestCase("OAuthRefreshContext", Admitted)]
         [TestCase("OAuthStateClaims", Admitted)]
         [TestCase("OAuthTokens", Admitted)]
         public void ASharedModelsTypeOfTheContext_IsJudgedAsTheDesignExpects(string candidate, string expected)
         {
-            var judged = WhenTheCandidatesAreJudged(ProductionModule.Value, CandidatesIn(ProductionModule.Value, CandidateModelsNamespaces));
+            var judged = ProductionJudgement.Value;
 
             ThenTheCandidateIsJudged(judged, candidate, expected);
         }
@@ -129,11 +144,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase("AMadeUpRefusal", OnTheWire)]
         [TestCase("AMadeUpAnswerPart", OnTheWire)]
         [TestCase("AMadeUpReachedValue", ReachedByTheKernel)]
+        [TestCase("AMadeUpPublishedEvent", UsedByCodeThatStays)]
         [TestCase("AMadeUpFlow", Admitted)]
         [TestCase("AMadeUpToken", Admitted)]
         public void AMadeUpModelsType_IsJudgedByWhatTheCompiledCodeShows(string candidate, string expected)
         {
-            var judged = WhenTheCandidatesAreJudged(TestModule.Value, CandidatesIn(TestModule.Value, MadeUpCandidateNamespaces));
+            var judged = MadeUpJudgement.Value;
 
             ThenTheCandidateIsJudged(judged, candidate, expected);
         }
@@ -240,13 +256,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             var candidateNames = candidates.Select(type => type.FullName).ToHashSet(StringComparer.Ordinal);
             var stored = StoredTypesIn(module);
             var onTheWire = TypesSentByControllersIn(module);
-            var reachedBy = KernelReachOf(module, candidateNames);
+            var (reachedBy, usedBy) = ReachOf(module, candidateNames, MovingMembersOf(module));
 
             var admitted = candidateNames.Where(name => !stored.Contains(name) && !onTheWire.Contains(name)).ToHashSet(StringComparer.Ordinal);
             int refused;
             do
             {
-                refused = admitted.RemoveWhere(name => reachedBy[name].Any(reacher => !admitted.Contains(reacher)));
+                refused = admitted.RemoveWhere(name => usedBy[name].Count > 0 || reachedBy[name].Any(reacher => !admitted.Contains(reacher)));
             }
             while (refused > 0);
 
@@ -256,6 +272,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                     stored.Contains(type.FullName),
                     onTheWire.Contains(type.FullName),
                     [.. reachedBy[type.FullName].Where(reacher => !admitted.Contains(reacher)).Select(ShortNameOf)],
+                    [.. usedBy[type.FullName].Select(ShortNameOf).Distinct(StringComparer.Ordinal)],
                     admitted.Contains(type.FullName)),
                 StringComparer.Ordinal);
         }
@@ -267,7 +284,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             InlineBaseline.AssertMatches(
                 judged.Where(entry => entry.Value.Admitted).Select(entry => entry.Key),
                 TrackerIntegrationMembership.ModelsTypesThatMove,
-                $"A shared Models type the context uses moves with it only when it is not stored, not sent by a controller and not reached by a Models type that stays: put each admitted type on ModelsTypesThatMove, and take a refused one off. The refused candidates and why: {refusals}");
+                $"A shared Models type the context uses moves with it only when it is not stored, not sent by a controller, not reached by a Models type that stays and not used by any other code that stays outside the module: put each admitted type on ModelsTypesThatMove, and take a refused one off. The refused candidates and why: {refusals}");
         }
 
         private static void ThenTheCandidateIsJudged(Dictionary<string, CandidateJudgement> judged, string candidate, string expected)
@@ -281,11 +298,12 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Stored => judgement.Stored,
                 OnTheWire => judgement.OnTheWire,
                 ReachedByTheKernel => judgement.ReachedBy.Count > 0,
+                UsedByCodeThatStays => judgement.UsedBy.Count > 0,
                 _ => judgement.Admitted,
             };
 
             Assert.That(holds, Is.True,
-                $"{candidate} should be {expected}, but: {judgement.Describe(candidate)} A type the database context stores, or a controller sends, or a staying Models type reaches, cannot leave the shared kernel without breaking the stored model, the wire format or the rule that the kernel reaches no module. The compiled code does not show a type sent through a variable typed object or built by a helper the controller does not call directly.");
+                $"{candidate} should be {expected}, but: {judgement.Describe(candidate)} A type the database context stores, or a controller sends, or a staying Models type reaches, or other staying code uses, cannot leave the shared kernel without breaking the stored model, the wire format or the rule that nothing left behind reaches into the module. The compiled code does not show a type sent through a variable typed object or built by a helper the controller does not call directly.");
         }
 
         private static HashSet<string> StoredTypesIn(ModuleDefinition module)
@@ -394,21 +412,39 @@ namespace Lighthouse.Backend.Tests.Architecture
             return false;
         }
 
-        private static Dictionary<string, List<string>> KernelReachOf(ModuleDefinition module, HashSet<string> candidateNames)
+        // The types that move into the module as members of the context; what they use may move with them.
+        private static HashSet<string> MovingMembersOf(ModuleDefinition module)
+            => [.. module.Types
+                .Where(type => IsIn(type.Namespace, TrackerIntegrationNamespaces) || MembersOutsideTheNamespaces.Contains(ShortNameOf(type.FullName)))
+                .Where(type => !TypesKeptForDemoData.Contains(ShortNameOf(type.FullName)))
+                .Select(type => type.FullName)];
+
+        // Splits who references each candidate into Models types (the kernel) and every other type that stays; the
+        // candidate itself, the moving members and the types the compiler makes are left out.
+        private static (Dictionary<string, List<string>> ReachedBy, Dictionary<string, List<string>> UsedBy) ReachOf(
+            ModuleDefinition module, HashSet<string> candidateNames, HashSet<string> movingMembers)
         {
             var reachedBy = candidateNames.ToDictionary(name => name, _ => new List<string>(), StringComparer.Ordinal);
+            var usedBy = candidateNames.ToDictionary(name => name, _ => new List<string>(), StringComparer.Ordinal);
 
-            foreach (var dependent in IlDependencies.DependentsIn(module, KernelNamespaces, target => target is not GenericParameter && candidateNames.Contains(OutermostOf(target).FullName)))
+            foreach (var dependent in IlDependencies.DependentsIn(module, "^", target => target is not GenericParameter && candidateNames.Contains(OutermostOf(target).FullName)))
             {
                 var reacher = dependent.TypeName.Split('+')[0];
 
+                if (movingMembers.Contains(reacher) || ShortNameOf(reacher).StartsWith('<'))
+                {
+                    continue;
+                }
+
+                var inTheKernel = candidateNames.Contains(reacher) || IsIn(reacher[..Math.Max(0, reacher.LastIndexOf('.'))], KernelNamespaces);
+
                 foreach (var target in dependent.Targets.Select(target => target.Split('+')[0]).Where(target => target != reacher).Distinct(StringComparer.Ordinal))
                 {
-                    reachedBy[target].Add(reacher);
+                    (inTheKernel ? reachedBy : usedBy)[target].Add(reacher);
                 }
             }
 
-            return reachedBy;
+            return (reachedBy, usedBy);
         }
 
         private static TypeDefinition GivenTheTypeIsInTheCompiledCode(ModuleDefinition module, string name)
@@ -469,7 +505,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             return arity < 0 ? name : name[..arity];
         }
 
-        private sealed record CandidateJudgement(bool Stored, bool OnTheWire, IReadOnlyList<string> ReachedBy, bool Admitted)
+        private sealed record CandidateJudgement(bool Stored, bool OnTheWire, IReadOnlyList<string> ReachedBy, IReadOnlyList<string> UsedBy, bool Admitted)
         {
             public string Describe(string candidate)
             {
@@ -490,8 +526,13 @@ namespace Lighthouse.Backend.Tests.Architecture
                     reasons.Add($"Models types that stay reach it ({string.Join(", ", ReachedBy)})");
                 }
 
+                if (UsedBy.Count > 0)
+                {
+                    reasons.Add($"code that stays outside the module uses it ({string.Join(", ", UsedBy)})");
+                }
+
                 return reasons.Count == 0
-                    ? $"{candidate} is admitted: nothing stores it, no controller sends it and no staying Models type reaches it."
+                    ? $"{candidate} is admitted: nothing stores it, no controller sends it, and nothing that stays reaches it."
                     : $"{candidate} stays in Models: {string.Join("; ", reasons)}.";
             }
         }
@@ -503,6 +544,8 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.MembershipFixtures
     internal static class AMadeUpConnectorInTheModule
     {
         public static int Fetched(int[] items) => items.Count(item => item > 0);
+
+        public static string Started(string value) => global::Lighthouse.Backend.Models.TrackerIntegrationMembershipFixtures.AMadeUpFlow.Start(value).Token.Value;
     }
 }
 
@@ -540,6 +583,8 @@ namespace Lighthouse.Backend.Models.TrackerIntegrationMembershipFixtures
     internal sealed record AMadeUpAnswerPart(int Value);
 
     internal sealed record AMadeUpReachedValue(int Value);
+
+    internal sealed record AMadeUpPublishedEvent(int ConnectionId);
 
     internal sealed record AMadeUpToken(string Value);
 
@@ -582,7 +627,15 @@ namespace Lighthouse.Backend.API.TrackerIntegrationMembershipFixtures
         public IActionResult Refuse() => StatusCode(403, AMadeUpRefusal.Because("not allowed"));
 
         public IActionResult Wrap() => Ok(new AMadeUpEnvelope(new AMadeUpAnswerPart(1)));
+    }
+}
 
-        public IActionResult Follow(string value) => Redirect(AMadeUpFlow.Start(value).Token.Value);
+namespace Lighthouse.Backend.Services.Implementation.TrackerIntegrationMembershipFixtures
+{
+    using Lighthouse.Backend.Models.TrackerIntegrationMembershipFixtures;
+
+    internal static class AMadeUpStayingSaveService
+    {
+        public static AMadeUpPublishedEvent Saved(int connectionId) => new(connectionId);
     }
 }

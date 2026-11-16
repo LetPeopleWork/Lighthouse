@@ -358,21 +358,21 @@ The maintainer runs the Models admission check over the shared Models candidates
 ```
 
 ```text
-The list of Models types that move equals exactly the candidates the database context does not store, no controller sends (signature, value handed to a result, or reached through its public properties) and no staying Models type reaches; the stored OAuth credential, health verdict and connection, the sent health answer and validation result, and the credential status reached by the credential stay; the OAuth flow, refresh, state and token values are admitted
+The list of Models types that move equals exactly the candidates the database context does not store, no controller sends (signature, value handed to a result, or reached through its public properties), no staying Models type reaches and no other code that stays outside the module uses; the stored OAuth credential, health verdict and connection, the sent health answer and validation result, and the credential status reached by the credential stay; the fetch-shape event, the OAuth completion result and the write-back result, item result, field update and value sources stay because staying code uses them; the OAuth flow, refresh, state and token values are admitted
 ```
 
 ```text
-Feature B moves only the shared Models types that can leave the kernel without changing the stored model, the wire format or making the kernel reach the module
+Feature B moves only the shared Models types that can leave the kernel without changing the stored model or the wire format and without any code left behind reaching into the module
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationMembershipArchUnitTest\.cs\:\:TheModelsTypesListedToMove\_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorReachedByTheKernel\, ASharedModelsTypeOfTheContext\_IsJudgedAsTheDesignExpects
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationMembershipArchUnitTest\.cs\:\:TheModelsTypesListedToMove\_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule\, ASharedModelsTypeOfTheContext\_IsJudgedAsTheDesignExpects
 
 ```text
-a type sent through a variable typed object or built by a helper the controller does not call directly is judged not sent
+a type sent through a variable typed object, or used by staying code only through reflection or a catch clause, is judged not sent and not used
 ```
 
 ###### Obligations
@@ -383,15 +383,15 @@ a type sent through a variable typed object or built by a helper the controller 
 P4
 
 ```text
-The admission check judges made-up Models types: one in a database set, one configured on the model builder, one in a controller signature, one handed to a status result, one reached through a sent envelope's property, one reached by a staying Models record, and a flow with its token that a controller only reads to redirect
+The admission check judges made-up Models types: one in a database set, one configured on the model builder, one in a controller signature, one handed to a status result, one reached through a sent envelope's property, one reached by a staying Models record, an event a staying service publishes, and a flow with its token used only by a made-up type in the module
 ```
 
 ```text
-The two records are stored, the three answers are on the wire, the reached value is reached by the kernel, the flow and its token are admitted
+The two records are stored, the three answers are on the wire, the reached value is reached by the kernel, the published event is used by code that stays, the flow and its token are admitted
 ```
 
 ```text
-The admission rule refuses an entity, a wire type or a kernel-reached type, and does not refuse a value a controller only reads
+The admission rule refuses an entity, a wire type, a kernel-reached type or a type staying code uses, and admits a value only the module uses
 ```
 
 ##### Disposition

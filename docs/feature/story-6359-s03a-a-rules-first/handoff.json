@@ -180,12 +180,12 @@
 "obligations": [
 "T1"
 ],
-"still_passes_if": "F197",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::TheModelsTypesListedToMove_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorReachedByTheKernel, ASharedModelsTypeOfTheContext_IsJudgedAsTheDesignExpects"
+"still_passes_if": "F212",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::TheModelsTypesListedToMove_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule, ASharedModelsTypeOfTheContext_IsJudgedAsTheDesignExpects"
 },
-"expected": "F195",
+"expected": "F210",
 "stimulus": "F194",
-"user_result": "F196"
+"user_result": "F211"
 },
 {
 "covers": [
@@ -199,9 +199,9 @@
 "still_passes_if": "F201",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::AMadeUpModelsType_IsJudgedByWhatTheCompiledCodeShows"
 },
-"expected": "F199",
-"stimulus": "F198",
-"user_result": "F200"
+"expected": "F214",
+"stimulus": "F213",
+"user_result": "F215"
 },
 {
 "covers": [
@@ -224,7 +224,7 @@
 "counters": {
 "D": 11,
 "E": 5,
-"F": 209,
+"F": 215,
 "K": 5,
 "P": 4,
 "S": 3,
@@ -1118,14 +1118,8 @@
 "F192": "A type added, renamed or dropped during the move fails the membership test by name until the list follows it",
 "F193": "a rename to a name already listed elsewhere is reported only as the old name missing",
 "F194": "The maintainer runs the Models admission check over the shared Models candidates of the context (OAuth, connection health, validation, write-back and the connection option types)",
-"F195": "The list of Models types that move equals exactly the candidates the database context does not store, no controller sends (signature, value handed to a result, or reached through its public properties) and no staying Models type reaches; the stored OAuth credential, health verdict and connection, the sent health answer and validation result, and the credential status reached by the credential stay; the OAuth flow, refresh, state and token values are admitted",
-"F196": "Feature B moves only the shared Models types that can leave the kernel without changing the stored model, the wire format or making the kernel reach the module",
-"F197": "a type sent through a variable typed object or built by a helper the controller does not call directly is judged not sent",
-"F198": "The admission check judges made-up Models types: one in a database set, one configured on the model builder, one in a controller signature, one handed to a status result, one reached through a sent envelope's property, one reached by a staying Models record, and a flow with its token that a controller only reads to redirect",
-"F199": "The two records are stored, the three answers are on the wire, the reached value is reached by the kernel, the flow and its token are admitted",
 "F2": "The packaging moves of Tracker integration stay under every existing guard: rules, CI live-suite selection and examine commands keep working on the new paths.",
 "F20": "The module's own boundary rules, the unit-test placement rule and retiring the old leaf pattern and old classifier alternatives: feature C.",
-"F200": "The admission rule refuses an entity, a wire type or a kernel-reached type, and does not refuse a value a controller only reads",
 "F201": "an entity configured only through an owned-type call or a separate configuration class is judged not stored",
 "F202": "The maintainer runs the edge check on the inbound and outbound edges named at design",
 "F203": "The Jira connector references the delivery-forecast block renderer, connection health references the concrete verdict repository, the connection save references the fetch fingerprint and the fetch-shape event, and connection health does not reference the Jira connector; the two demo back-fill handlers carry the CSV option name as text and hold no reference to the CSV option names type",
@@ -1136,6 +1130,12 @@
 "F208": "Fails when a listed type is missing from the IL or the list names a type that does not exist (RED first with a made-up name); a Models candidate that is an entity, a wire type, reached by a kernel type or used by staying code outside the module must not be admitted.",
 "F209": "The Tracker integration membership list equals the measured IL set both ways, and each admitted Models type is neither an EF entity, nor on the wire, nor reached by a Models type, nor used by any type that stays outside the module.",
 "F21": "Any behaviour a user sees: nothing changes; UI sketch and loading/failure looks are N/A.",
+"F210": "The list of Models types that move equals exactly the candidates the database context does not store, no controller sends (signature, value handed to a result, or reached through its public properties), no staying Models type reaches and no other code that stays outside the module uses; the stored OAuth credential, health verdict and connection, the sent health answer and validation result, and the credential status reached by the credential stay; the fetch-shape event, the OAuth completion result and the write-back result, item result, field update and value sources stay because staying code uses them; the OAuth flow, refresh, state and token values are admitted",
+"F211": "Feature B moves only the shared Models types that can leave the kernel without changing the stored model or the wire format and without any code left behind reaching into the module",
+"F212": "a type sent through a variable typed object, or used by staying code only through reflection or a catch clause, is judged not sent and not used",
+"F213": "The admission check judges made-up Models types: one in a database set, one configured on the model builder, one in a controller signature, one handed to a status result, one reached through a sent envelope's property, one reached by a staying Models record, an event a staying service publishes, and a flow with its token used only by a made-up type in the module",
+"F214": "The two records are stored, the three answers are on the wire, the reached value is reached by the kernel, the published event is used by code that stays, the flow and its token are admitted",
+"F215": "The admission rule refuses an entity, a wire type, a kernel-reached type or a type staying code uses, and admits a value only the module uses",
 "F22": "Rigor thorough for feature A: crafter, acceptance designer and architect on opus; reviewers sonnet; EXAMINE on sonnet.",
 "F23": "Push per slice, CI watched per push; rebase allowed when trunk moved (maintainer, 2026-11-16).",
 "F24": "Architecture tests over the compiled IL are the oracles; no production code changes in feature A beyond scripts and test-side rule files.",

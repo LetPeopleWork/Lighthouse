@@ -461,19 +461,19 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The maintainer runs the Models admission check over the shared Models candidates of the context (OAuth, connection health, validation, write-back and the connection option types)
 </code></pre>
 
-<pre><code>The list of Models types that move equals exactly the candidates the database context does not store, no controller sends (signature, value handed to a result, or reached through its public properties) and no staying Models type reaches; the stored OAuth credential, health verdict and connection, the sent health answer and validation result, and the credential status reached by the credential stay; the OAuth flow, refresh, state and token values are admitted
+<pre><code>The list of Models types that move equals exactly the candidates the database context does not store, no controller sends (signature, value handed to a result, or reached through its public properties), no staying Models type reaches and no other code that stays outside the module uses; the stored OAuth credential, health verdict and connection, the sent health answer and validation result, and the credential status reached by the credential stay; the fetch-shape event, the OAuth completion result and the write-back result, item result, field update and value sources stay because staying code uses them; the OAuth flow, refresh, state and token values are admitted
 </code></pre>
 
-<pre><code>Feature B moves only the shared Models types that can leave the kernel without changing the stored model, the wire format or making the kernel reach the module
+<pre><code>Feature B moves only the shared Models types that can leave the kernel without changing the stored model or the wire format and without any code left behind reaching into the module
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::TheModelsTypesListedToMove_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorReachedByTheKernel, ASharedModelsTypeOfTheContext_IsJudgedAsTheDesignExpects</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs::TheModelsTypesListedToMove_AreExactlyTheCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule, ASharedModelsTypeOfTheContext_IsJudgedAsTheDesignExpects</p>
 
-<pre><code>a type sent through a variable typed object or built by a helper the controller does not call directly is judged not sent
+<pre><code>a type sent through a variable typed object, or used by staying code only through reflection or a catch clause, is judged not sent and not used
 </code></pre>
 
 <h6>Obligations</h6>
@@ -483,13 +483,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P4</p>
 
-<pre><code>The admission check judges made-up Models types: one in a database set, one configured on the model builder, one in a controller signature, one handed to a status result, one reached through a sent envelope&#x27;s property, one reached by a staying Models record, and a flow with its token that a controller only reads to redirect
+<pre><code>The admission check judges made-up Models types: one in a database set, one configured on the model builder, one in a controller signature, one handed to a status result, one reached through a sent envelope&#x27;s property, one reached by a staying Models record, an event a staying service publishes, and a flow with its token used only by a made-up type in the module
 </code></pre>
 
-<pre><code>The two records are stored, the three answers are on the wire, the reached value is reached by the kernel, the flow and its token are admitted
+<pre><code>The two records are stored, the three answers are on the wire, the reached value is reached by the kernel, the published event is used by code that stays, the flow and its token are admitted
 </code></pre>
 
-<pre><code>The admission rule refuses an entity, a wire type or a kernel-reached type, and does not refuse a value a controller only reads
+<pre><code>The admission rule refuses an entity, a wire type, a kernel-reached type or a type staying code uses, and admits a value only the module uses
 </code></pre>
 
 <h5>Disposition</h5>
