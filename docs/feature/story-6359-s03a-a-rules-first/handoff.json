@@ -65,12 +65,83 @@
 "stimulus": "F162",
 "user_result": "F164"
 }
+],
+"S2": [
+{
+"covers": [
+"P3",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F169",
+"test": "Scripts/test-selection/test-path-classifier.sh (Scenario 20: module connector code/test: only the <tracker> live suite runs)"
+},
+"expected": "F167",
+"stimulus": "F166",
+"user_result": "F168"
+},
+{
+"covers": [
+"P3",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F173",
+"test": "Scripts/test-selection/test-path-classifier.sh (Scenario 21: module parent-source selector: jira=true)"
+},
+"expected": "F171",
+"stimulus": "F170",
+"user_result": "F172"
+},
+{
+"covers": [
+"P3",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F177",
+"test": "Scripts/test-selection/test-path-classifier.sh (Scenario 22: module shared code: shared=true for <path>)"
+},
+"expected": "F175",
+"stimulus": "F174",
+"user_result": "F176"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F181",
+"test": "Scripts/test-selection/test-path-classifier.sh (Scenario 23: module code outside the live connectors: no live suite)"
+},
+"expected": "F179",
+"stimulus": "F178",
+"user_result": "F180"
+},
+{
+"covers": [
+"P3",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F185",
+"test": "Scripts/test-selection/test-path-classifier.sh (Scenario 24: connector-throws-count counts the connectors on the module path / still on the old path)"
+},
+"expected": "F183",
+"stimulus": "F182",
+"user_result": "F184"
+}
 ]
 },
 "counters": {
 "D": 10,
 "E": 5,
-"F": 165,
+"F": 185,
 "K": 5,
 "P": 4,
 "S": 3,
@@ -928,8 +999,28 @@
 "F163": "Every module and old OAuth place counts as the persistence platform; neither namesake does.",
 "F164": "The OAuth token service stays recognised as a platform service, not a repository, after it moves into the module.",
 "F165": "The connector-side OAuth folder under Adapters.Connectors is also taken for the platform; the design leaves that open, so it is not pinned.",
+"F166": "A change to a Jira, Azure DevOps, Linear or ServiceNow connector's own code or its test, on the Tracker integration module path",
+"F167": "The CI test selection picks that tracker's live connector suite and no other, as for the same change on the old path",
+"F168": "A moved connector still runs its live suite in CI, and only that one",
+"F169": "A widening that matches the module connector folders with a pattern so broad it also matches unrelated module code (caught by Scenario 23)",
 "F17": "Widen the CI path classifier, the examine commands, the test-time budgets and Stryker configs to the new paths (A2).",
+"F170": "A change to the parent-source selector on the module's domain path",
+"F171": "The CI test selection picks the live Jira suite",
+"F172": "A change to what the Jira connector reads still runs the live Jira suite",
+"F173": "Jira selected only because the whole module domain folder were added to the Jira pattern",
+"F174": "A change to code all connectors share on the module path: connector Auth and OAuth folders (code and tests), the module's application and domain code, and the module's OAuth adapter",
+"F175": "The CI test selection marks the change as shared, so every live connector suite runs",
+"F176": "A change to shared connector code still runs every live suite",
+"F177": "A pattern matching the whole module, which Scenario 23 refuses",
+"F178": "A change on the module path that no live connector depends on: the CSV connector and the background services",
+"F179": "No live connector suite is selected, as on the old path",
 "F18": "Measure the membership list and Models admissions from the IL and fix them in a test (A3).",
+"F180": "Unrelated module changes do not spend live tracker quota",
+"F181": "Over-selection limited to other module folders than the two sampled",
+"F182": "The examine command that counts unsupported connector methods runs in a checkout whose CSV, Linear and ServiceNow connectors live on the module path, and in one where they live on the old path",
+"F183": "It prints one count per connector folder and the total, ignoring commented-out code, and succeeds, instead of reporting folder not found",
+"F184": "The examiner can still count what each connector cannot do after the move",
+"F185": "A command that finds the folders only when both the old and the module folder of a connector exist at once",
 "F19": "Moving any file of the context: feature B (story-6359-s03a-b-move).",
 "F2": "The packaging moves of Tracker integration stay under every existing guard: rules, CI live-suite selection and examine commands keep working on the new paths.",
 "F20": "The module's own boundary rules, the unit-test placement rule and retiring the old leaf pattern and old classifier alternatives: feature C.",

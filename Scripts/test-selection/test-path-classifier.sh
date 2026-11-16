@@ -146,6 +146,88 @@ assert "options owner: jira=false"       "$(classify_jira $'Lighthouse.Backend/L
 assert "other work item service: jira=false" "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs')" "false"
 assert "parent source tests: jira=false" "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorTest.cs')" "false"
 
+# ---------------------------------------------------------------------------------------------------------------------
+# Tracker integration on its module path. The connectors and their shared code move to
+# Modules/TrackerIntegration; a change there must select the same live suites as the same change on the old path,
+# or a connector change would reach main without its live suite ever running.
+module=Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration
+module_tests=Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration
+
+live_suite_flags() {
+  echo "jira=$(classify_jira "$1") ado=$(classify_ado "$1") linear=$(classify_linear "$1") servicenow=$(classify_servicenow "$1") shared=$(classify_shared "$1")"
+}
+
+# Scenario 20: a connector's own code or test on the module path selects that tracker's live suite, and only it
+for tracker_case in Jira:jira AzureDevOps:ado Linear:linear ServiceNow:servicenow; do
+  tracker=${tracker_case%%:*}
+  suite=${tracker_case##*:}
+  expected="jira=false ado=false linear=false servicenow=false shared=false"
+  expected=${expected/$suite=false/$suite=true}
+  assert "module connector code: only the $tracker live suite runs" \
+    "$(live_suite_flags "$module/Adapters/Connectors/$tracker/${tracker}Connector.cs")" "$expected"
+  assert "module connector test: only the $tracker live suite runs" \
+    "$(live_suite_flags "$module_tests/Adapters/Connectors/$tracker/${tracker}ConnectorTest.cs")" "$expected"
+done
+
+# Scenario 21: the parent-source selector decides what the Jira connector reads, on the module path too
+assert "module parent-source selector: jira=true" "$(classify_jira "$module/Domain/ParentSourceSelector.cs")" "true"
+
+# Scenario 22: code every connector shares, on the module path, runs every live suite
+for shared_path in \
+  "$module/Adapters/Connectors/Auth/WorkTrackingAuthStrategyFactory.cs" \
+  "$module/Adapters/Connectors/OAuth/OAuthSchemaExtensions.cs" \
+  "$module_tests/Adapters/Connectors/Auth/WorkTrackingAuthStrategyFactoryTest.cs" \
+  "$module_tests/Adapters/Connectors/OAuth/OAuthSchemaExtensionsTest.cs" \
+  "$module/Application/WorkTrackingConnectorFactory.cs" \
+  "$module/Application/OAuth/OAuthService.cs" \
+  "$module/Domain/AuthenticationMethodSchema.cs" \
+  "$module/Adapters/OAuth/OAuthCallbackStore.cs"
+do
+  assert "module shared code: shared=true for $shared_path" "$(classify_shared "$shared_path")" "true"
+done
+
+# Scenario 23: module code no live connector depends on selects no live suite, as on the old path
+for quiet_path in \
+  "$module/Adapters/Connectors/Csv/CsvWorkTrackingConnector.cs" \
+  "$module/Adapters/Background/ConnectionHealthBackgroundService.cs"
+do
+  assert "module code outside the live connectors: no live suite for $quiet_path" \
+    "$(live_suite_flags "$quiet_path")" "jira=false ado=false linear=false servicenow=false shared=false"
+done
+
+# Scenario 24: the examine command connector-throws-count finds the connector folders where they live.
+# It is generated with the checkout's path built in, so each case builds it inside a small made-up checkout
+# whose CSV, Linear and ServiceNow folders each hold one connector method that throws NotSupportedException
+# and one commented-out throw that must not count.
+examine_dir="$(cd "$script_dir/../examine" && pwd)"
+
+throws_count_in_checkout_with_connectors_under() {
+  local connectors_folder=$1
+  local checkout
+  checkout="$(mktemp -d)"
+  mkdir -p "$checkout/Scripts/examine"
+  find "$examine_dir" -maxdepth 1 -type f -exec cp {} "$checkout/Scripts/examine/" \;
+  for folder in Csv Linear ServiceNow; do
+    mkdir -p "$checkout/$connectors_folder/$folder"
+    printf '%s\n' "class ${folder}Connector {" \
+      "  void Write() => throw new NotSupportedException(\"cannot write\");" \
+      "  // void Old() => throw new NotSupportedException();" \
+      "}" > "$checkout/$connectors_folder/$folder/${folder}Connector.cs"
+  done
+  bash "$checkout/Scripts/examine/build-examine-commands" > /dev/null 2>&1
+  local output exit_code=0
+  output="$(bash "$checkout/Scripts/examine/bin/connector-throws-count" 2>&1)" || exit_code=$?
+  rm -rf "$checkout"
+  printf '%s\nexit: %s' "$output" "$exit_code"
+}
+
+expected_throws_count=$'Csv: 1\nLinear: 1\nServiceNow: 1\ntotal: 3\nexit: 0'
+assert "connector-throws-count: counts the connectors on the module path" \
+  "$(throws_count_in_checkout_with_connectors_under "$module/Adapters/Connectors")" "$expected_throws_count"
+assert "connector-throws-count: still counts the connectors on the old path" \
+  "$(throws_count_in_checkout_with_connectors_under Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors)" \
+  "$expected_throws_count"
+
 echo
 echo "passed: $pass"
 echo "failed: $fail"

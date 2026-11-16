@@ -260,6 +260,146 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P1</p>
+
+<pre><code>A change to a Jira, Azure DevOps, Linear or ServiceNow connector&#x27;s own code or its test, on the Tracker integration module path
+</code></pre>
+
+<pre><code>The CI test selection picks that tracker&#x27;s live connector suite and no other, as for the same change on the old path
+</code></pre>
+
+<pre><code>A moved connector still runs its live suite in CI, and only that one
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh (Scenario 20: module connector code/test: only the &lt;tracker&gt; live suite runs)</p>
+
+<pre><code>A widening that matches the module connector folders with a pattern so broad it also matches unrelated module code (caught by Scenario 23)
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P1</p>
+
+<pre><code>A change to the parent-source selector on the module&#x27;s domain path
+</code></pre>
+
+<pre><code>The CI test selection picks the live Jira suite
+</code></pre>
+
+<pre><code>A change to what the Jira connector reads still runs the live Jira suite
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh (Scenario 21: module parent-source selector: jira=true)</p>
+
+<pre><code>Jira selected only because the whole module domain folder were added to the Jira pattern
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P1</p>
+
+<pre><code>A change to code all connectors share on the module path: connector Auth and OAuth folders (code and tests), the module&#x27;s application and domain code, and the module&#x27;s OAuth adapter
+</code></pre>
+
+<pre><code>The CI test selection marks the change as shared, so every live connector suite runs
+</code></pre>
+
+<pre><code>A change to shared connector code still runs every live suite
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh (Scenario 22: module shared code: shared=true for &lt;path&gt;)</p>
+
+<pre><code>A pattern matching the whole module, which Scenario 23 refuses
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A change on the module path that no live connector depends on: the CSV connector and the background services
+</code></pre>
+
+<pre><code>No live connector suite is selected, as on the old path
+</code></pre>
+
+<pre><code>Unrelated module changes do not spend live tracker quota
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh (Scenario 23: module code outside the live connectors: no live suite)</p>
+
+<pre><code>Over-selection limited to other module folders than the two sampled
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P1</p>
+
+<pre><code>The examine command that counts unsupported connector methods runs in a checkout whose CSV, Linear and ServiceNow connectors live on the module path, and in one where they live on the old path
+</code></pre>
+
+<pre><code>It prints one count per connector folder and the total, ignoring commented-out code, and succeeds, instead of reporting folder not found
+</code></pre>
+
+<pre><code>The examiner can still count what each connector cannot do after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh (Scenario 24: connector-throws-count counts the connectors on the module path / still on the old path)</p>
+
+<pre><code>A command that finds the folders only when both the old and the module folder of a connector exist at once
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
