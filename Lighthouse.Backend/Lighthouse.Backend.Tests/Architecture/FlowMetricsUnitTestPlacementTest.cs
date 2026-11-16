@@ -57,6 +57,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ("DemoPercentilesBackfillHandlerTests", "Application/Policies"),
             ("PercentilesOverTimeRecordingHandlerTests", "Application/Policies"),
             ("PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest", "Application/Policies"),
+            ("TeamDataRefreshedTeamMetricsUpdateHandlerTest", "Application/Policies"),
             ("ProcessBehaviorRecordingHandlerTests", "Application/Policies"),
             ("OverTimeHistoryFillerTest", "Adapters/Background"),
             ("BlockedCountSnapshotRepositoryTests", "Adapters/Persistence"),

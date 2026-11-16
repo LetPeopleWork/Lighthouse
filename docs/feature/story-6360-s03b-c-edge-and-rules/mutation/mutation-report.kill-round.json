@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "2",
+  "thresholds": {
+    "high": 80,
+    "low": 70
+  },
+  "files": {
+    "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandler.cs": {
+      "language": "cs",
+      "source": "using Lighthouse.Backend.Models;\nusing Lighthouse.Backend.Models.Events;\nusing Lighthouse.Backend.Services.Interfaces.DomainEvents;\nusing Lighthouse.Backend.Services.Interfaces.Repositories;\n\nnamespace Lighthouse.Backend.Modules.FlowMetrics.Application.Policies\n{\n    public class TeamDataRefreshedTeamMetricsUpdateHandler(\n        IRepository<Team> teamRepository,\n        ITeamMetricsService teamMetricsService)\n        : IDomainEventHandler<TeamDataRefreshed>\n    {\n        public async Task HandleAsync(TeamDataRefreshed domainEvent, CancellationToken cancellationToken)\n        {\n            var team = teamRepository.GetById(domainEvent.TeamId);\n            if (team == null)\n            {\n                return;\n            }\n\n            await teamMetricsService.UpdateTeamMetrics(team);\n        }\n    }\n}\n",
+      "mutants": [
+        {
+          "id": "7622",
+          "mutatorName": "Equality mutation",
+          "replacement": "team != null",
+          "location": {
+            "start": {
+              "line": 16,
+              "column": 17
+            },
+            "end": {
+              "line": 16,
+              "column": 29
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "207b8080-9630-d5cc-9bdb-1de344ce1490",
+            "f55e4595-698f-9f81-b5b1-0d2950d50f3b"
+          ],
+          "killedBy": [
+            "207b8080-9630-d5cc-9bdb-1de344ce1490",
+            "f55e4595-698f-9f81-b5b1-0d2950d50f3b"
+          ]
+        },
+        {
+          "id": "7624",
+          "mutatorName": "Statement mutation",
+          "replacement": ";",
+          "location": {
+            "start": {
+              "line": 18,
+              "column": 17
+            },
+            "end": {
+              "line": 18,
+              "column": 24
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "207b8080-9630-d5cc-9bdb-1de344ce1490"
+          ],
+          "killedBy": [
+            "207b8080-9630-d5cc-9bdb-1de344ce1490"
+          ]
+        },
+        {
+          "id": "7625",
+          "mutatorName": "Statement mutation",
+          "replacement": ";",
+          "location": {
+            "start": {
+              "line": 21,
+              "column": 13
+            },
+            "end": {
+              "line": 21,
+              "column": 62
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "f55e4595-698f-9f81-b5b1-0d2950d50f3b"
+          ],
+          "killedBy": [
+            "f55e4595-698f-9f81-b5b1-0d2950d50f3b"
+          ]
+        }
+      ]
+    },
+    "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs": {
+      "language": "none",
+      "source": "File ignored by mutate filter",
+      "mutants": []
+    }
+  }
+}

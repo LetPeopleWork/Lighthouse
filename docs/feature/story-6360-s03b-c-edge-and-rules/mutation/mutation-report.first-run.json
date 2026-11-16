@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "2",
+  "thresholds": {
+    "high": 80,
+    "low": 70
+  },
+  "files": {
+    "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/TeamDataRefreshedTeamMetricsUpdateHandler.cs": {
+      "language": "cs",
+      "source": "using Lighthouse.Backend.Models;\nusing Lighthouse.Backend.Models.Events;\nusing Lighthouse.Backend.Services.Interfaces.DomainEvents;\nusing Lighthouse.Backend.Services.Interfaces.Repositories;\n\nnamespace Lighthouse.Backend.Modules.FlowMetrics.Application.Policies\n{\n    public class TeamDataRefreshedTeamMetricsUpdateHandler(\n        IRepository<Team> teamRepository,\n        ITeamMetricsService teamMetricsService)\n        : IDomainEventHandler<TeamDataRefreshed>\n    {\n        public async Task HandleAsync(TeamDataRefreshed domainEvent, CancellationToken cancellationToken)\n        {\n            var team = teamRepository.GetById(domainEvent.TeamId);\n            if (team == null)\n            {\n                return;\n            }\n\n            await teamMetricsService.UpdateTeamMetrics(team);\n        }\n    }\n}\n",
+      "mutants": [
+        {
+          "id": "7622",
+          "mutatorName": "Equality mutation",
+          "replacement": "team != null",
+          "location": {
+            "start": {
+              "line": 16,
+              "column": 17
+            },
+            "end": {
+              "line": 16,
+              "column": 29
+            }
+          },
+          "status": "NoCoverage",
+          "statusReason": "Not covered by any test.",
+          "static": false,
+          "coveredBy": [],
+          "killedBy": []
+        },
+        {
+          "id": "7624",
+          "mutatorName": "Statement mutation",
+          "replacement": ";",
+          "location": {
+            "start": {
+              "line": 18,
+              "column": 17
+            },
+            "end": {
+              "line": 18,
+              "column": 24
+            }
+          },
+          "status": "NoCoverage",
+          "statusReason": "Not covered by any test.",
+          "static": false,
+          "coveredBy": [],
+          "killedBy": []
+        },
+        {
+          "id": "7625",
+          "mutatorName": "Statement mutation",
+          "replacement": ";",
+          "location": {
+            "start": {
+              "line": 21,
+              "column": 13
+            },
+            "end": {
+              "line": 21,
+              "column": 62
+            }
+          },
+          "status": "NoCoverage",
+          "statusReason": "Not covered by any test.",
+          "static": false,
+          "coveredBy": [],
+          "killedBy": []
+        }
+      ]
+    },
+    "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/TeamDataService.cs": {
+      "language": "cs",
+      "source": "using Lighthouse.Backend.Models;\nusing Lighthouse.Backend.Models.Events;\nusing Lighthouse.Backend.Services.Interfaces.DomainEvents;\n\nnamespace Lighthouse.Backend.Modules.WorkItems.Application\n{\n    public class TeamDataService(\n        ILogger<TeamDataService> logger,\n        IWorkItemService workItemService,\n        IDomainEventDispatcher domainEventDispatcher)\n        : ITeamDataService\n    {\n        public async Task<SyncOutcome> UpdateTeamData(Team team)\n        {\n            // Stryker disable once all: entry trace; what this pass reports is the SyncOutcome it returns, which the scenarios assert.\n            logger.LogDebug(\"Updating Team Data for {TeamName}\", team.Name);\n\n            var outcome = await workItemService.UpdateWorkItemsForTeam(team);\n\n            await domainEventDispatcher.PublishAsync(new TeamDataRefreshed(team.Id));\n\n            // Stryker disable once all: exit trace of the same pass; the return below is the fact that matters.\n            logger.LogDebug(\"Finished updating Team Data for {TeamName}\", team.Name);\n\n            return outcome;\n        }\n    }\n}\n",
+      "mutants": [
+        {
+          "id": "9891",
+          "mutatorName": "Statement mutation",
+          "replacement": ";",
+          "location": {
+            "start": {
+              "line": 20,
+              "column": 13
+            },
+            "end": {
+              "line": 20,
+              "column": 86
+            }
+          },
+          "status": "Killed",
+          "static": false,
+          "coveredBy": [
+            "11951aab-2c38-583f-898d-e64dde09f8ff",
+            "379f9241-5880-94a5-cdef-e2559df949e6"
+          ],
+          "killedBy": [
+            "11951aab-2c38-583f-898d-e64dde09f8ff"
+          ]
+        }
+      ]
+    }
+  }
+}
