@@ -104,6 +104,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ThenTheAzureDevOpsConnectionIsSwept(answer);
         }
 
+        [Test]
+        public async Task ATeamRefreshOnAConnectorThatCannotSweep_DownloadsTheWholeQuery()
+        {
+            var connector = GivenAConnectorThatCannotSweep();
+            var team = GivenATeamWhoseQueryHoldsOneWorkItem(connector);
+
+            await WhenTheTeamIsRefreshed(connector, team);
+
+            ThenTheWholeQueryWasDownloadedOnceAndNothingWasSwept(connector, TeamDownload);
+        }
+
+        [Test]
+        public async Task APortfolioRefreshOnAConnectorThatCannotSweep_DownloadsEveryFeature()
+        {
+            var connector = GivenAConnectorThatCannotSweep();
+            var portfolio = GivenAPortfolioWhoseQueryHoldsOneFeature(connector, parentReferenceId: null);
+
+            await WhenThePortfolioIsRefreshed(connector, portfolio);
+
+            ThenTheWholeQueryWasDownloadedOnceAndNothingWasSwept(connector, PortfolioDownload);
+        }
+
+        [Test]
+        public async Task AParentFeatureReadOnAConnectorThatCannotSweep_ReadsEveryParentInFull()
+        {
+            var connector = GivenAConnectorThatCannotSweep();
+            var portfolio = GivenAPortfolioWhoseQueryHoldsOneFeature(connector, parentReferenceId: "PARENT-1");
+
+            await WhenThePortfolioIsRefreshed(connector, portfolio);
+
+            ThenTheWholeQueryWasDownloadedOnceAndNothingWasSwept(connector, ParentDownload);
+        }
+
         private static Type GivenTheIncrementalSourceCapability()
         {
             var capability = typeof(IWorkTrackingConnector).Assembly.GetType(IncrementalSourceCapabilityName);
@@ -264,6 +297,98 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static Type? DeclaredReturnTypeOf(Type owner, MemberShape member)
             => owner.GetMethod(member.Name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly, member.Parameters)?.ReturnType;
+
+        private static Mock<IWorkTrackingConnector> GivenAConnectorThatCannotSweep()
+        {
+            var connector = new Mock<IWorkTrackingConnector>();
+            connector.As<IFeatureSource>();
+
+            var interfaces = connector.Object.GetType().GetInterfaces().Select(type => type.FullName).ToList();
+
+            Assert.That(
+                interfaces,
+                Does.Not.Contain(IncrementalSourceCapabilityName),
+                "WHAT: the connector standing in for CSV, Linear or ServiceNow takes on the sweeping capability. WHY: this case is about a " +
+                "connector that cannot sweep at all. HOW: build the stand-in from the general port and the Feature-reading capability only.");
+
+            return connector;
+        }
+
+        private static Team GivenATeamWhoseQueryHoldsOneWorkItem(Mock<IWorkTrackingConnector> connector)
+        {
+            var team = new Team { Id = 51, Name = "A Team on a tracker that cannot sweep", WorkTrackingSystemConnection = ACsvConnection() };
+            team.WorkItemTypes.Add("User Story");
+
+            connector
+                .Setup(source => source.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new WorkItem { ReferenceId = "ITEM-1", Name = "The only item", Type = "User Story", Team = team }]);
+
+            return team;
+        }
+
+        private static Portfolio GivenAPortfolioWhoseQueryHoldsOneFeature(Mock<IWorkTrackingConnector> connector, string? parentReferenceId)
+        {
+            var portfolio = new Portfolio { Id = 52, Name = "A Portfolio on a tracker that cannot sweep", WorkTrackingSystemConnection = ACsvConnection() };
+            portfolio.WorkItemTypes.Add("Feature");
+
+            var features = connector.As<IFeatureSource>();
+            features
+                .Setup(source => source.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature(new WorkItemBase { ReferenceId = "FEATURE-1", Name = "The only Feature", Type = "Feature" }) { ParentReferenceId = parentReferenceId ?? string.Empty }]);
+            features
+                .Setup(source => source.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
+
+            return portfolio;
+        }
+
+        private static WorkTrackingSystemConnection ACsvConnection()
+            => new() { Id = 53, Name = "A CSV connection", WorkTrackingSystem = WorkTrackingSystems.Csv };
+
+        private static Task<SyncOutcome> WhenTheTeamIsRefreshed(Mock<IWorkTrackingConnector> connector, Team team)
+            => new WorkItemServiceTestBuilder().WithConnector(connector.Object).Build().UpdateWorkItemsForTeam(team);
+
+        private static Task<SyncOutcome> WhenThePortfolioIsRefreshed(Mock<IWorkTrackingConnector> connector, Portfolio portfolio)
+            => new WorkItemServiceTestBuilder().WithConnector(connector.Object).Build().UpdateFeaturesForPortfolio(portfolio);
+
+        private static void ThenTheWholeQueryWasDownloadedOnceAndNothingWasSwept(Mock<IWorkTrackingConnector> connector, FullDownload download)
+        {
+            var asked = connector.Invocations
+                .Select(invocation => new MemberShape(invocation.Method.Name, invocation.Method.ReturnType, [.. invocation.Method.GetParameters().Select(parameter => parameter.ParameterType)]).ToString())
+                .ToList();
+
+            var expected = download.Member.ToString();
+            var sweepsOrFetchesById = asked
+                .Where(member => member.Contains(" Sweep", StringComparison.Ordinal) || member.Contains("IReadOnlyCollection<String>", StringComparison.Ordinal))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    asked.Count(member => member == expected),
+                    Is.EqualTo(1),
+                    $"WHAT: the refresh did not ask for {expected} exactly once; it asked for [{string.Join("; ", asked)}]. WHY: a connector " +
+                    $"that cannot sweep is read in full on every refresh, so {download.What} must come from one full download. HOW: when the " +
+                    "connector is not a sweeping capability, take the full path, as for a connection whose probe answers no.");
+                Assert.That(
+                    sweepsOrFetchesById,
+                    Is.Empty,
+                    $"WHAT: the refresh asked a connector that cannot sweep for [{string.Join("; ", sweepsOrFetchesById)}]. WHY: only a sweeping " +
+                    "capability can answer a sweep or a fetch by id; anyone else can only refuse, and the refresh would lose its records. HOW: " +
+                    "test the connector for the sweeping capability before any sweep or fetch by id.");
+            }
+        }
+
+        private static readonly FullDownload TeamDownload = new(
+            new("GetWorkItemsForTeam", typeof(Task<IEnumerable<WorkItem>>), [typeof(Team), typeof(CancellationToken)]), "the Team's work items");
+
+        private static readonly FullDownload PortfolioDownload = new(
+            new("GetFeaturesForPortfolio", typeof(Task<List<Feature>>), [typeof(Portfolio), typeof(CancellationToken)]), "the Portfolio's Features");
+
+        private static readonly FullDownload ParentDownload = new(
+            new("GetParentFeaturesDetails", typeof(Task<List<Feature>>), [typeof(Portfolio), typeof(IEnumerable<string>), typeof(CancellationToken)]), "the parent Features");
+
+        private sealed record FullDownload(MemberShape Member, string What);
 
         private sealed record MemberShape(string Name, Type ReturnType, Type[] Parameters)
         {

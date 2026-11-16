@@ -272,6 +272,23 @@
 "expected": "F281",
 "stimulus": "F280",
 "user_result": "F282"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F213",
+"L1/F58"
+],
+"still_passes_if": "F287",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs::ATeamRefreshOnAConnectorThatCannotSweep_DownloadsTheWholeQuery"
+},
+"expected": "F285",
+"stimulus": "F284",
+"user_result": "F286"
 }
 ]
 },
@@ -280,7 +297,7 @@
 "C": 1,
 "D": 9,
 "E": 4,
-"F": 283,
+"F": 287,
 "K": 4,
 "L": 5,
 "N": 4,
@@ -2225,6 +2242,10 @@
 "F281": "Azure DevOps sweeps; Jira only once reached; CSV, Linear, ServiceNow are not of the type",
 "F282": "Each refresh takes the same sweep or full path as today",
 "F283": "The refresh service ignores the probe; held by WorkItemServiceTest",
+"F284": "Refresh a Team, a Portfolio, and a Portfolio whose Feature has a parent, through the Work Items refresh service, on a connector that reads Features but cannot sweep",
+"F285": "Each refresh asks once for the full download (work items, Features, parent Features) and never for a sweep or a fetch by id",
+"F286": "CSV, Linear and ServiceNow Teams and Portfolios take the full refresh path as before",
+"F287": "The service consults a probe on a connector that cannot sweep and only falls back after; guarded by no sweep or by-id call, not by the probe itself",
 "F29": "Returns the concrete connector as the base type; capabilities stay visible to is-tests.",
 "F3": "Only Jira and Azure DevOps are write-back targets; a write-back to a CSV, Linear or ServiceNow connection fails each update as it does today; their write-back throws are gone from the ratchet list",
 "F30": "Registrations by marker; the markers carry the capabilities.",

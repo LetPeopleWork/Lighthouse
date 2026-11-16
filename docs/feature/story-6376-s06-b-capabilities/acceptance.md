@@ -484,6 +484,36 @@ The refresh service ignores the probe; held by WorkItemServiceTest
 ###### Obligations
 
 
+##### Covers
+
+P3
+
+```text
+Refresh a Team, a Portfolio, and a Portfolio whose Feature has a parent, through the Work Items refresh service, on a connector that reads Features but cannot sweep
+```
+
+```text
+Each refresh asks once for the full download (work items, Features, parent Features) and never for a sweep or a fetch by id
+```
+
+```text
+CSV, Linear and ServiceNow Teams and Portfolios take the full refresh path as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/WorkTrackingConnectors\/IncrementalSourceCapabilityTest\.cs\:\:ATeamRefreshOnAConnectorThatCannotSweep\_DownloadsTheWholeQuery
+
+```text
+The service consults a probe on a connector that cannot sweep and only falls back after; guarded by no sweep or by-id call, not by the probe itself
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows

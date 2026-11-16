@@ -569,6 +569,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Refresh a Team, a Portfolio, and a Portfolio whose Feature has a parent, through the Work Items refresh service, on a connector that reads Features but cannot sweep
+</code></pre>
+
+<pre><code>Each refresh asks once for the full download (work items, Features, parent Features) and never for a sweep or a fetch by id
+</code></pre>
+
+<pre><code>CSV, Linear and ServiceNow Teams and Portfolios take the full refresh path as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs::ATeamRefreshOnAConnectorThatCannotSweep_DownloadsTheWholeQuery</p>
+
+<pre><code>The service consults a probe on a connector that cannot sweep and only falls back after; guarded by no sweep or by-id call, not by the probe itself
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
