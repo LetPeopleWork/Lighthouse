@@ -1420,6 +1420,7 @@ namespace Lighthouse.Backend
             // owner's items change - which is why it also stands as a handler for the two refresh
             // events. Holding nothing a correct answer depends on, it can be lost at any time.
             builder.Services.AddSingleton<ReconstructionMemo>();
+            builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedTeamMetricsUpdateHandler>();
             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
 

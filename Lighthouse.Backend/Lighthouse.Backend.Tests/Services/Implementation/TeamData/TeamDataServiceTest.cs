@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.Extensions.Logging;
@@ -10,7 +9,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
 {
     public class TeamDataServiceTest
     {
-        private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private Mock<IWorkItemService> workItemServiceMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
 
@@ -19,7 +17,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         [SetUp]
         public void Setup()
         {
-            teamMetricsServiceMock = new Mock<ITeamMetricsService>();
             workItemServiceMock = new Mock<IWorkItemService>();
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
             domainEventDispatcherMock
@@ -30,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         [Test]
         public async Task ExecuteAsync_UpdatesWorkItemsForTeam()
         {
-            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
+            var team = CreateTeam();
 
             var subject = CreateSubject();
 
@@ -42,7 +39,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         [Test]
         public async Task ExecuteAsync_PublishesTeamDataRefreshedForTeam()
         {
-            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
+            var team = CreateTeam();
 
             var subject = CreateSubject();
 
@@ -53,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
                 Times.Once);
         }
 
-        private Team CreateTeam(DateTime lastThroughputUpdateTime)
+        private Team CreateTeam()
         {
             return new Team
             {
@@ -64,13 +61,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
                 {
                     WorkTrackingSystem = WorkTrackingSystems.AzureDevOps
                 },
-                UpdateTime = lastThroughputUpdateTime
             };
         }
 
         private TeamDataService CreateSubject()
         {
-            return new TeamDataService(Mock.Of<ILogger<TeamDataService>>(), teamMetricsServiceMock.Object, workItemServiceMock.Object, domainEventDispatcherMock.Object);
+            return new TeamDataService(Mock.Of<ILogger<TeamDataService>>(), workItemServiceMock.Object, domainEventDispatcherMock.Object);
         }
     }
 }

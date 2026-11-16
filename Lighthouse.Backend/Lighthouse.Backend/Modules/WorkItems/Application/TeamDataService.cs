@@ -1,13 +1,11 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 
 namespace Lighthouse.Backend.Modules.WorkItems.Application
 {
     public class TeamDataService(
         ILogger<TeamDataService> logger,
-        ITeamMetricsService teamMetricsService,
         IWorkItemService workItemService,
         IDomainEventDispatcher domainEventDispatcher)
         : ITeamDataService
@@ -18,7 +16,6 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
             logger.LogDebug("Updating Team Data for {TeamName}", team.Name);
 
             var outcome = await workItemService.UpdateWorkItemsForTeam(team);
-            await teamMetricsService.UpdateTeamMetrics(team);
 
             await domainEventDispatcher.PublishAsync(new TeamDataRefreshed(team.Id));
 
