@@ -181,7 +181,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 
             ConnectorMock = new Mock<IWorkTrackingConnector>();
             ConnectorMock
-                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => []);
         }
 

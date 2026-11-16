@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             featureStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
                 .Returns(new List<FeatureStateTransition>().AsQueryable());
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new List<Feature>()));
 
             workItems = [];
             teams = [];
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
         {
             var theRefreshInstant = new DateTimeOffset(2025, 3, 14, 9, 30, 0, TimeSpan.Zero);
             var portfolio = CreatePortfolio();
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
             await CreateSubject(new FakeLighthouseClock(theRefreshInstant)).UpdateFeaturesForPortfolio(portfolio);
 
@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 
             SetupWorkForFeature(feature, 1, 0, team);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(project);
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 
             project.Features.Add(existingFeature);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(project);
@@ -190,7 +190,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             SetupWorkForFeature(feature1, 10, remainingWork, team);
             SetupWorkForFeature(feature2, 15, 12, team);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(project);
@@ -226,7 +226,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature = new Feature(team, remainingWork) { ReferenceId = "12", State = "Done", StateCategory = StateCategories.Done };
             SetupWorkForFeature(feature, totalWork, remainingWork, team);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(project);
@@ -257,7 +257,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 
             var features = new List<Feature>() { feature1, feature2 };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             featureRepositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>())).Returns((Func<Feature, bool> predicate) => features.SingleOrDefault(predicate));
 
@@ -285,7 +285,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(project);
@@ -312,7 +312,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature1 = new Feature { ReferenceId = "42" };
             var feature2 = new Feature { ReferenceId = "12" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(portfolio);
@@ -354,7 +354,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var features = new List<Feature>();
 
@@ -398,7 +398,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             project.PercentileHistoryInDays = percentileHistoryInDays;
 
             var feature = new Feature(team, 0) { ReferenceId = "42" };
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var sampledWindows = new List<TimeSpan>();
             projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -426,7 +426,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             project.PercentileHistoryInDays = historyInDays;
 
             var feature = new Feature(team, 0) { ReferenceId = "42" };
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var sampledWindows = new List<(DateTime Start, DateTime End)>();
             projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -456,7 +456,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
             projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(new List<Feature>());
 
@@ -483,7 +483,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 0 };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(project);
@@ -504,7 +504,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 7 };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(project);
@@ -524,7 +524,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature1 = new Feature(team, 0) { ReferenceId = "42" };
             var feature2 = new Feature(team, 2) { ReferenceId = "12" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             SetupWorkForFeature(feature1, 7, 0, team);
 
@@ -548,7 +548,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature1 = new Feature([(team1, 0, 12), (team2, 0, 10)]) { ReferenceId = "17" };
             var feature2 = new Feature([(team1, 2, 13), (team2, 2, 3)]) { ReferenceId = "19" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
             SetupWorkForFeature(feature1, 0, 0);
             SetupWorkForFeature(feature2, 12, 12);
 
@@ -576,7 +576,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var remainingWorkItems = 12;
             var feature = new Feature(team, remainingWorkItems) { ReferenceId = "42" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 12, remainingWorkItems, team);
 
             var subject = CreateSubject();
@@ -595,12 +595,12 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var project = CreatePortfolio();
 
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new List<Feature>()));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new List<Feature>()));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(project);
 
-            workTrackingConnectorMock.Verify(x => x.GetFeaturesForPortfolio(project, CancellationToken.None), Times.Exactly(1));
+            workTrackingConnectorMock.As<IFeatureSource>().Verify(x => x.GetFeaturesForPortfolio(project, CancellationToken.None), Times.Exactly(1));
         }
 
         [Test]
@@ -616,7 +616,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var feature1 = new Feature(team1, remainingWorkItemsFeature1) { ReferenceId = "1" };
             var feature2 = new Feature(team2, remainingWorkItemsFeature1) { ReferenceId = "2" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature1, feature2 }));
 
             SetupWorkForFeature(feature1, 12, remainingWorkItemsFeature1, team1);
             SetupWorkForFeature(feature2, 12, remainingWorkItemsFeature2, team2);
@@ -642,7 +642,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var remainingWorkItemsTeam2 = 7;
             var feature = new Feature(team1, remainingWorkItemsTeam1) { ReferenceId = "1" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             SetupWorkForFeature(feature, 12, remainingWorkItemsTeam1, team1);
             SetupWorkForFeature(feature, 12, remainingWorkItemsTeam2, team2);
@@ -670,7 +670,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(testTeams) { ReferenceId = "42" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
@@ -700,7 +700,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var testTeams = new List<(Team team, int remainingItems, int totalItems)> { (team1, 0, 0), (team2, 0, 0) };
             var feature = new Feature(testTeams) { ReferenceId = "42" };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
@@ -742,7 +742,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 }
             };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
@@ -782,7 +782,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 }
             };
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
             SetupWorkForFeature(feature, 0, 0);
 
             var subject = CreateSubject();
@@ -825,7 +825,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(portfolio);
@@ -870,7 +870,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(portfolio);
@@ -915,7 +915,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(portfolio);
@@ -957,7 +957,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             };
             SetupWorkForFeature(feature, 0, 0);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
             await subject.UpdateFeaturesForPortfolio(portfolio);
@@ -987,8 +987,8 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 
             SetupWorkForFeature(feature, 1, 0, team);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
-            workTrackingConnectorMock.Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId }, CancellationToken.None)).ReturnsAsync(
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId }, CancellationToken.None)).ReturnsAsync(
                 [parentFeature]);
 
             var subject = CreateSubject();
@@ -1010,8 +1010,8 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 
             SetupWorkForFeature(feature, 1, 0, team);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
-            workTrackingConnectorMock.Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId }, CancellationToken.None)).ReturnsAsync(
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetParentFeaturesDetails(project, new[] { feature.ParentReferenceId }, CancellationToken.None)).ReturnsAsync(
                 [parentFeature]);
 
             var subject = CreateSubject();
@@ -1651,7 +1651,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var stored = TheFeaturesTheRefreshStores();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ADownloadOfEveryKindOfFeature(TheFirstReadingDay));
             TheStoredFeaturesAre(TheStoredFeature);
 
@@ -1733,7 +1733,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             portfolio.OwnParentOverride(TheFieldThatNamesTheLinkType);
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([
                     ADownloadedFeature(TheFeatureWithOneLink, TheLoneLink, OneIncident, TheLoneLink, TheFirstReadingDay),
                     ADownloadedFeature(TheFeatureWithNoLink, TheTrackersOwnParent, [], string.Empty, TheFirstReadingDay)]);
@@ -1766,7 +1766,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var stored = TheFeaturesTheRefreshStores();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([
                     ADownloadedFeature(TheFeatureUnderTwoIncidents, TheTrackersOwnParent, TwoIssuesNobodyHoldsAsAFeature, string.Empty, TheFirstReadingDay),
                     ADownloadedFeature(TheFeatureUnderTwoIncidents, TheTrackersOwnParent, TwoIssuesNobodyHoldsAsAFeature, string.Empty, TheFirstReadingDay)]);
@@ -1808,7 +1808,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             string[] bothPhrases = [inward, outward];
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => AFeatureWhoseDependencyFieldPointsBothWays(referenceId, named, bothPhrases, TheFirstReadingDay))]);
 
             NothingAboveTheFeaturesIsDownloaded();
@@ -1842,7 +1842,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([AFeatureWhoseDependencyFieldPointsBothWays("FTR-1", "Dependency", BothDependencyPhrases, TheFirstReadingDay)]);
 
             NothingAboveTheFeaturesIsDownloaded();
@@ -1864,7 +1864,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => new Feature
                 {
                     ReferenceId = referenceId,
@@ -1889,7 +1889,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new Feature
                 {
                     ReferenceId = "FTR-1",
@@ -1912,7 +1912,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new Feature
                 {
                     ReferenceId = "FTR-1",
@@ -1935,7 +1935,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new Feature
                 {
                     ReferenceId = "FTR-1",
@@ -1962,7 +1962,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new Feature
                 {
                     ReferenceId = "FTR-1",
@@ -1987,7 +1987,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new Feature
                 {
                     ReferenceId = "FTR-1",
@@ -2010,7 +2010,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new Feature
                 {
                     ReferenceId = "FTR-1",
@@ -2034,7 +2034,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new Feature
                 {
                     ReferenceId = "FTR-1",
@@ -2059,7 +2059,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new Feature
                 {
                     ReferenceId = "FTR-1",
@@ -2111,7 +2111,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             portfolio.IgnoreDependencies = true;
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new Feature
                 {
                     ReferenceId = "FTR-1",
@@ -2142,7 +2142,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var inTheParentOverrideField = new RefreshFinding(RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.ParentOverrideField, "Dependency", BothDependencyPhrases);
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([.. EveryKindOfFeature.Select(referenceId => new Feature
                 {
                     ReferenceId = referenceId,
@@ -2235,7 +2235,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 .Setup(connector => connector.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([]);
             workTrackingConnectorMock
-                .Setup(connector => connector.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([]);
         }
 
@@ -2282,10 +2282,10 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var stored = TheFeaturesTheRefreshStores();
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([AFeatureUnderTheIssueAbove(TheFirstReadingDay)]);
             workTrackingConnectorMock
-                .Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([TheIssueAboveAsDownloaded(), TheIssueAboveAsDownloaded()]);
             TheStoredFeaturesAre(TheStoredFeature);
 
@@ -2338,7 +2338,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 .Setup(connector => connector.SweepParentFeatures(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new RemoteRecordStamp(TheIssueAbove, TheFirstReadingDay)]);
             workTrackingConnectorMock
-                .Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([TheIssueAboveAsDownloaded()]);
             TheStoredFeaturesAre(TheStoredFeature);
 
@@ -2377,10 +2377,10 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 .Returns(new StoredFeatures(new Dictionary<string, DateTime?> { ["INC-5610"] = TheFirstReadingDay.AddYears(-1) }));
 
             workTrackingConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([TheIssueAboveAsDownloaded(), AFeatureUnderTheIssueAbove(TheFirstReadingDay)]);
             workTrackingConnectorMock
-                .Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Portfolio _, IEnumerable<string> keys, CancellationToken _) => keys.Contains(TheIssueAbove) ? [TheIssueAboveAsDownloaded()] : []);
 
             var subject = CreateSubject();
@@ -2426,7 +2426,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             var portfolio = CreatePortfolio();
             portfolio.UpdateFeatures([new Feature { Id = idCounter++, ReferenceId = "FTR-1" }]);
 
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None))
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, CancellationToken.None))
                 .ThrowsAsync(new InvalidOperationException("The tracker could not be asked."));
 
             var subject = CreateSubject();
@@ -2544,7 +2544,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             SetupWorkForFeature(feature, 11, 11, team);
 
             workTrackingConnectorMock
-                .Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None))
+                .As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(project, CancellationToken.None))
                 .Returns(Task.FromResult(new List<Feature> { feature }));
 
             var subject = CreateSubject();
@@ -2888,7 +2888,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 SyncedTransitions = [new WorkItemStateTransition { FromState = "To Do", ToState = "In Progress", TransitionedAt = TheCorrectedTime }],
                 TransitionsAreItsWholeHistory = true,
             };
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([incoming]);
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([incoming]);
 
             await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
 
@@ -2974,7 +2974,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                 SyncedTransitions = [.. read.Select(t => new WorkItemStateTransition { FromState = t.FromState, ToState = t.ToState, TransitionedAt = t.At })],
                 TransitionsAreItsWholeHistory = transitionsAreItsWholeHistory,
             };
-            workTrackingConnectorMock.Setup(x => x.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([incoming]);
+            workTrackingConnectorMock.As<IFeatureSource>().Setup(x => x.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([incoming]);
 
             await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
 

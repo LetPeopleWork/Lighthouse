@@ -754,7 +754,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 .Returns<Team, CancellationToken>((team, _) => Task.FromResult<IReadOnlyList<RemoteRecordStamp>>([new RemoteRecordStamp(TheItemOf(team.Name), TheItemLastChangedAt)]));
 
             connector
-                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, CancellationToken>((portfolio, _) => Task.FromResult(TheFeatureOf(portfolio)));
             connector
                 .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
@@ -763,7 +763,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 .Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, CancellationToken>((portfolio, _) => Task.FromResult<IReadOnlyList<RemoteRecordStamp>>([new RemoteRecordStamp(TheItemOf(portfolio.Name), TheItemLastChangedAt)]));
             connector
-                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Feature>());
             connector
                 .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))

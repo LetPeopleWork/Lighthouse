@@ -597,7 +597,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
                 .Returns<Team, CancellationToken>(async (team, _) => await StampsFor(team));
 
             connector
-                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, CancellationToken>(async (portfolio, _) => await TheFeatureOf(portfolio));
             connector
                 .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
@@ -606,7 +606,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
                 .Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, CancellationToken>(async (portfolio, _) => await StampsFor(portfolio));
             connector
-                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns<Portfolio, IEnumerable<string>, CancellationToken>(async (_, _, _) => await NoParentFeatures());
             connector
                 .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))

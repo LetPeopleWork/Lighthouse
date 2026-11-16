@@ -11,7 +11,7 @@ using System.Text;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 {
-    public class CsvWorkTrackingConnector(ILogger<CsvWorkTrackingConnector> logger) : IWorkTrackingConnector
+    public class CsvWorkTrackingConnector(ILogger<CsvWorkTrackingConnector> logger) : IWorkTrackingConnector, IFeatureSource
     {
         private static int orderCounter;
 

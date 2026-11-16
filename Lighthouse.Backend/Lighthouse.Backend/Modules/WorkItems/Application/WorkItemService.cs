@@ -969,7 +969,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
 
         private async Task<RemoteFeatureFetch> FetchEveryFeature(IWorkTrackingConnector connector, Portfolio portfolio, CancellationToken stopping)
         {
-            var recordsFromTracker = (await connector.GetFeaturesForPortfolio(portfolio, stopping)).ToList();
+            var recordsFromTracker = (await FeatureSourceFor(connector, portfolio).GetFeaturesForPortfolio(portfolio, stopping)).ToList();
             var actualFeatures = DeduplicateByReferenceId(recordsFromTracker, portfolio.Name, feature => feature.ReferenceId);
 
             return new RemoteFeatureFetch(
@@ -1393,7 +1393,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
 
             var parentFeatures = mode == SyncMode.Delta
                 ? await FetchOnlyTheParentFeaturesThatMoved(connector, portfolio, parentFeatureIds, storedParentFeatures, scan.Stamps)
-                : DeduplicateByReferenceId(await connector.GetParentFeaturesDetails(portfolio, parentFeatureIds, Stopping), portfolio.Name, feature => feature.ReferenceId);
+                : DeduplicateByReferenceId(await FeatureSourceFor(connector, portfolio).GetParentFeaturesDetails(portfolio, parentFeatureIds, Stopping), portfolio.Name, feature => feature.ReferenceId);
 
             _ = PlaceWhatTheLinksLeftOpen(portfolio, ParentPlacementReport.ParentsOfThePortfoliosFeatures(portfolio.Name), ParentNarrowing.DoNotNarrow, parentFeatures);
 
@@ -1466,7 +1466,7 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
 
             return keysToDownload.Count == 0
                 ? []
-                : DeduplicateByReferenceId(await connector.GetParentFeaturesDetails(portfolio, keysToDownload, Stopping), portfolio.Name, feature => feature.ReferenceId);
+                : DeduplicateByReferenceId(await FeatureSourceFor(connector, portfolio).GetParentFeaturesDetails(portfolio, keysToDownload, Stopping), portfolio.Name, feature => feature.ReferenceId);
         }
 
         // Inverts the Feature half's rule: parents are excluded from the orphaned-Feature cleanup by
@@ -1482,6 +1482,13 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
         private IWorkTrackingConnector GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
         {
             return workTrackingConnectorFactory.GetWorkTrackingConnector(workTrackingSystem);
+        }
+
+        // A tracker with no records a Portfolio could roll up over fails the refresh here, before anything is written.
+        private static IFeatureSource FeatureSourceFor(IWorkTrackingConnector connector, Portfolio portfolio)
+        {
+            return connector as IFeatureSource
+                ?? throw new NotSupportedException($"Reading Features is not supported for {portfolio.WorkTrackingSystemConnection.WorkTrackingSystem}.");
         }
     }
 }

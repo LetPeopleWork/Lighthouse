@@ -1,13 +1,9 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors
 {
@@ -28,23 +24,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var features = await subject.GetFeaturesForPortfolio(APortfolioReadFromCsv(), CancellationToken.None);
 
             Assert.That(features.TrueForAll(feature => feature.DependsOnReferences.Count == 0), Is.True);
-        }
-
-        /// <summary>
-        /// ServiceNow returns no Features at all, so there is nothing for a dependency to be between. The
-        /// point of asserting it is that the refusal is unchanged - reading dependencies did not turn a
-        /// clear "this connector has no Features" into some other failure.
-        /// </summary>
-        [Test]
-        public void GetFeaturesForPortfolio_ServiceNowStillRefusesToReturnFeaturesAtAll()
-        {
-            var subject = new ServiceNowWorkTrackingConnector(
-                Mock.Of<ILogger<ServiceNowWorkTrackingConnector>>(),
-                Mock.Of<IWorkTrackingAuthStrategyFactory>());
-
-            Assert.That(
-                async () => await subject.GetFeaturesForPortfolio(new Portfolio(), CancellationToken.None),
-                Throws.TypeOf<NotSupportedException>());
         }
 
         private Portfolio APortfolioReadFromCsv()

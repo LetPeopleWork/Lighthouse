@@ -36,8 +36,6 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
         /// </summary>
         Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken);
 
-        Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken);
-
         /// <summary>
         /// Phase 2 of the two-phase portfolio fetch (Epic #5687 slice 03): full payloads - fields,
         /// changelog, transitions - for the named Features only. Adjacent to its sibling on purpose:
@@ -47,18 +45,16 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 
         /// <summary>
         /// Phase 1 of the two-phase portfolio fetch (Epic #5687 slice 03): the same query
-        /// <see cref="GetFeaturesForPortfolio(Portfolio)"/> issues, asking only for identity plus the remote
+        /// <see cref="IFeatureSource.GetFeaturesForPortfolio(Portfolio, CancellationToken)"/> issues, asking only for identity plus the remote
         /// change timestamp. It enumerates the WHOLE result set, which is what keeps
         /// <c>removed = stored - swept</c> meaning exactly what it means today (D2).
         /// </summary>
         Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken);
 
-        Task<List<Feature>> GetParentFeaturesDetails(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken);
-
         /// <summary>
         /// Phase 1 of the parent-Feature fetch (Epic #5687 slice 03). The parent path is already a keyed
         /// query, so its sweep is that same keyed query asking only for identity plus the remote change
-        /// timestamp - and phase 2 is <see cref="GetParentFeaturesDetails"/> called with a shorter key
+        /// timestamp - and phase 2 is <see cref="IFeatureSource.GetParentFeaturesDetails"/> called with a shorter key
         /// list, which is why the parent path needs no second overload.
         ///
         /// <paramref name="parentFeatureIds"/> is derived from what is STORED, never from what this cycle

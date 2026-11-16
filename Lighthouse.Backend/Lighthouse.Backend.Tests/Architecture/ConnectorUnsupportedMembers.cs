@@ -43,14 +43,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "The ServiceNow connector does not sweep work items for changes yet.",
             ["ServiceNowWorkTrackingConnector.GetWorkItemsForTeam(Team, IReadOnlyCollection`1, CancellationToken)"] =
                 "The ServiceNow connector does not fetch single work items by their reference ids yet.",
-            ["ServiceNowWorkTrackingConnector.GetFeaturesForPortfolio(Portfolio, CancellationToken)"] =
-                "ServiceNow's tables carry no parent record a portfolio could roll up over, so it reads no portfolio work.",
             ["ServiceNowWorkTrackingConnector.GetFeaturesForPortfolio(Portfolio, IReadOnlyCollection`1, CancellationToken)"] =
                 "ServiceNow's tables carry no parent record a portfolio could roll up over, so it fetches no features by reference id.",
             ["ServiceNowWorkTrackingConnector.SweepFeaturesForPortfolio(Portfolio, CancellationToken)"] =
                 "The ServiceNow connector does not sweep features for changes yet.",
-            ["ServiceNowWorkTrackingConnector.GetParentFeaturesDetails(Portfolio, IEnumerable`1, CancellationToken)"] =
-                "ServiceNow's tables carry no parent record a portfolio could roll up over, so it reads no parent features.",
             ["ServiceNowWorkTrackingConnector.SweepParentFeatures(Portfolio, IEnumerable`1, CancellationToken)"] =
                 "The ServiceNow connector does not sweep parent features for changes yet.",
             ["JiraWorkTrackingConnector.SweepIdentities(IWorkItemQueryOwner, IEnumerable`1, String, CancellationToken)"] =

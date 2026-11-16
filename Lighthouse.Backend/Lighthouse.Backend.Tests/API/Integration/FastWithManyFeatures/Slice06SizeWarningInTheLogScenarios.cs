@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.API.Integration.TaskManager;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -126,7 +127,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         private void GivenTheTrackerReturnsFeatures(int count)
         {
             ConnectorMock
-                .Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(c => c.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([.. Enumerable.Range(1, count).Select(index => new Feature(new WorkItemBase
                 {
                     ReferenceId = $"NW-{index}",

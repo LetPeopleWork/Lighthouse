@@ -14,6 +14,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.API.Integration.TaskManager;
 using Lighthouse.Backend.Tests.TestDoubles;
@@ -134,7 +135,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
                 .Setup(connector => connector.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Team team, CancellationToken _) => tracker.WorkItemsOf(team));
             ConnectorMock
-                .Setup(connector => connector.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .As<IFeatureSource>().Setup(connector => connector.GetFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Portfolio portfolio, CancellationToken _) => tracker.FeaturesOf(portfolio));
 
             connectionId = 0;

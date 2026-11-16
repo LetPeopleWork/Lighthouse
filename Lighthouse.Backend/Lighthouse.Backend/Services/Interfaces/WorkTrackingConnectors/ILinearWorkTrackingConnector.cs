@@ -1,6 +1,6 @@
 namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
-    public interface ILinearWorkTrackingConnector : IWorkTrackingConnector, IBoardInformationProvider
+    public interface ILinearWorkTrackingConnector : IWorkTrackingConnector, IBoardInformationProvider, IFeatureSource
     {
     }
 }
