@@ -166,7 +166,7 @@
 "C": 2,
 "D": 6,
 "E": 4,
-"F": 186,
+"F": 189,
 "K": 4,
 "L": 4,
 "P": 2,
@@ -1627,6 +1627,33 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F187",
+"F188"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F188"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F189"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F189"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1748,6 +1775,9 @@
 "F184": "The test fails naming that entry for deletion and names no newcomer",
 "F185": "When a connector stops refusing, the developer is told to delete its entry so the list only shrinks",
 "F186": "Nothing plausible beyond the shared two-way comparison other ratchets already use",
+"F187": "connector-throws-count probe printed Csv 6, Linear 6, ServiceNow 8, total 20 (text-count helper; oracle lists 22; the ratchet test itself passed against the real assembly, so the helper count is a coarser tally, unreconciled).",
+"F188": "architecture-rules Unsupported: 10/10 passed: unlisted throwing method fails named with fix hint; listed method no longer refusing fails named for deletion; made-up direct, helper, async, lambda, PlatformNotSupported cases reported by exact name; non-port and other-exception negatives not reported; real-assembly list test passes. I did not mutate the code to add or remove a throw myself.",
+"F189": "architecture-rules Portfolio: ThePortAndEveryConnectorNameAPortfolioAsAPortfolio passed; later-added connector with Portfolio project is named; tracker-project-only connector passes. 9/9. backend-tests Connector: 1426/1426 passed incl. refresh/validation/unsupported-declaration tests; no before/after response-shape diff captured.",
 "F19": "Out of scope: removing any NotSupportedException throw, splitting the port into capability interfaces (feature B), moving connectors into Modules (S03a), rewriting doc-comment prose that cites internal ids (the edit commits of feature B do that).",
 "F2": "The connector port's unsupported members are counted by a test that names each one, and the port speaks the glossary's Portfolio, so feature B can remove the throws one capability at a time",
 "F20": "The connector port, its five connectors and every caller ship in one deployable (Lighthouse.Backend) and change in the same commit; the parties cannot change apart, so the primary oracles and the compiler cover the agreement.",

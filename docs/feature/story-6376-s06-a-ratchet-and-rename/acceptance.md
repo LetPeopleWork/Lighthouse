@@ -330,4 +330,46 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+connector-throws-count probe printed Csv 6, Linear 6, ServiceNow 8, total 20 (text-count helper; oracle lists 22; the ratchet test itself passed against the real assembly, so the helper count is a coarser tally, unreconciled).
+```
+
+```text
+architecture-rules Unsupported: 10/10 passed: unlisted throwing method fails named with fix hint; listed method no longer refusing fails named for deletion; made-up direct, helper, async, lambda, PlatformNotSupported cases reported by exact name; non-port and other-exception negatives not reported; real-assembly list test passes. I did not mutate the code to add or remove a throw myself.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules Unsupported: 10/10 passed: unlisted throwing method fails named with fix hint; listed method no longer refusing fails named for deletion; made-up direct, helper, async, lambda, PlatformNotSupported cases reported by exact name; non-port and other-exception negatives not reported; real-assembly list test passes. I did not mutate the code to add or remove a throw myself.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+architecture-rules Portfolio: ThePortAndEveryConnectorNameAPortfolioAsAPortfolio passed; later-added connector with Portfolio project is named; tracker-project-only connector passes. 9/9. backend-tests Connector: 1426/1426 passed incl. refresh/validation/unsupported-declaration tests; no before/after response-shape diff captured.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+architecture-rules Portfolio: ThePortAndEveryConnectorNameAPortfolioAsAPortfolio passed; later-added connector with Portfolio project is named; tracker-project-only connector passes. 9/9. backend-tests Connector: 1426/1426 passed incl. refresh/validation/unsupported-declaration tests; no before/after response-shape diff captured.
+```
