@@ -33,6 +33,10 @@
       "path": "Scripts/examine/bin/refresh-reactions-compare"
     },
     {
+      "name": "workitems-edge-show",
+      "path": "Scripts/examine/bin/workitems-edge-show"
+    },
+    {
       "name": "backend-tests",
       "path": "Scripts/examine/bin/backend-tests"
     },

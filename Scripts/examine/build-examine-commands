@@ -14,6 +14,7 @@ cat > "$out/architecture-rules" <<EOF
 # Usage: architecture-rules [name-fragment [Debug|Release]]
 #   name-fragment  runs only the rules whose full name contains it, for example FlowMetrics
 #   Release        builds and runs the rules the way CI does (some code is compiled differently there)
+# For the Work Items edge and rules checks, workitems-edge-show runs them grouped by expectation.
 set -euo pipefail
 # The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
 export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
@@ -52,21 +53,43 @@ cat > "$out/metrics-answers-compare" <<EOF
 #!/usr/bin/env bash
 # Captures every Flow metrics API answer on two git revisions, back to back on the same backup database,
 # and compares them. Exit 0 and "identical" mean every answer and the snapshot tables match.
-# Usage: metrics-answers-compare [base-revision [candidate-revision]]   (takes about 5 to 10 minutes)
+# Usage: metrics-answers-compare [base-revision [candidate-revision]]
 # With no arguments it compares the last revision before the Flow metrics move (7ec328cb6) with the checkout's HEAD.
+# The base capture is kept and reused for the rest of the UTC day (same revision, backup database and capture
+# script); the candidate is always captured fresh. Takes about 3 minutes with a kept base, 6 to 10 without.
 set -euo pipefail
 # The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
 export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 base="\${1:-7ec328cb6}"
 candidate="\${2:-\$(git -C "$repo" rev-parse HEAD)}"
+base_sha="\$(git -C "$repo" rev-parse --verify "\$base^{commit}")"
 echo "comparing base \$base with candidate \$candidate"
 cap="$repo/docs/feature/story-6358-s02-metrics-pilot/capture"
 work="\$(mktemp -d)"
-"\$cap/capture-metrics.sh" "\$base" "\$work/base" >"\$work/base.log" 2>&1 || { tail -20 "\$work/base.log"; exit 1; }
+trap 'rm -rf "\$work"' EXIT
+# Some answers count from today, so a kept base is only valid on the day it was captured.
+inputs="\$( (cd "$repo/Lighthouse.Backend/Lighthouse.Backend/DB_Backup" && sha256sum LighthouseAppContext.db*; \\
+  sha256sum < "\$cap/capture-metrics.sh") | sha256sum | cut -c1-16)"
+store="$home/.cache/lighthouse-examine/metrics/\$base_sha"
+kept="\$store/\$(date -u +%Y-%m-%d)-\$inputs"
+if [ -f "\$kept/_manifest.txt" ]; then
+  echo "base: from the cache (\$kept)"
+else
+  echo "base: not in the cache for today; capturing it and caching it"
+  mkdir -p "\$store"
+  incoming="\$(mktemp -d "\$store/.incoming-XXXXXX")"
+  "\$cap/capture-metrics.sh" "\$base_sha" "\$incoming" >"\$work/base.log" 2>&1 \\
+    || { tail -20 "\$work/base.log"; rm -rf "\$incoming"; exit 1; }
+  kept="\$store/\$(sed -n 's/^today_utc: //p' "\$incoming/_manifest.txt")-\$inputs"
+  # Older days are of no further use; a capture left half-done by an interrupted run is cleared after two hours.
+  find "\$store" -mindepth 1 -maxdepth 1 \\( ! -name '.incoming-*' -o -mmin +120 \\) ! -path "\$incoming" -exec rm -rf {} +
+  mv "\$incoming" "\$kept"
+  echo "base: captured and cached (\$kept)"
+fi
 "\$cap/capture-metrics.sh" "\$candidate" "\$work/candidate" >"\$work/candidate.log" 2>&1 || { tail -20 "\$work/candidate.log"; exit 1; }
-echo "base manifest:"; cat "\$work/base/_manifest.txt"
+echo "base manifest:"; cat "\$kept/_manifest.txt"
 echo "candidate manifest:"; cat "\$work/candidate/_manifest.txt"
-"\$cap/compare.sh" "\$work/base" "\$work/candidate"
+"\$cap/compare.sh" "\$kept" "\$work/candidate"
 EOF
 chmod +x "$out/metrics-answers-compare"
 
@@ -1089,6 +1112,83 @@ echo "VERDICT: IDENTICAL, all $compared observable reactions give the same outco
 EOF
 chmod +x "$out/refresh-reactions-compare"
 
+# Reads a test results file and prints "<class>\t<outcome>\t<test name and case>" per test, in run order.
+cat > "$out/workitems-edge-show.awk" <<'EOF'
+function decode(s) {
+  gsub(/&quot;/, "\"", s); gsub(/&apos;/, "'", s); gsub(/&lt;/, "<", s); gsub(/&gt;/, ">", s); gsub(/&amp;/, "\\&", s)
+  return s
+}
+function attr(line, name) {
+  if (match(line, " " name "=\"[^\"]*\"")) return substr(line, RSTART + length(name) + 3, RLENGTH - length(name) - 4)
+  return ""
+}
+/<UnitTestResult / { n++; id[n] = attr($0, "testId"); test[n] = decode(attr($0, "testName")); outcome[n] = attr($0, "outcome") }
+/<UnitTest / { current = attr($0, "id") }
+/<TestMethod / { c = attr($0, "className"); sub(/.*\./, "", c); class[current] = c }
+END { for (i = 1; i <= n; i++) printf "%s\t%s\t%s\n", class[id[i]], outcome[i], test[i] }
+EOF
+cat > "$out/workitems-edge-show" <<EOF
+#!/usr/bin/env bash
+# Runs the checks of the Work Items edge and rules feature in one test run and prints one line per test, grouped
+# by what they show: Passed or Failed, then the test's class, name and case (the names are written as sentences).
+#   E1  a Team refresh updates the Team's metrics before its other reactions, and what a failed reaction does;
+#       also the order in which the start-up registers the reactions to a Team refresh
+#   E2  the Work Items module rules (offenders named, stale lists caught both ways) and the Flow metrics list
+#   E3  where the Work Items unit tests sit, by layer, and that a misplaced one is reported
+# Ends with the totals; exit 0 only when every test passed.
+# Usage: workitems-edge-show   (takes about 1 to 2 minutes, building first when needed)
+set -uo pipefail
+if [ "\${1:-}" = "--help" ] || [ "\${1:-}" = "-h" ]; then
+  sed -n '2,/^set -uo/p' "\$0" | grep '^#' | sed 's/^# \{0,1\}//'
+  exit 0
+fi
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+groups=(
+  "E1 handler order and failure|TeamMetricsFollowTheTeamRefreshTest DomainEventHandlerOrderPinTest"
+  "E2 module rules|WorkItemsDoesNotCommandFlowMetricsArchUnitTest WorkItemsModuleBoundariesArchUnitTest FlowMetricsInboundApplicationArchUnitTest"
+  "E3 placement|WorkItemsUnitTestPlacementTest"
+)
+filter=""
+for group in "\${groups[@]}"; do
+  for class in \${group#*|}; do filter="\${filter:+\$filter|}FullyQualifiedName~.\$class"; done
+done
+work="\$(mktemp -d)"
+trap 'rm -rf "\$work"' EXIT
+dotnet test "$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj" --filter "\$filter" \\
+  --logger "console;verbosity=normal" --logger "trx;LogFileName=edge.trx" --results-directory "\$work" >"\$work/run.log" 2>&1
+status=\$?
+rows="\$work/rows.tsv"
+[ -f "\$work/edge.trx" ] && awk -f "$out/workitems-edge-show.awk" "\$work/edge.trx" > "\$rows" || : > "\$rows"
+missing=0
+for group in "\${groups[@]}"; do
+  echo "== \${group%%|*}"
+  for class in \${group#*|}; do
+    if ! awk -F '\t' -v c="\$class" '\$1 == c { found = 1 } END { exit !found }' "\$rows"; then echo "  NoResult \$class (no test of this class ran)"; missing=1; fi
+    awk -F '\t' -v c="\$class" '\$1 == c { printf "  %s %s.%s\n", \$2, \$1, \$3 }' "\$rows" | sort
+  done
+  if [ "\${group%%|*}" = "E1 handler order and failure" ]; then
+    echo "  reactions to a Team refresh, in the order the start-up registers them:"
+    grep -E 'IDomainEventHandler<TeamDataRefreshed>' "$repo/Lighthouse.Backend/Lighthouse.Backend/Program.cs" \\
+      | sed -E 's/.*GetRequiredService<([A-Za-z0-9_]+)>.*/\1/; s/.*IDomainEventHandler<TeamDataRefreshed>, *([A-Za-z0-9_]+)>.*/\1/' \\
+      | awk '{ printf "    %d. %s\n", NR, \$1 }'
+  fi
+done
+passed=\$(awk -F '\t' '\$2 == "Passed"' "\$rows" | wc -l)
+failed=\$(awk -F '\t' '\$2 != "Passed"' "\$rows" | wc -l)
+if [ \$status -ne 0 ] || [ \$failed -ne 0 ]; then
+  grep -E "^  Failed |^    (Error Message|  )|: error " "\$work/run.log" | head -40
+fi
+echo "TOTAL: \$((passed + failed)) tests, \$passed passed, \$failed not passed"
+if [ \$status -ne 0 ] || [ \$failed -ne 0 ] || [ \$missing -ne 0 ] || [ \$passed -eq 0 ]; then
+  tail -5 "\$work/run.log"
+  echo "RESULT: FAILED"
+  exit 1
+fi
+echo "RESULT: ALL PASSED"
+EOF
+chmod +x "$out/workitems-edge-show"
+
 cat > "$out/backend-tests" <<EOF
 #!/usr/bin/env bash
 # Runs the whole backend test suite except the tests that talk to real Jira, Linear, Azure DevOps, ServiceNow
@@ -1096,6 +1196,7 @@ cat > "$out/backend-tests" <<EOF
 # Usage: backend-tests [name-fragment]   (a fragment narrows the run to tests whose full name contains it,
 # for example DomainEventHandlerOrderPin for the check that event handlers keep their order; a narrowed run
 # also prints every passing test by name, so you can see which scenarios ran)
+# For the Work Items edge and rules checks, workitems-edge-show runs them faster, grouped by expectation.
 set -euo pipefail
 # The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
 export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
