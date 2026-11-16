@@ -1,0 +1,1073 @@
+{
+"counters": {
+"D": 10,
+"E": 5,
+"F": 149,
+"K": 5,
+"P": 4,
+"S": 3,
+"T": 2,
+"Y": 5
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"agreement": [
+{
+"contract": "path-classifier.sh classification output (live-suite flags per tracker and shared)",
+"decision": "Migrated",
+"locator": "Scripts/test-selection/path-classifier.sh:13",
+"party": "Producer",
+"reason": "F58"
+},
+{
+"contract": "path-classifier.sh classification output (live-suite flags per tracker and shared)",
+"decision": "UnchangedCompatible",
+"locator": ".github/workflows/ci_changes.yml:1",
+"party": "Consumer",
+"reason": "F59"
+},
+{
+"contract": "path-classifier.sh classification output (live-suite flags per tracker and shared)",
+"decision": "UnchangedCompatible",
+"locator": ".github/workflows/ci_backend.yml:1",
+"party": "Consumer",
+"reason": "F60"
+},
+{
+"contract": "path-classifier.sh classification output (live-suite flags per tracker and shared)",
+"decision": "UnchangedCompatible",
+"locator": "Scripts/test-selection/dev-test.sh:1",
+"party": "Consumer",
+"reason": "F61"
+},
+{
+"contract": "path-classifier.sh classification output (live-suite flags per tracker and shared)",
+"decision": "Migrated",
+"locator": "Scripts/test-selection/dev-test.ps1:22",
+"party": "Consumer",
+"reason": "F62"
+}
+],
+"boundaries": {
+"dependency_direction": "F68",
+"driven_ports": [
+"F66",
+"F67"
+],
+"driving_port": "F65"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F73",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F72"
+},
+{
+"axis": "Inhabitation",
+"basis": "F74",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F72"
+},
+{
+"axis": "PublicReachability",
+"basis": "F75",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F72"
+},
+{
+"axis": "Liveness",
+"basis": "F76",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F72"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F45"
+},
+{
+"id": "K2",
+"text": "F46"
+},
+{
+"id": "K3",
+"text": "F47"
+},
+{
+"id": "K4",
+"text": "F48"
+},
+{
+"id": "K5",
+"text": "F49"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F35"
+},
+{
+"id": "D2",
+"text": "F36"
+},
+{
+"id": "D3",
+"text": "F37"
+},
+{
+"id": "D4",
+"text": "F38"
+},
+{
+"id": "D5",
+"text": "F39"
+},
+{
+"id": "D6",
+"text": "F40"
+},
+{
+"id": "D7",
+"text": "F41"
+},
+{
+"id": "D8",
+"text": "F42"
+},
+{
+"id": "D9",
+"text": "F43"
+},
+{
+"id": "D10",
+"text": "F44"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F63"
+},
+{
+"analysis": "prefactoring",
+"reason": "F64"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15",
+"reason": "F50",
+"symbol": "ModuleRules"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs:21",
+"reason": "F51",
+"symbol": "WorkItemsRulesSeeTheModuleArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:15",
+"reason": "F52",
+"symbol": "WorkItemsMembershipArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:13",
+"reason": "F53",
+"symbol": "WorkTrackingIntegrationPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs:34",
+"reason": "F54",
+"symbol": "PlatformPersistencePattern"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorRatchetFixtures.cs:1",
+"reason": "F55",
+"symbol": "ConnectorRatchetFixtures"
+},
+{
+"decision": "Extend",
+"locator": "Scripts/test-selection/path-classifier.sh:13",
+"reason": "F56",
+"symbol": "JIRA_REGEX"
+},
+{
+"decision": "Extend",
+"locator": "Scripts/examine/build-examine-commands:1222",
+"reason": "F57",
+"symbol": "connector-throws-count"
+}
+],
+"risks": [
+{
+"allowed": "F79",
+"forbidden": "F80",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "story-6359-s03a-a-rules-first",
+"preserved": "F78",
+"residue": "F81",
+"source": "F77"
+},
+{
+"allowed": "F84",
+"forbidden": "F85",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "story-6359-s03a-a-rules-first",
+"preserved": "F83",
+"residue": "F86",
+"source": "F82"
+},
+{
+"allowed": "F89",
+"forbidden": "F90",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "story-6359-s03a-c-edges-and-rules",
+"preserved": "F88",
+"residue": "F91",
+"source": "F87"
+},
+{
+"allowed": "F94",
+"forbidden": "F95",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "story-6359-s03a-a-rules-first",
+"preserved": "F93",
+"residue": "F96",
+"source": "F92"
+},
+{
+"allowed": "F99",
+"forbidden": "F100",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "story-6359-s03a-a-rules-first",
+"preserved": "F98",
+"residue": "F101",
+"source": "F97"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "story-6359-s03a-a-rules-first",
+"state": "F69"
+},
+{
+"kind": "Excluded",
+"owner": "story-6359-s03a-a-rules-first",
+"state": "F70"
+},
+{
+"kind": "Unknown",
+"owner": "maintainer",
+"state": "F71"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F132",
+"falsifier": "F133",
+"promises": [
+"P1",
+"P2"
+],
+"stimulus": "F131"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~TrackerIntegrationRulesSeeTheModuleArchUnitTest\"",
+"id": "T2",
+"obligation": "F144",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:13",
+"reason": "F136"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs:34",
+"reason": "F137"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:1",
+"reason": "F138"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs:15",
+"reason": "F139"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F140"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionHealthSingleWriterArchUnitTest.cs:12",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs:20",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs:32",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CategoryListOwnershipGuardTest.cs:12",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs:21",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs:19",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/JiraRouteLiteralsTest.cs:11",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorRatchetFixtures.cs:8",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowHistoryPurityArchUnitTest.cs:16",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowValidationVerdictPurityArchUnitTest.cs:14",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs:19",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs:17",
+"reason": "F141"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F142"
+},
+{
+"analysis": "prefactoring",
+"reason": "F143"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs:1",
+"reason": "F134",
+"symbol": "ForecastingRulesSeeTheModuleArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionHealthSingleWriterArchUnitTest.cs:12",
+"reason": "F135",
+"symbol": "ConnectionHealthSingleWriterArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs:20",
+"reason": "F135",
+"symbol": "WriteBackTargetCapabilityArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:35",
+"reason": "F135",
+"symbol": "DependencySingleDecisionArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs:32",
+"reason": "F135",
+"symbol": "CalendarDayAnchorSeamArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CategoryListOwnershipGuardTest.cs:12",
+"reason": "F135",
+"symbol": "CategoryListOwnershipGuardTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs:21",
+"reason": "F135",
+"symbol": "SecretCustodySeamArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs:19",
+"reason": "F135",
+"symbol": "FeatureSourceCapabilityArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/JiraRouteLiteralsTest.cs:11",
+"reason": "F135",
+"symbol": "JiraRouteLiteralsTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowHistoryPurityArchUnitTest.cs:16",
+"reason": "F135",
+"symbol": "ServiceNowHistoryPurityArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowValidationVerdictPurityArchUnitTest.cs:14",
+"reason": "F135",
+"symbol": "ServiceNowValidationVerdictPurityArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs:19",
+"reason": "F135",
+"symbol": "ConnectorPortSpeaksPortfolioArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs:17",
+"reason": "F135",
+"symbol": "ConnectorsDeclareNoUnsupportedMembersArchUnitTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsRulesSeeTheModuleArchUnitTest.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F128"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs",
+"reason": "F129"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/JiraRouteLiteralsTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionHealthSingleWriterArchUnitTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorRatchetFixtures.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowHistoryPurityArchUnitTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowValidationVerdictPurityArchUnitTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CategoryListOwnershipGuardTest.cs",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs",
+"reason": "F130"
+}
+],
+"verification": [
+"pwsh Lighthouse.Backend/Test-Fast.ps1",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~TrackerIntegrationRulesSeeTheModuleArchUnitTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Lighthouse.Backend.Tests.Architecture\"",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S2": {
+"oracle": "Scripts/test-selection/test-path-classifier.sh",
+"public_oracle": {
+"expected": "F114",
+"falsifier": "F115",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F113"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "ci-selection",
+"locator": "Scripts/test-selection/path-classifier.sh:13",
+"reason": "F116"
+},
+{
+"decision": "Changed",
+"kind": "ci-selection",
+"locator": "Scripts/test-selection/dev-test.ps1:22",
+"reason": "F117"
+},
+{
+"decision": "Changed",
+"kind": "examine",
+"locator": "Scripts/examine/build-examine-commands:1222",
+"reason": "F118"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "workflow",
+"locator": ".github/workflows/ci_changes.yml:1",
+"reason": "F119"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-timings",
+"locator": "Scripts/test-timings/test-time-budget.json:59",
+"reason": "F120"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "mutation-config",
+"locator": "Lighthouse.Backend/stryker-config.json:7",
+"reason": "F121"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "build",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj:1",
+"reason": "F122"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "ci-selection",
+"locator": "Scripts/test-selection/dev-test.sh:19",
+"reason": "F123"
+}
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F124"
+},
+{
+"analysis": "agreement",
+"reason": "F125"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F126"
+},
+{
+"analysis": "prefactoring",
+"reason": "F127"
+}
+]
+},
+"supports": [
+"Scripts/examine/build-examine-commands"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Scripts/test-selection/path-classifier.sh",
+"reason": "F110"
+},
+{
+"change": "Extend",
+"path": "Scripts/test-selection/dev-test.ps1",
+"reason": "F111"
+},
+{
+"change": "Extend",
+"path": "Scripts/examine/build-examine-commands",
+"reason": "F112"
+}
+],
+"verification": [
+"bash Scripts/test-selection/test-path-classifier.sh",
+"bash Scripts/examine/build-examine-commands",
+"Scripts/examine/bin/connector-throws-count",
+"python3 -m unittest discover -s Scripts/test-timings/tests",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs",
+"public_oracle": {
+"expected": "F103",
+"falsifier": "F104",
+"promises": [
+"P1",
+"P4"
+],
+"stimulus": "F102"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~TrackerIntegrationMembershipArchUnitTest\"",
+"id": "T1",
+"obligation": "F109",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs"
+}
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F105"
+},
+{
+"analysis": "impact",
+"reason": "F106"
+},
+{
+"analysis": "agreement",
+"reason": "F107"
+},
+{
+"analysis": "prefactoring",
+"reason": "F108"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs"
+],
+"verification": [
+"pwsh Lighthouse.Backend/Test-Fast.ps1",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~TrackerIntegrationMembershipArchUnitTest\"",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F145"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F146"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F147"
+},
+{
+"id": "E4",
+"promises": [
+"P3"
+],
+"text": "F148"
+},
+{
+"id": "E5",
+"promises": [
+"P4"
+],
+"text": "F149"
+}
+]
+},
+"facts": {
+"F1": "Story #6359 S03a feature A: before any Tracker integration file moves, every architecture rule, the CI test selection, the examine commands and the membership list see the future Modules/TrackerIntegration, so the moves in feature B cannot silently escape a rule or skip a live connector suite. Design authority: docs/feature/story-6359-s03a-package-tracker-integration/feature-delta.md slices A1-A3.",
+"F10": "the CI test selection classifies the change",
+"F100": "Reading those as regressions",
+"F101": "Coordinate S03d through the lists, each only shrinks",
+"F102": "The maintainer runs the membership test: the D-1 membership list of Tracker integration (102 production types) and its D-2 Models admissions, measured from the compiled IL, compared both ways with the inline list; the inbound and outbound IL edges E5-E8 confirmed.",
+"F103": "Passes on today code; D-2 admits only Models candidates that are not EF entities, not serialized by a controller and not reached by any Models type (expected: the OAuth flow/state/token value types).",
+"F104": "Fails when a listed type is missing from the IL or the list names a type that does not exist (RED first with a made-up name); a Models candidate that is an entity, wire type or reached by a kernel type must not be admitted.",
+"F105": "No production target; the oracle reuses the WorkItemsMembershipArchUnitTest shape (shared reuse).",
+"F106": "No production or support target changes; only the new oracle file is added by the acceptance designer.",
+"F107": "No shared contract touched.",
+"F108": "No code target.",
+"F109": "The Tracker integration membership list equals the measured IL set both ways, and each admitted Models type is neither an EF entity, nor controller-serialized, nor reached by a Models type.",
+"F11": "it selects that tracker's live connector suite (all live suites for a shared path), as it does for the same change under the old path; and the connector-throws-count examine command and the test-time budgets find the module path instead of reporting folder not found",
+"F110": "JIRA/ADO/LINEAR/SERVICENOW regexes also match Modules/TrackerIntegration/Adapters/Connectors/<Tracker>/ (production and tests), Jira also Modules/TrackerIntegration/Domain/ParentSourceSelector.cs; SHARED_REGEX also Adapters/Connectors/(Auth|OAuth)/, Modules/TrackerIntegration/Application/, Modules/TrackerIntegration/Domain/, Adapters/OAuth/.",
+"F111": "Its own copies of the tracker regexes widened identically.",
+"F112": "connector-throws-count locates the Csv, Linear and ServiceNow connector folders wherever they live (old or module path) instead of the hard-coded old folder.",
+"F113": "The CI test selection classifies a changed file under Modules/TrackerIntegration/Adapters/Connectors/<Tracker>/ (production or test) for Jira, Linear, Azure DevOps or ServiceNow, or under the module shared Application, Domain or OAuth paths (bash test-path-classifier.sh); and connector-throws-count runs against a tree where the connector folders live under the module path.",
+"F114": "The tracker live suite is selected (all live suites for a shared path), as for the same change under the old path; connector-throws-count prints one line per connector folder and the total instead of folder not found.",
+"F115": "Today: each module-path scenario classifies false (RED) and connector-throws-count exits 1 with folder not found. A regex widened for production but not tests, or a missed tracker, leaves a scenario false.",
+"F116": "Regexes widened (E3).",
+"F117": "Regex copies widened.",
+"F118": "connector-throws-count path fix (E4).",
+"F119": "Calls the classifier; flags unchanged in shape.",
+"F12": "The membership of the context is fixed from the compiled code",
+"F120": "Names test classes by full name; rewritten when those tests move in B3. A2 checks the three Python tests under Scripts/test-timings/tests (E11).",
+"F121": "Path globs rewritten with the move of their files in B3 (E10).",
+"F122": "SDK globbing; A2 confirms no item names a moved path.",
+"F123": "Sources path-classifier.sh; picks up the widening without an edit.",
+"F124": "Owners recorded in shared reuse: path-classifier.sh and connector-throws-count are extended in place; no new owner.",
+"F125": "The classifier output agreement is recorded in shared agreements (producer migrated, workflows and dev-test consumers compatible or migrated).",
+"F126": "A2 changes scripts, not a dependency or boundary law; its oracle is the classifier scenario script.",
+"F127": "Additive regex alternatives; existing classifier scenarios stay green as the preservation check.",
+"F128": "WorkTrackingIntegrationPattern gains ^Lighthouse\\.Backend\\.Services\\.Factories$ and ^Lighthouse\\.Backend\\.Modules\\.TrackerIntegration(\\.|$); Portfolio/Delivery side not widened to DeliverySources (D-7, C1).",
+"F129": "PlatformPersistencePattern gains Modules.TrackerIntegration.(Application|Adapters).OAuth.",
+"F13": "the membership list of Tracker integration and its admitted Models types, measured from the IL",
+"F130": "Where it keys on a source path, full-name string or folder: locate files by name under the production source and read full names from typeof; using-only otherwise; no rule loosened.",
+"F131": "The maintainer runs the architecture rule tests (dotnet test, Architecture namespace) with a made-up connector type under Lighthouse.Backend.Modules.TrackerIntegration that reaches Work Items, Forecasting, the update code or a repository, compiled into the IL the rules read (WorkItemsRulesSeeTheModule fixture approach).",
+"F132": "The rules that guard the Tracker integration context (leaf rule and connectors-do-not-depend-on-any-repository rule) report that type as an offender, exactly as they do for the same type under Services/Implementation/WorkTrackingConnectors; every existing architecture rule stays green on today code.",
+"F133": "Today: the made-up offender under the module passes the rules (RED). A widening that misses the module namespace, Services.Factories, or the module OAuth namespaces in RepositoryRecognition leaves that offender unreported; widening DeliverySources early turns the existing Jira to renderer edge red.",
+"F134": "Second precedent of the made-up offender fixture; the A1 oracle follows it, no new fixture owner.",
+"F135": "Existing rule keeps its owner; extended to see the module path or namespace (typeof or locate-by-name), never copied or loosened.",
+"F136": "Pattern widened to the module namespace and Services.Factories.",
+"F137": "Platform persistence pattern widened to module OAuth namespaces (E2).",
+"F138": "One of the 13 path/name/typeof keyed rule files rewritten to locate by name or typeof; same for the other 12 listed as S1 targets.",
+"F139": "Selector names leave Work Items lists only in B1.",
+"F14": "the maintainer runs the membership test",
+"F140": "No production change in feature A.",
+"F141": "Path, full-name string or folder keys rewritten to locate by name or typeof; using-only otherwise.",
+"F142": "Rule files are private to the test assembly; no producer or consumer outside this commit reads them.",
+"F143": "Additive widening in place; existing rules green on today code are the preservation check.",
+"F144": "The leaf rule and the connector no-repository rule govern every type under Lighthouse.Backend.Modules.TrackerIntegration as well as the old WorkTrackingConnectors and Factories namespaces, including types added later.",
+"F145": "Before any file moves, every architecture rule, the CI live-suite selection, the examine commands and the membership list already recognise the Modules/TrackerIntegration paths; a maintainer running the architecture rules and the membership test sees them pass on today's code.",
+"F146": "When a made-up connector type under Lighthouse.Backend.Modules.TrackerIntegration reaches Work Items, Forecasting, the update code or a repository, the Tracker integration architecture rules report it as an offender, as they do for the same type under the old Services/Implementation/WorkTrackingConnectors path.",
+"F147": "Running connector-throws-count and the test-time budgets finds the Modules/TrackerIntegration connector folders (Jira, Linear, Azure DevOps, ServiceNow) and does not report folder not found.",
+"F148": "A changed production or test file under Modules/TrackerIntegration/Adapters/Connectors/<Tracker>/ selects that tracker's live suite in CI, and a change under the shared Application, Domain or OAuth paths selects all live suites, as for the old path.",
+"F149": "The membership test for Tracker integration, with its admitted Models types, passes on today's compiled code, fails when a listed type is missing, and fails when the list names a type that does not exist.",
+"F15": "it passes on today's code, and fails when a listed type is missing or the list names a type that does not exist",
+"F16": "Widen the existing architecture rules and RepositoryRecognition so they also see Modules/TrackerIntegration (A1).",
+"F17": "Widen the CI path classifier, the examine commands, the test-time budgets and Stryker configs to the new paths (A2).",
+"F18": "Measure the membership list and Models admissions from the IL and fix them in a test (A3).",
+"F19": "Moving any file of the context: feature B (story-6359-s03a-b-move).",
+"F2": "The packaging moves of Tracker integration stay under every existing guard: rules, CI live-suite selection and examine commands keep working on the new paths.",
+"F20": "The module's own boundary rules, the unit-test placement rule and retiring the old leaf pattern and old classifier alternatives: feature C.",
+"F21": "Any behaviour a user sees: nothing changes; UI sketch and loading/failure looks are N/A.",
+"F22": "Rigor thorough for feature A: crafter, acceptance designer and architect on opus; reviewers sonnet; EXAMINE on sonnet.",
+"F23": "Push per slice, CI watched per push; rebase allowed when trunk moved (maintainer, 2026-11-16).",
+"F24": "Architecture tests over the compiled IL are the oracles; no production code changes in feature A beyond scripts and test-side rule files.",
+"F25": "The Portfolio/Delivery DeliverySources widening waits for C1, where the Jira to Promises renderer edge is listed (D-7 confirmed); otherwise A1 goes red.",
+"F26": "The maintainer runs dotnet build and the architecture tests locally; the rules see the module path.",
+"F27": "Not supplied.",
+"F28": "The maintainer pushes; CI selects the live connector suites for the changed paths and stays green.",
+"F29": "A1: every architecture rule that names the Tracker integration namespaces, folders, paths or types also sees Modules/TrackerIntegration; a made-up connector there that reaches Work Items, Forecasting, the update code or a repository is caught. Acceptance: oracle TrackerIntegrationRulesSeeTheModuleArchUnitTest is RED first (the made-up offender under the module passes today's rules), then green with all existing rules green. The feature's walking skeleton.",
+"F3": "The Tracker integration code can move to Modules/TrackerIntegration without escaping any guard: every architecture rule, the CI live-suite selection, the examine commands and the membership list already see the new paths before any file moves.",
+"F30": "The architecture rules keep guarding the context once its files move (about 1 day).",
+"F31": "A2: the CI test selection, the examine commands, the test-time budgets and the Stryker configs find connector code under the module paths too; a change to a connector on a module path still selects its live suite. Acceptance: test-path-classifier.sh gains one scenario per tracker plus shared on module paths (RED: classified false today); connector-throws-count run against a module path (RED: folder not found), then green.",
+"F32": "A moved connector cannot skip its live suite in CI (about 1 day).",
+"F33": "A3: the membership list of Tracker integration and its admitted Models types are measured from the IL and fixed in a test; the inbound and outbound IL edges named at DESIGN are confirmed. Acceptance: TrackerIntegrationMembershipArchUnitTest fails when a listed type is missing from the list or the list names a type that does not exist (RED first), then green on today's code.",
+"F34": "Feature B moves exactly the measured set (about half a day).",
+"F35": "Feature A changes no production code: only test-side architecture rule files, RepositoryRecognition, the CI test-selection scripts and the examine command builder change. No file of the Tracker integration context moves here; the moves are feature B (story-6359-s03a-b-move), the module boundary rules, the unit-test placement rule and retiring old alternatives are feature C.",
+"F36": "D-0 No schema change: no entity, DbSet, migration or table name changes; entities stay in Models.",
+"F37": "D-3 Target path: Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration with Domain, Application (plus Application/OAuth, Application/ConnectionHealth), Adapters/Connectors/{AzureDevOps,Csv,Jira,Linear,ServiceNow,Auth,OAuth}, Adapters/OAuth, Adapters/Background; namespace equals folder (Lighthouse.Backend.Modules.TrackerIntegration.<Layer>[.<Sub>]); tests mirror it under Lighthouse.Backend.Tests/Modules/TrackerIntegration. Feature A rules and scripts widen to exactly these paths.",
+"F38": "Ratchet: every rule reads the compiled IL (IlDependencies over Mono.Cecil); lists are inline, compared both ways and never loosened. A widening adds the module namespace or path beside the old one; old alternatives are retired only in feature C once nothing lives there.",
+"F39": "D-7 confirmed by the maintainer: the Portfolio/Delivery side of the leaf rule does not gain Services.(Implementation|Interfaces).DeliverySources in A1; that widening waits for C1, where the JiraWorkTrackingConnector to IDeliveryForecastBlockRenderer edge is listed for S03d. Widening it in A1 would turn A1 red on that existing edge.",
+"F4": "A made-up connector under the module that breaks a context boundary is caught",
+"F40": "D-11 CI selection: path-classifier.sh selects live connector suites by path, so A2 widens each tracker regex to also match Modules/TrackerIntegration/Adapters/Connectors/<Tracker>/ (production and tests), Jira also Modules/TrackerIntegration/Domain/ParentSourceSelector.cs, and SHARED_REGEX also Adapters/Connectors/(Auth|OAuth)/, Modules/TrackerIntegration/Application/, Modules/TrackerIntegration/Domain/ and Adapters/OAuth/. Old alternatives stay until C1/C2.",
+"F41": "D-12 Behaviour-free proof reuses EXAMINE commands architecture-rules, ef-model-unchanged, backend-tests, connector-throws-count (after the A2 path fix), refresh-answers-compare and forecast-answers-compare; no new examine command.",
+"F42": "Formal verification not applicable: the claims are which types and paths a rule or script sees and which IL edges exist, decided exactly by the compiled IL and the classifier with a made-up offender or path per rule as falsifier; no state, ordering, concurrency, recovery or liveness changes, so a Quint/TLA+/Agda model would restate the namespace map and could not fail. No checker was probed or run; any requested model claim stays INDETERMINATE.",
+"F43": "Paradigm object_oriented (CLAUDE.md, repository). The rule carriers are the existing static test-side owners: ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern (leaf rule), RepositoryRecognition.PlatformPersistencePattern (repository recognition), ModuleRules/ModuleWording (module rules), ConnectorRatchetFixtures (connector fixtures); scripts are procedural bash/pwsh. No domain decision is introduced, so no new domain owner.",
+"F44": "Rigor thorough for feature A (crafter, acceptance designer, architect on opus; reviewers and EXAMINE on sonnet); push per slice with CI watched; rebase allowed when trunk moved.",
+"F45": "Behaviour-free: no route, DTO, response, UI, schema, DI registration or Program.cs change in feature A; UI sketch and loading/failure looks N/A.",
+"F46": "Live connector categories (JiraIntegration, LinearIntegration, AdoIntegration, ServiceNowIntegration, GithubIntegration) are never run locally; CI runs them on push. The shared Linear key can rate-limit.",
+"F47": "dotnet build ends with zero warnings; tests carry no nWave scenario tags; comments are rare and never cite internal ids.",
+"F48": "Every existing architecture rule stays green on today code after the widening; no rule is loosened and no inline list grows except by an entry the authority names.",
+"F49": "Input bounds: none stored or validated; the populations are the compiled types of Lighthouse.Backend and the repo-relative paths fed to the classifier. No bound on their count is set by the authority.",
+"F5": "a made-up connector type under Lighthouse.Backend.Modules.TrackerIntegration that reaches Work Items, Forecasting, the update code or a repository",
+"F50": "Owns module rules and their wording; feature A copies no rule.",
+"F51": "Made-up offender under a module fixture approach reused for A1 oracle (also ForecastingRulesSeeTheModuleArchUnitTest).",
+"F52": "Membership-list shape reused for the A3 oracle.",
+"F53": "The leaf rule pattern in ModuleBoundariesArchUnitTest; A1 adds Services.Factories and Modules.TrackerIntegration; replaced by R-T7/R-T8 in C1.",
+"F54": "RepositoryRecognition platform persistence recognition; A1 adds Modules.TrackerIntegration.(Application|Adapters).OAuth so the connector no-repository rule keeps its meaning after B4.",
+"F55": "S06 connector port fixtures; only locates types by typeof instead of names.",
+"F56": "path-classifier.sh is the sole owner of live-suite selection by path; A2 widens its tracker and shared regexes.",
+"F57": "Existing examine command; A2 makes it locate connector folders wherever they live.",
+"F58": "Regexes widened to module paths; output shape unchanged.",
+"F59": "Calls the classifier; categories are by TestCategory, not path.",
+"F6": "the maintainer runs the architecture rule tests",
+"F60": "Consumes the flags only.",
+"F61": "Uses the same classifier.",
+"F62": "Carries its own copies of the tracker regexes; widened identically in A2.",
+"F63": "No independently released producer and consumer: the classifier, its callers, rule files and the production assembly change and ship in the same commit of one repository; test-path-classifier.sh exercises the real classifier.",
+"F64": "Rules and scripts are widened additively in place; no preserving move precedes the change, and the existing rules staying green on today code is itself the preservation check.",
+"F65": "Maintainer runs the architecture rule tests (dotnet test over Lighthouse.Backend.Tests/Architecture) and the CI test-selection script (bash Scripts/test-selection/test-path-classifier.sh) and the generated examine command connector-throws-count",
+"F66": "Compiled IL of Lighthouse.Backend read through IlDependencies/ArchUnitNET",
+"F67": "Repository file tree read by path-classifier.sh and build-examine-commands",
+"F68": "Test-side rules and scripts read the production assembly and paths; production code never depends on them.",
+"F69": "A type or path of the context under the old location or under Modules/TrackerIntegration: both are seen by every rule and the classifier",
+"F7": "the rules that guard the Tracker integration context report that type as an offender, as they do today for the same type under Services/Implementation/WorkTrackingConnectors",
+"F70": "A type under Modules/TrackerIntegration that reaches Work Items, Forecasting, the update code or a repository without being caught",
+"F71": "A host-side log configuration outside the repository naming a moved logger category",
+"F72": "Rules, classifier and membership see the module",
+"F73": "Each slice oracle has a made-up offender or path falsifier executed against the real IL or classifier",
+"F74": "Existing rules stay green on today code; membership list measured from the current IL",
+"F75": "Observed through dotnet test and bash test-path-classifier.sh, the maintainer and CI entry points",
+"F76": "Not applicable: synchronous one-shot test and script runs, no progress or fairness claim",
+"F77": "Assumption negated: CI selects live suites by test category only",
+"F78": "A connector change selects its live suite",
+"F79": "All live suites run for shared paths",
+"F8": "A change to a connector on the new path still selects its live suite in CI",
+"F80": "A connector change under the module path that runs no live suite",
+"F81": "A2 widens before any move; C1 removes old alternatives",
+"F82": "Assumption negated: rules key only on namespaces, never on paths, strings or names",
+"F83": "Each rule keeps guarding the context after the move",
+"F84": "Rules locate files by name and read full names from typeof",
+"F85": "A rule that silently stops matching after a move (passes vacuously)",
+"F86": "A1 rewrites path/string keyed rules; per-hit content of the 23 rule files checked in A1",
+"F87": "Assumption negated: the ACL depends on no downstream context",
+"F88": "Leaf rule green on today code",
+"F89": "One listed edge JiraWorkTrackingConnector to IDeliveryForecastBlockRenderer",
+"F9": "a changed file under Modules/TrackerIntegration/Adapters/Connectors/<Tracker>/ (production or test) for Jira, Linear, Azure DevOps or ServiceNow, or under the module's shared Application, Domain or OAuth paths",
+"F90": "Widening DeliverySources in A1 (goes red) or a growing list",
+"F91": "Listed in C1, removed by S03d",
+"F92": "Reflection or assembly scan by namespace string; JSON carrying .NET type names",
+"F93": "Same DI resolution and serialized bytes",
+"F94": "none found by text search",
+"F95": "Namespace string lookups that break after a move",
+"F96": "A3 checks strings in the IL; full suite catches a scan",
+"F97": "Second set (walkthrough, not derived from): worktree without premium licence fixture; parallel S03d moving DeliverySources",
+"F98": "Rule results unaffected",
+"F99": "2 environmental Licensing failures in a worktree"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F22"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F23"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F24"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F25"
+}
+],
+"journey": [
+{
+"emotion": "F27",
+"step": "F26"
+},
+{
+"emotion": "F27",
+"step": "F28"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"given": "F5",
+"id": "P2",
+"kind": "Scenario",
+"then": "F7",
+"title": "F4",
+"when": "F6"
+},
+{
+"given": "F9",
+"id": "P3",
+"kind": "Scenario",
+"then": "F11",
+"title": "F8",
+"when": "F10"
+},
+{
+"given": "F13",
+"id": "P4",
+"kind": "Scenario",
+"then": "F15",
+"title": "F12",
+"when": "F14"
+}
+],
+"scope_in": [
+"F16",
+"F17",
+"F18"
+],
+"scope_out": [
+"F19",
+"F20",
+"F21"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F29",
+"promises": [
+"P1",
+"P2"
+],
+"work": {
+"size": "S",
+"value": "F30"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F31",
+"promises": [
+"P1",
+"P3"
+],
+"work": {
+"size": "S",
+"value": "F32"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S3",
+"observation": "F33",
+"promises": [
+"P1",
+"P4"
+],
+"work": {
+"size": "S",
+"value": "F34"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6359-s03a-a-rules-first",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
