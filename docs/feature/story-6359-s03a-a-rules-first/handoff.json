@@ -1,8 +1,76 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P2",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F153",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs::AConnectorUnderTheModuleReachingWorkItemsForecastingOrTheUpdateCode_IsNamedByTheLeafRule"
+},
+"expected": "F151",
+"stimulus": "F150",
+"user_result": "F152"
+},
+{
+"covers": [
+"P2",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F157",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs::AFactoryInTheServicesFactoriesNamespaceReachingWorkItems_IsNamedByTheLeafRule"
+},
+"expected": "F155",
+"stimulus": "F154",
+"user_result": "F156"
+},
+{
+"covers": [
+"P2",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F161",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs::AConnectorUnderTheModuleReachingTheDatabase_IsNamedByTheNoRepositoryRule_WhileItsOAuthTokensStayAllowed"
+},
+"expected": "F159",
+"stimulus": "F158",
+"user_result": "F160"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F165",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs::TheOAuthTokenPlaceUnderTheModule_CountsAsThePersistencePlatform_WhileANamesakeDoesNot"
+},
+"expected": "F163",
+"stimulus": "F162",
+"user_result": "F164"
+}
+]
+},
 "counters": {
 "D": 10,
 "E": 5,
-"F": 149,
+"F": 165,
 "K": 5,
 "P": 4,
 "S": 3,
@@ -843,7 +911,23 @@
 "F148": "A changed production or test file under Modules/TrackerIntegration/Adapters/Connectors/<Tracker>/ selects that tracker's live suite in CI, and a change under the shared Application, Domain or OAuth paths selects all live suites, as for the old path.",
 "F149": "The membership test for Tracker integration, with its admitted Models types, passes on today's compiled code, fails when a listed type is missing, and fails when the list names a type that does not exist.",
 "F15": "it passes on today's code, and fails when a listed type is missing or the list names a type that does not exist",
+"F150": "The maintainer runs the architecture rule tests with made-up connectors under the Tracker integration module that reach Work Items, Forecasting or the update code, beside the same connector in the old connectors place, a connector reading only a Feature, one reaching a delivery source, and a namesake just outside the module.",
+"F151": "The leaf rule names the three module connectors and the old-place connector; it does not name the Feature reader, the delivery-source connector or the namesake.",
+"F152": "A connector that moves into the module and breaks the leaf boundary is still reported by the architecture tests.",
+"F153": "A pattern that sees only part of the module, such as Adapters, would still name these Adapters.Connectors offenders while a module Domain or Application type reaching Work Items escapes.",
+"F154": "The maintainer runs the architecture rule tests with a made-up factory in the Services factories namespace reaching Work Items, the same factory in the old factories namespace, and a namesake whose namespace only starts alike.",
+"F155": "The leaf rule names both factories and not the namesake.",
+"F156": "The half of the connector factory that lives in the Services factories namespace is guarded like the other half.",
+"F157": "The Services factories alternative also takes in sub-namespaces below it; the namesake only checks a sibling prefix.",
+"F158": "The maintainer runs the architecture rule tests with a made-up connector under the module reaching the database context, the same connector in the old connectors place, a module connector reading its OAuth token through the module token place, and a namesake outside the module reaching the database.",
+"F159": "The no-repository rule names the module connector and the old-place connector; it does not name the OAuth token reader or the namesake.",
 "F16": "Widen the existing architecture rules and RepositoryRecognition so they also see Modules/TrackerIntegration (A1).",
+"F160": "A connector that moves into the module and reads stored records is still reported; reading OAuth tokens stays allowed.",
+"F161": "A rule that missed a module repository under Adapters.Persistence while still catching the database context; that path belongs to the shared stored-records pattern, not to this case.",
+"F162": "The maintainer runs the architecture rule tests over the module OAuth token places (Application, Adapters and a provider below Adapters), the old OAuth places, and two namesakes that only share a prefix.",
+"F163": "Every module and old OAuth place counts as the persistence platform; neither namesake does.",
+"F164": "The OAuth token service stays recognised as a platform service, not a repository, after it moves into the module.",
+"F165": "The connector-side OAuth folder under Adapters.Connectors is also taken for the platform; the design leaves that open, so it is not pinned.",
 "F17": "Widen the CI path classifier, the examine commands, the test-time budgets and Stryker configs to the new paths (A2).",
 "F18": "Measure the membership list and Models admissions from the IL and fix them in a test (A3).",
 "F19": "Moving any file of the context: feature B (story-6359-s03a-b-move).",
