@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     public static class AuthenticationMethodKeys
     {

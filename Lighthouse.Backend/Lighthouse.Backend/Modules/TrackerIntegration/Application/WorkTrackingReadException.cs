@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Validation;
 
-namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     /// <summary>
     /// A read a connector refused, carrying the verdict that says why (ADR-126 decision 1). The

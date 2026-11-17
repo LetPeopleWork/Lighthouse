@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     /// <summary>
     /// A work tracking system read the query Lighthouse sent and refused to run it. Its sentence and the query

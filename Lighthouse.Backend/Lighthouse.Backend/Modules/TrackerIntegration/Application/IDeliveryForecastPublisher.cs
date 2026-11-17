@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
 
-namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     /// <summary>
     /// Writing a forecast back onto the remote source a Delivery is bound to. Declared separately from

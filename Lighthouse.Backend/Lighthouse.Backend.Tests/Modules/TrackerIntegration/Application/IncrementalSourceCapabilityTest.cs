@@ -8,7 +8,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
 {
     /// <summary>
     /// Only Jira and Azure DevOps can sweep a query for identities and change stamps and then fetch just the

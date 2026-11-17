@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
 {
     public class AuthenticationMethodKeysTest
     {

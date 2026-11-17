@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     public interface IWorkTrackingAuthStrategyFactory
     {

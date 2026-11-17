@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     public class Board
     {

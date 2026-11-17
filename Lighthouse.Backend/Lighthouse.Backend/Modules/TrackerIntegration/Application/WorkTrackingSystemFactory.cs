@@ -6,7 +6,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 
-namespace Lighthouse.Backend.Factories
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     public class WorkTrackingSystemFactory(ILogger<WorkTrackingSystemFactory> logger) : IWorkTrackingSystemFactory
     {

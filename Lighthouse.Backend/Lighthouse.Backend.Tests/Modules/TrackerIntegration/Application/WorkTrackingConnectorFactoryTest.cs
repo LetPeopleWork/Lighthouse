@@ -9,7 +9,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Factories
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
 {
     public class WorkTrackingConnectorFactoryTest
     {

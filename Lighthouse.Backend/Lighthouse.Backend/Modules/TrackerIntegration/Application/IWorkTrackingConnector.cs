@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 
-namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     // Every method here that loops over pages takes a CancellationToken; the ones that do not - validating a
     // connection, reading predefined fields - do not, because a token they could not honour
