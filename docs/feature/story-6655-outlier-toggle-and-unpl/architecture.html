@@ -583,6 +583,27 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>switch label copy
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Add name-only event OutlierHandlingSwitchedOff = 28 (next free integer on main), emitted when the reader switches outlier handling off; listed in the usage-data doc.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Add name-only event OutlierHandlingSwitchedOff = 28 (next free integer on main), emitted when the reader switches outlier handling off; listed in the usage-data doc.
+</code></pre>
+
+<p>docs/settings/usagedata.md</p>
+
+<p>Extend</p>
+
+<pre><code>Add name-only event OutlierHandlingSwitchedOff = 28 (next free integer on main), emitted when the reader switches outlier handling off; listed in the usage-data doc.
+</code></pre>
+
 <p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierSwitch.test.tsx</p>
 
 <h4>Verification</h4>
@@ -656,6 +677,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>single owner of outlier copy
 </code></pre>
 
+<p>UsageDataEventName</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103</p>
+
+<p>Extend</p>
+
+<pre><code>Existing closed event enum; the new name-only event takes the next integer after OutlierListOpened = 27, nothing renumbered.
+</code></pre>
+
+<p>UsageDataEventName</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52</p>
+
+<p>Extend</p>
+
+<pre><code>Existing frontend mirror of the event names next to OutlierListOpened; the existing emitter call is reused, no new emitter.
+</code></pre>
+
+<p>What is sent</p>
+
+<p>docs/settings/usagedata.md:33</p>
+
+<p>Extend</p>
+
+<pre><code>The usage-data page already lists every event under this section; the new event is listed there.
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>component</p>
@@ -683,6 +731,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>UnchangedCompatible</p>
 
 <pre><code>the switch starts on, so existing chip tests keep their meaning
+</code></pre>
+
+<p>enum</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103</p>
+
+<p>Changed</p>
+
+<pre><code>One new enum member; names only, so no stored data or wire shape changes.
+</code></pre>
+
+<p>enum-mirror</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52</p>
+
+<p>Changed</p>
+
+<pre><code>One new name in the frontend mirror; existing events unchanged.
+</code></pre>
+
+<p>doc</p>
+
+<p>docs/settings/usagedata.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>One new event row listed for readers of the usage-data page.
 </code></pre>
 
 <h5>Agreement</h5>

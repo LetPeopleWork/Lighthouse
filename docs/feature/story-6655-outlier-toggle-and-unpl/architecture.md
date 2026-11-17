@@ -505,6 +505,30 @@ Extend
 switch label copy
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs
+
+Extend
+
+```text
+Add name-only event OutlierHandlingSwitchedOff = 28 (next free integer on main), emitted when the reader switches outlier handling off; listed in the usage-data doc.
+```
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts
+
+Extend
+
+```text
+Add name-only event OutlierHandlingSwitchedOff = 28 (next free integer on main), emitted when the reader switches outlier handling off; listed in the usage-data doc.
+```
+
+docs\/settings\/usagedata\.md
+
+Extend
+
+```text
+Add name-only event OutlierHandlingSwitchedOff = 28 (next free integer on main), emitted when the reader switches outlier handling off; listed in the usage-data doc.
+```
+
 Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierSwitch\.test\.tsx
 
 #### Verification
@@ -585,6 +609,36 @@ Extend
 single owner of outlier copy
 ```
 
+UsageDataEventName
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs\:103
+
+Extend
+
+```text
+Existing closed event enum; the new name-only event takes the next integer after OutlierListOpened = 27, nothing renumbered.
+```
+
+UsageDataEventName
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts\:52
+
+Extend
+
+```text
+Existing frontend mirror of the event names next to OutlierListOpened; the existing emitter call is reused, no new emitter.
+```
+
+What is sent
+
+docs\/settings\/usagedata\.md\:33
+
+Extend
+
+```text
+The usage-data page already lists every event under this section; the new event is listed there.
+```
+
 ##### Impact
 
 component
@@ -615,6 +669,36 @@ UnchangedCompatible
 
 ```text
 the switch starts on, so existing chip tests keep their meaning
+```
+
+enum
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs\:103
+
+Changed
+
+```text
+One new enum member; names only, so no stored data or wire shape changes.
+```
+
+enum\-mirror
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts\:52
+
+Changed
+
+```text
+One new name in the frontend mirror; existing events unchanged.
+```
+
+doc
+
+docs\/settings\/usagedata\.md\:1
+
+Changed
+
+```text
+One new event row listed for readers of the usage-data page.
 ```
 
 ##### Agreement

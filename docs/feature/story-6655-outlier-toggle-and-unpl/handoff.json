@@ -3,7 +3,7 @@
 "B": 3,
 "C": 1,
 "D": 11,
-"F": 241,
+"F": 248,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -336,6 +336,24 @@
 "kind": "test",
 "locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx:1",
 "reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "enum",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103",
+"reason": "F246"
+},
+{
+"decision": "Changed",
+"kind": "enum-mirror",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52",
+"reason": "F247"
+},
+{
+"decision": "Changed",
+"kind": "doc",
+"locator": "docs/settings/usagedata.md:1",
+"reason": "F248"
 }
 ],
 "laws": [
@@ -384,6 +402,24 @@
 "locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:36",
 "reason": "F130",
 "symbol": "outlierWording"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:103",
+"reason": "F243",
+"symbol": "UsageDataEventName"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:52",
+"reason": "F244",
+"symbol": "UsageDataEventName"
+},
+{
+"decision": "Extend",
+"locator": "docs/settings/usagedata.md:33",
+"reason": "F245",
+"symbol": "What is sent"
 }
 ]
 },
@@ -397,6 +433,21 @@
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts",
 "reason": "F124"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs",
+"reason": "F242"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts",
+"reason": "F242"
+},
+{
+"change": "Extend",
+"path": "docs/settings/usagedata.md",
+"reason": "F242"
 }
 ],
 "verification": [
@@ -1170,6 +1221,13 @@
 "F24": "Remembering the on/off choice across loads, sessions or users: the maintainer said no need to store it; it starts on every time.",
 "F240": "closed boundary cases of the baseline rule",
 "F241": "Maintainer 2026-11-17: no separate check of the UNPL count on the team that showed 20+ outliers is needed before DELIVER; the UNPL rule is accepted as designed.",
+"F242": "Add name-only event OutlierHandlingSwitchedOff = 28 (next free integer on main), emitted when the reader switches outlier handling off; listed in the usage-data doc.",
+"F243": "Existing closed event enum; the new name-only event takes the next integer after OutlierListOpened = 27, nothing renumbered.",
+"F244": "Existing frontend mirror of the event names next to OutlierListOpened; the existing emitter call is reused, no new emitter.",
+"F245": "The usage-data page already lists every event under this section; the new event is listed there.",
+"F246": "One new enum member; names only, so no stored data or wire shape changes.",
+"F247": "One new name in the frontend mirror; existing events unchanged.",
+"F248": "One new event row listed for readers of the usage-data page.",
 "F25": "Changes to the process behaviour chart itself, its baseline rules or its special-cause rules.",
 "F26": "Outlier handling on any chart other than the Cycle Time scatterplot.",
 "F27": "Outlier handling has an on/off control, on by default, its state is not stored, and it starts on at every load (maintainer, in the Request).",
