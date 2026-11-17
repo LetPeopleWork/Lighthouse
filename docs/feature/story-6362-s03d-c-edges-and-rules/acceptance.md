@@ -455,16 +455,6 @@ P3
 Probe architecture-rules TrackerIntegrationReachesNoPromises passes by name (Tracker integration reaches no Promises type), and backend-tests DeliveryForecastBlockRenderer and backend-tests JiraDeliverySourceProvider pass by name, showing the Jira connector still merges the Delivery forecast block through the Tracker-defined port implemented by the Promises renderer. Which side defines and implements the port is observable only through test names.
 ```
 
-#### E4
-
-##### Promises
-
-P4
-
-```text
-Probe architecture-rules PromisesUnitTestPlacement: every Promises unit test sits under the Promises test folders and no Promises source file remains under Services except named exceptions; the probe names a test or source file left in an old folder as Failed. The named exceptions themselves are visible only if the test name states them.
-```
-
 #### E5
 
 ##### Promises

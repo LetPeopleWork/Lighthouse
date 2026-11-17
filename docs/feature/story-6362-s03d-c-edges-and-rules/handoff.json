@@ -241,7 +241,7 @@
 "counters": {
 "D": 8,
 "E": 5,
-"F": 202,
+"F": 203,
 "K": 4,
 "L": 3,
 "P": 5,
@@ -294,8 +294,7 @@
 "id": "K1",
 "slices": [
 "S1",
-"S2",
-"S3"
+"S2"
 ],
 "text": "F23"
 },
@@ -303,8 +302,7 @@
 "id": "K2",
 "slices": [
 "S1",
-"S2",
-"S3"
+"S2"
 ],
 "text": "F24"
 },
@@ -318,8 +316,7 @@
 {
 "id": "K4",
 "slices": [
-"S2",
-"S3"
+"S2"
 ],
 "text": "F26"
 }
@@ -356,17 +353,13 @@
 },
 {
 "id": "D5",
-"slices": [
-"S3"
-],
 "text": "F19"
 },
 {
 "id": "D6",
 "slices": [
 "S1",
-"S2",
-"S3"
+"S2"
 ],
 "text": "F20"
 },
@@ -374,8 +367,7 @@
 "id": "D7",
 "slices": [
 "S1",
-"S2",
-"S3"
+"S2"
 ],
 "text": "F21"
 },
@@ -383,8 +375,7 @@
 "id": "D8",
 "slices": [
 "S1",
-"S2",
-"S3"
+"S2"
 ],
 "text": "F22"
 }
@@ -952,73 +943,6 @@
 "dotnet build Lighthouse.Backend",
 "dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
 ]
-},
-"S3": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs",
-"public_oracle": {
-"expected": "F57",
-"falsifier": "F58",
-"promises": [
-"P4",
-"P5"
-],
-"stimulus": "F56"
-},
-"records": {
-"architectural_tests": [
-{
-"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesUnitTestPlacementTest\"",
-"id": "T1",
-"obligation": "F68",
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs"
-}
-],
-"laws": [
-{
-"evidence": [
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs"
-],
-"id": "L1",
-"kind": "Invariant",
-"layer": "Application",
-"owner": "PromisesUnitTestPlacementTest",
-"statement": "F63",
-"treatment": {
-"cases": [
-"F64",
-"F65",
-"F66"
-],
-"kind": "Finite",
-"reason": "F67"
-}
-}
-],
-"not_applicable": [
-{
-"analysis": "reuse",
-"reason": "F59"
-},
-{
-"analysis": "impact",
-"reason": "F60"
-},
-{
-"analysis": "agreement",
-"reason": "F61"
-},
-{
-"analysis": "prefactoring",
-"reason": "F62"
-}
-]
-},
-"verification": [
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesUnitTestPlacementTest\"",
-"pwsh Lighthouse.Backend/Test-Fast.ps1",
-"dotnet build Lighthouse.Backend",
-"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
-]
 }
 }
 },
@@ -1044,13 +968,6 @@
 "P3"
 ],
 "text": "F144"
-},
-{
-"id": "E4",
-"promises": [
-"P4"
-],
-"text": "F145"
 },
 {
 "id": "E5",
@@ -1107,13 +1024,11 @@
 "F137": "the Jira connector reaching IDeliveryForecastBlockRenderer is named",
 "F138": "a made-up Tracker integration type reaching a Promises type is named",
 "F139": "the renderer merge examples (replace in place, append on broken markers, idempotent rewrite) return the same text",
-"F14": "C3: every Promises unit test sits under the Promises test folders; no Promises source file is left in Services apart from the named exceptions.",
 "F140": "Edges are a finite set read exactly from the IL; the merge body does not change, so its existing example tests are the preservation check and a generator would test the old code against itself",
 "F141": "Tracker integration reaches no Promises type; the merge port lives in Tracker integration Application and the renderer implements it",
 "F142": "Probe architecture-rules PromisesModuleBoundaries (also PromisesUnitTestPlacement is separate): every test of the Promises module rules is listed Passed by name, covering layer placement, Domain reaching only the shared kernel, outsiders reaching Domain/Application/Policies only as listed, and Application reaching no EF Core, Data, API, other module Adapters, update code, write-back round, Access or Licensing except as listed; the names also show the lists are compared both ways against compiled code and that a made-up offender is named per rule. Whether the lists are measured from compiled code is observable only through test names; the test internals are not observable.",
 "F143": "Probe architecture-rules WorkItemsModuleBoundaries and architecture-rules TrackerIntegrationModuleBoundaries: both rule sets pass by name, and the names show Promises is legal by namespace rather than by listed type. The exact list size (smaller by exactly the Promises entries) is not observable by any probe line or test name; stated as outside what a probe can show.",
 "F144": "Probe architecture-rules TrackerIntegrationReachesNoPromises passes by name (Tracker integration reaches no Promises type), and backend-tests DeliveryForecastBlockRenderer and backend-tests JiraDeliverySourceProvider pass by name, showing the Jira connector still merges the Delivery forecast block through the Tracker-defined port implemented by the Promises renderer. Which side defines and implements the port is observable only through test names.",
-"F145": "Probe architecture-rules PromisesUnitTestPlacement: every Promises unit test sits under the Promises test folders and no Promises source file remains under Services except named exceptions; the probe names a test or source file left in an old folder as Failed. The named exceptions themselves are visible only if the test name states them.",
 "F146": "Probes deliveries-answers-compare, forecast-answers-compare, refresh-reactions-compare each print IDENTICAL (base before the Promises move vs HEAD); ef-model-unchanged shows no model change per provider; backend-tests JiraQuietWriteBack and backend-tests JiraBatchedWriteBack pass by name for the Jira text; backend-tests with no fragment shows zero failures. Outside the expectation and not observable: the four blocked-period reactions that refresh-reactions-compare names not observable on both sides; routes and DI behaviour are observable only via the compare probes and test names; text written to a real Jira runs only in CI (ci-live-suites-show shows which suites CI runs, not their result).",
 "F147": "Run the Promises module rules over the compiled backend: where each Promises type lives, and what each Promises layer holds",
 "F148": "Each of the 17 Promises types lives in its Domain, Application or Policies namespace, none is left under Services or Models, and each layer holds exactly its listed types; a made-up type left in its former home, or an unlisted type in a layer, is named and its twin is not",
@@ -1178,6 +1093,7 @@
 "F200": "The same text as before the port was extracted, pinned by the unchanged renderer merge examples",
 "F201": "The text written to Jira does not change",
 "F202": "A change to the merge reached only through the Jira connector's publishing path; the unchanged Jira write-back and publishing unit tests cover that path",
+"F203": "C3 dropped as an nwdes slice (host decision in AFK mode, as A4 was): feature B already moved every Promises unit test and source file, so the placement check has no RED; it passes 29/29 on arrival and a throwaway probe proved it names a misplaced file. The check is kept as a regression guard (Architecture/PromisesUnitTestPlacementTest.cs), committed with feature C and judged by the whole-candidate review.",
 "F21": "Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of unchanged pure code: namespace placement, the exact set of edges per rule, the location of each test file, and that MergeInto's body is unchanged. Each is decided exactly by its IL architecture oracle (Finite laws) with a made-up offender per rule as falsifier, and by the existing example tests for the merge. No Quint, TLA+ or Agda model: no state machine, ordering, concurrency, recovery or progress claim changes (no handler, queue or schedule moves), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: IDescriptionBlockMerger narrows what the connector can call to the one merge it uses, checked by the C# compiler; property tests add nothing over a finite edge set.",
 "F22": "Confirmed (maintainer 2026-11-17): rigor thorough for feature C (architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet); C2 stays as the last edit slice of feature C; push per slice with CI watched, rebase before push allowed; no review window; mutation once at the end of S03d on frozen code (D-13), then finalize. C2 adds a file under Modules/TrackerIntegration/Application and edits Program.cs, so its push runs every live suite (D-11).",
 "F23": "Rule lists only shrink and are never loosened: inline full-name lists compared both ways against the IL (IlDependencies, which misses catch-clause, event and attribute-named-argument references); exemptions are exact per type and its nested types, never a namespace or layer; holdings compare top-level types (nested names reduced to the part before the plus sign). Each rule edit is proved by a throwaway probe that is reverted.",
@@ -1216,20 +1132,6 @@
 "F53": "IDescriptionBlockMerger added to TrackerIntegrationMembership.Moves in C2",
 "F54": "A namespace-wide exemption",
 "F55": "None found beyond that list",
-"F56": "Run PromisesUnitTestPlacementTest over the test assembly and the source tree: find the unit tests of the PromisesMembership types and the Promises source files",
-"F57": "Every Promises unit test lives under Tests/Modules/Promises in its subject's sub-folder; no Promises source file is under Services apart from the named exceptions (Delivery repositories, write-back round, update code, ordering and ranking); integration, acceptance and controller tests are not judged",
-"F58": "A made-up Promises unit test in an old test folder, or a made-up Promises source file under Services, is named with its path; a named exception that no longer exists is named",
-"F59": "No code target: the move is done. Consulted and reused by the oracle as they are: TrackerIntegrationUnitTestPlacementTest and ForecastingUnitTestPlacementTest (the placement pattern), PromisesMembership (the Promises types). A second membership list would duplicate it.",
-"F6": "Every Promises unit test lives under the Promises test folders, and no Promises source file is left under Services apart from the named exceptions; a test or source file placed in an old folder is named.",
-"F60": "No production or test file moves or changes: measured, the nine Promises unit tests sit under Tests/Modules/Promises and no Promises source is under Services apart from the named exceptions",
-"F61": "No shared contract changes; the oracle only reads the test assembly, the source tree and PromisesMembership",
-"F62": "No code target",
-"F63": "The set of Promises unit tests outside Tests/Modules/Promises and the set of Promises source files under Services beyond the named exceptions are both empty",
-"F64": "a made-up Promises unit test in an old folder is named",
-"F65": "a made-up Promises source file under Services is named",
-"F66": "a named exception that no longer exists is named",
-"F67": "Files and test types are a finite set read exactly; generation adds no coverage",
-"F68": "Every Promises unit test lives under the Promises test folders and no Promises source file is left under Services apart from the named exceptions",
 "F69": "Its inbound list loses DeliveryRuleService (line 129) and its legal callers take Promises Application by namespace",
 "F7": "Nothing a user, a tracker or the database sees changes: the text written to Jira, every Delivery answer, forecast, route, DI behaviour and the EF model stay the same, and every existing test stays green.",
 "F70": "Its inbound list loses DeliveryForecastPublishingService and DeliverySourceResolver (lines 103-104) and its legal callers take Promises Application by namespace; the edge list R-T7 stays for C2",
@@ -1284,6 +1186,12 @@
 "kind": "Confirmed"
 },
 "text": "F11"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F203"
 }
 ],
 "promises": [
@@ -1301,11 +1209,6 @@
 "id": "P3",
 "kind": "Outcome",
 "text": "F5"
-},
-{
-"id": "P4",
-"kind": "Outcome",
-"text": "F6"
 },
 {
 "id": "P5",
@@ -1331,14 +1234,6 @@
 "observation": "F13",
 "promises": [
 "P3",
-"P5"
-]
-},
-{
-"id": "S3",
-"observation": "F14",
-"promises": [
-"P4",
 "P5"
 ]
 }

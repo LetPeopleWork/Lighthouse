@@ -41,28 +41,27 @@ Governed slices: S2
 ```text
 Confirmed (D-9, D-1, D-4, D-5, D-6): Architecture/PromisesUnitTestPlacementTest.cs checks that every unit test of a Promises type (the PromisesMembership types) lives under Tests/Modules/Promises in the sub-folder of its subject, and that no Promises source file is left under Services apart from the named exceptions with their owners: the Delivery repositories (DeliveryRepository, DeliveryMetricSnapshotRepository, IDeliveryRepository, IDeliveryMetricSnapshotRepository, RecordableDeliveries; repository split owner S05d), the write-back round (owner #6657), the update code (S03f, Epic 6474) and feature ordering and ranking (S03i). Integration, acceptance and controller tests stay where they are. Modelled on TrackerIntegrationUnitTestPlacementTest and ForecastingUnitTestPlacementTest. Measured today: the nine Promises unit tests already sit under Tests/Modules/Promises; DeliverySourceBindabilityTest tests a kernel Models type and is not a Promises unit test; no file moves in C3.
 ```
-Governed slices: S3
 
 #### D6
 
 ```text
 Confirmed (D-0, D-12, P5): behaviour-free. No schema, entity, migration, route, DTO, forecast, Delivery answer, handler order or DI lifetime changes, and the bytes written to Jira stay the same. Production changes only in C2. Behaviour-preservation evidence for C2, unchanged and green: the renderer merge tests DeliveryForecastBlockRendererTest and DeliveryForecastBlockRendererBeyondTheHorizonTest, the Jira write-back unit tests JiraBatchedWriteBackTest and JiraQuietWriteBackTest, and the connector publishing tests JiraDeliverySourceProviderTest and JiraDeliveryForecastPublisherTest; the live JiraWriteBackTest and JiraSuppressionRetryIntegrationTest run in CI on the push. EXAMINE observes through admitted probes only (architecture-rules, test-selection-show, ci-live-suites-show, ef-model-unchanged, the answers-compare probes) and names up front the four blocked-period reactions refresh-reactions-compare cannot observe.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S2
 
 #### D7
 
 ```text
 Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of unchanged pure code: namespace placement, the exact set of edges per rule, the location of each test file, and that MergeInto's body is unchanged. Each is decided exactly by its IL architecture oracle (Finite laws) with a made-up offender per rule as falsifier, and by the existing example tests for the merge. No Quint, TLA+ or Agda model: no state machine, ordering, concurrency, recovery or progress claim changes (no handler, queue or schedule moves), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: IDescriptionBlockMerger narrows what the connector can call to the one merge it uses, checked by the C# compiler; property tests add nothing over a finite edge set.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S2
 
 #### D8
 
 ```text
 Confirmed (maintainer 2026-11-17): rigor thorough for feature C (architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet); C2 stays as the last edit slice of feature C; push per slice with CI watched, rebase before push allowed; no review window; mutation once at the end of S03d on frozen code (D-13), then finalize. C2 adds a file under Modules/TrackerIntegration/Application and edits Program.cs, so its push runs every live suite (D-11).
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S2
 
 ### Constraints
 
@@ -71,14 +70,14 @@ Governed slices: S1, S2, S3
 ```text
 Rule lists only shrink and are never loosened: inline full-name lists compared both ways against the IL (IlDependencies, which misses catch-clause, event and attribute-named-argument references); exemptions are exact per type and its nested types, never a namespace or layer; holdings compare top-level types (nested names reduced to the part before the plus sign). Each rule edit is proved by a throwaway probe that is reverted.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S2
 
 #### K2
 
 ```text
 One oracle file per slice; an approved oracle file is never edited, not even a using line; a crafter target is never an oracle support; oracles name types as strings. Made-up offenders live in a fixture namespace such as Lighthouse.Backend.Modules.PromisesFixtures. Rule tests assert by the failure naming the offender, not by counts. No nWave scenario tags. The oracles are IL architecture tests and start no host.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S2
 
 #### K3
 
@@ -92,7 +91,7 @@ Governed slices: S2
 ```text
 Order: S2 and S3 run after S1. S1's Tracker integration rule file holds the one edge C2 empties, and the placement check relies on the Promises rule set being in place.
 ```
-Governed slices: S2, S3
+Governed slices: S2
 
 ### Reuse
 
@@ -1332,197 +1331,6 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegratio
 
 ```text
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~TrackerIntegrationReachesNoPromisesArchUnitTest"
-```
-
-##### Contract tests
-
-None.
-
-### S3
-
-#### Targets
-
-None.
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesUnitTestPlacementTest\.cs
-
-#### Verification
-
-```text
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~PromisesUnitTestPlacementTest"
-pwsh Lighthouse.Backend/Test-Fast.ps1
-dotnet build Lighthouse.Backend
-dotnet test Lighthouse.Backend --filter "TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration"
-```
-
-#### Supports
-
-None.
-
-#### Public oracle
-
-```text
-Run PromisesUnitTestPlacementTest over the test assembly and the source tree: find the unit tests of the PromisesMembership types and the Promises source files
-```
-
-```text
-Every Promises unit test lives under Tests/Modules/Promises in its subject's sub-folder; no Promises source file is under Services apart from the named exceptions (Delivery repositories, write-back round, update code, ordering and ranking); integration, acceptance and controller tests are not judged
-```
-
-```text
-A made-up Promises unit test in an old test folder, or a made-up Promises source file under Services, is named with its path; a named exception that no longer exists is named
-```
-
-##### Promises
-
-P4
-
-P5
-
-#### Prefactoring
-
-None.
-
-#### Records
-
-##### Decisions
-
-None.
-
-##### Constraints
-
-None.
-
-##### Reuse
-
-None.
-
-##### Impact
-
-None.
-
-##### Agreement
-
-None.
-
-##### Not applicable
-
-reuse
-
-```text
-No code target: the move is done. Consulted and reused by the oracle as they are: TrackerIntegrationUnitTestPlacementTest and ForecastingUnitTestPlacementTest (the placement pattern), PromisesMembership (the Promises types). A second membership list would duplicate it.
-```
-
-impact
-
-```text
-No production or test file moves or changes: measured, the nine Promises unit tests sit under Tests/Modules/Promises and no Promises source is under Services apart from the named exceptions
-```
-
-agreement
-
-```text
-No shared contract changes; the oracle only reads the test assembly, the source tree and PromisesMembership
-```
-
-prefactoring
-
-```text
-No code target
-```
-
-##### Boundaries
-
-None.
-
-##### Observations
-
-None.
-
-##### Equality
-
-None.
-
-##### Constructors
-
-None.
-
-##### Laws
-
-###### L1
-
-```text
-The set of Promises unit tests outside Tests/Modules/Promises and the set of Promises source files under Services beyond the named exceptions are both empty
-```
-
-Invariant
-
-Application
-
-PromisesUnitTestPlacementTest
-
-###### Treatment
-
-Finite
-
-###### Cases
-
-```text
-a made-up Promises unit test in an old folder is named
-```
-
-```text
-a made-up Promises source file under Services is named
-```
-
-```text
-a named exception that no longer exists is named
-```
-
-```text
-Files and test types are a finite set read exactly; generation adds no coverage
-```
-
-###### Evidence
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesUnitTestPlacementTest\.cs
-
-##### Refuted
-
-None.
-
-##### Claims
-
-None.
-
-##### States
-
-None.
-
-##### Models
-
-None.
-
-##### Closure
-
-None.
-
-##### Risks
-
-None.
-
-##### Architectural tests
-
-###### T1
-
-```text
-Every Promises unit test lives under the Promises test folders and no Promises source file is left under Services apart from the named exceptions
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesUnitTestPlacementTest\.cs
-
-```text
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~PromisesUnitTestPlacementTest"
 ```
 
 ##### Contract tests

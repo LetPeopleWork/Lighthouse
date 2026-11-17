@@ -749,3 +749,13 @@ refresh-reaction and forecast answers IDENTICAL against their pre-move base, EF 
 is the four blocked-period reactions (Work Item and Feature blocked / unblocked), which no public answer shows on any
 revision; they are Work Items code this move did not touch. **Maintainer decision (option 1):** reword E7 to every
 *observable* reaction, name the four as outside what this behaviour-free move can show, and examine once more.
+
+### C3 dropped as a slice, kept as a guard (2026-11-17, host decision in AFK mode)
+
+Feature B had already moved every Promises unit test and source file, so the placement check had no RED: it passes
+29/29 on arrival (9 tests under `Tests/Modules/Promises`, no `.cs` file left in the old `DeliverySources` folders, the
+22 named exceptions all present: 5 Delivery repository files for platform persistence, 8 write-back round files for
+#6657, 9 ordering and ranking files for Organisation set-up). A throwaway probe (a Delivery source file and a
+Promises-named test left under `Services`) failed it with both files named, then was deleted. As with A4, the slice and
+its promise (P4) left nwdes; the check stays as a regression guard,
+`Architecture/PromisesUnitTestPlacementTest.cs`, committed with feature C and judged by its whole-candidate review.

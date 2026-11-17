@@ -44,14 +44,6 @@ Outcome
 Tracker integration reaches no Promises type: the Jira connector merges the Delivery forecast block through a port that Tracker integration defines and the Promises renderer implements.
 ```
 
-### P4
-
-Outcome
-
-```text
-Every Promises unit test lives under the Promises test folders, and no Promises source file is left under Services apart from the named exceptions; a test or source file placed in an old folder is named.
-```
-
 ### P5
 
 Outcome
@@ -97,6 +89,15 @@ EXAMINE observes through admitted probes only; expectations name only what a pro
 Confirmed
 
 
+```text
+C3 dropped as an nwdes slice (host decision in AFK mode, as A4 was): feature B already moved every Promises unit test and source file, so the placement check has no RED; it passes 29/29 on arrival and a throwaway probe proved it names a misplaced file. The check is kept as a regression guard (Architecture/PromisesUnitTestPlacementTest.cs), committed with feature C and judged by the whole-candidate review.
+```
+
+#### Status
+
+Confirmed
+
+
 ## Journey
 
 None.
@@ -134,26 +135,6 @@ C2: the Jira connector merges the forecast block through IDescriptionBlockMerger
 #### Promises
 
 P3
-
-P5
-
-#### Depends on
-
-None.
-
-#### Slice work
-
-None.
-
-### S3
-
-```text
-C3: every Promises unit test sits under the Promises test folders; no Promises source file is left in Services apart from the named exceptions.
-```
-
-#### Promises
-
-P4
 
 P5
 
