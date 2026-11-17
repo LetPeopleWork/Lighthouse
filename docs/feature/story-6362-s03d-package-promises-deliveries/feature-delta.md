@@ -651,3 +651,21 @@ Not verified at DESIGN (each named with the slice that measures it): IL edges (a
 `noisy` text search; A2/C1); D-2 admissions (A2); whether the two `PortfolioForecastsUpdated` handlers depend on each
 other (A2); demo data holds a Delivery (A3); csproj item paths (A3); the exact content of the 29 test files that `using`
 the `DeliverySources` namespaces (B1); whether Promises reaches Forecasting or Flow metrics `Application` (A2, none found by text search).
+
+## Wave: DELIVER / [REF] Start of DELIVER (maintainer, 2026-11-17)
+
+The six open confirmations, answered by the maintainer on 2026-11-17 before S03a closed:
+
+1. **Start order**: S03d starts after S03a is fully closed (features A, B, C, mutation, finalize, CI green). Agreed.
+2. **Write-back item**: file one ADO item "Place the write-back round (candidate: Forecasting `Application/WriteBack`)",
+   owner candidate the Forecasting module, under Epic #6510, when S03d starts. Yes.
+3. **C2** (the Jira → Promises renderer edge inverted through `IDescriptionBlockMerger`): stays in S03d as the last slice
+   of feature C.
+4. **Push**: per slice, CI watched per push, rebase before push allowed.
+5. **Size**: M, about 6.5 days, 9 slices in 3 features. Agreed.
+6. **Rigor**: `standard` for feature B (pure move: crafter, acceptance designer, architect on sonnet; reviewers and
+   EXAMINE on haiku); `thorough` for features A and C (opus; reviewers and EXAMINE on sonnet).
+- **Review window**: none (behaviour-free Story). **UI sketch / loading and failure looks**: N/A.
+- **EXAMINE probes**: each feature's expectations name only what an admitted probe can show (`architecture-rules`,
+  `test-selection-show`, `ci-live-suites-show`, `ef-model-unchanged`, the answers-compare probes); a gap is closed by
+  adding a probe before the expectations are recorded (lesson of S03a feature B).
