@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 12,
-"F": 145,
+"E": 5,
+"F": 150,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -670,6 +671,45 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F146"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F147"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F148"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F149"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F150"
+}
+]
+},
 "facts": {
 "F1": "Story #6362 S03d Package Promises (Deliveries), feature A of three (rules first): before any Promises file moves into Modules/Promises, make every architecture rule that names a Promises type, namespace or folder also see Modules/Promises; measure the Promises membership and the Models admissions from the IL and fix them in a test; add a Delivery-answers EXAMINE command that reports a changed Delivery answer; pin the CI test selection for Promises paths and for the C2 port path. Design authority: docs/feature/story-6362-s03d-package-promises-deliveries/feature-delta.md.",
 "F10": "Push per slice with CI watched; rebase before push allowed; no review window (behaviour-free); mutation once at the end of S03d on frozen code (maintainer, 2026-11-17).",
@@ -723,7 +763,12 @@
 "F143": "identical pair",
 "F144": "one answer changed",
 "F145": "nothing compared",
+"F146": "Running the architecture-rules probe lists the Promises-related architecture tests as Passed, and the tests whose names state a made-up offender is reported (a Delivery service under Modules.Promises reaching a repository, Forecasting or the update code) show Passed, so such an offender is caught.",
+"F147": "The backend-tests probe on the Promises membership test shows it Passed, and its test names state that a missing listed type and an unlisted extra type each make it fail, for both the types that move and the Models types admitted into the module.",
+"F148": "The deliveries-answers-compare probe prints DIFFERENT when two revisions differ in one Delivery answer, and IDENTICAL when no Delivery answer differs (including base against candidate of this feature).",
+"F149": "The test-selection-show probe shows a path under Modules/Promises selects the backend suite only, and the Tracker integration port path for the Jira connector or Program.cs selects every live connector suite; the recorded selection scenarios pass.",
 "F15": "A4: CI selection cases for Promises paths and the C2 port path.",
+"F150": "The ef-model-unchanged probe reports the database model unchanged, deliveries-answers-compare of base against candidate prints IDENTICAL, and the architecture-rules and backend-tests probes show every existing test Passed with none Failed.",
 "F16": "Confirmed (D-0, D-12, P5): feature A changes no production code, schema, DI registration or Program.cs. Only test-side architecture rule files, ModuleRules, the EXAMINE command builder, .nwave/examine.json and the classifier test script change; path-classifier.sh only if an A4 case is red. Nothing moves in feature A; the moves are feature B (story-6362-s03d-b-move), the module rules, C2 port and placement are feature C.",
 "F17": "Confirmed (D-1): the Promises membership is the 13 Services files that move (DeliveryForecastBlockRenderer, IDeliveryForecastBlockRenderer, DeliveryRuleService, IDeliveryRuleService, DeliverySourceResolver, DeliverySourceSyncService, DeliveryForecastPublishingService and their 3 interfaces, DeliveryMetricValuesProjector, DeliveryMetricSnapshotRecordingHandler, DeliveryForecastPublishingHandler) plus the admitted Models value DeliveryForecastBlock. Update code, write-back round, ordering and ranking, repositories, entities, controllers and DTOs stay with a named owner.",
 "F18": "Confirmed (D-2): a Models type is admitted into the module only if it is not an EF entity, not on the wire, not reached by a kernel type and not used by code that stays outside. Expected admitted: DeliveryForecastBlock only (E11). A2 measures every candidate from the IL and pins the answer; if DeliveryForecastBlock fails a condition, A2 records it and the Domain folder is dropped (D-3).",
