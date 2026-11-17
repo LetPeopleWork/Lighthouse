@@ -238,6 +238,23 @@
 "expected": "F548",
 "stimulus": "F547",
 "user_result": "F549"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F153",
+"L4/F154"
+],
+"still_passes_if": "F607",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs"
+},
+"expected": "F608",
+"stimulus": "F604",
+"user_result": "F606"
 }
 ],
 "S3": [
@@ -449,7 +466,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 603,
+"F": 608,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -2946,6 +2963,10 @@
 "F601": "The Throughput panel shows two change lines 13 (+25 %) and 0.14 per day (+24 %), named total and per day; the header judges Throughput on its Total line too",
 "F602": "The report page and its header agree on how Throughput moved",
 "F603": "A header that judges per day only",
+"F604": "Create a report with a 14-day Then ending today, and one with a 90-day Then ending 45 days ago, on 15 Nov 2026, then read each",
+"F606": "A new report's Now is as long as its Then and ends today",
+"F607": "Now keeps a fixed default length or ends on Then's end",
+"F608": "14-day Then 2 to 15 Nov reads Now 2 to 15 Nov; 90-day Then 4 Jul to 1 Oct reads Now 18 Aug to 15 Nov",
 "F61": "Usage-data events: answered in DEVOPS, not here.",
 "F62": "Now always has the same length as Then (maintainer reply on ADO #6625). Reverses epic-5878 D43 (Now length chosen and saved separately), D59 and D62 (the Now step), and the Now-length part of D44 (Edit report).",
 "F63": "Q1: new reports default to Then and Now back to back (Then ends the day before the last L days). Ending Then today stays allowed (5878 D38 kept: Now may overlap Then).",

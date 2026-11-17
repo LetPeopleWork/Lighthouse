@@ -505,6 +505,36 @@ A notice flag or changed list entry is added for old reports, or the export Now 
 
 None.
 
+##### Covers
+
+P1
+
+```text
+Create a report with a 14-day Then ending today, and one with a 90-day Then ending 45 days ago, on 15 Nov 2026, then read each
+```
+
+```text
+14-day Then 2 to 15 Nov reads Now 2 to 15 Nov; 90-day Then 4 Jul to 1 Oct reads Now 18 Aug to 15 Nov
+```
+
+```text
+A new report's Now is as long as its Then and ends today
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreation\/EqualLengthReportsScenarios\.cs
+
+```text
+Now keeps a fixed default length or ends on Then's end
+```
+
+###### Obligations
+
+
+
 ### S3
 
 ##### Covers

@@ -185,6 +185,26 @@ namespace Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
             }
         }
 
+        [TestCase(0, 14, "2026-11-02", "2026-11-15", "2026-11-02", "2026-11-15",
+            TestName = "A new report with a 14-day Then ending today, 2 Nov to 15 Nov 2026, reads a Now of the same 2 Nov to 15 Nov 2026")]
+        [TestCase(45, 90, "2026-07-04", "2026-10-01", "2026-08-18", "2026-11-15",
+            TestName = "A new report with a 90-day Then ending 45 days ago, 4 Jul to 1 Oct 2026, reads a 90-day Now of 18 Aug to 15 Nov 2026")]
+        public async Task A_new_report_reads_a_Now_as_long_as_Then_ending_today(int thenEndedDaysAgo, int thenLengthDays, string thenStart, string thenEnd, string nowStart, string nowEnd)
+        {
+            var lightspeed = ATeam("Lightspeed");
+            var reportId = await ASavedReport(lightspeed, Today.AddDays(-thenEndedDaysAgo), thenLengthDays);
+
+            var read = Read(lightspeed, reportId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(read.ThenWindow, Is.EqualTo(new ReportWindow(DateOnly.Parse(thenStart), DateOnly.Parse(thenEnd), thenLengthDays)),
+                    "WHAT: Then reads another window than asked for. WHY: Then is frozen as asked. HOW: keep the requested Then.");
+                Assert.That(read.NowWindow, Is.EqualTo(new ReportWindow(DateOnly.Parse(nowStart), DateOnly.Parse(nowEnd), thenLengthDays)),
+                    "WHAT: Now is not as long as Then or does not end today. WHY: every report compares equal lengths. HOW: derive Now from Then's length.");
+            }
+        }
+
         private async Task<int> ASavedReport(ReportOwner owner, DateOnly thenEnd, int thenLengthDays)
         {
             using var scope = harness.NewScope();
