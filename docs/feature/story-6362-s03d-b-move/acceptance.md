@@ -318,34 +318,34 @@ P1
 Every Promises type sits in its designed place: the forecast block in Domain, the services, interfaces and projector in Application, and the two forecasts-updated handlers in Application Policies. No Promises type is left in its old namespace, and Domain reaches only the shared kernel. The architecture-rules probe reports each rule that places or bounds these types as Passed, by name.
 ```
 
-#### E2
+#### E5
 
 ##### Promises
 
 P2
 
 ```text
-The unit tests of each moved Promises type run and pass, and each architecture rule that names a moved type reports Passed for its new place, with the rule comparing both ways. The backend-tests probe lists each moved type unit test class as Passed, and the architecture-rules probe lists those named rules as Passed.
+The unit tests of each moved Promises type run and pass. The probe `backend-tests Tests.Modules.Promises` lists each of their tests by name as Passed, and its totals line shows 0 Failed. The probe `architecture-rules Promises` lists each architecture rule that names a moved type by name as Passed.
 ```
 
-#### E3
+#### E6
 
 ##### Promises
 
 P3
 
 ```text
-When a Portfolio forecasts are updated, its Delivery metric snapshot is recorded before its forecasts are published. The order-pin test reports Passed by name, and the forecast-triggers-show probe lists the snapshot recording ahead of the forecast publication.
+When a Portfolio's forecasts are updated, its Delivery metric snapshot is recorded before its forecasts are published. The probe `backend-tests DomainEventHandlerOrderPin` lists the test HandlersOfAPortfolioForecastUpdate_RecordTheDeliverySnapshotBeforePublishingTheForecasts by name as Passed.
 ```
 
-#### E4
+#### E7
 
 ##### Promises
 
 P4
 
 ```text
-Nothing a user, a tracker or the database sees changes. The deliveries-answers-compare probe against the base revision prints IDENTICAL for the Delivery answers over the demo scenarios, the ef-model-unchanged probe reports the database model unchanged, the refresh-reactions-show and forecast-triggers-show probes show the same reactions as before, and the existing backend test classes report Passed.
+Nothing a user, a tracker or the database sees changes, and the existing backend tests stay green. The probe `deliveries-answers-compare` (no arguments) prints IDENTICAL. The probe `refresh-reactions-compare` (no arguments) prints IDENTICAL. The probe `forecast-answers-compare` (no arguments) prints IDENTICAL. The probe `ef-model-unchanged` prints "No changes have been made to the model since the last migration." for each provider it lists. The probe `backend-tests` (no fragment) prints 0 Failed in its totals line.
 ```
 
 ## Charter

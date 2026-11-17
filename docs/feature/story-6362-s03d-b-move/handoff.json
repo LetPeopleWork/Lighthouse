@@ -176,8 +176,8 @@
 "counters": {
 "C": 1,
 "D": 7,
-"E": 4,
-"F": 177,
+"E": 7,
+"F": 180,
 "K": 3,
 "L": 2,
 "P": 4,
@@ -1212,25 +1212,25 @@
 "text": "F134"
 },
 {
-"id": "E2",
+"id": "E5",
 "promises": [
 "P2"
 ],
-"text": "F135"
+"text": "F178"
 },
 {
-"id": "E3",
+"id": "E6",
 "promises": [
 "P3"
 ],
-"text": "F136"
+"text": "F179"
 },
 {
-"id": "E4",
+"id": "E7",
 "promises": [
 "P4"
 ],
-"text": "F137"
+"text": "F180"
 }
 ]
 },
@@ -1275,9 +1275,6 @@
 "F132": "Both forecasts-updated handlers live in Modules/Promises/Application/Policies by namespace, lists compared both ways and never vacuous",
 "F133": "PortfolioForecastsUpdated handlers are registered snapshot recording first, then publishing",
 "F134": "Every Promises type sits in its designed place: the forecast block in Domain, the services, interfaces and projector in Application, and the two forecasts-updated handlers in Application Policies. No Promises type is left in its old namespace, and Domain reaches only the shared kernel. The architecture-rules probe reports each rule that places or bounds these types as Passed, by name.",
-"F135": "The unit tests of each moved Promises type run and pass, and each architecture rule that names a moved type reports Passed for its new place, with the rule comparing both ways. The backend-tests probe lists each moved type unit test class as Passed, and the architecture-rules probe lists those named rules as Passed.",
-"F136": "When a Portfolio forecasts are updated, its Delivery metric snapshot is recorded before its forecasts are published. The order-pin test reports Passed by name, and the forecast-triggers-show probe lists the snapshot recording ahead of the forecast publication.",
-"F137": "Nothing a user, a tracker or the database sees changes. The deliveries-answers-compare probe against the base revision prints IDENTICAL for the Delivery answers over the demo scenarios, the ef-model-unchanged probe reports the database model unchanged, the refresh-reactions-show and forecast-triggers-show probes show the same reactions as before, and the existing backend test classes report Passed.",
 "F138": "Read the compiled assembly and look up the two Delivery forecast block records by name",
 "F139": "Both records live in the Promises Domain, none is left under the old Models folder, the Domain holds exactly them, and it reaches only the shared kernel and the base library",
 "F14": "Behaviour-free (D-0, D-4, D-10): no class is created, split, merged or renamed, no signature changes, no entity, DbSet, migration, route or DTO changes. Repositories, entities, update code, write-back round, ordering and ranking stay. Program.cs lines and order stay; only usings and full type names change, and the two PortfolioForecastsUpdated registrations keep their order (snapshot recording, then publishing).",
@@ -1322,7 +1319,10 @@
 "F175": "The five existing order pins keep their outcome; nothing user-visible changes",
 "F176": "Every Delivery answer and forecast publication stays the same",
 "F177": "A behaviour change outside event order, which the full suite run at the end of the slice observes",
+"F178": "The unit tests of each moved Promises type run and pass. The probe `backend-tests Tests.Modules.Promises` lists each of their tests by name as Passed, and its totals line shows 0 Failed. The probe `architecture-rules Promises` lists each architecture rule that names a moved type by name as Passed.",
+"F179": "When a Portfolio's forecasts are updated, its Delivery metric snapshot is recorded before its forecasts are published. The probe `backend-tests DomainEventHandlerOrderPin` lists the test HandlersOfAPortfolioForecastUpdate_RecordTheDeliverySnapshotBeforePublishingTheForecasts by name as Passed.",
 "F18": "Claim-to-checker: namespace placement, Domain reach and handler order are finite facts read from the compiled IL and the composition root, checked by the two ArchUnit oracles (Finite laws) and by EXAMINE probes (architecture-rules, backend-tests, ef-model-unchanged, deliveries-answers-compare, deliveries-answers-selftest, refresh-reactions-show, test-selection-show, ci-live-suites-show). No Quint, TLA+ or Agda model: nothing is a state machine, queue or proof obligation (no handler, schedule or queue moves) and a model would restate the namespace map. Liveness not applicable: no progress property exists. Type strength: native C# namespaces, no new types; invalid placement is excluded by the IL rules, not by construction.",
+"F180": "Nothing a user, a tracker or the database sees changes, and the existing backend tests stay green. The probe `deliveries-answers-compare` (no arguments) prints IDENTICAL. The probe `refresh-reactions-compare` (no arguments) prints IDENTICAL. The probe `forecast-answers-compare` (no arguments) prints IDENTICAL. The probe `ef-model-unchanged` prints \"No changes have been made to the model since the last migration.\" for each provider it lists. The probe `backend-tests` (no fragment) prints 0 Failed in its totals line.",
 "F19": "Push and cost (D-11, maintainer 2026-11-17): B1 and B2 edit Program.cs, a shared path, so each push selects every live suite; push per slice with CI watched; no review window; mutation once at the end of S03d on frozen code. Standard rigor: architect, acceptance designer and crafter on sonnet, reviewers and EXAMINE on haiku. EXAMINE expectations name only what an admitted probe shows.",
 "F2": "Promises lives in its own module folder, so its rules can be enforced by namespace in feature C, with nothing a user, a tracker or the database sees changed",
 "F20": "No schema, route, DTO, DI lifetime, forecast or Delivery answer changes; the EF model stays the same (ef-model-unchanged) and every existing test stays green unmodified apart from moves, usings and rule-file strings.",
