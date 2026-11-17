@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             const string inThePoliciesFolder = $"{ModuleTestFolder}/Application/Policies/{AMadeUpTestFile}.cs";
             const string aNeighbour = $"{ModuleTestFolder}/Domain/ANeighbourTest.cs";
             const string aSharedHelper = "TestHelpers/WorkItemServiceTestBuilder.cs";
-            const string aSelectorTestThatStays = "Services/Implementation/Dependencies/DependencySourceSelectorTest.cs";
+            const string aSelectorTestThatStays = "Modules/TrackerIntegration/Application/DependencySourceSelectorTest.cs";
             const string anIntegrationTest = "API/Integration/AWorkItemsControllerIntegrationTest.cs";
 
             yield return new TestCaseData(new[] { leftBehind }, new[] { moved, leftBehind }).SetArgDisplayNames("left in its old place");
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             const string aNewcomerAmongTheRules = "Services/Implementation/WorkItemRules/ANewcomerRuleTest.cs";
             const string aNewcomerInASubfolder = "Services/Implementation/TeamData/Refresh/ANewcomerRefreshTest.cs";
             const string aFolderWithASimilarName = "Services/Implementation/WorkItemsNeighbour/ANeighbourTest.cs";
-            const string aSelectorTestThatStays = "Services/Implementation/Parents/ParentSourceSelectorTest.cs";
+            const string aSelectorTestThatStays = "Modules/TrackerIntegration/Domain/ParentSourceSelectorTest.cs";
             const string anIntegrationTest = "API/Integration/AWorkItemsControllerIntegrationTest.cs";
             const string aModuleTest = $"{ModuleTestFolder}/Application/ANewcomerWorkItemTest.cs";
 

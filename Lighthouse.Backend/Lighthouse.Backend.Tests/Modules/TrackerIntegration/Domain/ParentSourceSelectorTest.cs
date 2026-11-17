@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Parents;
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using NUnit.Framework;
 using System.Collections;
 using System.Reflection;

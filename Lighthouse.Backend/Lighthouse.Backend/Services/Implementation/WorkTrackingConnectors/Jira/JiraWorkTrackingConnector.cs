@@ -1,8 +1,8 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
-using Lighthouse.Backend.Services.Implementation.Dependencies;
-using Lighthouse.Backend.Services.Implementation.Parents;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;

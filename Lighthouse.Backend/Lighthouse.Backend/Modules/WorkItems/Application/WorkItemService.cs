@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
@@ -7,7 +8,6 @@ using Lighthouse.Backend.Models.Staleness;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation.Parents;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

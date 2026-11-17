@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {

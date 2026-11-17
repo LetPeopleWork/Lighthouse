@@ -252,7 +252,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [TestCase("\"Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService\",")]
         [TestCase("\"Lighthouse.Backend.Services.Implementation.WorkItems.SomethingThatDidNotMove\",")]
-        [TestCase("\"Lighthouse.Backend.Services.Implementation.Dependencies.DependencySourceSelector\",")]
+        [TestCase("\"Lighthouse.Backend.Modules.TrackerIntegration.Application.DependencySourceSelector\",")]
         [TestCase("\"**/Modules/WorkItems/Application/Dependencies/DependencyRefreshReporter.cs\",")]
         [TestCase("    /// <see cref=\"Modules.WorkItems.Application.RuleEvaluator{T}\"/>, and every")]
         public void ANewHomeOrATypeThatStays_IsNotFound(string line)

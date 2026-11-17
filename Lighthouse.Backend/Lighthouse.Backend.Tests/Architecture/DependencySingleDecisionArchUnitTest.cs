@@ -3,9 +3,9 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
-using Lighthouse.Backend.Services.Implementation.Dependencies;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Modules.Forecasting.Application;
-using Lighthouse.Backend.Services.Implementation.Parents;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
@@ -49,10 +49,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend/Services/Implementation/Dependencies/",
             "Lighthouse.Backend/Modules/WorkItems/Domain/Dependencies/",
             "Lighthouse.Backend/Modules/WorkItems/Application/Dependencies/",
+            TheFileThatChoosesTheSource,
         ];
 
         private const string TheFileThatChoosesTheSource =
-            "Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs";
+            "Lighthouse.Backend/Modules/TrackerIntegration/Application/DependencySourceSelector.cs";
 
         // The trackers that return Features and can carry something for one to wait on. ServiceNow returns
         // no Features at all, so a dependency has nothing to run between there and it is not listed. Found by
@@ -137,10 +138,21 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Modules/WorkItems/Application/Dependencies/",
         ];
 
+        // Two files of the folder this epic started in now live in the Tracker integration module, whose layers
+        // hold much more than this epic added, so they are read by name rather than by folder.
+        private static readonly string[] TheDependencyFilesThatLeftTheFolders =
+        [
+            "Modules/TrackerIntegration/Application/DependencySourceSelector.cs",
+            "Modules/TrackerIntegration/Domain/DependencyFieldReferences.cs",
+        ];
+
         private static readonly string[] WhatThisEpicAddedToTheBackend =
             [.. TheFoldersThisEpicStartedIn, .. TheModulesDependencyFolders];
 
-        private const string TheConnectors = ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern;
+        // The translation rules in the Tracker integration Domain decide for every tracker, so they are not
+        // the connectors these rules police.
+        private const string TheConnectors =
+            @"^(?!Lighthouse\.Backend\.Modules\.TrackerIntegration\.Domain(\.|$))(" + ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern + ")";
 
         private static readonly string[] TheTypesThatMaySetAParent =
         [
@@ -997,6 +1009,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var files = WhatThisEpicAddedToTheBackend
                 .Where(folder => TheFolderIsThereToRead(backendRoot, folder))
                 .SelectMany(folder => Directory.EnumerateFiles(PathUnder(backendRoot, folder), "*.cs", SearchOption.AllDirectories))
+                .Concat(TheDependencyFilesThatLeftTheFolders.Select(file => PathUnder(backendRoot, file)))
                 .Select(file => new SourceFile(
                     Path.GetRelativePath(solutionRoot, file).Replace('\\', '/'),
                     File.ReadAllText(file),

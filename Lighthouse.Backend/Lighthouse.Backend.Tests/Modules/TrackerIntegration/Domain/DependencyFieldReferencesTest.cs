@@ -1,5 +1,5 @@
-using Lighthouse.Backend.Services.Implementation.Dependencies;
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Domain
 {

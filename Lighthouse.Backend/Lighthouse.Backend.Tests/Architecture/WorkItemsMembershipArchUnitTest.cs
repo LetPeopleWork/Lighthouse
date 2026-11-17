@@ -37,9 +37,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly Dictionary<string, string> Stays = new(StringComparer.Ordinal)
         {
-            ["DependencySourceSelector"] = "Tracker integration: the connectors call it while they apply the connection's mapping",
-            ["DependencyFieldReferences"] = "Tracker integration: the CSV connector calls it while it applies the connection's mapping",
-            ["ParentSourceSelector"] = "Tracker integration: the connectors call it while they apply the connection's mapping",
             ["OrphanedFeatureCleanupService"] = "Work Items, once it reads Features through a repository port instead of the database context",
             ["IOrphanedFeatureCleanupService"] = "Work Items, together with its only implementation, once the cleanup reads Features through a repository port",
         };

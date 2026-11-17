@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models.Dependencies;
-using Lighthouse.Backend.Services.Implementation.Dependencies;
 using NUnit.Framework;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 

@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Parents;
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 
 namespace Lighthouse.Backend.Tests.Models
 {

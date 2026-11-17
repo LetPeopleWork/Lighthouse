@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
-using Lighthouse.Backend.Services.Implementation.Dependencies;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Tests.TestHelpers;
 using NUnit.Framework;
 

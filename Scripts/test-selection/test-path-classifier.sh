@@ -144,7 +144,7 @@ done
 assert "work item base: jira=false"      "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs')" "false"
 assert "options owner: jira=false"       "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs')" "false"
 assert "other work item service: jira=false" "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs')" "false"
-assert "parent source tests: jira=false" "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorTest.cs')" "false"
+assert "parent source tests: jira=false" "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/ParentSourceSelectorTest.cs')" "false"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Tracker integration on its module path. The connectors and their shared code move to

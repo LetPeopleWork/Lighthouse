@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.Extensions.Logging;
 using Moq;
