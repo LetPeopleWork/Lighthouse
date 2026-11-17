@@ -1,0 +1,1480 @@
+{
+"counters": {
+"B": 3,
+"C": 1,
+"D": 11,
+"F": 240,
+"K": 4,
+"L": 4,
+"P": 5,
+"S": 3,
+"T": 1,
+"Y": 3
+},
+"design": {
+"adrs": [
+{
+"key": "002",
+"status": "Proposed",
+"title": "A Cycle Time outlier is above the Cycle Time UNPL, judged by a replaceable backend outlier definition"
+}
+],
+"paradigm": "object_oriented",
+"shared": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.FlowMetrics\"",
+"id": "T1",
+"obligation": "F122",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F76",
+"driven_ports": [
+"F74",
+"F75"
+],
+"driving_port": "F73",
+"failures": [
+{
+"condition": "F77",
+"id": "B1",
+"observation": "F78",
+"outcome": "Refusal"
+},
+{
+"condition": "F79",
+"id": "B2",
+"observation": "F80",
+"outcome": "Refusal"
+},
+{
+"condition": "F81",
+"id": "B3",
+"observation": "F82",
+"outcome": "Indeterminate"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F96",
+"bypass": "F98",
+"constructor": "XmRCalculator.UpperNaturalProcessLimitOf",
+"consumer": "XmRCalculator large-change rule and UpperNaturalProcessLimitOutlierDefinition",
+"harm": "F95",
+"id": "C1",
+"owner": "UpperNaturalProcessLimit",
+"proposition": "F94",
+"public_observation": "F97"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F104",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F103"
+},
+{
+"axis": "Inhabitation",
+"basis": "F105",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F103"
+},
+{
+"axis": "PublicReachability",
+"basis": "F106",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F103"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F68"
+},
+{
+"id": "K2",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F69"
+},
+{
+"id": "K3",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F70"
+},
+{
+"id": "K4",
+"slices": [
+"S2"
+],
+"text": "F71"
+}
+],
+"constructors": [
+{
+"name": "UpperNaturalProcessLimit.Of",
+"signature": "XmRCalculator.UpperNaturalProcessLimitOf(int[] baselineValues) -> UpperNaturalProcessLimit (length >= 2)"
+},
+{
+"name": "OutlierVerdict",
+"signature": "OutlierVerdict.Limited(UpperNaturalProcessLimit, IReadOnlyList<int>) | OutlierVerdict.NoLimits"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F57"
+},
+{
+"id": "D2",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F58"
+},
+{
+"id": "D3",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F59"
+},
+{
+"id": "D4",
+"slices": [
+"S1"
+],
+"text": "F60"
+},
+{
+"id": "D5",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F61"
+},
+{
+"id": "D6",
+"slices": [
+"S3"
+],
+"text": "F62"
+},
+{
+"id": "D7",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F63"
+},
+{
+"id": "D8",
+"text": "F64"
+},
+{
+"id": "D9",
+"slices": [
+"S2",
+"S3"
+],
+"text": "F65"
+},
+{
+"id": "D10",
+"text": "F66"
+},
+{
+"id": "D11",
+"slices": [
+"S1"
+],
+"text": "F67"
+}
+],
+"equality": [
+{
+"definition": "F87",
+"under": "verdict"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F72"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F84",
+"description": "F83",
+"result_type": "int set"
+},
+{
+"cannot_distinguish": "F86",
+"description": "F85",
+"result_type": "rendered view"
+}
+],
+"refuted": [
+{
+"cause": "F89",
+"counterexample": "F90",
+"statement": "F88"
+},
+{
+"cause": "F92",
+"counterexample": "F93",
+"statement": "F91"
+}
+],
+"risks": [
+{
+"allowed": "F109",
+"forbidden": "F110",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F108",
+"residue": "F111",
+"source": "F107"
+},
+{
+"allowed": "F114",
+"forbidden": "F115",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F113",
+"residue": "F116",
+"source": "F112"
+},
+{
+"allowed": "F119",
+"forbidden": "F120",
+"id": "Y3",
+"kind": "Bypass",
+"owner": "architect",
+"preserved": "F118",
+"residue": "F121",
+"source": "F117"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"state": "F99"
+},
+{
+"kind": "Admitted",
+"state": "F100"
+},
+{
+"kind": "Excluded",
+"state": "F101"
+},
+{
+"kind": "Unknown",
+"owner": "maintainer",
+"state": "F102"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierSwitch.test.tsx",
+"public_oracle": {
+"expected": "F126",
+"falsifier": "F127",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F125"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:176",
+"reason": "F131"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:36",
+"reason": "F132"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx:1",
+"reason": "F133"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "CycleTimeScatterPlotChart",
+"statement": "F136",
+"treatment": {
+"cases": [
+"F137",
+"F138",
+"F139"
+],
+"kind": "Finite",
+"reason": "F140"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F134"
+},
+{
+"analysis": "prefactoring",
+"reason": "F135"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:176",
+"reason": "F128",
+"symbol": "CycleTimeScatterPlotChart"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/utils/charts/outliers.ts:79",
+"reason": "F129",
+"symbol": "axisTop"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:36",
+"reason": "F130",
+"symbol": "outlierWording"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"reason": "F123"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts",
+"reason": "F124"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierSwitch.test.tsx"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersFollowTheProcessBehaviourChartTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/XmRCalculatorTest.cs",
+"move": "F156",
+"preserved": "F157",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~XmRCalculatorTest\""
+]
+},
+"public_oracle": {
+"expected": "F154",
+"falsifier": "F155",
+"promises": [
+"P1",
+"P4"
+],
+"stimulus": "F153"
+},
+"records": {
+"agreement": [
+{
+"contract": "CycleTimeOutliersDto on GET cycleTime/outliers",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:491",
+"party": "Producer",
+"reason": "F197"
+},
+{
+"contract": "CycleTimeOutliersDto on GET cycleTime/outliers",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:475",
+"party": "Producer",
+"reason": "F197"
+},
+{
+"contract": "CycleTimeOutliersDto on GET cycleTime/outliers",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts:150",
+"party": "Consumer",
+"reason": "F198"
+},
+{
+"contract": "ProcessBehaviourChart JSON on cycleTime/pbc",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:682",
+"party": "Producer",
+"reason": "F199"
+},
+{
+"contract": "ProcessBehaviourChart JSON on cycleTime/pbc",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts:647",
+"party": "Consumer",
+"reason": "F200"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/XmRCalculator.cs:15",
+"reason": "F177"
+},
+{
+"decision": "Changed",
+"kind": "application-port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ITeamMetricsService.cs:29",
+"reason": "F178"
+},
+{
+"decision": "Changed",
+"kind": "application-port",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPortfolioMetricsService.cs:17",
+"reason": "F179"
+},
+{
+"decision": "Changed",
+"kind": "route",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:491",
+"reason": "F180"
+},
+{
+"decision": "Changed",
+"kind": "route",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:475",
+"reason": "F181"
+},
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1402",
+"reason": "F182"
+},
+{
+"decision": "Migrated",
+"kind": "frontend-rule",
+"locator": "Lighthouse.Frontend/src/utils/charts/outliers.ts:37",
+"reason": "F183"
+},
+{
+"decision": "Changed",
+"kind": "frontend-service",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts:150",
+"reason": "F184"
+},
+{
+"decision": "Migrated",
+"kind": "usage-docs",
+"locator": "docs/product/architecture/adr-282-outlier-is-a-per-chart-median-multiple.md:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/CycleTimeOutlierDefinition.cs:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:682",
+"reason": "F187"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs:210",
+"reason": "F188"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs:61",
+"reason": "F189"
+},
+{
+"decision": "Changed",
+"kind": "dto",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CycleTimeOutliersDto.cs:1",
+"reason": "F190"
+},
+{
+"decision": "Changed",
+"kind": "frontend-copy",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:36",
+"reason": "F191"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:176",
+"reason": "F192"
+},
+{
+"decision": "Changed",
+"kind": "frontend-model",
+"locator": "Lighthouse.Frontend/src/models/Metrics/CycleTimeOutliers.ts:1",
+"reason": "F193"
+},
+{
+"decision": "Changed",
+"kind": "wiring",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:363",
+"reason": "F194"
+},
+{
+"decision": "Changed",
+"kind": "wiring",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:224",
+"reason": "F195"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:505",
+"reason": "F196"
+}
+],
+"laws": [
+{
+"id": "L2",
+"kind": "Refinement",
+"layer": "Domain",
+"owner": "UpperNaturalProcessLimitOutlierDefinition",
+"statement": "F201",
+"treatment": {
+"cases": [
+"F202",
+"F203",
+"F204",
+"F205",
+"F206"
+],
+"kind": "Finite",
+"reason": "F207"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "outliers.ts",
+"statement": "F208",
+"treatment": {
+"falsifier": "F215",
+"generator": {
+"domain": "F209",
+"must_include": [
+"F210",
+"F211",
+"F212"
+],
+"seed_policy": "fast-check default seed, printed on failure",
+"shrinking": "F213",
+"size_bound": "0..50 items"
+},
+"independent_observation": "F214",
+"kind": "Broad"
+}
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/XmRCalculator.cs:15",
+"reason": "F158",
+"symbol": "XmRCalculator"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:682",
+"reason": "F159",
+"symbol": "BuildCycleTimeProcessBehaviourChart"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:573",
+"reason": "F160",
+"symbol": "ResolveBaseline"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs:416",
+"reason": "F161",
+"symbol": "ComputeCycleTimeData"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/CycleTimeOutlierDefinition.cs:1",
+"reason": "F162",
+"symbol": "ICycleTimeOutlierDefinition"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:491",
+"reason": "F163",
+"symbol": "GetCycleTimeProcessBehaviourChart"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Frontend/src/utils/charts/outliers.ts:37",
+"reason": "F164",
+"symbol": "findOutliers"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts:150",
+"reason": "F165",
+"symbol": "getCycleTimePbc"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ITeamMetricsService.cs:29",
+"reason": "F166",
+"symbol": "ITeamMetricsService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPortfolioMetricsService.cs:17",
+"reason": "F167",
+"symbol": "IPortfolioMetricsService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs:61",
+"reason": "F168",
+"symbol": "PortfolioMetricsService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs:475",
+"reason": "F169",
+"symbol": "PortfolioMetricsController"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CycleTimeOutliersDto.cs:1",
+"reason": "F170",
+"symbol": "CycleTimeOutliersDto"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1402",
+"reason": "F171",
+"symbol": "Program"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:36",
+"reason": "F130",
+"symbol": "outlierWording"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:176",
+"reason": "F172",
+"symbol": "CycleTimeScatterPlotChart"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/models/Metrics/CycleTimeOutliers.ts:1",
+"reason": "F173",
+"symbol": "ICycleTimeOutliers"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:363",
+"reason": "F174",
+"symbol": "buildWidgetNodes"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:224",
+"reason": "F175",
+"symbol": "onFetchNamedCycleTimePercentiles"
+},
+{
+"decision": "Extend",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:505",
+"reason": "F176",
+"symbol": "Outlier"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/CycleTimeOutliersWireContractTest.cs",
+"Lighthouse.Frontend/src/utils/charts/outliers.test.ts",
+"Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/XmRCalculator.cs",
+"reason": "F141"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/CycleTimeOutlierDefinition.cs",
+"reason": "F142"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs",
+"reason": "F143"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ITeamMetricsService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPortfolioMetricsService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+"reason": "F144"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+"reason": "F144"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CycleTimeOutliersDto.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F145"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/utils/charts/outliers.ts",
+"reason": "F146"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"reason": "F148"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+"reason": "F149"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/models/Metrics/CycleTimeOutliers.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx",
+"reason": "F150"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F151"
+},
+{
+"change": "Extend",
+"path": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md",
+"reason": "F152"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~CycleTimeOutliers\"",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/utils/charts/outliers.test.ts src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs",
+"public_oracle": {
+"expected": "F222",
+"falsifier": "F223",
+"promises": [
+"P1",
+"P5"
+],
+"stimulus": "F221"
+},
+"records": {
+"agreement": [
+{
+"contract": "CycleTimeOutliersDto status NoLimits",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:491",
+"party": "Producer",
+"reason": "F232"
+},
+{
+"contract": "CycleTimeOutliersDto status NoLimits",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/MetricsService.ts:150",
+"party": "Consumer",
+"reason": "F233"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "domain",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/CycleTimeOutlierDefinition.cs:1",
+"reason": "F229"
+},
+{
+"decision": "Changed",
+"kind": "dto",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CycleTimeOutliersDto.cs:1",
+"reason": "F230"
+},
+{
+"decision": "Changed",
+"kind": "application",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:682",
+"reason": "F231"
+},
+{
+"decision": "Changed",
+"kind": "frontend-copy",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:36",
+"reason": "F219"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:176",
+"reason": "F220"
+}
+],
+"laws": [
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "BaseMetricsService.BuildCycleTimeOutliers",
+"statement": "F235",
+"treatment": {
+"cases": [
+"F236",
+"F237",
+"F238",
+"F239"
+],
+"kind": "Finite",
+"reason": "F240"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F234"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/CycleTimeOutlierDefinition.cs:1",
+"reason": "F224",
+"symbol": "OutlierVerdict"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CycleTimeOutliersDto.cs:1",
+"reason": "F225",
+"symbol": "CycleTimeOutliersDto"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:36",
+"reason": "F130",
+"symbol": "outlierWording"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:176",
+"reason": "F226",
+"symbol": "CycleTimeScatterPlotChart"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs:682",
+"reason": "F227",
+"symbol": "BuildCycleTimeProcessBehaviourChart"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/outlierHeaderChip.tsx:1",
+"reason": "F228",
+"symbol": "outlierHeaderChip"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/CycleTimeOutlierDefinition.cs",
+"reason": "F216"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs",
+"reason": "F217"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CycleTimeOutliersDto.cs",
+"reason": "F218"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts",
+"reason": "F219"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"reason": "F220"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~CycleTimeOutliersWithoutProcessLimits\"",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx"
+]
+}
+}
+},
+"facts": {
+"F1": "Story 6655 Outlier Config and on/off: Was playing around with the new outliers in the cycle time scatterplot, and while I like it, I think it should be adjusted like this: - would be nice to toggle it on/off, so if I really wanna see all items, it should show (on by default, no need to store the state and start on always...) - been thinking if we should use the UNPL from the CT PBC as a limit instead of 5x median... I think basing it on UNPL does make more sense (in my mind). Later we *may* configure it more but for now I would not configure it at all. With the UNPL the question is, does it still work. Following an example from a team, where we have 20+ outliers, and comparison with the CT PBC (way less).",
+"F10": "the reader switches outlier handling off",
+"F100": "NoLimits verdict: invalid baseline or fewer than 2 baseline Cycle Times",
+"F101": "a verdict built from the rounded UNPL or from 5 x median",
+"F102": "whether the UNPL count is useful for the team that showed 20+ outliers",
+"F103": "outlier verdict",
+"F104": "NoLimits is the only result without limits; Limited needs an UpperNaturalProcessLimit built from >= 2 values",
+"F105": "two positive baseline Cycle Times build a limit and a Limited verdict",
+"F106": "service port -> GET cycleTime/outliers -> MetricsService.getCycleTimeOutliers -> chart chip and drawn items",
+"F107": "negated: the cycle time data and the verdict come from the same data (a refresh lands between the two requests)",
+"F108": "every plotted item is drawn or listed",
+"F109": "an outlier id not among the plotted items is ignored; a new long item is drawn until the next load",
+"F11": "all closed Work Items, the 3 former outliers included, are drawn on the plot, the y-axis rises to fit the tallest of them, and the outlier chip is gone; switching it on again restores the chip and the shorter axis",
+"F110": "an item neither drawn nor listed; the axis clipping a drawn item",
+"F111": "a brief mismatch until the next load; the axis cap never goes below the tallest drawn item",
+"F112": "negated: the selected named definition stays valid",
+"F113": "no stale count",
+"F114": "NoLimits, then the chart resets to the default",
+"F115": "outliers of another definition",
+"F116": "none",
+"F117": "the PBC and outlier answers read separate cache entries",
+"F118": "same formula and comparison by construction",
+"F119": "cache entries expiring at different times",
+"F12": "Outliers are the Work Items above the Cycle Time UNPL",
+"F120": "a different baseline rule",
+"F121": "agreement depends on both being computed from the same stored items; no extra guard",
+"F122": "New Flow metrics types stay in their layer: the definition, verdict and limit in Domain with no Application, EF or API dependency; the service method in Application",
+"F123": "Hide outliers switch, local state on by default; off draws every item with the pre-outlier axis and hides the chip",
+"F124": "switch label copy",
+"F125": "Render CycleTimeScatterPlotChart (one render) with closed Work Items of 2, 3, 3, 4 and 60 days; read the switch, the chip and the drawn items; click Hide outliers off; then on again",
+"F126": "At first the switch is on, the 60-day item is not drawn and the chip says 1 outlier; switched off all 5 items are drawn, the y-axis top is at least 60 and no chip is shown; switched on again the chip and the shorter axis return",
+"F127": "A switch that starts off or reads a stored value, an off state that still filters or keeps the chip, or an on state that does not restore the chip fails the test",
+"F128": "owns the outlier partition, axis and chip today; the switch gates them in the same place",
+"F129": "with hasOutliers false it already gives the pre-outlier axis that the off state needs",
+"F13": "the Cycle Time process behaviour chart of the same Team and date range has an UNPL of 30 days, and closed Work Items with Cycle Times of 12, 30, 31 and 90 days",
+"F130": "single owner of outlier copy",
+"F131": "new switch; props unchanged, so widgetNodes and BaseMetricsView are untouched",
+"F132": "adds the switch label; existing wording unchanged",
+"F133": "the switch starts on, so existing chip tests keep their meaning",
+"F134": "no shared contract changes: the chart props, routes and DTOs stay as they are",
+"F135": "an additive switch over existing state; no structure must move first",
+"F136": "With the switch off the drawn items are all items and no chip is shown; switching on restores the partition and chip; every mount starts on",
+"F137": "first render: on, outlier hidden, chip 1",
+"F138": "off: all drawn, axis fits 60, no chip",
+"F139": "on again: chip and shorter axis",
+"F14": "the reader looks at the Cycle Time scatterplot with outlier handling on",
+"F140": "a two-state switch over one fixture is a closed finite domain",
+"F141": "UpperNaturalProcessLimit value object shared by the PBC and the outlier rule",
+"F142": "ICycleTimeOutlierDefinition, UpperNaturalProcessLimitOutlierDefinition, OutlierVerdict, CycleTimeObservation",
+"F143": "BuildCycleTimeOutliers on the same baseline and samples as the Cycle Time PBC",
+"F144": "GET cycleTime/outliers",
+"F145": "register the one outlier definition",
+"F146": "replace the median rule with partition by verdict ids; axis cap at the limit, never below the tallest drawn item",
+"F147": "UNPL help sentence and list title",
+"F148": "keyed verdict query, loading and failure reporting",
+"F149": "getCycleTimeOutliers for Team and Portfolio",
+"F15": "the Work Items of 31 and 90 days are the outliers, the 12 and 30 day Work Items are drawn, and the outlier list and the help name the limit as the upper natural process limit, not as 5 times the median",
+"F150": "pass the verdict fetcher to the chart",
+"F151": "build the verdict fetcher for the owner and range",
+"F152": "glossary: Outlier rewritten, Upper natural process limit added",
+"F153": "At the application-service port (ServicePortHarness, FakeLighthouseClock): a Team whose baseline Cycle Times give an unrounded UNPL of 30 and whose closed Work Items in the range have 12, 30, 31 and 90 days; call GetCycleTimeOutliers(team, start, end, null) and GetCycleTimeProcessBehaviourChart(team, start, end); repeat with a baseline giving 30.6 and a 31-day item; repeat with a named Cycle Time definition",
+"F154": "Limited with exactly the ids of the 31 and 90 day items, equal to the PBC points whose value is above its limit; at 30.6 the 31-day item is an outlier; the named definition judges by named durations the same way",
+"F155": "The 5 x median rule (no outliers here), a comparison with the rounded UNPL (misses 31 at 30.6), >= instead of >, or treating below-limit LargeChange points as outliers fails a row",
+"F156": "Extract the UNPL into an UpperNaturalProcessLimit value object (XmRCalculator.UpperNaturalProcessLimitOf and IsExceededBy) and use it in Calculate and the large-change rule, before any outlier code; this lets the outlier definition reuse the same formula and comparison",
+"F157": "every XmRResult value and every special-cause classification",
+"F158": "already owns the UNPL formula and the above-limit comparison; the outlier rule must use the same ones",
+"F159": "owns baseline resolution and the Cycle Time samples (filter > 0, order); the outlier build shares them",
+"F16": "Without process limits, no Work Item is set apart",
+"F160": "the baseline rule is unchanged",
+"F161": "already yields each item with its named durations",
+"F162": "no existing type judges outliers in the backend; the replaceable definition the maintainer asked for",
+"F163": "the outlier route sits beside it with the same guard, range check and lookup; the PBC answer is not reused (rounded limit, no named variant)",
+"F164": "the median rule is superseded; partition by verdict ids keeps one rule owner in the backend",
+"F165": "MetricsService owns metrics routes; add getCycleTimeOutliers next to it",
+"F166": "the Team metrics application port; the outlier query sits beside GetCycleTimeProcessBehaviourChart",
+"F167": "the Portfolio twin",
+"F168": "delegates to BaseMetricsService.BuildCycleTimeOutliers with Feature Cycle Times, as it does for the PBC",
+"F169": "route beside cycleTime/pbc with the same guard and checks",
+"F17": "the Cycle Time process behaviour chart has no limits for the selected range, because its baseline is invalid (for example shorter than 14 days) or holds fewer than 2 closed Work Items",
+"F170": "ProcessBehaviourChart carries a rounded limit and every point; no DTO carries a verdict",
+"F171": "the composition root registers the metrics services; the definition is registered there",
+"F172": "owns the partition and chip; it already fetches per-definition answers for the selected Cycle Time",
+"F173": "no frontend model carries the verdict",
+"F174": "already passes the named-percentile fetcher to the chart; the verdict fetcher goes the same way",
+"F175": "the same owner-and-range fetcher pattern builds the verdict fetcher",
+"F176": "the existing glossary row is rewritten, UNPL row added",
+"F177": "limit extracted; every XmRResult value unchanged",
+"F178": "new method; test doubles implementing the interface gain it",
+"F179": "new method",
+"F18": "every closed Work Item is drawn, no outlier count is shown, and the reader can see that outliers need the process behaviour chart's limits",
+"F180": "additive route; cycleTime/pbc unchanged",
+"F181": "additive route",
+"F182": "one singleton registration; forces the full backend Integration suite",
+"F183": "median rule and fiftiethPercentile removed; existing outliers tests rewritten by the acceptance designer",
+"F184": "new call; test fakes of the metrics service gain it",
+"F185": "decisions 1 to 3 superseded by the new ADR",
+"F186": "new file",
+"F187": "new BuildCycleTimeOutliers sharing the PBC samples; PBC output unchanged",
+"F188": "implements the new port method; constructor gains the definition",
+"F189": "implements the new port method; constructor gains the definition, so tests that new it up pass the UNPL definition",
+"F19": "An on/off control for outlier handling on the Cycle Time scatterplot, on by default, not stored: every load starts with it on.",
+"F190": "new DTO",
+"F191": "help sentence and list title name the UNPL; OUTLIER_MEDIAN_MULTIPLE import removed",
+"F192": "new fetcher prop and keyed query; existing outlier tests rewritten for the new rule",
+"F193": "new model",
+"F194": "context gains the fetcher; tests that mock the chart are unaffected",
+"F195": "builds the fetcher for Team and Portfolio",
+"F196": "glossary rows",
+"F197": "new route and DTO",
+"F198": "reads status as a string, limit as number or null, ids as numbers",
+"F199": "the prefactoring keeps every value",
+"F2": "A reader of the cycle time scatterplot can see every item on demand, and the items flagged as outliers match the ones the cycle time process behaviour chart calls unusual.",
+"F20": "Replace the 5 x median outlier rule with the Cycle Time process behaviour chart's UNPL for the same Team or Portfolio and date range, including its configured baseline when one is set.",
+"F200": "no field changes",
+"F201": "For a valid baseline with at least 2 positive Cycle Times, the outlier ids are exactly the shown items with days strictly above the unrounded UNPL, and equal the Cycle Time PBC points above that limit; named definitions follow the same law over named durations",
+"F202": "UNPL 30: 12 and 30 drawn, 31 and 90 outliers",
+"F203": "UNPL 30.6: 31 is an outlier",
+"F204": "all-equal baseline (moving range 0): only items above that value",
+"F205": "item below the lower limit is not an outlier",
+"F206": "named definition with the same values gives the same ids",
+"F207": "the boundary rows discriminate every plausible wrong rule (median, rounded, >=, LargeChange); the backend test project has no property library and the test-writing skill puts the rule at the port",
+"F208": "The frontend partition is total and disjoint: typical plus outliers equals the plotted items, outliers are exactly the plotted items whose id is in the verdict, sorted longest first; the axis top is at least every drawn value and at most the limit unless a drawn value exceeds it",
+"F209": "lists of plotted items with unique ids and days 0..400, a verdict id set drawn from those ids plus foreign ids, a limit 0..400",
+"F21": "The outlier help text, the outlier list title and the chip wording name the new limit in the configured Terminology words.",
+"F210": "empty list",
+"F211": "a verdict id not among the items",
+"F212": "a drawn item above the limit",
+"F213": "fast-check built-in shrinking",
+"F214": "set union and intersection of the inputs computed in the test from the ids",
+"F215": "dropping an item, judging by days instead of ids, or capping the axis below a drawn item",
+"F216": "NoLimits for fewer than 2 baseline Cycle Times",
+"F217": "NoLimits for an invalid baseline or unknown named definition",
+"F218": "NoLimits status",
+"F219": "no-limits text",
+"F22": "A defined result when the process behaviour chart has no limits (invalid baseline, fewer than 2 baseline Work Items): no outliers set apart, and the reader is told why.",
+"F220": "no-limits look",
+"F221": "At the application-service port: GetCycleTimeOutliers for a Team whose selected range is 10 days with no configured baseline and items of 5 and 90 days; again with a 30-day range holding 1 positive Cycle Time; again with a valid 14-day range holding 2",
+"F222": "NoLimits with no ids for the 10-day range and for 1 item, Limited for 2 items; and the rendered chart with a NoLimits verdict draws every item, shows no count chip and shows the no-limits text",
+"F223": "A 5 x median fallback (90 would be an outlier), treating 1 item as limits, or a count chip on NoLimits fails a row",
+"F224": "created by S2 in this feature; S3 adds its NoLimits case, no earlier owner exists",
+"F225": "created by S2 in this feature; S3 adds the NoLimits status",
+"F226": "renders the no-limits look in the chip place",
+"F227": "S3 adds the invalid-baseline branch to the S2 outlier build, mirroring the InvalidBaselineChart branch of this method",
+"F228": "not shown on NoLimits; the no-limits text takes its place",
+"F229": "NoLimits case",
+"F23": "Any configuration of the outlier rule (multiple, limit choice, per Team setting): the maintainer said not to configure it for now.",
+"F230": "NoLimits status value, limit null",
+"F231": "invalid baseline or unknown named definition gives NoLimits",
+"F232": "emits NoLimits with null limit and no ids",
+"F233": "maps NoLimits to the no-limits look",
+"F234": "adds a case to the S2 choice; nothing must move first",
+"F235": "The verdict is NoLimits exactly when the baseline is invalid or holds fewer than 2 positive Cycle Times; then no item is set apart",
+"F236": "10-day range: NoLimits",
+"F237": "1 baseline item: NoLimits",
+"F238": "0 baseline items: NoLimits",
+"F239": "14 days and 2 items: Limited",
+"F24": "Remembering the on/off choice across loads, sessions or users: the maintainer said no need to store it; it starts on every time.",
+"F240": "closed boundary cases of the baseline rule",
+"F25": "Changes to the process behaviour chart itself, its baseline rules or its special-cause rules.",
+"F26": "Outlier handling on any chart other than the Cycle Time scatterplot.",
+"F27": "Outlier handling has an on/off control, on by default, its state is not stored, and it starts on at every load (maintainer, in the Request).",
+"F28": "No configuration of the outlier rule in this Story; a later Story may add it (maintainer, in the Request).",
+"F29": "The limit is the UNPL exactly as the Cycle Time process behaviour chart computes it: average plus 2.66 times the average moving range of the baseline Cycle Times, the baseline being the configured baseline dates or, without one, the selected date range. An outlier is a Work Item the chart marks above that UNPL (compared unrounded, as the chart does), so the two charts never disagree on which Work Items are unusual.",
+"F3": "A reader of the Cycle Time scatterplot can switch outlier handling off to see every closed Work Item drawn on the chart, and when it is on, the Work Items set apart as outliers are exactly the ones the Cycle Time process behaviour chart shows above its upper natural process limit (UNPL).",
+"F30": "Only the above-UNPL rule (large change, upward) defines an outlier. The chart's other signals (below the lower limit, two-sigma and one-sigma runs, shifts) do not set a Work Item apart on the scatterplot, because a long Cycle Time is what squeezes the other dots.",
+"F31": "When the process behaviour chart has no usable limits (status BaselineInvalid, or fewer than 2 baseline Work Items, where the UNPL equals the single value or 0), no Work Item is set apart and the chip area says outliers need the process behaviour chart's limits; the scatterplot never falls back to 5 x median silently.",
+"F32": "The scatterplot gets the UNPL whether or not the process behaviour chart widget is shown on the same tab; today the Cycle Time process behaviour chart data is fetched only when that widget is asked for, so DESIGN decides how the limit reaches the scatterplot.",
+"F33": "While the limit is loading or could not be loaded, the scatterplot shows no stale outlier count: it reuses the existing loading chip wording (Outliers, loading) and the WidgetShell failure look; DESIGN sketches both states.",
+"F34": "Control: a labelled MUI Switch, copy Hide outliers, in the scatterplot title row next to the Cycle Time selector, on by default. Switched off: every Work Item drawn, y-axis fits all, outlier chip hidden. Wording finalised at the DELIVER sketch review.",
+"F35": "New help sentence: An outlier is a closed Work Item whose Cycle Time is above the upper natural process limit of the Cycle Time process behaviour chart for this date range. List title: Work Items with a Cycle Time above the upper natural process limit (N days). Terms come from Terminology.",
+"F37": "Does the UNPL rule still work for the team that showed 20+ outliers? Recommendation: accept the rule if, on that team's data, the maintainer judges the count useful (agreement with the process behaviour chart holds by construction); if the UNPL is lower than the old cut on some data and flags more items, the maintainer decides whether that is acceptable. Needs the maintainer's look at that team's data at the DELIVER sketch review; does not block slice 1.",
+"F38": "DISCUSS checklist, RBAC impact: N/A, because the control is view-only and local, adds no action, page or data, and the limit comes from Cycle Time data a reader of the Metrics tab can already see.",
+"F39": "DISCUSS checklist, Lighthouse-Clients CLI and MCP: N/A, because no API route or DTO changes if the scatterplot uses the existing Cycle Time process behaviour chart answer; DESIGN revisits this if the named-definition answer needs a new field or route.",
+"F4": "Outlier handling starts on every time the chart opens",
+"F40": "DISCUSS checklist, website marketing surface: no new line or page, because this refines an existing chart behaviour; at finalize, check that no website or docs copy still says 5 times the median.",
+"F41": "DISCUSS checklist, context map: touches Flow metrics only; publishes and reacts to no domain event (view behaviour, no state change); UI surface is the Metrics tab of a Team's or Portfolio's page (ADR-271), unchanged. New glossary terms for Flow metrics in ADR-270: Outlier (a closed Work Item whose Cycle Time is above the Cycle Time UNPL) and Upper natural process limit (UNPL); neither is in the glossary today.",
+"F42": "Visualization checklist: the question is which closed Work Items are unusually long, and can I see them all; awkward data covered by the no-limits scenario and the existing all-visible-are-outliers state; form unchanged (scatter); title and axes unchanged and labelled; the info popover and docs state the UNPL rule and the switch; no new colour; the switch carries a text label, not colour alone; loading, failure and no-limits states are distinct from no data; check phone width, dark mode, enlarged and PDF at finalize.",
+"F43": "The reader opens the Metrics tab of a Team and looks at the Cycle Time scatterplot; outlier handling is on and the longest Work Items are set apart in the outlier chip.",
+"F44": "Not supplied beyond the maintainer liking the outliers.",
+"F45": "The reader compares the outliers with the Cycle Time process behaviour chart and sees the two agree on which Work Items are unusual.",
+"F46": "Not supplied; the Request records that 20+ outliers against far fewer on the process behaviour chart prompted the change.",
+"F47": "The reader wants to see every Work Item and switches outlier handling off; all dots are drawn and the axis fits them.",
+"F48": "Not supplied.",
+"F49": "The reader reloads or comes back later and finds outlier handling on again.",
+"F5": "a Team whose closed Work Items in the selected date range include Work Items above the Cycle Time UNPL",
+"F50": "Walking skeleton: on the Cycle Time scatterplot of a Team's Metrics tab, a Hide outliers switch is on at every load; switching it off draws every closed Work Item with the y-axis fitting all of them and hides the outlier chip; switching it on restores the chip and the shorter axis. Outliers are still found by today's rule in this slice.",
+"F51": "A reader can see every Work Item on demand.",
+"F52": "On the Cycle Time scatterplot with the default Cycle Time, the Work Items set apart as outliers are exactly the ones the Cycle Time process behaviour chart of the same Team or Portfolio and date range marks above its UNPL (its configured baseline included), whether or not that chart is shown on the tab; the outlier list title and the info popover name the upper natural process limit in Terminology words, and while the limit loads or fails no stale count is shown.",
+"F53": "The outliers a reader sees agree with the process behaviour chart.",
+"F54": "When the Cycle Time process behaviour chart has no usable limits for the range (invalid baseline, such as one shorter than 14 days, or fewer than 2 baseline Work Items), the scatterplot sets no Work Item apart, draws every Work Item, and tells the reader that outliers need the process behaviour chart's limits; it never falls back to 5 x median.",
+"F55": "A reader is never shown outliers from a limit that does not exist.",
+"F56": "Maintainer 2026-11-17: a named Cycle Time definition uses the same rule as the default: its UNPL is computed the same way (XmR, same baseline) over that definition's Cycle Times. The outlier rule must be designed as a replaceable definition (e.g. a strategy/policy passed in), so another outlier definition can be supplied later without reworking callers; still no user configuration now.",
+"F57": "Where the rule lives: the outlier rule moves to the backend, Flow metrics module, behind a replaceable definition. Domain interface ICycleTimeOutlierDefinition (Modules/FlowMetrics/Domain/CycleTimeOutlierDefinition.cs) has one method: OutlierVerdict Judge(IReadOnlyList<int> baselineCycleTimes, IReadOnlyList<CycleTimeObservation> shown). The only implementation now is UpperNaturalProcessLimitOutlierDefinition, registered once as a singleton in Program.cs next to the metrics services and injected by constructor into TeamMetricsService and PortfolioMetricsService. A later definition is supplied by registering another implementation; the route, the DTO, the services and the frontend do not change. The frontend keeps no rule: it partitions the plotted items by the outlier ids of the verdict. Confirms the DISCUSS proposals: limit = the Cycle Time PBC UNPL (average + 2.66 x average moving range of the baseline Cycle Times, configured baseline or else the selected range), compared unrounded; only above-UNPL sets an item apart; no silent 5 x median fallback.",
+"F58": "Carriers and owners. Domain (Modules/FlowMetrics/Domain): UpperNaturalProcessLimit value object in XmRCalculator.cs, holding the unrounded double, built by XmRCalculator.UpperNaturalProcessLimitOf(int[] baseline) and answering IsExceededBy(int days) as days > limit; XmRCalculator.Calculate and its large-change rule use the same object, so the PBC marker and the outlier rule share one formula and one comparison. OutlierVerdict closed choice (abstract record with two cases): Limited(UpperNaturalProcessLimit Limit, IReadOnlyList<int> OutlierWorkItemIds) and NoLimits. CycleTimeObservation(int WorkItemId, int Days) record. Application (Modules/FlowMetrics/Application): GetCycleTimeOutliers(owner, startDate, endDate, int? definitionId) on ITeamMetricsService and IPortfolioMetricsService, built once in BaseMetricsService.BuildCycleTimeOutliers: it resolves the baseline with ResolveBaseline, collects baseline and shown Cycle Times with the same window, filter (Cycle Time > 0) and order as BuildCycleTimeProcessBehaviourChart (a named definition uses each item named duration, items without one are skipped), and asks the injected definition; cached through GetFromCacheIfExists with a key that includes the definition id. API: GET cycleTime/outliers?startDate&endDate&definitionId on TeamMetricsController and PortfolioMetricsController, next to cycleTime/pbc, under the same RbacGuard read requirement; DTO CycleTimeOutliersDto (API/DTO) with Status (CycleTimeOutlierStatus Ready or NoLimits, serialised as a string), UpperNaturalProcessLimit (double or null) and OutlierWorkItemIds (int array). Frontend: ICycleTimeOutliers model, MetricsService.getCycleTimeOutliers for Team and Portfolio, and a keyed TanStack query in the chart. Per-process state: none new beyond the existing metrics cache; the switch is React component state only.",
+"F59": "Rejected: reuse the existing cycleTime/pbc answer in the frontend. Its UNPL is rounded to whole days while the chart classifies with the unrounded value, so a frontend comparison disagrees at the boundary (see refuted law); it has no named-definition variant; and its LargeChange marker also covers points below the lower limit. Rejected: recompute XmR in TypeScript, a second owner of the same rule. Rejected: a frontend strategy object, because the named Cycle Times and the baseline rules live in the backend. ADR-282 decisions 1 to 3 (5 x median, frontend fiftiethPercentile) are superseded for the Cycle Time scatterplot by the new ADR; its decisions 4 to 7 (filter outliers out of the series, edge markers, chip and list, statistics untouched) stay.",
+"F6": "the reader opens the Metrics tab, or reloads it after switching outlier handling off",
+"F60": "Switch: a labelled MUI Switch, copy Hide outliers, in the scatterplot title row next to the Cycle Time selector, React useState(true) inside CycleTimeScatterPlotChart, never stored, so every mount starts on. Off: no partition, every item drawn, the y-axis is the pre-outlier axis (axisTop without a limit), chip and no-limits text hidden. On: today partition and chip. Wording finalised at the DELIVER sketch review. Confirms the DISCUSS proposal.",
+"F61": "Loading and failure looks: the verdict is a keyed TanStack query owned by the chart, key [ownerKind, ownerId, startDate, endDate, definitionId or default], fetched whenever the scatterplot is shown, independent of the PBC widget. While it is pending or failed no item is set apart and no count is shown: pending reuses the chip loading wording (Outliers / Outliers, loading, disabled) and the chart reports loading up to its WidgetShell frame through the existing widget status channel, so the frame dims under its spinner; a failed query reports failure so the frame shows its could-not-load look. A late answer for an older key never lands (the key differs; no placeholder data from another key). Confirms the DISCUSS proposal.",
+"F62": "No usable limits: the verdict is NoLimits when the resolved baseline is invalid (missing, or shorter than 14 days) or holds fewer than 2 positive Cycle Times (the PBC then draws UNPL = the single value or 0 and marks nothing). The chart then sets no item apart, draws every item with the pre-outlier axis, shows no count chip and shows in the chip place the text: No outliers: the {Cycle Time} process behaviour chart has no limits for this date range. The info popover says outliers need those limits. Never a fallback to 5 x median. Confirms the DISCUSS proposal.",
+"F63": "Wording (Terminology words): help sentence An outlier is a closed {Work Item} whose {Cycle Time} is above the upper natural process limit of the {Cycle Time} process behaviour chart for this date range. List title {Work Items} with a {Cycle Time} above the upper natural process limit ({N} days), where N is the unrounded limit shown with at most one decimal (30.6, 30), so the stated limit and the listed set never disagree. Confirms the DISCUSS proposal with that precision.",
+"F64": "Formal verification: the claims are pure, finite, request-response functions with no concurrency, waiting or recovery (one verdict per request). Claim-to-checker: outlier membership and NoLimits laws -> executable example tables at the application-service port plus a fast-check property on the frontend partition; no Quint/TLA+/Agda model was authored or run because the root context for this feature directed no formal model checking and a short algebraic note; the formal-proof axis of these claims is INDETERMINATE (not executed), never PASS. Liveness is not applicable: no state machine, no retry and no waiting; each request is a finite computation over a bounded list.",
+"F65": "Named Cycle Time definitions use the same rule (maintainer, Confirmed): baseline dates resolved as for the default; values are each item named duration over the baseline window; Cycle Times of 0 and items without a named value are skipped, as the PBC skips 0-day items. An unknown or invalid named definition yields NoLimits; the chart already resets such a selection to the default.",
+"F66": "Product checklist answers: RBAC N/A, the route sits in the existing metrics controllers under their existing TeamRead/PortfolioRead guard, so whoever reads the Metrics tab reads it. Lighthouse-Clients CLI/MCP: no change, the route is additive and no existing answer changes; a client may adopt it later. Context map: Flow metrics only, no domain event; ADR-270 Flow metrics glossary entry Outlier is rewritten (closed Work Item whose Cycle Time is above the Cycle Time UNPL, owned by ICycleTimeOutlierDefinition) and Upper natural process limit (UNPL) is added, in S2. UI surface: Metrics tab of a Team or Portfolio (ADR-271), unchanged. Open item (UNPL count useful for the 20+ outlier team) stays Open, owner maintainer, at the DELIVER sketch review; it blocks no slice.",
+"F67": "DEVOPS input: no platform risk (one additive read route over data already loaded, no migration, no new external call). Usage-data proposal: name-only event OutlierHandlingSwitchedOff, appended as the next integer in UsageDataEventName (28 at the time of design) and in the frontend UsageDataEventName map, emitted when the reader switches outlier handling off; it counts how often readers want every item. Emitting belongs to S1 and S1 then lists it in docs/settings/usagedata.md; DEVOPS confirms or answers N/A.",
+"F68": "Baseline: the configured baseline dates or, without one, the selected date range; invalid under 14 days (owned by ResolveBaseline, unchanged). At least 2 positive baseline Cycle Times give limits. No upper bound on the range or item count beyond what the PBC already accepts.",
+"F69": "An outlier is strictly above the unrounded UNPL (days > limit); Cycle Times are whole days; 0-day items are never outliers.",
+"F7": "outlier handling is on: the Work Items above the UNPL are not drawn on the plot and the outlier chip counts them",
+"F70": "No configuration of the rule and no stored switch state; outliers only on the Cycle Time scatterplot; the PBC output, its baseline and special-cause rules are unchanged (the prefactoring keeps every PBC JSON value).",
+"F71": "Additive only: no database migration, no change to existing routes or DTOs; Program.cs gains one registration line, which forces the full backend Integration suite at the end of S2.",
+"F72": "Producer (metrics controllers) and consumer (frontend MetricsService) ship in one deployable in the same commit; Lighthouse-Clients do not consume the route. The JSON names are pinned by the S2 wire contract support.",
+"F73": "Backend: ITeamMetricsService/IPortfolioMetricsService.GetCycleTimeOutliers (application-service port), reached over HTTP GET cycleTime/outliers. Frontend: CycleTimeScatterPlotChart props and its Hide outliers switch.",
+"F74": "ICycleTimeOutlierDefinition (domain strategy)",
+"F75": "existing work item reads and metrics cache used by BaseMetricsService",
+"F76": "API -> Flow metrics Application -> Flow metrics Domain; Domain depends on nothing; frontend chart -> MetricsService -> HTTP",
+"F77": "startDate after endDate",
+"F78": "existing 400 with the start-before-end message",
+"F79": "unknown Team or Portfolio id",
+"F8": "The reader sees every Work Item on demand",
+"F80": "existing 404",
+"F81": "outlier request fails or times out in the browser",
+"F82": "WidgetShell could-not-load look; no count, no item set apart",
+"F83": "Outlier work item ids of the verdict for an owner, range and definition",
+"F84": "order of outliers; the reason for NoLimits",
+"F85": "Chart: drawn items, chip count or no-limits text, y-axis top, switch state",
+"F86": "which backend definition produced the verdict",
+"F87": "Two verdicts are equal when both are NoLimits, or both are Limited with the same id set and the same unrounded limit.",
+"F88": "Comparing Cycle Times with the UNPL that cycleTime/pbc returns yields the PBC outliers",
+"F89": "the DTO UNPL is rounded to whole days; the classification uses the unrounded value (carrier too coarse)",
+"F9": "the Cycle Time scatterplot shows an outlier chip with 3 outliers",
+"F90": "baseline giving UNPL 30.6: the PBC returns 31; a 31-day item is above 30.6 on the PBC but not above 31",
+"F91": "Points marked LargeChange on the PBC are the outliers",
+"F92": "LargeChange also marks points below the lower limit (law scope)",
+"F93": "a 1-day item below an LNPL of 2 is LargeChange but is not long",
+"F94": "The scatterplot outliers are exactly the PBC points above its UNPL for the same owner, range, baseline and Cycle Time definition",
+"F95": "two charts on one tab disagree on which Work Items are unusual",
+"F96": "baseline Cycle Times and shown Cycle Times from BaseMetricsService",
+"F97": "GET cycleTime/outliers ids versus cycleTime/pbc points above the limit",
+"F98": "a frontend comparison of its own; a different Cycle Time computation between WorkItemDto and the service; two answers computed from data refreshed in between",
+"F99": "Limited verdict with zero or more outlier ids"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F27"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F28"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F29"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F30"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F31"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F32"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F33"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F34"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F35"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F56"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Product"
+},
+"text": "F37"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F38"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F39"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F40"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F41"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F42"
+}
+],
+"journey": [
+{
+"emotion": "F44",
+"step": "F43"
+},
+{
+"emotion": "F46",
+"step": "F45"
+},
+{
+"emotion": "F48",
+"step": "F47"
+},
+{
+"emotion": "F48",
+"step": "F49"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"given": "F5",
+"id": "P2",
+"kind": "Scenario",
+"then": "F7",
+"title": "F4",
+"when": "F6"
+},
+{
+"given": "F9",
+"id": "P3",
+"kind": "Scenario",
+"then": "F11",
+"title": "F8",
+"when": "F10"
+},
+{
+"given": "F13",
+"id": "P4",
+"kind": "Scenario",
+"then": "F15",
+"title": "F12",
+"when": "F14"
+},
+{
+"given": "F17",
+"id": "P5",
+"kind": "Scenario",
+"then": "F18",
+"title": "F16",
+"when": "F14"
+}
+],
+"scope_in": [
+"F19",
+"F20",
+"F21",
+"F22"
+],
+"scope_out": [
+"F23",
+"F24",
+"F25",
+"F26"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F50",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"work": {
+"size": "S",
+"value": "F51"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F52",
+"promises": [
+"P1",
+"P4"
+],
+"work": {
+"size": "M",
+"value": "F53"
+}
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F54",
+"promises": [
+"P1",
+"P5"
+],
+"work": {
+"size": "S",
+"value": "F55"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6655-outlier-toggle-and-unpl",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
