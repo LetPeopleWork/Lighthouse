@@ -2,7 +2,187 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Run the Promises module rules over the compiled backend: where each Promises type lives, and what each Promises layer holds
+```
+
+```text
+Each of the 17 Promises types lives in its Domain, Application or Policies namespace, none is left under Services or Models, and each layer holds exactly its listed types; a made-up type left in its former home, or an unlisted type in a layer, is named and its twin is not
+```
+
+```text
+The architecture rules show Promises as one module with its three layers, and a type placed elsewhere fails by name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesModuleBoundariesArchUnitTest\.cs\:\:EveryPromisesType\_LivesInItsLayer\_AndNoneIsLeftBehind
+
+```text
+A type that lands in the wrong Promises layer while its layer list is edited to match it
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the Promises Domain rule over the compiled backend and over a made-up Domain
+```
+
+```text
+Promises' Domain reaches only the shared Models and the base library; a made-up Domain type asking the licence is named and its compliant twin is not
+```
+
+```text
+Promises' Domain stays pure calculation, and a Domain type that reaches a service fails by name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesModuleBoundariesArchUnitTest\.cs\:\:ThePromisesDomain\_ReachesOnlyTheSharedKernelAndTheBaseLibrary
+
+```text
+A Domain type that reaches a Models entity carrying persistence behaviour, since all of Models is legal
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the Promises inbound rules over the compiled backend: who outside Promises reaches its Domain, its Application and its Policies; then delete each listed entry and add one with no edge
+```
+
+```text
+Domain: no outside type; Application: only the API, the composition root and PortfolioUpdater; Policies: only the composition root; each deleted entry is named as offending, an entry with no edge is named for deletion, and a made-up outsider is named while the API, the composition root and a listed caller are not, in words that speak of Promises
+```
+
+```text
+Who may call Promises is a short, exact list that only shrinks, and a new caller fails by name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesModuleBoundariesArchUnitTest\.cs\:\:APromisesListedRule\_MatchesWhatTheCompiledCodeReaches\_InBothDirections
+
+```text
+A Tracker integration type reaching Promises' Application, since that edge is left to Tracker integration's own exact rule; and a reference only in a catch clause, an event or an attribute named argument, which the IL reader does not see
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the Promises outbound rules over the compiled backend: what Promises' Application reaches below it and in the platform, and what the module reaches upstream; then delete each listed edge and add one that is gone
+```
+
+```text
+Application: the 19 measured edges into the clock, the platform repositories, the generic repository, the blackout periods and the domain event handler contract, nothing in EF Core, Data, API or any Adapters; upstream (other modules' Adapters, update code, write-back round, Access, Licensing): none; each made-up offender (a DbSet, an unlisted platform service, a Forecasting adapter, the write-back trigger, the update key, the licence) is named with its edge, and a compliant service calling Work Items and Tracker integration Applications passes
+```
+
+```text
+Promises reaches the rest of the system only through a short, exact list of ports, and a new reach fails by name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesModuleBoundariesArchUnitTest\.cs\:\:APromisesTypeReachingForbiddenCode\_IsNamedWithTheEdge
+
+```text
+Promises reaching a platform type outside the Services namespaces, or another module's Domain directly, since neither is a target of these rules
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Read the inbound lists of the Work Items and Tracker integration rules by field name and look for Promises types
+```
+
+```text
+Neither list names a Promises type: Work Items loses DeliveryRuleService, Tracker integration loses DeliveryForecastPublishingService and DeliverySourceResolver; a made-up list naming a Promises type is named and a list without one passes
+```
+
+```text
+Work Items and Tracker integration treat Promises as a legal caller by namespace, and a Promises entry left on their lists fails by name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesModuleBoundariesArchUnitTest\.cs\:\:TheInboundListOfANeighbourModule\_NamesNoPromisesType
+
+```text
+The neighbours making the whole Promises module legal rather than only its Application; their own both-ways rules then decide what reaches them
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P5
+
+```text
+Change only test rule files in this slice
+```
+
+```text
+No production file changes; every existing test keeps its outcome
+```
+
+```text
+Nothing a user, a tracker or the database sees changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+This slice changes no production code; preservation is observed by the declared full backend test run and by EXAMINE's compare probes, not by an architecture oracle
+```
+
+host full gates and EXAMINE
 
 ## Expectations
 

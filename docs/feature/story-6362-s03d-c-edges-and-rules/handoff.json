@@ -1,8 +1,114 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F90",
+"T2"
+],
+"still_passes_if": "F150",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::EveryPromisesType_LivesInItsLayer_AndNoneIsLeftBehind"
+},
+"expected": "F148",
+"stimulus": "F147",
+"user_result": "F149"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F90",
+"T2"
+],
+"still_passes_if": "F154",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::ThePromisesDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary"
+},
+"expected": "F152",
+"stimulus": "F151",
+"user_result": "F153"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F88",
+"L2/F89",
+"L2/F90",
+"T2"
+],
+"still_passes_if": "F158",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::APromisesListedRule_MatchesWhatTheCompiledCodeReaches_InBothDirections"
+},
+"expected": "F156",
+"stimulus": "F155",
+"user_result": "F157"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F88",
+"L2/F89",
+"L2/F90",
+"T2"
+],
+"still_passes_if": "F162",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::APromisesTypeReachingForbiddenCode_IsNamedWithTheEdge"
+},
+"expected": "F160",
+"stimulus": "F159",
+"user_result": "F161"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F91",
+"T2"
+],
+"still_passes_if": "F166",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::TheInboundListOfANeighbourModule_NamesNoPromisesType"
+},
+"expected": "F164",
+"stimulus": "F163",
+"user_result": "F165"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "host full gates and EXAMINE",
+"reason": "F170"
+},
+"expected": "F168",
+"stimulus": "F167",
+"user_result": "F169"
+}
+]
+},
 "counters": {
 "D": 8,
 "E": 5,
-"F": 146,
+"F": 170,
 "K": 4,
 "L": 3,
 "P": 5,
@@ -876,9 +982,33 @@
 "F144": "Probe architecture-rules TrackerIntegrationReachesNoPromises passes by name (Tracker integration reaches no Promises type), and backend-tests DeliveryForecastBlockRenderer and backend-tests JiraDeliverySourceProvider pass by name, showing the Jira connector still merges the Delivery forecast block through the Tracker-defined port implemented by the Promises renderer. Which side defines and implements the port is observable only through test names.",
 "F145": "Probe architecture-rules PromisesUnitTestPlacement: every Promises unit test sits under the Promises test folders and no Promises source file remains under Services except named exceptions; the probe names a test or source file left in an old folder as Failed. The named exceptions themselves are visible only if the test name states them.",
 "F146": "Probes deliveries-answers-compare, forecast-answers-compare, refresh-reactions-compare each print IDENTICAL (base before the Promises move vs HEAD); ef-model-unchanged shows no model change per provider; backend-tests JiraQuietWriteBack and backend-tests JiraBatchedWriteBack pass by name for the Jira text; backend-tests with no fragment shows zero failures. Outside the expectation and not observable: the four blocked-period reactions that refresh-reactions-compare names not observable on both sides; routes and DI behaviour are observable only via the compare probes and test names; text written to a real Jira runs only in CI (ci-live-suites-show shows which suites CI runs, not their result).",
+"F147": "Run the Promises module rules over the compiled backend: where each Promises type lives, and what each Promises layer holds",
+"F148": "Each of the 17 Promises types lives in its Domain, Application or Policies namespace, none is left under Services or Models, and each layer holds exactly its listed types; a made-up type left in its former home, or an unlisted type in a layer, is named and its twin is not",
+"F149": "The architecture rules show Promises as one module with its three layers, and a type placed elsewhere fails by name",
 "F15": "Confirmed (feature-delta D-8, Ratchet design New rules C1): Promises gets its own module rules in Architecture/PromisesModuleBoundariesArchUnitTest.cs, R-P1..R-P7, written with the shared ModuleRules (its PromisesModule namespace constant already exists, ModuleRules.cs:27) and a Promises ModuleWording built in the oracle from two strings, as ForecastingModuleBoundariesArchUnitTest does (ModuleWording.cs:7 already takes the name and the legal callers), so ModuleRules.cs and ModuleWording.cs stay unchanged. Every list is inline, measured from the compiled IL and compared both ways; designed baselines: R-P1 the D-1 lists (types in their layer, none left under Services); R-P2 Domain reaches only Models and the base library, empty; R-P3 outside to Domain, empty; R-P4 outside to Application besides the API and the composition root: PortfolioUpdater; R-P5 outside to Application/Policies besides the composition root: empty; R-P6 Application reaches no EF Core, Data, API or any module's Adapters, Work Items and Tracker integration Application legal by namespace, Forecasting and Flow metrics Application legal if found, platform only through the list ILighthouseClock, IDeliveryRepository, IDeliveryMetricSnapshotRepository, RecordableDeliveries and the dispatcher contract, by name; R-P7 no other module's Adapters, update code, write-back round, Access or Licensing, empty. A neighbour without a namespace is listed by type name. Anything else the IL finds is added only with a reason.",
+"F150": "A type that lands in the wrong Promises layer while its layer list is edited to match it",
+"F151": "Run the Promises Domain rule over the compiled backend and over a made-up Domain",
+"F152": "Promises' Domain reaches only the shared Models and the base library; a made-up Domain type asking the licence is named and its compliant twin is not",
+"F153": "Promises' Domain stays pure calculation, and a Domain type that reaches a service fails by name",
+"F154": "A Domain type that reaches a Models entity carrying persistence behaviour, since all of Models is legal",
+"F155": "Run the Promises inbound rules over the compiled backend: who outside Promises reaches its Domain, its Application and its Policies; then delete each listed entry and add one with no edge",
+"F156": "Domain: no outside type; Application: only the API, the composition root and PortfolioUpdater; Policies: only the composition root; each deleted entry is named as offending, an entry with no edge is named for deletion, and a made-up outsider is named while the API, the composition root and a listed caller are not, in words that speak of Promises",
+"F157": "Who may call Promises is a short, exact list that only shrinks, and a new caller fails by name",
+"F158": "A Tracker integration type reaching Promises' Application, since that edge is left to Tracker integration's own exact rule; and a reference only in a catch clause, an event or an attribute named argument, which the IL reader does not see",
+"F159": "Run the Promises outbound rules over the compiled backend: what Promises' Application reaches below it and in the platform, and what the module reaches upstream; then delete each listed edge and add one that is gone",
 "F16": "Confirmed (Ratchet design, D-7 edge Promises to Tracker integration option b): Promises' Application is legal by namespace as an inbound caller in the Work Items and Tracker integration rules, so their lists lose exactly the three Promises entries: WorkItemsModuleBoundariesArchUnitTest.OtherOutsideTypesReachingTheApplication loses Modules.Promises.Application.DeliveryRuleService (line 129); TrackerIntegrationModuleBoundariesArchUnitTest.OtherOutsideTypesReachingTheApplication loses Modules.Promises.Application.DeliveryForecastPublishingService and DeliverySourceResolver (lines 103-104). Promises may reach Tracker integration Application, never its Adapters. No other entry or pattern of those files changes in C1; the R-T7 edge list stays one entry until C2.",
+"F160": "Application: the 19 measured edges into the clock, the platform repositories, the generic repository, the blackout periods and the domain event handler contract, nothing in EF Core, Data, API or any Adapters; upstream (other modules' Adapters, update code, write-back round, Access, Licensing): none; each made-up offender (a DbSet, an unlisted platform service, a Forecasting adapter, the write-back trigger, the update key, the licence) is named with its edge, and a compliant service calling Work Items and Tracker integration Applications passes",
+"F161": "Promises reaches the rest of the system only through a short, exact list of ports, and a new reach fails by name",
+"F162": "Promises reaching a platform type outside the Services namespaces, or another module's Domain directly, since neither is a target of these rules",
+"F163": "Read the inbound lists of the Work Items and Tracker integration rules by field name and look for Promises types",
+"F164": "Neither list names a Promises type: Work Items loses DeliveryRuleService, Tracker integration loses DeliveryForecastPublishingService and DeliverySourceResolver; a made-up list naming a Promises type is named and a list without one passes",
+"F165": "Work Items and Tracker integration treat Promises as a legal caller by namespace, and a Promises entry left on their lists fails by name",
+"F166": "The neighbours making the whole Promises module legal rather than only its Application; their own both-ways rules then decide what reaches them",
+"F167": "Change only test rule files in this slice",
+"F168": "No production file changes; every existing test keeps its outcome",
+"F169": "Nothing a user, a tracker or the database sees changes",
 "F17": "Confirmed (D-7 option b, D-10): the Tracker integration to Promises edge is inverted. New Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs declares one method with the renderer's measured signature kept exactly: string MergeInto(string? existingDescription, string blockText) (IDeliveryForecastBlockRenderer.cs:25; the authority's shorthand parameter name existing is not used). MergeInto leaves IDeliveryForecastBlockRenderer, which keeps Render only; DeliveryForecastBlockRenderer implements both interfaces and keeps Render and MergeInto in one class with unchanged bodies. JiraWorkTrackingConnector's fifth constructor parameter (JiraWorkTrackingConnector.cs:26) changes type from IDeliveryForecastBlockRenderer to IDescriptionBlockMerger, its call at line 3968 and its parameter name stay, and its using of Modules.Promises.Application goes. Program.cs keeps line 1474 and the order of every line and adds one registration AddScoped<IDescriptionBlockMerger, DeliveryForecastBlockRenderer>() beside it; the connector is built only by DI (Program.cs:1493 via WorkTrackingConnectorFactory). The class is stateless and pure, so two scoped instances behave the same. No AddPromises extension. Carrier: the port is a Tracker integration Application interface owned by that module; the implementation is owned by Promises Application; no per-process state.",
+"F170": "This slice changes no production code; preservation is observed by the declared full backend test run and by EXAMINE's compare probes, not by an architecture oracle",
 "F18": "Confirmed (D-7, Ratchet design R-P8): after C2 Tracker integration reaches no Promises type. Test-side lists that hold the edge follow it in C2: TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts (line 135) goes to empty, and TheJiraConnectorMergingTheForecastBlock (line 140) with the test that pins that one edge (line 229) follow; TrackerIntegrationMembershipArchUnitTest's case (JiraWorkTrackingConnector, IDeliveryForecastBlockRenderer, true) at line 195 follows; TrackerIntegrationMembership.Moves gains IDescriptionBlockMerger, because the membership test names any unlisted type under Modules.TrackerIntegration. Made-up offender fixtures in that file that name IDeliveryForecastBlockRenderer still compile and stay. The test constructions that pass new DeliveryForecastBlockRenderer() to the connector compile unchanged (the class implements the port); only JiraDeliverySourceProviderTest's service registration (line 1137) changes so DI can build the connector (D-9).",
 "F19": "Confirmed (D-9, D-1, D-4, D-5, D-6): Architecture/PromisesUnitTestPlacementTest.cs checks that every unit test of a Promises type (the PromisesMembership types) lives under Tests/Modules/Promises in the sub-folder of its subject, and that no Promises source file is left under Services apart from the named exceptions with their owners: the Delivery repositories (DeliveryRepository, DeliveryMetricSnapshotRepository, IDeliveryRepository, IDeliveryMetricSnapshotRepository, RecordableDeliveries; repository split owner S05d), the write-back round (owner #6657), the update code (S03f, Epic 6474) and feature ordering and ranking (S03i). Integration, acceptance and controller tests stay where they are. Modelled on TrackerIntegrationUnitTestPlacementTest and ForecastingUnitTestPlacementTest. Measured today: the nine Promises unit tests already sit under Tests/Modules/Promises; DeliverySourceBindabilityTest tests a kernel Models type and is not a Promises unit test; no file moves in C3.",
 "F2": "The Promises module keeps its shape on its own: a new reach across its border fails a named rule, and Tracker integration no longer depends on Promises, with nothing a user, a tracker or the database sees changed",

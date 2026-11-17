@@ -151,7 +151,163 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Promises module rules over the compiled backend: where each Promises type lives, and what each Promises layer holds
+</code></pre>
+
+<pre><code>Each of the 17 Promises types lives in its Domain, Application or Policies namespace, none is left under Services or Models, and each layer holds exactly its listed types; a made-up type left in its former home, or an unlisted type in a layer, is named and its twin is not
+</code></pre>
+
+<pre><code>The architecture rules show Promises as one module with its three layers, and a type placed elsewhere fails by name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::EveryPromisesType_LivesInItsLayer_AndNoneIsLeftBehind</p>
+
+<pre><code>A type that lands in the wrong Promises layer while its layer list is edited to match it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Promises Domain rule over the compiled backend and over a made-up Domain
+</code></pre>
+
+<pre><code>Promises&#x27; Domain reaches only the shared Models and the base library; a made-up Domain type asking the licence is named and its compliant twin is not
+</code></pre>
+
+<pre><code>Promises&#x27; Domain stays pure calculation, and a Domain type that reaches a service fails by name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::ThePromisesDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary</p>
+
+<pre><code>A Domain type that reaches a Models entity carrying persistence behaviour, since all of Models is legal
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Promises inbound rules over the compiled backend: who outside Promises reaches its Domain, its Application and its Policies; then delete each listed entry and add one with no edge
+</code></pre>
+
+<pre><code>Domain: no outside type; Application: only the API, the composition root and PortfolioUpdater; Policies: only the composition root; each deleted entry is named as offending, an entry with no edge is named for deletion, and a made-up outsider is named while the API, the composition root and a listed caller are not, in words that speak of Promises
+</code></pre>
+
+<pre><code>Who may call Promises is a short, exact list that only shrinks, and a new caller fails by name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::APromisesListedRule_MatchesWhatTheCompiledCodeReaches_InBothDirections</p>
+
+<pre><code>A Tracker integration type reaching Promises&#x27; Application, since that edge is left to Tracker integration&#x27;s own exact rule; and a reference only in a catch clause, an event or an attribute named argument, which the IL reader does not see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Promises outbound rules over the compiled backend: what Promises&#x27; Application reaches below it and in the platform, and what the module reaches upstream; then delete each listed edge and add one that is gone
+</code></pre>
+
+<pre><code>Application: the 19 measured edges into the clock, the platform repositories, the generic repository, the blackout periods and the domain event handler contract, nothing in EF Core, Data, API or any Adapters; upstream (other modules&#x27; Adapters, update code, write-back round, Access, Licensing): none; each made-up offender (a DbSet, an unlisted platform service, a Forecasting adapter, the write-back trigger, the update key, the licence) is named with its edge, and a compliant service calling Work Items and Tracker integration Applications passes
+</code></pre>
+
+<pre><code>Promises reaches the rest of the system only through a short, exact list of ports, and a new reach fails by name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::APromisesTypeReachingForbiddenCode_IsNamedWithTheEdge</p>
+
+<pre><code>Promises reaching a platform type outside the Services namespaces, or another module&#x27;s Domain directly, since neither is a target of these rules
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the inbound lists of the Work Items and Tracker integration rules by field name and look for Promises types
+</code></pre>
+
+<pre><code>Neither list names a Promises type: Work Items loses DeliveryRuleService, Tracker integration loses DeliveryForecastPublishingService and DeliverySourceResolver; a made-up list naming a Promises type is named and a list without one passes
+</code></pre>
+
+<pre><code>Work Items and Tracker integration treat Promises as a legal caller by namespace, and a Promises entry left on their lists fails by name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs::TheInboundListOfANeighbourModule_NamesNoPromisesType</p>
+
+<pre><code>The neighbours making the whole Promises module legal rather than only its Application; their own both-ways rules then decide what reaches them
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Change only test rule files in this slice
+</code></pre>
+
+<pre><code>No production file changes; every existing test keeps its outcome
+</code></pre>
+
+<pre><code>Nothing a user, a tracker or the database sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>This slice changes no production code; preservation is observed by the declared full backend test run and by EXAMINE&#x27;s compare probes, not by an architecture oracle
+</code></pre>
+
+<p>host full gates and EXAMINE</p>
 
 <h2>Expectations</h2>
 
