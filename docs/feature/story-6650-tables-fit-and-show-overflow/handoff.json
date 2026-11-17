@@ -1,0 +1,1410 @@
+{
+"counters": {
+"C": 1,
+"D": 13,
+"F": 236,
+"K": 4,
+"L": 5,
+"N": 3,
+"P": 12,
+"S": 4,
+"Y": 4
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"agreement": [
+{
+"contract": "PersistedGridState in localStorage lighthouse:datagrid:<storageKey>:state",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:460",
+"party": "Producer",
+"reason": "F114"
+},
+{
+"contract": "PersistedGridState in localStorage lighthouse:datagrid:<storageKey>:state",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/hooks.ts:143",
+"party": "Consumer",
+"reason": "F115"
+},
+{
+"contract": "DataGridColumn column carrier",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:22",
+"party": "Producer",
+"reason": "F116"
+}
+],
+"boundaries": {
+"dependency_direction": "F122",
+"driven_ports": [
+"F120",
+"F121"
+],
+"driving_port": "F119"
+},
+"claims": [
+{
+"admitted_input": "F158",
+"bypass": "F160",
+"constructor": "fitColumn",
+"consumer": "DataGridBase",
+"harm": "F157",
+"id": "C1",
+"owner": "columnFit.ts",
+"proposition": "F156",
+"public_observation": "F159"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F171",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F170"
+},
+{
+"axis": "Inhabitation",
+"basis": "F173",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F172"
+},
+{
+"axis": "PublicReachability",
+"basis": "F175",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F174"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F100"
+},
+{
+"id": "K2",
+"text": "F101"
+},
+{
+"id": "K3",
+"text": "F102"
+},
+{
+"id": "K4",
+"text": "F103"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F87"
+},
+{
+"id": "D2",
+"text": "F88"
+},
+{
+"id": "D3",
+"text": "F89"
+},
+{
+"id": "D4",
+"text": "F90"
+},
+{
+"id": "D5",
+"text": "F91"
+},
+{
+"id": "D6",
+"text": "F92"
+},
+{
+"id": "D7",
+"text": "F93"
+},
+{
+"id": "D8",
+"text": "F94"
+},
+{
+"id": "D9",
+"text": "F95"
+},
+{
+"id": "D10",
+"text": "F96"
+},
+{
+"id": "D11",
+"text": "F97"
+},
+{
+"id": "D12",
+"text": "F98"
+},
+{
+"id": "D13",
+"text": "F99"
+}
+],
+"equality": [
+{
+"definition": "F129",
+"under": "fitColumn"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "columnFit.ts",
+"statement": "F130",
+"treatment": {
+"falsifier": "F135",
+"generator": {
+"domain": "F131",
+"must_include": [
+"F132"
+],
+"seed_policy": "fast-check default seed, printed on failure",
+"shrinking": "F133",
+"size_bound": "one column per case"
+},
+"independent_observation": "F134",
+"kind": "Broad"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "columnFit.ts",
+"statement": "F136",
+"treatment": {
+"falsifier": "F140",
+"generator": {
+"domain": "F137",
+"must_include": [
+"F138"
+],
+"seed_policy": "fast-check default seed",
+"shrinking": "F133",
+"size_bound": "one column per case"
+},
+"independent_observation": "F139",
+"kind": "Broad"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "horizontalOverflow.ts",
+"statement": "F141",
+"treatment": {
+"falsifier": "F145",
+"generator": {
+"domain": "F142",
+"must_include": [
+"F143"
+],
+"seed_policy": "fast-check default seed",
+"shrinking": "F133",
+"size_bound": "one measure triple per case"
+},
+"independent_observation": "F144",
+"kind": "Broad"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "DataGridBase.tsx",
+"statement": "F146",
+"treatment": {
+"cases": [
+"F147",
+"F148",
+"F149"
+],
+"kind": "Finite",
+"reason": "F150"
+}
+},
+{
+"id": "L5",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "DataGridBase.tsx",
+"statement": "F151",
+"treatment": {
+"cases": [
+"F152",
+"F153",
+"F154"
+],
+"kind": "Finite",
+"reason": "F155"
+}
+}
+],
+"models": [
+{
+"assumptions": [
+"F166"
+],
+"atoms": [
+{
+"kind": "State",
+"name": "cStored",
+"site": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts",
+"symbol": "PersistedGridState.columnWidths"
+},
+{
+"kind": "State",
+"name": "scrollLeft",
+"site": "Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.ts",
+"symbol": "grid scroll position"
+},
+{
+"kind": "Action",
+"name": "pick",
+"site": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx",
+"symbol": "grid event recompute"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F167",
+"id": "N1"
+},
+{
+"description": "F168",
+"id": "N2"
+},
+{
+"description": "F169",
+"id": "N3"
+}
+],
+"path": "docs/feature/story-6650-tables-fit-and-show-overflow/columnFit.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "Inv",
+"site": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.ts and Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.ts",
+"statement": "F165",
+"symbol": "fitColumn and overflowEdges"
+}
+]
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F117"
+},
+{
+"analysis": "contract_tests",
+"reason": "F118"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F124",
+"description": "F123",
+"result_type": "FittedColumn"
+},
+{
+"cannot_distinguish": "F126",
+"description": "F125",
+"result_type": "none | left | right | both"
+},
+{
+"cannot_distinguish": "F128",
+"description": "F127",
+"result_type": "inside | outside"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:201",
+"reason": "F104",
+"symbol": "DataGridBase"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:22",
+"reason": "F105",
+"symbol": "DataGridColumn"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:94",
+"reason": "F106",
+"symbol": "withNewColumnsWhereDeclared"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/hooks.ts:143",
+"reason": "F107",
+"symbol": "usePersistedGridState"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/hooks.ts:222",
+"reason": "F108",
+"symbol": "useColumnWidths"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.ts:1",
+"reason": "F109",
+"symbol": "fitColumn"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.ts:1",
+"reason": "F110",
+"symbol": "overflowEdges"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/TruncatedCell.tsx:1",
+"reason": "F111",
+"symbol": "TruncatedCell"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridToolbar.tsx:5",
+"reason": "F112",
+"symbol": "Tooltip"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:12",
+"reason": "F113",
+"symbol": "DataGrid"
+}
+],
+"risks": [
+{
+"allowed": "F178",
+"forbidden": "F179",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F177",
+"residue": "F180",
+"source": "F176"
+},
+{
+"allowed": "F183",
+"forbidden": "F184",
+"id": "Y2",
+"kind": "SinglePointOfFailure",
+"owner": "crafter",
+"preserved": "F182",
+"residue": "F185",
+"source": "F181"
+},
+{
+"allowed": "F188",
+"forbidden": "F189",
+"id": "Y3",
+"kind": "Bypass",
+"owner": "maintainer (accepted by P5)",
+"preserved": "F187",
+"residue": "F190",
+"source": "F186"
+},
+{
+"allowed": "F193",
+"forbidden": "F194",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F192",
+"residue": "F195",
+"source": "F191"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"state": "F161"
+},
+{
+"kind": "Excluded",
+"state": "F162"
+},
+{
+"kind": "Excluded",
+"state": "F163"
+},
+{
+"kind": "Unknown",
+"owner": "acceptance designer and crafter per table in S3 and S4",
+"state": "F164"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts",
+"public_oracle": {
+"expected": "F218",
+"falsifier": "F219",
+"promises": [
+"P1",
+"P2",
+"P3",
+"P4",
+"P5",
+"P12"
+],
+"stimulus": "F217"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.ts:1",
+"reason": "F201"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/TruncatedCell.tsx:1",
+"reason": "F201"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:201",
+"reason": "F222"
+},
+{
+"decision": "Changed",
+"kind": "type",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts:22",
+"reason": "F223"
+},
+{
+"decision": "Changed",
+"kind": "export",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/index.ts:1",
+"reason": "F224"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/ReportList.tsx:168",
+"reason": "F225"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:106",
+"reason": "F226"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.tsx:1",
+"reason": "F227"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.EndToEndTests/tests/models/reports/ReportsListPage.ts:22",
+"reason": "F228"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F229"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/ReportList.tsx:259",
+"reason": "F220",
+"symbol": "ReportList"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/index.ts:1",
+"reason": "F221",
+"symbol": "DataGridBase"
+}
+]
+},
+"supports": [
+"Lighthouse.EndToEndTests/tests/models/reports/ReportsListPage.ts",
+"Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.test.ts",
+"Lighthouse.Frontend/src/components/Common/DataGrid/TruncatedCell.test.tsx",
+"Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx",
+"Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.defaults.test.tsx",
+"Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+"Lighthouse.Frontend/src/components/Common/DataGrid/ColumnOrderDialog.test.tsx",
+"Lighthouse.Frontend/src/pages/Common/Reports/ReportList.test.tsx",
+"Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.ts",
+"reason": "F211"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/TruncatedCell.tsx",
+"reason": "F212"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx",
+"reason": "F213"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/types.ts",
+"reason": "F214"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/index.ts",
+"reason": "F215"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportList.tsx",
+"reason": "F216"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/DataGrid src/pages/Common/Reports/ReportList.test.tsx src/pages/Common/Reports/ReportsTab.test.tsx",
+"pnpm --dir Lighthouse.EndToEndTests exec playwright test tests/specs/reports/ReportListTableFit.spec.ts"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.overflow.test.tsx",
+"public_oracle": {
+"expected": "F199",
+"falsifier": "F200",
+"promises": [
+"P6",
+"P7",
+"P8",
+"P11"
+],
+"stimulus": "F198"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.ts:1",
+"reason": "F201"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:364",
+"reason": "F202"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F203"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.test.ts",
+"Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts",
+"Lighthouse.EndToEndTests/tests/models/reports/ReportsListPage.ts",
+"Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.ts",
+"reason": "F196"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx",
+"reason": "F197"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/DataGrid",
+"pnpm --dir Lighthouse.EndToEndTests exec playwright test tests/specs/reports/ReportListTableFit.spec.ts"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx",
+"public_oracle": {
+"expected": "F206",
+"falsifier": "F207",
+"promises": [
+"P9",
+"P12"
+],
+"stimulus": "F205"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:106",
+"reason": "F209"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F210"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:106",
+"reason": "F208",
+"symbol": "DataOverviewTable"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx",
+"Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx",
+"reason": "F204"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/DataOverviewTable"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx",
+"public_oracle": {
+"expected": "F232",
+"falsifier": "F233",
+"promises": [
+"P10",
+"P12"
+],
+"stimulus": "F231"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.tsx:1",
+"reason": "F235"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:1",
+"reason": "F235"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx:1",
+"reason": "F235"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/ArchivedFeatureGrid.tsx:1",
+"reason": "F235"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:1",
+"reason": "F235"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx:1",
+"reason": "F235"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementGrid.tsx:1",
+"reason": "F235"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F236"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.tsx:237",
+"reason": "F234",
+"symbol": "DataGridBase"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx:134",
+"reason": "F234",
+"symbol": "DataGridBase"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx:303",
+"reason": "F234",
+"symbol": "DataGridBase"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/ArchivedFeatureGrid.tsx:67",
+"reason": "F234",
+"symbol": "DataGridBase"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:224",
+"reason": "F234",
+"symbol": "DataGridBase"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx:161",
+"reason": "F234",
+"symbol": "DataGridBase"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementGrid.tsx:93",
+"reason": "F234",
+"symbol": "DataGridBase"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.moveActions.test.tsx",
+"Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.test.tsx",
+"Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx",
+"Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.layout.test.tsx",
+"Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx",
+"Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/ArchivedFeatureGrid.test.tsx",
+"Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.list.test.tsx",
+"Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx",
+"Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.test.tsx",
+"Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/refinementColumns.test.tsx",
+"Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.test.tsx"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.tsx",
+"reason": "F230"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx",
+"reason": "F230"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+"reason": "F230"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/ArchivedFeatureGrid.tsx",
+"reason": "F230"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx",
+"reason": "F230"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.tsx",
+"reason": "F230"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementGrid.tsx",
+"reason": "F230"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/FeatureGrid src/components/Common/FeatureListDataGrid src/components/Common/WorkItemsDialog src/pages/Portfolios/Detail/Components/DeliveryGrid src/pages/Settings/Connections src/pages/Settings/SystemInfo src/pages/Teams/Detail/Refinement"
+]
+}
+}
+},
+"facts": {
+"F1": "ADO Story #6650, split out of Story #6625. Feedback from a community user: he could not find Delete on the report list; it sits in the last column and scrolls out of view. The cause is in the shared DataGridBase, used by the report list, the Overview tables (DataOverviewTable) and other tables (FeatureGrid, FeatureListDataGrid, WorkItemsDialog, ArchivedFeatureGrid, ConnectionsSettings, ThirdPartyPackagesSection, RefinementGrid). The maintainer sees the same problem on the Overview. Maintainer decision (2026-11-15): both. 1) Columns fit the available width better: they shrink, and long names truncate with a tooltip. 2) When columns still do not fit, a visible cue (shadow or fade on the edge) shows there is more to scroll to.",
+"F10": "the person looks at the row and hovers or focuses the name",
+"F100": "No new dependency: stay on community @mui/x-data-grid ^9.17.0 and the existing MUI Tooltip; no Pro or Premium package and no licence key.",
+"F101": "The persisted grid state PersistedGridState in localStorage (key lighthouse:datagrid:<storageKey>:state) keeps its shape and sanitiser; old stored widths are honoured, never rewritten.",
+"F102": "No API route, DTO or backend change; row actions keep their existing useRbac gating; no column, row action or column content is added, removed or reordered by a table.",
+"F103": "Bounds: text minimum width defaults to 120 px (proposed, Open at the sketch); content and actions columns never below their declared width; widths are whole pixels; the authority gives no upper bound for a stored width and the design adds none (an over-wide stored width scrolls with the cue).",
+"F104": "The one shared grid every affected table uses; the cause (all widths persisted, cells wrap, no pinning, no cue) lives here, so the fit, pinning and cue wiring extend it rather than a wrapper per table.",
+"F105": "Existing column carrier of every table; gains the optional fit choice so a table marks text, content or actions columns without a second column type.",
+"F106": "Owns the merge of saved and declared column order; it also places the pinned actions column last, so no second ordering rule exists.",
+"F107": "Stores and sanitises columnWidths already; only what DataGridBase writes into it changes (the resized column, not every column).",
+"F108": "Holds the live width map; unchanged.",
+"F109": "No existing owner decides column flex, minWidth and protection from a column kind; DataGridBase mixes a persisted-width rule into its memo. A pure owner keeps the rule testable without layout (jsdom).",
+"F11": "the name ends with an ellipsis and a tooltip shows the full name; text columns shrink first. Falsifier: the full text is lost with no way to read it, or the cell wraps and hides the row's other cells.",
+"F110": "Nothing in the app detects horizontal overflow of a grid; a pure function of the scroll measures plus one hook owns it.",
+"F111": "Searched for an ellipsis-with-tooltip cell: none is shared; cells wrap today. One component used by DataGridBase for every text column.",
+"F112": "The MUI Tooltip the grid toolbar already uses gives the full text of a truncated cell.",
+"F113": "The community grid (@mui/x-data-grid 9.17) already shares leftover width among flex columns and respects minWidth, and offers cellClassName, headerClassName, columnBufferPx and the scroll and dimension API; the fit and the pinned column use those instead of a Lighthouse width solver or the Pro grid.",
+"F114": "Writes the same shape; after this change it writes only resized widths, a subset of what it wrote before.",
+"F115": "Reads and sanitises the same shape; states stored by earlier versions load unchanged and are honoured as set by the person.",
+"F116": "fit is optional and derived when absent, so every existing table compiles and keeps its columns.",
+"F117": "No dependency, boundary or owner law in authority is reachable by this change: it stays inside the presentation component DataGridBase and its callers; the hexagonal backend rules and the useRbac rule are not touched.",
+"F118": "Producer and consumer of the stored grid state and of DataGridColumn are in one deployable and change in the same commit; the primary oracles cover them.",
+"F119": "DataGridBase props (rows, columns with optional fit, storageKey) as rendered by a table component, and the person interacting with the rendered grid (resize, scroll, keyboard focus, Reset)",
+"F12": "Numbers, dates and actions are never cut",
+"F120": "community @mui/x-data-grid DataGrid (props, apiRef events and root dimensions)",
+"F121": "browser localStorage through usePersistedGridState",
+"F122": "Table components depend on DataGridBase; DataGridBase depends on the pure modules columnFit and horizontalOverflow and on the community grid; the pure modules depend on nothing but types.",
+"F123": "Fitted column props per column: flex, width, minWidth, resizable, pinned class",
+"F124": "the rendered pixel width, which the community grid computes in a browser only",
+"F125": "Overflow edges of a rendered grid",
+"F126": "how many columns are hidden on a side",
+"F127": "In a browser at a given viewport width: bounding box of the Delete button of the first report row against the grid box",
+"F128": "which column shrank to make room",
+"F129": "Two fitted columns are equal when flex, width, minWidth, resizable and pinned flag agree; header text and renderers are passed through unchanged.",
+"F13": "a table whose columns do not all fit",
+"F130": "A content or actions column never gets a width or minWidth below its declared width, whatever stored width it has.",
+"F131": "declared width 40..400, stored width absent or 1..800, fit kind content or actions",
+"F132": "stored width below declared width",
+"F133": "fast-check integer shrinking",
+"F134": "minWidth and width of the fitted props compared with the declared width written out",
+"F135": "fitColumn takes a stored width below the declared width for a content column",
+"F136": "A text column without a stored width is flex with minWidth equal to its declared or default minimum; with a stored width it is not flex and its width equals the stored width.",
+"F137": "minWidth absent or 40..300, flex absent or 1..3, stored width absent or 40..800",
+"F138": "stored width present",
+"F139": "flex, width, minWidth of the fitted props",
+"F14": "the grid shrinks columns",
+"F140": "stored width replaced by the fitted flex, or flex left on a resized column",
+"F141": "overflowEdges is none exactly when contentWidth is within viewportWidth plus one pixel; right exactly when scrollLeft plus viewportWidth is more than one pixel short of contentWidth; left exactly when scrollLeft is more than one pixel.",
+"F142": "viewportWidth 0..2000, contentWidth 0..4000, scrollLeft 0..max(0, contentWidth - viewportWidth)",
+"F143": "scrollLeft at 0, at the end of the range, contentWidth equal to viewportWidth",
+"F144": "the closed value compared with the comparisons written out in the test",
+"F145": "right still reported at the end of the scroll range, or a cue on a table that fits",
+"F146": "The pinned actions column is ordered last for any saved column order.",
+"F147": "no saved order",
+"F148": "saved order with actions first",
+"F149": "saved order without the actions field",
+"F15": "number, date and row-action columns keep at least the width that shows their whole content (a number is never ellipsised); only text columns shrink below their preferred width. Falsifier: a number or date shows an ellipsis, or an action button is clipped.",
+"F150": "finite set of order shapes",
+"F151": "A resize commit stores only the resized column width merged into the stored widths.",
+"F152": "first resize of Name",
+"F153": "second resize of Owner keeps Name",
+"F154": "Reset clears both",
+"F155": "finite interaction sequence",
+"F156": "A number, date or action cell is never ellipsised or clipped",
+"F157": "a reader sees a cut number or cannot press Delete",
+"F158": "DataGridColumn with fit content or actions (declared or derived)",
+"F159": "cell shows its whole content; in the browser skeleton Delete is fully inside the grid box",
+"F16": "A width the person set stays theirs",
+"F160": "a table that renders its own text into a content column wider than the declared width; a caller passing raw GridColDef props",
+"F161": "text column narrower than its text: ellipsis plus tooltip",
+"F162": "content or actions column below its declared width",
+"F163": "actions column scrolled out of view",
+"F164": "declared width of a content column smaller than its real content (a long localised date or a large number)",
+"F165": "content never cut, text never below minimum, stored text width kept, fits when minima fit, no cue when it fits, no right cue at the end, cue only with hidden columns",
+"F166": "two text columns, one content column and one pinned actions column; widths 40..1200 px; the grid flex pass is abstracted as equal share then clamp to minimum",
+"F167": "MUTANT 1: a stored content width below the content width is used as is",
+"F168": "MUTANT 2: a stored text width is replaced by the fitted share",
+"F169": "MUTANT 3: the right cue stays at the end of the scroll range",
+"F17": "a person has resized the Name column of a grid, so the width is stored for that grid",
+"F170": "fit and cue invariants",
+"F171": "Quint model columnFit.qnt: quint run 20000 samples and quint verify (Apalache, bounded) found no violation; three behavioural mutants each violated Inv in quint run",
+"F172": "a fitted grid with a pinned actions column",
+"F173": "any DataGridColumn list builds fitted props through fitColumn; the report list columns are an inhabitant",
+"F174": "Delete reachable on the report list",
+"F175": "ReportList columns -> fitColumn -> DataGridBase -> community DataGrid -> Reports tab of a Team; observed by the S1 Playwright skeleton",
+"F176": "Assumption: the community grid renders each row as a horizontal strip inside one scroller so position sticky works (negated by an MUI DOM change in an upgrade)",
+"F177": "Delete reachable by scrolling",
+"F178": "pinning lost until fixed",
+"F179": "Delete unreachable",
+"F18": "they reopen the grid",
+"F180": "the S1 Playwright skeleton fails on an upgrade that breaks sticky",
+"F181": "columnBufferPx large enough to render every column",
+"F182": "pinned cell exists",
+"F183": "a little more DOM per row",
+"F184": "actions cell virtualised away",
+"F185": "a table with very many columns pays render cost; all current tables have under twenty",
+"F186": "Widths stored by earlier versions for every column",
+"F187": "the person widths",
+"F188": "the table overflows and shows the cue",
+"F189": "their widths silently replaced",
+"F19": "the stored width is used for that column as set, and the other columns fit around it; Reset in the toolbar clears stored widths and returns to the fitted layout. Falsifier: reopening replaces their width with the fitted one, or Reset leaves their widths in place.",
+"F190": "Reset returns to the fit; pinned actions keep Delete in view meanwhile",
+"F191": "Second set, walked over the finished design: right-to-left layout, browser zoom at 200 percent, a grid inside a dialog (WorkItemsDialog), rows with checkbox selection",
+"F192": "fit and pinned actions",
+"F193": "cue on the mirrored side is not designed (the app has no RTL locale)",
+"F194": "the checkbox column treated as text and shrunk",
+"F195": "checkbox selection column is MUI-owned and fixed width; zoom only lowers available width and is covered by the minima; dialogs use the same component",
+"F196": "overflowEdges and useHorizontalOverflow",
+"F197": "renders the edge overlays, data-overflow, the aria description, minWidth 0 on the root, and the focus scroll past the pinned column",
+"F198": "DataGridBase rendering the report list columns with the grid root dimensions stubbed to content 900 px in a 400 px viewport; the test fires scrollPositionChange at left 0, in the middle and at the end, then resizes the viewport to 1000 px; then focuses a cell that ends under the pinned column with the keyboard. In the browser skeleton at 375 px the person sees the table, not the page, scroll.",
+"F199": "data-overflow is right at 0, both in the middle, left at the end and none at 1000 px; the right overlay shows only when right or both and the left only when left or both; the grid aria description names the hidden side while there is one and is absent at none; the keyboard-focused cell is scrolled clear of the pinned column; at 375 px the document does not scroll sideways and the grid scroller does.",
+"F2": "Every column of a table, including its actions, can be found: tables fit their width where they can, and say so when they cannot.",
+"F20": "An edge cue shows more columns off screen",
+"F200": "a cue at the end of the range or on a table that fits, overflow shown only as a shadow with no text state, a focused cell left under the pinned column, or the page scrolling sideways.",
+"F201": "new",
+"F202": "cue overlays, aria description, root minWidth, focus scroll",
+"F203": "Builds on the S1 structure; adds a hook and overlays with no existing code to move first.",
+"F204": "marks name and tags as text, remaining features, deliveries, reports and last updated as content, actions as actions; drops the isMobile width switches that the fit replaces",
+"F205": "The Overview table rendered with Teams whose names are longer than their column; the person hovers a long name and the grid reports horizontal overflow.",
+"F206": "the name cell truncates with the full name in its tooltip, the actions column carries the pinned class and is the last column, number and date cells keep their whole content, and the overflow cue state is exposed as on the report list.",
+"F207": "the actions column not pinned or not last, a long name wrapping or lost, or no overflow state.",
+"F208": "the Overview table; only its column fit marks change",
+"F209": "fit marks; isMobile width switches removed",
+"F21": "a table whose columns still do not fit at the current width (for example a narrow window)",
+"F210": "Only column definitions change; nothing to move first.",
+"F211": "pure owner of the fit rule (fitColumn, ColumnFit, DEFAULT_TEXT_MIN_WIDTH)",
+"F212": "ellipsis cell with full-text tooltip on hover and keyboard focus",
+"F213": "calls fitColumn, renders text cells through TruncatedCell, pins the actions column (sticky class, last in order, columnBufferPx), stores only the resized width",
+"F214": "DataGridColumn gains optional fit",
+"F215": "exports ColumnFit for table components",
+"F216": "marks Name and Owner as text with their minimum widths, Created and Template as content, actions as actions",
+"F217": "In a browser, a Team with several reports, one with a name longer than its column; the person opens the Reports tab at 1280 px wide, hovers the long name, then reloads with a stored Name width and presses Reset; then the same at 375 px wide and scrolls the table to the left end.",
+"F218": "At 1280 px the Delete button of every row lies inside the grid box with the scroller at scrollLeft 0, the long name ends with an ellipsis and the tooltip shows the full name, the Created date shows whole; a stored Name width is used as set after reload and Reset returns the fitted layout; at 375 px Delete is still inside the grid box at scrollLeft 0 and at the end.",
+"F219": "Delete outside the grid box at 1280 px or at 375 px, the full name not reachable by tooltip, a date with an ellipsis, or the stored width replaced on reload.",
+"F22": "the person views the table scrolled to the left",
+"F220": "the report list columns are the walking-skeleton table; only fit marks change",
+"F221": "The DataGrid barrel; it also exports the ColumnFit type for the tables.",
+"F222": "fit, pinning, truncation, resize persistence; every table using it changes layout at once",
+"F223": "optional fit added; callers compile unchanged",
+"F224": "exports ColumnFit",
+"F225": "fit marks",
+"F226": "gets the derived fit from S1 (flex columns text, others content); its own marks come in S3",
+"F227": "derived fit until S4; its tests are S4 supports",
+"F228": "page object gains the grid box, a row Delete locator and the scroll position",
+"F229": "The resize-persistence change and the fit call are the behaviour itself; no behaviour-preserving move makes them easier, and DataGridBase has no seam to extract first that the slice does not create anyway.",
+"F23": "a shadow or fade on the right edge shows that more columns can be scrolled to. Falsifier: columns are cut off at the edge with no cue.",
+"F230": "marks each column text, content or actions where the derived fit is wrong",
+"F231": "Each of the Feature, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables rendered with a long text value and its actions column, if any.",
+"F232": "in each, the long text truncates with its full text in a tooltip, number, date and state cells show whole, the actions column is pinned and last, and the overflow state is exposed when the grid overflows.",
+"F233": "any of these tables wraps or loses a long text, cuts a number or date, or leaves its actions column unpinned.",
+"F234": "The table keeps its DataGridBase use and its columns; only the fit marks of its columns are added where the derived fit is wrong.",
+"F235": "column fit marks only",
+"F236": "Only column definitions change per table; nothing to move first.",
+"F24": "The cue follows the scroll position and disappears when nothing is hidden",
+"F25": "a table with a cue on the right edge",
+"F26": "the person scrolls to the end, or the window is widened until everything fits",
+"F27": "the right cue goes, a left cue shows while columns are hidden on the left, and no cue shows once all columns are visible. Falsifier: a cue stays at the end of the scroll range or on a table that fits.",
+"F28": "The cue is not the only way to know",
+"F29": "a table with columns off screen and a keyboard or screen-reader user",
+"F3": "A person looking at any table that uses the shared grid can find every column it offers, including its row actions such as Delete on the report list: the columns fit the available width where they can, and when they cannot, the table visibly shows that more columns wait off screen.",
+"F30": "they move through the grid with the keyboard",
+"F31": "focus moves to off-screen cells and scrolls them into view, and the table exposes to assistive technology that it scrolls horizontally with more columns than shown (the cue is also a text-readable state, not colour or shadow alone). Falsifier: a keyboard user cannot reach the actions column, or only a visual effect marks the overflow.",
+"F32": "Overview tables fit and cue like the report list",
+"F33": "the Overview with a table whose columns do not fit",
+"F34": "the person opens it",
+"F35": "its columns fit and truncate as on the report list, and a cue shows when columns still overflow. Falsifier: the Overview table still hides its last column with no cue.",
+"F36": "Remaining tables behave the same",
+"F37": "the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables",
+"F38": "each is opened at a narrow width",
+"F39": "each fits where it can and shows the cue where it cannot, with no per-table behaviour that contradicts the report list. Falsifier: one of these tables still scrolls its last column out of view with no cue.",
+"F4": "Report list shows Delete without scrolling",
+"F40": "Phone width",
+"F41": "a window around 375 px wide",
+"F42": "a person opens a table that cannot fit",
+"F43": "text columns are at their minimum width, the table scrolls horizontally, the cue shows, and the actions remain reachable by scrolling. Falsifier: the page scrolls sideways instead of the table, or the actions cannot be reached.",
+"F44": "Shared DataGridBase behaviour: columns fit the available width (text columns shrink and truncate with a full-text tooltip; number, date and action columns are protected), a horizontal-overflow edge cue, keyboard and screen-reader exposure of the overflow, and the interaction with stored widths, applied to the report list first, then the Overview and the other DataGridBase tables.",
+"F46": "Direction is Confirmed by the maintainer (2026-11-15): both fit (columns shrink, long names truncate with a tooltip) and a visible edge cue when columns still do not fit.",
+"F47": "Proposed: text columns (names, titles, owner) shrink and truncate; number, date, state and row-action columns never go below the width that shows their whole content, so a number is never ellipsised and an action button is never clipped (visualization: truncation must not hide meaning).",
+"F48": "Proposed: the tooltip shows the full text, on hover and on keyboard focus of the cell; it is not the only place the text lives, so the cell carries the full text for assistive technology.",
+"F49": "Proposed: a width the person set by resizing is kept as they set it, and the fit fills the remaining columns around it; Reset in the toolbar clears the stored widths and returns to the fitted layout. If their stored widths together exceed the available width, the table scrolls and shows the cue; their choice is not overridden.",
+"F5": "a Team with several reports and a desktop-width window",
+"F50": "Proposed: shadow or fade on the right edge while columns lie to the right, on the left edge while columns lie to the left, each disappearing when that side has nothing hidden; the cue is decorative and does not capture clicks.",
+"F51": "Proposed: the cue is not the only signal: keyboard focus scrolls cells into view, and the grid exposes its horizontal overflow to assistive technology (existing MUI DataGrid roles retained).",
+"F52": "Proposed: the behaviour applies to every DataGridBase user at once, because the cause is in the shared component; each table can mark which of its columns are protected. Delivery is staged by slice (report list, Overview, the rest) so each table is observed on its own.",
+"F53": "DISCUSS checklist - RBAC impact: N/A, because no action, page or data is added; Delete and the other actions keep their existing gating through useRbac().",
+"F54": "DISCUSS checklist - Lighthouse-Clients CLI / MCP: N/A, because no API route or DTO changes; this is front-end rendering only.",
+"F55": "DISCUSS checklist - Website marketing surface: N/A, because it fixes table usability and is not a capability worth a line; no docs/assets file is expected to change (screenshots are a finalize decision).",
+"F56": "DISCUSS checklist - Context map: cross-cutting UI infrastructure; no bounded context of ADR-270 is changed and no domain event is published or reacted to. It touches the surfaces that show tables: the Reports tab of a Team and of a Portfolio, the Overview, Feature and Work Item lists, and Settings > System (Connections, System Info). No new glossary term is introduced; no new concept, context or edge, so ADR-270 and ARCHITECTURE.md section 4 stay unchanged. Per ADR-271 no new UI surface is added and no surface moves; the terms Feature, Work Item, Team, Portfolio are written as the configurable defaults.",
+"F57": "Usage data is a DEVOPS question, not asked here.",
+"F58": "Loading and failure: the grid already shows its own loading state; this feature adds no data fetch, so no new loading or failure look is needed (DESIGN confirms). The sketch review at the start of DELIVER must cover the cue, the truncated cell and the phone width.",
+"F6": "the person opens its Reports tab",
+"F60": "Open (maintainer, with the DELIVER sketch): minimum widths and which columns are protected per table; for example the report list's Name shrinking to a minimum of about 160 px. Exact numbers are not yet supplied.",
+"F61": "Open (maintainer, at the DELIVER sketch review): shadow or fade as the cue style, and whether a text hint is added.",
+"F63": "A person opens a table (for example a Team's Reports tab) and looks for Delete; the columns fit the width, so Delete is in view.",
+"F64": "Not supplied; the community user reported that he could not find Delete.",
+"F65": "In a narrow window the table cannot fit; the person sees the edge cue, scrolls or tabs to the actions column and uses it.",
+"F66": "Not supplied.",
+"F68": "Delete is found on the report list",
+"F69": "On the report list at a width where columns still do not fit, a right-edge cue shows more columns, follows scroll position, disappears when nothing is hidden, and the grid announces horizontal overflow to keyboard and screen-reader users; at phone width the table (not the page) scrolls.",
+"F7": "the Name column takes the remaining width and shrinks, and the actions column with Delete is inside the visible table without horizontal scrolling. Falsifier: Delete sits beyond the right edge at a width where the other columns could have shrunk.",
+"F70": "A person knows when a table has more columns than shown",
+"F72": "The Overview no longer hides its last column",
+"F74": "Every shared-grid table can be read to its last column",
+"F75": "The actions column stays pinned at the right edge",
+"F76": "a shared-grid table with an actions column (Delete, Edit and so on), and columns that overflow the width",
+"F77": "the person scrolls the table sideways",
+"F78": "the actions column stays at the right edge and never scrolls out of view, while the fit and the edge cue still apply to the other columns. Falsifier: Delete scrolls out of view at any width, or the pinned column hides the cue or covers another column's content.",
+"F79": "The actions column pinned to the right edge on every shared-grid table that has one (walking skeleton on the report list, carried to the other tables by the later slices).",
+"F8": "Long text truncates and the tooltip gives the full text",
+"F80": "New columns, new row actions, moving Delete to another place (such as a row menu), changes to what a table lists, the report list's content, a card-per-row layout at phone width; also hiding or reordering columns, which exist today and stay as they are.",
+"F81": "Confirmed by the maintainer (2026-11-17): the actions column (Delete, Edit and so on) is pinned to the right edge on every shared-grid table that has one, so it never scrolls out of view; the fit and the edge cue stay.",
+"F82": "Confirmed by the maintainer (2026-11-17): at phone width the table scrolls inside its box with the cue; a card-per-row layout is out of scope.",
+"F83": "Open (DESIGN decides): how to pin the actions column. The app uses the community @mui/x-data-grid, which has no built-in column pinning, so DESIGN chooses between a custom sticky column and the Pro grid's pinning, and must check the choice with the edge cue, user-set widths and phone width.",
+"F84": "On the report list, Delete and the other row actions are visible without scrolling at desktop width and stay pinned at the right edge when the table scrolls; the Name column shrinks and truncates with a full-text tooltip; number, date and action columns are never cut; a width the person stored is kept. Establishes the shared fit and pinning mechanism in the grid (walking skeleton).",
+"F85": "On the Overview, the DataOverviewTable fits and truncates like the report list and shows the cue when columns still overflow. Its actions column, if any, stays pinned.",
+"F86": "The Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables each fit, pin their actions column and show the cue at a narrow width, with columns marked truncatable or protected per table.",
+"F87": "Pinning (Open item resolved by DESIGN): the actions column is pinned with a custom sticky column inside DataGridBase on the community @mui/x-data-grid 9.17. A column whose fit kind is actions gets a Lighthouse class through the community cellClassName and headerClassName props, styled position sticky, right 0, an opaque cell background, a z-index above other cells and a left shadow line; it is always ordered last (the column-order merge forces it to the end, whatever a saved order says), is not resizable, and ignores any stored width. DataGrid gets a large columnBufferPx so every column is rendered (all shared grids have under twenty columns and rows are paged), because a virtualised-away cell cannot stick. Rejected: the Pro grid pinning (a paid per-developer licence and a licence key in an open-source app, for one feature); rejected: writing the community grid internal pinnedColumns state through the api ref (internal API, and it unlocks a Pro feature without its licence); rejected: moving Delete into a row menu (scope out). Checked against the cue (the right cue is drawn at the left edge of the pinned column, never under it), user-set widths (other columns still resize; the pinned one does not), column reorder (pinned stays last) and hide (hiding the actions column still works as today), phone width (pinned column plus the scrolling rest) and the stored grid state (shape unchanged).",
+"F88": "Fit carrier: DataGridColumn gains an optional fit choice, ColumnFit = { kind: text, minWidth? } | { kind: content } | { kind: actions }. When a column declares none, it is derived: a column with flex is text, any other column is content. So S1 changes every DataGridBase table at once without editing them, and S3 and S4 only mark columns where the derivation is wrong. The single owner of the fit rule is a new pure module columnFit.ts (fitColumn(column, storedWidth) returns the MUI column props: flex, width, minWidth, resizable, cell and header class). DataGridBase calls it in its column memo and keeps no width rule of its own. Text: flex = column.flex or 1, minWidth = fit.minWidth or DEFAULT_TEXT_MIN_WIDTH 120 px, cell does not wrap and truncates. Content: fixed width, minWidth = that width, never flex, never ellipsised. Actions: content plus pinned. The fit itself is the community grid flex pass (leftover width shared among flex columns, never below minWidth); when the minima do not fit, the grid scroller scrolls.",
+"F89": "Truncation: text cells render through a new TruncatedCell component in the DataGrid folder: a nowrap box with overflow hidden and text-overflow ellipsis, inside an MUI Tooltip that carries the full text. The full text is the column value (valueGetter or field value as a string); a renderCell output keeps its own element inside the box and the tooltip text comes from the value. The tooltip opens on hover and while the cell or an element inside it has keyboard focus (focusin and focusout on the box, plus the grid focused-cell state for the cell itself), and only when the text is cut (scrollWidth greater than clientWidth at open). The full text stays in the DOM, so assistive technology reads it whole. Content and actions cells keep the current centred cell layout and are never cut. Row height stays auto.",
+"F9": "a report whose name is longer than its column",
+"F90": "Stored widths: on a resize commit DataGridBase stores only the width of the column the person resized, merged into the stored widths. Today it stores every column width after any resize, which turns flex off for all columns and is one reason Delete drifts off screen. A stored text width is used as set (flex off for that column, minWidth kept); a stored content width is used but never below the content width; a stored actions width is ignored. Widths stored by earlier versions stay in place as the person set them; Reset in the toolbar (clearState, unchanged) clears them and returns to the fitted layout. The localStorage shape PersistedGridState and its sanitiser do not change.",
+"F91": "Edge cue: a new pure function overflowEdges(scrollLeft, viewportWidth, contentWidth) in horizontalOverflow.ts returns a closed value none | left | right | both, with a one-pixel tolerance. A hook useHorizontalOverflow(apiRef) in the same module reads the grid root dimensions (apiRef getRootDimensions: content size and viewport inner size) and the scroll position, and recomputes on the grid events scrollPositionChange, resize, columnWidthChange and columnVisibilityModelChange. DataGridBase renders two decorative overlays (aria-hidden, pointer-events none) from that value: the left one at the left edge of the scroller, the right one at the left edge of the pinned actions column (or the right edge when there is none). The wrapper carries data-overflow with the same value, and a visually hidden text referenced from the grid with aria-describedby says that the table scrolls sideways and columns are hidden on the named side, so the cue is not shadow alone. Keyboard: the grid already scrolls a focused cell into view; on cellFocusIn DataGridBase additionally scrolls left by the overlap when the focused cell ends under the pinned actions column, because the community grid does not know a custom pinned column.",
+"F92": "Phone width: the DataGridBase root box keeps width 100 percent and gets minWidth 0, so the grid scroller, not the page, scrolls sideways; text columns stop at their minimum widths, the cue shows and the pinned actions stay in view. A card-per-row layout is out of scope (Confirmed).",
+"F93": "Loading and failure: confirmed no new look. The feature adds no fetch; each grid keeps its existing loading overlay and its callers keep their failure looks. The cue is computed from the rendered grid, so a loading grid with no rows shows no cue.",
+"F94": "Proposed decisions confirmed by DESIGN: text columns shrink and truncate, number, date, state and action columns are protected (fit kind content or actions); the tooltip shows the full text on hover and keyboard focus and the cell keeps the full text for assistive technology; a stored width is kept and the rest fits around it, Reset returns to the fit, and stored widths that overflow scroll with the cue; the cue is on the side with hidden columns, decorative, not clickable; the cue is not the only signal (focus scrolls cells into view, aria description of the overflow, MUI grid roles kept); the behaviour applies to every DataGridBase user through the shared component, delivered by slice.",
+"F95": "Open for the maintainer at the DELIVER sketch review (they change what a user sees): (1) minimum widths and protected columns per table; DESIGN proposes DEFAULT_TEXT_MIN_WIDTH 120 px and the report list Name 160 px, Owner 120 px; (2) shadow or fade as the cue style, and whether a visible text hint is added; (3) the wording of the screen-reader overflow description. The crafter uses the proposed values until the sketch decides.",
+"F96": "Formal coverage: the fit and cue safety claims (content never cut, text never below its minimum, stored text width kept, no overflow when the minima fit, no cue when the table fits, no right cue at the end of the scroll range, a cue only on a side with hidden columns) are modelled in Quint, because they are state invariants over a finite abstraction of widths and scroll position. Quint covers them; TLA+ is not needed (no temporal claim) and Agda is not needed (no proof beyond the bounded model). Liveness is not applicable: the fit and the cue are pure functions of the current widths and scroll position recomputed on each grid event; nothing waits for eventual progress.",
+"F97": "Layers: domain is not affected (no business rule). Application/presentation: columnFit (states: column fit kind text, content, actions with optional stored width; operation fitColumn; observation the MUI column props) and horizontalOverflow (state: scrollLeft, viewport width, content width; operation overflowEdges; observation none, left, right, both). Adapter: DataGridBase maps those onto the community DataGrid props and events and onto localStorage through usePersistedGridState; its failure translation is unchanged (storage errors are logged and the grid falls back to defaults). Infrastructure/recovery: none.",
+"F98": "Context map: cross-cutting UI infrastructure; no bounded context, glossary term, domain event or UI surface changes, so ADR-270, ADR-271 and ARCHITECTURE.md section 4 stay unchanged.",
+"F99": "Test substrate: jsdom has no layout, so the rules live in pure functions tested in .test.ts files (columnFit.test.ts, horizontalOverflow.test.ts, fast-check 4.10.2 available for the broad laws); the wiring is tested in DataGridBase component tests that stub apiRef getRootDimensions and fire grid events; the only real-layout check is one Playwright walking skeleton on the report list through the ReportsListPage page object (desktop width and 375 px), which proves the sticky column and the fit in a browser. No screenshot changes are planned; screenshots are a finalize decision. The Lighthouse test-writing skill wins over nWave timing and PBT density rules."
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F46"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F47"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F48"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F49"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F50"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F51"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F52"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F53"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F54"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F55"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F56"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F57"
+},
+{
+"status": {
+"kind": "Proposed"
+},
+"text": "F58"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F81"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F60"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F61"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F82"
+},
+{
+"status": {
+"kind": "Open",
+"owner": "Design"
+},
+"text": "F83"
+}
+],
+"journey": [
+{
+"emotion": "F64",
+"step": "F63"
+},
+{
+"emotion": "F66",
+"step": "F65"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"given": "F5",
+"id": "P2",
+"kind": "Scenario",
+"then": "F7",
+"title": "F4",
+"when": "F6"
+},
+{
+"given": "F9",
+"id": "P3",
+"kind": "Scenario",
+"then": "F11",
+"title": "F8",
+"when": "F10"
+},
+{
+"given": "F13",
+"id": "P4",
+"kind": "Scenario",
+"then": "F15",
+"title": "F12",
+"when": "F14"
+},
+{
+"given": "F17",
+"id": "P5",
+"kind": "Scenario",
+"then": "F19",
+"title": "F16",
+"when": "F18"
+},
+{
+"given": "F21",
+"id": "P6",
+"kind": "Scenario",
+"then": "F23",
+"title": "F20",
+"when": "F22"
+},
+{
+"given": "F25",
+"id": "P7",
+"kind": "Scenario",
+"then": "F27",
+"title": "F24",
+"when": "F26"
+},
+{
+"given": "F29",
+"id": "P8",
+"kind": "Scenario",
+"then": "F31",
+"title": "F28",
+"when": "F30"
+},
+{
+"given": "F33",
+"id": "P9",
+"kind": "Scenario",
+"then": "F35",
+"title": "F32",
+"when": "F34"
+},
+{
+"given": "F37",
+"id": "P10",
+"kind": "Scenario",
+"then": "F39",
+"title": "F36",
+"when": "F38"
+},
+{
+"given": "F41",
+"id": "P11",
+"kind": "Scenario",
+"then": "F43",
+"title": "F40",
+"when": "F42"
+},
+{
+"given": "F76",
+"id": "P12",
+"kind": "Scenario",
+"then": "F78",
+"title": "F75",
+"when": "F77"
+}
+],
+"scope_in": [
+"F44",
+"F79"
+],
+"scope_out": [
+"F80"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F84",
+"promises": [
+"P1",
+"P2",
+"P3",
+"P4",
+"P5",
+"P12"
+],
+"work": {
+"size": "M",
+"value": "F68"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F69",
+"promises": [
+"P6",
+"P7",
+"P8",
+"P11"
+],
+"work": {
+"size": "S",
+"value": "F70"
+}
+},
+{
+"depends_on": [
+"S1",
+"S2"
+],
+"id": "S3",
+"observation": "F85",
+"promises": [
+"P9",
+"P12"
+],
+"work": {
+"size": "S",
+"value": "F72"
+}
+},
+{
+"depends_on": [
+"S3"
+],
+"id": "S4",
+"observation": "F86",
+"promises": [
+"P10",
+"P12"
+],
+"work": {
+"size": "M",
+"value": "F74"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6650-tables-fit-and-show-overflow",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
