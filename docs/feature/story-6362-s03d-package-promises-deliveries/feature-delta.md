@@ -720,3 +720,15 @@ probes show.
 - The order pin was proven by a throwaway swap of the two registrations: the new pin failed with
   "expected [SnapshotRecording, Publishing], was [Publishing, SnapshotRecording]"; Program.cs restored.
 - `DeliveryMetricValuesProjectorTest` also needed the new `using` (it builds the recording handler).
+
+### Feature B EXAMINE round 1 (2026-11-17)
+
+Not closed: E1 met; E2, E3 and E4 observation gaps, no product violation seen (Delivery answers IDENTICAL over
+23 answers in 9 scenarios, EF model unchanged, 1232 architecture rules passed, backend 0 failed). The gaps came
+from which probes were used and named, not from the product: `backend-tests` was run without a name fragment, so
+it printed totals only, while a fragment prints every passing test by name; E3 asked `forecast-triggers-show` for
+an order it does not show; E4 asked for "the same reactions" with show-probes, while `refresh-reactions-compare`
+and `forecast-answers-compare` compare two revisions. The restart recompute the examiner saw is the documented
+behaviour of `forecast-triggers-show` (the start-up seeding forgets what stored forecasts were computed from).
+Taken on the maintainer's feature A precedent (fix the observation, reword the expectation, re-run): E2–E4 are
+reworded to name the probe and fragment that shows each, without changing what is promised; EXAMINE re-runs.
