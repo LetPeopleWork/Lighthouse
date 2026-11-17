@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.Promises.Application;
 
-namespace Lighthouse.Backend.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Modules.Promises.Application.Policies
 {
     public class DeliveryMetricSnapshotRecordingHandler(
         IDeliveryRepository deliveryRepository,
