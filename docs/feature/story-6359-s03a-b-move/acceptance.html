@@ -328,6 +328,183 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the layout test for the connector port: the fifteen port and capability types looked up by name
+</code></pre>
+
+<pre><code>All fifteen live in the Tracker integration Application and none is left under Services; a missing type fails
+</code></pre>
+
+<pre><code>The maintainer sees the connector port in the module&#x27;s Application after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>Only some of the fifteen move, or a renamed type is skipped silently, or a copy stays under Services
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the layout test for the factories: the four factory types looked up by name
+</code></pre>
+
+<pre><code>Connector and system factories and their interfaces live in the Application and none is left under Factories
+</code></pre>
+
+<pre><code>The maintainer sees the factories beside the port they build
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>The factory interfaces move while a class stays under Factories
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the layout test for the authentication schema: keys, schema, method and option looked up by name
+</code></pre>
+
+<pre><code>All four live in the Application and none is left under Services
+</code></pre>
+
+<pre><code>The authentication schema the API reads sits in the module&#x27;s Application
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>The schema moves but AuthenticationMethod or AuthenticationMethodOption stays behind
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the layout test for the board types: Board and BoardInformation looked up by name
+</code></pre>
+
+<pre><code>Both live in the Application and none is left under Services
+</code></pre>
+
+<pre><code>The board types sit beside the board port
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>Board moves but BoardInformation stays in the connector implementation namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the rules on made-up offenders: a type left in its former home, a port naming an implementation type, and their clean twins
+</code></pre>
+
+<pre><code>The offender is named and the twin is not
+</code></pre>
+
+<pre><code>A rule that cannot fail would let a left-behind type pass unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>A rule that flags every type or no type at all
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the leak check on the board port signatures
+</code></pre>
+
+<pre><code>IBoardInformationProvider names no implementation namespace, and the port is found
+</code></pre>
+
+<pre><code>Callers of the board port do not depend on connector code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>The port names Board from the old implementation namespace but Board is also in Services so the move test alone passes
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the leak check on each factory interface and its class
+</code></pre>
+
+<pre><code>Interface and class share one namespace
+</code></pre>
+
+<pre><code>A caller imports one namespace for one factory
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>The pair is checked only for the Application layer so a split pair that moves together in name only is accepted
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

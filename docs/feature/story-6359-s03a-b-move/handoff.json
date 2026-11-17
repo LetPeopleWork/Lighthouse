@@ -113,13 +113,127 @@
 "stimulus": "F702",
 "user_result": "F704"
 }
+],
+"S2": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F473"
+],
+"still_passes_if": "F709",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs"
+},
+"expected": "F707",
+"stimulus": "F706",
+"user_result": "F708"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6"
+],
+"still_passes_if": "F713",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs"
+},
+"expected": "F711",
+"stimulus": "F710",
+"user_result": "F712"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6"
+],
+"still_passes_if": "F717",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs"
+},
+"expected": "F715",
+"stimulus": "F714",
+"user_result": "F716"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6"
+],
+"still_passes_if": "F721",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs"
+},
+"expected": "F719",
+"stimulus": "F718",
+"user_result": "F720"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T6"
+],
+"still_passes_if": "F725",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs"
+},
+"expected": "F723",
+"stimulus": "F722",
+"user_result": "F724"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F475"
+],
+"still_passes_if": "F729",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs"
+},
+"expected": "F727",
+"stimulus": "F726",
+"user_result": "F728"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F474"
+],
+"still_passes_if": "F733",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs"
+},
+"expected": "F731",
+"stimulus": "F730",
+"user_result": "F732"
+}
 ]
 },
 "counters": {
 "C": 2,
 "D": 24,
 "E": 6,
-"F": 705,
+"F": 733,
 "K": 8,
 "L": 8,
 "P": 6,
@@ -3517,6 +3631,34 @@
 "F703": "Once the selectors leave Work Items, a stale note for one fails the existing rule, which compares both ways",
 "F704": "Work Items' notes list no selector after the move",
 "F705": "Stale selector notes stay in the list (only fails once the move lands; craft edits that file)",
+"F706": "Run the layout test for the connector port: the fifteen port and capability types looked up by name",
+"F707": "All fifteen live in the Tracker integration Application and none is left under Services; a missing type fails",
+"F708": "The maintainer sees the connector port in the module's Application after the move",
+"F709": "Only some of the fifteen move, or a renamed type is skipped silently, or a copy stays under Services",
+"F710": "Run the layout test for the factories: the four factory types looked up by name",
+"F711": "Connector and system factories and their interfaces live in the Application and none is left under Factories",
+"F712": "The maintainer sees the factories beside the port they build",
+"F713": "The factory interfaces move while a class stays under Factories",
+"F714": "Run the layout test for the authentication schema: keys, schema, method and option looked up by name",
+"F715": "All four live in the Application and none is left under Services",
+"F716": "The authentication schema the API reads sits in the module's Application",
+"F717": "The schema moves but AuthenticationMethod or AuthenticationMethodOption stays behind",
+"F718": "Run the layout test for the board types: Board and BoardInformation looked up by name",
+"F719": "Both live in the Application and none is left under Services",
+"F720": "The board types sit beside the board port",
+"F721": "Board moves but BoardInformation stays in the connector implementation namespace",
+"F722": "Run the rules on made-up offenders: a type left in its former home, a port naming an implementation type, and their clean twins",
+"F723": "The offender is named and the twin is not",
+"F724": "A rule that cannot fail would let a left-behind type pass unseen",
+"F725": "A rule that flags every type or no type at all",
+"F726": "Run the leak check on the board port signatures",
+"F727": "IBoardInformationProvider names no implementation namespace, and the port is found",
+"F728": "Callers of the board port do not depend on connector code",
+"F729": "The port names Board from the old implementation namespace but Board is also in Services so the move test alone passes",
+"F730": "Run the leak check on each factory interface and its class",
+"F731": "Interface and class share one namespace",
+"F732": "A caller imports one namespace for one factory",
+"F733": "The pair is checked only for the Application layer so a split pair that moves together in name only is accepted",
 "F8": "Every existing test is green unmodified apart from moves, using lines and rule-list strings; refresh answers, forecasts, routes, DTOs, DI lifetimes, handler order and the EF model are identical; the live connector suites are green in CI",
 "F9": "B1: move the five translation-rule types and their unit tests into Modules/TrackerIntegration/Domain; Work Items' rules lose the selectors."
 },

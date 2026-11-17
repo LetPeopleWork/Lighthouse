@@ -207,6 +207,211 @@ Stale selector notes stay in the list (only fails once the move lands; craft edi
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P1
+
+```text
+Run the layout test for the connector port: the fifteen port and capability types looked up by name
+```
+
+```text
+All fifteen live in the Tracker integration Application and none is left under Services; a missing type fails
+```
+
+```text
+The maintainer sees the connector port in the module's Application after the move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationApplicationLayoutArchUnitTest\.cs
+
+```text
+Only some of the fifteen move, or a renamed type is skipped silently, or a copy stays under Services
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the layout test for the factories: the four factory types looked up by name
+```
+
+```text
+Connector and system factories and their interfaces live in the Application and none is left under Factories
+```
+
+```text
+The maintainer sees the factories beside the port they build
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationApplicationLayoutArchUnitTest\.cs
+
+```text
+The factory interfaces move while a class stays under Factories
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the layout test for the authentication schema: keys, schema, method and option looked up by name
+```
+
+```text
+All four live in the Application and none is left under Services
+```
+
+```text
+The authentication schema the API reads sits in the module's Application
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationApplicationLayoutArchUnitTest\.cs
+
+```text
+The schema moves but AuthenticationMethod or AuthenticationMethodOption stays behind
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the layout test for the board types: Board and BoardInformation looked up by name
+```
+
+```text
+Both live in the Application and none is left under Services
+```
+
+```text
+The board types sit beside the board port
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationApplicationLayoutArchUnitTest\.cs
+
+```text
+Board moves but BoardInformation stays in the connector implementation namespace
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the rules on made-up offenders: a type left in its former home, a port naming an implementation type, and their clean twins
+```
+
+```text
+The offender is named and the twin is not
+```
+
+```text
+A rule that cannot fail would let a left-behind type pass unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationApplicationLayoutArchUnitTest\.cs
+
+```text
+A rule that flags every type or no type at all
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the leak check on the board port signatures
+```
+
+```text
+IBoardInformationProvider names no implementation namespace, and the port is found
+```
+
+```text
+Callers of the board port do not depend on connector code
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationApplicationLayoutArchUnitTest\.cs
+
+```text
+The port names Board from the old implementation namespace but Board is also in Services so the move test alone passes
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the leak check on each factory interface and its class
+```
+
+```text
+Interface and class share one namespace
+```
+
+```text
+A caller imports one namespace for one factory
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationApplicationLayoutArchUnitTest\.cs
+
+```text
+The pair is checked only for the Application layer so a split pair that moves together in name only is accepted
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
