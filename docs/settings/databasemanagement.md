@@ -27,6 +27,9 @@ Creates an encrypted snapshot of the current database and downloads it to your m
 
 The backup file is AES-256 encrypted (PBKDF2 key derivation, SHA-256, 100 000 iterations). It contains all database content plus a `manifest.json` with metadata (provider name, creation date, app version).
 
+{: .note }
+> **The backup does not contain this installation's encryption key.** The credentials stored in your Connections (tokens, OAuth sign-ins) are encrypted with that key, so only an installation that uses the same key can read them after a restore. See [Encryption](encryption.html) for where the key lives and how to move it.
+
 ---
 
 ### Restore
@@ -41,6 +44,13 @@ Replaces the current database with the contents of a previously created backup f
 All running forecasts and background updates are paused until the restart completes.
 
 If the wrong password is supplied the operation fails immediately with an error — no data is changed.
+
+**Before it changes anything, Lighthouse checks the backup's stored credentials.** If the backup holds credentials and this installation's encryption key can read none of them (typically a backup from another installation), the restore stops, nothing is changed, and a dialog explains why. You then have two choices:
+
+- **Cancel** — keep your current data. To restore with the credentials, give this installation the encryption key the backup was made with, then restore again.
+- **Restore without credentials** — the restore completes and the unreadable credentials are removed, so Lighthouse can start. Your Connections and their other settings are kept; enter each token again in its Connection.
+
+A backup whose credentials can be read, at least in part, restores as before.
 
 ---
 
@@ -67,7 +77,7 @@ The UI shows a warning banner when operations are blocked.
 
 | Provider | Backup format | Extra tooling required |
 |---|---|---|
-| **SQLite** | Raw database files (`.db`, `.db-wal`, `.db-shm`) | None — works out of the box |
+| **SQLite** | Raw database files (`.db`, `.db-wal`, `.db-shm`) | None — works out of the box; restore and clear write into the open database, so they work on Windows, macOS and Linux while Lighthouse is running |
 | **PostgreSQL** | Custom `pg_dump` archive (`lighthouse.pgdump`) | `pg_dump`, `pg_restore`, and `psql` must be installed |
 
 The active provider is shown on the page. You cannot change the provider from this screen — that is controlled by your Lighthouse configuration.
