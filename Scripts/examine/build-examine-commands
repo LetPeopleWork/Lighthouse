@@ -1394,3 +1394,46 @@ case "\$action" in
 esac
 EOF
 chmod +x "$out/linux-appimage"
+
+cat > "$out/ci-live-suites-show" <<EOF
+#!/usr/bin/env bash
+# Shows, for the newest finished "Build And Deploy Lighthouse" run (one parked at the release approval counts as
+# finished) at or before a revision, how each tracker's live
+# connector suite did in CI: one line per tracker with how many of its live tests passed, failed or were skipped,
+# then the run's backend job result. A live test is one whose test class carries the tracker's category
+# (JiraIntegration, AdoIntegration, LinearIntegration, ServiceNowIntegration, GithubIntegration); the counts come
+# from the per-test timings CI uploads. Commits that change only documents start no run, so earlier first-parent
+# commits are tried in turn.
+# Usage: ci-live-suites-show [revision]   (default HEAD; takes about 20 seconds)
+set -euo pipefail
+export HOME="$home"
+repo="$repo"
+rev="\${1:-HEAD}"
+run=""; at=""
+for sha in \$(git -C "\$repo" rev-list --first-parent -n 40 "\$rev"); do
+  run=\$(gh run list -R LetPeopleWork/Lighthouse -w "Build And Deploy Lighthouse" --commit "\$sha" --json databaseId,status \\
+    -q '[.[] | select(.status=="completed" or .status=="waiting")][0].databaseId // empty' 2>/dev/null || true)
+  if [ -n "\$run" ]; then at="\$sha"; break; fi
+done
+[ -n "\$run" ] || { echo "no finished CI run found within 40 first-parent commits of \$rev"; exit 1; }
+echo "revision \$(git -C "\$repo" rev-parse --short "\$rev"); CI run \$run on commit \${at:0:9}"
+gh run view "\$run" -R LetPeopleWork/Lighthouse --json jobs \\
+  -q '.jobs[] | select(.name=="Verify Backend / backend") | "backend job: \(.conclusion)"'
+work=\$(mktemp -d); trap 'rm -rf "\$work"' EXIT
+gh run download "\$run" -R LetPeopleWork/Lighthouse -n test-timings-backend -D "\$work" >/dev/null 2>&1 \\
+  || { echo "the run has no test-timings-backend artifact"; exit 1; }
+classes="\$work/classes.txt"; : > "\$classes"
+for cat in JiraIntegration AdoIntegration LinearIntegration ServiceNowIntegration GithubIntegration; do
+  grep -rl --include='*.cs' "Category(\"\$cat\")" "\$repo/Lighthouse.Backend/Lighthouse.Backend.Tests" 2>/dev/null \\
+    | xargs -r grep -hoE '^ *(public|internal)( sealed| abstract| static| partial)* class [A-Za-z0-9_]+' \\
+    | awk -v c="\$cat" '{ print c, \$NF }' >> "\$classes" || true
+done
+awk 'NR == FNR { cls[\$2] = \$1; next }
+  FNR > 1 { split(\$0, f, ","); n = split(f[1], p, "."); if (n >= 2 && (p[n-1] in cls)) count[cls[p[n-1]] " " f[4]]++ }
+  END {
+    split("JiraIntegration AdoIntegration LinearIntegration ServiceNowIntegration GithubIntegration", order, " ")
+    for (i = 1; i <= 5; i++) { c = order[i]
+      printf "%s: passed %d, failed %d, skipped %d\n", c, count[c " Passed"], count[c " Failed"], count[c " Skipped"] }
+  }' "\$classes" "\$work/test-timings-backend.csv"
+EOF
+chmod +x "$out/ci-live-suites-show"

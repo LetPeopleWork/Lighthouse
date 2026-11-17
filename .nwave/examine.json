@@ -55,6 +55,10 @@
     {
       "name": "linux-appimage",
       "path": "Scripts/examine/bin/linux-appimage"
+    },
+    {
+      "name": "ci-live-suites-show",
+      "path": "Scripts/examine/bin/ci-live-suites-show"
     }
   ],
   "build": "Scripts/examine/build-examine-commands"
