@@ -1,5 +1,4 @@
 using System.Data.Common;
-using System.Reflection;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
@@ -124,6 +123,20 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
         }
 
         [Test]
+        public async Task Restoring_without_credentials_a_backup_whose_credentials_cannot_be_checked_restores_it_without_removing_any()
+        {
+            await GivenAConnectionWithASecretAndAPlainOptionIsStored(BoardConnection);
+            GivenThisInstallationRunsOnAnotherKey();
+            GivenTheDatabaseComesFromAVersionThatStoredNoOAuthCredentials();
+            await GivenABackupOfItIsCreated();
+
+            await WhenTheOperatorRestoresTheBackupWithoutItsUnreadableCredentials();
+
+            ThenTheRestoreCompleted();
+            ThenTheSecretOptionsAre([$"{BoardConnection}|PersonalAccessToken|unreadable"]);
+        }
+
+        [Test]
         public async Task Removing_unreadable_credentials_blanks_or_deletes_only_what_this_key_cannot_read()
         {
             await GivenAConnectionWithASecretAndAPlainOptionIsStored(BoardConnection);
@@ -137,7 +150,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
             await GivenAnOAuthCredentialIsStored(AnotherOAuthConnection);
             GivenItsTokenWasStoredUnderAnotherKey(AnotherOAuthConnection, "AccessToken", takenFrom: ScratchConnection);
 
-            await WhenTheUnreadableCredentialsAreRemovedFromTheLiveDatabase();
+            WhenTheUnreadableCredentialsAreRemovedFromTheLiveDatabase();
 
             ThenTheSecretOptionsAre(
             [
@@ -263,7 +276,20 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
                 ("$to", connectionName));
         }
 
+        // An older version had no table for OAuth credentials, so a backup it made cannot be asked about them: the check
+        // cannot tell whether the credentials are readable, and the restore must go ahead without removing anything.
+        private void GivenTheDatabaseComesFromAVersionThatStoredNoOAuthCredentials()
+        {
+            Write("DROP TABLE OAuthCredentials;");
+        }
+
         private async Task GivenABackupIsCreated()
+        {
+            await GivenABackupOfItIsCreated();
+            rowsInTheBackup = LiveRows();
+        }
+
+        private async Task GivenABackupOfItIsCreated()
         {
             var service = DatabaseManagement();
             var created = await service.CreateBackup(BackupPassword);
@@ -274,7 +300,6 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
             await using var artifact = service.GetBackupArtifact(created.OperationId);
             await artifact.CopyToAsync(backup);
             backup.Position = 0;
-            rowsInTheBackup = LiveRows();
         }
 
         private void GivenThisInstallationRunsOnAnotherKey()
@@ -284,46 +309,13 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
 
         private async Task WhenTheOperatorRestoresTheBackupWithoutItsUnreadableCredentials()
         {
-            var restore = typeof(IDatabaseManagementService).GetMethods()
-                .SingleOrDefault(method => method.Name == nameof(IDatabaseManagementService.RestoreBackup)
-                    && method.GetParameters().Length == 3
-                    && method.GetParameters()[2].ParameterType.IsEnum);
-            if (restore is null)
-            {
-                Assert.Fail(
-                    "The database management service offers no restore that takes the operator's choice about unreadable credentials. " +
-                    "Without it the operator cannot restore a backup whose credentials this key cannot read, so the configuration cannot " +
-                    "move between installations. Give RestoreBackup a third parameter, the closed choice UnreadableCredentials " +
-                    "{ StopRestore, Remove }.");
-            }
-
-            var remove = Enum.Parse(restore!.GetParameters()[2].ParameterType, "Remove");
-            outcome = await (Task<DatabaseOperationStatus>)restore.Invoke(DatabaseManagement(), [backup, BackupPassword, remove])!;
+            outcome = await DatabaseManagement().RestoreBackup(backup, BackupPassword, UnreadableCredentials.Remove);
         }
 
-        private async Task WhenTheUnreadableCredentialsAreRemovedFromTheLiveDatabase()
+        private void WhenTheUnreadableCredentialsAreRemovedFromTheLiveDatabase()
         {
-            var removalType = typeof(DatabaseManagementService).Assembly
-                .GetType("Lighthouse.Backend.Services.Implementation.Encryption.UnreadableStoredSecrets");
-            if (removalType is null)
-            {
-                Assert.Fail(
-                    "Nothing removes the stored credentials this installation's key cannot read. Without it a restore without " +
-                    "credentials leaves the values the next start refuses. Add UnreadableStoredSecrets, built with the key ring in use, " +
-                    "whose RemoveFrom takes an unopened connection to the live database, as the provider's CreateConnection returns it.");
-            }
-
-            var constructor = removalType!.GetConstructors().Single(c => c.GetParameters().Length == 1);
-            var ring = keyInUse.Current;
-            object ringArgument = constructor.GetParameters()[0].ParameterType.IsInstanceOfType(ring) ? ring : new EncryptionKeyRingHolder(ring);
-            var removal = constructor.Invoke([ringArgument]);
-            var removeFrom = removalType.GetMethod("RemoveFrom", BindingFlags.Public | BindingFlags.Instance)!;
-
-            await using DbConnection live = new SqliteConnection($"Data Source={harness.DatabasePath};Pooling=False");
-            if (removeFrom.Invoke(removal, [live]) is Task removing)
-            {
-                await removing;
-            }
+            using DbConnection live = new SqliteConnection($"Data Source={harness.DatabasePath};Pooling=False");
+            new UnreadableStoredSecrets(keyInUse.Current).RemoveFrom(live);
         }
 
         private void ThenTheRestoreCompleted()

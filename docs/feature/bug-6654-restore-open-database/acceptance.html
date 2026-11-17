@@ -540,6 +540,57 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Restore without credentials a backup made by an older version that had no table for OAuth credentials, whose only stored credential this key cannot read, so the check cannot tell
+</code></pre>
+
+<pre><code>The restore completes and the stored credential is kept as it was in the backup; nothing is removed
+</code></pre>
+
+<pre><code>A backup the check cannot judge restores as it was; Restore without credentials never removes a credential unless the check found none readable
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreWithoutUnreadableCredentialsTest.cs::Restoring_without_credentials_a_backup_whose_credentials_cannot_be_checked_restores_it_without_removing_any</p>
+
+<pre><code>removal ran on the cannot-tell answer but somehow left this credential in place; the removal reads every credential column first and fails on the missing table, so a removal attempt makes the restore fail
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>From the explanation choose Restore without credentials, and the second restore answers Failed with a reason
+</code></pre>
+
+<pre><code>The error message shows that reason and no success message shows
+</code></pre>
+
+<pre><code>The operator reads why the restore without credentials failed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx::shows the reason a failed restore without credentials gives, as an error</p>
+
+<pre><code>the reason shows but the explanation dialog stays open; the existing busy-then-close row pins the closing
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h3>S3</h3>
 
 <h5>Covers</h5>
@@ -592,6 +643,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h6>Obligations</h6>
 
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Clear the database on an installation that has no database file and no data folder yet
+</code></pre>
+
+<pre><code>Clear completes and leaves an empty database file with no tables
+</code></pre>
+
+<pre><code>Clear Database works on a fresh installation instead of failing on a missing file
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/SqliteDatabaseManagementProviderTest.cs::ClearDatabase_OnAnInstallationWithNoDatabaseFileYet_LeavesAnEmptyDatabase</p>
+
+<pre><code>the folder exists but the file is missing and creation of the folder is broken; this row deletes the folder too, so that break fails it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 

@@ -240,6 +240,35 @@
 "expected": "F351",
 "stimulus": "F350",
 "user_result": "F352"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8"
+],
+"still_passes_if": "F360",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreWithoutUnreadableCredentialsTest.cs::Restoring_without_credentials_a_backup_whose_credentials_cannot_be_checked_restores_it_without_removing_any"
+},
+"expected": "F358",
+"stimulus": "F357",
+"user_result": "F359"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F364",
+"test": "Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx::shows the reason a failed restore without credentials gives, as an error"
+},
+"expected": "F362",
+"stimulus": "F361",
+"user_result": "F363"
 }
 ],
 "S3": [
@@ -275,6 +304,19 @@
 "expected": "F291",
 "stimulus": "F290",
 "user_result": "F292"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F368",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/SqliteDatabaseManagementProviderTest.cs::ClearDatabase_OnAnInstallationWithNoDatabaseFileYet_LeavesAnEmptyDatabase"
+},
+"expected": "F366",
+"stimulus": "F365",
+"user_result": "F367"
 }
 ]
 },
@@ -283,7 +325,7 @@
 "C": 2,
 "D": 12,
 "E": 8,
-"F": 356,
+"F": 368,
 "K": 6,
 "L": 9,
 "N": 5,
@@ -1950,7 +1992,19 @@
 "F354": "The live database holds an unreadable token, a readable token, an empty secret value, plain options, and OAuth credentials: one with a readable access token and an unreadable refresh token, one with an unreadable access token and a readable refresh token, one with both unreadable and one with both readable; the unreadable credentials are removed with this installation's key.",
 "F355": "Only the unreadable token is blanked; the readable token and the empty value are untouched; plain options stay; every OAuth credential with any unreadable token is deleted and only the fully readable one stays.",
 "F356": "A removal that blanks the empty secret value instead of leaving it alone would still pass, since blanking an empty value leaves it empty; the case only proves the row is neither deleted nor changed to something else.",
+"F357": "Restore without credentials a backup made by an older version that had no table for OAuth credentials, whose only stored credential this key cannot read, so the check cannot tell",
+"F358": "The restore completes and the stored credential is kept as it was in the backup; nothing is removed",
+"F359": "A backup the check cannot judge restores as it was; Restore without credentials never removes a credential unless the check found none readable",
 "F36": "Singleton holding the running ring; Current is the key the restored database will be read with.",
+"F360": "removal ran on the cannot-tell answer but somehow left this credential in place; the removal reads every credential column first and fails on the missing table, so a removal attempt makes the restore fail",
+"F361": "From the explanation choose Restore without credentials, and the second restore answers Failed with a reason",
+"F362": "The error message shows that reason and no success message shows",
+"F363": "The operator reads why the restore without credentials failed",
+"F364": "the reason shows but the explanation dialog stays open; the existing busy-then-close row pins the closing",
+"F365": "Clear the database on an installation that has no database file and no data folder yet",
+"F366": "Clear completes and leaves an empty database file with no tables",
+"F367": "Clear Database works on a fresh installation instead of failing on a missing file",
+"F368": "the folder exists but the file is missing and creation of the folder is broken; this row deletes the folder too, so that break fails it",
 "F37": "Owns the SQLite file mechanics; restore and clear change mechanism, and it gains StageBackup and CreateConnection.",
 "F38": "Owns pg_dump, pg_restore and psql; gains StageBackup over a scratch database and CreateConnection.",
 "F39": "Per-provider staging and connection creation belong on the provider port.",

@@ -225,6 +225,40 @@ describe("DatabaseManagementSettings", () => {
 		});
 	});
 
+	it("shows the reason a failed restore without credentials gives, as an error", async () => {
+		const user = userEvent.setup();
+		mockDatabaseManagementService.restoreBackup
+			.mockResolvedValueOnce(restoreThatFailed("CredentialsUnreadable"))
+			.mockResolvedValueOnce({
+				operationId: "op-restore",
+				operationType: "Restore",
+				state: "Failed",
+				failureReason: "The backup file is damaged.",
+			});
+		renderComponent();
+		await restoreTheBackup(user);
+		const explanation = await screen.findByRole("dialog", {
+			name: "Stored credentials in this backup cannot be read",
+		});
+
+		await user.click(
+			within(explanation).getByRole("button", {
+				name: "Restore without credentials",
+			}),
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("The backup file is damaged."),
+			).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByText(
+				"Restore completed successfully. Your data has been restored.",
+			),
+		).not.toBeInTheDocument();
+	});
+
 	it("renders clear section", async () => {
 		renderComponent();
 

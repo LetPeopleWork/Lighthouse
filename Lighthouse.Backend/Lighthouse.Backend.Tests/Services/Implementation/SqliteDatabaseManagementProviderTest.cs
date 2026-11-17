@@ -223,6 +223,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task ClearDatabase_OnAnInstallationWithNoDatabaseFileYet_LeavesAnEmptyDatabase()
+        {
+            Directory.Delete(testDbDirectory, recursive: true);
+
+            await subject.ClearDatabase();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(File.Exists(testDbPath), Is.True,
+                    "Clear Database on an installation that has no database file yet must create one, instead of failing because the file or its folder is missing.");
+                Assert.That(TableCountIn(testDbPath), Is.Zero,
+                    "Clear Database on an installation that has no database file yet must leave an empty database, so migrations build the schema afresh.");
+            }
+        }
+
+        [Test]
         public async Task ClearDatabase_AlsoEmptiesRowsTheLiveWriteAheadLogHeld()
         {
             using (var live = OpenInWriteAheadLogMode(testDbPath))

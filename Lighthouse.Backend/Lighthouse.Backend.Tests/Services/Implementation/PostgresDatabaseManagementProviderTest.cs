@@ -379,9 +379,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             try
             {
-                var stageBackup = TheProvidersBackupCheck();
-
-                await Assert.ThrowsAsync(Is.InstanceOf<Exception>(), async () => await (Task)stageBackup.Invoke(subject, [backupDir])!,
+                await Assert.ThrowsAsync(Is.InstanceOf<Exception>(), async () => await subject.StageBackup(backupDir),
                     "A backup whose credential tables cannot be restored must fail the check, so the restore stops before the live database is dropped.");
                 Assert.That(Describe(commands), Is.EqualTo(ScratchMadeRestoredAndDropped),
                     "When pg_restore fails the scratch database must still be dropped, and the live database never: a failed check changes nothing.");
@@ -429,22 +427,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var (tool, arguments) => $"{tool} {arguments}",
             })];
 
-        // The check is looked up by name so that this class still compiles on a provider that does not offer it;
-        // such a provider then fails these tests with the message below instead of failing the whole build.
-        private System.Reflection.MethodInfo TheProvidersBackupCheck()
-        {
-            var stageBackup = subject.GetType().GetMethod("StageBackup", [typeof(string)]);
-            Assert.That(stageBackup, Is.Not.Null,
-                "The PostgreSQL provider offers no StageBackup(string), so a restore cannot check a backup's credentials before it drops the live database. Add it to the provider port and implement it here.");
-            return stageBackup!;
-        }
-
-        private async Task<IAsyncDisposable> StageBackupOf(string backupDir)
-        {
-            var staging = (Task)TheProvidersBackupCheck().Invoke(subject, [backupDir])!;
-            await staging;
-            return (IAsyncDisposable)staging.GetType().GetProperty("Result")!.GetValue(staging)!;
-        }
+        private async Task<IStagedBackup> StageBackupOf(string backupDir) => await subject.StageBackup(backupDir);
 
         [Test]
         public async Task ClearDatabase_RunsPsqlDropAndRecreate()

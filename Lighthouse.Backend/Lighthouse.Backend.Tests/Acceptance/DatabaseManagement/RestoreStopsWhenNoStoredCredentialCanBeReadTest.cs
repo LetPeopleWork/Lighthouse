@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
@@ -41,15 +39,11 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
         private const string ReasonTheRestoreStopped =
             "None of the stored credentials in this backup can be read with this installation's encryption key. Nothing has been changed.";
 
-        private const string CredentialsUnreadable = "CredentialsUnreadable";
-
         private static readonly EncryptionKey KeyOfTheInstallationThatMadeTheBackup =
             new("key-backup-origin", Convert.FromBase64String("jcZatOnLrOP2HUMH4s43VB5Ci7uiCipa3odpR0edbKg="));
 
         private static readonly EncryptionKey KeyOfThisInstallation =
             new("key-this-installation", Convert.FromBase64String("2gMy+eBfMpbvIUlN9fyFHwpBNlNBpw+SVuAOmMVXsaE="));
-
-        private static readonly JsonSerializerOptions StatusAsTheApiSendsIt = new() { Converters = { new JsonStringEnumConverter() } };
 
         private ServicePortHarness harness = null!;
 
@@ -234,8 +228,8 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
                     $"The restore ended {outcome.State}, but this installation's key reads none of the backup's stored credentials. " +
                     "Restored, such a backup leaves a database the next start refuses. Check the backup's credentials with the key in use " +
                     "before restoring, and stop when it holds credentials and none can be read.");
-                Assert.That(FailureCodeAsTheApiSendsIt(), Is.EqualTo(CredentialsUnreadable),
-                    "The stopped restore carries no failure code CredentialsUnreadable, sent as text. The settings page opens its " +
+                Assert.That(outcome.FailureCode, Is.EqualTo(DatabaseOperationFailure.CredentialsUnreadable),
+                    "The stopped restore carries no failure code CredentialsUnreadable. The settings page opens its " +
                     "unreadable-credentials dialog on that code alone, never on the reason text, so the code must be on the result.");
                 Assert.That(outcome.FailureReason, Is.EqualTo(ReasonTheRestoreStopped),
                     "The operator must read why the restore stopped and that nothing was changed. Put exactly this reason on the result.");
@@ -276,14 +270,6 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
         {
             Assert.That(Read("SELECT Description FROM BlackoutPeriods ORDER BY Description;"), Is.EqualTo(expected),
                 "After a completed restore the live database must hold the backup's data and nothing added after the backup was made.");
-        }
-
-        private string? FailureCodeAsTheApiSendsIt()
-        {
-            using var sent = JsonDocument.Parse(JsonSerializer.Serialize(outcome, StatusAsTheApiSendsIt));
-            return sent.RootElement.TryGetProperty("FailureCode", out var code) && code.ValueKind == JsonValueKind.String
-                ? code.GetString()
-                : null;
         }
 
         private List<string> LiveRows()

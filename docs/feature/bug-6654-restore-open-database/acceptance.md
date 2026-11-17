@@ -451,6 +451,65 @@ A catch of a general exception (not a cryptographic one) inside the new removal 
 ###### Obligations
 
 
+##### Covers
+
+P3
+
+```text
+Restore without credentials a backup made by an older version that had no table for OAuth credentials, whose only stored credential this key cannot read, so the check cannot tell
+```
+
+```text
+The restore completes and the stored credential is kept as it was in the backup; nothing is removed
+```
+
+```text
+A backup the check cannot judge restores as it was; Restore without credentials never removes a credential unless the check found none readable
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DatabaseManagement\/RestoreWithoutUnreadableCredentialsTest\.cs\:\:Restoring\_without\_credentials\_a\_backup\_whose\_credentials\_cannot\_be\_checked\_restores\_it\_without\_removing\_any
+
+```text
+removal ran on the cannot-tell answer but somehow left this credential in place; the removal reads every credential column first and fails on the missing table, so a removal attempt makes the restore fail
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+From the explanation choose Restore without credentials, and the second restore answers Failed with a reason
+```
+
+```text
+The error message shows that reason and no success message shows
+```
+
+```text
+The operator reads why the restore without credentials failed
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/DatabaseManagement\/DatabaseManagementSettings\.test\.tsx\:\:shows the reason a failed restore without credentials gives\, as an error
+
+```text
+the reason shows but the explanation dialog stays open; the existing busy-then-close row pins the closing
+```
+
+###### Obligations
+
+None.
+
 ### S3
 
 ##### Covers
@@ -511,6 +570,36 @@ A clear that emptied only the tables the scenario checks (blackout periods) and 
 
 ###### Obligations
 
+
+##### Covers
+
+P1
+
+```text
+Clear the database on an installation that has no database file and no data folder yet
+```
+
+```text
+Clear completes and leaves an empty database file with no tables
+```
+
+```text
+Clear Database works on a fresh installation instead of failing on a missing file
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/SqliteDatabaseManagementProviderTest\.cs\:\:ClearDatabase\_OnAnInstallationWithNoDatabaseFileYet\_LeavesAnEmptyDatabase
+
+```text
+the folder exists but the file is missing and creation of the folder is broken; this row deletes the folder too, so that break fails it
+```
+
+###### Obligations
+
+None.
 
 ## Expectations
 
