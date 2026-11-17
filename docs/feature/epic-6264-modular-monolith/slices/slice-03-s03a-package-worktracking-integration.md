@@ -24,7 +24,7 @@ The ACL can live in one folder with no inward dependency. **Disproved if** the m
 ## Acceptance criteria
 
 - [ ] No file of this context remains in `Services/Interfaces` or `Services/Implementation`. Interfaces are co-located with their implementations.
-- [ ] The leaf-adapter rule holds by namespace. Context-owned `Models` types have moved.
+- [x] The leaf-adapter rule holds by namespace (one listed edge, to Promises). Context-owned `Models` types that are not entities, wire types, the connector port's vocabulary or used by code outside the module have moved: the four OAuth value types (D-2 amended); the rest is listed for S04b and S12c.
 - [ ] Moves separate from edits. ARCHITECTURE.md §4 row, anchors and diagram updated.
 - [ ] Behaviour-free, connector tests green (run the live-connector categories deliberately, since connectors are moved), mutation score held.
 
@@ -56,3 +56,15 @@ S06 Connector capability interfaces (#6376) runs before this Story, so S03a move
 its leaf rule against it. S05e (#6373, connection ports) stays a soft dependency, decided at this Story's DESIGN.
 Scope note for DESIGN: ADR-270 gives Tracker integration more than the brief's IN list: connections and their
 credentials, OAuth, connection health and write-back translation. Re-count against ADR-270, not the brief.
+
+## Update after S03a (#6359, 2026-11-17)
+
+Delivered in `Modules/TrackerIntegration` (106 files; record: `docs/evolution/2026-11-17-story-6359-s03a-package-tracker-integration/evolution.md`).
+The "Models moved" criterion is corrected (D-2 amended): a `Models` type moves only if it is not an entity, not on the
+wire, not reached by a kernel type and not used by code that stays outside the module, so only the four OAuth value
+types moved. Notes for later Stories:
+
+- **S05e** (#6373): the three connection repositories stay with the platform and wait for it; `ConnectionHealthService` and `OAuthService` take them (4 listed edges).
+- **S03d** (Promises): two edges are listed. The port edge is legal (`DeliverySourceResolver` and `DeliveryForecastPublishingService` read the connector factory); the Jira connector's edge to Promises' forecast block renderer stays listed until S03d's C2 slice. S03d also files the ADO item for the write-back round.
+- **S03i** (Organisation set-up): the connection save and the connection usage stay for it.
+- **S09a**: the factories and the auth schema name connectors (5 listed edges) until the composition root builds them.

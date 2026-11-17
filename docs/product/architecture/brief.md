@@ -1416,7 +1416,7 @@ flowchart TB
 
 | Candidate module (bounded-context slice) | Existing namespace anchor(s) | Owns | Cross-module today |
 |---|---|---|---|
-| **WorkTracking-Integration** | `Services.Implementation.WorkTrackingConnectors.*` (Jira/ADO/Linear/CSV), `OAuth.*`, `Auth strategies` | External-system adapters, connector auth, sync ingestion | Feeds WorkItems + Portfolio via `IWorkItemService` |
+| **Tracker integration** (was WorkTracking-Integration; packaged by Story 6359) | `Modules.TrackerIntegration.{Domain, Application, Application.OAuth, Application.ConnectionHealth, Adapters.Connectors.<Tracker>, Adapters.OAuth, Adapters.Background}` (Jira/ADO/Linear/CSV/ServiceNow, OAuth, auth strategies, connection health) | External-system adapters, connector auth, sync ingestion | Feeds WorkItems + Portfolio via `IWorkItemService` |
 | **WorkItems / Sync** | `Services.Implementation.WorkItems`, `TeamData`, `BackgroundServices.Update` | `WorkItem`/`Feature`/`FeatureWork` lifecycle, the update queue, the updaters | Publishes the refresh events (Q1) |
 | **Forecasting** | `Services.Implementation.Forecast.*`, `PercentileCalculator`, `XmRCalculator` | Monte-Carlo / forecast computation, forecast filter rules | Subscribes to `PortfolioFeaturesRefreshed` |
 | **Portfolio / Delivery** | `Services.Implementation.DeliveryRuleService`, `PortfolioMetricsService`, delivery repos | Portfolio + Delivery config, delivery rule recompute | Subscribes to refresh events |
@@ -11557,3 +11557,104 @@ and class sit in different namespaces: both for S03a and S09a.
 
 ADR-285 (new), ADR-139 (amended), ADR-138 (two-phase sync), ADR-268 (ratchet convention), ADR-270 (Tracker
 integration glossary: Capability; the Project drift row).
+
+## Application Architecture — story-6359 s03a package tracker integration
+
+Feature: S03a Package Tracker integration, Story 6359, Epic 6510. Waves: DESIGN to DELIVER and finalize. Dates:
+2026-11-16 to 2026-11-17. Paradigm: OOP, behaviour-free refactoring; no schema change. Workspaces:
+`docs/feature/story-6359-s03a-package-tracker-integration/` (design), `story-6359-s03a-a-rules-first`,
+`story-6359-s03a-b-move`, `story-6359-s03a-c-edges-and-rules`.
+
+### Module layout (as shipped)
+
+Root `Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/`, inside the one assembly. Namespace = folder.
+106 production files moved.
+
+| Layer (namespace under `Lighthouse.Backend.Modules.TrackerIntegration`) | Files | What it holds |
+|---|---:|---|
+| `Domain` | 3 | `WorkItemStateTransitionMapper`, `ParentSourceSelector`, `DependencyFieldReferences`. The kernel and the .NET base library only |
+| `Application` | 25 | The connector port (`IWorkTrackingConnector`, the capability interfaces `IFeatureSource`, `IIncrementalSource`, `IWriteBackTarget`, the per-tracker interfaces, `IBoardInformationProvider`, `IDeliverySourceProvider`, `IDeliveryForecastPublisher`), the read refusals, the connector and system factories, `AuthenticationMethodSchema` and `AuthenticationMethodKeys`, `Board` and `BoardInformation`, `WorkItemCategoryCrossing`, `DependencySourceSelector` |
+| `Application.OAuth` | 19 | `OAuthService`, the provider registry, the state-token issuer, the refresh options, the exceptions, and the four OAuth value types (`OAuthFlowContext`, `OAuthRefreshContext`, `OAuthStateClaims`, `OAuthTokens`) |
+| `Application.ConnectionHealth` | 3 | `ConnectionHealthService`, `ConnectionHealthCadence`, `IConnectionHealthService` |
+| `Adapters.Connectors.<Tracker>` | 52 | The five connectors with their mappers, verdicts and helpers (`AzureDevOps` 6, `Csv` 2, `Jira` 17 with `IssueFactory`, `Linear` 3, `ServiceNow` 14), `Auth` 8 (the auth strategies and their factory), `OAuth` 2 (option names and schema extensions) |
+| `Adapters.OAuth` | 3 | The Jira, Azure DevOps and stub OAuth providers |
+| `Adapters.Background` | 1 | `ConnectionHealthProber` |
+
+Unit tests moved with the production code, in the same slice: `Lighthouse.Backend.Tests/Modules/TrackerIntegration/{Domain
+(5), Application (7), Application/OAuth (7), Adapters/Connectors (78), Adapters/OAuth (2)}`, 99 files, each class in the
+namespace of its folder; `TrackerIntegrationUnitTestPlacementTest` keeps them there. The tests moved with the code,
+unlike S03b, because the test paths are in the live-suite classifier: a separate test move would have started every
+live suite on the shared Linear key a second time.
+
+Two `Application` types are in a different layer than the plan: `WorkItemCategoryCrossing` and `DependencySourceSelector`
+call helpers in `Lighthouse.Backend.Extensions`, which the Domain rule rejects.
+
+Outside the module, unchanged: the entities `WorkTrackingSystemConnection`, `OAuthCredential` and
+`ConnectionHealthVerdict`, the connection option types, `Models.WriteBack`, `ConnectionValidationResult`,
+`OAuthCompleteResult`, `ConnectionFetchShapeChanged`, the wire DTOs, the controllers (`API`), the three repositories
+(`Services/Implementation/Repositories`, until S05e), the connection save and usage services (Organisation set-up,
+S03i), the write-back round (stays with its publisher), the encryption folders (platform lane) and demo data
+(`Factories`, platform lane). A `Models` type moves only if it is not an entity, not on the wire, not reached by a
+kernel type and not used by code that stays outside the module: that left four OAuth value types.
+
+### The two S06 leaks and the one edge out
+
+Both leaks Story 6376 handed over are closed by placement, with no signature change: `Board` and `BoardInformation` sit
+in `Application` beside `IBoardInformationProvider`, and `IWorkTrackingConnectorFactory` and its class share one
+namespace.
+
+| Edge | Reading |
+|---|---|
+| Promises → Tracker integration | `DeliverySourceResolver` and `DeliveryForecastPublishingService` read the factory and the capability interfaces, all in `Application`; a legal customer of the port, listed by name until S03d packages Promises. Ratchet candidate 3, answered |
+| Tracker integration → Promises | `JiraWorkTrackingConnector` → `IDeliveryForecastBlockRenderer`: the one listed entry of the leaf rule, owner S03d (its C2 slice) |
+
+Rejected: a query service in front of the factory (a pass-through layer), moving the renderer into the module or handing
+the merged text in as data now (an edit to the publication contract that S03d designs), moving the repositories to
+`Adapters/Persistence` or taking S05e inside this Story (the health and OAuth services take them), moving the write-back
+round in (it would make the anti-corruption layer reach Flow metrics, Licensing and Forecasting), and one slice per
+connector folder (each push runs every live suite on a shared key).
+
+### Rule shapes
+
+Every rule reads the compiled IL through `IlDependencies` and calls the shared `ModuleRules` with Tracker integration's
+namespaces and its own `ModuleWording`; every list is inline and compared both ways (ADR-268), with made-up types that
+prove a newcomer and a stale entry fail and a compliant twin passes. Four layout tests pin each layer group.
+
+| Rule | Shape | Baseline (measured from the IL) |
+|---|---|---|
+| R-T1 Layout | Each named type lives in its layer namespace, none left under `Services` or `Factories` | the type lists |
+| R-T2 Domain outbound | `Domain` → kernel and base library only | empty |
+| R-T3 Domain inbound | Outside → `Domain` only from the list | 1: `WorkItemService` (the design also expected `Program`) |
+| R-T4 Application inbound | Outside → `Application` only from `API`, `Program`, Work Items, or the list | 7: the two Promises callers, `WriteBackService`, `TeamUpdater`, `PortfolioUpdater`, `UpdateServiceBase`, `DemoDataFactory` |
+| R-T5 Adapters inbound | Outside → `Adapters` only from `Program` or the list | 2: the two connection controllers (they read `JiraSiteAddress`) |
+| R-T6 Application outbound | No EF Core, `Data`, `API`, module `Adapters`; stored records, the key ring and demo data only through the list | 11: five where the factories and the auth schema name a connector (S09a), four for `ConnectionHealthService`, two for `OAuthService` |
+| R-T7 Leaf | The module reaches no other context | 1: the Jira renderer edge |
+| R-T8 Repositories | No module type reaches a repository except the R-T6 entries | 4, derived from R-T6 |
+| Test placement | Each unit-test file sits in its layer folder, its classes in the folder's namespace | the file list |
+
+The factories and the auth schema stay in `Application` although they name connectors, because moving them would break
+the factory's one namespace and edit a move Story; the five edges are listed by exact type name, owner S09a. The rules
+widened before the move (`ModuleBoundariesArchUnitTest`'s connector pattern, the repository recognition, the
+single dependency decision, the connector rules keyed on source paths or full names, the live-suite classifier) saw both
+the old and the module namespaces; `TrackerIntegrationMembershipArchUnitTest` fixes the membership measured from the IL.
+The old leaf pattern and the two old leaf rules are retired.
+
+### Behaviour-free proof
+
+Existing tests stayed green apart from moves, `using` lines and rule files; the five live connector suites passed in CI
+on the push of feature B. Public commands for the examiner: `refresh-answers-compare` (297 answers identical),
+`ci-live-suites-show`, `architecture-rules`, `ef-model-unchanged`, `backend-tests`, `connector-throws-count`. Log
+categories change with the namespace to `Lighthouse.Backend.Modules.TrackerIntegration.*`; no configuration names the old
+ones. `Program.cs` keeps its registrations and their order, with `using` changes only; no `AddTrackerIntegration`
+extension (S09a).
+
+### Left
+
+S05e: the three repositories and `IRepository<>` use by the OAuth and health services. S09a: the factories and the auth
+schema naming connectors, and `AddTrackerIntegration`. S03d: the two Promises edges, and the write-back round's home.
+S03i: the connection save and usage.
+
+### ADR references
+
+ADR-270 (Decision 1 Tracker integration row, "Every edge", "Edges measured by packaging Tracker integration", ratchet
+candidate 3, Decision 6, "Left open" on write-back), ADR-285 (the connector port), ADR-268 (ratchet convention).

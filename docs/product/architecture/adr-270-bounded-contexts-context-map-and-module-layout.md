@@ -14,11 +14,12 @@
 > features (Epic 6455 "deeper hierarchies" first). They are **not** refactoring work: no packaging Story builds
 > Signals, the promise lifecycle events, levels above the Feature, or organisation-wide defaults for SLE and staleness.
 >
-> **Moved so far (2026-11-16):** Flow metrics, by the pilot Story 6358, Forecasting, by Story 6361, and Work Items,
-> by Story 6360. For these three contexts this ADR describes today's code, apart from what is still marked target only
-> (per-level granularity, forecasts composed over more than one level above the leaf, the leaf unit's capacity inputs
-> in Forecasting's own extension, the Team and Portfolio refresh pipelines that still sit in the update code, and the
-> entities, events and DTOs that stay in `Models` and `API/DTO`). Every other context is still where §4 places it.
+> **Moved so far (2026-11-17):** Flow metrics, by the pilot Story 6358, Forecasting, by Story 6361, Work Items,
+> by Story 6360, and Tracker integration, by Story 6359. For these four contexts this ADR describes today's code, apart
+> from what is still marked target only (per-level granularity, forecasts composed over more than one level above the
+> leaf, the leaf unit's capacity inputs in Forecasting's own extension, the Team and Portfolio refresh pipelines that
+> still sit in the update code, and the entities, events and DTOs that stay in `Models` and `API/DTO`). Every other
+> context is still where §4 places it.
 
 ## Context
 
@@ -59,7 +60,7 @@ set-up, the Deliveries go to Promises. RBAC/Identity splits into Access and Lice
 | Context | Type | Responsibility | Owns | From today's §4 module | Packaged or target |
 |---|---|---|---|---|---|
 | **Organisation set-up** | supporting; upstream of nearly all | How this organisation is structured and how it works by default. It holds the levels and their names (Terminology), the units on each level (the leaf unit that generates throughput, today's Team; the units above it, today's Portfolios), the mapping of tracker types, states and fields onto Lighthouse's concepts with its defaults, each unit's overrides, the calendar (blackout periods) and the cadence and priority rules (refresh cadence, Feature ordering policy). Structure and defaults only, no behaviour. | Terminology, blackout periods and recurring rules, refresh cadence, Feature ordering policy, the Team and Portfolio entities and their settings, connection defaults (until a decision on org default versus per-tracker default) | None. Spread over Platform/Persistence (seeding, settings), Portfolio/Delivery, the `Models` kernel and the connection settings | **Packaged** from today's settings, Teams and Portfolios. Levels above the Feature, org-wide defaults with local override for SLE, staleness and similar, and per-level granularity are **target only** |
-| **Tracker integration** | supporting | The anti-corruption layer in front of Jira (Cloud, Server, Data Center), Azure DevOps, Linear, CSV and ServiceNow. Connections, credentials and OAuth, connection health, and the **translation** of each tracker record into a Work Item or Feature during a fetch, applying the mapping it is given. Nobody outside it sees a tracker's model. | Connections and their credentials, connectors, connection health, the shared category-crossing rule that dates started and finished work | WorkTracking-Integration (minus the mapping, which moves to Organisation set-up) | **Packaged** |
+| **Tracker integration** | supporting | The anti-corruption layer in front of Jira (Cloud, Server, Data Center), Azure DevOps, Linear, CSV and ServiceNow. Connections, credentials and OAuth, connection health, and the **translation** of each tracker record into a Work Item or Feature during a fetch, applying the mapping it is given. Nobody outside it sees a tracker's model. | Connections and their credentials, connectors, connection health, the shared category-crossing rule that dates started and finished work | WorkTracking-Integration (minus the mapping, which moves to Organisation set-up) | **Packaged** in `Modules/TrackerIntegration` by Story 6359 (2026-11-17): the connector port and its factories, the five connectors with their auth strategies, OAuth, connection health and the translation rules (the parent and dependency source selectors included). Its entities (`WorkTrackingSystemConnection`, `OAuthCredential`, `ConnectionHealthVerdict`), the connection option types, `Models.WriteBack`, `ConnectionValidationResult` and its wire DTOs still sit in `Models` and `API/DTO`; only the four OAuth value types moved. Connection persistence stays with the platform repositories until S05e; the connection save and the connection usage stay for Organisation set-up (S03i); the write-back round stays with its publisher |
 | **Work Items** | supporting | Owns Lighthouse's copy of the work mirrored from the trackers and keeps it current; the refresh process itself is still called sync. The items of every level, leaf and non-leaf alike, are **one item model with a level**, not separate contexts for leaf and non-leaf items. Refreshes (scheduled and forced), the sync mode (full or sweep), parent links (placing Work Items under Features), rolling work up onto Features including the default-size guess for a Feature with no children, dependencies, blocked and state-transition capture. Its outward facts are "this unit's data was refreshed" and "a refresh failed", not its internal steps. | The items (today's Work Items and Features), their state transitions, blocked periods, parent links, the roll-up and the default-size guess, the refresh log, the Team and Portfolio refresh pipelines | WorkItems/Sync, plus the refresh half of Portfolio/Delivery (the Team and Portfolio updaters) | **Packaged** in `Modules/WorkItems` by Story 6360 (2026-11-16). Its entities, rule types, parent and dependency value types, events and DTOs still sit in `Models` and `API/DTO`. The Team and Portfolio refresh pipelines stay in the update code until Epic 6474 slice 12 replaces them with one refresh per unit. The parent and dependency source selectors stay with Tracker integration, because the connectors call them |
 | **Flow metrics** | **core** | One flow calculation at every level: throughput, cycle time, Work Item Age, WIP, percentiles, cumulative state time, process behaviour, blocked history, the day-keyed history snapshots. Granularity differs by level (a Team per day, a strategic level per week or month), which is a property of the level. SLE risk stays here until the first Signals feature. | The metric calculations and caches, the over-time snapshot tables and the history filler | Metrics / Time-in-state | **Packaged** in `Modules/FlowMetrics` by the pilot, Story 6358 (2026-11-09). Its entities and `Models/Metrics` DTOs still sit in `Models`. Per-level granularity is **target only** |
 | **Forecasting** | **core** | Answers "when" and "how many" at every level. It forecasts the items directly above the leaf from the leaf unit's throughput (Monte Carlo), then composes "all children done" upwards level by level. It owns the forecasting inputs of the leaf unit (Feature WIP, throughput window): Organisation set-up owns the unit's identity, structure and way-of-working overrides, Forecasting owns how the leaf unit behaves as capacity, stored as Forecasting's own extension keyed by the unit's id (today both live on `Team`; Epic 6474 moves them in its slice 07, an expand-only schema change). A forecast is an answer that is recomputed and replaced; it is a planning aid, not a tracked promise. | Forecasts (completion and start), the forecast round and its fingerprint, manual forecasts, backtests and the reality check, the forecast filter rules | Forecasting, plus the forecast half of Portfolio/Delivery (the forecast updater) | **Packaged** in `Modules/Forecasting` by Story 6361 (2026-11-15). Its entities, the types the kernel entities reach and its wire DTOs still sit in `Models` and `API/DTO`. The leaf unit's capacity inputs move with Epic 6474, not with the packaging. Composing forecasts over more than one level above the leaf is target |
@@ -177,10 +178,11 @@ them from the code or the walk, and the maintainer accepted them with the ADR.
 
 | Upstream → downstream | Relationship | How the downstream reaches it | Legal today? (depends-on, per §4) | Derived by the ADR (accepted with it) |
 |---|---|---|---|---|
-| Jira, ADO, Linear, CSV, ServiceNow (and the Jira and ADO OAuth providers) → Tracker integration | external upstream; anti-corruption layer | Connectors translate each record into Work Item or Feature | Yes (WorkTracking-Integration is a leaf input adapter) | |
+| Jira, ADO, Linear, CSV, ServiceNow (and the Jira and ADO OAuth providers) → Tracker integration | external upstream; anti-corruption layer | Connectors translate each record into Work Item or Feature | Yes (WorkTracking-Integration is a leaf input adapter). Since Story 6359 (2026-11-17) the module's own rules enforce it by namespace, with the one entry of the Tracker integration → Promises row below | |
 | Organisation set-up → Tracker integration | conformist: the ACL applies the organisation's mapping as given | Mapping handed in as data with each fetch (see the acknowledged cycle above) | Today the mapping sits on Team, Portfolio and connection in the kernel; no module edge exists. New edge, in meaning only | |
 | Tracker integration → Organisation set-up | customer/supplier: set-up is the customer of the ACL's query port | Validates queries and asks for suggested types and states | No module edge today (the API band calls the connectors). New edge | **Derived** (from the cycle above) |
 | Tracker integration → Work Items | customer/supplier: Work Items is the customer, the connector port is the negotiated contract | Query through the connector port | Yes (WorkItems/Sync depends on WorkTracking-Integration) | |
+| Promises → Tracker integration | customer/supplier: Promises is a customer of the connector port (Deliveries read their source, and publish forecasts back, through the factory and the capability interfaces) | **Through the ACL's port since Story 6359 (2026-11-17):** `DeliverySourceResolver` and `DeliveryForecastPublishingService` take `IWorkTrackingConnectorFactory` and type-test for `IDeliverySourceProvider` and `IDeliveryForecastPublisher`, all in `Modules.TrackerIntegration.Application`, never `Adapters`. Listed by name in the Application inbound list (R-T4) until S03d packages Promises | Yes, derived: the factory and the capability interfaces are the port (ADR-285), so a customer of the port is a legal edge. Ratchet candidate 3, answered | **Derived** (from code) |
 | Organisation set-up → every other context | open host: everyone conforms to its structure (units, levels, names, defaults, calendar) | Queries through its contract; reactions to its events | Today through the kernel. New edges | |
 | Work Items → Flow metrics | upstream publishes, downstream reacts (domain events) | Reacts to the refresh events; reads stored history through read ports. Since Story 6360 (2026-11-16) this includes updating a Team's metrics after its refresh: `TeamDataRefreshedTeamMetricsUpdateHandler` in Flow metrics' `Application/Policies` handles `TeamDataRefreshed`, registered first among that event's handlers so the later reactions read fresh metrics | Not drawn in §4. Works today only because the events sit in the kernel. Becomes a legal edge once event types move to Work Items | |
 | Flow metrics → Work Items (Work Items calls Flow metrics, beyond the event) | none designed; a direct call | `WorkItemService` queries `IPortfolioMetricsService` and the Domain's `PercentileCalculator` for the default-size guess. The command is gone: since Story 6360 (2026-11-16) `TeamDataService` no longer calls `ITeamMetricsService.UpdateTeamMetrics`; it publishes `TeamDataRefreshed` and Flow metrics reacts (row above, ratchet candidate 1) | **Not legal** (WorkItems/Sync may not depend on Metrics). Measured 2026-11-09. The two query edges stay ratcheted, by name, in Flow metrics' R3 and R4 lists and in Work Items' own Application outbound list, until Flow metrics answers the default-size guess itself (Epic 6474 slice 10) or `WorkItemService` is split (S07a) | **Derived** (from code, Story 6358) |
@@ -194,7 +196,7 @@ them from the code or the walk, and the maintainer accepted them with the ADR.
 | Flow metrics → Refinement | customer/supplier | Reads the SLE yardstick and throughput | Yes (Refinement depends on Metrics) | **Derived** |
 | Forecasting → Promises | customer/supplier | Reacts to "forecasts updated"; reads Feature forecasts for the joint "all done by" answer | Yes (Portfolio/Delivery depends on Forecasting) | |
 | Work Items → Promises | customer/supplier | Delivery rules match fetched Features | Yes (Portfolio/Delivery depends on WorkItems/Sync) | |
-| Tracker integration → Promises | customer/supplier (Jira Releases as a Delivery's source, forecasts published back) | Through the connector | **Not legal** (Portfolio/Delivery depends on WorkTracking-Integration is not in §4), but present in code. Ratchet candidate | **Derived** (from code) |
+| Tracker integration → Promises | customer/supplier (Jira Releases as a Delivery's source, forecasts published back) | Through the connector. One entry today, since Story 6359 (2026-11-17): `JiraWorkTrackingConnector` → `IDeliveryForecastBlockRenderer`, which merges the forecast block into a Jira description. Listed as the one entry of "the module reaches no other context" (R-T7), owner S03d | **Not legal** (Portfolio/Delivery depends on WorkTracking-Integration is not in §4), but present in code. Listed, and removed when the publisher hands the connector the merged text (S03d's C2 slice) | **Derived** (from code) |
 | Work Items, Flow metrics, Forecasting, Promises → Signals | upstream publishes, downstream reacts | Domain events only | Target only | |
 | Flow metrics → Reports | conformist ("a report and the tab never disagree") | Reads through the same metrics contract the tab uses | Yes (Reports depends on Metrics) | |
 | Signals → Reports | conformist | Includes signals as they are | Target only | |
@@ -306,6 +308,54 @@ How the Team metrics update became a reaction, with the same metrics:
 - `UpdateTeamMetrics` still saves through Work Items' `IWorkItemRepository`: Flow metrics writing through Work Items'
   repository. That goes when the metrics services are composed differently (S07b).
 
+### Edges measured by packaging Tracker integration (2026-11-17)
+
+Story 6359 moved Tracker integration into `Modules/TrackerIntegration` and measured every edge into and out of it from
+the compiled IL, in the same way as the three Stories before it. Each list is inline, fails on a newcomer and on a
+stale entry, and only shrinks (ADR-268). The rules live in
+`Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs` and call the shared
+`ModuleRules` with Tracker integration's namespaces and a `ModuleWording` of their own. That each type lives in its layer
+is pinned by four layout tests, one per layer group. The design's expected lists were a guess from a text search; the
+lists below are what the IL showed, and every difference is an edge that exists today, never a new one.
+
+| Rule | What it allows | Baseline (outside types, or edges) |
+|---|---|---|
+| R-T1, layers | Every listed Tracker integration type lives in its layer, and none is left under `Services` or `Factories` | the lists in the four layout tests |
+| R-T2, Domain outbound | Tracker integration's `Domain` depends only on the kernel (`Models`) and the .NET base library | empty |
+| R-T3, Domain inbound | Outside types reach `Domain` only from the list | 1: `Modules.WorkItems.Application.WorkItemService` (it reads the parent source selector). `Program` does not reach `Domain` |
+| R-T4, Application inbound | `API`, the composition root and Work Items by namespace (legal), plus the list | 7: `DeliverySourceResolver` and `DeliveryForecastPublishingService` (Promises reads the factory and the capabilities, ratchet candidate 3), `WriteBackService`, `TeamUpdater`, `PortfolioUpdater` and `UpdateServiceBase` (the refresh pipelines that stay in the update code), `DemoDataFactory` (it reads the system factory; the design did not expect it). `ConnectionSaveService` and the Encryption readers do not appear |
+| R-T5, Adapters inbound | Only the composition root reaches `Adapters`, plus the list | 2: `WorkTrackingSystemConnectionController` and `WorkTrackingSystemConnectionsController` (both read `JiraSiteAddress`). The two demo backfill handlers of Flow metrics no longer reach a connector |
+| R-T6, Application outbound | No EF Core, `Data`, `API` or module `Adapters` type; the stored records, the key ring and demo data only through the list | 11: five edges where `AuthenticationMethodSchema`, `WorkTrackingConnectorFactory` and `WorkTrackingSystemFactory` name a connector (the factory and the schema stay in `Application` until the composition root builds the connectors, S09a); `ConnectionHealthService` → `ConnectionSecrets`, `ConnectionHealthVerdictRepository`, `RepositoryBase<T>` and `IRepository<T>`; `OAuthService` → `UnreadableSecretException` and `IRepository<T>` (the repositories wait for S05e) |
+| R-T7, leaf | The module reaches no other context | 1: `JiraWorkTrackingConnector` → `IDeliveryForecastBlockRenderer` (Promises), owner S03d |
+| R-T8, repositories | No module type reaches a repository except the `Application` entries of R-T6 | 4: `ConnectionHealthService` three and `OAuthService` one, derived from R-T6 so the two lists cannot drift. No connector reaches a repository |
+| Work Items, connectors | Work Items → Tracker integration is legal by namespace | its connector rule now reads the module namespace; the old `WorkTrackingIntegrationPattern` and the two old leaf rules are retired |
+
+Two edges between Tracker integration and Promises, and what was decided about each (Story 6359 D-7):
+
+- **Promises → Tracker integration is legal and listed.** `DeliverySourceResolver` and `DeliveryForecastPublishingService`
+  take the connector factory and type-test for `IDeliverySourceProvider` and `IDeliveryForecastPublisher`. After the
+  move they reach only `Modules.TrackerIntegration.Application`, never `Adapters`. The factory and the capability
+  interfaces already are the anti-corruption layer's port (ADR-285), so a wrapper service would hide nothing. Promises
+  has no namespace of its own yet, so the two callers are listed by name; they leave the list when S03d packages
+  Promises.
+- **Tracker integration → Promises is listed, with one entry.** The Jira connector merges the forecast block into a
+  description through Promises' renderer. Handing it the merged text as data would change the publication contract, so
+  it waits for S03d's design (its C2 slice). The list only shrinks.
+
+Placement decisions the measurement settled:
+
+- The Domain rule rejected two translation types, because they call helpers in `Lighthouse.Backend.Extensions`:
+  `WorkItemCategoryCrossing` and `DependencySourceSelector` live in `Application`. `WorkItemStateTransitionMapper`,
+  `ParentSourceSelector` and `DependencyFieldReferences` live in `Domain`.
+- Only the four OAuth value types (`OAuthFlowContext`, `OAuthRefreshContext`, `OAuthStateClaims`, `OAuthTokens`) moved
+  out of `Models`. A type moves only if it is not an entity, not on the wire, not reached by a kernel type and not used
+  by code that stays outside the module. So `ConnectionFetchShapeChanged` (the staying save service publishes it, Work
+  Items handles it), the write-back vocabulary (the port's signatures use it) and `OAuthCompleteResult` (the staying
+  `OAuthController` reads it) stay in `Models`.
+- The two leaks that Story 6376 left (the board port naming implementation types, and the factory interface in a
+  different namespace from its class) are closed by placement, with no signature change.
+- The write-back round stays with its publisher (see "Left open").
+
 ### Ratchet candidates
 
 Each of these is an edge today's code takes that §4 does not allow, or one that points the wrong way once its two
@@ -332,6 +382,11 @@ guard (ADR-268) or removes it.
 3. **Deliveries talk to the tracker without the ACL's contract.** `Services/Implementation/DeliverySources/DeliverySourceResolver.cs:9`
    and `DeliveryForecastPublishingService.cs:12` take `IWorkTrackingConnectorFactory`. Portfolio/Delivery →
    WorkTracking-Integration is not a legal edge, and the board's map has no edge from Tracker integration to Promises.
+   *Answered (Story 6359, 2026-11-17):* through the ACL's port. The connector factory and the capability interfaces
+   already are that port (ADR-285), so a wrapper service would only repeat them. Both callers now reach only
+   `Modules.TrackerIntegration.Application`, are legal customers of it, and are listed by name in its Application
+   inbound list until S03d packages Promises. The one edge the other way, the Jira connector merging the forecast block
+   through Promises' renderer, is the one entry of the module's "reaches no other context" rule, owner S03d.
 4. **The Portfolio refresh pipeline reaches into Promises and Forecasting.** Inside the refresh, `PortfolioUpdater.cs:101`
    recomputes rule-based Deliveries and `PortfolioUpdater.cs:106` resyncs Deliveries from their source, and
    `PortfolioUpdater.cs:124` is a direct trigger of the forecast updater (it enqueues work), bypassing an event. Legal
@@ -476,12 +531,12 @@ class, table or wire field. The glossary lists only terms that matter or drift.
 
 | Term | Meaning | Code name today | Drift |
 |---|---|---|---|
-| Connection | Lighthouse's link to one tracker instance, with its credential | `WorkTrackingSystemConnection` | |
-| Translation | Turning a tracker record into a Work Item or Feature during a fetch | `*WorkItemMapper`s, `WorkItemCategoryCrossing` | Code says "mapper" for translation; keep "mapping" for Organisation set-up's concept |
-| Parent source | One place a connector can read a parent from: the tracker's own parent, a field, or on Jira a link type. Read per record and ordered by the shared selector | `ParentSourceEntry`, `ParentReading`, `ParentSourceSelector` | |
+| Connection | Lighthouse's link to one tracker instance, with its credential | `WorkTrackingSystemConnection` (an entity, still in `Models`) | |
+| Translation | Turning a tracker record into a Work Item or Feature during a fetch | `*WorkItemMapper`s (in `Modules/TrackerIntegration/Adapters/Connectors`), `WorkItemCategoryCrossing` (in `Modules/TrackerIntegration/Application`) | Code says "mapper" for translation; keep "mapping" for Organisation set-up's concept |
+| Parent source | One place a connector can read a parent from: the tracker's own parent, a field, or on Jira a link type. Read per record and ordered by the shared selector | `ParentSourceEntry`, `ParentReading`, `ParentSourceSelector` (the selector in `Modules/TrackerIntegration/Domain`) | |
 | Connection stopped working | One fact about the connection, whatever the cause | health verdict per refresh, `UnreadableSecretException` | Target event |
-| Read refusal | A tracker read that failed, carrying the sentence the user reads, and never an empty answer | `WorkTrackingReadException`, `JiraReadException`, `AzureDevOpsReadException` | |
-| Capability | What a connector can do for a connection: read Features, sweep, write back. A connector that cannot do something does not offer it; where the answer depends on the connection, the capability asks the connection (ADR-285) | `IFeatureSource`, `IIncrementalSource` (its probe `SupportsIncrementalSync`), `IWriteBackTarget` | |
+| Read refusal | A tracker read that failed, carrying the sentence the user reads, and never an empty answer | `WorkTrackingReadException` (in `Modules/TrackerIntegration/Application`), `JiraReadException`, `AzureDevOpsReadException` (in `Adapters/Connectors`) | |
+| Capability | What a connector can do for a connection: read Features, sweep, write back. A connector that cannot do something does not offer it; where the answer depends on the connection, the capability asks the connection (ADR-285) | `IFeatureSource`, `IIncrementalSource` (its probe `SupportsIncrementalSync`), `IWriteBackTarget`, all in `Modules/TrackerIntegration/Application` | |
 
 ### Work Items
 
@@ -601,6 +656,18 @@ Other precise names that already say their role (`SyncModeResolver`, `StageRuleM
   source selectors stay with Tracker integration. Entities, rule types, events and DTOs stay in `Models` and `API/DTO`.
   Its unit tests: `Domain` (8), `Application` (17), `Application/Policies` (4), kept there by
   `WorkItemsUnitTestPlacementTest`.
+- Tracker integration today (Story 6359, 2026-11-17, counted from the folders): `Domain` (3 files, the state-transition
+  mapper and the parent and dependency field selectors), `Application` (25, the connector port with its capability
+  interfaces, the factories, the auth schema, the Board types and the two translation rules that call a helper outside
+  `Domain`), `Application/OAuth` (19, the OAuth service and its ports, the state tokens and the four OAuth value types),
+  `Application/ConnectionHealth` (3), `Adapters/Connectors` (52 in seven sub-folders: `AzureDevOps` 6, `Csv` 2, `Jira`
+  17, `Linear` 3, `ServiceNow` 14, `Auth` 8, `OAuth` 2), `Adapters/OAuth` (3, the Jira, Azure DevOps and stub
+  providers), `Adapters/Background` (1, the connection health prober). 106 files in all. No `Adapters/Persistence`: the
+  connection, OAuth credential and health verdict repositories stay with the platform until S05e, and the connection
+  health service and the OAuth service take them. Its unit tests: `Domain` (5), `Application` (7), `Application/OAuth`
+  (7), `Adapters/Connectors` (78), `Adapters/OAuth` (2), kept there by `TrackerIntegrationUnitTestPlacementTest`.
+  Entities, the connection option types, `Models.WriteBack`, `ConnectionValidationResult` and the wire DTOs stay in
+  `Models` and `API/DTO`.
 
 Chosen over:
 - **Flat, role-named folders** per module: the layers are not visible, so the dependency rule cannot be read off the
@@ -718,6 +785,12 @@ These were not decided on the board; the packaging Story of the named context de
   (planning) or Organisation set-up.
 - Where **write-back** lives: the translation into tracker fields is Tracker integration's; what is written comes from
   its publisher (Forecasting's dates, Work Items' fields).
+  *Answered (Story 6359, 2026-11-17):* the translation stays with Tracker integration (`IWriteBackTarget` in
+  `Modules/TrackerIntegration/Application`, each connector's implementation in its `Adapters/Connectors` folder). The
+  round (`WriteBackService`, the collector, the round and its context, the trigger service) decides what is written and
+  when, from Forecasting's dates and Work Items' fields, and reaches Flow metrics and Licensing. Moving it into Tracker
+  integration would make the anti-corruption layer reach those contexts, so it stays where it is and is placed by the
+  Story that packages its publisher (S03d). S03d files an ADO item for it.
 - Where the **update queue** lives: its mechanics look like platform-lane infrastructure, while scheduling a refresh is
   Work Items' and a forecast round is Forecasting's.
 - **Mapping and the ACL.** The cycle is broken in Decision 2 (set-up is a customer of the ACL's query port; the

@@ -62,7 +62,7 @@ Invoke the **`update-docs`** skill. It identifies stale/missing docs + `@screens
    - the ADR range in the header bullet and in the closing line of the ADR index vs. the highest `adr-NNN-*.md` on disk;
    - the module table vs. the namespace patterns in `ModuleBoundariesArchUnitTest.cs`, and the enforced-rules list vs. the tests in `Lighthouse.Backend.Tests/Architecture/`;
    - the authentication schemes vs. `SmartAuthSchemeSelector`, and the adapter choices vs. the registrations in `Program.cs`;
-   - the connector list vs. `Services.*.WorkTrackingConnectors`;
+   - the connector list vs. the module folder `Modules/TrackerIntegration/Adapters/Connectors`;
    - the topology table vs. `chart/` and the health endpoints;
    - the CI paragraph vs. `.github/workflows/`;
    - framework majors (`TargetFramework`, React/MUI/Vite in `Lighthouse.Frontend/package.json`).

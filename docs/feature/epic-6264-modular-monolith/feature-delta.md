@@ -167,7 +167,7 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
 
 | Story | Context | Brief |
 |---|---|---|
-| S03a | WorkTracking-Integration | `slice-03-s03a-package-worktracking-integration.md` |
+| S03a | Tracker integration (was WorkTracking-Integration; done 2026-11-17) | `slice-03-s03a-package-worktracking-integration.md` |
 | S03b | WorkItems / Sync | `slice-04-s03b-package-workitems-sync.md` |
 | S03c | Forecasting | `slice-05-s03c-package-forecasting.md` |
 | S03d | Portfolio / Delivery | `slice-06-s03d-package-portfolio-delivery.md` |
@@ -181,7 +181,7 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
 - AC (each):
   - [ ] No file of that context remains in `Services/Interfaces` or `Services/Implementation`. Interfaces are co-located with their implementations.
   - [ ] Context-owned DTOs move from `Models` into the context's Application contract, after S12c has made them pure mapping.
-  - [ ] The context's ArchUnit rule is by namespace. Existing rules (e.g. "WorkTracking-Integration is a leaf input adapter", "Refinement depends down only") are preserved in the new namespaces.
+  - [ ] The context's ArchUnit rule is by namespace. Existing rules (e.g. "Tracker integration is a leaf input adapter", "Refinement depends down only") are preserved in the new namespaces.
   - [ ] Move commits separate from edit commits. ARCHITECTURE.md §4 row, anchors and diagram updated in the same change.
   - [ ] Behaviour-free, all tests green, mutation score held.
 - **Notes from S02 (2026-11-09), for every S03\*** (the full lessons are in ADR-270, "Lessons from the Flow metrics pilot"; the gate is go-with-changes, decided 2026-11-09):
@@ -196,6 +196,7 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
   - S03b (Work Items): shrinks the Flow metrics lists. `TeamDataService` and `WorkItemService` sit in R3 and R4; S03b's DESIGN decides the Work Items edge. *S03c done (2026-11-15):* the Flow metrics ↔ Forecasting cycle is gone; Forecasting depends on Flow metrics, Flow metrics asks through three ports of its own, R4 is 5 and R5 is empty. *S03b done (2026-11-16):* the Team metrics update is a Flow metrics reaction to `TeamDataRefreshed`, so `TeamDataService` left R4 (5 → 4); `WorkItemService`'s two default-size-guess queries stay listed in R3, R4 and Work Items' own outbound list. `WorkItemsModuleBoundariesArchUnitTest` is the third module on `ModuleRules`.
   - Where a context the rules need has no namespace of its own yet (Organisation set-up, Promises), list its types by name: S03b's outbound list holds the settings and the clock beside `IFeatureOrdering`, and its inbound list holds `DeliveryRuleService`. Stricter than designed, never looser.
   - A type a connector calls stays outside the module (the leaf rule): S03b left the parent and dependency source selectors in `Services` for Tracker integration (S03a).
+  - *S03a done (2026-11-17):* Tracker integration is packaged in `Modules/TrackerIntegration`; `TrackerIntegrationModuleBoundariesArchUnitTest` is the fourth module on `ModuleRules`. Notes for later Stories: **S05e** (connection ports): the three connection repositories wait for it, and `ConnectionHealthService` and `OAuthService` take them (4 listed edges, R-T8). **S03d** (Promises): two edges are listed, the port edge (`DeliverySourceResolver` and `DeliveryForecastPublishingService` read the connector factory, legal, leave the Application inbound list when Promises has a namespace) and the Jira connector's edge to Promises' forecast block renderer (the one entry of the leaf rule; goes in S03d's C2 slice). S03d also files the ADO item for where the write-back round lives. **S03i** (Organisation set-up): the connection save and the connection usage stay for it. **S09a**: the factories and the auth schema name connectors (5 listed edges) until the composition root builds them.
   - S03f (Platform): `DatabaseMaintenanceGate` reaches the Flow metrics Application (R4 list).
 
 #### S04a — Close the `Models ↛ Services` gap
@@ -610,9 +611,9 @@ Anyone opening the repo can see the nine bounded contexts, what each one owns an
 
 | # | Measure | Baseline (brief → verified) | Target | Measured by | Story |
 |---|---|---|---|---|---|
-| 1 | Files under `Services/Interfaces` + `Services/Implementation` | loose: brief 41 + 56 → **42 + 58**; total **155 + 352 = 507** | **0** | `find Lighthouse.Backend/Lighthouse.Backend/Services/{Interfaces,Implementation} -name '*.cs' \| wc -l` | S02, S03a–h |
-| 2 | Contexts packaged under their own folder with namespace rules | **0 of 9** (Metrics is a type-set) | **9 of 9** (or 8 + Platform as composition root, per S01) | ArchUnit rule count per context, folder tree | S02, S03* |
-| 3 | `Models` file count | brief ~218 → **242** (2026-10-22) → **246** (2026-10-27); S04a will add 6 kernel files, S04b reduces | only S01's kernel allow-list | `find …/Models -name '*.cs' \| wc -l` + kernel rule | S04b |
+| 1 | Files under `Services/Interfaces` + `Services/Implementation` | loose: brief 41 + 56 → **42 + 58**; total **155 + 352 = 507** | **0** | `find Lighthouse.Backend/Lighthouse.Backend/Services/{Interfaces,Implementation} -name '*.cs' \| wc -l` (2026-11-17, after S03a: 115 + 217 = **332** on disk; the design projected 328) | S02, S03a–h |
+| 2 | Contexts packaged under their own folder with namespace rules | **0 of 9** (Metrics is a type-set); **4 of 11** after S03a (2026-11-17: Flow metrics, Forecasting, Work Items, Tracker integration) | **9 of 9** (or 8 + Platform as composition root, per S01) | ArchUnit rule count per context, folder tree | S02, S03* |
+| 3 | `Models` file count | brief ~218 → **242** (2026-10-22) → **246** (2026-10-27); S04a will add 6 kernel files, S04b reduces; **263** after S03a (2026-11-17, four OAuth value types moved out) | only S01's kernel allow-list | `find …/Models -name '*.cs' \| wc -l` + kernel rule | S04b |
 | 4 | Files calling `GetAllByPredicate` outside persistence adapters | brief 12 → **14** (52 calls; 2026-10-22 counted a comment) → **15** at landing (Epic 6350 added `ReportOwnerLookup`) | **0**, then `protected` | S05a guard list length | S05a–g |
 | 5 | `API` types depending on `IRepository<>` / `I*Repository` | brief 5 → ≈20 → **23** (20 controllers + 3 API helpers, verified 2026-10-27) | **0** | S05a sibling-rule list length | S05c–e, S12* |
 | 6 | Production `S107` suppressions | brief 18 → **17** (8 API + 9 others; StubOAuthProvider is S1075) | **0** | `grep -rln "disable S107" --include=*.cs Lighthouse.Backend/Lighthouse.Backend` | S07*, S12* |
@@ -913,6 +914,18 @@ item changes the plan for the others.
   - The S06 brief's "Jira Cloud vs Data Center" is outdated: Data Center sweeps too, and the runtime case is "deployment not yet known".
   - Lesson: Stryker.NET cannot mutate a guard that declares a pattern variable (`is not IIncrementalSource source`); it reports CompileError and tests none. Hand-mutate such guards. Doing so found that no test checked the probe was honoured, older than this Story; three service-port tests now do.
   - Later, not this Story: the S07a pick-ups (Portfolio parameters still named `project` in `WorkItemService`, two oracle files to move), the port leaks for S03a/S09a (`IBoardInformationProvider`'s implementation types, the factory's split namespaces), a read refusal with a user sentence for a ServiceNow Portfolio, `SupportsDeliveryForecastPublishing`.
+
+### 2026-11-17 — S03a #6359 Package Tracker integration — Delivered
+- Commits: `175daeeec` (base) `..b08c6f99c` (feature C's EXAMINE accepted), in three nwdes features: A rules first, B the move, C the edges and the module rules · workspaces: `docs/feature/story-6359-s03a-package-tracker-integration/` (design), `story-6359-s03a-a-rules-first`, `story-6359-s03a-b-move`, `story-6359-s03a-c-edges-and-rules` · record: `docs/evolution/2026-11-17-story-6359-s03a-package-tracker-integration/evolution.md`.
+- Ratchet: Tracker integration lives in `Modules/TrackerIntegration/{Domain (3), Application (25), Application/OAuth (19), Application/ConnectionHealth (3), Adapters/Connectors (52), Adapters/OAuth (3), Adapters/Background (1)}`, 106 files. New rules from the IL (`TrackerIntegrationModuleBoundariesArchUnitTest`, on `ModuleRules`): Domain → kernel only; outside → Domain from **1** listed type; outside → Application from API, the composition root, Work Items and **7** listed types; outside → Adapters from the composition root and **2** listed controllers; Application → no EF Core, `Data`, `API` or `Adapters`, platform along **11** listed edges; the module reaches no other context except **1** listed edge (Jira connector → Promises' renderer); no repository except **4** listed edges. 99 unit-test files under `Lighthouse.Backend.Tests/Modules/TrackerIntegration`, kept there by `TrackerIntegrationUnitTestPlacementTest`. The old leaf pattern and its two rules are retired.
+- KPIs re-measured: KPI 1 under `Services/Interfaces` + `Services/Implementation` **332** (115 + 217; design projected 328); KPI 2 **4 of 11**; KPI 3 `Models` 267 → **263**. KPI 12: see `docs/feature/story-6359-s03a-package-tracker-integration/mutation/`.
+- Changes the plan:
+  - The slice-03 brief's criterion "context-owned `Models` types have moved" is rewritten (D-2, amended): only the four OAuth value types moved; entities, wire types, the connector port's vocabulary and types used by staying code stay.
+  - Application types that name connectors stay in `Application`, listed by exact type name (D-14, owner S09a); two translation types live in `Application`, not `Domain`, because they call `Extensions` helpers.
+  - Feature B's EXAMINE was waived by the maintainer after two attempts (2026-11-17).
+  - The IL lists differ from the design's guesses, each difference an edge that exists today (R-T3 to R-T8).
+  - Lesson: a rule list keyed by short type name cannot tell the moved AzureDevOps `WorkItemExtensions` from the unmoved one in `Extensions`; key by full name.
+  - Later, not this Story: S05e (repositories), S03d (the two Promises edges, write-back round), S03i (connection save and usage), S09a (factories naming connectors, `AddTrackerIntegration`), the connection entities and DTOs (S04b, S12c).
 
 ## Wave: DISCUSS / [REF] Split into improvement Epics (2026-11-03)
 
