@@ -10,12 +10,27 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         public static IReadOnlyList<string> Moves { get; } =
         [
-            "AMadeUpDeliveryServiceNobodyWrote",
+            "DeliveryForecastBlockRenderer",
+            "DeliveryForecastPublishingHandler",
+            "DeliveryForecastPublishingService",
+            "DeliveryMetricSnapshotRecordingHandler",
+            "DeliveryMetricValues",
+            "DeliveryMetricValuesProjector",
+            "DeliveryRuleService",
+            "DeliverySourceResolver",
+            "DeliverySourceSyncService",
+            "IDeliveryForecastBlockRenderer",
+            "IDeliveryForecastPublishingService",
+            "IDeliveryRuleService",
+            "IDeliverySourceResolver",
+            "IDeliverySourceSyncService",
+            "PortfolioSourcePreview",
         ];
 
         public static IReadOnlyList<string> ModelsTypesThatMove { get; } =
         [
-            "AMadeUpDeliveryValueNobodyWrote",
+            "DeliveryForecastBlock",
+            "DeliveryForecastBlockPercentile",
         ];
     }
 }
