@@ -10,17 +10,13 @@ import type {
 import type { IReportCreationOptions } from "../../../../models/Reports/ReportsAcrossOwners";
 import { parseLocalDate } from "../../../../utils/date/localDate";
 import MetricsAndNameStep from "./thenAndNow/MetricsAndNameStep";
-import NowStep from "./thenAndNow/NowStep";
 import ThenStep from "./thenAndNow/ThenStep";
 import {
 	lengthOf,
 	nameOf,
-	newBackToBackDraft,
 	newReportForOwnersOf,
 	newReportOf,
 	newThenAndNowDraft,
-	nowLengthOf,
-	nowRefusalOf,
 	reportChangeOf,
 	shownMetricsOf,
 	type ThenAndNowDraft,
@@ -39,8 +35,10 @@ export interface ReportTypeStepProps<TDraft> {
 	frozen?: boolean;
 	/** The window lengths offered with one click, when they are not the owner's own. */
 	windowPresets?: readonly number[];
-	/** One window chosen for several owners: Then offers Custom, and Now is Same as Then unless changed. */
+	/** One window chosen for several owners: Then offers Custom. */
 	forSeveralOwners?: boolean;
+	/** The name of the Team or Portfolio the report is for, when the wizard was opened on one. */
+	ownerName?: string;
 }
 
 export interface ReportTypeStep<TDraft> {
@@ -59,6 +57,8 @@ export interface ReportTypeDefinition<TDraft> {
 	toNewReport: (draft: TDraft, templates: IReportTemplates) => INewReport;
 	draftOf: (report: IReport) => TDraft;
 	toChange: (draft: TDraft, templates: IReportTemplates) => ReportChange;
+	/** The length a refusal of the window names, or null while none is entered. */
+	windowLengthOf: (draft: TDraft) => number | null;
 	/** What the type configures before any owner is picked, when one report is created for several owners. */
 	forOwners: {
 		newDraft: () => TDraft;
@@ -89,13 +89,6 @@ export const reportTypes: {
 					thenRefusalOf(draft, templates) === null,
 			},
 			{
-				label: "Now",
-				component: NowStep,
-				isComplete: (draft, templates) =>
-					lengthOf(nowLengthOf(draft)) !== null &&
-					nowRefusalOf(draft, templates) === null,
-			},
-			{
 				label: "Metrics & name",
 				component: MetricsAndNameStep,
 				isComplete: (draft, templates) =>
@@ -106,8 +99,9 @@ export const reportTypes: {
 		toNewReport: newReportOf,
 		draftOf: thenAndNowDraftOf,
 		toChange: reportChangeOf,
+		windowLengthOf: (draft) => lengthOf(draft.thenLength),
 		forOwners: {
-			newDraft: newBackToBackDraft,
+			newDraft: newThenAndNowDraft,
 			windowPresets: [30, 90, 180],
 			toNewReport: newReportForOwnersOf,
 		},

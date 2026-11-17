@@ -127,7 +127,6 @@ export interface INewReport {
 	thenAndNow: {
 		thenEndDate: string;
 		thenLengthDays: number;
-		nowLengthDays: number | null;
 	};
 }
 

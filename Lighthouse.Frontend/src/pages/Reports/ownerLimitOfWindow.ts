@@ -6,52 +6,36 @@ import { LONG_DAY } from "../Common/Reports/wizard/longDay";
 import { ownerCannotHold } from "../Common/Reports/wizard/reportWindowCheck";
 import {
 	lengthOf,
-	nowLengthOf,
 	thenEndOf,
 } from "../Common/Reports/wizard/thenAndNow/thenAndNowDraft";
 import type { Draft } from "./bulkWizardSteps";
 import { type OwnerLimitOf, ownerKeyOf } from "./OwnerStep";
 
-/** What stops an owner from holding the window as configured so far, or null when it holds it. */
+/**
+ * What stops an owner from holding the window as configured so far, or null when it holds it. Only Then can
+ * be too long: Now is as long as Then and ends today, so it starts no earlier than a Then that ends by today.
+ */
 export const limitOfFor =
 	(draft: Draft, templates: IReportTemplates): OwnerLimitOf =>
 	(owner) => {
 		const thenLength = lengthOf(draft.thenLength);
-		const nowLength = lengthOf(nowLengthOf(draft));
 		const thenEndDay = thenEndOf(draft, templates);
 		const thenEnd = parseLocalDate(thenEndDay);
 		const keptSince =
 			owner.earliestStart === null ? null : parseLocalDate(owner.earliestStart);
 		if (thenLength === null || thenEnd === null || keptSince === null)
 			return null;
-		const today = parseLocalDate(templates.today);
-		const tooLong: { window: "Then" | "Now"; start: Date }[] = [];
-		if (
-			ownerCannotHold(
-				{ side: "then", end: thenEndDay, lengthDays: thenLength },
-				templates,
-				owner,
-			)
+		return ownerCannotHold(
+			{ side: "then", end: thenEndDay, lengthDays: thenLength },
+			templates,
+			owner,
 		)
-			tooLong.push({
-				window: "Then",
-				start: subDays(thenEnd, thenLength - 1),
-			});
-		if (
-			nowLength !== null &&
-			today !== null &&
-			ownerCannotHold({ side: "now", lengthDays: nowLength }, templates, owner)
-		)
-			tooLong.push({ window: "Now", start: subDays(today, nowLength - 1) });
-		tooLong.sort((left, right) => left.start.getTime() - right.start.getTime());
-		const furthestBack = tooLong[0];
-		return furthestBack === undefined
-			? null
-			: {
+			? {
 					keptSince: format(keptSince, LONG_DAY),
-					window: furthestBack.window,
-					windowStarts: format(furthestBack.start, LONG_DAY),
-				};
+					window: "Then",
+					windowStarts: format(subDays(thenEnd, thenLength - 1), LONG_DAY),
+				}
+			: null;
 	};
 
 /** The owners that can hold the window. */

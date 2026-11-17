@@ -543,7 +543,10 @@ const TeamDetail: React.FC = () => {
 											reportId={Number(reportId)}
 										/>
 									) : (
-										<ReportsTab owner={{ kind: "team", id: team.id }} />
+										<ReportsTab
+											owner={{ kind: "team", id: team.id }}
+											ownerName={team.name}
+										/>
 									))}
 
 								{activeView === "settings" && team && (

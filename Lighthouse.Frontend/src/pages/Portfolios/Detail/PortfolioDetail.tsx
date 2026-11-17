@@ -470,6 +470,7 @@ const PortfolioDetail: React.FC = () => {
 									) : (
 										<ReportsTab
 											owner={{ kind: "portfolio", id: portfolio.id }}
+											ownerName={portfolio.name}
 										/>
 									))}
 

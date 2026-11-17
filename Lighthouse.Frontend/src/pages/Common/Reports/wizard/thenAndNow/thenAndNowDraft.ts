@@ -24,34 +24,23 @@ const DEFAULT_LENGTH_DAYS = 90;
 export interface ThenAndNowDraft {
 	thenEnd: string | null;
 	thenLength: string;
-	nowLength: string | null;
 	name: string | null;
 	shownMetricKeys: ReportMetricKey[] | null;
 	/** The metrics a report being edited captured when it was created; a new report captures every one offered. */
 	capturedMetricKeys?: ReportMetricKey[];
-	/** Until its day is entered, Then ends the day before Now starts instead of today, so the windows sit back to back. */
-	thenEndsBeforeNow?: boolean;
 }
 
 export const newThenAndNowDraft = (): ThenAndNowDraft => ({
 	thenEnd: null,
 	thenLength: String(DEFAULT_LENGTH_DAYS),
-	nowLength: null,
 	name: null,
 	shownMetricKeys: null,
-});
-
-/** A draft for several owners at once, whose Then ends the day before Now starts until its day is entered. */
-export const newBackToBackDraft = (): ThenAndNowDraft => ({
-	...newThenAndNowDraft(),
-	thenEndsBeforeNow: true,
 });
 
 /** The report as it was read, with every field entered, so nothing follows a default that the server's today would move. */
 export const thenAndNowDraftOf = (report: IReport): ThenAndNowDraft => ({
 	thenEnd: report.thenAndNow.thenWindow.end,
 	thenLength: String(report.thenAndNow.thenWindow.lengthDays),
-	nowLength: String(report.thenAndNow.nowWindow.lengthDays),
 	name: report.name,
 	shownMetricKeys: [...report.shownMetricKeys],
 	capturedMetricKeys: (
@@ -66,26 +55,23 @@ export const isCaptured = (
 	draft.capturedMetricKeys === undefined ||
 	draft.capturedMetricKeys.includes(key);
 
+// Now is as long as Then and ends today, so the day before it starts lies Then's length before today.
 const dayBeforeNowStarts = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
 ): string => {
 	const today = parseLocalDate(templates.today);
-	const nowLengthDays = lengthOf(nowLengthOf(draft));
-	if (today === null || nowLengthDays === null) return templates.today;
-	const day = subDays(today, nowLengthDays);
+	const lengthDays = lengthOf(draft.thenLength);
+	if (today === null || lengthDays === null) return templates.today;
+	const day = subDays(today, lengthDays);
 	return isValid(day) ? formatLocalDate(day) : templates.today;
 };
 
+/** The day Then ends: the one entered, or until then the day before Now starts, so the windows sit back to back. */
 export const thenEndOf = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
-): string => {
-	if (draft.thenEnd !== null) return draft.thenEnd;
-	return draft.thenEndsBeforeNow === true
-		? dayBeforeNowStarts(draft, templates)
-		: templates.today;
-};
+): string => draft.thenEnd ?? dayBeforeNowStarts(draft, templates);
 
 const wholeDaysOf = (text: string): number | null => {
 	const days = Number(text);
@@ -123,20 +109,65 @@ export const thenRefusalOf = (
 		templates,
 	);
 
-/** Now is as long as Then until somebody changes it. */
-export const nowLengthOf = (draft: ThenAndNowDraft): string =>
-	draft.nowLength ?? draft.thenLength;
+/** A window by its first and last day, as yyyy-MM-dd, and its length. */
+export interface ReportWindow {
+	start: string;
+	end: string;
+	lengthDays: number;
+}
 
-/** Why the server would refuse the Now entered, or null while it has no whole number of days yet or would be accepted. */
-export const nowRefusalOf = (
+const windowEndingOn = (
+	endDay: Date,
+	lengthDays: number,
+): ReportWindow | null => {
+	const startDay = subDays(endDay, lengthDays - 1);
+	return isValid(startDay)
+		? {
+				start: formatLocalDate(startDay),
+				end: formatLocalDate(endDay),
+				lengthDays,
+			}
+		: null;
+};
+
+/**
+ * Then as entered, and Now as long as Then ending on the server's today; null while Then's end or length is no
+ * day or whole number of days, or a window would start before the calendar does.
+ */
+export const windowsOf = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
-): ReportWindowRefusal | null =>
-	refusalOnceWhole(
-		nowLengthOf(draft),
-		(lengthDays) => ({ side: "now", lengthDays }),
-		templates,
-	);
+): { then: ReportWindow; now: ReportWindow } | null => {
+	const lengthDays = lengthOf(draft.thenLength);
+	const thenEnd = parseLocalDate(thenEndOf(draft, templates));
+	const today = parseLocalDate(templates.today);
+	if (lengthDays === null || thenEnd === null || today === null) return null;
+
+	const then = windowEndingOn(thenEnd, lengthDays);
+	const now = windowEndingOn(today, lengthDays);
+	return then === null || now === null ? null : { then, now };
+};
+
+/** How Then sits beside Now: on the same days, sharing days up to Then's last one, or apart. */
+export type WindowsRelation =
+	| { kind: "apart" }
+	| { kind: "sameDays" }
+	| { kind: "overlapUntil"; until: string };
+
+export const windowsRelationOf = (
+	draft: ThenAndNowDraft,
+	templates: IReportTemplates,
+): WindowsRelation | null => {
+	const windows = windowsOf(draft, templates);
+	if (windows === null) return null;
+
+	// yyyy-MM-dd days compare as text in the order of the days they name.
+	const { then, now } = windows;
+	if (then.end === now.end) return { kind: "sameDays" };
+	return then.end >= now.start
+		? { kind: "overlapUntil", until: then.end }
+		: { kind: "apart" };
+};
 
 const daysFromTo = (startDay: Date, endDay: Date): string => {
 	const startFormat =
@@ -210,32 +241,21 @@ export const newReportOf = (
 	thenAndNow: {
 		thenEndDate: thenEndOf(draft, templates),
 		thenLengthDays: lengthOf(draft.thenLength) ?? 0,
-		nowLengthDays: lengthOf(nowLengthOf(draft)),
 	},
 });
 
-/** The report as several owners get it: a Now left following Then is sent as such, so each owner's Now follows its Then. */
-export const newReportForOwnersOf = (
-	draft: ThenAndNowDraft,
-	templates: IReportTemplates,
-): INewReport => {
-	const report = newReportOf(draft, templates);
-	return {
-		...report,
-		thenAndNow: {
-			...report.thenAndNow,
-			nowLengthDays:
-				draft.nowLength === null ? null : lengthOf(draft.nowLength),
-		},
-	};
-};
+/** The report as several owners get it: each owner's Now is as long as its Then, as for one owner. */
+export const newReportForOwnersOf = newReportOf;
 
-/** What saving an edit changes; Then is left out, it stays as it was frozen. Only called once every step is complete. */
+/**
+ * What saving an edit changes; Then is left out, it stays as it was frozen. Now's length is sent as Then's, the
+ * only length Now can have. Only called once every step is complete.
+ */
 export const reportChangeOf = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
 ): ReportChange => ({
 	name: nameOf(draft, templates),
 	shownMetricKeys: shownMetricsOf(draft, templates),
-	thenAndNow: { nowLengthDays: lengthOf(nowLengthOf(draft)) ?? 0 },
+	thenAndNow: { nowLengthDays: lengthOf(draft.thenLength) ?? 0 },
 });

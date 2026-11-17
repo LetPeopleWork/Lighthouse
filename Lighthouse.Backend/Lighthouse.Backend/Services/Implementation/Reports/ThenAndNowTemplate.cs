@@ -43,8 +43,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<string>.Refused(ReportRefusalCodes.ThenTooLong);
             }
 
-            var nowLengthDays = settings.NowLengthDays ?? settings.ThenLengthDays;
-            if (ReportWindowPolicy.NowRefusal(nowLengthDays, calendar.Today, calendar.DoneItemsCutoffDays) is string nowRefusal)
+            if (ReportWindowPolicy.NowLengthRefusal(settings.NowLengthDays, settings.ThenLengthDays) is string nowRefusal)
             {
                 return ReportOutcome<string>.Refused(nowRefusal);
             }
@@ -54,7 +53,6 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             var payload = new ThenAndNowPayload
             {
                 ThenWindow = thenWindow,
-                NowLengthDays = nowLengthDays,
                 Captures = captures,
             };
 

@@ -26,6 +26,8 @@ const LIST_MIN_HEIGHT = 120;
 
 interface ReportsTabProps {
 	owner: IReportOwner;
+	/** The Team's or Portfolio's name, which the create wizard names when it refuses a window. */
+	ownerName?: string;
 }
 
 const ListOrEmpty: React.FC<{
@@ -40,7 +42,10 @@ const ListOrEmpty: React.FC<{
 		<ReportList owner={owner} reports={reports} actions={actions} />
 	);
 
-const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
+const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({
+	owner,
+	ownerName,
+}) => {
 	const { getTerm } = useTerminology();
 	const [isCreating, setIsCreating] = useState(false);
 	const { isEditor, isLoading: rolesAreLoading } = useMayEditReports(owner);
@@ -92,7 +97,11 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 				</Box>
 			)}
 			{isCreating && (
-				<ReportWizard owner={owner} onClose={() => setIsCreating(false)} />
+				<ReportWizard
+					owner={owner}
+					ownerName={ownerName}
+					onClose={() => setIsCreating(false)}
+				/>
 			)}
 			{editing.element}
 			<Box

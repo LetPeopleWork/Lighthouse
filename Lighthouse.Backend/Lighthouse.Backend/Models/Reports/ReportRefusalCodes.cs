@@ -23,6 +23,8 @@ namespace Lighthouse.Backend.Models.Reports
 
         public const string NowBeforeCutoff = "now-before-cutoff";
 
+        public const string NowLengthDiffersFromThen = "now-length-differs-from-then";
+
         public const string NoMetricShown = "no-metric-shown";
 
         public const string UnknownMetric = "unknown-metric";

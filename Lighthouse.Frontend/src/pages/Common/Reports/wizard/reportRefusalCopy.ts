@@ -26,24 +26,34 @@ export type ReportRefusalCode =
 	| "not-admin"
 	| "not-saved";
 
-/** What a refusal's sentence may name: the server's bounds and the instance's own words. */
+/** What a refusal's sentence may name: the server's bounds, the instance's own words, the owner and the window entered. */
 export interface RefusalWords {
 	minimumLengthDays: number;
 	earliestStart: string | null;
 	ownerTerm: string;
 	workItemsTerm: string;
+	/** The Team's or Portfolio's name, when the wizard was opened on one. */
+	ownerName?: string;
+	/** The length Then was entered with, when it is a whole number of days. */
+	thenLengthDays?: number;
 }
 
-/** The words a refusal names, from the bounds the server answered and the instance's own terms. */
+/** The words a refusal names, from the bounds the server answered, the instance's own terms and the window entered. */
 export const useRefusalWords = (
 	owner: IReportOwner,
-): ((bounds: ReportWindowBounds) => RefusalWords) => {
+	ownerName?: string,
+): ((
+	bounds: ReportWindowBounds,
+	thenLengthDays: number | null,
+) => RefusalWords) => {
 	const { getTerm } = useTerminology();
-	return (bounds) => ({
+	return (bounds, thenLengthDays) => ({
 		minimumLengthDays: bounds.minimumLengthDays,
 		earliestStart: bounds.earliestStart,
 		ownerTerm: getTerm(ownerTermKeyOf(owner)),
 		workItemsTerm: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+		ownerName,
+		thenLengthDays: thenLengthDays ?? undefined,
 	});
 };
 
@@ -76,8 +86,16 @@ const oldestKeptDay = (earliestStart: string | null): string => {
 	return day === null ? "the oldest kept day" : format(day, LONG_DAY);
 };
 
-const cutoffRefusal = (side: "Then" | "Now", words: RefusalWords): string =>
-	`The ${side} window must start on or after ${oldestKeptDay(words.earliestStart)} — older finished ${words.workItemsTerm} are no longer kept.`;
+const thenAndNowOf = (thenLengthDays: number | undefined): string =>
+	thenLengthDays === undefined
+		? "this Then and Now"
+		: `a ${thenLengthDays}-day Then and Now`;
+
+const ownerOf = (words: RefusalWords): string =>
+	words.ownerName ?? `This ${words.ownerTerm}`;
+
+const tooLittleHistory = (words: RefusalWords): string =>
+	`${ownerOf(words)} keeps history from ${oldestKeptDay(words.earliestStart)}: too little for ${thenAndNowOf(words.thenLengthDays)}. Pick a shorter length or a later end date.`;
 
 const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 	{
@@ -85,11 +103,7 @@ const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 			`Then needs at least ${words.minimumLengthDays} days.`,
 		"then-too-long": () => "Then can't reach back that far.",
 		"then-ends-in-the-future": () => "Then cannot end after today.",
-		"then-before-cutoff": (words) => cutoffRefusal("Then", words),
-		"now-too-short": (words) =>
-			`Now needs at least ${words.minimumLengthDays} days.`,
-		"now-too-long": () => "Now can't reach back that far.",
-		"now-before-cutoff": (words) => cutoffRefusal("Now", words),
+		"then-before-cutoff": tooLittleHistory,
 		"name-missing": () => "Give the report a name.",
 		"name-too-long": () => "A report name can be at most 200 characters.",
 		"no-metric-shown": () => "Choose at least one metric",
@@ -127,7 +141,6 @@ const NOT_CREATED_REASON: Partial<
 	"report-cap-reached": (words) =>
 		`${words.ownerName} already has its one Then & Now report; Premium lifts this limit.`,
 	"then-before-cutoff": historyStartSentence,
-	"now-before-cutoff": historyStartSentence,
 	"not-saved": () => "it couldn't be saved. Try again.",
 };
 

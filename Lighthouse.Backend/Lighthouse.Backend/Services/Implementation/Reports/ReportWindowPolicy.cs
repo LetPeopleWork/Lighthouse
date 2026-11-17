@@ -68,6 +68,13 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return HoldsEverythingFrom(window.Start, today, doneItemsCutoffDays) ? null : ReportRefusalCodes.NowBeforeCutoff;
         }
 
+        /// <summary>
+        /// Why a Now length asked for at create cannot be kept; null when none is asked for or it equals Then's,
+        /// because Now is always as long as Then.
+        /// </summary>
+        public static string? NowLengthRefusal(int? requestedNowLengthDays, int thenLengthDays)
+            => requestedNowLengthDays is int asked && asked != thenLengthDays ? ReportRefusalCodes.NowLengthDiffersFromThen : null;
+
         public static ReportWindow? NowWindow(DateOnly today, int lengthDays) => ReportWindow.EndingOn(today, lengthDays);
 
         private static bool HoldsEverythingFrom(DateOnly start, DateOnly today, int doneItemsCutoffDays)

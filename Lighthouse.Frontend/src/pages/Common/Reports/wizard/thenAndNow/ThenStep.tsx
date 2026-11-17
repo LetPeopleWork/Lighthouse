@@ -1,19 +1,42 @@
 import { Stack, TextField, Typography } from "@mui/material";
+import { format } from "date-fns";
 import type React from "react";
+import { parseLocalDate } from "../../../../../utils/date/localDate";
 import { FROZEN_NOTE } from "../frozenNote";
+import { LONG_DAY } from "../longDay";
 import { useRefusalWords, windowRefusalCopyFor } from "../reportRefusalCopy";
 import type { ReportTypeStepProps } from "../reportTypes";
 import {
 	lengthOf,
-	resolvedThenDays,
+	type ReportWindow,
 	type ThenAndNowDraft,
 	thenEndOf,
 	thenRefusalOf,
+	type WindowsRelation,
+	windowDaysOf,
+	windowsOf,
+	windowsRelationOf,
 } from "./thenAndNowDraft";
 import WindowLengthControl from "./WindowLengthControl";
 
+const SAME_DAYS =
+	"Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass.";
+
+const daysOf = (window: ReportWindow): string | null =>
+	windowDaysOf(window.start, window.end);
+
+const relationLineOf = (relation: WindowsRelation | null): string | null => {
+	if (relation === null || relation.kind === "apart") return null;
+	if (relation.kind === "sameDays") return SAME_DAYS;
+	const until = parseLocalDate(relation.until);
+	return until === null
+		? null
+		: `Now overlaps Then until ${format(until, LONG_DAY)}`;
+};
+
 const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 	owner,
+	ownerName,
 	templates,
 	draft,
 	onChange,
@@ -23,9 +46,9 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 	frozen = false,
 }) => {
 	const end = thenEndOf(draft, templates);
-	const days = resolvedThenDays(end, lengthOf(draft.thenLength));
-	const daysLine = frozen ? `= ${days} · ${FROZEN_NOTE}` : `= ${days}`;
-	const refusalWordsFor = useRefusalWords(owner);
+	const windows = windowsOf(draft, templates);
+	const relationLine = relationLineOf(windowsRelationOf(draft, templates));
+	const refusalWordsFor = useRefusalWords(owner, ownerName);
 	const refusal = frozen ? null : thenRefusalOf(draft, templates);
 	const locked = disabled || frozen;
 
@@ -56,12 +79,26 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 				customLabel={forSeveralOwners ? "" : "Custom:"}
 				customChoice={forSeveralOwners}
 			/>
-			{days !== null && (
-				<Typography color="text.secondary">{daysLine}</Typography>
+			{windows !== null && (
+				<>
+					<Typography color="text.secondary">
+						{`Then ${daysOf(windows.then)} (${windows.then.lengthDays} days)`}
+						{frozen && ` · ${FROZEN_NOTE}`}
+					</Typography>
+					<Typography color="text.secondary">
+						{`Now ${daysOf(windows.now)} (${windows.now.lengthDays} days, ends today)`}
+					</Typography>
+				</>
+			)}
+			{relationLine !== null && (
+				<Typography color="text.secondary">{relationLine}</Typography>
 			)}
 			{refusal !== null && (
 				<Typography color="error" role="alert">
-					{windowRefusalCopyFor(refusal, refusalWordsFor(templates))}
+					{windowRefusalCopyFor(
+						refusal,
+						refusalWordsFor(templates, lengthOf(draft.thenLength)),
+					)}
 				</Typography>
 			)}
 		</Stack>

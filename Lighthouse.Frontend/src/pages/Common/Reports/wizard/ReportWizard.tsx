@@ -41,6 +41,8 @@ const EDITING = { title: "Edit report", action: "Save" };
 
 interface ReportWizardProps {
 	owner: IReportOwner;
+	/** The Team's or Portfolio's name, which a refusal of the window names. */
+	ownerName?: string;
 	onClose: () => void;
 	/** The report as it was read, when the wizard changes it instead of creating one. */
 	editing?: IReport;
@@ -49,6 +51,7 @@ interface ReportWizardProps {
 /** Creates a report, or edits one: the Type first, then the steps that Type adds. */
 const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	owner,
+	ownerName,
 	onClose,
 	editing,
 }) => {
@@ -84,7 +87,9 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 	const isLastStep = activeStep === type.steps.length;
 	const isComplete = canMoveOn(current, isFrozen, draft, templates);
 
-	const refusalWordsFor = useRefusalWords(owner);
+	const wordsFor = useRefusalWords(owner, ownerName);
+	const refusalWordsFor = (bounds: IReportTemplates) =>
+		wordsFor(bounds, type.windowLengthOf(draft));
 
 	const startSubmitting = () => {
 		setIsSubmitting(true);
@@ -213,6 +218,7 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 						onChange={setDraft}
 						disabled={isSubmitting}
 						frozen={isFrozen}
+						ownerName={ownerName}
 					/>
 				)}
 			</WizardStepperFrame>
