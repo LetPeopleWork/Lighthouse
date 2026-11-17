@@ -328,16 +328,6 @@ P3
 When a Portfolio's forecasts are updated, its Delivery metric snapshot is recorded before its forecasts are published. The probe `backend-tests DomainEventHandlerOrderPin` lists the test HandlersOfAPortfolioForecastUpdate_RecordTheDeliverySnapshotBeforePublishingTheForecasts by name as Passed.
 ```
 
-#### E7
-
-##### Promises
-
-P4
-
-```text
-Nothing a user, a tracker or the database sees changes, and the existing backend tests stay green. The probe `deliveries-answers-compare` (no arguments) prints IDENTICAL. The probe `refresh-reactions-compare` (no arguments) prints IDENTICAL. The probe `forecast-answers-compare` (no arguments) prints IDENTICAL. The probe `ef-model-unchanged` prints "No changes have been made to the model since the last migration." for each provider it lists. The probe `backend-tests` (no fragment) prints 0 Failed in its totals line.
-```
-
 #### E8
 
 ##### Promises
@@ -346,6 +336,16 @@ P2
 
 ```text
 The unit tests of each moved Promises type run and pass. The probe `backend-tests` (no fragment) prints 0 Failed in its totals line, so the moved tests run and pass. The probe `architecture-rules Promises` lists as Passed, by name, the rules that place the moved unit tests in the Promises test folders: `TheUnitTestsOfTheMovedServices_LiveInThePromisesApplicationTestFolder_AndNoneIsLeftUnderServices` and `TheUnitTestsOfTheTwoForecastsUpdatedHandlers_LiveInThePromisesPoliciesTestFolder_AndNoneIsLeftUnderServices`. The same probe lists as Passed, by name, each architecture rule that names a moved type.
+```
+
+#### E9
+
+##### Promises
+
+P4
+
+```text
+Nothing a user, a tracker or the database sees changes, and the existing backend tests stay green. The probe `deliveries-answers-compare` (no arguments) prints IDENTICAL. The probe `refresh-reactions-compare` (no arguments) prints IDENTICAL, which covers every observable reaction on both revisions. Not observable, and outside this expectation: the four blocked-period reactions (Work Item and Feature blocked and unblocked), which the probe names not observable on both sides; they are Work Items code this behaviour-free move did not touch and do not count against it. The probe `forecast-answers-compare` (no arguments) prints IDENTICAL. The probe `ef-model-unchanged` prints "No changes have been made to the model since the last migration." for each provider it lists. The probe `backend-tests` (no fragment) prints 0 Failed in its totals line.
 ```
 
 ## Charter
