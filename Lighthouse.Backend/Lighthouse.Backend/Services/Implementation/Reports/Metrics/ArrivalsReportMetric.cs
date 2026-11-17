@@ -26,8 +26,8 @@ namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics
             var days = started.Count;
             var total = started.Sum();
 
-            var startedPerDay = (double)total / days;
-            var finishedPerDay = (double)finished.Sum() / finished.Count;
+            var startedPerDay = AveragePerDay(started);
+            var finishedPerDay = AveragePerDay(finished);
 
             return new()
             {

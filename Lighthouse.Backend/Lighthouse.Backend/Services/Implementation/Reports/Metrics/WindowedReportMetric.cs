@@ -29,6 +29,9 @@ namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics
 
         protected abstract Dictionary<string, CapturedValue> ValuesOver(ReportOwner owner, ReportWindow window);
 
+        /// <summary>The average of a daily count series over its days, unrounded.</summary>
+        protected static double AveragePerDay(IReadOnlyList<int> daily) => (double)daily.Sum() / daily.Count;
+
         private static Dictionary<string, CapturedValue> FrozenIn(JsonObject? captured, Dictionary<string, CapturedValue> now)
             => now.Keys
                 .Select(member => (Member: member, Frozen: captured?[member]?.Deserialize<CapturedValue>(ThenAndNowPayload.JsonOptions)))

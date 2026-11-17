@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics
             return new()
             {
                 [Total] = CapturedValue.Shown(total, days),
-                [PerDay] = CapturedValue.Shown((double)total / days, days),
+                [PerDay] = CapturedValue.Shown(AveragePerDay(daily), days),
             };
         }
     }
