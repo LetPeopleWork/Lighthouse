@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.DeliverySources;
 
-namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     /// <summary>
     /// Composes the published block and merges it into a description that a human also writes in.

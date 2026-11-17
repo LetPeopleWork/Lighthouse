@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
-namespace Lighthouse.Backend.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     public class DeliveryForecastPublishingService(
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,

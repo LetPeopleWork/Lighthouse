@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     /// <summary>
     /// What a Delivery reads as on a given day. The daily snapshot and the record pinned when a

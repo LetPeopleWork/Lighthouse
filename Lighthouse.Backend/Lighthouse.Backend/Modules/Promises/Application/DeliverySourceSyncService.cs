@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     public class DeliverySourceSyncService(
         IDeliverySourceResolver resolver,

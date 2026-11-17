@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
 
-namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     /// <summary>
     /// What a bound source currently is, seen from one Portfolio: the remote verdict, plus the Features

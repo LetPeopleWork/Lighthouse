@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Models.DeliverySources
+namespace Lighthouse.Backend.Modules.Promises.Domain
 {
     /// <summary>
     /// One percentile of a Delivery's forecast, as the published block states it.

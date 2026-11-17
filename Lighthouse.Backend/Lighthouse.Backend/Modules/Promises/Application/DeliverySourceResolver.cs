@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
-namespace Lighthouse.Backend.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     public class DeliverySourceResolver(IWorkTrackingConnectorFactory workTrackingConnectorFactory) : IDeliverySourceResolver
     {

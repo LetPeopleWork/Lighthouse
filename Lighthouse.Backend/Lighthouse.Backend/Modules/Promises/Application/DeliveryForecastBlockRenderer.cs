@@ -4,7 +4,7 @@ using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 
-namespace Lighthouse.Backend.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     public class DeliveryForecastBlockRenderer : IDeliveryForecastBlockRenderer
     {

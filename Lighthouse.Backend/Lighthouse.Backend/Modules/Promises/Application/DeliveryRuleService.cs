@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     public class DeliveryRuleService : IDeliveryRuleService
     {

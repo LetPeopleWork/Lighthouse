@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     /// <summary>
     /// Publishes the forecast of every eligible source-bound Delivery back onto its remote source.

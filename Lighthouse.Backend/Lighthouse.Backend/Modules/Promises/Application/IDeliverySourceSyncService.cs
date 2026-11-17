@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
+namespace Lighthouse.Backend.Modules.Promises.Application
 {
     /// <summary>
     /// Applies what the remote currently says to every source-bound Delivery of a Portfolio, on the
