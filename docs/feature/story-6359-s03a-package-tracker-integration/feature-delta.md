@@ -645,3 +645,18 @@ events consumed elsewhere). Consequences:
 - `OAuthCompleteResult` stays: `OAuthController` (which stays) reads it from `IOAuthService.CompleteAsync`.
 
 A3's oracle and its membership rule check all four conditions.
+
+## Wave: DESIGN / [REF] D-14 Application types that name the connectors (B2 slice review, 2026-11-17)
+
+The B2 slice review found that three `Application` types name connector types: `WorkTrackingConnectorFactory` and
+`WorkTrackingSystemFactory` construct the connectors, and `AuthenticationMethodSchema` reads each tracker's option
+names. After B3 moves the connectors to `Adapters/Connectors`, these are `Application` → own `Adapters` edges, which the
+module rules of C1 forbid by default.
+
+| Option | Verdict |
+|---|---|
+| **a (recommended, taken in AFK mode)** Keep the three in `Application` and list each edge by exact type name in C1's `Application` outbound list, owner S09a (the composition root takes over connector construction when `AddTrackerIntegration` arrives) | Keeps B a pure move and keeps D-5's "factory interface and class share one namespace", which B2's oracle pins. The list only shrinks. |
+| b Move the two factory classes to `Adapters/Connectors` | Rejected now: breaks D-5's leak fix and B2's approved oracle; S06 D-8 made the factory part of the port. |
+| c Give `Application` its own option-name source for the schema | Rejected now: an edit inside a move Story; the option names are each connector's vocabulary. |
+
+Exemptions are exact per type, never per namespace or layer (S1 learning). C1 owns the list entries.
