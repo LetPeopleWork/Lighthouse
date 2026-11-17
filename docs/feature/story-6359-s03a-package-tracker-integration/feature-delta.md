@@ -674,3 +674,19 @@ recorded)" resolved in B1 as follows, and this record is that recording:
 Feature C keys the module lists by full name where a short name is shared: the moved AzureDevOps
 `WorkItemExtensions` and the unmoved `Lighthouse.Backend.Extensions.WorkItemExtensions` have the same
 short name, and the name-only lists in `TrackerIntegrationMembership` cannot tell them apart.
+
+## Wave: DELIVER / [REF] Feature B EXAMINE waived by the maintainer (2026-11-17)
+
+`nwdes examine close` accepts only `--outcome accepted`, and the source-blind examiner did not reach that outcome in two attempts.
+The maintainer waived the rest of EXAMINE for feature B (option 1, 2026-11-17), on the evidence below. The examiner
+gathered all of it through its own public probes on candidate 4a5b91296 (code as of 6968d2c84):
+
+| Expectation | Examiner verdict | Observation |
+|---|---|---|
+| E4 each tracker connects, syncs, and CI runs its live suite | met | `ci-live-suites-show 6968d2c84`: CI run 44061766628, backend job success; Jira 72, ADO 58, Linear 20, ServiceNow 20, GitHub 32 live tests passed, none failed or skipped. |
+| E1, E2, E6 same behaviour and stored data | observation gap | `refresh-answers-compare d8dc2f2db`: VERDICT IDENTICAL, 297 answers compared, 0 different. `ef-model-unchanged`: no model change on SQLite or Postgres. `architecture-rules`: 1005 of 1005 passed. |
+| E3, E5 auth setup, board listing, OAuth and connection health | observation gap | No public probe reaches these; the full filtered backend suite (13769 passed, 0 failed) and the whole-candidate review cover them. |
+
+The examiner recorded no contradicting observation. Before the next move feature, give the examiner probes for the
+behaviours its expectations name (OAuth connect and health, auth setup, board listing, forecasts) while the expectations
+are written, not after.
