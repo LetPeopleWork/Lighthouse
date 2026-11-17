@@ -1,0 +1,4706 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: story-6359-s03a-b-move</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D13</h4>
+
+<pre><code>Placement: every type of TrackerIntegrationMembership.Moves and the four admitted Models OAuth value types moves by git mv to Lighthouse.Backend/Modules/TrackerIntegration, namespace equals folder. Layers: Domain, Application, Application/OAuth, Application/ConnectionHealth, Adapters/Connectors/{AzureDevOps,Csv,Jira,Linear,ServiceNow,Auth,OAuth}, Adapters/OAuth, Adapters/Background. Unit tests move with their files to Lighthouse.Backend.Tests/Modules/TrackerIntegration/&lt;same sub-folder&gt; in the same slice. Slice order S1 then S2 then S3 then S4.
+</code></pre>
+
+<h4>D14</h4>
+
+<pre><code>Domain exception, measured: WorkItemCategoryCrossing calls EnumerableExtensions.IsItemInList and DependencySourceSelector calls Extensions.WorkItemExtensions.GetAdditionalFieldValue, both in namespace Lighthouse.Backend.Extensions, which ModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary rejects (kernel is Lighthouse.Backend.Models plus the base library). Both therefore go to Application in S1, no code edit to avoid it. WorkItemStateTransitionMapper, ParentSourceSelector and DependencyFieldReferences use only Models and go to Domain, flat folder.
+</code></pre>
+
+<h4>D15</h4>
+
+<pre><code>Stay unchanged: repositories, connection save and usage, write-back round, Encryption, demo data (Factories keeps only demo data), Health, controllers, API DTOs, entities, all other Models types (OAuthCompleteResult, OAuthCredential, ConnectionHealthVerdict and the rest).
+</code></pre>
+
+<h4>D16</h4>
+
+<pre><code>Commit shape per slice: oracle commit, pure-move commit (git mv plus namespace line only, tests included), edits (using lines, full-name strings in rule lists, scripts, configs, csproj, budgets) uncommitted for the host, then review record. Program.cs registrations and order stay, only using lines change. No class is created, split or merged; no signature changes; no EF model change.
+</code></pre>
+
+<h4>D17</h4>
+
+<pre><code>Layer algebra. Domain: states are pure values; operations are the five translation rules over handed-in data; observation is the set of Domain-namespace types and their IL dependency targets; equality is type full name. Application: operations are the connector port, factories, OAuth and health use cases; observation is the namespace of each type and the IL edges to Adapters, which must be empty; factory interface and class share one namespace; Board and BoardInformation sit beside IBoardInformationProvider. Adapters: connectors, strategies, providers, prober; observation is namespace and that connectors reach no repository. Infrastructure and recovery: unchanged, no timeout, retry, replay or loss behaviour is touched; DI lifetimes and handler order identical.
+</code></pre>
+
+<h4>D18</h4>
+
+<pre><code>Checker mapping: placement and dependency-edge claims are decided exactly by the compiled IL through IlDependencies and ModuleRules, each oracle carrying a made-up offender as falsifier; behaviour-free is decided by the existing suites, the live connector suites in CI and the EXAMINE answer comparisons. No Quint, TLA+ or Agda model: there is no state, ordering, concurrency, recovery or liveness claim, and a model would restate the namespace map and could not fail. Quint 0.33.1 is installed (probed with quint --version) and was not run; no waiver is recorded, the formal-model claim set is empty by reason, not by omission. Liveness: not applicable, nothing progresses.
+</code></pre>
+
+<h4>D19</h4>
+
+<pre><code>Type and property assessment (object oriented, nw-code-design-oo read): no class is added or changed, so no new anemic type, no Object Calisthenics break and no new invariant owner; each existing rule keeps its cohesive owner. Construction safety: a type cannot silently stay in an old namespace because each layout oracle looks the type up by name in the compiled assembly and fails when it is missing. Property testing: not applicable, every law is a finite list of named types compared both ways, native examples.
+</code></pre>
+
+<h4>D20</h4>
+
+<pre><code>Oracle design rule for all four slices: a layout oracle asserts through ModuleRules.TypesLiveInTheirLayer for its layer (and DomainReachesOnlyTheKernelAndTheBaseLibrary in S1), reads types by name from the compiled assembly, fails naming the offender when a type is missing or in the wrong place, and fails when the layer holds no type. An existing rule that finds its subject by namespace or path (SecretCustodySeamArchUnitTest auth pattern, ConnectorPort key, ConnectorRatchetFixtures, ConnectionHealthSingleWriterArchUnitTest, ServiceNow purity tests) proves in the slice that moves its subject that it still names a made-up offender in the new place, or cites TrackerIntegrationRulesSeeTheModuleArchUnitTest. Lists are rewritten to the new names and compared both ways, never loosened. No nWave scenario tags in code.
+</code></pre>
+
+<h4>D21</h4>
+
+<pre><code>Test substrate: NUnit 4.6 architecture tests reading compiled IL through Mono.Cecil, no host started. Commands run from the repository root under flock (flock -o &lt;lockfile&gt; prefix, not recorded in the command text). Default per-test budgets and the 300 s suite ceiling apply, no derogation requested; each oracle reads the cached IL module like the existing ones. Live connector categories are never run locally; CI runs them on each push (push per slice, maintainer 2026-11-16 and 2026-11-17), hold after B4 until review and EXAMINE are accepted.
+</code></pre>
+
+<h4>D22</h4>
+
+<pre><code>Risk walk. Stressor: a rule keyed on a path or namespace string goes blind after a move; allowed none, forbidden a vacuous rule; residue owner the slice that moves the subject. Stressor: CI selects live suites by path; A2 already matches both old and new paths, old alternatives stay until feature C. Stressor second set: a Serilog filter or reflection string naming an old category; none found in the repository, a host-side configuration outside it is unknown and accepted. Single point of failure: Program.cs using lines, compile error is immediate. Bypass: reflection or string type names, none found; IL misses catch-clause, event and attribute-named-argument references, covered by the full suite.
+</code></pre>
+
+<h4>D23</h4>
+
+<pre><code>Design gap recorded for the host: product promise P2 and slice S1 say all five translation rules live in Domain, but two are rejected by the Domain rule (see Domain exception) and the approved design already sends such types to Application. The S1 oracle therefore asserts three types in Domain and two in Application; if the maintainer wants all five in Domain, the Extensions calls must first be edited, which is a behaviour-free but non-move change outside this feature.
+</code></pre>
+
+<h4>D24</h4>
+
+<pre><code>Reuse verdicts: ModuleRules.TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary (Architecture/ModuleRules.cs:127,153) REUSE; TrackerIntegrationMembership REUSE; the four layout oracles CREATE_NEW (Forecasting and Work Items layout oracles are the model); moved types REUSE unchanged by git mv.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K5</h4>
+
+<pre><code>Behaviour-free: no route, DTO, serialized response, refresh answer, forecast, DI lifetime, handler order or EF model changes; no schema change. No stored or validated input is introduced and no bound is added or removed; the only inputs are source files and the compiled assembly.
+</code></pre>
+
+<h4>K6</h4>
+
+<pre><code>Domain reaches only Lighthouse.Backend.Models and the base library. Application reaches no Adapters of its own module. The factory interface and class share Modules.TrackerIntegration.Application. The board port names no implementation namespace.
+</code></pre>
+
+<h4>K7</h4>
+
+<pre><code>Feature A files (TrackerIntegrationMembership.cs and its test, TrackerIntegrationRulesSeeTheModuleArchUnitTest) may take a using or full-name string edit forced by the move, recorded as a target, never a semantic change. Earlier slices oracle files of this feature are never edited.
+</code></pre>
+
+<h4>K8</h4>
+
+<pre><code>UI, loading and failure looks, RBAC, clients, website and usage-data event are not applicable: nothing a user sees or does changes. Jev is unauthorized (typesafe unavailable by refusal).
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Producer and consumers sit in one deployable and change in the same commit; no wire or persisted data changes; the architecture oracle and existing integration tests cover them.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>The slices are themselves behaviour-free moves; no later behaviour change in this feature needs a preparatory move.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>IL architecture tests over the compiled Lighthouse.Backend assembly via IlDependencies and ModuleRules (no host); real consumers unchanged: API controllers, Work Items refresh, Promises delivery sources, write-back round, ConnectionHealthProber
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>IWorkTrackingConnector and capabilities (moved, unchanged)
+</code></pre>
+
+<pre><code>IWorkTrackingAuthStrategy (moved, unchanged)
+</code></pre>
+
+<pre><code>IOAuthProvider (moved, unchanged)
+</code></pre>
+
+<pre><code>IRepository and ConnectionHealthVerdictRepository (stay)
+</code></pre>
+
+<pre><code>Domain to Models only; Application to Domain and Models and the listed platform edges; Adapters to Application; composition root to Adapters; no Adapters to repositories in Adapters/Connectors
+</code></pre>
+
+<h4>Failures</h4>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<pre><code>Namespace and IL dependency targets of each listed type in the compiled assembly
+</code></pre>
+
+<p>IReadOnlyList of full type names and verdict naming each offender</p>
+
+<pre><code>runtime behaviour, DI lifetimes, catch-clause, event and attribute-named-argument references
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>layout observation</p>
+
+<pre><code>Two layouts are equal when every listed type has the same full name and the IL edges between listed layers are the same lists; short name equality holds before and after (membership compares short names).
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<h4>C2</h4>
+
+<pre><code>Every Moves type lives in its named layer and none is left under Services or Factories
+</code></pre>
+
+<pre><code>a type left behind or in the wrong layer breaks the module boundary feature C builds on
+</code></pre>
+
+<p>TrackerIntegrationMembership and the four layout oracles</p>
+
+<pre><code>the compiled Lighthouse.Backend assembly
+</code></pre>
+
+<p>git mv plus namespace line</p>
+
+<p>ModuleRules.TypesLiveInTheirLayer</p>
+
+<pre><code>oracle verdict naming offenders
+</code></pre>
+
+<pre><code>a type renamed or deleted: oracle looks up by name and fails; reflection strings: none found
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Type in its layer namespace with the old using lines rewritten
+</code></pre>
+
+<p>crafter</p>
+
+<p>Excluded</p>
+
+<pre><code>A listed type under Services or Factories, or Domain reaching Extensions, Services or Adapters
+</code></pre>
+
+<p>layout oracles</p>
+
+<p>Unknown</p>
+
+<pre><code>Host-side log filters or external configuration naming an old category
+</code></pre>
+
+<p>maintainer</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>layer placement
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>oracle per slice excludes each listed type outside its layer and Domain edges outside the kernel; IL decided, not yet built
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>layer placement
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>each type has a concrete target path in the slice targets; git mv produces it
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>layer placement
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>oracle reads the compiled assembly produced by dotnet build, the same assembly the host runs; consumers unchanged
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>layer placement
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>not applicable: no progress, queue, schedule or handler changes, no temporal claim
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y3</h4>
+
+<p>Bypass</p>
+
+<pre><code>string or reflection type names and path-keyed rules
+</code></pre>
+
+<pre><code>same rule coverage after the move
+</code></pre>
+
+<pre><code>old alternatives stay until feature C
+</code></pre>
+
+<pre><code>a rule that passes with its subject gone
+</code></pre>
+
+<pre><code>IL misses catch-clause, event and attribute-named-argument references
+</code></pre>
+
+<p>acceptance designer and reviewer</p>
+
+<h4>Y4</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>Program.cs using lines and shared Linear key on push
+</code></pre>
+
+<pre><code>build and live suites green
+</code></pre>
+
+<pre><code>a push may rerun on a 429
+</code></pre>
+
+<pre><code>red push
+</code></pre>
+
+<pre><code>live suites only in CI
+</code></pre>
+
+<p>host</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/WorkItemStateTransitionMapper.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/WorkItemStateTransitionMapper.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/ParentSourceSelector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/Parents/ParentSourceSelector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DependencyFieldReferences.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/Dependencies/DependencyFieldReferences.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkItemCategoryCrossing.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/WorkItemCategoryCrossing.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DependencySourceSelector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/WorkItemStateTransitionMapperTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/WorkItemStateTransitionMapperTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/ParentSourceSelectorOrderTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorOrderTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/ParentSourceSelectorOwnParentTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorOwnParentTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/ParentSourceSelectorTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DependencyFieldReferencesTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/Dependencies/DependencyFieldReferencesTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkItemCategoryCrossingTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/WorkItemCategoryCrossingTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DependencySourceSelectorTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/Dependencies/DependencySourceSelectorTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentSourcesOwnerWriteThroughTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WhereAPortfoliosWorkItemHangsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WhereATeamsWorkItemHangsTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTransitionFallbackIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTransitionSyncIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationDomainLayoutArchUnitTest
+pwsh Lighthouse.Backend/Test-Fast.ps1
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the compiled-assembly layout test for Tracker integration Domain: look up WorkItemStateTransitionMapper, ParentSourceSelector and DependencyFieldReferences in Modules.TrackerIntegration.Domain and WorkItemCategoryCrossing and DependencySourceSelector in Modules.TrackerIntegration.Application, and run the Domain-reaches-only-kernel rule; Work Items membership test lists no selector.
+</code></pre>
+
+<pre><code>Each of the five types is found in its namespace, none under Services, Domain reaches only Models and the base library, and made-up Domain offenders reaching Services, Adapters or Extensions are each reported by name.
+</code></pre>
+
+<pre><code>Leave a type under Services.Implementation, rename or delete one, or let a Domain type call EnumerableExtensions: the oracle fails naming it.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>Walking skeleton of the feature: it creates Modules/TrackerIntegration/Domain and Application. Tests: three to Tests/Modules/TrackerIntegration/Domain, two to Application. Work Items rule files stop treating the selectors as their own (membership Stays entries removed, placement fixtures use real new paths, outbound list measured by running the rules).
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>Translation rules called by connectors and Work Items</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>using lines only
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is itself a behaviour-free move.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>One deployable, same commit; see shared record.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>Moved targets keep their existing owner unchanged (git mv, namespace line only); using-line targets change no responsibility. ModuleRules.TypesLiveInTheirLayer is reused by the oracle; the oracle file is CreateNew.
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Impact closed by the target list: every Create target is a git mv, every Extend target is a consumer, rule list, script, config, csproj or budget naming a moved type. Program.cs registrations and order, path-classifier, examine locations and SecretCustody pattern stay compatible; consumer agreements recorded.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>TrackerIntegrationDomainLayoutArchUnitTest reading the compiled assembly
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<p>None.</p>
+
+<pre><code>as the shared boundaries
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L5</h6>
+
+<pre><code>Domain holds exactly WorkItemStateTransitionMapper, ParentSourceSelector, DependencyFieldReferences and reaches only Models and the base library; Application holds WorkItemCategoryCrossing and DependencySourceSelector; Work Items membership lists no selector
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>TrackerIntegrationDomainLayoutArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>three Domain types
+</code></pre>
+
+<pre><code>two Application types
+</code></pre>
+
+<pre><code>made-up Domain type reaching Services, Adapters, Extensions
+</code></pre>
+
+<pre><code>closed list of five types
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T5</h6>
+
+<pre><code>S1: listed types live in their layer, none under Services or Factories, layer edges as the shared boundaries; falsified by made-up offenders in a fixture namespace Modules.TrackerIntegrationFixtures
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationDomainLayoutArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IAzureDevOpsWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IBoardInformationProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IBoardInformationProvider.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IDeliveryForecastPublisher.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IDeliveryForecastPublisher.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IDeliverySourceProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IDeliverySourceProvider.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IFeatureSource.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IFeatureSource.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IIncrementalSource.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IJiraWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ILinearWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/ILinearWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IServiceNowWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IServiceNowWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingAuthStrategy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingAuthStrategy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingAuthStrategyFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingAuthStrategyFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWriteBackTarget.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWriteBackTarget.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingReadException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/WorkTrackingReadException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingRefusedException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/WorkTrackingRefusedException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingConnectorFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Factories/IWorkTrackingConnectorFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingSystemFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Factories/IWorkTrackingSystemFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Factories/WorkTrackingConnectorFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingSystemFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Factories/WorkTrackingSystemFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodKeys.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodKeys.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodSchema.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/Board.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Boards/Board.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/BoardInformation.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Boards/BoardInformation.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactoryTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Factories/WorkTrackingConnectorFactoryTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingSystemFactoryTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Factories/WorkTrackingSystemFactoryTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/AuthenticationMethodKeysTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodKeysTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/AuthenticationMethodSchemaTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchemaTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/IncrementalSourceCapabilityTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/AuthenticationMethodDtoTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05PredefinedFieldEnforcementTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05PredefinedFieldSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/NamedDependencyLinkAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionSecretStatePayloadTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionValidationUnreadableSecretTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice05LighterRoundsScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06SizeWarningInTheLogScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/ParentPlacementAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/ForecastWhileItUpdatesAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowConnectionAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowTeamSyncAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice02SeeWhatIsRunningSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice05AnyBrokenCredentialSaysSoSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WriteBackMappingForNewAdditionalFieldIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S16_ValidateEndpointAccessTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WizardsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WriteBackLicenseGateTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorRatchetFixtures.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataReferenceIdUniquenessTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/LighterRoundsOnPostgresTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DemoDataStateEnteredSeamIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceCsvStateEnteredSeamIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTransitionFallbackIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTransitionSyncIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/FetchFingerprintPinnedDigestTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/JiraReadingVersionFingerprintTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateServiceBaseTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliveryForecastPublishingServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceResolverTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Bug5023JiraRefreshRotationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategyTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBatchedWriteBackTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsSuppressionOutcomeTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWriteBackTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvCancellationGranularityTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnectorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBatchedWriteBackTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliverySourceProviderTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyDogfoodTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraLinkTypeDogfoodTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesLiveTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDirectionDogfoodTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDogfoodTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraQuietWriteBackTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshRefusalTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraScopedTokenIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraSuppressionRetryIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWriteBackTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardPickerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowCancellationGranularityTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowConnectionConfigurationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowRecordClassTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTeamSyncTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTransitionHistoryTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/AzureDevOpsOrganisation.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/FakeJiraDataCenter.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/JiraConnectorTestSetup.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestAuthStrategyFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/WorkItemServiceTestBuilder.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/AuthenticationMethodDto.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/WizardsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ConnectionHealth/ConnectionHealthService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliveryForecastPublishingService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/Providers/JiraOAuthProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/Providers/StubOAuthProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/JiraCloudBasicAuthStrategy.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/LinearApiKeyAuthStrategy.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/NoOpAuthStrategy.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/OAuthBearerAuthStrategy.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/PatAuthStrategy.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsReadException.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraQueryRejectedException.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReadException.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardMapper.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowReadException.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationApplicationLayoutArchUnitTest
+pwsh Lighthouse.Backend/Test-Fast.ps1
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the layout test for Application: the 15 port types, four factory types, AuthenticationMethodKeys, AuthenticationMethodSchema (with AuthenticationMethod and AuthenticationMethodOption), Board and BoardInformation looked up by name.
+</code></pre>
+
+<pre><code>All live in Modules.TrackerIntegration.Application; IWorkTrackingConnectorFactory and WorkTrackingConnectorFactory share one namespace; IBoardInformationProvider names no implementation namespace.
+</code></pre>
+
+<pre><code>Leave one in Services.Interfaces or Factories, split the factory pair across namespaces, or let the board port name a connector namespace: the oracle names it.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>IncrementalSourceCapabilityTest moves with the port to Tests/Modules/TrackerIntegration/Application; ConnectorsWithoutDependenciesTest moves in S3 with the connectors. Both leaks fixed by placement only.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>Connector port IWorkTrackingConnector and capabilities</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:1</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>moved to Application, signature unchanged
+</code></pre>
+
+<p>Connector port IWorkTrackingConnector and capabilities</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>using lines only
+</code></pre>
+
+<p>Connector port IWorkTrackingConnector and capabilities</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>using lines only; edge is legal and listed in feature C
+</code></pre>
+
+<p>Authentication schema read by API DTOs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>API to Application is legal by namespace
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is itself a behaviour-free move.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>One deployable, same commit; see shared record.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>Moved targets keep their existing owner unchanged (git mv, namespace line only); using-line targets change no responsibility. ModuleRules.TypesLiveInTheirLayer is reused by the oracle; the oracle file is CreateNew.
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Impact closed by the target list: every Create target is a git mv, every Extend target is a consumer, rule list, script, config, csproj or budget naming a moved type. Program.cs registrations and order, path-classifier, examine locations and SecretCustody pattern stay compatible; consumer agreements recorded.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>TrackerIntegrationApplicationLayoutArchUnitTest reading the compiled assembly
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<p>None.</p>
+
+<pre><code>as the shared boundaries
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L6</h6>
+
+<pre><code>The port, factories, auth schema and board types live in Application; factory pair shares a namespace; the board port names no implementation namespace
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>TrackerIntegrationApplicationLayoutArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>25 listed types
+</code></pre>
+
+<pre><code>factory pair namespace
+</code></pre>
+
+<pre><code>IBoardInformationProvider signature namespaces
+</code></pre>
+
+<pre><code>closed list
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T6</h6>
+
+<pre><code>S2: listed types live in their layer, none under Services or Factories, layer edges as the shared boundaries; falsified by made-up offenders in a fixture namespace Modules.TrackerIntegrationFixtures
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationApplicationLayoutArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsFieldNames.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFieldNames.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsReadException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsReadException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsWorkTrackingOptionNames.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingOptionNames.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/RelationTypeListing.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/RelationTypeListing.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/WorkItemExtensions.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/WorkItemExtensions.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsBatchedWriteBackTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBatchedWriteBackTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsCancellationGranularityTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsCancellationGranularityTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsHistoryReadTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsHistoryReadTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsRawListsTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsRawListsTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsSuppressionOutcomeTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsSuppressionOutcomeTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsWriteBackTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWriteBackTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvWorkTrackingOptionNames.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingOptionNames.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvCancellationGranularityTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvCancellationGranularityTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvDemoJourneyWithStateMappingTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvWorkTrackingConnectorTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnectorTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/adodata.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/adodata.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/empty-file.txt</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/empty-file.txt
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/invalid-missing-required.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/invalid-missing-required.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/invalid-not-csv.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/invalid-not-csv.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/invalid-wrong-csv.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/invalid-wrong-csv.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/project-valid-all-optional.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/project-valid-all-optional.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/project-valid-depends-on.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/project-valid-depends-on.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/project-valid-required-only.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/project-valid-required-only.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/project-valid-with-optional.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/project-valid-with-optional.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-additional-fields.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-additional-fields.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-all-optional.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-all-optional.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-demo-journey-synthesis.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-demo-journey-synthesis.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-required-only.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-required-only.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-state-since.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-state-since.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-with-optional.csv</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-with-optional.csv
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/Issue.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/Issue.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueExtensions.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraFieldNames.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraFieldNames.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNames.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNames.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraQueryRejectedException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraQueryRejectedException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReadException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReadException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseSweepCost.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCost.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseSweepTally.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepTally.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseVersionReader.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseVersionReader.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraRestRoutes.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraRestRoutes.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraSiteAddress.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraSiteAddress.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingOptionNames.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingOptionNames.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/LinkDirection.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/LinkDirection.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/StandingLink.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/StandingLink.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueExtensionsParentLinkTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensionsParentLinkTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBatchedWriteBackTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBatchedWriteBackTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBoardOriginalNamesTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBoardQueryAssemblyTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBoardReadFailureTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraCancellationGranularityTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraCancellationGranularityTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliveryForecastPublisherTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliveryForecastPublisherTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliverySourceProviderTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDependencyDogfoodTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyDogfoodTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDependencyLinkTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyLinkTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraFieldLookupTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraFieldLookupTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraIncrementalSyncTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraIssuesPerRequestTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIssuesPerRequestTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraLinkTypeDogfoodTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraLinkTypeDogfoodTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraNamedDependencyLinkTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraNamedDependencyLinkTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNamesLiveTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesLiveTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNamesRefusedListTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNamesTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDirectionDogfoodTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDirectionDogfoodTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDogfoodTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDogfoodTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentReadingsTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentReadingsTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraQuietWriteBackTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraQuietWriteBackTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraRefreshOriginalNamesTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshOriginalNamesTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraRefreshRefusalTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshRefusalTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseSweepCostTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCostTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseSweepLineTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraScopedTokenIntegrationTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraScopedTokenIntegrationTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraSiteAddressTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraSiteAddressTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraSuppressionRetryIntegrationTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraSuppressionRetryIntegrationTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWriteBackTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWriteBackTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearResponses.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearResponses.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearWorkTrackingOptionNames.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingOptionNames.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearCancellationGranularityTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearCancellationGranularityTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearDependencyDogfoodTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyDogfoodTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearDependencyRelationTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyRelationTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearFetchRefusalTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearFetchRefusalTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearWorkTrackingConnectorHistoryParsingTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorHistoryParsingTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearWorkTrackingConnectorTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowBoardMapper.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardMapper.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowBoardVerdict.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardVerdict.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowClassLabels.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowClassLabels.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowHistoryQuery.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryQuery.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowHistoryVerdict.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryVerdict.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowReadException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowReadException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowReadScope.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowReadScope.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowStateSpan.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpan.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowStateSpanMapper.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowTeamQueryVerdict.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTeamQueryVerdict.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowValidationVerdict.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdict.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkItemMapper.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkItemMapper.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkTrackingConnector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkTrackingOptionNames.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingOptionNames.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowBoardPickerTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardPickerTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowBoardVerdictTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardVerdictTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowCancellationGranularityTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowCancellationGranularityTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowClassLabelsTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowClassLabelsTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowConnectionConfigurationTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowConnectionConfigurationTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowHistoryQueryTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryQueryTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowHistoryVerdictTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryVerdictTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowRecordClassTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowRecordClassTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowStateSpanMapperTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowTeamQueryVerdictTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTeamQueryVerdictTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowTeamSyncTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTeamSyncTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowTransitionHistoryTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTransitionHistoryTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowValidationVerdictTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdictTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkItemMapperTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkItemMapperTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkTrackingConnectorIntegrationTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorIntegrationTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/JiraCloudBasicAuthStrategy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/JiraCloudBasicAuthStrategy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/LinearApiKeyAuthStrategy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/LinearApiKeyAuthStrategy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/NoOpAuthStrategy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/NoOpAuthStrategy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/OAuthBearerAuthStrategy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/OAuthBearerAuthStrategy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/PatAuthStrategy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/PatAuthStrategy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/ServiceNowBasicAuthStrategy.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/WorkTrackingAuthStrategyFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/WorkTrackingAuthStrategyNotFoundException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyNotFoundException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Auth/ServiceNowBasicAuthStrategyTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategyTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Auth/WorkTrackingAuthStrategyTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/OAuth/OAuthSchemaExtensions.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/OAuth/OAuthSchemaExtensions.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/OAuth/OAuthWorkTrackingOptionNames.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/OAuth/OAuthWorkTrackingOptionNames.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/IIssueFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Factories/IIssueFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactory.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Factories/IssueFactory.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactoryLinkDatesTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Factories/IssueFactoryLinkDatesTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactoryOriginalNamesTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Factories/IssueFactoryOriginalNamesTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactoryRawListsTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Factories/IssueFactoryRawListsTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactoryTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ConnectorsWithoutDependenciesTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/OAuth/OAuthSchemaExtensionsTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthSchemaExtensionsTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05SyntheticLabelRemovalTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/NamedDependencyLinkAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionValidationUnreadableSecretTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/ParentPlacementAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowConnectionAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowTeamSyncAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowHistoryPurityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowValidationVerdictPurityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataReferenceIdUniquenessTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactoryTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingSystemFactoryTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceCsvStateEnteredSeamIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Bug5023JiraRefreshRotationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthCredentialConcurrentLoadTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthProviderRegistryTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/AuthenticationMethodSchemaTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/IncrementalSourceCapabilityTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/AzureDevOpsOrganisation.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/JiraConnectorTestSetup.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestAuthStrategyFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerPayloadSources.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingSystemFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/GlobalSuppressions.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodSchema.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/stryker-config.json</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.servicenow-record-classes.json</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.bug-5973-jira-board-query.json</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.bug-5756-fetch-refusal.json</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5074-blocked-items-slice05.json</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Scripts/test-timings/test-time-budget.json</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Scripts/test-timings/tests/test_check_budget_time_budgets.py</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Scripts/test-timings/tests/test_connector_classes.py</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationConnectorsLayoutArchUnitTest
+pwsh Lighthouse.Backend/Test-Fast.ps1
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the layout test for the connectors: every connector, helper, mapper, verdict, read scope, option-name class, auth strategy and factory, OAuthSchemaExtensions, OAuthWorkTrackingOptionNames, IIssueFactory and IssueFactory looked up by name.
+</code></pre>
+
+<pre><code>Each lives in Modules.TrackerIntegration.Adapters.Connectors.&lt;Tracker|Auth|OAuth&gt;, none under Services, the mirrored tests sit in the mirrored test folder, the CSV test data resolves at its new path, and the path-keyed rules still name a made-up offender there.
+</code></pre>
+
+<pre><code>Leave one type or test folder behind, forget a csproj data entry (CSV test fails to find its file), or a rule whose subject pattern no longer matches: the oracle or the rule falsifier fails.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>The 15 CSV test-data entries in Lighthouse.Backend.Tests.csproj, the Stryker mutate paths, the test-time-budget keys and their Python pins, the connector-class discovery test and the guard lists of test class names follow the moved tests. Stryker test-case-filters match by class name and need no edit.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>CI live-suite selection by path</p>
+
+<p>Scripts/test-selection/path-classifier.sh:13</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>already matches old and new paths (feature A)
+</code></pre>
+
+<p>Test-time budget keys by test class full name</p>
+
+<p>Scripts/test-timings/test-time-budget.json:59</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>five keys renamed to the new test namespaces
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is itself a behaviour-free move.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>One deployable, same commit; see shared record.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>Moved targets keep their existing owner unchanged (git mv, namespace line only); using-line targets change no responsibility. ModuleRules.TypesLiveInTheirLayer is reused by the oracle; the oracle file is CreateNew.
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Impact closed by the target list: every Create target is a git mv, every Extend target is a consumer, rule list, script, config, csproj or budget naming a moved type. Program.cs registrations and order, path-classifier, examine locations and SecretCustody pattern stay compatible; consumer agreements recorded.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>TrackerIntegrationConnectorsLayoutArchUnitTest reading the compiled assembly
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<p>None.</p>
+
+<pre><code>as the shared boundaries
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L7</h6>
+
+<pre><code>Every connector type, helper, auth strategy, OAuth schema helper and issue factory lives in Adapters.Connectors.&lt;Tracker&gt; and reaches no repository
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>TrackerIntegrationConnectorsLayoutArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>per tracker folder
+</code></pre>
+
+<pre><code>Auth and OAuth folders
+</code></pre>
+
+<pre><code>closed list
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T7</h6>
+
+<pre><code>S3: listed types live in their layer, none under Services or Factories, layer edges as the shared boundaries; falsified by made-up offenders in a fixture namespace Modules.TrackerIntegrationFixtures
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationConnectorsLayoutArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCredentialNotValidException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthCredentialNotValidException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthProviderNotFoundException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthProviderNotFoundException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthProviderRegistry.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthProviderRegistry.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthProviderResponseException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthProviderResponseException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshFailedException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthRefreshFailedException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshOptions.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthRefreshOptions.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshTimeoutException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthRefreshTimeoutException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthStateTokenExpiredException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthStateTokenExpiredException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthStateTokenInvalidException.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthStateTokenInvalidException.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthStateTokenIssuer.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthStateTokenIssuer.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/Providers/JiraOAuthProvider.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/StubOAuthProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/OAuth/Providers/StubOAuthProvider.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthProvider.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthProvider.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthProviderRegistry.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthProviderRegistry.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthStateTokenIssuer.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthStateTokenIssuer.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthFlowContext.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Models/OAuth/OAuthFlowContext.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshContext.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Models/OAuth/OAuthRefreshContext.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthStateClaims.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Models/OAuth/OAuthStateClaims.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthTokens.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Models/OAuth/OAuthTokens.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ConnectionHealth/ConnectionHealthCadence.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/ConnectionHealth/ConnectionHealthCadence.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ConnectionHealth/ConnectionHealthService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/ConnectionHealth/ConnectionHealthService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ConnectionHealth/IConnectionHealthService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Interfaces/ConnectionHealth/IConnectionHealthService.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Background/ConnectionHealthProber.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend/Services/Implementation/BackgroundServices/ConnectionHealthProber.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/Bug5023JiraRefreshRotationTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/Bug5023JiraRefreshRotationTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthCredentialConcurrentLoadTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthCredentialConcurrentLoadTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthProviderRegistryTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthProviderRegistryTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshSingleFlightTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthServiceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthStateSecretPersistenceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthStateSecretPersistenceTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthStateTokenIssuerTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthStateTokenIssuerTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProviderTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/AdoOAuthProviderTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProviderTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionHealthSingleWriterArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostIsReleasedAfterDisposeTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Auth/WorkTrackingAuthStrategyTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestDoubles/CountingStubOAuthProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestAuthStrategyFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/ConnectionHealthController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/OAuthBearerAuthStrategy.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.feature</p>
+
+<p>Extend</p>
+
+<pre><code>using lines, full-name strings or paths naming a moved type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationOAuthAndHealthLayoutArchUnitTest
+pwsh Lighthouse.Backend/Test-Fast.ps1
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the layout test for OAuth and health: OAuth service, registry, issuer, refresh options, 7 exceptions, 4 interfaces and the four Models value types in Application.OAuth; health service, cadence and interface in Application.ConnectionHealth; the three providers in Adapters.OAuth; ConnectionHealthProber in Adapters.Background; and no Moves type under Services or Factories.
+</code></pre>
+
+<pre><code>Every type found in its namespace and the TrackerIntegrationMembership Moves list has no member left under Services or Factories; ConnectionHealthSingleWriter still names a made-up offender.
+</code></pre>
+
+<pre><code>Leave any Moves type under Services, move an entity or wire type, or leave OAuthFlowContext in Models: the oracle fails.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>The four admitted Models value types move to Application/OAuth; OAuthCompleteResult stays (OAuthController reads it). OAuthSchemaExtensionsTest moved in S3. Connection health has no unit test of its own to move.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>OAuth service and provider ports</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>using lines only
+</code></pre>
+
+<p>Connection health port</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/ConnectionHealthController.cs:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>using lines only
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is itself a behaviour-free move.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>One deployable, same commit; see shared record.
+</code></pre>
+
+<p>reuse</p>
+
+<pre><code>Moved targets keep their existing owner unchanged (git mv, namespace line only); using-line targets change no responsibility. ModuleRules.TypesLiveInTheirLayer is reused by the oracle; the oracle file is CreateNew.
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>Impact closed by the target list: every Create target is a git mv, every Extend target is a consumer, rule list, script, config, csproj or budget naming a moved type. Program.cs registrations and order, path-classifier, examine locations and SecretCustody pattern stay compatible; consumer agreements recorded.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>TrackerIntegrationOAuthAndHealthLayoutArchUnitTest reading the compiled assembly
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<p>None.</p>
+
+<pre><code>as the shared boundaries
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L8</h6>
+
+<pre><code>OAuth and health live in Application.OAuth, Application.ConnectionHealth, Adapters.OAuth, Adapters.Background; no Moves type is left under Services or Factories
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>TrackerIntegrationOAuthAndHealthLayoutArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>four layer folders
+</code></pre>
+
+<pre><code>no leftover Moves type
+</code></pre>
+
+<pre><code>closed list
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T8</h6>
+
+<pre><code>S4: listed types live in their layer, none under Services or Factories, layer edges as the shared boundaries; falsified by made-up offenders in a fixture namespace Modules.TrackerIntegrationFixtures
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationOAuthAndHealthLayoutArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>

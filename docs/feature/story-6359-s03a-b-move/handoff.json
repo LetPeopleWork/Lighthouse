@@ -1,0 +1,3509 @@
+{
+"counters": {
+"C": 2,
+"D": 24,
+"E": 6,
+"F": 677,
+"K": 8,
+"L": 8,
+"P": 6,
+"S": 4,
+"T": 8,
+"Y": 4
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F379",
+"driven_ports": [
+"F375",
+"F376",
+"F377",
+"F378"
+],
+"driving_port": "F374"
+},
+"claims": [
+{
+"admitted_input": "F385",
+"bypass": "F387",
+"constructor": "git mv plus namespace line",
+"consumer": "ModuleRules.TypesLiveInTheirLayer",
+"harm": "F384",
+"id": "C2",
+"owner": "TrackerIntegrationMembership and the four layout oracles",
+"proposition": "F383",
+"public_observation": "F386"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F392",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F391"
+},
+{
+"axis": "Inhabitation",
+"basis": "F393",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F391"
+},
+{
+"axis": "PublicReachability",
+"basis": "F394",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F391"
+},
+{
+"axis": "Liveness",
+"basis": "F395",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F391"
+}
+],
+"constraints": [
+{
+"id": "K5",
+"text": "F368"
+},
+{
+"id": "K6",
+"text": "F369"
+},
+{
+"id": "K7",
+"text": "F370"
+},
+{
+"id": "K8",
+"text": "F371"
+}
+],
+"decisions": [
+{
+"id": "D13",
+"text": "F356"
+},
+{
+"id": "D14",
+"text": "F357"
+},
+{
+"id": "D15",
+"text": "F358"
+},
+{
+"id": "D16",
+"text": "F359"
+},
+{
+"id": "D17",
+"text": "F360"
+},
+{
+"id": "D18",
+"text": "F361"
+},
+{
+"id": "D19",
+"text": "F362"
+},
+{
+"id": "D20",
+"text": "F363"
+},
+{
+"id": "D21",
+"text": "F364"
+},
+{
+"id": "D22",
+"text": "F365"
+},
+{
+"id": "D23",
+"text": "F366"
+},
+{
+"id": "D24",
+"text": "F367"
+}
+],
+"equality": [
+{
+"definition": "F382",
+"under": "layout observation"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F372"
+},
+{
+"analysis": "prefactoring",
+"reason": "F373"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F381",
+"description": "F380",
+"result_type": "IReadOnlyList of full type names and verdict naming each offender"
+}
+],
+"risks": [
+{
+"allowed": "F398",
+"forbidden": "F399",
+"id": "Y3",
+"kind": "Bypass",
+"owner": "acceptance designer and reviewer",
+"preserved": "F397",
+"residue": "F400",
+"source": "F396"
+},
+{
+"allowed": "F403",
+"forbidden": "F404",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "host",
+"preserved": "F402",
+"residue": "F405",
+"source": "F401"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "crafter",
+"state": "F388"
+},
+{
+"kind": "Excluded",
+"owner": "layout oracles",
+"state": "F389"
+},
+{
+"kind": "Unknown",
+"owner": "maintainer",
+"state": "F390"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F420",
+"falsifier": "F421",
+"promises": [
+"P1"
+],
+"stimulus": "F419"
+},
+"records": {
+"agreement": [
+{
+"contract": "Translation rules called by connectors and Work Items",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1",
+"party": "Consumer",
+"reason": "F423"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationDomainLayoutArchUnitTest",
+"id": "T5",
+"obligation": "F435",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F429",
+"driving_port": "F428"
+},
+"decisions": [
+"F422"
+],
+"laws": [
+{
+"id": "L5",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "TrackerIntegrationDomainLayoutArchUnitTest",
+"statement": "F430",
+"treatment": {
+"cases": [
+"F431",
+"F432",
+"F433"
+],
+"kind": "Finite",
+"reason": "F434"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F424"
+},
+{
+"analysis": "contract_tests",
+"reason": "F425"
+},
+{
+"analysis": "reuse",
+"reason": "F426"
+},
+{
+"analysis": "impact",
+"reason": "F427"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/WorkItemStateTransitionMapper.cs",
+"reason": "F406"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/ParentSourceSelector.cs",
+"reason": "F407"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/DependencyFieldReferences.cs",
+"reason": "F408"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkItemCategoryCrossing.cs",
+"reason": "F409"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/DependencySourceSelector.cs",
+"reason": "F410"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/WorkItemStateTransitionMapperTest.cs",
+"reason": "F411"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/ParentSourceSelectorOrderTest.cs",
+"reason": "F412"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/ParentSourceSelectorOwnParentTest.cs",
+"reason": "F413"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/ParentSourceSelectorTest.cs",
+"reason": "F414"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/DependencyFieldReferencesTest.cs",
+"reason": "F415"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkItemCategoryCrossingTest.cs",
+"reason": "F416"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/DependencySourceSelectorTest.cs",
+"reason": "F417"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ParentSourcesOwnerWriteThroughTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WhereAPortfoliosWorkItemHangsTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WhereATeamsWorkItemHangsTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTransitionFallbackIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTransitionSyncIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs",
+"reason": "F418"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationDomainLayoutArchUnitTest",
+"pwsh Lighthouse.Backend/Test-Fast.ps1",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F465",
+"falsifier": "F466",
+"promises": [
+"P1"
+],
+"stimulus": "F464"
+},
+"records": {
+"agreement": [
+{
+"contract": "Connector port IWorkTrackingConnector and capabilities",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs:1",
+"party": "Producer",
+"reason": "F468"
+},
+{
+"contract": "Connector port IWorkTrackingConnector and capabilities",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1",
+"party": "Consumer",
+"reason": "F423"
+},
+{
+"contract": "Connector port IWorkTrackingConnector and capabilities",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs:1",
+"party": "Consumer",
+"reason": "F469"
+},
+{
+"contract": "Authentication schema read by API DTOs",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs:1",
+"party": "Consumer",
+"reason": "F470"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationApplicationLayoutArchUnitTest",
+"id": "T6",
+"obligation": "F477",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F429",
+"driving_port": "F471"
+},
+"decisions": [
+"F467"
+],
+"laws": [
+{
+"id": "L6",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "TrackerIntegrationApplicationLayoutArchUnitTest",
+"statement": "F472",
+"treatment": {
+"cases": [
+"F473",
+"F474",
+"F475"
+],
+"kind": "Finite",
+"reason": "F476"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F424"
+},
+{
+"analysis": "contract_tests",
+"reason": "F425"
+},
+{
+"analysis": "reuse",
+"reason": "F426"
+},
+{
+"analysis": "impact",
+"reason": "F427"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IAzureDevOpsWorkTrackingConnector.cs",
+"reason": "F436"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IBoardInformationProvider.cs",
+"reason": "F437"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IDeliveryForecastPublisher.cs",
+"reason": "F438"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IDeliverySourceProvider.cs",
+"reason": "F439"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IFeatureSource.cs",
+"reason": "F440"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IIncrementalSource.cs",
+"reason": "F441"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IJiraWorkTrackingConnector.cs",
+"reason": "F442"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ILinearWorkTrackingConnector.cs",
+"reason": "F443"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IServiceNowWorkTrackingConnector.cs",
+"reason": "F444"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingAuthStrategy.cs",
+"reason": "F445"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingAuthStrategyFactory.cs",
+"reason": "F446"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingConnector.cs",
+"reason": "F447"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWriteBackTarget.cs",
+"reason": "F448"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingReadException.cs",
+"reason": "F449"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingRefusedException.cs",
+"reason": "F450"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingConnectorFactory.cs",
+"reason": "F451"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingSystemFactory.cs",
+"reason": "F452"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactory.cs",
+"reason": "F453"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingSystemFactory.cs",
+"reason": "F454"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodKeys.cs",
+"reason": "F455"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodSchema.cs",
+"reason": "F456"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/Board.cs",
+"reason": "F457"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/BoardInformation.cs",
+"reason": "F458"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactoryTest.cs",
+"reason": "F459"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingSystemFactoryTest.cs",
+"reason": "F460"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/AuthenticationMethodKeysTest.cs",
+"reason": "F461"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/AuthenticationMethodSchemaTest.cs",
+"reason": "F462"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/IncrementalSourceCapabilityTest.cs",
+"reason": "F463"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/AuthenticationMethodDtoTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05PredefinedFieldEnforcementTests.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05PredefinedFieldSpecifications.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/NamedDependencyLinkAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionSecretStatePayloadTests.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionValidationUnreadableSecretTests.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice05LighterRoundsScenarios.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06SizeWarningInTheLogScenarios.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/ParentPlacementAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/ForecastWhileItUpdatesAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowConnectionAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowTeamSyncAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice02SeeWhatIsRunningSpecifications.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice05AnyBrokenCredentialSaysSoSpecifications.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WriteBackMappingForNewAdditionalFieldIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S16_ValidateEndpointAccessTests.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WizardsControllerTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WriteBackLicenseGateTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorRatchetFixtures.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorsDeclareNoUnsupportedMembersArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataReferenceIdUniquenessTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/LighterRoundsOnPostgresTests.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DemoDataStateEnteredSeamIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceCsvStateEnteredSeamIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceFeatureTransitionIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTransitionFallbackIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTransitionSyncIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/FetchFingerprintPinnedDigestTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Domain/JiraReadingVersionFingerprintTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateServiceBaseTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliveryForecastPublishingServiceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceResolverTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Bug5023JiraRefreshRotationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategyTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBatchedWriteBackTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsSuppressionOutcomeTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWriteBackTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvCancellationGranularityTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnectorTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBatchedWriteBackTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliverySourceProviderTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyDogfoodTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraLinkTypeDogfoodTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesLiveTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDirectionDogfoodTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDogfoodTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraQuietWriteBackTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshRefusalTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraScopedTokenIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraSuppressionRetryIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWriteBackTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardPickerTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowCancellationGranularityTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowConnectionConfigurationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowRecordClassTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTeamSyncTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTransitionHistoryTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/AzureDevOpsOrganisation.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/FakeJiraDataCenter.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/JiraConnectorTestSetup.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestAuthStrategyFactory.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/WorkItemServiceTestBuilder.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/AuthenticationMethodDto.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WizardsController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ConnectionHealth/ConnectionHealthService.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliveryForecastPublishingService.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/Providers/JiraOAuthProvider.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/Providers/StubOAuthProvider.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/JiraCloudBasicAuthStrategy.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/LinearApiKeyAuthStrategy.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/NoOpAuthStrategy.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/OAuthBearerAuthStrategy.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/PatAuthStrategy.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyFactory.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsReadException.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraQueryRejectedException.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReadException.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardMapper.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowReadException.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs",
+"reason": "F418"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationApplicationLayoutArchUnitTest",
+"pwsh Lighthouse.Backend/Test-Fast.ps1",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F624",
+"falsifier": "F625",
+"promises": [
+"P1"
+],
+"stimulus": "F623"
+},
+"records": {
+"agreement": [
+{
+"contract": "CI live-suite selection by path",
+"decision": "UnchangedCompatible",
+"locator": "Scripts/test-selection/path-classifier.sh:13",
+"party": "Consumer",
+"reason": "F627"
+},
+{
+"contract": "Test-time budget keys by test class full name",
+"decision": "Migrated",
+"locator": "Scripts/test-timings/test-time-budget.json:59",
+"party": "Consumer",
+"reason": "F628"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationConnectorsLayoutArchUnitTest",
+"id": "T7",
+"obligation": "F633",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F429",
+"driving_port": "F629"
+},
+"decisions": [
+"F626"
+],
+"laws": [
+{
+"id": "L7",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "TrackerIntegrationConnectorsLayoutArchUnitTest",
+"statement": "F630",
+"treatment": {
+"cases": [
+"F631",
+"F632"
+],
+"kind": "Finite",
+"reason": "F476"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F424"
+},
+{
+"analysis": "contract_tests",
+"reason": "F425"
+},
+{
+"analysis": "reuse",
+"reason": "F426"
+},
+{
+"analysis": "impact",
+"reason": "F427"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsFieldNames.cs",
+"reason": "F478"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsReadException.cs",
+"reason": "F479"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+"reason": "F480"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsWorkTrackingOptionNames.cs",
+"reason": "F481"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/RelationTypeListing.cs",
+"reason": "F482"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/WorkItemExtensions.cs",
+"reason": "F483"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsBatchedWriteBackTest.cs",
+"reason": "F484"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs",
+"reason": "F485"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsCancellationGranularityTest.cs",
+"reason": "F486"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs",
+"reason": "F487"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs",
+"reason": "F488"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsHistoryReadTest.cs",
+"reason": "F489"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs",
+"reason": "F490"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs",
+"reason": "F491"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsRawListsTest.cs",
+"reason": "F492"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsSuppressionOutcomeTest.cs",
+"reason": "F493"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs",
+"reason": "F494"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsWriteBackTest.cs",
+"reason": "F495"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvWorkTrackingConnector.cs",
+"reason": "F496"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvWorkTrackingOptionNames.cs",
+"reason": "F497"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvCancellationGranularityTest.cs",
+"reason": "F498"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvDemoJourneyWithStateMappingTest.cs",
+"reason": "F499"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/CsvWorkTrackingConnectorTest.cs",
+"reason": "F500"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/adodata.csv",
+"reason": "F501"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/empty-file.txt",
+"reason": "F502"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/invalid-missing-required.csv",
+"reason": "F503"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/invalid-not-csv.csv",
+"reason": "F504"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/invalid-wrong-csv.csv",
+"reason": "F505"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/project-valid-all-optional.csv",
+"reason": "F506"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/project-valid-depends-on.csv",
+"reason": "F507"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/project-valid-required-only.csv",
+"reason": "F508"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/project-valid-with-optional.csv",
+"reason": "F509"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-additional-fields.csv",
+"reason": "F510"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-all-optional.csv",
+"reason": "F511"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-demo-journey-synthesis.csv",
+"reason": "F512"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-required-only.csv",
+"reason": "F513"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-state-since.csv",
+"reason": "F514"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-with-optional.csv",
+"reason": "F515"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/Issue.cs",
+"reason": "F516"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueExtensions.cs",
+"reason": "F517"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraFieldNames.cs",
+"reason": "F518"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNames.cs",
+"reason": "F519"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraQueryRejectedException.cs",
+"reason": "F520"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReadException.cs",
+"reason": "F521"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseSweepCost.cs",
+"reason": "F522"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseSweepTally.cs",
+"reason": "F523"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseVersionReader.cs",
+"reason": "F524"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraRestRoutes.cs",
+"reason": "F525"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraSiteAddress.cs",
+"reason": "F526"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs",
+"reason": "F527"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingOptionNames.cs",
+"reason": "F528"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/LinkDirection.cs",
+"reason": "F529"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/StandingLink.cs",
+"reason": "F530"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueExtensionsParentLinkTest.cs",
+"reason": "F531"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBatchedWriteBackTest.cs",
+"reason": "F532"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBoardOriginalNamesTest.cs",
+"reason": "F533"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBoardQueryAssemblyTest.cs",
+"reason": "F534"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBoardReadFailureTest.cs",
+"reason": "F535"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraCancellationGranularityTest.cs",
+"reason": "F536"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliveryForecastPublisherTest.cs",
+"reason": "F537"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs",
+"reason": "F538"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDependencyDogfoodTest.cs",
+"reason": "F539"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDependencyLinkTest.cs",
+"reason": "F540"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraFieldLookupTest.cs",
+"reason": "F541"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraIncrementalSyncTest.cs",
+"reason": "F542"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraIssuesPerRequestTest.cs",
+"reason": "F543"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraLinkTypeDogfoodTest.cs",
+"reason": "F544"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraNamedDependencyLinkTest.cs",
+"reason": "F545"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNamesLiveTest.cs",
+"reason": "F546"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNamesRefusedListTest.cs",
+"reason": "F547"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNamesTest.cs",
+"reason": "F548"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDirectionDogfoodTest.cs",
+"reason": "F549"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDogfoodTest.cs",
+"reason": "F550"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentReadingsTest.cs",
+"reason": "F551"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraQuietWriteBackTest.cs",
+"reason": "F552"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraRefreshOriginalNamesTest.cs",
+"reason": "F553"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraRefreshRefusalTest.cs",
+"reason": "F554"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseSweepCostTest.cs",
+"reason": "F555"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraReleaseSweepLineTest.cs",
+"reason": "F556"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraScopedTokenIntegrationTest.cs",
+"reason": "F557"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraSiteAddressTest.cs",
+"reason": "F558"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraSuppressionRetryIntegrationTest.cs",
+"reason": "F559"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs",
+"reason": "F560"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorTest.cs",
+"reason": "F561"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWriteBackTest.cs",
+"reason": "F562"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearResponses.cs",
+"reason": "F563"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearWorkTrackingConnector.cs",
+"reason": "F564"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearWorkTrackingOptionNames.cs",
+"reason": "F565"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearCancellationGranularityTest.cs",
+"reason": "F566"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearDependencyDogfoodTest.cs",
+"reason": "F567"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearDependencyRelationTest.cs",
+"reason": "F568"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearFetchRefusalTest.cs",
+"reason": "F569"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearWorkTrackingConnectorHistoryParsingTest.cs",
+"reason": "F570"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearWorkTrackingConnectorTest.cs",
+"reason": "F571"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowBoardMapper.cs",
+"reason": "F572"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowBoardVerdict.cs",
+"reason": "F573"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowClassLabels.cs",
+"reason": "F574"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowHistoryQuery.cs",
+"reason": "F575"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowHistoryVerdict.cs",
+"reason": "F576"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowReadException.cs",
+"reason": "F577"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowReadScope.cs",
+"reason": "F578"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowStateSpan.cs",
+"reason": "F579"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowStateSpanMapper.cs",
+"reason": "F580"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowTeamQueryVerdict.cs",
+"reason": "F581"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowValidationVerdict.cs",
+"reason": "F582"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkItemMapper.cs",
+"reason": "F583"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+"reason": "F584"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkTrackingOptionNames.cs",
+"reason": "F585"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowBoardPickerTest.cs",
+"reason": "F586"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowBoardVerdictTest.cs",
+"reason": "F587"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowCancellationGranularityTest.cs",
+"reason": "F588"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowClassLabelsTest.cs",
+"reason": "F589"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowConnectionConfigurationTest.cs",
+"reason": "F590"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowHistoryQueryTest.cs",
+"reason": "F591"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowHistoryVerdictTest.cs",
+"reason": "F592"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowRecordClassTest.cs",
+"reason": "F593"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs",
+"reason": "F594"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowStateSpanMapperTest.cs",
+"reason": "F595"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowTeamQueryVerdictTest.cs",
+"reason": "F596"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowTeamSyncTest.cs",
+"reason": "F597"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowTransitionHistoryTest.cs",
+"reason": "F598"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowValidationVerdictTest.cs",
+"reason": "F599"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkItemMapperTest.cs",
+"reason": "F600"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkTrackingConnectorIntegrationTest.cs",
+"reason": "F601"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
+"reason": "F602"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/JiraCloudBasicAuthStrategy.cs",
+"reason": "F603"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/LinearApiKeyAuthStrategy.cs",
+"reason": "F604"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/NoOpAuthStrategy.cs",
+"reason": "F605"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/OAuthBearerAuthStrategy.cs",
+"reason": "F606"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/PatAuthStrategy.cs",
+"reason": "F607"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/ServiceNowBasicAuthStrategy.cs",
+"reason": "F608"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/WorkTrackingAuthStrategyFactory.cs",
+"reason": "F609"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/WorkTrackingAuthStrategyNotFoundException.cs",
+"reason": "F610"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Auth/ServiceNowBasicAuthStrategyTest.cs",
+"reason": "F611"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Auth/WorkTrackingAuthStrategyTest.cs",
+"reason": "F612"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/OAuth/OAuthSchemaExtensions.cs",
+"reason": "F613"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/OAuth/OAuthWorkTrackingOptionNames.cs",
+"reason": "F614"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/IIssueFactory.cs",
+"reason": "F615"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactory.cs",
+"reason": "F616"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactoryLinkDatesTest.cs",
+"reason": "F617"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactoryOriginalNamesTest.cs",
+"reason": "F618"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactoryRawListsTest.cs",
+"reason": "F619"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/IssueFactoryTest.cs",
+"reason": "F620"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/ConnectorsWithoutDependenciesTest.cs",
+"reason": "F621"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/OAuth/OAuthSchemaExtensionsTest.cs",
+"reason": "F622"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05SyntheticLabelRemovalTests.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/NamedDependencyLinkAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionValidationUnreadableSecretTests.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/ParentPlacementAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceScenarios.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkScenarios.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowConnectionAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowTeamSyncAcceptanceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/RefreshesStayTheSameTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectorPortSpeaksPortfolioArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FeatureSourceCapabilityArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowHistoryPurityArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ServiceNowValidationVerdictPurityArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataReferenceIdUniquenessTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactoryTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingSystemFactoryTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceCsvStateEnteredSeamIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/Bug5023JiraRefreshRotationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthCredentialConcurrentLoadTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthProviderRegistryTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/AuthenticationMethodSchemaTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/IncrementalSourceCapabilityTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/AzureDevOpsOrganisation.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/JiraConnectorTestSetup.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestAuthStrategyFactory.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerPayloadSources.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactory.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingSystemFactory.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/GlobalSuppressions.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodSchema.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/stryker-config.json",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.servicenow-record-classes.json",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.bug-5973-jira-board-query.json",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.bug-5756-fetch-refusal.json",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5074-blocked-items-slice05.json",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Scripts/test-timings/test-time-budget.json",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Scripts/test-timings/tests/test_check_budget_time_budgets.py",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Scripts/test-timings/tests/test_connector_classes.py",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",
+"reason": "F418"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationConnectorsLayoutArchUnitTest",
+"pwsh Lighthouse.Backend/Test-Fast.ps1",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F670",
+"falsifier": "F671",
+"promises": [
+"P1"
+],
+"stimulus": "F669"
+},
+"records": {
+"agreement": [
+{
+"contract": "OAuth service and provider ports",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs:1",
+"party": "Consumer",
+"reason": "F423"
+},
+{
+"contract": "Connection health port",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ConnectionHealthController.cs:1",
+"party": "Consumer",
+"reason": "F423"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationOAuthAndHealthLayoutArchUnitTest",
+"id": "T8",
+"obligation": "F677",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F429",
+"driving_port": "F673"
+},
+"decisions": [
+"F672"
+],
+"laws": [
+{
+"id": "L8",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "TrackerIntegrationOAuthAndHealthLayoutArchUnitTest",
+"statement": "F674",
+"treatment": {
+"cases": [
+"F675",
+"F676"
+],
+"kind": "Finite",
+"reason": "F476"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F424"
+},
+{
+"analysis": "contract_tests",
+"reason": "F425"
+},
+{
+"analysis": "reuse",
+"reason": "F426"
+},
+{
+"analysis": "impact",
+"reason": "F427"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthCredentialNotValidException.cs",
+"reason": "F634"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthProviderNotFoundException.cs",
+"reason": "F635"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthProviderRegistry.cs",
+"reason": "F636"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthProviderResponseException.cs",
+"reason": "F637"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshFailedException.cs",
+"reason": "F638"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshOptions.cs",
+"reason": "F639"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshTimeoutException.cs",
+"reason": "F640"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs",
+"reason": "F641"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthStateTokenExpiredException.cs",
+"reason": "F642"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthStateTokenInvalidException.cs",
+"reason": "F643"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthStateTokenIssuer.cs",
+"reason": "F644"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProvider.cs",
+"reason": "F645"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProvider.cs",
+"reason": "F646"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/StubOAuthProvider.cs",
+"reason": "F647"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthProvider.cs",
+"reason": "F648"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthProviderRegistry.cs",
+"reason": "F649"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthService.cs",
+"reason": "F650"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthStateTokenIssuer.cs",
+"reason": "F651"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthFlowContext.cs",
+"reason": "F652"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshContext.cs",
+"reason": "F653"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthStateClaims.cs",
+"reason": "F654"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthTokens.cs",
+"reason": "F655"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ConnectionHealth/ConnectionHealthCadence.cs",
+"reason": "F656"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ConnectionHealth/ConnectionHealthService.cs",
+"reason": "F657"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/ConnectionHealth/IConnectionHealthService.cs",
+"reason": "F658"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Background/ConnectionHealthProber.cs",
+"reason": "F659"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/Bug5023JiraRefreshRotationTest.cs",
+"reason": "F660"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthCredentialConcurrentLoadTest.cs",
+"reason": "F661"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthProviderRegistryTest.cs",
+"reason": "F662"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshSingleFlightTest.cs",
+"reason": "F663"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthServiceTest.cs",
+"reason": "F664"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthStateSecretPersistenceTest.cs",
+"reason": "F665"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthStateTokenIssuerTest.cs",
+"reason": "F666"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProviderTest.cs",
+"reason": "F667"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProviderTest.cs",
+"reason": "F668"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthControllerIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OAuthProviderAbstractionIntegrationTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ConnectionHealthSingleWriterArchUnitTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostIsReleasedAfterDisposeTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Auth/WorkTrackingAuthStrategyTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestDoubles/CountingStubOAuthProvider.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestAuthStrategyFactory.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ConnectionHealthController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/OAuthController.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/OAuthBearerAuthStrategy.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",
+"reason": "F418"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.feature",
+"reason": "F418"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationOAuthAndHealthLayoutArchUnitTest",
+"pwsh Lighthouse.Backend/Test-Fast.ps1",
+"dotnet build Lighthouse.Backend"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F350"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F351"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F352"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F353"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F354"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F355"
+}
+]
+},
+"facts": {
+"F1": "Story #6359 S03a feature B of three (the move): move the Tracker integration types feature A's membership test lists (TrackerIntegrationMembership.Moves, plus the four admitted Models OAuth value types OAuthFlowContext, OAuthRefreshContext, OAuthStateClaims, OAuthTokens) out of Services and Factories into Lighthouse.Backend/Modules/TrackerIntegration, namespace = folder: the translation rules (category crossing, state-transition mapper, parent and dependency source selectors, dependency field references) into Domain (B1); the connector port, capabilities, factories, auth schema and board types into Application (B2); the five connectors, their helpers, the auth strategies, the OAuth schema helpers and Jira's issue factory into Adapters/Connectors/<Tracker> (B3); OAuth and connection health into Application/OAuth, Application/ConnectionHealth, Adapters/OAuth and Adapters/Background (B4). Unit tests move with the files they test (D-9). Pure moves in their own commits, edits apart. Behaviour-free. Design: docs/feature/story-6359-s03a-package-tracker-integration/feature-delta.md (slices B1-B4, D-0 to D-12, Ratchet design, Component decomposition).",
+"F10": "B2: move the connector port, capabilities, factories, auth schema and board types and their tests into Modules/TrackerIntegration/Application.",
+"F11": "B3: move the five connectors, helpers, auth strategies, OAuth schema helpers and IssueFactory with their tests into Adapters/Connectors/<Tracker>; Stryker configs and test-time budgets follow.",
+"F12": "B4: move OAuth, connection health, the OAuth providers and the prober with the four admitted Models value types and their tests.",
+"F13": "The module's own boundary rules, the unit-test placement rule and retiring the old leaf pattern and old classifier alternatives: feature C.",
+"F14": "Repositories, the connection save service, connection usage, the write-back round, encryption, demo data, controllers, API DTOs and entities stay where they are (D-1, D-4, D-6).",
+"F15": "Any behaviour a user sees: nothing changes; UI sketch and loading/failure looks are N/A.",
+"F16": "Rigor standard for feature B: crafter, acceptance designer and architect on sonnet; reviewers and EXAMINE on haiku (maintainer, 2026-11-16).",
+"F17": "Push per slice, CI watched per push, each push runs all live connector suites in CI (maintainer, 2026-11-16 and 2026-11-17; overrides D-11's push-once recommendation).",
+"F18": "Unit tests move with their production files in the same slice, in a separate move commit (D-9); Program.cs registrations and their order stay, only using lines change (D-10).",
+"F19": "Hold after feature B: B4 pushed with CI green, whole-candidate review and EXAMINE accepted (maintainer, 2026-11-17).",
+"F2": "Tracker integration lives in its own module folder, so feature C can give it its own module rules",
+"F20": "The maintainer runs dotnet build and the architecture tests locally after each slice; the moved types sit in their layer and every rule stays green.",
+"F21": "Not supplied.",
+"F22": "The maintainer pushes each slice; CI runs the live connector suites and stays green.",
+"F23": "B1: the category crossing, the state-transition mapper, ParentSourceSelector, DependencySourceSelector and DependencyFieldReferences live in Modules/TrackerIntegration/Domain, which reaches only the kernel; Work Items' membership, boundary and layout rules no longer list the selectors. Oracle TrackerIntegrationDomainLayoutArchUnitTest is RED first (types not in Domain). The feature's walking skeleton.",
+"F24": "B2: the connector port (15 types), the factories and their interfaces, the auth schema and Board/BoardInformation live in Modules/TrackerIntegration/Application; the two S06 leaks are fixed by placement. Oracle TrackerIntegrationApplicationLayoutArchUnitTest is RED first.",
+"F25": "B3: the five connectors, their helpers, the auth strategies, the OAuth schema helpers and IIssueFactory/IssueFactory live in Modules/TrackerIntegration/Adapters/Connectors/<Tracker> with their unit tests mirrored; CSV test-data entries in the test csproj, Stryker configs and test-time budgets follow. Oracle TrackerIntegrationConnectorsLayoutArchUnitTest is RED first.",
+"F26": "B4: OAuth (service, registry, state tokens, exceptions, ports and the four admitted Models value types) in Application/OAuth, connection health in Application/ConnectionHealth, the OAuth providers in Adapters/OAuth, ConnectionHealthProber in Adapters/Background; no Moves type left under Services or Factories. Oracle TrackerIntegrationOAuthAndHealthLayoutArchUnitTest is RED first.",
+"F3": "Tracker integration lives in Modules/TrackerIntegration in the layers the design names, and nothing a user, a tracker or the database sees changes.",
+"F350": "Users, trackers and the database see no change from the tracker integration move: same behaviour and same stored data.",
+"F351": "Category crossing, state-transition mapping, parent and dependency selection and dependency field references give users the same results as before the move. Namespace placement is architectural and goes to candidate review, not user observation.",
+"F352": "Connector behaviour, auth setup and board listing are unchanged for users after the port and factories move. Namespace placement of the port, factories and board types is architectural and goes to candidate review.",
+"F353": "Each of the five trackers still connects, authenticates and syncs exactly as before the move, and CI still runs that tracker's live suite.",
+"F354": "OAuth connect, token refresh, provider handling and connection health behave for users exactly as before the move. Namespace placement is architectural and goes to candidate review.",
+"F355": "Every existing test passes unmodified apart from moves. Refresh answers, forecasts, routes, DTOs, DI lifetimes, handler order and the EF model are unchanged, and the live connector suites are green in CI.",
+"F356": "Placement: every type of TrackerIntegrationMembership.Moves and the four admitted Models OAuth value types moves by git mv to Lighthouse.Backend/Modules/TrackerIntegration, namespace equals folder. Layers: Domain, Application, Application/OAuth, Application/ConnectionHealth, Adapters/Connectors/{AzureDevOps,Csv,Jira,Linear,ServiceNow,Auth,OAuth}, Adapters/OAuth, Adapters/Background. Unit tests move with their files to Lighthouse.Backend.Tests/Modules/TrackerIntegration/<same sub-folder> in the same slice. Slice order S1 then S2 then S3 then S4.",
+"F357": "Domain exception, measured: WorkItemCategoryCrossing calls EnumerableExtensions.IsItemInList and DependencySourceSelector calls Extensions.WorkItemExtensions.GetAdditionalFieldValue, both in namespace Lighthouse.Backend.Extensions, which ModuleRules.DomainReachesOnlyTheKernelAndTheBaseLibrary rejects (kernel is Lighthouse.Backend.Models plus the base library). Both therefore go to Application in S1, no code edit to avoid it. WorkItemStateTransitionMapper, ParentSourceSelector and DependencyFieldReferences use only Models and go to Domain, flat folder.",
+"F358": "Stay unchanged: repositories, connection save and usage, write-back round, Encryption, demo data (Factories keeps only demo data), Health, controllers, API DTOs, entities, all other Models types (OAuthCompleteResult, OAuthCredential, ConnectionHealthVerdict and the rest).",
+"F359": "Commit shape per slice: oracle commit, pure-move commit (git mv plus namespace line only, tests included), edits (using lines, full-name strings in rule lists, scripts, configs, csproj, budgets) uncommitted for the host, then review record. Program.cs registrations and order stay, only using lines change. No class is created, split or merged; no signature changes; no EF model change.",
+"F360": "Layer algebra. Domain: states are pure values; operations are the five translation rules over handed-in data; observation is the set of Domain-namespace types and their IL dependency targets; equality is type full name. Application: operations are the connector port, factories, OAuth and health use cases; observation is the namespace of each type and the IL edges to Adapters, which must be empty; factory interface and class share one namespace; Board and BoardInformation sit beside IBoardInformationProvider. Adapters: connectors, strategies, providers, prober; observation is namespace and that connectors reach no repository. Infrastructure and recovery: unchanged, no timeout, retry, replay or loss behaviour is touched; DI lifetimes and handler order identical.",
+"F361": "Checker mapping: placement and dependency-edge claims are decided exactly by the compiled IL through IlDependencies and ModuleRules, each oracle carrying a made-up offender as falsifier; behaviour-free is decided by the existing suites, the live connector suites in CI and the EXAMINE answer comparisons. No Quint, TLA+ or Agda model: there is no state, ordering, concurrency, recovery or liveness claim, and a model would restate the namespace map and could not fail. Quint 0.33.1 is installed (probed with quint --version) and was not run; no waiver is recorded, the formal-model claim set is empty by reason, not by omission. Liveness: not applicable, nothing progresses.",
+"F362": "Type and property assessment (object oriented, nw-code-design-oo read): no class is added or changed, so no new anemic type, no Object Calisthenics break and no new invariant owner; each existing rule keeps its cohesive owner. Construction safety: a type cannot silently stay in an old namespace because each layout oracle looks the type up by name in the compiled assembly and fails when it is missing. Property testing: not applicable, every law is a finite list of named types compared both ways, native examples.",
+"F363": "Oracle design rule for all four slices: a layout oracle asserts through ModuleRules.TypesLiveInTheirLayer for its layer (and DomainReachesOnlyTheKernelAndTheBaseLibrary in S1), reads types by name from the compiled assembly, fails naming the offender when a type is missing or in the wrong place, and fails when the layer holds no type. An existing rule that finds its subject by namespace or path (SecretCustodySeamArchUnitTest auth pattern, ConnectorPort key, ConnectorRatchetFixtures, ConnectionHealthSingleWriterArchUnitTest, ServiceNow purity tests) proves in the slice that moves its subject that it still names a made-up offender in the new place, or cites TrackerIntegrationRulesSeeTheModuleArchUnitTest. Lists are rewritten to the new names and compared both ways, never loosened. No nWave scenario tags in code.",
+"F364": "Test substrate: NUnit 4.6 architecture tests reading compiled IL through Mono.Cecil, no host started. Commands run from the repository root under flock (flock -o <lockfile> prefix, not recorded in the command text). Default per-test budgets and the 300 s suite ceiling apply, no derogation requested; each oracle reads the cached IL module like the existing ones. Live connector categories are never run locally; CI runs them on each push (push per slice, maintainer 2026-11-16 and 2026-11-17), hold after B4 until review and EXAMINE are accepted.",
+"F365": "Risk walk. Stressor: a rule keyed on a path or namespace string goes blind after a move; allowed none, forbidden a vacuous rule; residue owner the slice that moves the subject. Stressor: CI selects live suites by path; A2 already matches both old and new paths, old alternatives stay until feature C. Stressor second set: a Serilog filter or reflection string naming an old category; none found in the repository, a host-side configuration outside it is unknown and accepted. Single point of failure: Program.cs using lines, compile error is immediate. Bypass: reflection or string type names, none found; IL misses catch-clause, event and attribute-named-argument references, covered by the full suite.",
+"F366": "Design gap recorded for the host: product promise P2 and slice S1 say all five translation rules live in Domain, but two are rejected by the Domain rule (see Domain exception) and the approved design already sends such types to Application. The S1 oracle therefore asserts three types in Domain and two in Application; if the maintainer wants all five in Domain, the Extensions calls must first be edited, which is a behaviour-free but non-move change outside this feature.",
+"F367": "Reuse verdicts: ModuleRules.TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary (Architecture/ModuleRules.cs:127,153) REUSE; TrackerIntegrationMembership REUSE; the four layout oracles CREATE_NEW (Forecasting and Work Items layout oracles are the model); moved types REUSE unchanged by git mv.",
+"F368": "Behaviour-free: no route, DTO, serialized response, refresh answer, forecast, DI lifetime, handler order or EF model changes; no schema change. No stored or validated input is introduced and no bound is added or removed; the only inputs are source files and the compiled assembly.",
+"F369": "Domain reaches only Lighthouse.Backend.Models and the base library. Application reaches no Adapters of its own module. The factory interface and class share Modules.TrackerIntegration.Application. The board port names no implementation namespace.",
+"F370": "Feature A files (TrackerIntegrationMembership.cs and its test, TrackerIntegrationRulesSeeTheModuleArchUnitTest) may take a using or full-name string edit forced by the move, recorded as a target, never a semantic change. Earlier slices oracle files of this feature are never edited.",
+"F371": "UI, loading and failure looks, RBAC, clients, website and usage-data event are not applicable: nothing a user sees or does changes. Jev is unauthorized (typesafe unavailable by refusal).",
+"F372": "Producer and consumers sit in one deployable and change in the same commit; no wire or persisted data changes; the architecture oracle and existing integration tests cover them.",
+"F373": "The slices are themselves behaviour-free moves; no later behaviour change in this feature needs a preparatory move.",
+"F374": "IL architecture tests over the compiled Lighthouse.Backend assembly via IlDependencies and ModuleRules (no host); real consumers unchanged: API controllers, Work Items refresh, Promises delivery sources, write-back round, ConnectionHealthProber",
+"F375": "IWorkTrackingConnector and capabilities (moved, unchanged)",
+"F376": "IWorkTrackingAuthStrategy (moved, unchanged)",
+"F377": "IOAuthProvider (moved, unchanged)",
+"F378": "IRepository and ConnectionHealthVerdictRepository (stay)",
+"F379": "Domain to Models only; Application to Domain and Models and the listed platform edges; Adapters to Application; composition root to Adapters; no Adapters to repositories in Adapters/Connectors",
+"F380": "Namespace and IL dependency targets of each listed type in the compiled assembly",
+"F381": "runtime behaviour, DI lifetimes, catch-clause, event and attribute-named-argument references",
+"F382": "Two layouts are equal when every listed type has the same full name and the IL edges between listed layers are the same lists; short name equality holds before and after (membership compares short names).",
+"F383": "Every Moves type lives in its named layer and none is left under Services or Factories",
+"F384": "a type left behind or in the wrong layer breaks the module boundary feature C builds on",
+"F385": "the compiled Lighthouse.Backend assembly",
+"F386": "oracle verdict naming offenders",
+"F387": "a type renamed or deleted: oracle looks up by name and fails; reflection strings: none found",
+"F388": "Type in its layer namespace with the old using lines rewritten",
+"F389": "A listed type under Services or Factories, or Domain reaching Extensions, Services or Adapters",
+"F390": "Host-side log filters or external configuration naming an old category",
+"F391": "layer placement",
+"F392": "oracle per slice excludes each listed type outside its layer and Domain edges outside the kernel; IL decided, not yet built",
+"F393": "each type has a concrete target path in the slice targets; git mv produces it",
+"F394": "oracle reads the compiled assembly produced by dotnet build, the same assembly the host runs; consumers unchanged",
+"F395": "not applicable: no progress, queue, schedule or handler changes, no temporal claim",
+"F396": "string or reflection type names and path-keyed rules",
+"F397": "same rule coverage after the move",
+"F398": "old alternatives stay until feature C",
+"F399": "a rule that passes with its subject gone",
+"F4": "The category crossing, the state-transition mapper, the parent and dependency source selectors and the dependency field references live in Lighthouse.Backend.Modules.TrackerIntegration.Domain and reach only the shared kernel and the base library; Work Items' rules no longer hold the selectors as their own; a type the Domain rule rejects lives in Application, recorded",
+"F400": "IL misses catch-clause, event and attribute-named-argument references",
+"F401": "Program.cs using lines and shared Linear key on push",
+"F402": "build and live suites green",
+"F403": "a push may rerun on a 429",
+"F404": "red push",
+"F405": "live suites only in CI",
+"F406": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/WorkItemStateTransitionMapper.cs",
+"F407": "git mv from Lighthouse.Backend/Services/Implementation/Parents/ParentSourceSelector.cs",
+"F408": "git mv from Lighthouse.Backend/Services/Implementation/Dependencies/DependencyFieldReferences.cs",
+"F409": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/WorkItemCategoryCrossing.cs",
+"F410": "git mv from Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs",
+"F411": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/WorkItemStateTransitionMapperTest.cs",
+"F412": "git mv from Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorOrderTest.cs",
+"F413": "git mv from Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorOwnParentTest.cs",
+"F414": "git mv from Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorTest.cs",
+"F415": "git mv from Lighthouse.Backend.Tests/Services/Implementation/Dependencies/DependencyFieldReferencesTest.cs",
+"F416": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/WorkItemCategoryCrossingTest.cs",
+"F417": "git mv from Lighthouse.Backend.Tests/Services/Implementation/Dependencies/DependencySourceSelectorTest.cs",
+"F418": "using lines, full-name strings or paths naming a moved type",
+"F419": "Run the compiled-assembly layout test for Tracker integration Domain: look up WorkItemStateTransitionMapper, ParentSourceSelector and DependencyFieldReferences in Modules.TrackerIntegration.Domain and WorkItemCategoryCrossing and DependencySourceSelector in Modules.TrackerIntegration.Application, and run the Domain-reaches-only-kernel rule; Work Items membership test lists no selector.",
+"F420": "Each of the five types is found in its namespace, none under Services, Domain reaches only Models and the base library, and made-up Domain offenders reaching Services, Adapters or Extensions are each reported by name.",
+"F421": "Leave a type under Services.Implementation, rename or delete one, or let a Domain type call EnumerableExtensions: the oracle fails naming it.",
+"F422": "Walking skeleton of the feature: it creates Modules/TrackerIntegration/Domain and Application. Tests: three to Tests/Modules/TrackerIntegration/Domain, two to Application. Work Items rule files stop treating the selectors as their own (membership Stays entries removed, placement fixtures use real new paths, outbound list measured by running the rules).",
+"F423": "using lines only",
+"F424": "The slice is itself a behaviour-free move.",
+"F425": "One deployable, same commit; see shared record.",
+"F426": "Moved targets keep their existing owner unchanged (git mv, namespace line only); using-line targets change no responsibility. ModuleRules.TypesLiveInTheirLayer is reused by the oracle; the oracle file is CreateNew.",
+"F427": "Impact closed by the target list: every Create target is a git mv, every Extend target is a consumer, rule list, script, config, csproj or budget naming a moved type. Program.cs registrations and order, path-classifier, examine locations and SecretCustody pattern stay compatible; consumer agreements recorded.",
+"F428": "TrackerIntegrationDomainLayoutArchUnitTest reading the compiled assembly",
+"F429": "as the shared boundaries",
+"F430": "Domain holds exactly WorkItemStateTransitionMapper, ParentSourceSelector, DependencyFieldReferences and reaches only Models and the base library; Application holds WorkItemCategoryCrossing and DependencySourceSelector; Work Items membership lists no selector",
+"F431": "three Domain types",
+"F432": "two Application types",
+"F433": "made-up Domain type reaching Services, Adapters, Extensions",
+"F434": "closed list of five types",
+"F435": "S1: listed types live in their layer, none under Services or Factories, layer edges as the shared boundaries; falsified by made-up offenders in a fixture namespace Modules.TrackerIntegrationFixtures",
+"F436": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IAzureDevOpsWorkTrackingConnector.cs",
+"F437": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IBoardInformationProvider.cs",
+"F438": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IDeliveryForecastPublisher.cs",
+"F439": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IDeliverySourceProvider.cs",
+"F440": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IFeatureSource.cs",
+"F441": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IIncrementalSource.cs",
+"F442": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IJiraWorkTrackingConnector.cs",
+"F443": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/ILinearWorkTrackingConnector.cs",
+"F444": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IServiceNowWorkTrackingConnector.cs",
+"F445": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingAuthStrategy.cs",
+"F446": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingAuthStrategyFactory.cs",
+"F447": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs",
+"F448": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWriteBackTarget.cs",
+"F449": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/WorkTrackingReadException.cs",
+"F450": "git mv from Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/WorkTrackingRefusedException.cs",
+"F451": "git mv from Lighthouse.Backend/Factories/IWorkTrackingConnectorFactory.cs",
+"F452": "git mv from Lighthouse.Backend/Factories/IWorkTrackingSystemFactory.cs",
+"F453": "git mv from Lighthouse.Backend/Factories/WorkTrackingConnectorFactory.cs",
+"F454": "git mv from Lighthouse.Backend/Factories/WorkTrackingSystemFactory.cs",
+"F455": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodKeys.cs",
+"F456": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs",
+"F457": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Boards/Board.cs",
+"F458": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Boards/BoardInformation.cs",
+"F459": "git mv from Lighthouse.Backend.Tests/Factories/WorkTrackingConnectorFactoryTest.cs",
+"F460": "git mv from Lighthouse.Backend.Tests/Factories/WorkTrackingSystemFactoryTest.cs",
+"F461": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodKeysTest.cs",
+"F462": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchemaTest.cs",
+"F463": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/IncrementalSourceCapabilityTest.cs",
+"F464": "Run the layout test for Application: the 15 port types, four factory types, AuthenticationMethodKeys, AuthenticationMethodSchema (with AuthenticationMethod and AuthenticationMethodOption), Board and BoardInformation looked up by name.",
+"F465": "All live in Modules.TrackerIntegration.Application; IWorkTrackingConnectorFactory and WorkTrackingConnectorFactory share one namespace; IBoardInformationProvider names no implementation namespace.",
+"F466": "Leave one in Services.Interfaces or Factories, split the factory pair across namespaces, or let the board port name a connector namespace: the oracle names it.",
+"F467": "IncrementalSourceCapabilityTest moves with the port to Tests/Modules/TrackerIntegration/Application; ConnectorsWithoutDependenciesTest moves in S3 with the connectors. Both leaks fixed by placement only.",
+"F468": "moved to Application, signature unchanged",
+"F469": "using lines only; edge is legal and listed in feature C",
+"F470": "API to Application is legal by namespace",
+"F471": "TrackerIntegrationApplicationLayoutArchUnitTest reading the compiled assembly",
+"F472": "The port, factories, auth schema and board types live in Application; factory pair shares a namespace; the board port names no implementation namespace",
+"F473": "25 listed types",
+"F474": "factory pair namespace",
+"F475": "IBoardInformationProvider signature namespaces",
+"F476": "closed list",
+"F477": "S2: listed types live in their layer, none under Services or Factories, layer edges as the shared boundaries; falsified by made-up offenders in a fixture namespace Modules.TrackerIntegrationFixtures",
+"F478": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFieldNames.cs",
+"F479": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsReadException.cs",
+"F480": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+"F481": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingOptionNames.cs",
+"F482": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/RelationTypeListing.cs",
+"F483": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/WorkItemExtensions.cs",
+"F484": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBatchedWriteBackTest.cs",
+"F485": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs",
+"F486": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsCancellationGranularityTest.cs",
+"F487": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs",
+"F488": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs",
+"F489": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsHistoryReadTest.cs",
+"F490": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs",
+"F491": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs",
+"F492": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsRawListsTest.cs",
+"F493": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsSuppressionOutcomeTest.cs",
+"F494": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs",
+"F495": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWriteBackTest.cs",
+"F496": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+"F497": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingOptionNames.cs",
+"F498": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvCancellationGranularityTest.cs",
+"F499": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs",
+"F5": "The connector port and its capabilities, both factories with their interfaces, the auth schema and the board types live in Lighthouse.Backend.Modules.TrackerIntegration.Application; the factory interface and class share that namespace; the board port names no implementation namespace",
+"F500": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnectorTest.cs",
+"F501": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/adodata.csv",
+"F502": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/empty-file.txt",
+"F503": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/invalid-missing-required.csv",
+"F504": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/invalid-not-csv.csv",
+"F505": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/invalid-wrong-csv.csv",
+"F506": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/project-valid-all-optional.csv",
+"F507": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/project-valid-depends-on.csv",
+"F508": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/project-valid-required-only.csv",
+"F509": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/project-valid-with-optional.csv",
+"F510": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-additional-fields.csv",
+"F511": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-all-optional.csv",
+"F512": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-demo-journey-synthesis.csv",
+"F513": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-required-only.csv",
+"F514": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-state-since.csv",
+"F515": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/team-valid-with-optional.csv",
+"F516": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/Issue.cs",
+"F517": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs",
+"F518": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraFieldNames.cs",
+"F519": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNames.cs",
+"F520": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraQueryRejectedException.cs",
+"F521": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReadException.cs",
+"F522": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCost.cs",
+"F523": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepTally.cs",
+"F524": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseVersionReader.cs",
+"F525": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraRestRoutes.cs",
+"F526": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraSiteAddress.cs",
+"F527": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+"F528": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingOptionNames.cs",
+"F529": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/LinkDirection.cs",
+"F530": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/StandingLink.cs",
+"F531": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensionsParentLinkTest.cs",
+"F532": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBatchedWriteBackTest.cs",
+"F533": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs",
+"F534": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs",
+"F535": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs",
+"F536": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraCancellationGranularityTest.cs",
+"F537": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliveryForecastPublisherTest.cs",
+"F538": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliverySourceProviderTest.cs",
+"F539": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyDogfoodTest.cs",
+"F540": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDependencyLinkTest.cs",
+"F541": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraFieldLookupTest.cs",
+"F542": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs",
+"F543": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIssuesPerRequestTest.cs",
+"F544": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraLinkTypeDogfoodTest.cs",
+"F545": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraNamedDependencyLinkTest.cs",
+"F546": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesLiveTest.cs",
+"F547": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs",
+"F548": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesTest.cs",
+"F549": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDirectionDogfoodTest.cs",
+"F550": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDogfoodTest.cs",
+"F551": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentReadingsTest.cs",
+"F552": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraQuietWriteBackTest.cs",
+"F553": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshOriginalNamesTest.cs",
+"F554": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshRefusalTest.cs",
+"F555": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCostTest.cs",
+"F556": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs",
+"F557": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraScopedTokenIntegrationTest.cs",
+"F558": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraSiteAddressTest.cs",
+"F559": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraSuppressionRetryIntegrationTest.cs",
+"F560": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs",
+"F561": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs",
+"F562": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWriteBackTest.cs",
+"F563": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearResponses.cs",
+"F564": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+"F565": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingOptionNames.cs",
+"F566": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearCancellationGranularityTest.cs",
+"F567": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyDogfoodTest.cs",
+"F568": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearDependencyRelationTest.cs",
+"F569": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearFetchRefusalTest.cs",
+"F570": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorHistoryParsingTest.cs",
+"F571": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorTest.cs",
+"F572": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardMapper.cs",
+"F573": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardVerdict.cs",
+"F574": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowClassLabels.cs",
+"F575": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryQuery.cs",
+"F576": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryVerdict.cs",
+"F577": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowReadException.cs",
+"F578": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowReadScope.cs",
+"F579": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpan.cs",
+"F580": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs",
+"F581": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTeamQueryVerdict.cs",
+"F582": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdict.cs",
+"F583": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkItemMapper.cs",
+"F584": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+"F585": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingOptionNames.cs",
+"F586": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardPickerTest.cs",
+"F587": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowBoardVerdictTest.cs",
+"F588": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowCancellationGranularityTest.cs",
+"F589": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowClassLabelsTest.cs",
+"F590": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowConnectionConfigurationTest.cs",
+"F591": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryQueryTest.cs",
+"F592": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryVerdictTest.cs",
+"F593": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowRecordClassTest.cs",
+"F594": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs",
+"F595": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperTest.cs",
+"F596": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTeamQueryVerdictTest.cs",
+"F597": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTeamSyncTest.cs",
+"F598": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTransitionHistoryTest.cs",
+"F599": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdictTest.cs",
+"F6": "The five connectors, their helpers, the auth strategies, the OAuth schema helpers and Jira's issue factory live in Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.<Tracker>; their unit tests sit in the mirrored test folder; the CI test selection still picks that tracker's live suite",
+"F600": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkItemMapperTest.cs",
+"F601": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorIntegrationTest.cs",
+"F602": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
+"F603": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/JiraCloudBasicAuthStrategy.cs",
+"F604": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/LinearApiKeyAuthStrategy.cs",
+"F605": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/NoOpAuthStrategy.cs",
+"F606": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/OAuthBearerAuthStrategy.cs",
+"F607": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/PatAuthStrategy.cs",
+"F608": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs",
+"F609": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyFactory.cs",
+"F610": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyNotFoundException.cs",
+"F611": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategyTest.cs",
+"F612": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyTest.cs",
+"F613": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/OAuth/OAuthSchemaExtensions.cs",
+"F614": "git mv from Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/OAuth/OAuthWorkTrackingOptionNames.cs",
+"F615": "git mv from Lighthouse.Backend/Factories/IIssueFactory.cs",
+"F616": "git mv from Lighthouse.Backend/Factories/IssueFactory.cs",
+"F617": "git mv from Lighthouse.Backend.Tests/Factories/IssueFactoryLinkDatesTest.cs",
+"F618": "git mv from Lighthouse.Backend.Tests/Factories/IssueFactoryOriginalNamesTest.cs",
+"F619": "git mv from Lighthouse.Backend.Tests/Factories/IssueFactoryRawListsTest.cs",
+"F620": "git mv from Lighthouse.Backend.Tests/Factories/IssueFactoryTest.cs",
+"F621": "git mv from Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ConnectorsWithoutDependenciesTest.cs",
+"F622": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthSchemaExtensionsTest.cs",
+"F623": "Run the layout test for the connectors: every connector, helper, mapper, verdict, read scope, option-name class, auth strategy and factory, OAuthSchemaExtensions, OAuthWorkTrackingOptionNames, IIssueFactory and IssueFactory looked up by name.",
+"F624": "Each lives in Modules.TrackerIntegration.Adapters.Connectors.<Tracker|Auth|OAuth>, none under Services, the mirrored tests sit in the mirrored test folder, the CSV test data resolves at its new path, and the path-keyed rules still name a made-up offender there.",
+"F625": "Leave one type or test folder behind, forget a csproj data entry (CSV test fails to find its file), or a rule whose subject pattern no longer matches: the oracle or the rule falsifier fails.",
+"F626": "The 15 CSV test-data entries in Lighthouse.Backend.Tests.csproj, the Stryker mutate paths, the test-time-budget keys and their Python pins, the connector-class discovery test and the guard lists of test class names follow the moved tests. Stryker test-case-filters match by class name and need no edit.",
+"F627": "already matches old and new paths (feature A)",
+"F628": "five keys renamed to the new test namespaces",
+"F629": "TrackerIntegrationConnectorsLayoutArchUnitTest reading the compiled assembly",
+"F630": "Every connector type, helper, auth strategy, OAuth schema helper and issue factory lives in Adapters.Connectors.<Tracker> and reaches no repository",
+"F631": "per tracker folder",
+"F632": "Auth and OAuth folders",
+"F633": "S3: listed types live in their layer, none under Services or Factories, layer edges as the shared boundaries; falsified by made-up offenders in a fixture namespace Modules.TrackerIntegrationFixtures",
+"F634": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthCredentialNotValidException.cs",
+"F635": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthProviderNotFoundException.cs",
+"F636": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthProviderRegistry.cs",
+"F637": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthProviderResponseException.cs",
+"F638": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthRefreshFailedException.cs",
+"F639": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthRefreshOptions.cs",
+"F640": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthRefreshTimeoutException.cs",
+"F641": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs",
+"F642": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthStateTokenExpiredException.cs",
+"F643": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthStateTokenInvalidException.cs",
+"F644": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/OAuthStateTokenIssuer.cs",
+"F645": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs",
+"F646": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/Providers/JiraOAuthProvider.cs",
+"F647": "git mv from Lighthouse.Backend/Services/Implementation/OAuth/Providers/StubOAuthProvider.cs",
+"F648": "git mv from Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthProvider.cs",
+"F649": "git mv from Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthProviderRegistry.cs",
+"F650": "git mv from Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthService.cs",
+"F651": "git mv from Lighthouse.Backend/Services/Interfaces/OAuth/IOAuthStateTokenIssuer.cs",
+"F652": "git mv from Lighthouse.Backend/Models/OAuth/OAuthFlowContext.cs",
+"F653": "git mv from Lighthouse.Backend/Models/OAuth/OAuthRefreshContext.cs",
+"F654": "git mv from Lighthouse.Backend/Models/OAuth/OAuthStateClaims.cs",
+"F655": "git mv from Lighthouse.Backend/Models/OAuth/OAuthTokens.cs",
+"F656": "git mv from Lighthouse.Backend/Services/Implementation/ConnectionHealth/ConnectionHealthCadence.cs",
+"F657": "git mv from Lighthouse.Backend/Services/Implementation/ConnectionHealth/ConnectionHealthService.cs",
+"F658": "git mv from Lighthouse.Backend/Services/Interfaces/ConnectionHealth/IConnectionHealthService.cs",
+"F659": "git mv from Lighthouse.Backend/Services/Implementation/BackgroundServices/ConnectionHealthProber.cs",
+"F660": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/Bug5023JiraRefreshRotationTest.cs",
+"F661": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthCredentialConcurrentLoadTest.cs",
+"F662": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthProviderRegistryTest.cs",
+"F663": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs",
+"F664": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs",
+"F665": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthStateSecretPersistenceTest.cs",
+"F666": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthStateTokenIssuerTest.cs",
+"F667": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/AdoOAuthProviderTest.cs",
+"F668": "git mv from Lighthouse.Backend.Tests/Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs",
+"F669": "Run the layout test for OAuth and health: OAuth service, registry, issuer, refresh options, 7 exceptions, 4 interfaces and the four Models value types in Application.OAuth; health service, cadence and interface in Application.ConnectionHealth; the three providers in Adapters.OAuth; ConnectionHealthProber in Adapters.Background; and no Moves type under Services or Factories.",
+"F670": "Every type found in its namespace and the TrackerIntegrationMembership Moves list has no member left under Services or Factories; ConnectionHealthSingleWriter still names a made-up offender.",
+"F671": "Leave any Moves type under Services, move an entity or wire type, or leave OAuthFlowContext in Models: the oracle fails.",
+"F672": "The four admitted Models value types move to Application/OAuth; OAuthCompleteResult stays (OAuthController reads it). OAuthSchemaExtensionsTest moved in S3. Connection health has no unit test of its own to move.",
+"F673": "TrackerIntegrationOAuthAndHealthLayoutArchUnitTest reading the compiled assembly",
+"F674": "OAuth and health live in Application.OAuth, Application.ConnectionHealth, Adapters.OAuth, Adapters.Background; no Moves type is left under Services or Factories",
+"F675": "four layer folders",
+"F676": "no leftover Moves type",
+"F677": "S4: listed types live in their layer, none under Services or Factories, layer edges as the shared boundaries; falsified by made-up offenders in a fixture namespace Modules.TrackerIntegrationFixtures",
+"F7": "The OAuth service, registry, state tokens, exceptions and provider port live in Application.OAuth with the four admitted Models value types; connection health in Application.ConnectionHealth; the OAuth providers in Adapters.OAuth; the health prober in Adapters.Background; no type of the membership Moves list is left under Services or Factories",
+"F8": "Every existing test is green unmodified apart from moves, using lines and rule-list strings; refresh answers, forecasts, routes, DTOs, DI lifetimes, handler order and the EF model are identical; the live connector suites are green in CI",
+"F9": "B1: move the five translation-rule types and their unit tests into Modules/TrackerIntegration/Domain; Work Items' rules lose the selectors."
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F16"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F17"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F18"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F19"
+}
+],
+"journey": [
+{
+"emotion": "F21",
+"step": "F20"
+},
+{
+"emotion": "F21",
+"step": "F22"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+},
+{
+"id": "P5",
+"kind": "Outcome",
+"text": "F7"
+},
+{
+"id": "P6",
+"kind": "Outcome",
+"text": "F8"
+}
+],
+"scope_in": [
+"F9",
+"F10",
+"F11",
+"F12"
+],
+"scope_out": [
+"F13",
+"F14",
+"F15"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F23",
+"promises": [
+"P1",
+"P2",
+"P6"
+]
+},
+{
+"id": "S2",
+"observation": "F24",
+"promises": [
+"P1",
+"P3",
+"P6"
+]
+},
+{
+"id": "S3",
+"observation": "F25",
+"promises": [
+"P1",
+"P4",
+"P6"
+]
+},
+{
+"id": "S4",
+"observation": "F26",
+"promises": [
+"P1",
+"P5",
+"P6"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6359-s03a-b-move",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}
