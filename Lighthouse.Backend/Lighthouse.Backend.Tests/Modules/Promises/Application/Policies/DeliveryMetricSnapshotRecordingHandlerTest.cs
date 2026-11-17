@@ -20,7 +20,7 @@ using Moq;
 using NUnit.Framework;
 using Lighthouse.Backend.Modules.Promises.Application;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Tests.Modules.Promises.Application.Policies
 {
     [TestFixture]
     public class DeliveryMetricSnapshotRecordingHandlerTest : IntegrationFixture

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.Promises.Application;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Tests.Modules.Promises.Application.Policies
 {
     /// <summary>
     /// Where publishing hangs. It is the forecast rather than the fetch, because the numbers being
