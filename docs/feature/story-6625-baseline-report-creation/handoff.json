@@ -22,7 +22,7 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F482",
-"test": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx::for a Then ending today, and still creates the report"
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx::says \"Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass.\" for a Then ending today, and still creates the report"
 },
 "expected": "F480",
 "stimulus": "F479",

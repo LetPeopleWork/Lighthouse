@@ -502,7 +502,7 @@ describe("Then and Now side by side on the Then step", () => {
 		).not.toHaveProperty("nowLengthDays");
 	});
 
-	it('says "Now and Then are the same days today." for a Then ending today, and still creates the report', async () => {
+	it('says "Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass." for a Then ending today, and still creates the report', async () => {
 		const reportService = await openTheWizard(onMidNovember());
 		await next();
 

@@ -56,7 +56,7 @@ She is told the windows are the same days today and can still create the report
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportsTab\.createWizard\.test\.tsx\:\:for a Then ending today\, and still creates the report
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportsTab\.createWizard\.test\.tsx\:\:says \"Now and Then are the same days today\. Now moves forward from tomorrow\; the comparison becomes meaningful as days pass\.\" for a Then ending today\, and still creates the report
 
 ```text
 A wizard showing the same-days line also for a Then ending yesterday (covered by the windowsRelationOf table and the window law)
