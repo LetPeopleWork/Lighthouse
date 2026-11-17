@@ -82,11 +82,11 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 			{windows !== null && (
 				<>
 					<Typography color="text.secondary">
-						{`Then ${daysOf(windows.then)} (${windows.then.lengthDays} days)`}
+						{`Then ${daysOf(windows.thenWindow)} (${windows.thenWindow.lengthDays} days)`}
 						{frozen && ` · ${FROZEN_NOTE}`}
 					</Typography>
 					<Typography color="text.secondary">
-						{`Now ${daysOf(windows.now)} (${windows.now.lengthDays} days, ends today)`}
+						{`Now ${daysOf(windows.nowWindow)} (${windows.nowWindow.lengthDays} days, ends today)`}
 					</Typography>
 				</>
 			)}

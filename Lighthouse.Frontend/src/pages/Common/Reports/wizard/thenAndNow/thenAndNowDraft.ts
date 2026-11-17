@@ -137,7 +137,7 @@ const windowEndingOn = (
 export const windowsOf = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
-): { then: ReportWindow; now: ReportWindow } | null => {
+): { thenWindow: ReportWindow; nowWindow: ReportWindow } | null => {
 	const lengthDays = lengthOf(draft.thenLength);
 	const thenEnd = parseLocalDate(thenEndOf(draft, templates));
 	const today = parseLocalDate(templates.today);
@@ -145,7 +145,9 @@ export const windowsOf = (
 
 	const then = windowEndingOn(thenEnd, lengthDays);
 	const now = windowEndingOn(today, lengthDays);
-	return then === null || now === null ? null : { then, now };
+	return then === null || now === null
+		? null
+		: { thenWindow: then, nowWindow: now };
 };
 
 /** How Then sits beside Now: on the same days, sharing days up to Then's last one, or apart. */
@@ -162,7 +164,7 @@ export const windowsRelationOf = (
 	if (windows === null) return null;
 
 	// yyyy-MM-dd days compare as text in the order of the days they name.
-	const { then, now } = windows;
+	const { thenWindow: then, nowWindow: now } = windows;
 	if (then.end === now.end) return { kind: "sameDays" };
 	return then.end >= now.start
 		? { kind: "overlapUntil", until: then.end }

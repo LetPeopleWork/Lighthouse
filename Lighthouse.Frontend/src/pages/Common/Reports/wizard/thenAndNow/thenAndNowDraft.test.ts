@@ -154,9 +154,8 @@ const midNovember: IReportTemplates = { ...templates, today: "2026-11-15" };
 describe("windowsOf", () => {
 	it("puts a 30-day Then left at its default end back to back with a 30-day Now ending today", () => {
 		expect(windowsOf(draftWith({ thenLength: "30" }), midNovember)).toEqual({
-			// biome-ignore lint/suspicious/noThenProperty: the window contract names its first window "then", as the report reads it
-			then: { start: "2026-09-17", end: "2026-10-16", lengthDays: 30 },
-			now: { start: "2026-10-17", end: "2026-11-15", lengthDays: 30 },
+			thenWindow: { start: "2026-09-17", end: "2026-10-16", lengthDays: 30 },
+			nowWindow: { start: "2026-10-17", end: "2026-11-15", lengthDays: 30 },
 		});
 	});
 
@@ -167,9 +166,8 @@ describe("windowsOf", () => {
 				midNovember,
 			),
 		).toEqual({
-			// biome-ignore lint/suspicious/noThenProperty: the window contract names its first window "then", as the report reads it
-			then: { start: "2026-10-02", end: "2026-10-31", lengthDays: 30 },
-			now: { start: "2026-10-17", end: "2026-11-15", lengthDays: 30 },
+			thenWindow: { start: "2026-10-02", end: "2026-10-31", lengthDays: 30 },
+			nowWindow: { start: "2026-10-17", end: "2026-11-15", lengthDays: 30 },
 		});
 	});
 
@@ -296,13 +294,16 @@ describe("the window law: the overlap line shows exactly when Then and Now share
 						expectedRelation(thenEnd, nowStart, today),
 					);
 					expect(windowsOf(draft, midNovember)).toEqual({
-						// biome-ignore lint/suspicious/noThenProperty: the window contract names its first window "then", as the report reads it
-						then: {
+						thenWindow: {
 							start: dayOf(thenEnd - lengthDays + 1),
 							end: dayOf(thenEnd),
 							lengthDays,
 						},
-						now: { start: dayOf(nowStart), end: midNovember.today, lengthDays },
+						nowWindow: {
+							start: dayOf(nowStart),
+							end: midNovember.today,
+							lengthDays,
+						},
 					});
 				},
 			),
