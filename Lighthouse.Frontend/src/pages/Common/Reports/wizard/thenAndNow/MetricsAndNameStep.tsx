@@ -10,7 +10,7 @@ import type React from "react";
 import { Fragment, useId } from "react";
 import type { ReportMetricKey } from "../../../../../models/Reports/Report";
 import { useTerminology } from "../../../../../services/TerminologyContext";
-import { metricNameTermKeyOf } from "../../panels/reportPanelRegistry";
+import { metricNameOf } from "../../panels/reportPanelRegistry";
 import type { ReportTypeStepProps } from "../reportTypes";
 import {
 	isCaptured,
@@ -49,7 +49,7 @@ const MetricsAndNameStep: React.FC<
 					return (
 						<Fragment key={key}>
 							<FormControlLabel
-								label={getTerm(metricNameTermKeyOf(key))}
+								label={metricNameOf(key, getTerm)}
 								control={
 									<Checkbox
 										checked={isShown}

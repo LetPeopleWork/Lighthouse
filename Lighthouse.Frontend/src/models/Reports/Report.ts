@@ -15,7 +15,8 @@ export type ReportMetricKey =
 	| "cycle-time"
 	| "throughput"
 	| "wip"
-	| "work-item-age";
+	| "work-item-age"
+	| "arrivals";
 
 export interface IReportTemplate {
 	templateKey: ReportTemplateKey;
@@ -72,6 +73,8 @@ export type ReportMetricSide = Partial<
 		| "p50"
 		| "total"
 		| "perDay"
+		| "throughputPerDay"
+		| "gapPerDay"
 		| "average"
 		| "median"
 		| "min"

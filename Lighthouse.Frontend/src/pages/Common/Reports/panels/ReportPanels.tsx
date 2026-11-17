@@ -2,11 +2,7 @@ import type React from "react";
 import type { IReport, IReportMetric } from "../../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
-import {
-	inCatalogOrder,
-	metricNameTermKeyOf,
-	panelFor,
-} from "./reportPanelRegistry";
+import { inCatalogOrder, metricNameOf, panelFor } from "./reportPanelRegistry";
 import UnsupportedMetricPanel from "./UnsupportedMetricPanel";
 
 /** A metric shown on a report made before it was captured reads as not captured on both sides. */
@@ -22,10 +18,7 @@ const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
 		const panel = panelFor(key);
 		if (panel === undefined)
 			return (
-				<UnsupportedMetricPanel
-					key={key}
-					name={getTerm(metricNameTermKeyOf(key))}
-				/>
+				<UnsupportedMetricPanel key={key} name={metricNameOf(key, getTerm)} />
 			);
 		const metric = report.thenAndNow.metrics[key] ?? NOTHING_CAPTURED;
 		const Panel = panel.component;

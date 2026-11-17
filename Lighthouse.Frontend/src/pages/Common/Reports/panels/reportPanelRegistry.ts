@@ -4,6 +4,7 @@ import type {
 	ReportMetricKey,
 } from "../../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import ArrivalsPanel, { ARRIVALS_CHANGE_LINES } from "./ArrivalsPanel";
 import CycleTimePanel, { PERCENTILES } from "./CycleTimePanel";
 import { SPREAD_LINES } from "./DailySpreadPanel";
 import ThroughputPanel, { CHANGE_LINES } from "./ThroughputPanel";
@@ -28,15 +29,18 @@ export interface ReportPanelDefinition {
 	changeLines: readonly ChangeLine[];
 }
 
-/** Every metric in the order its panel stacks, each named in the instance's words. */
-const METRIC_CATALOG: readonly {
-	key: ReportMetricKey;
-	nameTermKey: string;
-}[] = [
+const ARRIVALS_NAME = "Arrivals";
+
+/** Every metric in the order its panel stacks; each is named in the instance's words, or by a fixed name it has no term for. */
+const METRIC_CATALOG: readonly (
+	| { key: ReportMetricKey; nameTermKey: string }
+	| { key: ReportMetricKey; fixedName: string }
+)[] = [
 	{ key: "cycle-time", nameTermKey: TERMINOLOGY_KEYS.CYCLE_TIME },
 	{ key: "throughput", nameTermKey: TERMINOLOGY_KEYS.THROUGHPUT },
 	{ key: "wip", nameTermKey: TERMINOLOGY_KEYS.WIP },
 	{ key: "work-item-age", nameTermKey: TERMINOLOGY_KEYS.WORK_ITEM_AGE },
+	{ key: "arrivals", fixedName: ARRIVALS_NAME },
 ];
 
 /** One entry per metric this version can show; a report from a later version may still name a key with none. */
@@ -65,6 +69,12 @@ export const reportPanelRegistry = {
 		directionOfGood: "lower",
 		changeLines: SPREAD_LINES,
 	},
+	arrivals: {
+		component: ArrivalsPanel,
+		titleOf: () => ARRIVALS_NAME,
+		directionOfGood: "lower",
+		changeLines: ARRIVALS_CHANGE_LINES,
+	},
 } satisfies Record<ReportMetricKey, ReportPanelDefinition>;
 
 export const panelFor = (
@@ -76,9 +86,15 @@ export const panelFor = (
 		>
 	)[key];
 
-/** The term naming a metric; a metric from a later version has none and goes by its key. */
-export const metricNameTermKeyOf = (key: ReportMetricKey): string =>
-	METRIC_CATALOG.find((entry) => entry.key === key)?.nameTermKey ?? key;
+/** What a metric is called: the instance's word for it, a fixed name, or for a metric from a later version its key. */
+export const metricNameOf = (
+	key: ReportMetricKey,
+	getTerm: (key: string) => string,
+): string => {
+	const entry = METRIC_CATALOG.find((candidate) => candidate.key === key);
+	if (entry === undefined) return key;
+	return "fixedName" in entry ? entry.fixedName : getTerm(entry.nameTermKey);
+};
 
 const catalogPositionOf = (key: ReportMetricKey): number => {
 	const position = METRIC_CATALOG.findIndex((entry) => entry.key === key);

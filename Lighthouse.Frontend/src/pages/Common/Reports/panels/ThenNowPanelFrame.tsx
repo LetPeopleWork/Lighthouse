@@ -7,6 +7,8 @@ interface ThenNowPanelFrameProps {
 	then: React.ReactNode;
 	now: React.ReactNode;
 	change: React.ReactNode;
+	/** A control placed beside the title, outside the heading so it does not become part of the panel's name. */
+	info?: React.ReactNode;
 }
 
 type DataAttributes = { readonly [attribute: `data-${string}`]: string };
@@ -96,6 +98,7 @@ const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
 	then,
 	now,
 	change,
+	info,
 }) => {
 	const titleId = useId();
 	return (
@@ -105,9 +108,12 @@ const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
 			variant="outlined"
 			sx={{ p: 2, width: "100%", breakInside: "avoid" }}
 		>
-			<Typography id={titleId} variant="h6" component="h2" gutterBottom>
-				{title}
-			</Typography>
+			<Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+				<Typography id={titleId} variant="h6" component="h2">
+					{title}
+				</Typography>
+				{info}
+			</Box>
 			<ThenNowColumns count={3}>
 				<ThenNowColumn data-segment="then" heading="Then" first>
 					{then}

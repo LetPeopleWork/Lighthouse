@@ -10,6 +10,8 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
         public IReadOnlyList<int> DailyThroughput(ReportOwner owner, ReportWindow window) => SeriesOf(owner).DailyThroughput(owner, window);
 
+        public IReadOnlyList<int> DailyArrivals(ReportOwner owner, ReportWindow window) => SeriesOf(owner).DailyArrivals(owner, window);
+
         public IReadOnlyList<int> DailyWorkInProgress(ReportOwner owner, ReportWindow window) => SeriesOf(owner).DailyWorkInProgress(owner, window);
 
         public IReadOnlyList<int> DailyTotalWorkItemAge(ReportOwner owner, ReportWindow window) => SeriesOf(owner).DailyTotalWorkItemAge(owner, window);

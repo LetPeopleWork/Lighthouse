@@ -65,7 +65,8 @@ export const NeutralLineIcon: React.FC<{ readonly Icon: SvgIconComponent }> = ({
 const LineChange: React.FC<{
 	readonly change: ThenNowChange | null;
 	readonly magnitudeText: (magnitude: number) => string;
-}> = ({ change, magnitudeText }) => {
+	readonly showPercent: boolean;
+}> = ({ change, magnitudeText, showPercent }) => {
 	if (change === null) {
 		return <Typography component="span">{DASH}</Typography>;
 	}
@@ -79,7 +80,7 @@ const LineChange: React.FC<{
 				kind={change.mark}
 				colour={verdictColours[change.verdict]}
 			/>{" "}
-			{changeText(change, magnitudeText(Math.abs(change.delta)))}
+			{changeText(change, magnitudeText(Math.abs(change.delta)), showPercent)}
 		</Typography>
 	);
 };
@@ -95,12 +96,13 @@ export const LineChanges: React.FC<{
 		changeLines: lines,
 		directionOfGood,
 	});
-	return lines.map(({ key, label }, index) => (
+	return lines.map(({ key, label, showPercent = true }, index) => (
 		<PanelLine key={key}>
 			<LineName label={label} />
 			<LineChange
 				change={comparisons[index].change}
 				magnitudeText={magnitudeText}
+				showPercent={showPercent}
 			/>
 		</PanelLine>
 	));

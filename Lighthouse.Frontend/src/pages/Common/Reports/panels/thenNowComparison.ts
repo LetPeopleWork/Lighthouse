@@ -28,6 +28,8 @@ export interface ChangeLine {
 	readonly key: ReportMetricSideKey;
 	readonly label: string;
 	readonly decimals: number;
+	/** False for a line whose change is not a share of Then, such as a gap that can cross zero. */
+	readonly showPercent?: boolean;
 }
 
 const MINUS = "−";
@@ -140,8 +142,10 @@ export const lineComparisonsOf = (
 export const changeText = (
 	change: ThenNowChange,
 	magnitude: string,
+	showPercent = true,
 ): string => {
 	if (change.delta === 0) return "No change";
+	if (!showPercent) return magnitude;
 	const percent =
 		change.percent === null ? "Then was 0" : `${signed(change.percent)} %`;
 	return `${magnitude} (${percent})`;

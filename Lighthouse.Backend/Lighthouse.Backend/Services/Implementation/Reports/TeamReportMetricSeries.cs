@@ -24,6 +24,9 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
         public IReadOnlyList<int> DailyThroughput(ReportOwner owner, ReportWindow window)
             => OverWindow(owner, window, (team, start, end) => DailyCounts(metrics.GetThroughputForTeam(team, start, end)));
 
+        public IReadOnlyList<int> DailyArrivals(ReportOwner owner, ReportWindow window)
+            => OverWindow(owner, window, (team, start, end) => DailyCounts(metrics.GetStartedItemsForTeam(team, start, end)));
+
         public IReadOnlyList<int> DailyWorkInProgress(ReportOwner owner, ReportWindow window)
             => OverWindow(owner, window, (team, start, end) => DailyCounts(metrics.GetWorkInProgressOverTimeForTeam(team, start, end)));
 
