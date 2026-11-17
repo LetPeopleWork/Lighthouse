@@ -1162,14 +1162,6 @@ Extend
 Show Then and Now by date and the relation line; the too-little-history line names the owner from the ownerName step prop
 ```
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/NowStep\.tsx
-
-Extend
-
-```text
-Deleted: the Now step and the bulk Same as Then / Custom choice go
-```
-
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportTypes\.ts
 
 Extend
@@ -1287,6 +1279,8 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter 'FullyQualified
 
 #### Supports
 
+Lighthouse\.Frontend\/src\/pages\/Reports\/ReportsPage\.test\.tsx
+
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/thenAndNowDraft\.test\.ts
 
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportWindowCheck\.test\.ts
@@ -1389,6 +1383,10 @@ The create and edit wizards share one step list, so removing the Now step here r
 Supports: every test this slice breaks is declared and changes its expectation to the new behaviour; a row that only exercised the removed Now choice may be deleted with its reason. Left out because this slice does not break them: BulkReportWizard.openings.test.tsx, BulkReportWizard.ownerStepLooks.test.tsx and ReportsPage.usageData.test.tsx reach the owner step only through BulkReportsTestKit; reportWindowBoundaries.json keeps its Now rows for the backend NowRefusal unit rows until S2; ReportWindowPolicyTest, ThenAndNowTemplateEditTest, ReportLoggingTest, ReportBulkCommandsTest, ReportQueriesTest, CycleTimeReportMetricTest, ThenAndNowPayloadRoundTripTest and TeamReportsControllerTest touch only Edit, Read, logs or stubbed ports this slice leaves unchanged; Slice02, Slice04, Slice05b, ReportCreationTimingProbe, BulkReportsAcceptanceTest, CreateForSeveralTeamsScenarios and PortfoliosJoinTheSelectionScenarios already create with equal or no Now; Slice10EditReportScenarios and ReportsWithoutSignInScenarios are edits, S2. No cut: narrowing the backend to Create keeps most backend tests untouched, the remaining support edits are expectation updates of one kind (no Now step, no Now length), and splitting the bulk wizard off would split one product slice.
 ```
 
+```text
+S1 deletes Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx (its question no longer exists; ThenStep shows the derived Now). The deletion is part of S1 craft even though it is no longer a listed target: a deleted file cannot carry a resolving reuse locator, and the target change kinds are only Create/Extend.
+```
+
 ##### Constraints
 
 None.
@@ -1417,7 +1415,7 @@ Existing step already shows the Then days line and refusal; the Now line and rel
 
 reportWindowCheck
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportWindowCheck\.ts\:88
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportWindowCheck\.ts\:69
 
 Extend
 
@@ -1435,14 +1433,14 @@ Extend
 Existing per-owner limit; the Now branch becomes unreachable and is removed
 ```
 
-NowStep
+ThenStep
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/NowStep\.tsx\:1
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/ThenStep\.tsx\:37
 
 Replace
 
 ```text
-The question it asks no longer exists; the Then step shows the derived Now
+NowStep (removed in S1 craft) asked a question that no longer exists; its replacement owner is the Then step, which shows the derived Now
 ```
 
 reportTypes
@@ -1465,14 +1463,14 @@ Reuse
 Edit start index stays 2, which now names Metrics & name; only the comment changes
 ```
 
-cutoffRefusal
+tooLittleHistory
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportRefusalCopy\.ts\:79
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportRefusalCopy\.ts\:97
 
 Extend
 
 ```text
-Existing copy for then-before-cutoff becomes the too-little-history line naming the owner
+Existing copy for then-before-cutoff (cutoffRefusal) becomes the too-little-history line naming the owner
 ```
 
 INewReport

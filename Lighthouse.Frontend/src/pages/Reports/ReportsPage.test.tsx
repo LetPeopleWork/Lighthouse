@@ -356,9 +356,6 @@ describe("Editing from a row", () => {
 			}),
 		);
 		const wizard = await screen.findByRole("dialog");
-		await user.click(
-			await within(wizard).findByRole("button", { name: "Next" }),
-		);
 		const name = await within(wizard).findByRole("textbox", { name: "Name" });
 		await user.clear(name);
 		await user.type(name, renamed);

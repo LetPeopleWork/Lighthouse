@@ -174,7 +174,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 518,
+"F": 521,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -882,7 +882,8 @@
 "F416",
 "F417",
 "F418",
-"F419"
+"F419",
+"F519"
 ],
 "impact": [
 {
@@ -1272,7 +1273,7 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.ts:88",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.ts:69",
 "reason": "F290",
 "symbol": "reportWindowCheck"
 },
@@ -1284,9 +1285,9 @@
 },
 {
 "decision": "Replace",
-"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx:1",
-"reason": "F292",
-"symbol": "NowStep"
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx:37",
+"reason": "F520",
+"symbol": "ThenStep"
 },
 {
 "decision": "Extend",
@@ -1302,9 +1303,9 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:79",
-"reason": "F296",
-"symbol": "cutoffRefusal"
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:97",
+"reason": "F521",
+"symbol": "tooLittleHistory"
 },
 {
 "decision": "Extend",
@@ -1351,6 +1352,7 @@
 ]
 },
 "supports": [
+"Lighthouse.Frontend/src/pages/Reports/ReportsPage.test.tsx",
 "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts",
 "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.test.ts",
 "Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.test.tsx",
@@ -1385,11 +1387,6 @@
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx",
 "reason": "F405"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx",
-"reason": "F271"
 },
 {
 "change": "Extend",
@@ -2271,7 +2268,6 @@
 "F267": "IReportQueries.Get read to ReportView to ThroughputPanel and ThenAndNowSummary",
 "F268": "Not applicable: pure rendering of a read",
 "F27": "Edit report changes name and shown metrics only",
-"F271": "Deleted: the Now step and the bulk Same as Then / Custom choice go",
 "F273": "Edit now opens on Metrics & name, index unchanged; comment updated",
 "F274": "Remove the Now side of the check",
 "F276": "Remove the per-owner Now branch; a valid Then always fits a same-length Now",
@@ -2285,10 +2281,8 @@
 "F29": "she opens Edit report",
 "F290": "Existing frontend mirror of the server window rules; only the Now side goes",
 "F291": "Existing per-owner limit; the Now branch becomes unreachable and is removed",
-"F292": "The question it asks no longer exists; the Then step shows the derived Now",
 "F294": "Existing registry of Then & Now steps; the Now step leaves it",
 "F295": "Edit start index stays 2, which now names Metrics & name; only the comment changes",
-"F296": "Existing copy for then-before-cutoff becomes the too-little-history line naming the owner",
 "F297": "Existing create request type; loses nowLengthDays",
 "F3": "A {Team} or {Portfolio} Admin creates a Then & Now report whose Now is always exactly as long as its Then, without choosing a Now length or understanding window rules, so every report, new or already saved, is a like-for-like comparison; and the report compares the {Throughput} Total of Then against Now.",
 "F30": "she can change the name and the shown metrics, no Now length is offered, and Then is not checked again against the kept history, so an old report whose Then is now older than the kept history stays editable",
@@ -2519,7 +2513,10 @@
 "F516": "After the refused Create the wizard reads 'Lightspeed keeps history from 3 Oct 2025: too little for a 90-day Then and Now. Pick a shorter length or a later end date.'; the Team page hands the tab 'Team Lightspeed' and the Portfolio page 'Project Apollo' (TeamDetail.reportsTab and PortfolioDetail.reportsTab tests)",
 "F517": "The too-little-history line names the owner whose page she is on, also when the server refuses after Create",
 "F518": "A detail page passing a stale or different owner's name (the stand-in shows exactly the loaded owner's name)",
+"F519": "S1 deletes Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx (its question no longer exists; ThenStep shows the derived Now). The deletion is part of S1 craft even though it is no longer a listed target: a deleted file cannot carry a resolving reuse locator, and the target change kinds are only Create/Extend.",
 "F52": "Bulk Create wizard on the app-level Reports page: no 'Same as Then / Custom' Now choice; every saved report's Now = Then.",
+"F520": "NowStep (removed in S1 craft) asked a question that no longer exists; its replacement owner is the Then step, which shows the derived Now",
+"F521": "Existing copy for then-before-cutoff (cutoffRefusal) becomes the too-little-history line naming the owner",
 "F54": "Edit report: name and shown metrics only.",
 "F55": "The API refuses a create or edit carrying a Now length different from Then's; absent or equal is accepted.",
 "F56": "{Throughput} Total line gains change and % change and counts in the CHANGE summary.",

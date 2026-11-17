@@ -89,7 +89,7 @@ describe("what Create does on the owner step", () => {
 
 	it("is not offered before the owner step", () => {
 		expect(createActionOf(0, 3, "ready", onCreate)).toBeUndefined();
-		expect(createActionOf(NOW_STEP, 3, "ready", onCreate)).toBeUndefined();
+		expect(createActionOf(THEN_STEP, 3, "ready", onCreate)).toBeUndefined();
 	});
 
 	it("counts the picked owners in its label, in the singular for one", () => {

@@ -3,10 +3,12 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
+	INewReport,
 	IReportOwner,
 	ReportMetricKey,
 } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type { IReportService } from "../../../services/Api/ReportService";
 import { actAndSettle } from "../../../tests/actAndSettle";
 import { deferred } from "../../../tests/HeldMetricsService";
 import { inSequence } from "../../../tests/inSequence";
@@ -137,10 +139,8 @@ const theNextButton = async () =>
 	within(await theWizard()).getByRole("button", { name: "Next" });
 
 /** The one report the wizard asked the server to create. */
-const theCreatedReport = (reportService: { createReport: unknown }) =>
-	vi.mocked(
-		reportService.createReport as (owner: IReportOwner, report: object) => void,
-	).mock.calls[0][1];
+const theCreatedReport = (reportService: IReportService): INewReport =>
+	vi.mocked(reportService.createReport).mock.calls[0][1];
 
 const theCreateButton = async () =>
 	within(await theWizard()).findByRole("button", { name: CREATE });
@@ -497,7 +497,7 @@ describe("Then and Now side by side on the Then step", () => {
 			}),
 		);
 		expect(
-			(created as { thenAndNow: object }).thenAndNow,
+			created.thenAndNow,
 			"a new report never sends a Now length: Now is always as long as Then, so the request carries none",
 		).not.toHaveProperty("nowLengthDays");
 	});
