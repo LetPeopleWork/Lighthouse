@@ -64,4 +64,10 @@ No usable limits (baseline < 14 days or fewer than 2 items)
 - Loading: chip disabled with "Outliers, loading", chart frame dimmed under its spinner, no count shown.
 - Failure: the widget's could-not-load message.
 
-## Rigor profile — to agree at the start of 6655 DELIVER
+## Rigor profile — agreed with the maintainer (2026-11-17)
+
+| Slice | Profile | Crafter, acceptance designer | Reviewers, examiner |
+|---|---|---|---|
+| S1 switch | `standard` | `sonnet` | `haiku` |
+| S2 UNPL rule | `thorough` | `opus` | `sonnet` |
+| S3 no limits | `thorough` | `opus` | `sonnet` |
