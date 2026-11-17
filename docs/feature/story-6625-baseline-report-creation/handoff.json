@@ -4,26 +4,18 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 402,
+"F": 474,
 "K": 6,
 "L": 8,
 "N": 7,
 "P": 14,
 "S": 3,
-"T": 1,
+"T": 2,
 "Y": 4
 },
 "design": {
 "paradigm": "object_oriented",
 "shared": {
-"architectural_tests": [
-{
-"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest",
-"id": "T1",
-"obligation": "F236",
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs"
-}
-],
 "boundaries": {
 "dependency_direction": "F123",
 "driven_ports": [
@@ -131,7 +123,7 @@
 },
 {
 "id": "K5",
-"text": "F111"
+"text": "F403"
 },
 {
 "id": "K6",
@@ -630,17 +622,17 @@
 },
 {
 "contract": "NewReportRequest thenAndNow.nowLengthDays",
-"decision": "Migrated",
+"decision": "UnchangedCompatible",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:22",
 "party": "Consumer",
-"reason": "F330"
+"reason": "F462"
 },
 {
 "contract": "NewReportRequest thenAndNow.nowLengthDays",
-"decision": "Migrated",
+"decision": "UnchangedCompatible",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:90",
 "party": "Consumer",
-"reason": "F331"
+"reason": "F463"
 },
 {
 "contract": "NewReportRequest thenAndNow.nowLengthDays",
@@ -648,6 +640,27 @@
 "locator": "docs/feature/story-6625-baseline-report-creation/brief.md:1",
 "party": "Producer",
 "reason": "F332"
+},
+{
+"contract": "NewReportRequest thenAndNow.nowLengthDays",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:46",
+"party": "Consumer",
+"reason": "F464"
+},
+{
+"contract": "ReportEditRequest thenAndNow.nowLengthDays",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:240",
+"party": "Producer",
+"reason": "F465"
+},
+{
+"contract": "ReportEditRequest thenAndNow.nowLengthDays",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs:41",
+"party": "Consumer",
+"reason": "F466"
 }
 ],
 "closure": [
@@ -683,6 +696,23 @@
 "runtime": "DesignedNotBuilt",
 "subject": "F340"
 }
+],
+"constructors": [
+{
+"name": "windowsRelationOf",
+"signature": "windowsRelationOf(draft: ThenAndNowDraft, templates: IReportTemplates): WindowsRelation | null; WindowsRelation = {kind: 'apart'} | {kind: 'sameDays'} | {kind: 'overlapUntil'; until: string}"
+},
+{
+"name": "windowsOf",
+"signature": "windowsOf(draft: ThenAndNowDraft, templates: IReportTemplates): {then: ReportWindow; now: ReportWindow} | null; ReportWindow = {start: string; end: string; lengthDays: number}"
+}
+],
+"decisions": [
+"F415",
+"F416",
+"F417",
+"F418",
+"F419"
 ],
 "impact": [
 {
@@ -742,12 +772,6 @@
 {
 "decision": "Changed",
 "kind": "production",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:16",
-"reason": "F310"
-},
-{
-"decision": "Changed",
-"kind": "production",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:56",
 "reason": "F311"
 },
@@ -764,36 +788,6 @@
 "reason": "F313"
 },
 {
-"decision": "Changed",
-"kind": "interface",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:40",
-"reason": "F314"
-},
-{
-"decision": "Changed",
-"kind": "production",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs:27",
-"reason": "F315"
-},
-{
-"decision": "Changed",
-"kind": "production",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:138",
-"reason": "F316"
-},
-{
-"decision": "Changed",
-"kind": "production",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:90",
-"reason": "F316"
-},
-{
-"decision": "Migrated",
-"kind": "test",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:1",
-"reason": "F317"
-},
-{
 "decision": "Migrated",
 "kind": "test",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs:1",
@@ -804,24 +798,6 @@
 "kind": "test",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice07NowLengthScenarios.cs:1",
 "reason": "F319"
-},
-{
-"decision": "Migrated",
-"kind": "test",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/BulkReports/BulkReportsAcceptanceTest.cs:61",
-"reason": "F320"
-},
-{
-"decision": "Migrated",
-"kind": "test",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs:1",
-"reason": "F321"
-},
-{
-"decision": "Migrated",
-"kind": "test",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Reports/ThenAndNowPayloadRoundTripTest.cs:1",
-"reason": "F322"
 },
 {
 "decision": "Migrated",
@@ -858,6 +834,222 @@
 "kind": "build",
 "locator": "Lighthouse.Frontend/stryker.6625.frontend.json:1",
 "reason": "F327"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx:43",
+"reason": "F426"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/ReportWizard.tsx:44",
+"reason": "F427"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:546",
+"reason": "F428"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:470",
+"reason": "F429"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/useReportEditing.tsx:94",
+"reason": "F430"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Frontend/src/pages/Reports/bulkWizardSteps.ts:21",
+"reason": "F431"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Frontend/src/pages/Reports/OwnerStep.tsx:36",
+"reason": "F432"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:16",
+"reason": "F433"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:40",
+"reason": "F434"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs:27",
+"reason": "F435"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:138",
+"reason": "F436"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:90",
+"reason": "F437"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/tests/ReportsTestKit.tsx:1",
+"reason": "F438"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/tests/BulkReportsTestKit.tsx:132",
+"reason": "F439"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Reports/bulkWizardSteps.test.ts:1",
+"reason": "F440"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.ownerLimits.test.tsx:1",
+"reason": "F441"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Reports/ownerLimitOfWindow.test.ts:1",
+"reason": "F442"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.test.ts:1",
+"reason": "F443"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/services/Api/ReportService.test.ts:118",
+"reason": "F444"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.editWizard.test.tsx:96",
+"reason": "F445"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx:651",
+"reason": "F446"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts:37",
+"reason": "F447"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.reportsTab.test.tsx:59",
+"reason": "F448"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx:29",
+"reason": "F449"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.openings.test.tsx:1",
+"reason": "F450"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.ownerStepLooks.test.tsx:54",
+"reason": "F451"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Reports/ReportsPage.usageData.test.tsx:1",
+"reason": "F452"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/tests/reportWindowBoundaries.json:75",
+"reason": "F453"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice01TeamReportScenarios.cs:404",
+"reason": "F454"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05WipAndWorkItemAgeScenarios.cs:74",
+"reason": "F455"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice07NowLengthScenarios.cs:1",
+"reason": "F456"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs:111",
+"reason": "F457"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs:82",
+"reason": "F458"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:1",
+"reason": "F459"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs:1",
+"reason": "F460"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/BulkReports/BulkReportsAcceptanceTest.cs:61",
+"reason": "F461"
 }
 ],
 "laws": [
@@ -928,12 +1120,6 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:6",
-"reason": "F293",
-"symbol": "NewReportRequest"
-},
-{
-"decision": "Extend",
 "locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.ts:74",
 "reason": "F294",
 "symbol": "reportTypes"
@@ -958,21 +1144,39 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs:27",
-"reason": "F298",
-"symbol": "NewThenAndNow"
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx:43",
+"reason": "F420",
+"symbol": "ReportsTab"
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:9",
-"reason": "F299",
-"symbol": "ReportCommands"
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/ReportWizard.tsx:50",
+"reason": "F421",
+"symbol": "ReportWizard"
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:8",
-"reason": "F300",
-"symbol": "ReportBulkCommands"
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:546",
+"reason": "F422",
+"symbol": "TeamDetail"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:470",
+"reason": "F423",
+"symbol": "PortfolioDetail"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/models/Reports/Report.ts:31",
+"reason": "F424",
+"symbol": "IReportTemplates"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/models/Reports/Report.ts:6",
+"reason": "F425",
+"symbol": "IReportOwner"
 }
 ]
 },
@@ -980,18 +1184,37 @@
 "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts",
 "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWindowCheck.test.ts",
 "Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.test.tsx",
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs",
+"Lighthouse.Frontend/src/tests/ReportsTestKit.tsx",
+"Lighthouse.Frontend/src/tests/BulkReportsTestKit.tsx",
+"Lighthouse.Frontend/src/pages/Reports/bulkWizardSteps.test.ts",
+"Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.portfolios.test.tsx",
+"Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.ownerLimits.test.tsx",
+"Lighthouse.Frontend/src/pages/Reports/ownerLimitOfWindow.test.ts",
+"Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.test.ts",
+"Lighthouse.Frontend/src/services/Api/ReportService.test.ts",
+"Lighthouse.Frontend/src/pages/Common/Reports/ReportView.editWizard.test.tsx",
+"Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx",
+"Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts",
+"Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.reportsTab.test.tsx",
+"Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice01TeamReportScenarios.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05WipAndWorkItemAgeScenarios.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice07NowLengthScenarios.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs"
 ],
 "targets": [
 {
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts",
-"reason": "F269"
+"reason": "F404"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx",
-"reason": "F270"
+"reason": "F405"
 },
 {
 "change": "Extend",
@@ -1001,7 +1224,7 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.ts",
-"reason": "F272"
+"reason": "F406"
 },
 {
 "change": "Extend",
@@ -1016,7 +1239,7 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts",
-"reason": "F275"
+"reason": "F407"
 },
 {
 "change": "Extend",
@@ -1026,17 +1249,12 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/models/Reports/Report.ts",
-"reason": "F277"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs",
-"reason": "F278"
+"reason": "F408"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs",
-"reason": "F279"
+"reason": "F409"
 },
 {
 "change": "Extend",
@@ -1046,32 +1264,34 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs",
-"reason": "F281"
+"reason": "F410"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs",
-"reason": "F282"
+"path": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx",
+"reason": "F411"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs",
-"reason": "F283"
+"path": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/ReportWizard.tsx",
+"reason": "F412"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs",
-"reason": "F284"
+"path": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx",
+"reason": "F413"
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs",
-"reason": "F284"
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx",
+"reason": "F414"
 }
 ],
 "verification": [
 "pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportsTab.createWizard.test.tsx src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts src/pages/Common/Reports/wizard/reportWindowCheck.test.ts src/pages/Reports/BulkReportWizard.test.tsx",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation"
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Reports src/pages/Common/Reports src/services/Api/ReportService.test.ts src/pages/Teams/Detail/TeamDetail.reportsTab.test.tsx src/pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter 'FullyQualifiedName~Lighthouse.Backend.Tests.API.Integration.Reports|FullyQualifiedName~ThenAndNowTemplateTest'"
 ]
 },
 "S2": {
@@ -1123,6 +1343,14 @@
 "locator": "Lighthouse.Frontend/src/pages/Reports/useReportsPdfExport.ts:1",
 "party": "Consumer",
 "reason": "F381"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest",
+"id": "T2",
+"obligation": "F236",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs"
 }
 ],
 "closure": [
@@ -1255,16 +1483,30 @@
 "kind": "build",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker.6625.backend.json:1",
 "reason": "F376"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:16",
+"reason": "F471"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:56",
+"reason": "F472"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:1",
+"reason": "F473"
 }
 ],
 "not_applicable": [
 {
 "analysis": "prefactoring",
-"reason": "F382"
-},
-{
-"analysis": "architectural_tests",
-"reason": "F383"
+"reason": "F474"
 }
 ],
 "reuse": [
@@ -1309,12 +1551,25 @@
 "locator": "Lighthouse.Frontend/src/models/Reports/Report.ts:140",
 "reason": "F361",
 "symbol": "ReportChange"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:26",
+"reason": "F469",
+"symbol": "ReportWindow"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:9",
+"reason": "F470",
+"symbol": "ReportWindowPolicy"
 }
 ]
 },
 "supports": [
 "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.editWizard.test.tsx",
-"Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts"
+"Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs"
 ],
 "targets": [
 {
@@ -1351,11 +1606,22 @@
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts",
 "reason": "F351"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs",
+"reason": "F467"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs",
+"reason": "F468"
 }
 ],
 "verification": [
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation",
-"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportView.editWizard.test.tsx src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts"
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportView.editWizard.test.tsx src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest"
 ]
 },
 "S3": {
@@ -1661,7 +1927,6 @@
 "F109": "Now length in a create or edit request: absent, or exactly equal to the Then length. Every other value is refused, including 0 and negative values.",
 "F11": "the Then step shows Then 2 Nov - 15 Nov 2026 and Now 2 Nov - 15 Nov 2026 and reads 'Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass.', and she can create the report",
 "F110": "EF migrations are expand-only: this feature adds no migration and drops no column; the unread payload member stays.",
-"F111": "Open, owner Acceptance designer with the maintainer: the copy of the too-little-history line (P5) and of the Total change magnitude (P10, for example 13 more) is decided at the UI sketch at the start of DELIVER. This design pins no exact wording for them.",
 "F112": "Loading and failure looks: the Then step fetches nothing new. Today, the oldest kept day and the minimum length come from the existing keyed reportTemplates query; while it loads, the wizard shows its existing lone spinner with Next disabled, and on failure its existing could-not-load alert. The bulk owner step keeps its existing owner-limit looks. The report view and the Throughput panel keep the existing report loading and failure looks.",
 "F113": "Existing value object for an inclusive window; NowEndingOn(today) makes equal length a property of construction instead of a caller rule.",
 "F114": "The single existing owner of window refusals, already held pure by architecture rule E15; NowLengthRefusal replaces NowRefusal.",
@@ -1835,24 +2100,13 @@
 "F266": "A read with totals 52 and 65 builds a Total change of +13 and +25 percent",
 "F267": "IReportQueries.Get read to ReportView to ThroughputPanel and ThenAndNowSummary",
 "F268": "Not applicable: pure rendering of a read",
-"F269": "Remove nowLength and thenEndsBeforeNow; back-to-back default end; windowsRelationOf closed sum apart, overlapUntil, sameDays; requests carry no Now length",
 "F27": "Edit report changes name and shown metrics only",
-"F270": "Show Then and Now by date and the relation line",
 "F271": "Deleted: the Now step and the bulk Same as Then / Custom choice go",
-"F272": "Drop the Now step from the Then & Now steps",
 "F273": "Edit now opens on Metrics & name, index unchanged; comment updated",
 "F274": "Remove the Now side of the check",
-"F275": "Too-little-history copy naming the owner (wording from the DELIVER sketch)",
 "F276": "Remove the per-owner Now branch; a valid Then always fits a same-length Now",
-"F277": "INewReport loses nowLengthDays",
-"F278": "ReportWindow.NowEndingOn; the payload record stops carrying NowLengthDays",
-"F279": "NowLengthRefusal replaces NowRefusal and NowWindow",
 "F28": "Elena may edit a Then & Now report",
 "F280": "Add now-length-differs-from-then",
-"F281": "Freeze applies the Now rule and stores no Now length",
-"F282": "Carry the optional Now length only as RequestedNowLengthDays for the refusal",
-"F283": "NewThenAndNow carries RequestedNowLengthDays",
-"F284": "Log the Then length only",
 "F285": "On instance day 15 Nov 2026 a Team Admin opens Create Report on the Team Reports tab, picks Then & Now and a Then length of 30 days, keeps the default end, then creates the report; variants set Then to end 15 Nov 2026 with 14 days, to end 31 Oct 2026 with 30 days, and pick a length the owner kept history cannot hold; the bulk wizard on the Reports page creates for several Teams with 30 days",
 "F286": "The Then step shows Then 17 Sep - 16 Oct 2026 and Now 17 Oct - 15 Nov 2026 with no overlap line and the wizard has no Now step; Then ending today shows the same-days line and can be created; Then ending 31 Oct shows Now 17 Oct - 15 Nov 2026 and the overlap-until line naming 31 Oct 2026; the too-little-history case shows a refusal naming the owner and Next stays disabled; every create request carries no Now length; every saved report (single and bulk) reads back a 30-day Now ending today",
 "F287": "A wizard that keeps the Now step, defaults Then to end today, shows no Now dates or a wrong overlap day, lets Next through on too little history, or a server that stores or applies a Now length different from Then",
@@ -1862,16 +2116,12 @@
 "F290": "Existing frontend mirror of the server window rules; only the Now side goes",
 "F291": "Existing per-owner limit; the Now branch becomes unreachable and is removed",
 "F292": "The question it asks no longer exists; the Then step shows the derived Now",
-"F293": "Existing request DTO keeps the optional member so an unequal Now can be refused",
 "F294": "Existing registry of Then & Now steps; the Now step leaves it",
 "F295": "Edit start index stays 2, which now names Metrics & name; only the comment changes",
 "F296": "Existing copy for then-before-cutoff becomes the too-little-history line naming the owner",
 "F297": "Existing create request type; loses nowLengthDays",
-"F298": "Existing create carrier; its Now member becomes RequestedNowLengthDays",
-"F299": "Existing create command; only its log line changes",
 "F3": "A {Team} or {Portfolio} Admin creates a Then & Now report whose Now is always exactly as long as its Then, without choosing a Now length or understanding window rules, so every report, new or already saved, is a like-for-like comparison; and the report compares the {Throughput} Total of Then against Now.",
 "F30": "she can change the name and the shown metrics, no Now length is offered, and Then is not checked again against the kept history, so an old report whose Then is now older than the kept history stays editable",
-"F300": "Existing bulk create command; only its log line changes",
 "F301": "Draft without Now; new relation function",
 "F302": "Shows Now and the relation line",
 "F303": "Deleted",
@@ -1882,20 +2132,13 @@
 "F308": "Now branch removed",
 "F309": "INewReport without nowLengthDays",
 "F31": "A Now length different from Then is refused",
-"F310": "Member removed from the record; legacy JSON still deserialises, unknown members ignored",
 "F311": "NowLengthRefusal replaces NowRefusal",
 "F312": "New code; now-* kept, NamesEarliestStart keeps NowBeforeCutoff harmlessly",
 "F313": "Freeze stores no Now",
-"F314": "Optional member kept, read only for the refusal",
 "F315": "RequestedNowLengthDays",
-"F316": "Logging without a Now length",
-"F317": "Now rows of the shared boundary table become NowLengthRefusal rows",
 "F318": "Now-length freeze cases change to the equal-length rule; touched rows move toward the port",
 "F319": "Host scenarios for a chosen Now length no longer hold; replaced by port scenarios, line off HostUsersStillToMove when emptied",
 "F32": "a request to create or edit a Then & Now report with a Then of 90 days",
-"F320": "Requests stop sending a Now length",
-"F321": "Log text without Now",
-"F322": "Legacy payload with nowLengthDays still reads",
 "F323": "Now rows removed from the shared table",
 "F324": "Draft without Now; relation cases added",
 "F325": "No Now choice",
@@ -1904,8 +2147,6 @@
 "F328": "Single-owner wizard stops sending a Now length",
 "F329": "Bulk wizard stops sending a Now length",
 "F33": "it carries a Now length of 45 days",
-"F330": "Reads the member only to refuse an unequal Now",
-"F331": "Logs only the Then length",
 "F332": "Lighthouse-Clients CLI and MCP only list and read reports and never send a Now length (DISCUSS checklist)",
 "F333": "The Now derivation replaces one expression and the draft change is local to thenAndNowDraft; no structure must move first",
 "F334": "In the Then step: the overlap line shows exactly when Then and Now share a day, it names the last day of Then, and the same-days line shows exactly when Then ends today; the default Then ends the day before Now starts, so default windows never overlap",
@@ -1961,8 +2202,6 @@
 "F38": "the Total line shows the change and % change (13 more, +25%) marked as better, per day keeps its own change, and the CHANGE summary judges {Throughput} on its Total line too",
 "F380": "Exhaustive copy table gains the new code",
 "F381": "Same shape; value now always equal in length to thenWindow",
-"F382": "S1 already moves Now to ReportWindow.NowEndingOn; S2 only calls it from Read and Edit",
-"F383": "The shared architecture check (only ReportWindow and ReportWindowPolicy compute a Now window) and E15 cover the laws S2 can reach",
 "F384": "Saved and edited reports compare equal lengths",
 "F385": "Quint invShownNowEqThen, invStaleOnlyAfterRealChange and invEditNeverRefusedForHistory held; mutants read-stored, bump and edit-checks-history killed",
 "F386": "A legacy 30/45 payload reads as a 30-day Now; an edit of name and metrics is accepted",
@@ -1983,12 +2222,84 @@
 "F400": "A 30-day report with Throughput Total 91 in both Then and Now shows the Total line with the existing grey dash mark and 'No change', counted as no change in the CHANGE summary.",
 "F401": "A report created before Throughput was captured shows no Total change and Throughput is not judged in the CHANGE summary.",
 "F402": "A 30-day report with Throughput Total 52 in Then and 65 in Now shows beside 'Total 65 Work Items' the change '▲ 13 (+25 %)' marked as better; the per-day line keeps its own change '▲ 0.43 per day (+25 %)'; and the CHANGE summary judges Throughput on its Total line.",
+"F403": "Copy decided at the start of DELIVER (feature-delta.md, maintainer decisions 2026-11-17): the too-little-history line reads '{owner name} keeps history from {d MMM yyyy}: too little for a {L}-day Then and Now. Pick a shorter length or a later end date.' and the Throughput Total change reads like '▲ 13 (+25 %)'. Configurable terms render through the terminology hook.",
+"F404": "Remove nowLength and thenEndsBeforeNow; back-to-back default end; windowsOf and windowsRelationOf as recorded in this slice's constructors; newReportOf and newReportForOwnersOf send no Now length; reportChangeOf sends the frozen Then length as Now length until S2 drops it; thenAndNowDraftOf drops nowLength",
+"F405": "Show Then and Now by date and the relation line; the too-little-history line names the owner from the ownerName step prop",
+"F406": "Drop the Now step from the Then & Now steps (create and edit share the list); ReportTypeStepProps gains optional ownerName",
+"F407": "then-before-cutoff in the single-owner wizard reads '{owner name} keeps history from {d MMM yyyy}: too little for a {L}-day Then and Now. Pick a shorter length or a later end date.'; RefusalWords gains the owner name and the Then length; with no owner name it reads 'This {Team or Portfolio term}'; the bulk not-created line for then-before-cutoff stays as it is; now-* copies may go because the wizard and the server no longer produce them on create",
+"F408": "INewReport loses nowLengthDays; IReportOwner and ReportChange stay unchanged in this slice",
+"F409": "Add NowLengthRefusal(requestedNowLengthDays, thenLengthDays): null when absent or equal, now-length-differs-from-then otherwise; NowRefusal and NowWindow stay until S2 because Edit and Read still call them",
+"F410": "Freeze checks Then as today, then NowLengthRefusal, and writes no nowLengthDays member; Read and Edit are unchanged in this slice (a payload without the member already reads a Now as long as Then)",
+"F411": "Optional ownerName prop, passed to the create ReportWizard",
+"F412": "Optional ownerName prop, passed to every step and to the refusal words; the Edit mount leaves it out because Then is frozen there",
+"F413": "Pass team.name to ReportsTab as ownerName",
+"F414": "Pass portfolio.name to ReportsTab as ownerName",
+"F415": "Owner name for the too-little-history line: passed down, not fetched. TeamDetail passes team.name and PortfolioDetail passes portfolio.name to ReportsTab as an optional ownerName prop; ReportsTab hands it to the create ReportWizard; ReportWizard hands it to every step through ReportTypeStepProps.ownerName and to the refusal words, so both the Then step's own check and a then-before-cutoff refusal from the server after Create name the owner. No new request, no wire change, IReportOwner and IReportTemplates unchanged, so the Then step still fetches nothing new. The Edit mount (useReportEditing) passes none: Then is frozen there and never refused. Without a name the line reads 'This {Team or Portfolio term} keeps history from ...'. The bulk wizard keeps its own per-owner not-created line. Test kit fixture fact: ReportsTestKit exports the owner names the oracle passes as ownerName, 'Lightspeed' for LIGHTSPEED (team 1) and 'Apollo' for APOLLO (portfolio 3); TeamDetail.reportsTab.test.tsx and PortfolioDetail.reportsTab.test.tsx observe the detail pages handing the loaded name to ReportsTab.",
+"F416": "Window contract in thenAndNowDraft.ts, consumed by ThenStep and checked by the window law of this slice: windowsOf(draft, templates) returns the Then window (start = Then end - L + 1, end = thenEndOf, lengthDays = L) and the Now window (start = today - L + 1, end = today, lengthDays = L), L = lengthOf(draft.thenLength), today = templates.today, or null while the end or the length is not a valid day or whole number. windowsRelationOf(draft, templates) returns null in the same case, else {kind: 'sameDays'} when Then ends today, {kind: 'overlapUntil', until} with until = Then's last day as yyyy-MM-dd when today - L + 1 <= Then end < today, and {kind: 'apart'} when Then end < today - L + 1. ThenStep renders apart as no line, sameDays as 'Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass.' and overlapUntil as 'Now overlaps Then until {until as d MMM yyyy}'. The default (thenEnd null) ends Then on today - L, so the default relation is apart.",
+"F417": "Backend scope of this slice is Create only. ReportWindowPolicy gains NowLengthRefusal; ThenAndNowTemplate.Freeze calls it after the Then checks and stores no nowLengthDays. ThenAndNowPayload.NowLengthDays, ReportWindowPolicy.NowRefusal and NowWindow, NewThenAndNow.NowLengthDays, NewReportRequest and the create logs stay unchanged: Read and Edit still use them until S2 derives Now and refuses an unequal edit. A payload written by this slice has no member, so the unchanged Read already shows a Now as long as Then. ReportWindow.NowEndingOn and the architectural test that only ReportWindow and ReportWindowPolicy build a Now window move to S2, the slice that changes the Now derivation.",
+"F418": "The create and edit wizards share one step list, so removing the Now step here removes it from Edit too: Edit opens on Metrics & name (the first editable index stays 2) and asks no Now question. Until S2, reportChangeOf sends the report's frozen Then length as nowLengthDays, which the unchanged edit path accepts. S1 owns the Now-step part of ReportView.editWizard.test.tsx and of ReportsTab.test.tsx; S2 keeps ReportView.editWizard.test.tsx for its own edit observations.",
+"F419": "Supports: every test this slice breaks is declared and changes its expectation to the new behaviour; a row that only exercised the removed Now choice may be deleted with its reason. Left out because this slice does not break them: BulkReportWizard.openings.test.tsx, BulkReportWizard.ownerStepLooks.test.tsx and ReportsPage.usageData.test.tsx reach the owner step only through BulkReportsTestKit; reportWindowBoundaries.json keeps its Now rows for the backend NowRefusal unit rows until S2; ReportWindowPolicyTest, ThenAndNowTemplateEditTest, ReportLoggingTest, ReportBulkCommandsTest, ReportQueriesTest, CycleTimeReportMetricTest, ThenAndNowPayloadRoundTripTest and TeamReportsControllerTest touch only Edit, Read, logs or stubbed ports this slice leaves unchanged; Slice02, Slice04, Slice05b, ReportCreationTimingProbe, BulkReportsAcceptanceTest, CreateForSeveralTeamsScenarios and PortfoliosJoinTheSelectionScenarios already create with equal or no Now; Slice10EditReportScenarios and ReportsWithoutSignInScenarios are edits, S2. No cut: narrowing the backend to Create keeps most backend tests untouched, the remaining support edits are expectation updates of one kind (no Now step, no Now length), and splitting the bulk wizard off would split one product slice.",
 "F42": "Throughput Total from a Then of 0",
+"F420": "The detail pages already mount it with the owner and hold the owner's name; an optional ownerName prop carries the name to the wizard with no new request and no wire change",
+"F421": "Already hands owner and templates to each step and builds the refusal words; it hands the owner name on the same way",
+"F422": "Holds the loaded team, whose name is the owner name the line needs",
+"F423": "Holds the loaded portfolio, whose name is the owner name the line needs",
+"F424": "Considered as the name carrier and rejected: adding the owner name to the templates answer changes the wire and the server for a fact the page already holds",
+"F425": "Considered as the name carrier and rejected: every report query key, path and test owner builds it from kind and id; a name in it would touch every caller for one line of copy",
+"F426": "Optional ownerName prop",
+"F427": "Optional ownerName prop handed to steps and refusal words",
+"F428": "Passes team.name",
+"F429": "Passes portfolio.name",
 "F43": "a 14-day Then & Now report whose {Throughput} Total is 0 in Then and 30 in Now",
+"F430": "Edit mount passes no ownerName; Then is frozen on edit, so the too-little-history line never shows there",
+"F431": "Step labels and OWNER_STEP derive from reportTypes; the owner step becomes step 4 of 4 with no code change",
+"F432": "OwnerLimit window stays Then or Now; limitOfFor now only yields Then",
+"F433": "Freeze leaves NowLengthDays unset; the member stays readable for old payloads until S2 stops reading it",
+"F434": "Optional nowLengthDays still bound and passed through as NewThenAndNow.NowLengthDays; its meaning is now the requested Now length, used only by the refusal",
+"F435": "NewThenAndNow keeps NowLengthDays as the requested length",
+"F436": "Logs the requested Now or the Then length after a successful create; once unequal is refused the two are equal",
+"F437": "Same as the single create log",
+"F438": "Owner-name fixture fact; CUTOFF_REFUSAL becomes the too-little-history sentence; theNowLengthField and nowNeedsAtLeast go",
+"F439": "OWNER_STEP becomes Step 4 of 4; SAME_AS_THEN and the Now form of keptHistoryStarts go",
 "F44": "the Total line reads '▲ 30 (Then was 0)' with no %",
+"F440": "Step labels lose Now; the Now step rows go",
+"F441": "Rows typing a Now length and expecting the Now limit line go",
+"F442": "Now-limit rows go",
+"F443": "Now step completion rows go",
+"F444": "Create requests carry no nowLengthDays; the edit row keeps it until S2",
+"F445": "Edit opens on Metrics and name; rows that waited for or set the Now length change or go; the edit request carries the Then length",
+"F446": "Edit rows that read the Now length field change",
+"F447": "then-before-cutoff copy changes; now-* rows go",
+"F448": "Its ReportsTab stand-in shows ownerName so the row observes team.name reaching the tab",
+"F449": "Same for portfolio.name",
 "F45": "Equal non-zero Throughput Totals read as no change",
+"F450": "Reaches the owner step only through the kit's toTheOwnerStep and OWNER_STEP",
+"F451": "Reads only the kit's OWNER_STEP constant",
+"F452": "Reaches the owner step only through the kit",
+"F453": "Now rows stay for the backend NowRefusal unit rows until S2; the frontend and host readers stop using them",
+"F454": "The Now-past-the-calendar create row is unreachable now (unequal is refused first) and goes",
+"F455": "Creates Then 15 with Now 30; becomes Now 15 or no Now",
+"F456": "Rows creating an unequal Now become the now-length-differs-from-then refusal or go",
+"F457": "Then rows send Now equal to the row length; Now rows are no longer reachable by create and are skipped",
+"F458": "May gain the now-length-differs-from-then reason constant",
+"F459": "NowRefusal and NowWindow stay in this slice",
 "F46": "a 30-day Then & Now report whose {Throughput} Total is 91 in Then and 91 in Now",
+"F460": "Create log fields unchanged; the Now-too-short row is an edit, S2",
+"F461": "Its comparisons already send equal lengths",
+"F462": "Binds the optional member and passes it on unchanged",
+"F463": "Logs it after success, when it is absent or equal to Then",
+"F464": "Freeze refuses an unequal value and stores none",
+"F465": "Edit sends the frozen Then length, accepted by the unchanged edit path, until S2 sends none",
+"F466": "Unchanged in this slice",
+"F467": "ReportWindow.NowEndingOn(today) builds the Now window from this window's length; the payload record stops carrying NowLengthDays (the JSON member stays, unread)",
+"F468": "NowRefusal and NowWindow go once Edit and Read no longer call them",
+"F469": "Existing inclusive window value object; NowEndingOn makes equal length a property of construction",
 "F47": "the Total line shows the existing grey dash mark and 'No change', and counts as no change in the CHANGE summary",
+"F470": "Single owner of window refusals; its Now members leave with their last callers",
+"F471": "NowEndingOn added; NowLengthDays member removed from the record",
+"F472": "NowRefusal and NowWindow removed",
+"F473": "Gains the Now-window owner rule",
+"F474": "S2 adds ReportWindow.NowEndingOn and calls it from Read in the same change; Edit drops its Now check; no structure must move first",
 "F48": "Throughput not captured shows no Total change",
 "F49": "a report created before {Throughput} was captured",
 "F5": "today is 15 Nov 2026 and Elena, a {Team} Admin of Team Lightspeed, creates a Then & Now report",

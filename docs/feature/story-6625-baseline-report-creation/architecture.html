@@ -221,7 +221,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>K5</h4>
 
-<pre><code>Open, owner Acceptance designer with the maintainer: the copy of the too-little-history line (P5) and of the Total change magnitude (P10, for example 13 more) is decided at the UI sketch at the start of DELIVER. This design pins no exact wording for them.
+<pre><code>Copy decided at the start of DELIVER (feature-delta.md, maintainer decisions 2026-11-17): the too-little-history line reads &#x27;{owner name} keeps history from {d MMM yyyy}: too little for a {L}-day Then and Now. Pick a shorter length or a later end date.&#x27; and the Throughput Total change reads like &#x27;▲ 13 (+25 %)&#x27;. Configurable terms render through the terminology hook.
 </code></pre>
 
 <h4>K6</h4>
@@ -1143,15 +1143,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>Architectural tests</h3>
 
-<h4>T1</h4>
-
-<pre><code>Only ReportWindow and ReportWindowPolicy compute a Now window: no other type in the Reports module calls ReportWindow.EndingOn with today or builds a Now window; E15 purity of ReportWindowPolicy stays
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
-
-<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest
-</code></pre>
+<p>None.</p>
 
 <h3>Contract tests</h3>
 
@@ -1167,14 +1159,14 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>Remove nowLength and thenEndsBeforeNow; back-to-back default end; windowsRelationOf closed sum apart, overlapUntil, sameDays; requests carry no Now length
+<pre><code>Remove nowLength and thenEndsBeforeNow; back-to-back default end; windowsOf and windowsRelationOf as recorded in this slice&#x27;s constructors; newReportOf and newReportForOwnersOf send no Now length; reportChangeOf sends the frozen Then length as Now length until S2 drops it; thenAndNowDraftOf drops nowLength
 </code></pre>
 
 <p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx</p>
 
 <p>Extend</p>
 
-<pre><code>Show Then and Now by date and the relation line
+<pre><code>Show Then and Now by date and the relation line; the too-little-history line names the owner from the ownerName step prop
 </code></pre>
 
 <p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx</p>
@@ -1188,7 +1180,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>Drop the Now step from the Then &amp; Now steps
+<pre><code>Drop the Now step from the Then &amp; Now steps (create and edit share the list); ReportTypeStepProps gains optional ownerName
 </code></pre>
 
 <p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportWizardRules.ts</p>
@@ -1209,7 +1201,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>Too-little-history copy naming the owner (wording from the DELIVER sketch)
+<pre><code>then-before-cutoff in the single-owner wizard reads &#x27;{owner name} keeps history from {d MMM yyyy}: too little for a {L}-day Then and Now. Pick a shorter length or a later end date.&#x27;; RefusalWords gains the owner name and the Then length; with no owner name it reads &#x27;This {Team or Portfolio term}&#x27;; the bulk not-created line for then-before-cutoff stays as it is; now-* copies may go because the wizard and the server no longer produce them on create
 </code></pre>
 
 <p>Lighthouse.Frontend/src/pages/Reports/ownerLimitOfWindow.ts</p>
@@ -1223,21 +1215,14 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>INewReport loses nowLengthDays
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs</p>
-
-<p>Extend</p>
-
-<pre><code>ReportWindow.NowEndingOn; the payload record stops carrying NowLengthDays
+<pre><code>INewReport loses nowLengthDays; IReportOwner and ReportChange stay unchanged in this slice
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs</p>
 
 <p>Extend</p>
 
-<pre><code>NowLengthRefusal replaces NowRefusal and NowWindow
+<pre><code>Add NowLengthRefusal(requestedNowLengthDays, thenLengthDays): null when absent or equal, now-length-differs-from-then otherwise; NowRefusal and NowWindow stay until S2 because Edit and Read still call them
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportRefusalCodes.cs</p>
@@ -1251,35 +1236,35 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>Freeze applies the Now rule and stores no Now length
+<pre><code>Freeze checks Then as today, then NowLengthRefusal, and writes no nowLengthDays member; Read and Edit are unchanged in this slice (a payload without the member already reads a Now as long as Then)
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx</p>
 
 <p>Extend</p>
 
-<pre><code>Carry the optional Now length only as RequestedNowLengthDays for the refusal
+<pre><code>Optional ownerName prop, passed to the create ReportWizard
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/ReportWizard.tsx</p>
 
 <p>Extend</p>
 
-<pre><code>NewThenAndNow carries RequestedNowLengthDays
+<pre><code>Optional ownerName prop, passed to every step and to the refusal words; the Edit mount leaves it out because Then is frozen there
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs</p>
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx</p>
 
 <p>Extend</p>
 
-<pre><code>Log the Then length only
+<pre><code>Pass team.name to ReportsTab as ownerName
 </code></pre>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs</p>
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx</p>
 
 <p>Extend</p>
 
-<pre><code>Log the Then length only
+<pre><code>Pass portfolio.name to ReportsTab as ownerName
 </code></pre>
 
 <p>Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx</p>
@@ -1288,6 +1273,8 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportsTab.createWizard.test.tsx src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts src/pages/Common/Reports/wizard/reportWindowCheck.test.ts src/pages/Reports/BulkReportWizard.test.tsx
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Reports src/pages/Common/Reports src/services/Api/ReportService.test.ts src/pages/Teams/Detail/TeamDetail.reportsTab.test.tsx src/pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &#x27;FullyQualifiedName~Lighthouse.Backend.Tests.API.Integration.Reports|FullyQualifiedName~ThenAndNowTemplateTest&#x27;
 </code></pre>
 
 <h4>Supports</h4>
@@ -1299,6 +1286,44 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <p>Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.test.tsx</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs</p>
+
+<p>Lighthouse.Frontend/src/tests/ReportsTestKit.tsx</p>
+
+<p>Lighthouse.Frontend/src/tests/BulkReportsTestKit.tsx</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/bulkWizardSteps.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.portfolios.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.ownerLimits.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/ownerLimitOfWindow.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.test.ts</p>
+
+<p>Lighthouse.Frontend/src/services/Api/ReportService.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportView.editWizard.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.reportsTab.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice01TeamReportScenarios.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05WipAndWorkItemAgeScenarios.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice07NowLengthScenarios.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs</p>
 
 <h4>Public oracle</h4>
 
@@ -1333,7 +1358,20 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <h5>Decisions</h5>
 
-<p>None.</p>
+<pre><code>Owner name for the too-little-history line: passed down, not fetched. TeamDetail passes team.name and PortfolioDetail passes portfolio.name to ReportsTab as an optional ownerName prop; ReportsTab hands it to the create ReportWizard; ReportWizard hands it to every step through ReportTypeStepProps.ownerName and to the refusal words, so both the Then step&#x27;s own check and a then-before-cutoff refusal from the server after Create name the owner. No new request, no wire change, IReportOwner and IReportTemplates unchanged, so the Then step still fetches nothing new. The Edit mount (useReportEditing) passes none: Then is frozen there and never refused. Without a name the line reads &#x27;This {Team or Portfolio term} keeps history from ...&#x27;. The bulk wizard keeps its own per-owner not-created line. Test kit fixture fact: ReportsTestKit exports the owner names the oracle passes as ownerName, &#x27;Lightspeed&#x27; for LIGHTSPEED (team 1) and &#x27;Apollo&#x27; for APOLLO (portfolio 3); TeamDetail.reportsTab.test.tsx and PortfolioDetail.reportsTab.test.tsx observe the detail pages handing the loaded name to ReportsTab.
+</code></pre>
+
+<pre><code>Window contract in thenAndNowDraft.ts, consumed by ThenStep and checked by the window law of this slice: windowsOf(draft, templates) returns the Then window (start = Then end - L + 1, end = thenEndOf, lengthDays = L) and the Now window (start = today - L + 1, end = today, lengthDays = L), L = lengthOf(draft.thenLength), today = templates.today, or null while the end or the length is not a valid day or whole number. windowsRelationOf(draft, templates) returns null in the same case, else {kind: &#x27;sameDays&#x27;} when Then ends today, {kind: &#x27;overlapUntil&#x27;, until} with until = Then&#x27;s last day as yyyy-MM-dd when today - L + 1 &lt;= Then end &lt; today, and {kind: &#x27;apart&#x27;} when Then end &lt; today - L + 1. ThenStep renders apart as no line, sameDays as &#x27;Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass.&#x27; and overlapUntil as &#x27;Now overlaps Then until {until as d MMM yyyy}&#x27;. The default (thenEnd null) ends Then on today - L, so the default relation is apart.
+</code></pre>
+
+<pre><code>Backend scope of this slice is Create only. ReportWindowPolicy gains NowLengthRefusal; ThenAndNowTemplate.Freeze calls it after the Then checks and stores no nowLengthDays. ThenAndNowPayload.NowLengthDays, ReportWindowPolicy.NowRefusal and NowWindow, NewThenAndNow.NowLengthDays, NewReportRequest and the create logs stay unchanged: Read and Edit still use them until S2 derives Now and refuses an unequal edit. A payload written by this slice has no member, so the unchanged Read already shows a Now as long as Then. ReportWindow.NowEndingOn and the architectural test that only ReportWindow and ReportWindowPolicy build a Now window move to S2, the slice that changes the Now derivation.
+</code></pre>
+
+<pre><code>The create and edit wizards share one step list, so removing the Now step here removes it from Edit too: Edit opens on Metrics &amp; name (the first editable index stays 2) and asks no Now question. Until S2, reportChangeOf sends the report&#x27;s frozen Then length as nowLengthDays, which the unchanged edit path accepts. S1 owns the Now-step part of ReportView.editWizard.test.tsx and of ReportsTab.test.tsx; S2 keeps ReportView.editWizard.test.tsx for its own edit observations.
+</code></pre>
+
+<pre><code>Supports: every test this slice breaks is declared and changes its expectation to the new behaviour; a row that only exercised the removed Now choice may be deleted with its reason. Left out because this slice does not break them: BulkReportWizard.openings.test.tsx, BulkReportWizard.ownerStepLooks.test.tsx and ReportsPage.usageData.test.tsx reach the owner step only through BulkReportsTestKit; reportWindowBoundaries.json keeps its Now rows for the backend NowRefusal unit rows until S2; ReportWindowPolicyTest, ThenAndNowTemplateEditTest, ReportLoggingTest, ReportBulkCommandsTest, ReportQueriesTest, CycleTimeReportMetricTest, ThenAndNowPayloadRoundTripTest and TeamReportsControllerTest touch only Edit, Read, logs or stubbed ports this slice leaves unchanged; Slice02, Slice04, Slice05b, ReportCreationTimingProbe, BulkReportsAcceptanceTest, CreateForSeveralTeamsScenarios and PortfoliosJoinTheSelectionScenarios already create with equal or no Now; Slice10EditReportScenarios and ReportsWithoutSignInScenarios are edits, S2. No cut: narrowing the backend to Create keeps most backend tests untouched, the remaining support edits are expectation updates of one kind (no Now step, no Now length), and splitting the bulk wizard off would split one product slice.
+</code></pre>
 
 <h5>Constraints</h5>
 
@@ -1386,15 +1424,6 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>The question it asks no longer exists; the Then step shows the derived Now
 </code></pre>
 
-<p>NewReportRequest</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:6</p>
-
-<p>Extend</p>
-
-<pre><code>Existing request DTO keeps the optional member so an unequal Now can be refused
-</code></pre>
-
 <p>reportTypes</p>
 
 <p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.ts:74</p>
@@ -1431,31 +1460,58 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>Existing create request type; loses nowLengthDays
 </code></pre>
 
-<p>NewThenAndNow</p>
+<p>ReportsTab</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs:27</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx:43</p>
 
 <p>Extend</p>
 
-<pre><code>Existing create carrier; its Now member becomes RequestedNowLengthDays
+<pre><code>The detail pages already mount it with the owner and hold the owner&#x27;s name; an optional ownerName prop carries the name to the wizard with no new request and no wire change
 </code></pre>
 
-<p>ReportCommands</p>
+<p>ReportWizard</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:9</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/ReportWizard.tsx:50</p>
 
 <p>Extend</p>
 
-<pre><code>Existing create command; only its log line changes
+<pre><code>Already hands owner and templates to each step and builds the refusal words; it hands the owner name on the same way
 </code></pre>
 
-<p>ReportBulkCommands</p>
+<p>TeamDetail</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:8</p>
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:546</p>
 
 <p>Extend</p>
 
-<pre><code>Existing bulk create command; only its log line changes
+<pre><code>Holds the loaded team, whose name is the owner name the line needs
+</code></pre>
+
+<p>PortfolioDetail</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:470</p>
+
+<p>Extend</p>
+
+<pre><code>Holds the loaded portfolio, whose name is the owner name the line needs
+</code></pre>
+
+<p>IReportTemplates</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:31</p>
+
+<p>Reuse</p>
+
+<pre><code>Considered as the name carrier and rejected: adding the owner name to the templates answer changes the wire and the server for a fact the page already holds
+</code></pre>
+
+<p>IReportOwner</p>
+
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:6</p>
+
+<p>Reuse</p>
+
+<pre><code>Considered as the name carrier and rejected: every report query key, path and test owner builds it from kind and id; a name in it would touch every caller for one line of copy
 </code></pre>
 
 <h5>Impact</h5>
@@ -1543,15 +1599,6 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>production</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:16</p>
-
-<p>Changed</p>
-
-<pre><code>Member removed from the record; legacy JSON still deserialises, unknown members ignored
-</code></pre>
-
-<p>production</p>
-
 <p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:56</p>
 
 <p>Changed</p>
@@ -1577,51 +1624,6 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>Freeze stores no Now
 </code></pre>
 
-<p>interface</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:40</p>
-
-<p>Changed</p>
-
-<pre><code>Optional member kept, read only for the refusal
-</code></pre>
-
-<p>production</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs:27</p>
-
-<p>Changed</p>
-
-<pre><code>RequestedNowLengthDays
-</code></pre>
-
-<p>production</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:138</p>
-
-<p>Changed</p>
-
-<pre><code>Logging without a Now length
-</code></pre>
-
-<p>production</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:90</p>
-
-<p>Changed</p>
-
-<pre><code>Logging without a Now length
-</code></pre>
-
-<p>test</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Now rows of the shared boundary table become NowLengthRefusal rows
-</code></pre>
-
 <p>test</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs:1</p>
@@ -1638,33 +1640,6 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <p>Migrated</p>
 
 <pre><code>Host scenarios for a chosen Now length no longer hold; replaced by port scenarios, line off HostUsersStillToMove when emptied
-</code></pre>
-
-<p>test</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/BulkReports/BulkReportsAcceptanceTest.cs:61</p>
-
-<p>Migrated</p>
-
-<pre><code>Requests stop sending a Now length
-</code></pre>
-
-<p>test</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Log text without Now
-</code></pre>
-
-<p>test</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Reports/ThenAndNowPayloadRoundTripTest.cs:1</p>
-
-<p>Migrated</p>
-
-<pre><code>Legacy payload with nowLengthDays still reads
 </code></pre>
 
 <p>test</p>
@@ -1721,6 +1696,330 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>New per-feature mutation config
 </code></pre>
 
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx:43</p>
+
+<p>Changed</p>
+
+<pre><code>Optional ownerName prop
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/ReportWizard.tsx:44</p>
+
+<p>Changed</p>
+
+<pre><code>Optional ownerName prop handed to steps and refusal words
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:546</p>
+
+<p>Changed</p>
+
+<pre><code>Passes team.name
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:470</p>
+
+<p>Changed</p>
+
+<pre><code>Passes portfolio.name
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/useReportEditing.tsx:94</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Edit mount passes no ownerName; Then is frozen on edit, so the too-little-history line never shows there
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/bulkWizardSteps.ts:21</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Step labels and OWNER_STEP derive from reportTypes; the owner step becomes step 4 of 4 with no code change
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/OwnerStep.tsx:36</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>OwnerLimit window stays Then or Now; limitOfFor now only yields Then
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:16</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Freeze leaves NowLengthDays unset; the member stays readable for old payloads until S2 stops reading it
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:40</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Optional nowLengthDays still bound and passed through as NewThenAndNow.NowLengthDays; its meaning is now the requested Now length, used only by the refusal
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportReadModels.cs:27</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>NewThenAndNow keeps NowLengthDays as the requested length
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:138</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Logs the requested Now or the Then length after a successful create; once unequal is refused the two are equal
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportBulkCommands.cs:90</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Same as the single create log
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/tests/ReportsTestKit.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Owner-name fixture fact; CUTOFF_REFUSAL becomes the too-little-history sentence; theNowLengthField and nowNeedsAtLeast go
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/tests/BulkReportsTestKit.tsx:132</p>
+
+<p>Migrated</p>
+
+<pre><code>OWNER_STEP becomes Step 4 of 4; SAME_AS_THEN and the Now form of keptHistoryStarts go
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/bulkWizardSteps.test.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Step labels lose Now; the Now step rows go
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.ownerLimits.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Rows typing a Now length and expecting the Now limit line go
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/ownerLimitOfWindow.test.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Now-limit rows go
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportTypes.test.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Now step completion rows go
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/services/Api/ReportService.test.ts:118</p>
+
+<p>Migrated</p>
+
+<pre><code>Create requests carry no nowLengthDays; the edit row keeps it until S2
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportView.editWizard.test.tsx:96</p>
+
+<p>Migrated</p>
+
+<pre><code>Edit opens on Metrics and name; rows that waited for or set the Now length change or go; the edit request carries the Then length
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx:651</p>
+
+<p>Migrated</p>
+
+<pre><code>Edit rows that read the Now length field change
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts:37</p>
+
+<p>Migrated</p>
+
+<pre><code>then-before-cutoff copy changes; now-* rows go
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.reportsTab.test.tsx:59</p>
+
+<p>Migrated</p>
+
+<pre><code>Its ReportsTab stand-in shows ownerName so the row observes team.name reaching the tab
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx:29</p>
+
+<p>Migrated</p>
+
+<pre><code>Same for portfolio.name
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.openings.test.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reaches the owner step only through the kit&#x27;s toTheOwnerStep and OWNER_STEP
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.ownerStepLooks.test.tsx:54</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reads only the kit&#x27;s OWNER_STEP constant
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Reports/ReportsPage.usageData.test.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reaches the owner step only through the kit
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/tests/reportWindowBoundaries.json:75</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Now rows stay for the backend NowRefusal unit rows until S2; the frontend and host readers stop using them
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice01TeamReportScenarios.cs:404</p>
+
+<p>Migrated</p>
+
+<pre><code>The Now-past-the-calendar create row is unreachable now (unequal is refused first) and goes
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05WipAndWorkItemAgeScenarios.cs:74</p>
+
+<p>Migrated</p>
+
+<pre><code>Creates Then 15 with Now 30; becomes Now 15 or no Now
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice07NowLengthScenarios.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Rows creating an unequal Now become the now-length-differs-from-then refusal or go
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs:111</p>
+
+<p>Migrated</p>
+
+<pre><code>Then rows send Now equal to the row length; Now rows are no longer reachable by create and are skipped
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs:82</p>
+
+<p>Migrated</p>
+
+<pre><code>May gain the now-length-differs-from-then reason constant
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>NowRefusal and NowWindow stay in this slice
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Create log fields unchanged; the Now-too-short row is an edit, S2
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/BulkReports/BulkReportsAcceptanceTest.cs:61</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Its comparisons already send equal lengths
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>NewReportRequest thenAndNow.nowLengthDays</p>
@@ -1751,9 +2050,9 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>Consumer</p>
 
-<p>Migrated</p>
+<p>UnchangedCompatible</p>
 
-<pre><code>Reads the member only to refuse an unequal Now
+<pre><code>Binds the optional member and passes it on unchanged
 </code></pre>
 
 <p>NewReportRequest thenAndNow.nowLengthDays</p>
@@ -1762,9 +2061,9 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>Consumer</p>
 
-<p>Migrated</p>
+<p>UnchangedCompatible</p>
 
-<pre><code>Logs only the Then length
+<pre><code>Logs it after success, when it is absent or equal to Then
 </code></pre>
 
 <p>NewReportRequest thenAndNow.nowLengthDays</p>
@@ -1776,6 +2075,39 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <p>UnchangedCompatible</p>
 
 <pre><code>Lighthouse-Clients CLI and MCP only list and read reports and never send a Now length (DISCUSS checklist)
+</code></pre>
+
+<p>NewReportRequest thenAndNow.nowLengthDays</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:46</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Freeze refuses an unequal value and stores none
+</code></pre>
+
+<p>ReportEditRequest thenAndNow.nowLengthDays</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:240</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Edit sends the frozen Then length, accepted by the unchanged edit path, until S2 sends none
+</code></pre>
+
+<p>ReportEditRequest thenAndNow.nowLengthDays</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs:41</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Unchanged in this slice
 </code></pre>
 
 <h5>Not applicable</h5>
@@ -1799,7 +2131,13 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <h5>Constructors</h5>
 
-<p>None.</p>
+<p>windowsRelationOf</p>
+
+<p>windowsRelationOf(draft: ThenAndNowDraft, templates: IReportTemplates): WindowsRelation | null; WindowsRelation = {kind: &#x27;apart&#x27;} | {kind: &#x27;sameDays&#x27;} | {kind: &#x27;overlapUntil&#x27;; until: string}</p>
+
+<p>windowsOf</p>
+
+<p>windowsOf(draft: ThenAndNowDraft, templates: IReportTemplates): {then: ReportWindow; now: ReportWindow} | null; ReportWindow = {start: string; end: string; lengthDays: number}</p>
 
 <h5>Laws</h5>
 
@@ -2004,12 +2342,27 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>Copy for now-length-differs-from-then: Now is always as long as Then.
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs</p>
+
+<p>Extend</p>
+
+<pre><code>ReportWindow.NowEndingOn(today) builds the Now window from this window&#x27;s length; the payload record stops carrying NowLengthDays (the JSON member stays, unread)
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs</p>
+
+<p>Extend</p>
+
+<pre><code>NowRefusal and NowWindow go once Edit and Read no longer call them
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs</p>
 
 <h4>Verification</h4>
 
 <pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
 pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportView.editWizard.test.tsx src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest
 </code></pre>
 
 <h4>Supports</h4>
@@ -2017,6 +2370,8 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportVi
 <p>Lighthouse.Frontend/src/pages/Common/Reports/ReportView.editWizard.test.tsx</p>
 
 <p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
 
 <h4>Public oracle</h4>
 
@@ -2116,6 +2471,24 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportVi
 <p>Extend</p>
 
 <pre><code>Existing edit request type; loses thenAndNow.nowLengthDays
+</code></pre>
+
+<p>ReportWindow</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:26</p>
+
+<p>Extend</p>
+
+<pre><code>Existing inclusive window value object; NowEndingOn makes equal length a property of construction
+</code></pre>
+
+<p>ReportWindowPolicy</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>Single owner of window refusals; its Now members leave with their last callers
 </code></pre>
 
 <h5>Impact</h5>
@@ -2264,6 +2637,33 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportVi
 <pre><code>New per-feature mutation config naming Tests.Acceptance.BaselineReportCreation
 </code></pre>
 
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ThenAndNowPayload.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>NowEndingOn added; NowLengthDays member removed from the record
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportWindowPolicy.cs:56</p>
+
+<p>Changed</p>
+
+<pre><code>NowRefusal and NowWindow removed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Gains the Now-window owner rule
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>ReportEditRequest thenAndNow.nowLengthDays</p>
@@ -2325,12 +2725,7 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportVi
 
 <p>prefactoring</p>
 
-<pre><code>S1 already moves Now to ReportWindow.NowEndingOn; S2 only calls it from Read and Edit
-</code></pre>
-
-<p>architectural_tests</p>
-
-<pre><code>The shared architecture check (only ReportWindow and ReportWindowPolicy compute a Now window) and E15 cover the laws S2 can reach
+<pre><code>S2 adds ReportWindow.NowEndingOn and calls it from Read in the same change; Edit drops its Now check; no structure must move first
 </code></pre>
 
 <h5>Boundaries</h5>
@@ -2443,7 +2838,15 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportVi
 
 <h5>Architectural tests</h5>
 
-<p>None.</p>
+<h6>T2</h6>
+
+<pre><code>Only ReportWindow and ReportWindowPolicy compute a Now window: no other type in the Reports module calls ReportWindow.EndingOn with today or builds a Now window; E15 purity of ReportWindowPolicy stays
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest
+</code></pre>
 
 <h5>Contract tests</h5>
 
