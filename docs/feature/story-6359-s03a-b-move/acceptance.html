@@ -505,6 +505,109 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The maintainer runs the architecture tests after the connectors move: each tracker&#x27;s connector, helpers, mappers, verdicts, read scopes, option names and Jira&#x27;s issue factory are looked up by name in the built product
+</code></pre>
+
+<pre><code>Every named type lives in its own tracker folder under the module&#x27;s connectors, none is left under Services or Factories, and a missing or renamed type is named in the failure
+</code></pre>
+
+<pre><code>Nothing a user sees changes; the maintainer sees each tracker&#x27;s code in one folder of the Tracker integration module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs#TrackerIntegrationConnectorsLayoutArchUnitTest.TheServiceNowConnectorItsMappersVerdictsAndReadScope_LiveInTheirTrackerFolder_AndNoneIsLeftUnderServices</p>
+
+<pre><code>a tracker folder holds a type under a sibling tracker&#x27;s folder name only if that sibling&#x27;s list names it; a nested response type moving alone is not seen (only top-level types are named)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The maintainer runs the architecture tests: the authentication strategies with their factory and the OAuth schema helpers are looked up by name in the built product
+</code></pre>
+
+<pre><code>The strategies and their factory live in the connectors&#x27; Auth folder, the OAuth schema helpers in the connectors&#x27; OAuth folder, none left under Services
+</code></pre>
+
+<pre><code>Nothing a user sees changes; credentials handling code sits in one named folder
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs#TrackerIntegrationConnectorsLayoutArchUnitTest.TheOAuthSchemaHelpers_LiveInTheOAuthFolder_AndNoneIsLeftUnderServices</p>
+
+<pre><code>the application-layer OAuth service and the strategy interface moving to a different folder; only the listed Auth and OAuth schema types are pinned here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The maintainer&#x27;s layout rule is run over made-up types: one well placed, one left under its former home, one that does not exist
+</code></pre>
+
+<pre><code>The left-behind and the missing type are each named in the failure; the well placed twin passes
+</code></pre>
+
+<pre><code>A move that leaves a type behind or renames it cannot pass the architecture tests unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs#TrackerIntegrationConnectorsLayoutArchUnitTest.ATypeThatIsMissingFromItsConnectorFolder_IsNamed</p>
+
+<pre><code>a rule that names offenders but whose real type lists drift from the production types; the lists are pinned by the folder rows
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The connectors, now below the module&#x27;s connectors folder, are checked for any dependency on the database context or a repository
+</code></pre>
+
+<pre><code>No connector reaches a stored-records type; the OAuth token service stays allowed; a made-up connector below the module that reaches the database is named
+</code></pre>
+
+<pre><code>Connectors still only translate what the tracker sent; the move opens no path to stored data
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs#TrackerIntegrationRulesSeeTheModuleArchUnitTest.AConnectorUnderTheModuleReachingTheDatabase_IsNamedByTheNoRepositoryRule_WhileItsOAuthTokensStayAllowed</p>
+
+<pre><code>a connector reaching a repository through a catch clause, event or attribute argument, which the compiled-code reader does not see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

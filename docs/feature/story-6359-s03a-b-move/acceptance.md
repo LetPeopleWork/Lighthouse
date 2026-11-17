@@ -412,6 +412,125 @@ The pair is checked only for the Application layer so a split pair that moves to
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P1
+
+```text
+The maintainer runs the architecture tests after the connectors move: each tracker's connector, helpers, mappers, verdicts, read scopes, option names and Jira's issue factory are looked up by name in the built product
+```
+
+```text
+Every named type lives in its own tracker folder under the module's connectors, none is left under Services or Factories, and a missing or renamed type is named in the failure
+```
+
+```text
+Nothing a user sees changes; the maintainer sees each tracker's code in one folder of the Tracker integration module
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationConnectorsLayoutArchUnitTest\.cs\#TrackerIntegrationConnectorsLayoutArchUnitTest\.TheServiceNowConnectorItsMappersVerdictsAndReadScope\_LiveInTheirTrackerFolder\_AndNoneIsLeftUnderServices
+
+```text
+a tracker folder holds a type under a sibling tracker's folder name only if that sibling's list names it; a nested response type moving alone is not seen (only top-level types are named)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+The maintainer runs the architecture tests: the authentication strategies with their factory and the OAuth schema helpers are looked up by name in the built product
+```
+
+```text
+The strategies and their factory live in the connectors' Auth folder, the OAuth schema helpers in the connectors' OAuth folder, none left under Services
+```
+
+```text
+Nothing a user sees changes; credentials handling code sits in one named folder
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationConnectorsLayoutArchUnitTest\.cs\#TrackerIntegrationConnectorsLayoutArchUnitTest\.TheOAuthSchemaHelpers\_LiveInTheOAuthFolder\_AndNoneIsLeftUnderServices
+
+```text
+the application-layer OAuth service and the strategy interface moving to a different folder; only the listed Auth and OAuth schema types are pinned here
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+The maintainer's layout rule is run over made-up types: one well placed, one left under its former home, one that does not exist
+```
+
+```text
+The left-behind and the missing type are each named in the failure; the well placed twin passes
+```
+
+```text
+A move that leaves a type behind or renames it cannot pass the architecture tests unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationConnectorsLayoutArchUnitTest\.cs\#TrackerIntegrationConnectorsLayoutArchUnitTest\.ATypeThatIsMissingFromItsConnectorFolder\_IsNamed
+
+```text
+a rule that names offenders but whose real type lists drift from the production types; the lists are pinned by the folder rows
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+The connectors, now below the module's connectors folder, are checked for any dependency on the database context or a repository
+```
+
+```text
+No connector reaches a stored-records type; the OAuth token service stays allowed; a made-up connector below the module that reaches the database is named
+```
+
+```text
+Connectors still only translate what the tracker sent; the move opens no path to stored data
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationRulesSeeTheModuleArchUnitTest\.cs\#TrackerIntegrationRulesSeeTheModuleArchUnitTest\.AConnectorUnderTheModuleReachingTheDatabase\_IsNamedByTheNoRepositoryRule\_WhileItsOAuthTokensStayAllowed
+
+```text
+a connector reaching a repository through a catch clause, event or attribute argument, which the compiled-code reader does not see
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows
