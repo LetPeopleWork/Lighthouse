@@ -17,8 +17,8 @@ import {
 	shownValue,
 } from "./thenNowComparison";
 
-const TOTAL_DECIMALS = 0;
-const PER_DAY_DECIMALS = 2;
+export const TOTAL_DECIMALS = 0;
+export const PER_DAY_DECIMALS = 2;
 
 export const CHANGE_LINES = [
 	{ key: "perDay", label: "per day", decimals: PER_DAY_DECIMALS },

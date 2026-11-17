@@ -14,16 +14,14 @@ import {
 	ValueLine,
 } from "./ThenNowLineParts";
 import ThenNowPanelFrame, { PanelLine } from "./ThenNowPanelFrame";
+import { PER_DAY_DECIMALS, TOTAL_DECIMALS } from "./ThroughputPanel";
 import {
 	absenceTextOf,
 	DASH,
-	roundForDisplay,
 	shownText,
 	shownValue,
 } from "./thenNowComparison";
 
-const TOTAL_DECIMALS = 0;
-const PER_DAY_DECIMALS = 2;
 /** The rows above the gap sentence, so the change mark sits level with it. */
 const ROWS_ABOVE_THE_GAP = 3;
 
@@ -109,9 +107,7 @@ const ArrivalsLines: React.FC<Readonly<ThenNowSideProps>> = (sideProps) => {
 			/>
 			<PanelLine>
 				<Typography component="span" sx={{ fontWeight: "bold" }}>
-					{gap === null
-						? DASH
-						: gapText(roundForDisplay(gap, PER_DAY_DECIMALS))}
+					{gap === null ? DASH : gapText(gap)}
 				</Typography>
 			</PanelLine>
 			<AbsenceNotes notes={absenceNotesOf(sideProps)} />

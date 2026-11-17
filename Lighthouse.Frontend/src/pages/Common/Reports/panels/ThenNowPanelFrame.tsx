@@ -101,6 +101,16 @@ const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
 	info,
 }) => {
 	const titleId = useId();
+	const heading = (
+		<Typography
+			id={titleId}
+			variant="h6"
+			component="h2"
+			gutterBottom={info === undefined}
+		>
+			{title}
+		</Typography>
+	);
 	return (
 		<Paper
 			component="section"
@@ -108,12 +118,16 @@ const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
 			variant="outlined"
 			sx={{ p: 2, width: "100%", breakInside: "avoid" }}
 		>
-			<Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-				<Typography id={titleId} variant="h6" component="h2">
-					{title}
-				</Typography>
-				{info}
-			</Box>
+			{info === undefined ? (
+				heading
+			) : (
+				<Box
+					sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: "0.35em" }}
+				>
+					{heading}
+					{info}
+				</Box>
+			)}
 			<ThenNowColumns count={3}>
 				<ThenNowColumn data-segment="then" heading="Then" first>
 					{then}
