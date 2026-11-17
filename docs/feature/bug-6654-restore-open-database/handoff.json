@@ -1,0 +1,1771 @@
+{
+"counters": {
+"B": 4,
+"C": 2,
+"D": 12,
+"E": 8,
+"F": 285,
+"K": 6,
+"L": 9,
+"N": 5,
+"P": 3,
+"S": 3,
+"T": 1,
+"Y": 9
+},
+"design": {
+"adrs": [
+{
+"key": "001",
+"status": "Accepted",
+"title": "Restore and clear SQLite through the online backup API, and check a backup's credentials before restoring it"
+}
+],
+"paradigm": "object_oriented",
+"shared": {
+"agreement": [
+{
+"contract": "POST /api/latest/database-management/restore: multipart file, password, optional removeUnreadableCredentials; response DatabaseOperationStatus with optional failureCode",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs:58",
+"party": "Producer",
+"reason": "F55"
+},
+{
+"contract": "POST /api/latest/database-management/restore: multipart file, password, optional removeUnreadableCredentials; response DatabaseOperationStatus with optional failureCode",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/DatabaseManagementService.ts:54",
+"party": "Consumer",
+"reason": "F56"
+},
+{
+"contract": "POST /api/latest/database-management/restore: multipart file, password, optional removeUnreadableCredentials; response DatabaseOperationStatus with optional failureCode",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/models/DatabaseManagement/DatabaseManagementTypes.ts:1",
+"party": "Consumer",
+"reason": "F57"
+},
+{
+"contract": "IDatabaseManagementProvider port: RestoreBackup, ClearDatabase, StageBackup, CreateConnection",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:8",
+"party": "Producer",
+"reason": "F58"
+},
+{
+"contract": "IDatabaseManagementProvider port: RestoreBackup, ClearDatabase, StageBackup, CreateConnection",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs:9",
+"party": "Producer",
+"reason": "F59"
+},
+{
+"contract": "IDatabaseManagementProvider port: RestoreBackup, ClearDatabase, StageBackup, CreateConnection",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:10",
+"party": "Consumer",
+"reason": "F60"
+},
+{
+"contract": "IDatabaseManagementService.RestoreBackup(Stream, string, UnreadableCredentials)",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:10",
+"party": "Producer",
+"reason": "F61"
+},
+{
+"contract": "IDatabaseManagementService.RestoreBackup(Stream, string, UnreadableCredentials)",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs:58",
+"party": "Consumer",
+"reason": "F62"
+},
+{
+"contract": "IDatabaseManagementService.RestoreBackup(Stream, string, UnreadableCredentials)",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs:152",
+"party": "Consumer",
+"reason": "F63"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SecretReadPathSourceStructureTest",
+"id": "T1",
+"obligation": "F175",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretReadPathSourceStructureTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F69",
+"driven_ports": [
+"F66",
+"F67",
+"F68"
+],
+"driving_port": "F65",
+"failures": [
+{
+"condition": "F70",
+"id": "B1",
+"observation": "F71",
+"outcome": "Refusal"
+},
+{
+"condition": "F72",
+"id": "B2",
+"observation": "F73",
+"outcome": "Refusal"
+},
+{
+"condition": "F74",
+"id": "B3",
+"observation": "F75",
+"outcome": "Refusal"
+},
+{
+"condition": "F76",
+"id": "B4",
+"observation": "F77",
+"outcome": "Indeterminate"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F95",
+"bypass": "F97",
+"constructor": "DatabaseManagementController.RestoreBackup",
+"consumer": "DatabaseManagementService.RestoreBackup",
+"harm": "F94",
+"id": "C1",
+"owner": "DatabaseManagementService",
+"proposition": "F93",
+"public_observation": "F96"
+},
+{
+"admitted_input": "F100",
+"bypass": "F102",
+"constructor": "DatabaseOperationTracker.TransitionToFailed(id, reason, DatabaseOperationFailure.CredentialsUnreadable)",
+"consumer": "DatabaseManagementSettings",
+"harm": "F99",
+"id": "C2",
+"owner": "DatabaseOperationStatus",
+"proposition": "F98",
+"public_observation": "F101"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F126",
+"design": "Pass",
+"evidence": [
+"docs/feature/bug-6654-restore-open-database/models/restore_credentials.qnt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F125"
+},
+{
+"axis": "Inhabitation",
+"basis": "F127",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F125"
+},
+{
+"axis": "PublicReachability",
+"basis": "F128",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F125"
+},
+{
+"axis": "Liveness",
+"basis": "F129",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F125"
+},
+{
+"axis": "Safety",
+"basis": "F131",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F130"
+},
+{
+"axis": "PublicReachability",
+"basis": "F132",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F130"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F28"
+},
+{
+"id": "K2",
+"slices": [
+"S3"
+],
+"text": "F29"
+},
+{
+"id": "K3",
+"text": "F30"
+},
+{
+"id": "K4",
+"slices": [
+"S1"
+],
+"text": "F31"
+},
+{
+"id": "K5",
+"text": "F32"
+},
+{
+"id": "K6",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F33"
+}
+],
+"constructors": [
+{
+"name": "UnreadableCredentials",
+"signature": "enum UnreadableCredentials { StopRestore, Remove }"
+},
+{
+"name": "DatabaseOperationFailure",
+"signature": "enum DatabaseOperationFailure { CredentialsUnreadable }"
+},
+{
+"name": "IStagedBackup",
+"signature": "Task<IStagedBackup> IDatabaseManagementProvider.StageBackup(string backupContentPath); IStagedBackup : IAsyncDisposable { DbConnection OpenConnection(); }"
+},
+{
+"name": "UnreadableStoredSecrets",
+"signature": "new UnreadableStoredSecrets(EncryptionKeyRing ring).RemoveFrom(DbConnection connection)"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S3"
+],
+"text": "F16"
+},
+{
+"id": "D2",
+"slices": [
+"S3"
+],
+"text": "F17"
+},
+{
+"id": "D3",
+"slices": [
+"S1"
+],
+"text": "F18"
+},
+{
+"id": "D4",
+"slices": [
+"S1"
+],
+"text": "F19"
+},
+{
+"id": "D5",
+"slices": [
+"S2"
+],
+"text": "F20"
+},
+{
+"id": "D6",
+"slices": [
+"S2"
+],
+"text": "F21"
+},
+{
+"id": "D7",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F22"
+},
+{
+"id": "D8",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F23"
+},
+{
+"id": "D9",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F24"
+},
+{
+"id": "D10",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F25"
+},
+{
+"id": "D11",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F26"
+},
+{
+"id": "D12",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F27"
+}
+],
+"equality": [
+{
+"definition": "F86",
+"under": "live database versus backup"
+},
+{
+"definition": "F87",
+"under": "stopped restore"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/bug-6654-restore-open-database/models/restore_credentials.qnt"
+],
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "DatabaseManagementService",
+"statement": "F88",
+"treatment": {
+"kind": "NoTest",
+"reason": "F89"
+}
+}
+],
+"models": [
+{
+"assumptions": [
+"F117",
+"F118",
+"F119"
+],
+"atoms": [
+{
+"kind": "State",
+"name": "live",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Data/DatabaseConfigurator.cs:1",
+"symbol": "live database rows"
+},
+{
+"kind": "State",
+"name": "finding",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs:21",
+"symbol": "StoredSecretFinding"
+},
+{
+"kind": "State",
+"name": "optIn",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/UnreadableCredentials.cs:1",
+"symbol": "UnreadableCredentials"
+},
+{
+"atomicity": "F113",
+"kind": "Action",
+"name": "check",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85",
+"symbol": "DatabaseSecretReadabilityProbe.Look over IStagedBackup.OpenConnection"
+},
+{
+"atomicity": "F114",
+"kind": "Action",
+"name": "copy",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:56",
+"symbol": "IDatabaseManagementProvider.RestoreBackup"
+},
+{
+"atomicity": "F115",
+"kind": "Action",
+"name": "scrub",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs:1",
+"symbol": "UnreadableStoredSecrets.RemoveFrom"
+},
+{
+"atomicity": "F116",
+"kind": "Action",
+"name": "crash",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85",
+"symbol": "process failure"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F120",
+"id": "N1"
+},
+{
+"description": "F121",
+"id": "N2"
+},
+{
+"description": "F122",
+"id": "N3"
+},
+{
+"description": "F123",
+"id": "N4"
+},
+{
+"description": "F124",
+"id": "N5"
+}
+],
+"path": "docs/feature/bug-6654-restore-open-database/models/restore_credentials.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "StopChangesNothing",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85",
+"statement": "F108",
+"symbol": "DatabaseManagementService.RestoreBackup"
+},
+{
+"kind": "Invariant",
+"name": "DoneIsStartable",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs:125",
+"statement": "F109",
+"symbol": "EncryptionKeyRingBootstrapper.Resolve"
+},
+{
+"kind": "Invariant",
+"name": "DoneWithoutRemovalEqualsBackup",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs:3",
+"statement": "F110",
+"symbol": "IDatabaseManagementProvider.RestoreBackup"
+},
+{
+"kind": "Invariant",
+"name": "RemovalTakesOnlyUnreadable",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs:1",
+"statement": "F111",
+"symbol": "UnreadableStoredSecrets.RemoveFrom"
+},
+{
+"kind": "Invariant",
+"name": "StopOnlyOnNothingReadable",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85",
+"statement": "F112",
+"symbol": "DatabaseManagementService.RestoreBackup"
+}
+]
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F64"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F79",
+"description": "F78",
+"result_type": "DatabaseOperationStatus"
+},
+{
+"cannot_distinguish": "F81",
+"description": "F80",
+"result_type": "table rows"
+},
+{
+"cannot_distinguish": "F83",
+"description": "F82",
+"result_type": "StoredSecretFinding"
+},
+{
+"cannot_distinguish": "F85",
+"description": "F84",
+"result_type": "WritesSeen"
+}
+],
+"refuted": [
+{
+"cause": "F91",
+"counterexample": "F92",
+"statement": "F90"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs:92",
+"reason": "F34",
+"symbol": "DatabaseSecretReadabilityProbe"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretStateClassifier.cs:15",
+"reason": "F35",
+"symbol": "SecretStateClassifier"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Encryption/IEncryptionKeyRingHolder.cs:5",
+"reason": "F36",
+"symbol": "IEncryptionKeyRingHolder"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:8",
+"reason": "F37",
+"symbol": "SqliteDatabaseManagementProvider"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs:9",
+"reason": "F38",
+"symbol": "PostgresDatabaseManagementProvider"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs:3",
+"reason": "F39",
+"symbol": "IDatabaseManagementProvider"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementService.cs:3",
+"reason": "F40",
+"symbol": "IDatabaseManagementService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:10",
+"reason": "F41",
+"symbol": "DatabaseManagementService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationStatus.cs:3",
+"reason": "F42",
+"symbol": "DatabaseOperationStatus"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseOperationTracker.cs:6",
+"reason": "F43",
+"symbol": "DatabaseOperationTracker"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs:11",
+"reason": "F44",
+"symbol": "DatabaseManagementController"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs:32",
+"reason": "F45",
+"symbol": "KeyThatReadsNothing"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretCustodyService.cs:30",
+"reason": "F46",
+"symbol": "SecretCustodyService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:155",
+"reason": "F47",
+"symbol": "DatabaseManagementSettings"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/DatabaseManagementService.ts:21",
+"reason": "F48",
+"symbol": "DatabaseManagementService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/models/DatabaseManagement/DatabaseManagementTypes.ts:1",
+"reason": "F49",
+"symbol": "IDatabaseOperationStatus"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretLocations.cs:1",
+"reason": "F50",
+"symbol": "StoredSecretLocations"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs:1",
+"reason": "F51",
+"symbol": "UnreadableStoredSecrets"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IStagedBackup.cs:1",
+"reason": "F52",
+"symbol": "IStagedBackup"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationFailure.cs:1",
+"reason": "F53",
+"symbol": "DatabaseOperationFailure"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/UnreadableCredentials.cs:1",
+"reason": "F54",
+"symbol": "UnreadableCredentials"
+}
+],
+"risks": [
+{
+"allowed": "F135",
+"forbidden": "F136",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "SqliteDatabaseManagementProvider",
+"preserved": "F134",
+"residue": "F137",
+"source": "F133"
+},
+{
+"allowed": "F140",
+"forbidden": "F141",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "SqliteDatabaseManagementProvider",
+"preserved": "F139",
+"residue": "F142",
+"source": "F138"
+},
+{
+"allowed": "F145",
+"forbidden": "F146",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "maintainer",
+"preserved": "F144",
+"residue": "F147",
+"source": "F143"
+},
+{
+"allowed": "F149",
+"forbidden": "F150",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "PostgresDatabaseManagementProvider",
+"preserved": "F139",
+"residue": "F151",
+"source": "F148"
+},
+{
+"allowed": "F154",
+"forbidden": "F155",
+"id": "Y5",
+"kind": "SinglePointOfFailure",
+"owner": "maintainer",
+"preserved": "F153",
+"residue": "F156",
+"source": "F152"
+},
+{
+"allowed": "F159",
+"forbidden": "F160",
+"id": "Y6",
+"kind": "Bypass",
+"owner": "DatabaseManagementService",
+"preserved": "F158",
+"residue": "F161",
+"source": "F157"
+},
+{
+"allowed": "F164",
+"forbidden": "F165",
+"id": "Y7",
+"kind": "Stressor",
+"owner": "DatabaseManagementSettings",
+"preserved": "F163",
+"residue": "F166",
+"source": "F162"
+},
+{
+"allowed": "F169",
+"forbidden": "F170",
+"id": "Y8",
+"kind": "Stressor",
+"owner": "DatabaseManagementService",
+"preserved": "F168",
+"residue": "F166",
+"source": "F167"
+},
+{
+"allowed": "F173",
+"forbidden": "F174",
+"id": "Y9",
+"kind": "Stressor",
+"owner": "SqliteDatabaseManagementProvider",
+"preserved": "F172",
+"residue": "F166",
+"source": "F171"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "DatabaseManagementService",
+"state": "F103"
+},
+{
+"kind": "Admitted",
+"owner": "UnreadableStoredSecrets",
+"state": "F104"
+},
+{
+"kind": "Admitted",
+"owner": "DatabaseManagementService",
+"state": "F105"
+},
+{
+"kind": "Excluded",
+"owner": "DatabaseManagementService",
+"state": "F106"
+},
+{
+"kind": "Unknown",
+"owner": "maintainer",
+"state": "F107"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreStopsWhenNoStoredCredentialCanBeReadTest.cs",
+"public_oracle": {
+"expected": "F205",
+"falsifier": "F206",
+"promises": [
+"P2"
+],
+"stimulus": "F204"
+},
+"records": {
+"boundaries": {
+"dependency_direction": "F224",
+"driven_ports": [
+"F222",
+"F223"
+],
+"driving_port": "F221"
+},
+"impact": [
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs:3",
+"reason": "F207"
+},
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationStatus.cs:3",
+"reason": "F208"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85",
+"reason": "F209"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs:113",
+"reason": "F210"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DatabaseManagementServiceTest.cs:22",
+"reason": "F211"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PostgresDatabaseManagementProviderTest.cs:1",
+"reason": "F212"
+},
+{
+"decision": "Changed",
+"kind": "frontend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:121",
+"reason": "F213"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "registration",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:491",
+"reason": "F214"
+},
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IStagedBackup.cs:1",
+"reason": "F215"
+},
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationFailure.cs:1",
+"reason": "F216"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseOperationTracker.cs:46",
+"reason": "F217"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:8",
+"reason": "F218"
+},
+{
+"decision": "Changed",
+"kind": "wire",
+"locator": "Lighthouse.Frontend/src/models/DatabaseManagement/DatabaseManagementTypes.ts:1",
+"reason": "F219"
+}
+],
+"laws": [
+{
+"id": "L4",
+"kind": "Algebraic",
+"layer": "Application",
+"owner": "DatabaseManagementService",
+"statement": "F225",
+"treatment": {
+"cases": [
+"F226",
+"F227",
+"F228",
+"F229"
+],
+"kind": "Finite",
+"reason": "F191"
+}
+},
+{
+"id": "L5",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "DatabaseManagementService",
+"statement": "F230",
+"treatment": {
+"cases": [
+"F231"
+],
+"kind": "Finite",
+"reason": "F191"
+}
+},
+{
+"id": "L6",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "PostgresDatabaseManagementProvider",
+"statement": "F232",
+"treatment": {
+"cases": [
+"F233",
+"F234"
+],
+"kind": "Finite",
+"reason": "F191"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F220"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PostgresDatabaseManagementProviderTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DatabaseManagementServiceTest.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IStagedBackup.cs",
+"reason": "F194"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationFailure.cs",
+"reason": "F195"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs",
+"reason": "F196"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationStatus.cs",
+"reason": "F197"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseOperationTracker.cs",
+"reason": "F198"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs",
+"reason": "F199"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs",
+"reason": "F200"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs",
+"reason": "F201"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/DatabaseManagement/DatabaseManagementTypes.ts",
+"reason": "F202"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx",
+"reason": "F203"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.DatabaseManagement.RestoreStopsWhenNoStoredCredentialCanBeReadTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PostgresDatabaseManagementProviderTest|FullyQualifiedName~DatabaseManagementServiceTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreWithoutUnreadableCredentialsTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/StoredSecretReadabilityProbeTests.cs",
+"move": "F249",
+"preserved": "F250",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~StoredSecretReadabilityProbeTests"
+]
+},
+"public_oracle": {
+"expected": "F247",
+"falsifier": "F248",
+"promises": [
+"P3"
+],
+"stimulus": "F246"
+},
+"records": {
+"boundaries": {
+"dependency_direction": "F267",
+"driven_ports": [
+"F265",
+"F266"
+],
+"driving_port": "F264"
+},
+"impact": [
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementService.cs:3",
+"reason": "F251"
+},
+{
+"decision": "Migrated",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6084HistoryFillAlwaysOnSpecifications.cs:160",
+"reason": "F252"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs:152",
+"reason": "F253"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs:96",
+"reason": "F254"
+},
+{
+"decision": "Changed",
+"kind": "frontend",
+"locator": "Lighthouse.Frontend/src/services/Api/DatabaseManagementService.ts:54",
+"reason": "F255"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretLocations.cs:1",
+"reason": "F256"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs:1",
+"reason": "F257"
+},
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/UnreadableCredentials.cs:1",
+"reason": "F258"
+},
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs:3",
+"reason": "F259"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:8",
+"reason": "F260"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs:9",
+"reason": "F260"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85",
+"reason": "F261"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs:58",
+"reason": "F262"
+},
+{
+"decision": "Changed",
+"kind": "frontend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:121",
+"reason": "F263"
+}
+],
+"laws": [
+{
+"id": "L7",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "UnreadableStoredSecrets",
+"statement": "F268",
+"treatment": {
+"cases": [
+"F269"
+],
+"kind": "Finite",
+"reason": "F191"
+}
+},
+{
+"id": "L8",
+"kind": "Algebraic",
+"layer": "Application",
+"owner": "DatabaseManagementService",
+"statement": "F270",
+"treatment": {
+"cases": [
+"F271",
+"F272"
+],
+"kind": "Finite",
+"reason": "F191"
+}
+},
+{
+"id": "L9",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "UnreadableStoredSecrets",
+"statement": "F273",
+"treatment": {
+"cases": [
+"F274",
+"F275",
+"F276",
+"F277"
+],
+"kind": "Finite",
+"reason": "F191"
+}
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs",
+"Lighthouse.Frontend/src/services/Api/DatabaseManagementService.test.ts",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DatabaseManagementServiceTest.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretLocations.cs",
+"reason": "F235"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs",
+"reason": "F236"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/UnreadableCredentials.cs",
+"reason": "F237"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs",
+"reason": "F238"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementService.cs",
+"reason": "F239"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs",
+"reason": "F240"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs",
+"reason": "F241"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs",
+"reason": "F241"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs",
+"reason": "F242"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs",
+"reason": "F243"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/DatabaseManagementService.ts",
+"reason": "F244"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx",
+"reason": "F245"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.DatabaseManagement.RestoreWithoutUnreadableCredentialsTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DatabaseManagementControllerTest|FullyQualifiedName~DatabaseManagementServiceTest|FullyQualifiedName~StoredSecretReadabilityProbeTests|FullyQualifiedName~SecretReadPathSourceStructureTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx src/services/Api/DatabaseManagementService.test.ts"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreAndClearWhileTheDatabaseIsOpenTest.cs",
+"public_oracle": {
+"expected": "F178",
+"falsifier": "F179",
+"promises": [
+"P1"
+],
+"stimulus": "F177"
+},
+"records": {
+"boundaries": {
+"dependency_direction": "F187",
+"driven_ports": [
+"F186"
+],
+"driving_port": "F185"
+},
+"impact": [
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:56",
+"reason": "F180"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/SqliteDatabaseManagementProviderTest.cs:160",
+"reason": "F181"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85",
+"reason": "F182"
+}
+],
+"laws": [
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "SqliteDatabaseManagementProvider",
+"statement": "F188",
+"treatment": {
+"cases": [
+"F189",
+"F190"
+],
+"kind": "Finite",
+"reason": "F191"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "SqliteDatabaseManagementProvider",
+"statement": "F192",
+"treatment": {
+"cases": [
+"F193"
+],
+"kind": "Finite",
+"reason": "F191"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F183"
+},
+{
+"analysis": "agreement",
+"reason": "F184"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/SqliteDatabaseManagementProviderTest.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs",
+"reason": "F176"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.DatabaseManagement.RestoreAndClearWhileTheDatabaseIsOpenTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SqliteDatabaseManagementProviderTest"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F278"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F279"
+},
+{
+"id": "E3",
+"promises": [
+"P1"
+],
+"text": "F280"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F281"
+},
+{
+"id": "E5",
+"promises": [
+"P2"
+],
+"text": "F282"
+},
+{
+"id": "E6",
+"promises": [
+"P2"
+],
+"text": "F283"
+},
+{
+"id": "E7",
+"promises": [
+"P3"
+],
+"text": "F284"
+},
+{
+"id": "E8",
+"promises": [
+"P3"
+],
+"text": "F285"
+}
+]
+},
+"facts": {
+"F1": "Bug 6654: Restore and Clear Database fail on Windows with SQLite (\"file is being used by another process\"). On Windows (and macOS) with the SQLite provider, Database Management -> Restore Backup always fails with System.IO.IOException: The process cannot access the file LighthouseAppContext.db because it is being used by another process. Clear Database fails the same way. Additional request: warn that backups do not include the encryption key, check before restoring, and allow starting anyway; maintainer decision: allow restoring without the unreadable credentials so the app starts and the user re-enters them.",
+"F10": "A restore of a backup whose credentials this installation cannot read stops before changing anything, with a clear message; Backup and Restore show the key warning",
+"F100": "StoredSecretFinding NothingReadable",
+"F101": "failureCode CredentialsUnreadable in the JSON response",
+"F102": "JSON is untyped at the boundary; TypeScript narrows failureCode to a literal union, unchecked at runtime.",
+"F103": "Restore stopped: live unchanged, Failed with CredentialsUnreadable.",
+"F104": "Restore completed after removal: no unreadable stored credential, connections kept with empty secrets.",
+"F105": "Restore of a partially readable or credential-free backup: live equals backup.",
+"F106": "A completed restore whose live database has stored credentials and none readable.",
+"F107": "Process failure after the copy and before the removal: live holds only unreadable credentials and the next start refuses with the existing start-anyway remedy.",
+"F108": "A stopped restore leaves the live database as it was at the start.",
+"F109": "A completed restore never leaves a live database whose stored credentials are all unreadable.",
+"F11": "A backup from another installation never leaves Lighthouse unable to start by surprise",
+"F110": "Unless the user opted in and nothing was readable, a completed restore makes the live database equal to the backup.",
+"F111": "After a completed restore the live secrets are a subset of the backup's and keep every readable one.",
+"F112": "A restore stops only when the backup holds credentials, none readable, and the user did not opt in.",
+"F113": "Reads the staged copy only; no write to the live database.",
+"F114": "SQLite: one backup-API write transaction. Postgres: drop then pg_restore, not atomic.",
+"F115": "One transaction on the live connection.",
+"F116": "Any point between check and the end of removal.",
+"F117": "A database is abstracted to its stored secrets, each a value id with readable or not under the running key, plus a legacy flag for a schema the probe cannot query.",
+"F118": "Only one restore runs at a time (DatabaseMaintenanceGate).",
+"F119": "Copy is atomic on the live database (one backup-API write transaction on SQLite; on Postgres pg_restore after drop is not atomic, outside this model).",
+"F12": "From that message the user restores without credentials; the restore completes, the unreadable credentials are gone and the app starts",
+"F120": "Check writes the backup to live before deciding (copy before check): quint run finds a StopChangesNothing violation.",
+"F121": "No stop (check always continues): quint run finds a DoneIsStartable violation.",
+"F122": "Removal leaves unreadable value 1 in place: quint run finds a DoneIsStartable violation.",
+"F123": "Removal runs on every opt-in, also for partially readable backups: quint run finds a DoneWithoutRemovalEqualsBackup violation.",
+"F124": "Stop also on CannotTell: quint run finds a StopOnlyOnNothingReadable violation.",
+"F125": "Restore credential check and removal",
+"F126": "Quint verify of Safety exhaustive at depth 5 with five behavioural mutants killed (one clause vacuous, recorded as refuted).",
+"F127": "Every admitted state is built from an admitted backup and opt-in through RestoreBackup; the model reaches Stopped and Done with and without removal.",
+"F128": "Form fields to DatabaseManagementController.RestoreBackup to DatabaseManagementService.RestoreBackup to DatabaseOperationStatus JSON and the live database; frontend dialog reads failureCode.",
+"F129": "Not applicable: one synchronous bounded request with no waiting on another party; every model run settles within three transitions.",
+"F13": "Configuration can be moved between installations at the cost of re-entering tokens",
+"F130": "Restore and clear on an open SQLite file",
+"F131": "Bounded probe on .NET 10 with Microsoft.Data.Sqlite 10.0.14: backup API into a live WAL database with an open connection and a shared file handle succeeded and the open connection read the new rows; clear from :memory: left zero tables, WAL kept.",
+"F132": "DatabaseManagementController to DatabaseManagementService to SqliteDatabaseManagementProvider, observed through an open connection.",
+"F133": "Negates: no other connection writes during restore (background sync writes)",
+"F134": "Live database is either the old or the restored one",
+"F135": "Restore fails with a busy message after 10 s",
+"F136": "A half-copied database",
+"F137": "None beyond a retry by the user",
+"F138": "Negates: backup and live database share a page size",
+"F139": "Live unchanged",
+"F14": "Restore Backup and Clear Database succeed on SQLite while the application holds the database file open",
+"F140": "Restore fails: SQLite refuses to change page size of a WAL destination",
+"F141": "Silent partial copy",
+"F142": "All Lighthouse databases use the default 4096-byte page; a hand-made backup with another size cannot be restored",
+"F143": "Negates: the process survives the restore",
+"F144": "Live is the old or the restored database",
+"F145": "Crash after copy before removal leaves only unreadable credentials",
+"F146": "A start that runs on unreadable credentials without saying so",
+"F147": "The next start refuses with the existing message naming the start-anyway setting",
+"F148": "Negates: the Postgres user may create databases",
+"F149": "Restore fails before any change",
+"F15": "Restore and Clear work on Windows and macOS",
+"F150": "Dropping live before the check",
+"F151": "Operators without CREATEDB already cannot clear or restore",
+"F152": "DatabaseMaintenanceGate is per process",
+"F153": "One restore at a time in one process",
+"F154": "A second request is refused while one runs",
+"F155": "Two restores interleaving check and copy",
+"F156": "Several replicas on one Postgres database are not coordinated, as today",
+"F157": "Outside writer: another process or replica writes credentials between check and copy",
+"F158": "The check reads the staged backup, which no other process writes",
+"F159": "Live writes by others are overwritten by the restore, as today",
+"F16": "SQLite restore and clear write through the SQLite online backup API (Microsoft.Data.Sqlite SqliteConnection.BackupDatabase) instead of replacing or deleting files. Restore: source is a Pooling=False connection on the staged backup .db in the extract directory (SQLite applies a legacy backup's -wal when it opens it); destination is a new Pooling=False connection on the live connection string with PRAGMA busy_timeout=10000. Clear: source is an empty Data Source=:memory: connection. The live .db, -wal and -shm files are never replaced or deleted, so every open connection, pooled or leaked, reads the new pages, and journal_mode stays WAL. RecycleConnection, migrations and seeding still follow in DatabaseManagementService. Owner: SqliteDatabaseManagementProvider.",
+"F160": "Checking live instead of the backup",
+"F161": "None for the staged copy",
+"F162": "Second set walkthrough: double click on Restore without credentials",
+"F163": "One restore",
+"F164": "The second request is refused by the gate",
+"F165": "Two removals",
+"F166": "Walkthrough, not executed",
+"F167": "Second set walkthrough: the key ring changes between the stop and the second request",
+"F168": "Check runs again with the current ring",
+"F169": "Now readable backup restores without removal",
+"F17": "Out of scope, unchanged: CreateBackup keeps its file copy (it opens the live file with FileShare.ReadWrite and already works on Windows; P1 does not need it), and DatabaseConfigurator keeps creating its own SqliteConnection (letting EF own it is not needed for P1, because the backup API never needs the file handles closed).",
+"F170": "Removal decided on the first request's finding",
+"F171": "Second set walkthrough: a long read transaction is open during the backup-API copy",
+"F172": "Copy completes in WAL mode",
+"F173": "The reader sees the old snapshot until its transaction ends",
+"F174": "Reader sees a mix of old and new pages",
+"F175": "The secret read path decides readability by inspecting values, never by catching: UnreadableStoredSecrets and the staged-backup types add no catch clause or exception filter on that path; the existing source-structure law covers the Encryption directory as it grows.",
+"F176": "RestoreBackup and ClearDatabase copy pages with SqliteConnection.BackupDatabase into a Pooling=False live connection with busy_timeout; no file replace or delete.",
+"F177": "Create a backup through the service, add a row, open a Pooling=False SqliteConnection and a FileStream with FileShare.ReadWrite on the live .db (on Linux .NET then refuses an exclusive open with the same 'being used by another process' IOException Windows gives), then call RestoreBackup with the backup and its password; in a second scenario, with an open connection, add a row and call ClearDatabase.",
+"F178": "Restore returns Completed and the still-open connection reads the backup's rows without the added row; Clear returns Completed and the still-open connection no longer sees the added row and sees the seeded database.",
+"F179": "Today's file copy throws IOException 'being used by another process' on restore (status Failed); today's File.Delete leaves the open connection reading the old file, so the added row is still visible after Clear.",
+"F18": "Postgres staging: PostgresDatabaseManagementProvider.StageBackup creates a scratch database named after the live one with the suffix _restore_check (psql CREATE DATABASE, after DROP DATABASE IF EXISTS WITH (FORCE)), runs pg_restore --table=WorkTrackingSystemConnectionOption --table=OAuthCredentials into it, and its IStagedBackup opens an NpgsqlConnection to it and drops it WITH (FORCE) on DisposeAsync. Only the two credential tables are restored, so the check costs a fraction of a full restore. A staging failure throws and the restore fails before the live database is touched. Rejected: checking after the restore (breaks nothing-is-changed), parsing pg_restore SQL output (COPY escaping is brittle), skipping the check on Postgres (breaks P2).",
+"F180": "Restore and clear mechanism replaced; CreateBackup unchanged.",
+"F181": "Rows that pin the file mechanics (replaces file, restores or removes -wal and -shm, deletes files) describe the old mechanism; the acceptance designer rewrites them to observe content, and keeps the missing-.db refusal.",
+"F182": "Calls the same provider members; RecycleConnection, migration and seeding still follow.",
+"F183": "The change is local to two methods of one provider; no preserving move makes it easier.",
+"F184": "Only the provider's internals change; IDatabaseManagementProvider's members and their meaning stay the same for S3.",
+"F185": "IDatabaseManagementService.RestoreBackup(Stream, password) and ClearDatabase(), built with ServicePortHarness and the real SqliteDatabaseManagementProvider over the harness database",
+"F186": "SqliteDatabaseManagementProvider over the live connection string",
+"F187": "Scenario -> DatabaseManagementService -> SqliteDatabaseManagementProvider -> Microsoft.Data.Sqlite",
+"F188": "After RestoreBackup completes while a connection opened before it and a FileShare.ReadWrite handle are both still open on the live file, the open connection reads exactly the backup's rows.",
+"F189": "Backup whose rows are all in its .db",
+"F19": "SQLite staging: SqliteDatabaseManagementProvider.StageBackup returns an IStagedBackup over the extracted .db (the same file RestoreBackup copies from) whose OpenConnection returns a Pooling=False SqliteConnection; DisposeAsync does nothing, because DatabaseManagementService already deletes the temporary directory.",
+"F190": "Legacy backup whose newest rows are only in its -wal file",
+"F191": "Closed finite domain (readability classes times opt-in); native NUnit cases cover it, generated inputs would add no coverage.",
+"F192": "After ClearDatabase completes while a connection opened before it is still open, that connection reads the empty, migrated and seeded database: rows the scenario added are gone.",
+"F193": "Live database with scenario rows and an open connection",
+"F194": "Disposable readable view of a backup before restore.",
+"F195": "Closed failure code CredentialsUnreadable.",
+"F196": "Adds StageBackup.",
+"F197": "Adds optional FailureCode.",
+"F198": "TransitionToFailed overload with a code.",
+"F199": "StageBackup over the extracted .db.",
+"F2": "An operator can restore a backup or clear the database on any OS, and a backup from another installation never leaves Lighthouse unable to start.",
+"F20": "Request contract: IDatabaseManagementService.RestoreBackup(Stream backupFile, string password, UnreadableCredentials onUnreadable) with the closed enum UnreadableCredentials { StopRestore, Remove }. DatabaseManagementController.RestoreBackup reads an optional form field removeUnreadableCredentials (bool, absent means false) and maps true to Remove. The frontend DatabaseManagementService.restoreBackup(file, password, removeUnreadableCredentials = false) appends the field only when true.",
+"F200": "StageBackup over a scratch database with the two credential tables.",
+"F201": "Pre-check before the provider restore; takes IEncryptionKeyRingHolder.",
+"F202": "failureCode on IDatabaseOperationStatus.",
+"F203": "Backup key-warning Alert, Restore check line, unreadable-credentials Dialog with Cancel.",
+"F204": "Store a connection with a secret option and an OAuth credential written under key ring A, create a backup through the service, replace the holder's ring with ring B that cannot read A, change a row, then call RestoreBackup with the backup and its password.",
+"F205": "Status Failed with FailureCode CredentialsUnreadable and the reason text that nothing has been changed; the live rows equal those before the call and the write watch saw no write and no file change. The same scenario with one secret readable under B returns Completed. Frontend: given a restore result with failureCode CredentialsUnreadable, the dialog titled Stored credentials in this backup cannot be read shows the approved body and Cancel, and Cancel closes it; the Backup section shows the key-warning Alert and the Restore section the check line.",
+"F206": "Today's service restores the backup (Completed) and leaves a database the next start refuses; a check placed after the provider restore changes the live rows; a dialog keyed on reason text opens on any failure.",
+"F207": "New member StageBackup; both providers implement it in this slice.",
+"F208": "Trailing optional FailureCode; existing constructions compile unchanged and the JSON gains failureCode.",
+"F209": "Stage, probe and stop before provider.RestoreBackup; new constructor dependency IEncryptionKeyRingHolder resolved by DI as a singleton already registered in Program.cs.",
+"F21": "Removal: only when onUnreadable is Remove and the pre-check answered NothingReadable, DatabaseManagementService calls, after provider.RestoreBackup and before migrations and seeding, new UnreadableStoredSecrets(ring).RemoveFrom(provider.CreateConnection()). It sets Value to the empty string on every WorkTrackingSystemConnectionOption row with IsSecret whose value SecretStateClassifier calls Unreadable, and deletes every OAuthCredentials row whose AccessToken or RefreshToken is Unreadable. Connections, non-secret options and all other data stay. Afterwards the startup probe answers NothingStored or SomethingReadable, so EncryptionKeyRingBootstrapper does not refuse; the Connection shows its token field empty and the user enters it again (an OAuth connection shows it is no longer authorised). With Remove and any other finding nothing is removed.",
+"F210": "StageBackup added; RestoreBackup and ClearDatabase unchanged.",
+"F211": "The provider mock must return a staged backup for StageBackup and the constructor takes a ring holder; the acceptance designer migrates the existing rows.",
+"F212": "Gains rows for the scratch-database staging commands and the always-drop rule.",
+"F213": "handleRestore branches on failureCode to open the dialog.",
+"F214": "IEncryptionKeyRingHolder is already a singleton; DatabaseManagementService picks it up by constructor injection.",
+"F215": "New port type, produced by both providers.",
+"F216": "New closed enum, serialised as a string.",
+"F217": "Failed-with-code overload; existing overload unchanged.",
+"F218": "StageBackup added.",
+"F219": "failureCode added to IDatabaseOperationStatus.",
+"F22": "Credential pre-check: DatabaseManagementService.RestoreBackup, after unzipping and before IDatabaseManagementProvider.RestoreBackup, asks the provider to stage the backup (await using IStagedBackup staged = await provider.StageBackup(extractDir)) and runs the existing DatabaseSecretReadabilityProbe over staged.OpenConnection with the running key ring from IEncryptionKeyRingHolder.Current. Only StoredSecretReadability.NothingReadable stops the restore; NothingStored, SomethingReadable and CannotTell restore as before, which is the confirmed maintainer decision and the same predicate the startup refusal in EncryptionKeyRingBootstrapper uses. The stop happens before the provider is called, so on Postgres it also happens before the provider drops the database.",
+"F220": "New members and one new step; no existing structure is in the way.",
+"F221": "IDatabaseManagementService.RestoreBackup(Stream, password) built with ServicePortHarness, the real SqliteDatabaseManagementProvider and an EncryptionKeyRingHolder; frontend: DatabaseManagementSettings with a mocked IDatabaseManagementService",
+"F222": "IDatabaseManagementProvider.StageBackup",
+"F223": "DatabaseSecretReadabilityProbe over IStagedBackup.OpenConnection",
+"F224": "Scenario -> DatabaseManagementService -> provider StageBackup and probe; DatabaseManagementService -> DatabaseOperationTracker",
+"F225": "With StopRestore, RestoreBackup stops exactly when the staged backup's finding is NothingReadable: then State Failed, FailureCode CredentialsUnreadable; otherwise Completed with the backup's rows.",
+"F226": "No stored credential: Completed",
+"F227": "One readable and one unreadable credential: Completed",
+"F228": "All credentials unreadable (written under another key): Failed, CredentialsUnreadable",
+"F229": "All credentials readable: Completed",
+"F23": "Result contract: DatabaseOperationStatus gains a trailing optional DatabaseOperationFailure? FailureCode = null, with the closed enum DatabaseOperationFailure { CredentialsUnreadable }, serialised as a string like the other enums. DatabaseOperationTracker.TransitionToFailed gains an overload taking the code. A stopped restore is State Failed, FailureCode CredentialsUnreadable and FailureReason: None of the stored credentials in this backup can be read with this installation's encryption key. Nothing has been changed. The frontend opens its dialog on failureCode, never on the reason text.",
+"F230": "A stopped restore changes nothing: live rows before equal live rows after, the write watch sees no write and no file change, and the gate is released.",
+"F231": "All credentials unreadable, StopRestore",
+"F232": "Postgres StageBackup restores only the two credential tables into the scratch database and always drops it, also when pg_restore fails.",
+"F233": "pg_restore succeeds: create, restore with both --table arguments, drop",
+"F234": "pg_restore fails: exception, drop still runs, live database never dropped",
+"F235": "Single owner of the stored-secret columns, read by the probe and the removal.",
+"F236": "Blanks unreadable secret option values and deletes OAuth credentials with an unreadable token.",
+"F237": "Closed opt-in StopRestore or Remove.",
+"F238": "Reads its queries from StoredSecretLocations (prefactoring).",
+"F239": "RestoreBackup takes UnreadableCredentials.",
+"F24": "Carriers and owners: decision carrier StoredSecretFinding (existing, Encryption) is the only input of the stop decision; error carrier DatabaseOperationFailure in DatabaseOperationStatus (Services/Interfaces/DatabaseManagement); opt-in carrier UnreadableCredentials (Services/Interfaces/DatabaseManagement); staged-backup effect carrier IStagedBackup : IAsyncDisposable (Services/Interfaces/DatabaseManagement), produced per provider; removal owner UnreadableStoredSecrets (Services/Implementation/Encryption) holding the ring and deciding per stored value; the set of stored-secret columns is owned once by StoredSecretLocations (Services/Implementation/Encryption), read by both the probe and the removal. Per-process state: no new state; DatabaseOperationTracker keeps the status and DatabaseMaintenanceGate keeps the single active operation.",
+"F240": "Adds CreateConnection for the live database.",
+"F241": "CreateConnection.",
+"F242": "Removal after the provider restore when opted in and nothing was readable.",
+"F243": "Optional form field removeUnreadableCredentials.",
+"F244": "restoreBackup sends removeUnreadableCredentials when true.",
+"F245": "Restore without credentials button in the dialog.",
+"F246": "Store a connection with a secret option, a non-secret option and an OAuth credential under key ring A, create a backup through the service, replace the holder's ring with ring B, then call RestoreBackup with the backup, its password and UnreadableCredentials.Remove. Frontend: from the open dialog click Restore without credentials.",
+"F247": "Status Completed; DatabaseSecretReadabilityProbe over the live database with ring B answers NothingStored, so the startup refusal does not fire; the connection and its non-secret option are present, the secret option value is empty and the OAuth credential row is gone. With one readable secret and Remove, the live database equals the backup. Controller: form field true reaches the service as Remove, absent as StopRestore. Frontend: the second call carries removeUnreadableCredentials true with the same file and password, the button shows loading, the dialog closes and the success Alert shows; a failing second call shows the error Alert.",
+"F248": "Without removal the probe answers NothingReadable and the next start refuses; deleting whole connections fails the connection-present check; removing on a partially readable backup fails the equals-backup check.",
+"F249": "Move the three stored-secret queries from DatabaseSecretReadabilityProbe into a new StoredSecretLocations owner that the probe reads; this makes UnreadableStoredSecrets reuse the same column set instead of copying it.",
+"F25": "Frontend (System, Database tab, DatabaseManagementSettings): the Backup section gets an info Alert with the approved key-warning text, the Restore section a new Typography line with the approved check text, and a Dialog that reuses the Clear Database dialog pattern (Dialog, DialogTitle, DialogContent, DialogActions) opens when the restore result has failureCode CredentialsUnreadable. S1 ships the dialog with Cancel, which closes it and keeps the chosen file and password. S2 adds Restore without credentials, which re-sends the same file and password with removeUnreadableCredentials true, shows the button's loading state while it runs and closes the dialog; a failed second request shows the existing error Alert. No view fetches new data, so the loading look is the existing button loading state and the failure look the existing error Alert.",
+"F250": "Every probe answer (NothingStored, SomethingReadable, NothingReadable, CannotTell) and the key ids seen.",
+"F251": "RestoreBackup gains the UnreadableCredentials parameter; the controller and test call sites move with it.",
+"F252": "Calls RestoreBackup; passes StopRestore if the call is on the service port, unchanged if it is on the provider.",
+"F253": "Moq setups and verifies name the new argument; new rows for the form field.",
+"F254": "Query list moves to StoredSecretLocations, behaviour preserved.",
+"F255": "Optional third argument; existing callers unchanged.",
+"F256": "New owner of the stored-secret columns.",
+"F257": "New removal owner.",
+"F258": "New opt-in enum.",
+"F259": "CreateConnection added; both providers implement it in this slice.",
+"F26": "Checker mapping: the restore, check, copy and removal state machine (P2, P3 safety) is a finite state model checked with Quint (quint verify on the Apalache backend, exhaustive at the reachable depth of 5 steps because every run settles within 3 transitions). TLA+/TLC is not needed: there is no temporal or fairness claim. Agda is not selected: no claim needs a proof beyond the finite model. The SQLite page-level behaviour behind P1 (an open connection reads the pages the backup API wrote) is a property of SQLite, not of this design, so it is not modelled; the S3 oracle observes it at runtime. Liveness is not applicable: each operation is one synchronous, bounded request that never waits on another party (gate acquisition returns at once), so no progress claim depends on fairness.",
+"F260": "CreateConnection added.",
+"F261": "Removal step after the provider restore when opted in and nothing was readable.",
+"F262": "Optional form field mapped to UnreadableCredentials.",
+"F263": "Restore without credentials button re-sends with the opt-in.",
+"F264": "IDatabaseManagementService.RestoreBackup(Stream, password, UnreadableCredentials.Remove) built with ServicePortHarness and the real SqliteDatabaseManagementProvider; controller form field mapping in DatabaseManagementControllerTest; frontend DatabaseManagementSettings and DatabaseManagementService client",
+"F265": "IDatabaseManagementProvider.CreateConnection",
+"F266": "UnreadableStoredSecrets over the live connection",
+"F267": "Scenario -> DatabaseManagementService -> provider and UnreadableStoredSecrets -> SecretStateClassifier and StoredSecretLocations",
+"F268": "With Remove and an all-unreadable backup, RestoreBackup completes; afterwards the startup probe over the live database answers NothingStored, every connection and non-secret option of the backup is present, secret option values are empty and OAuth credentials with unreadable tokens are gone.",
+"F269": "Backup with an API-token connection and an OAuth connection, all secrets under another key",
+"F27": "Context map: the change sits in the platform lane of ADR-270 (backups and restore, the encryption key ring); it reads and blanks Tracker-integration credential columns only inside a whole-database restore, as the startup probe already reads them, so no context, edge, domain event or glossary term changes. UI surface (ADR-271): System, Database tab, already its target.",
+"F270": "With Remove and any finding other than NothingReadable nothing is removed: the live database equals the backup.",
+"F271": "One readable and one unreadable credential, Remove: both values kept",
+"F272": "No stored credential, Remove: Completed, nothing removed",
+"F273": "UnreadableStoredSecrets removes a value only when SecretStateClassifier calls it Unreadable; readable and empty values are untouched.",
+"F274": "Readable secret kept",
+"F275": "Unreadable secret blanked",
+"F276": "Empty value untouched",
+"F277": "OAuth row with readable access token and unreadable refresh token deleted",
+"F278": "On SQLite, while the application is running, I run Restore Backup and it completes without a file-in-use error, on Windows, macOS and Linux.",
+"F279": "On SQLite, while the application is running, I run Clear Database and it completes without a file-in-use error, on Windows, macOS and Linux.",
+"F28": "Inputs keep their existing bounds: the backup upload is limited to 512 MiB (RequestSizeLimit) and the password must be non-empty; removeUnreadableCredentials is an optional boolean with no other values. No new bound is introduced.",
+"F280": "After a restore the application shows the data from the backup; after Clear Database it shows an empty, re-seeded database; no stale pre-operation data remains.",
+"F281": "When I start a restore and Lighthouse cannot read any stored credential in the backup with its current encryption key, the restore stops before changing anything, shows a clear message, and my existing data is unchanged.",
+"F282": "The Backup and Restore sections of the documentation and UI state that a backup does not contain the encryption key.",
+"F283": "When the key can read at least one credential in the backup, the restore is not blocked by the check.",
+"F284": "When the check finds no readable credential, I am offered Restore without credentials, and choosing it completes the restore with the backup data restored.",
+"F285": "After Restore without credentials, the unreadable credentials are gone, the application starts normally, and I can enter each token again in its Connection.",
+"F29": "The destination connection of the backup API sets PRAGMA busy_timeout=10000, the same wait DatabaseConfigurator gives every application connection; no longer wait is introduced.",
+"F3": "Restore Backup and Clear Database complete on the SQLite provider while the running application holds the database file open, on Windows, macOS and Linux; afterwards the application reads the restored (or empty, re-seeded) data.",
+"F30": "No schema change and no EF migration (migrations are expand-only).",
+"F31": "Postgres staging needs the CREATEDB privilege the provider already needs for ClearDatabase; the scratch database is always dropped, also on failure.",
+"F32": "Backend acceptance scenarios drive DatabaseManagementService directly under Lighthouse.Backend.Tests/Acceptance/DatabaseManagement, no host; that folder is named in the feature's Stryker test-case filter (Tests.Acceptance.DatabaseManagement). No nWave scenario tags in code. Comments are rare plain-language whys.",
+"F33": "Backups made before this change (file copies with optional -wal and -shm) stay restorable and checkable.",
+"F34": "Already answers exactly the startup refusal question over any DbConnection factory; pointed at the staged backup it is the pre-check, so the check and the refusal cannot disagree.",
+"F35": "Sole owner of whether one stored value is readable; the removal asks it per value.",
+"F36": "Singleton holding the running ring; Current is the key the restored database will be read with.",
+"F37": "Owns the SQLite file mechanics; restore and clear change mechanism, and it gains StageBackup and CreateConnection.",
+"F38": "Owns pg_dump, pg_restore and psql; gains StageBackup over a scratch database and CreateConnection.",
+"F39": "Per-provider staging and connection creation belong on the provider port.",
+"F4": "Before a restore changes any data, Lighthouse checks whether its encryption key can read the stored credentials in the backup; when it can read none of them, the restore stops with a clear message and nothing is changed. The Backup and Restore sections say that a backup does not contain the encryption key.",
+"F40": "RestoreBackup gains the opt-in parameter.",
+"F41": "Already sequences unzip, provider restore and migration behind the gate; check and removal slot into that sequence.",
+"F42": "Existing result carrier gains an optional closed failure code; no second result type.",
+"F43": "Owns operation status; TransitionToFailed gains an overload with the code.",
+"F44": "Driving adapter; RestoreBackup reads the optional form field.",
+"F45": "Kept unchanged: it addresses an operator at startup about environment variables; the shared knowledge is the NothingReadable predicate, reused through the probe.",
+"F46": "Considered for removal and left unchanged: it re-encrypts through EF on the running schema, while removal runs on a raw connection to a just-restored database before migrations.",
+"F47": "Holds Backup, Restore and the Clear Dialog; the new dialog reuses that pattern and the existing Alert.",
+"F48": "API client; restoreBackup gains the optional opt-in.",
+"F49": "Wire type gains failureCode.",
+"F5": "When the check finds no readable credential, the user can choose Restore without credentials: the restore completes, the unreadable credentials are removed, the application starts, and the user enters each token again in its Connection.",
+"F50": "The stored-secret queries are private to the probe; the removal needs the same set, so it moves to one owner both read.",
+"F51": "No existing type removes stored secrets; the classifier writes nothing and SecretCustodyService works through EF on the running schema.",
+"F52": "No type gives a readable, disposable view of a backup before restore; Postgres needs a scratch database with a lifetime.",
+"F53": "No closed failure code exists; FailureReason is free text and must not be string-matched.",
+"F54": "No opt-in carrier exists; a closed enum names the choice at the service port.",
+"F55": "Adds an optional form field and an optional response field; old clients that send neither get today's behaviour plus the stop.",
+"F56": "Sends the field on the second request and reads failureCode, in the same commit.",
+"F57": "Type gains failureCode as CredentialsUnreadable or null.",
+"F58": "Implements the new members and the new restore and clear mechanism.",
+"F59": "Implements StageBackup and CreateConnection; restore and clear unchanged.",
+"F6": "Letting EF own the SQLite connection (DatabaseConfigurator contextOwnsConnection) is a separate issue, unless the design needs it for P1.",
+"F60": "Calls StageBackup before RestoreBackup and CreateConnection for the removal.",
+"F61": "Takes the opt-in.",
+"F62": "Passes Remove when the form field is true, StopRestore otherwise.",
+"F63": "Moq setups name the new argument; the acceptance designer migrates them.",
+"F64": "Producer and consumers of every changed contract (controller, frontend client, provider port, service port) ship in one deployable and change in the same commit; the slice oracles and the existing controller test cover them. No external client calls database management.",
+"F65": "IDatabaseManagementService (RestoreBackup, ClearDatabase), driven by DatabaseManagementController and by acceptance scenarios",
+"F66": "IDatabaseManagementProvider (SQLite, Postgres): RestoreBackup, ClearDatabase, StageBackup, CreateConnection",
+"F67": "IStoredSecretReadabilityProbe over a DbConnection factory",
+"F68": "IEncryptionKeyRingHolder",
+"F69": "Controller -> IDatabaseManagementService -> DatabaseManagementService -> IDatabaseManagementProvider and Encryption (probe, classifier, UnreadableStoredSecrets); providers depend on Microsoft.Data.Sqlite, Npgsql and the command runner; nothing in Encryption depends on DatabaseManagement.",
+"F7": "Maintainer 2026-11-17: rigor profile thorough for all slices (opus crafter/acceptance designer/architect, sonnet reviewers).",
+"F70": "Staged backup holds stored credentials and none is readable, StopRestore",
+"F71": "Failed, FailureCode CredentialsUnreadable, live unchanged",
+"F72": "Another writer holds the SQLite write lock longer than busy_timeout during the backup API copy",
+"F73": "Failed with the SQLite busy message; the copy is one write transaction, so live is unchanged",
+"F74": "Postgres scratch database cannot be created or pg_restore of the credential tables fails",
+"F75": "Failed with the tool's error before the live database is dropped",
+"F76": "Staged backup schema has no credential tables or columns",
+"F77": "Probe answers CannotTell; restore proceeds as the startup check does",
+"F78": "DatabaseOperationStatus returned by IDatabaseManagementService.RestoreBackup or ClearDatabase: State and FailureCode",
+"F79": "Whether the live database changed, and which credentials were removed.",
+"F8": "Maintainer 2026-11-17: key-warning request is included in this bug; slices S1-S3 and the UI sketch (info Alert on Backup, new line on Restore, confirmation Dialog reusing the Clear-dialog pattern with Cancel / Restore without credentials) approved.",
+"F80": "Rows of the live database read through a Pooling=False SqliteConnection that was opened before the operation and is still open after it",
+"F81": "Whether the file was replaced or its pages rewritten; only content and visibility to an open connection.",
+"F82": "DatabaseSecretReadabilityProbe.Look over the live database with the running ring, the predicate the startup refusal uses",
+"F83": "Which values are readable beyond the first; whether non-secret data matches the backup.",
+"F84": "DatabaseWriteWatch of ServicePortHarness during a stopped restore: statements that wrote and whether the file changed",
+"F85": "Writes by another process outside the harness.",
+"F86": "Equal when every table read through a SQL connection holds the same rows; not byte equality, since the backup API rewrites pages and header counters.",
+"F87": "Nothing changed means the live rows read before equal the rows read after and the write watch saw no write statement and no file change.",
+"F88": "Model safety: StopChangesNothing, DoneIsStartable, DoneWithoutRemovalEqualsBackup, RemovalTakesOnlyUnreadable and StopOnlyOnNothingReadable hold in every reachable state of restore_credentials.qnt.",
+"F89": "Checked by quint verify on the model, exhaustive at the reachable depth; the runtime projection of each clause is a slice law below.",
+"F9": "The pre-check stops a restore only when the backup holds stored credentials and none can be read (the same NothingReadable case that refuses startup); partially readable backups restore as before.",
+"F90": "In the model, RemovalTakesOnlyUnreadable distinguishes removing only unreadable values from removing all values.",
+"F91": "Law scope: removal runs only after a NothingReadable finding, where every stored value is unreadable, so removing all equals removing the unreadable ones; the clause is vacuous in the model and the distinction lives in the runtime law on UnreadableStoredSecrets.",
+"F92": "Mutant removal filter s => false: quint run finds no RemovalTakesOnlyUnreadable violation.",
+"F93": "Credentials are removed only on an explicit UnreadableCredentials.Remove from the caller.",
+"F94": "Silent loss of every stored credential on an ordinary restore.",
+"F95": "Form field removeUnreadableCredentials=true",
+"F96": "Restore result Completed and the removed values",
+"F97": "Any in-process caller can pass Remove or cast an int to the enum; the C# compiler checks the parameter type only, not the value's origin.",
+"F98": "The stop is told apart from every other failure by a closed code, not by text.",
+"F99": "The UI opens the remove-credentials dialog on an unrelated failure, or never."
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F7"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F8"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F9"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_out": [
+"F6"
+],
+"slices": [
+{
+"depends_on": [
+"S3"
+],
+"id": "S1",
+"observation": "F10",
+"promises": [
+"P2"
+],
+"work": {
+"size": "M",
+"value": "F11"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F12",
+"promises": [
+"P3"
+],
+"work": {
+"size": "M",
+"value": "F13"
+}
+},
+{
+"id": "S3",
+"observation": "F14",
+"promises": [
+"P1"
+],
+"work": {
+"size": "S",
+"value": "F15"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "bug-6654-restore-open-database",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

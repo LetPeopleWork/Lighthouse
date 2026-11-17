@@ -1,0 +1,2403 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: bug-6654-restore-open-database</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>SQLite restore and clear write through the SQLite online backup API (Microsoft.Data.Sqlite SqliteConnection.BackupDatabase) instead of replacing or deleting files. Restore: source is a Pooling=False connection on the staged backup .db in the extract directory (SQLite applies a legacy backup&#x27;s -wal when it opens it); destination is a new Pooling=False connection on the live connection string with PRAGMA busy_timeout=10000. Clear: source is an empty Data Source=:memory: connection. The live .db, -wal and -shm files are never replaced or deleted, so every open connection, pooled or leaked, reads the new pages, and journal_mode stays WAL. RecycleConnection, migrations and seeding still follow in DatabaseManagementService. Owner: SqliteDatabaseManagementProvider.
+</code></pre>
+<p>Governed slices: S3</p>
+
+<h4>D2</h4>
+
+<pre><code>Out of scope, unchanged: CreateBackup keeps its file copy (it opens the live file with FileShare.ReadWrite and already works on Windows; P1 does not need it), and DatabaseConfigurator keeps creating its own SqliteConnection (letting EF own it is not needed for P1, because the backup API never needs the file handles closed).
+</code></pre>
+<p>Governed slices: S3</p>
+
+<h4>D3</h4>
+
+<pre><code>Postgres staging: PostgresDatabaseManagementProvider.StageBackup creates a scratch database named after the live one with the suffix _restore_check (psql CREATE DATABASE, after DROP DATABASE IF EXISTS WITH (FORCE)), runs pg_restore --table=WorkTrackingSystemConnectionOption --table=OAuthCredentials into it, and its IStagedBackup opens an NpgsqlConnection to it and drops it WITH (FORCE) on DisposeAsync. Only the two credential tables are restored, so the check costs a fraction of a full restore. A staging failure throws and the restore fails before the live database is touched. Rejected: checking after the restore (breaks nothing-is-changed), parsing pg_restore SQL output (COPY escaping is brittle), skipping the check on Postgres (breaks P2).
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D4</h4>
+
+<pre><code>SQLite staging: SqliteDatabaseManagementProvider.StageBackup returns an IStagedBackup over the extracted .db (the same file RestoreBackup copies from) whose OpenConnection returns a Pooling=False SqliteConnection; DisposeAsync does nothing, because DatabaseManagementService already deletes the temporary directory.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D5</h4>
+
+<pre><code>Request contract: IDatabaseManagementService.RestoreBackup(Stream backupFile, string password, UnreadableCredentials onUnreadable) with the closed enum UnreadableCredentials { StopRestore, Remove }. DatabaseManagementController.RestoreBackup reads an optional form field removeUnreadableCredentials (bool, absent means false) and maps true to Remove. The frontend DatabaseManagementService.restoreBackup(file, password, removeUnreadableCredentials = false) appends the field only when true.
+</code></pre>
+<p>Governed slices: S2</p>
+
+<h4>D6</h4>
+
+<pre><code>Removal: only when onUnreadable is Remove and the pre-check answered NothingReadable, DatabaseManagementService calls, after provider.RestoreBackup and before migrations and seeding, new UnreadableStoredSecrets(ring).RemoveFrom(provider.CreateConnection()). It sets Value to the empty string on every WorkTrackingSystemConnectionOption row with IsSecret whose value SecretStateClassifier calls Unreadable, and deletes every OAuthCredentials row whose AccessToken or RefreshToken is Unreadable. Connections, non-secret options and all other data stay. Afterwards the startup probe answers NothingStored or SomethingReadable, so EncryptionKeyRingBootstrapper does not refuse; the Connection shows its token field empty and the user enters it again (an OAuth connection shows it is no longer authorised). With Remove and any other finding nothing is removed.
+</code></pre>
+<p>Governed slices: S2</p>
+
+<h4>D7</h4>
+
+<pre><code>Credential pre-check: DatabaseManagementService.RestoreBackup, after unzipping and before IDatabaseManagementProvider.RestoreBackup, asks the provider to stage the backup (await using IStagedBackup staged = await provider.StageBackup(extractDir)) and runs the existing DatabaseSecretReadabilityProbe over staged.OpenConnection with the running key ring from IEncryptionKeyRingHolder.Current. Only StoredSecretReadability.NothingReadable stops the restore; NothingStored, SomethingReadable and CannotTell restore as before, which is the confirmed maintainer decision and the same predicate the startup refusal in EncryptionKeyRingBootstrapper uses. The stop happens before the provider is called, so on Postgres it also happens before the provider drops the database.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>D8</h4>
+
+<pre><code>Result contract: DatabaseOperationStatus gains a trailing optional DatabaseOperationFailure? FailureCode = null, with the closed enum DatabaseOperationFailure { CredentialsUnreadable }, serialised as a string like the other enums. DatabaseOperationTracker.TransitionToFailed gains an overload taking the code. A stopped restore is State Failed, FailureCode CredentialsUnreadable and FailureReason: None of the stored credentials in this backup can be read with this installation&#x27;s encryption key. Nothing has been changed. The frontend opens its dialog on failureCode, never on the reason text.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>D9</h4>
+
+<pre><code>Carriers and owners: decision carrier StoredSecretFinding (existing, Encryption) is the only input of the stop decision; error carrier DatabaseOperationFailure in DatabaseOperationStatus (Services/Interfaces/DatabaseManagement); opt-in carrier UnreadableCredentials (Services/Interfaces/DatabaseManagement); staged-backup effect carrier IStagedBackup : IAsyncDisposable (Services/Interfaces/DatabaseManagement), produced per provider; removal owner UnreadableStoredSecrets (Services/Implementation/Encryption) holding the ring and deciding per stored value; the set of stored-secret columns is owned once by StoredSecretLocations (Services/Implementation/Encryption), read by both the probe and the removal. Per-process state: no new state; DatabaseOperationTracker keeps the status and DatabaseMaintenanceGate keeps the single active operation.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>D10</h4>
+
+<pre><code>Frontend (System, Database tab, DatabaseManagementSettings): the Backup section gets an info Alert with the approved key-warning text, the Restore section a new Typography line with the approved check text, and a Dialog that reuses the Clear Database dialog pattern (Dialog, DialogTitle, DialogContent, DialogActions) opens when the restore result has failureCode CredentialsUnreadable. S1 ships the dialog with Cancel, which closes it and keeps the chosen file and password. S2 adds Restore without credentials, which re-sends the same file and password with removeUnreadableCredentials true, shows the button&#x27;s loading state while it runs and closes the dialog; a failed second request shows the existing error Alert. No view fetches new data, so the loading look is the existing button loading state and the failure look the existing error Alert.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>D11</h4>
+
+<pre><code>Checker mapping: the restore, check, copy and removal state machine (P2, P3 safety) is a finite state model checked with Quint (quint verify on the Apalache backend, exhaustive at the reachable depth of 5 steps because every run settles within 3 transitions). TLA+/TLC is not needed: there is no temporal or fairness claim. Agda is not selected: no claim needs a proof beyond the finite model. The SQLite page-level behaviour behind P1 (an open connection reads the pages the backup API wrote) is a property of SQLite, not of this design, so it is not modelled; the S3 oracle observes it at runtime. Liveness is not applicable: each operation is one synchronous, bounded request that never waits on another party (gate acquisition returns at once), so no progress claim depends on fairness.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>D12</h4>
+
+<pre><code>Context map: the change sits in the platform lane of ADR-270 (backups and restore, the encryption key ring); it reads and blanks Tracker-integration credential columns only inside a whole-database restore, as the startup probe already reads them, so no context, edge, domain event or glossary term changes. UI surface (ADR-271): System, Database tab, already its target.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Inputs keep their existing bounds: the backup upload is limited to 512 MiB (RequestSizeLimit) and the password must be non-empty; removeUnreadableCredentials is an optional boolean with no other values. No new bound is introduced.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>The destination connection of the backup API sets PRAGMA busy_timeout=10000, the same wait DatabaseConfigurator gives every application connection; no longer wait is introduced.
+</code></pre>
+<p>Governed slices: S3</p>
+
+<h4>K3</h4>
+
+<pre><code>No schema change and no EF migration (migrations are expand-only).
+</code></pre>
+
+<h4>K4</h4>
+
+<pre><code>Postgres staging needs the CREATEDB privilege the provider already needs for ClearDatabase; the scratch database is always dropped, also on failure.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>K5</h4>
+
+<pre><code>Backend acceptance scenarios drive DatabaseManagementService directly under Lighthouse.Backend.Tests/Acceptance/DatabaseManagement, no host; that folder is named in the feature&#x27;s Stryker test-case filter (Tests.Acceptance.DatabaseManagement). No nWave scenario tags in code. Comments are rare plain-language whys.
+</code></pre>
+
+<h4>K6</h4>
+
+<pre><code>Backups made before this change (file copies with optional -wal and -shm) stay restorable and checkable.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h3>Reuse</h3>
+
+<p>DatabaseSecretReadabilityProbe</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs:92</p>
+
+<p>Reuse</p>
+
+<pre><code>Already answers exactly the startup refusal question over any DbConnection factory; pointed at the staged backup it is the pre-check, so the check and the refusal cannot disagree.
+</code></pre>
+
+<p>SecretStateClassifier</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretStateClassifier.cs:15</p>
+
+<p>Reuse</p>
+
+<pre><code>Sole owner of whether one stored value is readable; the removal asks it per value.
+</code></pre>
+
+<p>IEncryptionKeyRingHolder</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Encryption/IEncryptionKeyRingHolder.cs:5</p>
+
+<p>Reuse</p>
+
+<pre><code>Singleton holding the running ring; Current is the key the restored database will be read with.
+</code></pre>
+
+<p>SqliteDatabaseManagementProvider</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:8</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the SQLite file mechanics; restore and clear change mechanism, and it gains StageBackup and CreateConnection.
+</code></pre>
+
+<p>PostgresDatabaseManagementProvider</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>Owns pg_dump, pg_restore and psql; gains StageBackup over a scratch database and CreateConnection.
+</code></pre>
+
+<p>IDatabaseManagementProvider</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs:3</p>
+
+<p>Extend</p>
+
+<pre><code>Per-provider staging and connection creation belong on the provider port.
+</code></pre>
+
+<p>IDatabaseManagementService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementService.cs:3</p>
+
+<p>Extend</p>
+
+<pre><code>RestoreBackup gains the opt-in parameter.
+</code></pre>
+
+<p>DatabaseManagementService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>Already sequences unzip, provider restore and migration behind the gate; check and removal slot into that sequence.
+</code></pre>
+
+<p>DatabaseOperationStatus</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationStatus.cs:3</p>
+
+<p>Extend</p>
+
+<pre><code>Existing result carrier gains an optional closed failure code; no second result type.
+</code></pre>
+
+<p>DatabaseOperationTracker</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseOperationTracker.cs:6</p>
+
+<p>Extend</p>
+
+<pre><code>Owns operation status; TransitionToFailed gains an overload with the code.
+</code></pre>
+
+<p>DatabaseManagementController</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs:11</p>
+
+<p>Extend</p>
+
+<pre><code>Driving adapter; RestoreBackup reads the optional form field.
+</code></pre>
+
+<p>KeyThatReadsNothing</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs:32</p>
+
+<p>Reuse</p>
+
+<pre><code>Kept unchanged: it addresses an operator at startup about environment variables; the shared knowledge is the NothingReadable predicate, reused through the probe.
+</code></pre>
+
+<p>SecretCustodyService</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretCustodyService.cs:30</p>
+
+<p>Reuse</p>
+
+<pre><code>Considered for removal and left unchanged: it re-encrypts through EF on the running schema, while removal runs on a raw connection to a just-restored database before migrations.
+</code></pre>
+
+<p>DatabaseManagementSettings</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:155</p>
+
+<p>Extend</p>
+
+<pre><code>Holds Backup, Restore and the Clear Dialog; the new dialog reuses that pattern and the existing Alert.
+</code></pre>
+
+<p>DatabaseManagementService</p>
+
+<p>Lighthouse.Frontend/src/services/Api/DatabaseManagementService.ts:21</p>
+
+<p>Extend</p>
+
+<pre><code>API client; restoreBackup gains the optional opt-in.
+</code></pre>
+
+<p>IDatabaseOperationStatus</p>
+
+<p>Lighthouse.Frontend/src/models/DatabaseManagement/DatabaseManagementTypes.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Wire type gains failureCode.
+</code></pre>
+
+<p>StoredSecretLocations</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretLocations.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>The stored-secret queries are private to the probe; the removal needs the same set, so it moves to one owner both read.
+</code></pre>
+
+<p>UnreadableStoredSecrets</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No existing type removes stored secrets; the classifier writes nothing and SecretCustodyService works through EF on the running schema.
+</code></pre>
+
+<p>IStagedBackup</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IStagedBackup.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No type gives a readable, disposable view of a backup before restore; Postgres needs a scratch database with a lifetime.
+</code></pre>
+
+<p>DatabaseOperationFailure</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationFailure.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No closed failure code exists; FailureReason is free text and must not be string-matched.
+</code></pre>
+
+<p>UnreadableCredentials</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/UnreadableCredentials.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No opt-in carrier exists; a closed enum names the choice at the service port.
+</code></pre>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>POST /api/latest/database-management/restore: multipart file, password, optional removeUnreadableCredentials; response DatabaseOperationStatus with optional failureCode</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs:58</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Adds an optional form field and an optional response field; old clients that send neither get today&#x27;s behaviour plus the stop.
+</code></pre>
+
+<p>POST /api/latest/database-management/restore: multipart file, password, optional removeUnreadableCredentials; response DatabaseOperationStatus with optional failureCode</p>
+
+<p>Lighthouse.Frontend/src/services/Api/DatabaseManagementService.ts:54</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Sends the field on the second request and reads failureCode, in the same commit.
+</code></pre>
+
+<p>POST /api/latest/database-management/restore: multipart file, password, optional removeUnreadableCredentials; response DatabaseOperationStatus with optional failureCode</p>
+
+<p>Lighthouse.Frontend/src/models/DatabaseManagement/DatabaseManagementTypes.ts:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Type gains failureCode as CredentialsUnreadable or null.
+</code></pre>
+
+<p>IDatabaseManagementProvider port: RestoreBackup, ClearDatabase, StageBackup, CreateConnection</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:8</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Implements the new members and the new restore and clear mechanism.
+</code></pre>
+
+<p>IDatabaseManagementProvider port: RestoreBackup, ClearDatabase, StageBackup, CreateConnection</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs:9</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Implements StageBackup and CreateConnection; restore and clear unchanged.
+</code></pre>
+
+<p>IDatabaseManagementProvider port: RestoreBackup, ClearDatabase, StageBackup, CreateConnection</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:10</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Calls StageBackup before RestoreBackup and CreateConnection for the removal.
+</code></pre>
+
+<p>IDatabaseManagementService.RestoreBackup(Stream, string, UnreadableCredentials)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:10</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Takes the opt-in.
+</code></pre>
+
+<p>IDatabaseManagementService.RestoreBackup(Stream, string, UnreadableCredentials)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs:58</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Passes Remove when the form field is true, StopRestore otherwise.
+</code></pre>
+
+<p>IDatabaseManagementService.RestoreBackup(Stream, string, UnreadableCredentials)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs:152</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Moq setups name the new argument; the acceptance designer migrates them.
+</code></pre>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Producer and consumers of every changed contract (controller, frontend client, provider port, service port) ship in one deployable and change in the same commit; the slice oracles and the existing controller test cover them. No external client calls database management.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>IDatabaseManagementService (RestoreBackup, ClearDatabase), driven by DatabaseManagementController and by acceptance scenarios
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>IDatabaseManagementProvider (SQLite, Postgres): RestoreBackup, ClearDatabase, StageBackup, CreateConnection
+</code></pre>
+
+<pre><code>IStoredSecretReadabilityProbe over a DbConnection factory
+</code></pre>
+
+<pre><code>IEncryptionKeyRingHolder
+</code></pre>
+
+<pre><code>Controller -&gt; IDatabaseManagementService -&gt; DatabaseManagementService -&gt; IDatabaseManagementProvider and Encryption (probe, classifier, UnreadableStoredSecrets); providers depend on Microsoft.Data.Sqlite, Npgsql and the command runner; nothing in Encryption depends on DatabaseManagement.
+</code></pre>
+
+<h4>Failures</h4>
+
+<h5>B1</h5>
+
+<pre><code>Staged backup holds stored credentials and none is readable, StopRestore
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Failed, FailureCode CredentialsUnreadable, live unchanged
+</code></pre>
+
+<h5>B2</h5>
+
+<pre><code>Another writer holds the SQLite write lock longer than busy_timeout during the backup API copy
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Failed with the SQLite busy message; the copy is one write transaction, so live is unchanged
+</code></pre>
+
+<h5>B3</h5>
+
+<pre><code>Postgres scratch database cannot be created or pg_restore of the credential tables fails
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>Failed with the tool&#x27;s error before the live database is dropped
+</code></pre>
+
+<h5>B4</h5>
+
+<pre><code>Staged backup schema has no credential tables or columns
+</code></pre>
+
+<p>Indeterminate</p>
+
+<pre><code>Probe answers CannotTell; restore proceeds as the startup check does
+</code></pre>
+
+<h3>Observations</h3>
+
+<pre><code>DatabaseOperationStatus returned by IDatabaseManagementService.RestoreBackup or ClearDatabase: State and FailureCode
+</code></pre>
+
+<p>DatabaseOperationStatus</p>
+
+<pre><code>Whether the live database changed, and which credentials were removed.
+</code></pre>
+
+<pre><code>Rows of the live database read through a Pooling=False SqliteConnection that was opened before the operation and is still open after it
+</code></pre>
+
+<p>table rows</p>
+
+<pre><code>Whether the file was replaced or its pages rewritten; only content and visibility to an open connection.
+</code></pre>
+
+<pre><code>DatabaseSecretReadabilityProbe.Look over the live database with the running ring, the predicate the startup refusal uses
+</code></pre>
+
+<p>StoredSecretFinding</p>
+
+<pre><code>Which values are readable beyond the first; whether non-secret data matches the backup.
+</code></pre>
+
+<pre><code>DatabaseWriteWatch of ServicePortHarness during a stopped restore: statements that wrote and whether the file changed
+</code></pre>
+
+<p>WritesSeen</p>
+
+<pre><code>Writes by another process outside the harness.
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>live database versus backup</p>
+
+<pre><code>Equal when every table read through a SQL connection holds the same rows; not byte equality, since the backup API rewrites pages and header counters.
+</code></pre>
+
+<p>stopped restore</p>
+
+<pre><code>Nothing changed means the live rows read before equal the rows read after and the write watch saw no write statement and no file change.
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>UnreadableCredentials</p>
+
+<p>enum UnreadableCredentials { StopRestore, Remove }</p>
+
+<p>DatabaseOperationFailure</p>
+
+<p>enum DatabaseOperationFailure { CredentialsUnreadable }</p>
+
+<p>IStagedBackup</p>
+
+<p>Task&lt;IStagedBackup&gt; IDatabaseManagementProvider.StageBackup(string backupContentPath); IStagedBackup : IAsyncDisposable { DbConnection OpenConnection(); }</p>
+
+<p>UnreadableStoredSecrets</p>
+
+<p>new UnreadableStoredSecrets(EncryptionKeyRing ring).RemoveFrom(DbConnection connection)</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>Model safety: StopChangesNothing, DoneIsStartable, DoneWithoutRemovalEqualsBackup, RemovalTakesOnlyUnreadable and StopOnlyOnNothingReadable hold in every reachable state of restore_credentials.qnt.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>DatabaseManagementService</p>
+
+<h5>Treatment</h5>
+
+<p>NoTest</p>
+
+<pre><code>Checked by quint verify on the model, exhaustive at the reachable depth; the runtime projection of each clause is a slice law below.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/bug-6654-restore-open-database/models/restore_credentials.qnt</p>
+
+<h3>Refuted</h3>
+
+<pre><code>In the model, RemovalTakesOnlyUnreadable distinguishes removing only unreadable values from removing all values.
+</code></pre>
+
+<pre><code>Law scope: removal runs only after a NothingReadable finding, where every stored value is unreadable, so removing all equals removing the unreadable ones; the clause is vacuous in the model and the distinction lives in the runtime law on UnreadableStoredSecrets.
+</code></pre>
+
+<pre><code>Mutant removal filter s =&gt; false: quint run finds no RemovalTakesOnlyUnreadable violation.
+</code></pre>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>Credentials are removed only on an explicit UnreadableCredentials.Remove from the caller.
+</code></pre>
+
+<pre><code>Silent loss of every stored credential on an ordinary restore.
+</code></pre>
+
+<p>DatabaseManagementService</p>
+
+<pre><code>Form field removeUnreadableCredentials=true
+</code></pre>
+
+<p>DatabaseManagementController.RestoreBackup</p>
+
+<p>DatabaseManagementService.RestoreBackup</p>
+
+<pre><code>Restore result Completed and the removed values
+</code></pre>
+
+<pre><code>Any in-process caller can pass Remove or cast an int to the enum; the C# compiler checks the parameter type only, not the value&#x27;s origin.
+</code></pre>
+
+<h4>C2</h4>
+
+<pre><code>The stop is told apart from every other failure by a closed code, not by text.
+</code></pre>
+
+<pre><code>The UI opens the remove-credentials dialog on an unrelated failure, or never.
+</code></pre>
+
+<p>DatabaseOperationStatus</p>
+
+<pre><code>StoredSecretFinding NothingReadable
+</code></pre>
+
+<p>DatabaseOperationTracker.TransitionToFailed(id, reason, DatabaseOperationFailure.CredentialsUnreadable)</p>
+
+<p>DatabaseManagementSettings</p>
+
+<pre><code>failureCode CredentialsUnreadable in the JSON response
+</code></pre>
+
+<pre><code>JSON is untyped at the boundary; TypeScript narrows failureCode to a literal union, unchecked at runtime.
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Restore stopped: live unchanged, Failed with CredentialsUnreadable.
+</code></pre>
+
+<p>DatabaseManagementService</p>
+
+<p>Admitted</p>
+
+<pre><code>Restore completed after removal: no unreadable stored credential, connections kept with empty secrets.
+</code></pre>
+
+<p>UnreadableStoredSecrets</p>
+
+<p>Admitted</p>
+
+<pre><code>Restore of a partially readable or credential-free backup: live equals backup.
+</code></pre>
+
+<p>DatabaseManagementService</p>
+
+<p>Excluded</p>
+
+<pre><code>A completed restore whose live database has stored credentials and none readable.
+</code></pre>
+
+<p>DatabaseManagementService</p>
+
+<p>Unknown</p>
+
+<pre><code>Process failure after the copy and before the removal: live holds only unreadable credentials and the next start refuses with the existing start-anyway remedy.
+</code></pre>
+
+<p>maintainer</p>
+
+<h3>Models</h3>
+
+<p>Quint</p>
+
+<p>docs/feature/bug-6654-restore-open-database/models/restore_credentials.qnt</p>
+
+<h5>Properties</h5>
+
+<p>StopChangesNothing</p>
+
+<p>Invariant</p>
+
+<pre><code>A stopped restore leaves the live database as it was at the start.
+</code></pre>
+
+<p>DatabaseManagementService.RestoreBackup</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85</p>
+
+<p>DoneIsStartable</p>
+
+<p>Invariant</p>
+
+<pre><code>A completed restore never leaves a live database whose stored credentials are all unreadable.
+</code></pre>
+
+<p>EncryptionKeyRingBootstrapper.Resolve</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs:125</p>
+
+<p>DoneWithoutRemovalEqualsBackup</p>
+
+<p>Invariant</p>
+
+<pre><code>Unless the user opted in and nothing was readable, a completed restore makes the live database equal to the backup.
+</code></pre>
+
+<p>IDatabaseManagementProvider.RestoreBackup</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs:3</p>
+
+<p>RemovalTakesOnlyUnreadable</p>
+
+<p>Invariant</p>
+
+<pre><code>After a completed restore the live secrets are a subset of the backup&#x27;s and keep every readable one.
+</code></pre>
+
+<p>UnreadableStoredSecrets.RemoveFrom</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs:1</p>
+
+<p>StopOnlyOnNothingReadable</p>
+
+<p>Invariant</p>
+
+<pre><code>A restore stops only when the backup holds credentials, none readable, and the user did not opt in.
+</code></pre>
+
+<p>DatabaseManagementService.RestoreBackup</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85</p>
+
+<h5>Atoms</h5>
+
+<p>State</p>
+
+<p>live</p>
+
+<p>live database rows</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Data/DatabaseConfigurator.cs:1</p>
+
+<p>None.</p>
+
+<p>State</p>
+
+<p>finding</p>
+
+<p>StoredSecretFinding</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs:21</p>
+
+<p>None.</p>
+
+<p>State</p>
+
+<p>optIn</p>
+
+<p>UnreadableCredentials</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/UnreadableCredentials.cs:1</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>check</p>
+
+<p>DatabaseSecretReadabilityProbe.Look over IStagedBackup.OpenConnection</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85</p>
+
+<pre><code>Reads the staged copy only; no write to the live database.
+</code></pre>
+
+<p>Action</p>
+
+<p>copy</p>
+
+<p>IDatabaseManagementProvider.RestoreBackup</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:56</p>
+
+<pre><code>SQLite: one backup-API write transaction. Postgres: drop then pg_restore, not atomic.
+</code></pre>
+
+<p>Action</p>
+
+<p>scrub</p>
+
+<p>UnreadableStoredSecrets.RemoveFrom</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs:1</p>
+
+<pre><code>One transaction on the live connection.
+</code></pre>
+
+<p>Action</p>
+
+<p>crash</p>
+
+<p>process failure</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85</p>
+
+<pre><code>Any point between check and the end of removal.
+</code></pre>
+
+<h5>Assumptions</h5>
+
+<pre><code>A database is abstracted to its stored secrets, each a value id with readable or not under the running key, plus a legacy flag for a schema the probe cannot query.
+</code></pre>
+
+<pre><code>Only one restore runs at a time (DatabaseMaintenanceGate).
+</code></pre>
+
+<pre><code>Copy is atomic on the live database (one backup-API write transaction on SQLite; on Postgres pg_restore after drop is not atomic, outside this model).
+</code></pre>
+
+<h5>Mutants</h5>
+
+<h6>N1</h6>
+
+<pre><code>Check writes the backup to live before deciding (copy before check): quint run finds a StopChangesNothing violation.
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N2</h6>
+
+<pre><code>No stop (check always continues): quint run finds a DoneIsStartable violation.
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N3</h6>
+
+<pre><code>Removal leaves unreadable value 1 in place: quint run finds a DoneIsStartable violation.
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N4</h6>
+
+<pre><code>Removal runs on every opt-in, also for partially readable backups: quint run finds a DoneWithoutRemovalEqualsBackup violation.
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h6>N5</h6>
+
+<pre><code>Stop also on CannotTell: quint run finds a StopOnlyOnNothingReadable violation.
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>Restore credential check and removal
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Quint verify of Safety exhaustive at depth 5 with five behavioural mutants killed (one clause vacuous, recorded as refuted).
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/bug-6654-restore-open-database/models/restore_credentials.qnt</p>
+
+<pre><code>Restore credential check and removal
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Every admitted state is built from an admitted backup and opt-in through RestoreBackup; the model reaches Stopped and Done with and without removal.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Restore credential check and removal
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Form fields to DatabaseManagementController.RestoreBackup to DatabaseManagementService.RestoreBackup to DatabaseOperationStatus JSON and the live database; frontend dialog reads failureCode.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Restore credential check and removal
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: one synchronous bounded request with no waiting on another party; every model run settles within three transitions.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Restore and clear on an open SQLite file
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Bounded probe on .NET 10 with Microsoft.Data.Sqlite 10.0.14: backup API into a live WAL database with an open connection and a shared file handle succeeded and the open connection read the new rows; clear from :memory: left zero tables, WAL kept.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Restore and clear on an open SQLite file
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>DatabaseManagementController to DatabaseManagementService to SqliteDatabaseManagementProvider, observed through an open connection.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: no other connection writes during restore (background sync writes)
+</code></pre>
+
+<pre><code>Live database is either the old or the restored one
+</code></pre>
+
+<pre><code>Restore fails with a busy message after 10 s
+</code></pre>
+
+<pre><code>A half-copied database
+</code></pre>
+
+<pre><code>None beyond a retry by the user
+</code></pre>
+
+<p>SqliteDatabaseManagementProvider</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: backup and live database share a page size
+</code></pre>
+
+<pre><code>Live unchanged
+</code></pre>
+
+<pre><code>Restore fails: SQLite refuses to change page size of a WAL destination
+</code></pre>
+
+<pre><code>Silent partial copy
+</code></pre>
+
+<pre><code>All Lighthouse databases use the default 4096-byte page; a hand-made backup with another size cannot be restored
+</code></pre>
+
+<p>SqliteDatabaseManagementProvider</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: the process survives the restore
+</code></pre>
+
+<pre><code>Live is the old or the restored database
+</code></pre>
+
+<pre><code>Crash after copy before removal leaves only unreadable credentials
+</code></pre>
+
+<pre><code>A start that runs on unreadable credentials without saying so
+</code></pre>
+
+<pre><code>The next start refuses with the existing message naming the start-anyway setting
+</code></pre>
+
+<p>maintainer</p>
+
+<h4>Y4</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negates: the Postgres user may create databases
+</code></pre>
+
+<pre><code>Live unchanged
+</code></pre>
+
+<pre><code>Restore fails before any change
+</code></pre>
+
+<pre><code>Dropping live before the check
+</code></pre>
+
+<pre><code>Operators without CREATEDB already cannot clear or restore
+</code></pre>
+
+<p>PostgresDatabaseManagementProvider</p>
+
+<h4>Y5</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>DatabaseMaintenanceGate is per process
+</code></pre>
+
+<pre><code>One restore at a time in one process
+</code></pre>
+
+<pre><code>A second request is refused while one runs
+</code></pre>
+
+<pre><code>Two restores interleaving check and copy
+</code></pre>
+
+<pre><code>Several replicas on one Postgres database are not coordinated, as today
+</code></pre>
+
+<p>maintainer</p>
+
+<h4>Y6</h4>
+
+<p>Bypass</p>
+
+<pre><code>Outside writer: another process or replica writes credentials between check and copy
+</code></pre>
+
+<pre><code>The check reads the staged backup, which no other process writes
+</code></pre>
+
+<pre><code>Live writes by others are overwritten by the restore, as today
+</code></pre>
+
+<pre><code>Checking live instead of the backup
+</code></pre>
+
+<pre><code>None for the staged copy
+</code></pre>
+
+<p>DatabaseManagementService</p>
+
+<h4>Y7</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set walkthrough: double click on Restore without credentials
+</code></pre>
+
+<pre><code>One restore
+</code></pre>
+
+<pre><code>The second request is refused by the gate
+</code></pre>
+
+<pre><code>Two removals
+</code></pre>
+
+<pre><code>Walkthrough, not executed
+</code></pre>
+
+<p>DatabaseManagementSettings</p>
+
+<h4>Y8</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set walkthrough: the key ring changes between the stop and the second request
+</code></pre>
+
+<pre><code>Check runs again with the current ring
+</code></pre>
+
+<pre><code>Now readable backup restores without removal
+</code></pre>
+
+<pre><code>Removal decided on the first request&#x27;s finding
+</code></pre>
+
+<pre><code>Walkthrough, not executed
+</code></pre>
+
+<p>DatabaseManagementService</p>
+
+<h4>Y9</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set walkthrough: a long read transaction is open during the backup-API copy
+</code></pre>
+
+<pre><code>Copy completes in WAL mode
+</code></pre>
+
+<pre><code>The reader sees the old snapshot until its transaction ends
+</code></pre>
+
+<pre><code>Reader sees a mix of old and new pages
+</code></pre>
+
+<pre><code>Walkthrough, not executed
+</code></pre>
+
+<p>SqliteDatabaseManagementProvider</p>
+
+<h3>Architectural tests</h3>
+
+<h4>T1</h4>
+
+<pre><code>The secret read path decides readability by inspecting values, never by catching: UnreadableStoredSecrets and the staged-backup types add no catch clause or exception filter on that path; the existing source-structure law covers the Encryption directory as it grows.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretReadPathSourceStructureTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SecretReadPathSourceStructureTest
+</code></pre>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IStagedBackup.cs</p>
+
+<p>Create</p>
+
+<pre><code>Disposable readable view of a backup before restore.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationFailure.cs</p>
+
+<p>Create</p>
+
+<pre><code>Closed failure code CredentialsUnreadable.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Adds StageBackup.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationStatus.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Adds optional FailureCode.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseOperationTracker.cs</p>
+
+<p>Extend</p>
+
+<pre><code>TransitionToFailed overload with a code.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>StageBackup over the extracted .db.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>StageBackup over a scratch database with the two credential tables.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Pre-check before the provider restore; takes IEncryptionKeyRingHolder.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/DatabaseManagement/DatabaseManagementTypes.ts</p>
+
+<p>Extend</p>
+
+<pre><code>failureCode on IDatabaseOperationStatus.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Backup key-warning Alert, Restore check line, unreadable-credentials Dialog with Cancel.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreStopsWhenNoStoredCredentialCanBeReadTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.DatabaseManagement.RestoreStopsWhenNoStoredCredentialCanBeReadTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PostgresDatabaseManagementProviderTest|FullyQualifiedName~DatabaseManagementServiceTest
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PostgresDatabaseManagementProviderTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DatabaseManagementServiceTest.cs</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Store a connection with a secret option and an OAuth credential written under key ring A, create a backup through the service, replace the holder&#x27;s ring with ring B that cannot read A, change a row, then call RestoreBackup with the backup and its password.
+</code></pre>
+
+<pre><code>Status Failed with FailureCode CredentialsUnreadable and the reason text that nothing has been changed; the live rows equal those before the call and the write watch saw no write and no file change. The same scenario with one secret readable under B returns Completed. Frontend: given a restore result with failureCode CredentialsUnreadable, the dialog titled Stored credentials in this backup cannot be read shows the approved body and Cancel, and Cancel closes it; the Backup section shows the key-warning Alert and the Restore section the check line.
+</code></pre>
+
+<pre><code>Today&#x27;s service restores the backup (Completed) and leaves a database the next start refuses; a check placed after the provider restore changes the live rows; a dialog keyed on reason text opens on any failure.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs:3</p>
+
+<p>Changed</p>
+
+<pre><code>New member StageBackup; both providers implement it in this slice.
+</code></pre>
+
+<p>wire</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationStatus.cs:3</p>
+
+<p>Changed</p>
+
+<pre><code>Trailing optional FailureCode; existing constructions compile unchanged and the JSON gains failureCode.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85</p>
+
+<p>Changed</p>
+
+<pre><code>Stage, probe and stop before provider.RestoreBackup; new constructor dependency IEncryptionKeyRingHolder resolved by DI as a singleton already registered in Program.cs.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs:113</p>
+
+<p>Changed</p>
+
+<pre><code>StageBackup added; RestoreBackup and ClearDatabase unchanged.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DatabaseManagementServiceTest.cs:22</p>
+
+<p>Migrated</p>
+
+<pre><code>The provider mock must return a staged backup for StageBackup and the constructor takes a ring holder; the acceptance designer migrates the existing rows.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PostgresDatabaseManagementProviderTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Gains rows for the scratch-database staging commands and the always-drop rule.
+</code></pre>
+
+<p>frontend</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:121</p>
+
+<p>Changed</p>
+
+<pre><code>handleRestore branches on failureCode to open the dialog.
+</code></pre>
+
+<p>registration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:491</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>IEncryptionKeyRingHolder is already a singleton; DatabaseManagementService picks it up by constructor injection.
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IStagedBackup.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New port type, produced by both providers.
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/DatabaseOperationFailure.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New closed enum, serialised as a string.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseOperationTracker.cs:46</p>
+
+<p>Changed</p>
+
+<pre><code>Failed-with-code overload; existing overload unchanged.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:8</p>
+
+<p>Changed</p>
+
+<pre><code>StageBackup added.
+</code></pre>
+
+<p>wire</p>
+
+<p>Lighthouse.Frontend/src/models/DatabaseManagement/DatabaseManagementTypes.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>failureCode added to IDatabaseOperationStatus.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>New members and one new step; no existing structure is in the way.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>IDatabaseManagementService.RestoreBackup(Stream, password) built with ServicePortHarness, the real SqliteDatabaseManagementProvider and an EncryptionKeyRingHolder; frontend: DatabaseManagementSettings with a mocked IDatabaseManagementService
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>IDatabaseManagementProvider.StageBackup
+</code></pre>
+
+<pre><code>DatabaseSecretReadabilityProbe over IStagedBackup.OpenConnection
+</code></pre>
+
+<pre><code>Scenario -&gt; DatabaseManagementService -&gt; provider StageBackup and probe; DatabaseManagementService -&gt; DatabaseOperationTracker
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L4</h6>
+
+<pre><code>With StopRestore, RestoreBackup stops exactly when the staged backup&#x27;s finding is NothingReadable: then State Failed, FailureCode CredentialsUnreadable; otherwise Completed with the backup&#x27;s rows.
+</code></pre>
+
+<p>Algebraic</p>
+
+<p>Application</p>
+
+<p>DatabaseManagementService</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>No stored credential: Completed
+</code></pre>
+
+<pre><code>One readable and one unreadable credential: Completed
+</code></pre>
+
+<pre><code>All credentials unreadable (written under another key): Failed, CredentialsUnreadable
+</code></pre>
+
+<pre><code>All credentials readable: Completed
+</code></pre>
+
+<pre><code>Closed finite domain (readability classes times opt-in); native NUnit cases cover it, generated inputs would add no coverage.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L5</h6>
+
+<pre><code>A stopped restore changes nothing: live rows before equal live rows after, the write watch sees no write and no file change, and the gate is released.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>DatabaseManagementService</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>All credentials unreadable, StopRestore
+</code></pre>
+
+<pre><code>Closed finite domain (readability classes times opt-in); native NUnit cases cover it, generated inputs would add no coverage.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L6</h6>
+
+<pre><code>Postgres StageBackup restores only the two credential tables into the scratch database and always drops it, also when pg_restore fails.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>PostgresDatabaseManagementProvider</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>pg_restore succeeds: create, restore with both --table arguments, drop
+</code></pre>
+
+<pre><code>pg_restore fails: exception, drop still runs, live database never dropped
+</code></pre>
+
+<pre><code>Closed finite domain (readability classes times opt-in); native NUnit cases cover it, generated inputs would add no coverage.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretLocations.cs</p>
+
+<p>Create</p>
+
+<pre><code>Single owner of the stored-secret columns, read by the probe and the removal.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs</p>
+
+<p>Create</p>
+
+<pre><code>Blanks unreadable secret option values and deletes OAuth credentials with an unreadable token.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/UnreadableCredentials.cs</p>
+
+<p>Create</p>
+
+<pre><code>Closed opt-in StopRestore or Remove.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Reads its queries from StoredSecretLocations (prefactoring).
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>RestoreBackup takes UnreadableCredentials.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Adds CreateConnection for the live database.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>CreateConnection.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>CreateConnection.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removal after the provider restore when opted in and nothing was readable.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Optional form field removeUnreadableCredentials.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/services/Api/DatabaseManagementService.ts</p>
+
+<p>Extend</p>
+
+<pre><code>restoreBackup sends removeUnreadableCredentials when true.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Restore without credentials button in the dialog.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreWithoutUnreadableCredentialsTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.DatabaseManagement.RestoreWithoutUnreadableCredentialsTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DatabaseManagementControllerTest|FullyQualifiedName~DatabaseManagementServiceTest|FullyQualifiedName~StoredSecretReadabilityProbeTests|FullyQualifiedName~SecretReadPathSourceStructureTest
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx src/services/Api/DatabaseManagementService.test.ts
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs</p>
+
+<p>Lighthouse.Frontend/src/services/Api/DatabaseManagementService.test.ts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DatabaseManagementServiceTest.cs</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Store a connection with a secret option, a non-secret option and an OAuth credential under key ring A, create a backup through the service, replace the holder&#x27;s ring with ring B, then call RestoreBackup with the backup, its password and UnreadableCredentials.Remove. Frontend: from the open dialog click Restore without credentials.
+</code></pre>
+
+<pre><code>Status Completed; DatabaseSecretReadabilityProbe over the live database with ring B answers NothingStored, so the startup refusal does not fire; the connection and its non-secret option are present, the secret option value is empty and the OAuth credential row is gone. With one readable secret and Remove, the live database equals the backup. Controller: form field true reaches the service as Remove, absent as StopRestore. Frontend: the second call carries removeUnreadableCredentials true with the same file and password, the button shows loading, the dialog closes and the success Alert shows; a failing second call shows the error Alert.
+</code></pre>
+
+<pre><code>Without removal the probe answers NothingReadable and the next start refuses; deleting whole connections fails the connection-present check; removing on a partially readable backup fails the equals-backup check.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>Move the three stored-secret queries from DatabaseSecretReadabilityProbe into a new StoredSecretLocations owner that the probe reads; this makes UnreadableStoredSecrets reuse the same column set instead of copying it.
+</code></pre>
+
+<pre><code>Every probe answer (NothingStored, SomethingReadable, NothingReadable, CannotTell) and the key ids seen.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/StoredSecretReadabilityProbeTests.cs</p>
+
+<h5>Verification</h5>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~StoredSecretReadabilityProbeTests
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementService.cs:3</p>
+
+<p>Changed</p>
+
+<pre><code>RestoreBackup gains the UnreadableCredentials parameter; the controller and test call sites move with it.
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6084HistoryFillAlwaysOnSpecifications.cs:160</p>
+
+<p>Migrated</p>
+
+<pre><code>Calls RestoreBackup; passes StopRestore if the call is on the service port, unchanged if it is on the provider.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs:152</p>
+
+<p>Migrated</p>
+
+<pre><code>Moq setups and verifies name the new argument; new rows for the form field.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs:96</p>
+
+<p>Changed</p>
+
+<pre><code>Query list moves to StoredSecretLocations, behaviour preserved.
+</code></pre>
+
+<p>frontend</p>
+
+<p>Lighthouse.Frontend/src/services/Api/DatabaseManagementService.ts:54</p>
+
+<p>Changed</p>
+
+<pre><code>Optional third argument; existing callers unchanged.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretLocations.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New owner of the stored-secret columns.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableStoredSecrets.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New removal owner.
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/UnreadableCredentials.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New opt-in enum.
+</code></pre>
+
+<p>interface</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DatabaseManagement/IDatabaseManagementProvider.cs:3</p>
+
+<p>Changed</p>
+
+<pre><code>CreateConnection added; both providers implement it in this slice.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:8</p>
+
+<p>Changed</p>
+
+<pre><code>CreateConnection added.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs:9</p>
+
+<p>Changed</p>
+
+<pre><code>CreateConnection added.
+</code></pre>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85</p>
+
+<p>Changed</p>
+
+<pre><code>Removal step after the provider restore when opted in and nothing was readable.
+</code></pre>
+
+<p>adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs:58</p>
+
+<p>Changed</p>
+
+<pre><code>Optional form field mapped to UnreadableCredentials.
+</code></pre>
+
+<p>frontend</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:121</p>
+
+<p>Changed</p>
+
+<pre><code>Restore without credentials button re-sends with the opt-in.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>None.</p>
+
+<h5>Boundaries</h5>
+
+<pre><code>IDatabaseManagementService.RestoreBackup(Stream, password, UnreadableCredentials.Remove) built with ServicePortHarness and the real SqliteDatabaseManagementProvider; controller form field mapping in DatabaseManagementControllerTest; frontend DatabaseManagementSettings and DatabaseManagementService client
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>IDatabaseManagementProvider.CreateConnection
+</code></pre>
+
+<pre><code>UnreadableStoredSecrets over the live connection
+</code></pre>
+
+<pre><code>Scenario -&gt; DatabaseManagementService -&gt; provider and UnreadableStoredSecrets -&gt; SecretStateClassifier and StoredSecretLocations
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L7</h6>
+
+<pre><code>With Remove and an all-unreadable backup, RestoreBackup completes; afterwards the startup probe over the live database answers NothingStored, every connection and non-secret option of the backup is present, secret option values are empty and OAuth credentials with unreadable tokens are gone.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>UnreadableStoredSecrets</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Backup with an API-token connection and an OAuth connection, all secrets under another key
+</code></pre>
+
+<pre><code>Closed finite domain (readability classes times opt-in); native NUnit cases cover it, generated inputs would add no coverage.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L8</h6>
+
+<pre><code>With Remove and any finding other than NothingReadable nothing is removed: the live database equals the backup.
+</code></pre>
+
+<p>Algebraic</p>
+
+<p>Application</p>
+
+<p>DatabaseManagementService</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>One readable and one unreadable credential, Remove: both values kept
+</code></pre>
+
+<pre><code>No stored credential, Remove: Completed, nothing removed
+</code></pre>
+
+<pre><code>Closed finite domain (readability classes times opt-in); native NUnit cases cover it, generated inputs would add no coverage.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L9</h6>
+
+<pre><code>UnreadableStoredSecrets removes a value only when SecretStateClassifier calls it Unreadable; readable and empty values are untouched.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>UnreadableStoredSecrets</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Readable secret kept
+</code></pre>
+
+<pre><code>Unreadable secret blanked
+</code></pre>
+
+<pre><code>Empty value untouched
+</code></pre>
+
+<pre><code>OAuth row with readable access token and unreadable refresh token deleted
+</code></pre>
+
+<pre><code>Closed finite domain (readability classes times opt-in); native NUnit cases cover it, generated inputs would add no coverage.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs</p>
+
+<p>Extend</p>
+
+<pre><code>RestoreBackup and ClearDatabase copy pages with SqliteConnection.BackupDatabase into a Pooling=False live connection with busy_timeout; no file replace or delete.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreAndClearWhileTheDatabaseIsOpenTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.DatabaseManagement.RestoreAndClearWhileTheDatabaseIsOpenTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~SqliteDatabaseManagementProviderTest
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/SqliteDatabaseManagementProviderTest.cs</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Create a backup through the service, add a row, open a Pooling=False SqliteConnection and a FileStream with FileShare.ReadWrite on the live .db (on Linux .NET then refuses an exclusive open with the same &#x27;being used by another process&#x27; IOException Windows gives), then call RestoreBackup with the backup and its password; in a second scenario, with an open connection, add a row and call ClearDatabase.
+</code></pre>
+
+<pre><code>Restore returns Completed and the still-open connection reads the backup&#x27;s rows without the added row; Clear returns Completed and the still-open connection no longer sees the added row and sees the seeded database.
+</code></pre>
+
+<pre><code>Today&#x27;s file copy throws IOException &#x27;being used by another process&#x27; on restore (status Failed); today&#x27;s File.Delete leaves the open connection reading the old file, so the added row is still visible after Clear.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>implementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs:56</p>
+
+<p>Changed</p>
+
+<pre><code>Restore and clear mechanism replaced; CreateBackup unchanged.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/SqliteDatabaseManagementProviderTest.cs:160</p>
+
+<p>Migrated</p>
+
+<pre><code>Rows that pin the file mechanics (replaces file, restores or removes -wal and -shm, deletes files) describe the old mechanism; the acceptance designer rewrites them to observe content, and keeps the missing-.db refusal.
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs:85</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Calls the same provider members; RecycleConnection, migration and seeding still follow.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The change is local to two methods of one provider; no preserving move makes it easier.
+</code></pre>
+
+<p>agreement</p>
+
+<pre><code>Only the provider&#x27;s internals change; IDatabaseManagementProvider&#x27;s members and their meaning stay the same for S3.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>IDatabaseManagementService.RestoreBackup(Stream, password) and ClearDatabase(), built with ServicePortHarness and the real SqliteDatabaseManagementProvider over the harness database
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>SqliteDatabaseManagementProvider over the live connection string
+</code></pre>
+
+<pre><code>Scenario -&gt; DatabaseManagementService -&gt; SqliteDatabaseManagementProvider -&gt; Microsoft.Data.Sqlite
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L2</h6>
+
+<pre><code>After RestoreBackup completes while a connection opened before it and a FileShare.ReadWrite handle are both still open on the live file, the open connection reads exactly the backup&#x27;s rows.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>SqliteDatabaseManagementProvider</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Backup whose rows are all in its .db
+</code></pre>
+
+<pre><code>Legacy backup whose newest rows are only in its -wal file
+</code></pre>
+
+<pre><code>Closed finite domain (readability classes times opt-in); native NUnit cases cover it, generated inputs would add no coverage.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L3</h6>
+
+<pre><code>After ClearDatabase completes while a connection opened before it is still open, that connection reads the empty, migrated and seeded database: rows the scenario added are gone.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>SqliteDatabaseManagementProvider</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Live database with scenario rows and an open connection
+</code></pre>
+
+<pre><code>Closed finite domain (readability classes times opt-in); native NUnit cases cover it, generated inputs would add no coverage.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>- 001 Restore and clear SQLite through the online backup API, and check a backup&#x27;s credentials before restoring it — Accepted</p>
+
+</body></html>
