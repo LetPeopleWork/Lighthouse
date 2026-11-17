@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 8,
-"F": 141,
+"E": 5,
+"F": 146,
 "K": 4,
 "L": 3,
 "P": 5,
@@ -782,6 +783,45 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F142"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F143"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F144"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F145"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F146"
+}
+]
+},
 "facts": {
 "F1": "Story #6362 S03d Package Promises (Deliveries), feature C of three (edges and rules): give Promises its own module rules by namespace with inline lists (R-P1..R-P7) and shrink the Work Items and Tracker integration lists that named Promises types; invert the one Tracker integration to Promises edge (the Jira connector merging the forecast block) through a port IDescriptionBlockMerger defined in Tracker integration Application and implemented by the renderer, with no change to the text written to Jira; and check that every Promises unit test lives under Tests/Modules/Promises and no Promises source file is left in Services apart from the named exceptions. Design authority: docs/feature/story-6362-s03d-package-promises-deliveries/feature-delta.md.",
 "F10": "C2 stays in S03d as the last edit of feature C; push per slice with CI watched; rebase before push allowed; no review window (behaviour-free); mutation once at the end of S03d on frozen code, then finalize (maintainer, 2026-11-17).",
@@ -831,6 +871,11 @@
 "F14": "C3: every Promises unit test sits under the Promises test folders; no Promises source file is left in Services apart from the named exceptions.",
 "F140": "Edges are a finite set read exactly from the IL; the merge body does not change, so its existing example tests are the preservation check and a generator would test the old code against itself",
 "F141": "Tracker integration reaches no Promises type; the merge port lives in Tracker integration Application and the renderer implements it",
+"F142": "Probe architecture-rules PromisesModuleBoundaries (also PromisesUnitTestPlacement is separate): every test of the Promises module rules is listed Passed by name, covering layer placement, Domain reaching only the shared kernel, outsiders reaching Domain/Application/Policies only as listed, and Application reaching no EF Core, Data, API, other module Adapters, update code, write-back round, Access or Licensing except as listed; the names also show the lists are compared both ways against compiled code and that a made-up offender is named per rule. Whether the lists are measured from compiled code is observable only through test names; the test internals are not observable.",
+"F143": "Probe architecture-rules WorkItemsModuleBoundaries and architecture-rules TrackerIntegrationModuleBoundaries: both rule sets pass by name, and the names show Promises is legal by namespace rather than by listed type. The exact list size (smaller by exactly the Promises entries) is not observable by any probe line or test name; stated as outside what a probe can show.",
+"F144": "Probe architecture-rules TrackerIntegrationReachesNoPromises passes by name (Tracker integration reaches no Promises type), and backend-tests DeliveryForecastBlockRenderer and backend-tests JiraDeliverySourceProvider pass by name, showing the Jira connector still merges the Delivery forecast block through the Tracker-defined port implemented by the Promises renderer. Which side defines and implements the port is observable only through test names.",
+"F145": "Probe architecture-rules PromisesUnitTestPlacement: every Promises unit test sits under the Promises test folders and no Promises source file remains under Services except named exceptions; the probe names a test or source file left in an old folder as Failed. The named exceptions themselves are visible only if the test name states them.",
+"F146": "Probes deliveries-answers-compare, forecast-answers-compare, refresh-reactions-compare each print IDENTICAL (base before the Promises move vs HEAD); ef-model-unchanged shows no model change per provider; backend-tests JiraQuietWriteBack and backend-tests JiraBatchedWriteBack pass by name for the Jira text; backend-tests with no fragment shows zero failures. Outside the expectation and not observable: the four blocked-period reactions that refresh-reactions-compare names not observable on both sides; routes and DI behaviour are observable only via the compare probes and test names; text written to a real Jira runs only in CI (ci-live-suites-show shows which suites CI runs, not their result).",
 "F15": "Confirmed (feature-delta D-8, Ratchet design New rules C1): Promises gets its own module rules in Architecture/PromisesModuleBoundariesArchUnitTest.cs, R-P1..R-P7, written with the shared ModuleRules (its PromisesModule namespace constant already exists, ModuleRules.cs:27) and a Promises ModuleWording built in the oracle from two strings, as ForecastingModuleBoundariesArchUnitTest does (ModuleWording.cs:7 already takes the name and the legal callers), so ModuleRules.cs and ModuleWording.cs stay unchanged. Every list is inline, measured from the compiled IL and compared both ways; designed baselines: R-P1 the D-1 lists (types in their layer, none left under Services); R-P2 Domain reaches only Models and the base library, empty; R-P3 outside to Domain, empty; R-P4 outside to Application besides the API and the composition root: PortfolioUpdater; R-P5 outside to Application/Policies besides the composition root: empty; R-P6 Application reaches no EF Core, Data, API or any module's Adapters, Work Items and Tracker integration Application legal by namespace, Forecasting and Flow metrics Application legal if found, platform only through the list ILighthouseClock, IDeliveryRepository, IDeliveryMetricSnapshotRepository, RecordableDeliveries and the dispatcher contract, by name; R-P7 no other module's Adapters, update code, write-back round, Access or Licensing, empty. A neighbour without a namespace is listed by type name. Anything else the IL finds is added only with a reason.",
 "F16": "Confirmed (Ratchet design, D-7 edge Promises to Tracker integration option b): Promises' Application is legal by namespace as an inbound caller in the Work Items and Tracker integration rules, so their lists lose exactly the three Promises entries: WorkItemsModuleBoundariesArchUnitTest.OtherOutsideTypesReachingTheApplication loses Modules.Promises.Application.DeliveryRuleService (line 129); TrackerIntegrationModuleBoundariesArchUnitTest.OtherOutsideTypesReachingTheApplication loses Modules.Promises.Application.DeliveryForecastPublishingService and DeliverySourceResolver (lines 103-104). Promises may reach Tracker integration Application, never its Adapters. No other entry or pattern of those files changes in C1; the R-T7 edge list stays one entry until C2.",
 "F17": "Confirmed (D-7 option b, D-10): the Tracker integration to Promises edge is inverted. New Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs declares one method with the renderer's measured signature kept exactly: string MergeInto(string? existingDescription, string blockText) (IDeliveryForecastBlockRenderer.cs:25; the authority's shorthand parameter name existing is not used). MergeInto leaves IDeliveryForecastBlockRenderer, which keeps Render only; DeliveryForecastBlockRenderer implements both interfaces and keeps Render and MergeInto in one class with unchanged bodies. JiraWorkTrackingConnector's fifth constructor parameter (JiraWorkTrackingConnector.cs:26) changes type from IDeliveryForecastBlockRenderer to IDescriptionBlockMerger, its call at line 3968 and its parameter name stay, and its using of Modules.Promises.Application goes. Program.cs keeps line 1474 and the order of every line and adds one registration AddScoped<IDescriptionBlockMerger, DeliveryForecastBlockRenderer>() beside it; the connector is built only by DI (Program.cs:1493 via WorkTrackingConnectorFactory). The class is stateless and pure, so two scoped instances behave the same. No AddPromises extension. Carrier: the port is a Tracker integration Application interface owned by that module; the implementation is owned by Promises Application; no per-process state.",
