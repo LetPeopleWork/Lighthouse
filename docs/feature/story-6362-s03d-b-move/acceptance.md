@@ -318,16 +318,6 @@ P1
 Every Promises type sits in its designed place: the forecast block in Domain, the services, interfaces and projector in Application, and the two forecasts-updated handlers in Application Policies. No Promises type is left in its old namespace, and Domain reaches only the shared kernel. The architecture-rules probe reports each rule that places or bounds these types as Passed, by name.
 ```
 
-#### E5
-
-##### Promises
-
-P2
-
-```text
-The unit tests of each moved Promises type run and pass. The probe `backend-tests Tests.Modules.Promises` lists each of their tests by name as Passed, and its totals line shows 0 Failed. The probe `architecture-rules Promises` lists each architecture rule that names a moved type by name as Passed.
-```
-
 #### E6
 
 ##### Promises
@@ -346,6 +336,16 @@ P4
 
 ```text
 Nothing a user, a tracker or the database sees changes, and the existing backend tests stay green. The probe `deliveries-answers-compare` (no arguments) prints IDENTICAL. The probe `refresh-reactions-compare` (no arguments) prints IDENTICAL. The probe `forecast-answers-compare` (no arguments) prints IDENTICAL. The probe `ef-model-unchanged` prints "No changes have been made to the model since the last migration." for each provider it lists. The probe `backend-tests` (no fragment) prints 0 Failed in its totals line.
+```
+
+#### E8
+
+##### Promises
+
+P2
+
+```text
+The unit tests of each moved Promises type run and pass. The probe `backend-tests` (no fragment) prints 0 Failed in its totals line, so the moved tests run and pass. The probe `architecture-rules Promises` lists as Passed, by name, the rules that place the moved unit tests in the Promises test folders: `TheUnitTestsOfTheMovedServices_LiveInThePromisesApplicationTestFolder_AndNoneIsLeftUnderServices` and `TheUnitTestsOfTheTwoForecastsUpdatedHandlers_LiveInThePromisesPoliciesTestFolder_AndNoneIsLeftUnderServices`. The same probe lists as Passed, by name, each architecture rule that names a moved type.
 ```
 
 ## Charter
