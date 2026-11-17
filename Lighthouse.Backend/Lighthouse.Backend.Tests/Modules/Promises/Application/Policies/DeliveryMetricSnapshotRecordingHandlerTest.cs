@@ -19,6 +19,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using Lighthouse.Backend.Modules.Promises.Application;
+using Lighthouse.Backend.Modules.Promises.Application.Policies;
 
 namespace Lighthouse.Backend.Tests.Modules.Promises.Application.Policies
 {

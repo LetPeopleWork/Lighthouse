@@ -292,7 +292,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Tests.Modules.WorkItems.Application.DemoDataStateEnteredSeamIntegrationTest",
             "Lighthouse.Backend.Tests.Modules.WorkItems.Application.WorkItemServiceCsvStateEnteredSeamIntegrationTest",
             "Lighthouse.Backend.Tests.Repository.DeliveryRepositoryTest",
-            "Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.DeliveryMetricSnapshotRecordingHandlerTest",
+            "Lighthouse.Backend.Tests.Modules.Promises.Application.Policies.DeliveryMetricSnapshotRecordingHandlerTest",
             "Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.DomainEventDispatcherGoldTest",
             "Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest",
             "Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.TeamDataRefreshedGoldTest",

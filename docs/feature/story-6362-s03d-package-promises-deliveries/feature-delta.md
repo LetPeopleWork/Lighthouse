@@ -710,3 +710,13 @@ scenarios. Maintainer's answer: **fix E3, waive E2, re-run once.** E3: the self-
 `deliveries-answers-selftest`. E2: waived at name level with this evidence: the exact-set test fails on a missing and on
 an extra admitted type, and both oracle approvals checked every wrong fill fails by name; E2 is reworded to what the
 probes show.
+
+### B2 as measured (2026-11-17)
+
+- `DeliveryMetricSnapshotRecordingHandlerTest` keeps the host for the whole fixture (it derives from `IntegrationFixture`
+  and about 25 helpers seed through host-resolved repositories and `LighthouseAppContext`), so D-9's second case applies:
+  its `HostUsersStillToMove` line is renamed to the new namespace, not removed. Rewriting the fixture onto the
+  mock-built handler is a follow-up for the Promises tests, outside this behaviour-free move.
+- The order pin was proven by a throwaway swap of the two registrations: the new pin failed with
+  "expected [SnapshotRecording, Publishing], was [Publishing, SnapshotRecording]"; Program.cs restored.
+- `DeliveryMetricValuesProjectorTest` also needed the new `using` (it builds the recording handler).

@@ -86,6 +86,7 @@ using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Promises.Application;
+using Lighthouse.Backend.Modules.Promises.Application.Policies;
 
 namespace Lighthouse.Backend
 {
