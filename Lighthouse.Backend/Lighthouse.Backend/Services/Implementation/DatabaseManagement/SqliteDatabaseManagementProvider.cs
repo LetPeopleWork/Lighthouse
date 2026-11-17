@@ -84,6 +84,9 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             return Task.CompletedTask;
         }
 
+        public DbConnection CreateConnection()
+            => new SqliteConnection(new SqliteConnectionStringBuilder(liveConnectionString) { Pooling = false }.ToString());
+
         public void RecycleConnection()
         {
             SqliteConnection.ClearAllPools();

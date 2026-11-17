@@ -199,6 +199,8 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             logger.LogInformation("PostgreSQL database {Database} cleared and recreated", database);
         }
 
+        public DbConnection CreateConnection() => new NpgsqlConnection(connectionString);
+
         public void RecycleConnection()
         {
             NpgsqlConnection.ClearAllPools();

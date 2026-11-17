@@ -1,3 +1,5 @@
+using System.Data.Common;
+
 namespace Lighthouse.Backend.Services.Interfaces.DatabaseManagement
 {
     public interface IDatabaseManagementProvider
@@ -11,6 +13,8 @@ namespace Lighthouse.Backend.Services.Interfaces.DatabaseManagement
         string? GetToolingGuidanceUrl();
 
         void RecycleConnection();
+
+        DbConnection CreateConnection();
 
         Task<string> CreateBackup(string destinationPath);
 

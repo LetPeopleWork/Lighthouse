@@ -11,6 +11,7 @@ export interface IDatabaseManagementService {
 	restoreBackup(
 		file: File,
 		password: string,
+		removeUnreadableCredentials?: boolean,
 	): Promise<IDatabaseOperationStatus>;
 	clearDatabase(): Promise<IDatabaseOperationStatus>;
 	getOperationStatus(
@@ -54,11 +55,15 @@ export class DatabaseManagementService
 	public restoreBackup(
 		file: File,
 		password: string,
+		removeUnreadableCredentials = false,
 	): Promise<IDatabaseOperationStatus> {
 		return this.withErrorHandling(async () => {
 			const formData = new FormData();
 			formData.append("file", file);
 			formData.append("password", password);
+			if (removeUnreadableCredentials) {
+				formData.append("removeUnreadableCredentials", "true");
+			}
 
 			const response = await this.apiService.post<IDatabaseOperationStatus>(
 				"/database-management/restore",

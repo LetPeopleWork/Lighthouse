@@ -91,13 +91,6 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
     // one of them can still be read - one is enough to say the key is the right one.
     public sealed class DatabaseSecretReadabilityProbe : IStoredSecretReadabilityProbe
     {
-        private static readonly string[] StoredSecretQueries =
-        [
-            """SELECT "Value" FROM "WorkTrackingSystemConnectionOption" WHERE "IsSecret" = true AND "Value" IS NOT NULL AND "Value" <> ''""",
-            """SELECT "AccessToken" FROM "OAuthCredentials" WHERE "AccessToken" IS NOT NULL AND "AccessToken" <> ''""",
-            """SELECT "RefreshToken" FROM "OAuthCredentials" WHERE "RefreshToken" IS NOT NULL AND "RefreshToken" <> ''""",
-        ];
-
         private readonly Func<DbConnection> connectionFactory;
 
         public DatabaseSecretReadabilityProbe(Func<DbConnection> connectionFactory)
@@ -121,7 +114,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 var stored = 0;
                 var keyIdsSeen = new List<string>();
 
-                foreach (var value in StoredSecretQueries.SelectMany(query => ValuesFrom(connection, query)))
+                foreach (var value in StoredSecretLocations.All.SelectMany(location => location.SecretsIn(connection)).Select(secret => secret.Value))
                 {
                     // Stryker disable once Update: this only ever answers "was there anything at all", so
                     // counting the other way reaches the same two answers by the same route.
@@ -151,22 +144,6 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             catch (Exception failedToAsk) when (failedToAsk is DbException or InvalidOperationException)
             {
                 return new StoredSecretFinding(StoredSecretReadability.CannotTell, []);
-            }
-        }
-
-        private static IEnumerable<string> ValuesFrom(DbConnection connection, string query)
-        {
-            using var command = connection.CreateCommand();
-            command.CommandText = query;
-
-            using var reader = command.ExecuteReader();
-
-            while (reader.Read())
-            {
-                if (!reader.IsDBNull(0))
-                {
-                    yield return reader.GetString(0);
-                }
             }
         }
     }

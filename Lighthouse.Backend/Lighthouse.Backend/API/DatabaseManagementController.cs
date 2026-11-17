@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("restore")]
         [RequestSizeLimit(512 * 1024 * 1024)]
-        public async Task<IActionResult> RestoreBackup(IFormFile file, [FromForm] string password)
+        public async Task<IActionResult> RestoreBackup(IFormFile file, [FromForm] string password, [FromForm] bool removeUnreadableCredentials = false)
         {
             if (file == null || file.Length == 0)
             {
@@ -70,7 +70,8 @@ namespace Lighthouse.Backend.API
             try
             {
                 var stream = file.OpenReadStream();
-                var status = await databaseManagementService.RestoreBackup(stream, password);
+                var onUnreadable = removeUnreadableCredentials ? UnreadableCredentials.Remove : UnreadableCredentials.StopRestore;
+                var status = await databaseManagementService.RestoreBackup(stream, password, onUnreadable);
                 return Accepted(status);
             }
             catch (InvalidOperationException ex)

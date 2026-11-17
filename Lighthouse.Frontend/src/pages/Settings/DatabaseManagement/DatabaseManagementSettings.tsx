@@ -122,7 +122,13 @@ const DatabaseManagementSettings: React.FC = () => {
 		}
 	}, []);
 
-	const handleRestore = async () => {
+	const handleRestore = () => restoreTheChosenBackup(false);
+
+	const handleRestoreWithoutCredentials = () => restoreTheChosenBackup(true);
+
+	const restoreTheChosenBackup = async (
+		removeUnreadableCredentials: boolean,
+	) => {
 		if (!restoreFile || !restorePassword) return;
 
 		setOperationLoading("restore");
@@ -130,10 +136,16 @@ const DatabaseManagementSettings: React.FC = () => {
 		setSuccess(null);
 
 		try {
-			const result = await databaseManagementService.restoreBackup(
-				restoreFile,
-				restorePassword,
-			);
+			const result = removeUnreadableCredentials
+				? await databaseManagementService.restoreBackup(
+						restoreFile,
+						restorePassword,
+						true,
+					)
+				: await databaseManagementService.restoreBackup(
+						restoreFile,
+						restorePassword,
+					);
 
 			if (result.failureCode === "CredentialsUnreadable") {
 				setUnreadableCredentialsReason(result.failureReason ?? "");
@@ -156,6 +168,9 @@ const DatabaseManagementSettings: React.FC = () => {
 		} catch (error_) {
 			setError(error_ instanceof Error ? error_.message : "Restore failed.");
 		} finally {
+			if (removeUnreadableCredentials) {
+				setUnreadableCredentialsReason(null);
+			}
 			setOperationLoading(null);
 			await fetchStatus();
 		}
@@ -486,6 +501,14 @@ const DatabaseManagementSettings: React.FC = () => {
 					<Button onClick={() => setUnreadableCredentialsReason(null)}>
 						Cancel
 					</Button>
+					<LoadingButton
+						onClick={handleRestoreWithoutCredentials}
+						loading={operationLoading === "restore"}
+						color="warning"
+						variant="contained"
+					>
+						Restore without credentials
+					</LoadingButton>
 				</DialogActions>
 			</Dialog>
 		</Box>

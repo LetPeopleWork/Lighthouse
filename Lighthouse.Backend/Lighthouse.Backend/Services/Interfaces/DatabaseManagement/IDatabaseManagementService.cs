@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Services.Interfaces.DatabaseManagement
 
         Task<DatabaseOperationStatus> CreateBackup(string password);
 
-        Task<DatabaseOperationStatus> RestoreBackup(Stream backupFile, string password);
+        Task<DatabaseOperationStatus> RestoreBackup(Stream backupFile, string password, UnreadableCredentials onUnreadable = UnreadableCredentials.StopRestore);
 
         Task<DatabaseOperationStatus> ClearDatabase();
 

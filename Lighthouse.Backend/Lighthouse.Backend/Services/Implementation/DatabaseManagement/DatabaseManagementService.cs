@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             }
         }
 
-        public async Task<DatabaseOperationStatus> RestoreBackup(Stream backupFile, string password)
+        public async Task<DatabaseOperationStatus> RestoreBackup(Stream backupFile, string password, UnreadableCredentials onUnreadable = UnreadableCredentials.StopRestore)
         {
             var operationId = GenerateOperationId();
 
@@ -117,7 +117,9 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 {
                     var extractDir = await UnzipBackup(backupFile, password, tempDir);
 
-                    if (await NoStoredCredentialCanBeRead(extractDir))
+                    var nothingReadable = await NoStoredCredentialCanBeRead(extractDir);
+
+                    if (nothingReadable && onUnreadable == UnreadableCredentials.StopRestore)
                     {
                         logger.LogWarning("Restore operation {OperationId} stopped: this installation's key reads none of the backup's stored credentials", operationId);
                         tracker.TransitionToFailed(operationId, CredentialsUnreadableReason, DatabaseOperationFailure.CredentialsUnreadable);
@@ -125,6 +127,11 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                     }
 
                     await provider.RestoreBackup(extractDir);
+
+                    if (nothingReadable)
+                    {
+                        RemoveTheCredentialsNoKeyHereCanRead(operationId);
+                    }
 
                     MigrateAndSeedDatabase();
 
@@ -160,6 +167,16 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             var finding = new DatabaseSecretReadabilityProbe(staged.OpenConnection).Look(keyRingHolder.Current);
 
             return finding.Readability == StoredSecretReadability.NothingReadable;
+        }
+
+        // The operator chose to restore anyway, so the credentials the running key cannot read are given up before the
+        // next start sees them and refuses; each one is entered again in its Connection.
+        private void RemoveTheCredentialsNoKeyHereCanRead(string operationId)
+        {
+            logger.LogWarning("Restore operation {OperationId} removes the stored credentials this installation's key cannot read, as the operator chose", operationId);
+
+            using var live = provider.CreateConnection();
+            new UnreadableStoredSecrets(keyRingHolder.Current).RemoveFrom(live);
         }
 
         private static async Task<string> UnzipBackup(Stream backupFile, string password, string tempDir)
