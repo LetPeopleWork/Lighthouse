@@ -151,13 +151,1116 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>object_oriented</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Confirmed D-8: Tracker integration gets one new boundaries file, Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs, with rules R-T2..R-T8 written through the shared ModuleRules class and a ModuleWording of its own, as the Forecasting and Work Items boundaries files do; no rule body is copied. R-T1 (each listed type lives in its layer, none left under Services or Factories) is already pinned by the four closed layout oracles TrackerIntegrationDomainLayoutArchUnitTest, TrackerIntegrationApplicationLayoutArchUnitTest, TrackerIntegrationConnectorsLayoutArchUnitTest and TrackerIntegrationOAuthAndHealthLayoutArchUnitTest and is cited, not restated.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D2</h4>
+
+<pre><code>Confirmed Ratchet design: the compiled IL decides every list entry. Each list is inline, measured from the IL during C1, keyed by full type name (nested types reduced to their top-level type), and compared both ways (a missing entry and an extra entry both fail). Where a short name is shared, the key is the full name (D-1 outcome record: the moved AzureDevOps WorkItemExtensions versus Lighthouse.Backend.Extensions.WorkItemExtensions). The Expected baseline column of the Ratchet design is a guess: an entry the design did not foresee is recorded in the list and reported to the host with the IL edge that forced it, never silently accepted; an expected entry the IL does not show is left out and reported the same way. Lists only shrink after C.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>D3</h4>
+
+<pre><code>Confirmed D-7: the Promises port edge is legal; R-T4 lists DeliverySourceResolver and DeliveryForecastPublishingService by full name as outside callers of Application until Promises has a namespace (S03d). R-T7 (the module reaches no other context: Work Items, Forecasting, Flow metrics, Promises and update code, Refinement, Reports, Access, Licensing) carries exactly one listed edge, JiraWorkTrackingConnector to IDeliveryForecastBlockRenderer, owner S03d.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D4</h4>
+
+<pre><code>Confirmed D-14: WorkTrackingConnectorFactory, WorkTrackingSystemFactory and AuthenticationMethodSchema stay in Application. Their Application to own-Adapters edges are listed by exact source type full name in the R-T6 Application outbound list, owner S09a. No namespace-wide or layer-wide exemption is added for them or for any other type; every exemption is exact per type.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D5</h4>
+
+<pre><code>Confirmed D-1, D-4 and D-6 (stays): the three repositories (WorkTrackingSystemConnectionRepository, OAuthCredentialRepository, ConnectionHealthVerdictRepository), the connection save service and its types, connection usage, the write-back round, Encryption, demo data and Health stay where they are. R-T6 and R-T8 list the Application repository edges of ConnectionHealthService and OAuthService by full name; these entries replace the OAuthService and ConnectionHealthService exemptions of ModuleBoundariesArchUnitTest. The same staying types are the named exceptions of the C2 no-file-left check, read from TrackerIntegrationMembership.Stays rather than restated.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>D6</h4>
+
+<pre><code>Confirmed D-2 as amended: Models types that do not meet all four admission conditions stay in the kernel (entities, wire types, the write-back vocabulary, ConnectionFetchShapeChanged, OAuthCompleteResult). Domain and Application reaching Models is therefore legal by namespace and needs no list entry; nothing moves in feature C.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D7</h4>
+
+<pre><code>Confirmed Reuse Analysis (REPLACE row): ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern and its two rules WorkTrackingIntegration_IsALeafInputAdapter and WorkTrackingConnectors_DoNotDependOnAnyRepository are retired; R-T7 and R-T8 replace them. Every consumer of the pattern migrates to the module namespace pattern ^Lighthouse\.Backend\.Modules\.TrackerIntegration(\.|$) in the same slice: DependencySingleDecisionArchUnitTest (TheConnectors), WorkItemsModuleBoundariesArchUnitTest, RefinementModuleArchUnitTest, and the TrackerIntegrationRulesSeeTheModuleArchUnitTest rows that key on the pattern by name. Feature B exact exemptions (ParentSourceSelector, IWorkTrackingConnectorFactory, IWorkTrackingSystemFactory, OAuthService, ConnectionHealthService) are kept or replaced by C1 list entries, never widened.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D8</h4>
+
+<pre><code>Confirmed D-11: C1 removes the old alternatives from Scripts/test-selection/path-classifier.sh and dev-test.ps1 (Services/Implementation/WorkTrackingConnectors/&lt;Tracker&gt;/, Services/Implementation/WorkTrackingConnectors/(Auth|OAuth)/, top-level Services/Implementation/WorkTrackingConnectors/*.cs, Services/Interfaces/WorkTrackingConnectors/I*.cs, Factories); module-path alternatives and alternatives outside the context (Parents, Models, FetchFingerprint, Program.cs, the solution and project files) stay. test-path-classifier.sh scenarios that exist only for old paths are removed; every module-path scenario stays green, so a change to a connector under the module still selects that tracker live suite.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D9</h4>
+
+<pre><code>Confirmed D-9, decided here: C2 writes a sibling TrackerIntegrationUnitTestPlacementTest modelled on WorkItemsUnitTestPlacementTest, as ForecastingUnitTestPlacementTest already is, instead of parameterising the existing placement tests: those are approved oracles of other features and would become craft targets. Test files are found on disk and classes read from the compiled test assembly with symbols. The no-file-left check lists the files under Services/Interfaces, Services/Implementation (WorkTrackingConnectors, OAuth, ConnectionHealth) and Factories that belong to the context and fails on any that is not a named exception.
+</code></pre>
+<p>Governed slices: S2</p>
+
+<h4>D10</h4>
+
+<pre><code>Layer algebra, test side only (production unchanged, D-0, D-10, D-12): state = the finite set of top-level type-to-type IL edges of the production assembly and the finite set of source and test file paths; operation = evaluate a rule over that state with an inline list; observation = a verdict naming each offender, each missing list entry and each extra list entry. Carriers: InboundVerdict, OutboundVerdict and KernelRuleVerdict owned by Lighthouse.Backend.Tests/Architecture/ModuleRules.cs; the module wording is a ModuleWording value owned by the new boundaries file; membership facts are owned by TrackerIntegrationMembership. No per-process state.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>D11</h4>
+
+<pre><code>Formal verification not applicable (feature-delta Formal verification section, Confirmed): every claim is an exact equality over finite sets read from the compiled IL and the file tree, decided exhaustively by the rule itself with a made-up offender per position as falsifier. There is no state transition, ordering, concurrency, recovery or liveness claim, so no Quint, TLA+/TLC or Agda model is selected; a model would restate the namespace map and could not fail. Liveness is not applicable: nothing runs over time. Treatment of each law is Finite; property-based testing is not applicable to a closed finite domain.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Production code does not change: routes, DTOs, refresh answers, forecasts, DI registrations and handler order, and the EF model stay the same (D-0, D-10, D-12, P4).
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>K2</h4>
+
+<pre><code>Rules read the compiled IL through IlDependencies, which does not see catch-clause, event or attribute named-argument references; that blind spot is accepted and not compensated by text search.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>K3</h4>
+
+<pre><code>Lists are never loosened and never widened to a namespace or layer; each entry names a full type name. Out of scope: moving repositories, the connection save service, connection usage, the write-back round, encryption or demo data, and shrinking any listed edge (S03d renderer edge, S09a connector construction, S03i connection save).
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>K4</h4>
+
+<pre><code>One oracle file per slice; an approved oracle file of this feature is not edited by a later slice. No nWave scenario tags in code. Made-up offenders live in a fixture namespace such as Lighthouse.Backend.Modules.TrackerIntegrationFixtures. Tests assert by the failure message naming the offender, not by counts.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>K5</h4>
+
+<pre><code>No input bound applies: no stored or validated input is added or changed.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Every producer and consumer of the touched contracts (the rule files, the classifier variables and their sourcing scripts and workflow) lives in one repository and changes in the same commit; no party changes apart, so the primary oracles cover them.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<p>None.</p>
+
+<h3>Equality</h3>
+
+<p>None.</p>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<p>None.</p>
+
+<h3>States</h3>
+
+<p>None.</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<p>None.</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>The oracle: rules R-T2..R-T8 with inline lists measured from the IL and a made-up offender per list position.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Retire WorkTrackingIntegrationPattern, WorkTrackingIntegration_IsALeafInputAdapter and WorkTrackingConnectors_DoNotDependOnAnyRepository with their OAuthService and ConnectionHealthService exemptions; R-T7 and R-T8 replace them.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>TheConnectors reads the module namespace instead of the retired pattern; the feature B exemptions stay exact.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Its connectors rule reads the module namespace instead of the retired pattern.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Its rule reads the module namespace instead of the retired pattern.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Rows that key on WorkTrackingIntegrationPattern by name follow the retirement; the made-up offender under the module stays caught by the module rules.
+</code></pre>
+
+<p>Scripts/test-selection/path-classifier.sh</p>
+
+<p>Extend</p>
+
+<pre><code>Remove the old Services/WorkTrackingConnectors and Factories alternatives; keep module paths.
+</code></pre>
+
+<p>Scripts/test-selection/dev-test.ps1</p>
+
+<p>Extend</p>
+
+<pre><code>Same removal as path-classifier.sh so local and CI selection agree.
+</code></pre>
+
+<p>Scripts/test-selection/test-path-classifier.sh</p>
+
+<p>Extend</p>
+
+<pre><code>Remove scenarios that exist only for old paths; module-path scenarios stay.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationModuleBoundariesArchUnitTest
+bash Scripts/test-selection/test-path-classifier.sh
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run TrackerIntegrationModuleBoundariesArchUnitTest (architecture-rules probe with fragment TrackerIntegrationModuleBoundaries) and bash Scripts/test-selection/test-path-classifier.sh on the candidate.
+</code></pre>
+
+<pre><code>Every rule R-T2..R-T8 passes on the production IL with its measured list and reports each made-up offender by name; the D-7 and D-14 entries appear by exact type name; every module-path classifier scenario passes and no old-path alternative remains; the filtered suite stays green.
+</code></pre>
+
+<pre><code>Before C1 the oracle class does not exist (RED). Removing a measured list entry, adding an entry with no IL edge, or a fixture type that reaches another context, a repository or the module Adapters from outside makes the named rule fail.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>ModuleRules</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15</p>
+
+<p>Reuse</p>
+
+<pre><code>Owns the inbound, outbound, layer and Domain rules and their verdicts; the new file calls it with the module namespaces and its own ModuleWording.
+</code></pre>
+
+<p>ModuleRulesCatchANewOffenderArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs:27</p>
+
+<p>Reuse</p>
+
+<pre><code>Made-up offenders in a fixture namespace are the falsifier approach; the new file uses its own TrackerIntegrationFixtures namespace.
+</code></pre>
+
+<p>WorkItemsModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:34</p>
+
+<p>Reuse</p>
+
+<pre><code>Model for a module boundaries file with ModuleWording and inline lists; no rule body is copied.
+</code></pre>
+
+<p>TrackerIntegrationMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembership.cs:11</p>
+
+<p>Reuse</p>
+
+<pre><code>Owns Moves and Stays; the lists derive layer subjects and staying types from it rather than restating them.
+</code></pre>
+
+<p>JIRA_REGEX</p>
+
+<p>Scripts/test-selection/path-classifier.sh:13</p>
+
+<p>Extend</p>
+
+<pre><code>The classifier owns live-suite selection; only old alternatives are removed.
+</code></pre>
+
+<p>JiraRegex</p>
+
+<p>Scripts/test-selection/dev-test.ps1:22</p>
+
+<p>Extend</p>
+
+<pre><code>Local mirror of the classifier; same removal.
+</code></pre>
+
+<p>WorkTrackingIntegrationPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:15</p>
+
+<p>Replace</p>
+
+<pre><code>The leaf rule on old and new namespaces is replaced by R-T7 and R-T8 on the module namespace once nothing lives in the old ones.
+</code></pre>
+
+<p>TrackerIntegrationModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No existing file owns the Tracker integration module rules; it calls ModuleRules and copies no rule body.
+</code></pre>
+
+<p>TheConnectors</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:152</p>
+
+<p>Extend</p>
+
+<pre><code>Its single-decision rules keep their owner; only the connector namespace it reads changes to the module namespace.
+</code></pre>
+
+<p>WorkTrackingIntegrationPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:185</p>
+
+<p>Extend</p>
+
+<pre><code>The Refinement rule keeps its owner; it reads the module namespace instead of the retired pattern.
+</code></pre>
+
+<p>WorkTrackingIntegrationPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs:68</p>
+
+<p>Extend</p>
+
+<pre><code>The feature A oracle keeps its other rows; rows keyed on the retired pattern follow its retirement.
+</code></pre>
+
+<p>throws_count_in_checkout_with_connectors_under</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh:208</p>
+
+<p>Extend</p>
+
+<pre><code>The classifier test owns the selection scenarios; old-path-only scenarios are removed, module-path ones kept.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>test-oracle</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:15</p>
+
+<p>Migrated</p>
+
+<pre><code>Pattern and its two rules removed; their subject moves to the new file.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:152</p>
+
+<p>Migrated</p>
+
+<pre><code>Consumer of the pattern reads the module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:258</p>
+
+<p>Migrated</p>
+
+<pre><code>Consumer of the pattern reads the module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:185</p>
+
+<p>Migrated</p>
+
+<pre><code>Consumer of the pattern reads the module namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs:152</p>
+
+<p>Migrated</p>
+
+<pre><code>Rows naming the pattern follow its retirement.
+</code></pre>
+
+<p>build-script</p>
+
+<p>Scripts/test-selection/path-classifier.sh:13</p>
+
+<p>Changed</p>
+
+<pre><code>Old alternatives removed; variable names and output unchanged.
+</code></pre>
+
+<p>build-script</p>
+
+<p>Scripts/test-selection/dev-test.ps1:22</p>
+
+<p>Changed</p>
+
+<pre><code>Old alternatives removed.
+</code></pre>
+
+<p>test-script</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh:232</p>
+
+<p>Changed</p>
+
+<pre><code>Old-path-only scenarios removed.
+</code></pre>
+
+<p>ci-workflow</p>
+
+<p>.github/workflows/ci_changes.yml:194</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Sources path-classifier.sh; same variables and output.
+</code></pre>
+
+<p>dev-script</p>
+
+<p>Scripts/test-selection/dev-test.sh:19</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Sources path-classifier.sh; same variables and output.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No production edit; rules only read it.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>path-classifier.sh tracker and shared regex variables and their true/false classification</p>
+
+<p>Scripts/test-selection/path-classifier.sh:13</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Old alternatives removed; names and output shape kept.
+</code></pre>
+
+<p>path-classifier.sh tracker and shared regex variables and their true/false classification</p>
+
+<p>.github/workflows/ci_changes.yml:194</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reads the same variables and output.
+</code></pre>
+
+<p>path-classifier.sh tracker and shared regex variables and their true/false classification</p>
+
+<p>Scripts/test-selection/dev-test.sh:19</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reads the same variables and output.
+</code></pre>
+
+<p>path-classifier.sh tracker and shared regex variables and their true/false classification</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh:232</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Old-path-only scenarios removed in the same commit.
+</code></pre>
+
+<p>ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:15</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Retired; consumers move to the module namespace in the same commit.
+</code></pre>
+
+<p>ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs:152</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Reads the module namespace.
+</code></pre>
+
+<p>ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:258</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Reads the module namespace.
+</code></pre>
+
+<p>ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:185</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Reads the module namespace.
+</code></pre>
+
+<p>ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationRulesSeeTheModuleArchUnitTest.cs:152</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Rows naming the pattern follow its retirement.
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Nothing moves in feature C and production is unchanged; the rule-file edits are the slice behaviour itself, preserved by the existing architecture tests staying green.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L1</h6>
+
+<pre><code>Each R-T list equals the set of IL edges its rule finds on the production assembly: a missing entry and an extra entry both fail, naming the entry.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>TrackerIntegrationModuleBoundariesArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>production IL with the measured lists passes
+</code></pre>
+
+<pre><code>a measured entry removed from a list fails naming it
+</code></pre>
+
+<pre><code>an entry with no IL edge added to a list fails naming it
+</code></pre>
+
+<pre><code>A closed finite domain: the IL edges and file paths of one build are enumerated exhaustively by the rule, so examples per position are complete and property-based generation adds nothing.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L2</h6>
+
+<pre><code>A made-up type in the TrackerIntegrationFixtures namespace in each rule position (Domain reaching beyond the kernel, an unlisted outside caller of Domain, Application or Adapters, Application reaching EF Core, Data, API or another module Adapters, the module reaching another context, a module type reaching a repository) makes that rule fail naming the type.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>TrackerIntegrationModuleBoundariesArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>one offender per rule R-T2..R-T8
+</code></pre>
+
+<pre><code>A closed finite domain: the IL edges and file paths of one build are enumerated exhaustively by the rule, so examples per position are complete and property-based generation adds nothing.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L3</h6>
+
+<pre><code>A changed file under Modules/TrackerIntegration/Adapters/Connectors/&lt;Tracker&gt;/ selects that tracker live suite; shared module paths select every live suite; no old Services/WorkTrackingConnectors or Factories alternative remains in path-classifier.sh or dev-test.ps1.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>path-classifier.sh</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>one module-path scenario per tracker and shared stays green
+</code></pre>
+
+<pre><code>old-path-only scenarios removed
+</code></pre>
+
+<pre><code>A closed finite domain: the IL edges and file paths of one build are enumerated exhaustively by the rule, so examples per position are complete and property-based generation adds nothing.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>Tracker integration module rules
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Each rule fails on a made-up offender in each position and on a missing or extra list entry.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Tracker integration module rules
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>The lists are measured from the current IL, so the production assembly satisfies every rule.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Tracker integration module rules
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>The rules run in the architecture suite, observable through the architecture-rules probe with the class-name fragment and through the filtered dotnet test gate.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<h6>Y1</h6>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: the Expected baseline column is correct
+</code></pre>
+
+<pre><code>Every list equals the IL
+</code></pre>
+
+<pre><code>An unforeseen entry is added with the edge that forced it
+</code></pre>
+
+<pre><code>An entry accepted silently or a list widened to a namespace
+</code></pre>
+
+<pre><code>Reported to the host for the design owner
+</code></pre>
+
+<p>host</p>
+
+<h6>Y2</h6>
+
+<p>Bypass</p>
+
+<pre><code>Assumption negated: the IL shows every dependency
+</code></pre>
+
+<pre><code>Rules over IL type references
+</code></pre>
+
+<pre><code>Catch-clause, event and attribute named-argument references and reflection by string go unseen
+</code></pre>
+
+<pre><code>Text search presented as an IL fact
+</code></pre>
+
+<pre><code>Accepted blind spot; the full suite and review cover behaviour
+</code></pre>
+
+<p>maintainer</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>R-T2 Domain reaches only Models and the base library; R-T3 outside to Domain only from its list; R-T4 outside to Application only from API, the composition root and Work Items by namespace plus its list; R-T5 outside to Adapters only from the composition root plus its list; R-T6 Application reaches no EF Core, Data, API or other module Adapters and platform only through its list (including the D-14 entries); R-T7 the module reaches no other context except the one D-7 entry; R-T8 no module type reaches a repository except the R-T6 Application entries. Each list compared both ways; a made-up offender in each position caught.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationModuleBoundariesArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>The oracle: unit-test placement under Tests/Modules/TrackerIntegration and the no-file-left check for the old folders.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationUnitTestPlacementTest
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run TrackerIntegrationUnitTestPlacementTest (architecture-rules probe with fragment TrackerIntegrationUnitTestPlacement) on the candidate.
+</code></pre>
+
+<pre><code>Every module unit test sits under Tests/Modules/TrackerIntegration with its folder namespace; no context file remains in Services/Interfaces, Services/Implementation or Factories apart from the named exceptions; made-up offenders are reported by path.
+</code></pre>
+
+<pre><code>Before C2 the oracle class does not exist (RED). A made-up test or source file of the context in an old folder, or an empty or missing listed folder, makes the check fail naming the path.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>WorkItemsUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs:17</p>
+
+<p>Reuse</p>
+
+<pre><code>Model for finding test files on disk and classes from the compiled assembly with symbols; a sibling, not a parameterisation, because it is another feature approved oracle.
+</code></pre>
+
+<p>TrackerIntegrationMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembership.cs:123</p>
+
+<p>Reuse</p>
+
+<pre><code>Stays names the exceptions of the no-file-left check.
+</code></pre>
+
+<p>TrackerIntegrationUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No placement test owns the Tracker integration module; a sibling of WorkItemsUnitTestPlacementTest and ForecastingUnitTestPlacementTest, which are other features approved oracles.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>test-oracle</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No file moves; the check reads paths only.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>A new test file only; it touches no shared contract.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>A new test file only; no production or existing test code moves.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L4</h6>
+
+<pre><code>A test or source file of the context outside its module folder, other than a named exception, is reported by path; a file in its module folder is not.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>TrackerIntegrationUnitTestPlacementTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>a made-up test file under Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors is reported
+</code></pre>
+
+<pre><code>a made-up source file under Services/Interfaces/WorkTrackingConnectors is reported
+</code></pre>
+
+<pre><code>a named exception such as a staying repository is not reported
+</code></pre>
+
+<pre><code>a made-up test file in its module layer folder is not reported
+</code></pre>
+
+<pre><code>A closed finite domain: the IL edges and file paths of one build are enumerated exhaustively by the rule, so examples per position are complete and property-based generation adds nothing.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>Tracker integration test placement and no-file-left
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Made-up files in old folders are reported by path.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Tracker integration test placement and no-file-left
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Feature B mirrored every test under the module, so the current tree passes.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>Tracker integration test placement and no-file-left
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Runs in the architecture suite; observable through the architecture-rules probe.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T2</h6>
+
+<pre><code>Every unit test file of the module sits under Lighthouse.Backend.Tests/Modules/TrackerIntegration in the folder of its layer with the namespace of its folder; no file of the context is left under Services/Interfaces, Services/Implementation (WorkTrackingConnectors, OAuth, ConnectionHealth) or Factories apart from the named exceptions; a listed folder that is empty or missing fails.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~TrackerIntegrationUnitTestPlacementTest
+</code></pre>
+
+<h5>Contract tests</h5>
 
 <p>None.</p>
 
