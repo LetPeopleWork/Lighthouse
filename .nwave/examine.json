@@ -67,6 +67,10 @@
     {
       "name": "test-selection-show",
       "path": "Scripts/examine/bin/test-selection-show"
+    },
+    {
+      "name": "deliveries-answers-selftest",
+      "path": "Scripts/examine/bin/deliveries-answers-selftest"
     }
   ],
   "build": "Scripts/examine/build-examine-commands"

@@ -1544,3 +1544,15 @@ for kind in backend jira ado linear servicenow github shared; do
 done
 EOF
 chmod +x "$out/test-selection-show"
+
+cat > "$out/deliveries-answers-selftest" <<EOF
+#!/usr/bin/env bash
+# Shows that deliveries-answers-compare can tell answers apart. Runs its compare stage on capture folders written for
+# the purpose: one pair that differs in a single Delivery answer (it must say DIFFERENT and exit 1), one identical
+# pair (IDENTICAL, exit 0) and one empty pair (it must not pass). Prints each check and the total.
+# Usage: deliveries-answers-selftest   (takes a few seconds)
+set -euo pipefail
+export HOME="$home"
+bash "$repo/Scripts/examine/test-deliveries-answers-compare.sh" 2>&1
+EOF
+chmod +x "$out/deliveries-answers-selftest"

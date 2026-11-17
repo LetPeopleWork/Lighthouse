@@ -699,3 +699,14 @@ Measured with `test-selection-show` before its oracle: a `Modules/Promises/**` s
 backend only, and `Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs` and `Program.cs` already select every
 live suite (shared). A4 had no missing behaviour, so no RED; it is removed from nwdes (slice S4, promise P4, expectation E4
 withdrawn by nwdes). The selection stays observable at EXAMINE through `test-selection-show`. Feature A is A1-A3.
+
+### Feature A EXAMINE round 1 (2026-11-17) and the maintainer's answer
+
+EXAMINE found E1 and E5 met and E2, E3 not observable: E2 asked for test names stating "missing" and "extra" for the
+admitted Models list too (it is covered by an exact both-ways list test and one verdict per candidate, not by named
+cases); E3's DIFFERENT could only be seen through the fixture self-test, which was not an admitted probe. The real run of
+`deliveries-answers-compare` (base `2b7a00e54` against the candidate) printed IDENTICAL over 23 Delivery answers in 9
+scenarios. Maintainer's answer: **fix E3, waive E2, re-run once.** E3: the self-test is admitted as the probe
+`deliveries-answers-selftest`. E2: waived at name level with this evidence: the exact-set test fails on a missing and on
+an extra admitted type, and both oracle approvals checked every wrong fill fails by name; E2 is reworded to what the
+probes show.
