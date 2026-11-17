@@ -60,8 +60,8 @@ describe("outlierWording", () => {
 	});
 
 	it("puts the configured terms into the list title and the empty-plot copy", () => {
-		expect(wording.listTitle).toBe(
-			"Stories with a Lead Time more than 5 times the median",
+		expect(wording.listTitle(30.6)).toBe(
+			"Stories with a Lead Time above the upper natural process limit (30.6 days)",
 		);
 		expect(wording.allVisibleAreOutliers).toBe(
 			"All visible Stories are outliers.",

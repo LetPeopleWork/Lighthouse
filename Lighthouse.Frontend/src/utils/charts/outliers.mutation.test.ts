@@ -1,31 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { axisTop, fiftiethPercentile, findOutliers } from "./outliers";
+import { axisTop } from "./outliers";
 
-describe("outliers edge cases", () => {
-	it("sorts the values before taking the median", () => {
-		expect(fiftiethPercentile([9, 1, 5, 3])).toBe(3);
+describe("the axis edge cases", () => {
+	it("ignores the limit when no outlier is set apart", () => {
+		expect(
+			axisTop({
+				typicalValues: [100],
+				lineValues: [50],
+				cut: 5,
+				hasOutliers: false,
+			}),
+		).toBeCloseTo(110, 5);
 	});
 
-	it("leaves every item typical and names no outliers when the median is zero", () => {
-		const result = findOutliers([0, 0, 0], (v) => v);
-		expect(result.outliers).toEqual([]);
-		expect(result.typical).toEqual([0, 0, 0]);
-		expect(result.median).toBeNull();
-	});
-
-	it("ignores the cut when there are no outliers", () => {
-		const open = { typicalValues: [100], lineValues: [50], hasOutliers: false };
-		expect(axisTop({ ...open, cut: 5 })).toBe(axisTop({ ...open, cut: null }));
-		expect(axisTop({ ...open, cut: 5 })).toBeGreaterThan(5);
-	});
-
-	it("fits all values when outliers exist but no cut is known", () => {
-		const base = { typicalValues: [10], lineValues: [20] };
-		expect(axisTop({ ...base, cut: null, hasOutliers: true })).toBe(
-			axisTop({ ...base, cut: null, hasOutliers: false }),
-		);
-		expect(axisTop({ ...base, cut: null, hasOutliers: true })).toBeGreaterThan(
-			0,
-		);
+	it("fits every drawn item and line when outliers exist but no limit is known", () => {
+		expect(
+			axisTop({
+				typicalValues: [10],
+				lineValues: [20],
+				cut: null,
+				hasOutliers: true,
+			}),
+		).toBeCloseTo(22, 5);
 	});
 });

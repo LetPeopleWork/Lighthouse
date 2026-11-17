@@ -732,6 +732,83 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The scatterplot asks a Portfolio with a 30-day limit and closed Features of 12, 30, 31 and 90 days for its outliers over the web
+</code></pre>
+
+<pre><code>The answer is 200 with status Ready as a word, upperNaturalProcessLimit 30 as a number and outlierWorkItemIds naming the 31 and 90 day Features
+</code></pre>
+
+<pre><code>A Portfolio&#x27;s scatterplot can read the verdict the backend works out
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/CycleTimeOutliersWireContractTest.cs::A_Portfolio_answers_its_outliers_with_a_status_word_the_limit_and_the_outlier_Feature_ids</p>
+
+<pre><code>an answer that adds fields the frontend does not read
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The axis is worked out with a limit of 5 days but no outlier set apart, and with outliers but no known limit
+</code></pre>
+
+<pre><code>Without outliers the limit is ignored and the axis fits 100 and 50 at 110; with no limit the axis fits 10 and 20 at 22
+</code></pre>
+
+<pre><code>The axis never cuts drawn Work Items or lines when there is nothing above it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.mutation.test.ts::fits every drawn item and line when outliers exist but no limit is known</p>
+
+<pre><code>an axis with a different headroom rule that rounds to the same values
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The outlier list title is built with Stories and Lead Time as the words and a limit of 30.6 days
+</code></pre>
+
+<pre><code>Stories with a Lead Time above the upper natural process limit (30.6 days)
+</code></pre>
+
+<pre><code>The list title names the limit in the reader&#x27;s words
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.mutation.test.ts::puts the configured terms into the list title and the empty-plot copy</p>
+
+<pre><code>a title that rounds 30.65 up where the product rounds it to nearest even
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

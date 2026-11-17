@@ -671,6 +671,95 @@ a chart that keeps the verdict of the previous range until the new one lands, wh
 
 None.
 
+##### Covers
+
+P1
+
+```text
+The scatterplot asks a Portfolio with a 30-day limit and closed Features of 12, 30, 31 and 90 days for its outliers over the web
+```
+
+```text
+The answer is 200 with status Ready as a word, upperNaturalProcessLimit 30 as a number and outlierWorkItemIds naming the 31 and 90 day Features
+```
+
+```text
+A Portfolio's scatterplot can read the verdict the backend works out
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/CycleTimeOutliersWireContractTest\.cs\:\:A\_Portfolio\_answers\_its\_outliers\_with\_a\_status\_word\_the\_limit\_and\_the\_outlier\_Feature\_ids
+
+```text
+an answer that adds fields the frontend does not read
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The axis is worked out with a limit of 5 days but no outlier set apart, and with outliers but no known limit
+```
+
+```text
+Without outliers the limit is ignored and the axis fits 100 and 50 at 110; with no limit the axis fits 10 and 20 at 22
+```
+
+```text
+The axis never cuts drawn Work Items or lines when there is nothing above it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/utils\/charts\/outliers\.mutation\.test\.ts\:\:fits every drawn item and line when outliers exist but no limit is known
+
+```text
+an axis with a different headroom rule that rounds to the same values
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+The outlier list title is built with Stories and Lead Time as the words and a limit of 30.6 days
+```
+
+```text
+Stories with a Lead Time above the upper natural process limit (30.6 days)
+```
+
+```text
+The list title names the limit in the reader's words
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/utils\/charts\/outlierWording\.mutation\.test\.ts\:\:puts the configured terms into the list title and the empty\-plot copy
+
+```text
+a title that rounds 30.65 up where the product rounds it to nearest even
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows
