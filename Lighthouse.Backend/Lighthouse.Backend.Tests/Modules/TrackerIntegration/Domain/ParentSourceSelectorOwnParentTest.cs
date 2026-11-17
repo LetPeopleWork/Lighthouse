@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Parents;
 using NUnit.Framework;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Domain
 {
     /// <summary>
     /// Whether a list asks for the tracker's own parent to be read at all. Every tracker asks this one

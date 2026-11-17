@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     /// <summary>
     /// When a work item crossed <em>into</em> a category of states — the instant every connector dates

@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Tests.TestHelpers;
 using NUnit.Framework;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
 {
     /// <summary>
     /// Where a Feature's dependencies were read from. The answer belongs to the Portfolio rather than to

@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Implementation.Parents
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Domain
 {
     /// <summary>
     /// Decides which of the sources a Team or a Portfolio lists gave one record its parent.

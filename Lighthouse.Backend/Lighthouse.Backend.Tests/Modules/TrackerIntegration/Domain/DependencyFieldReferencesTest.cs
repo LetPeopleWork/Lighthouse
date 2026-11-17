@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Services.Implementation.Dependencies;
 using NUnit.Framework;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Domain
 {
     /// <summary>
     /// A column a person types into, read as a list. Everything here is about being forgiving: nobody

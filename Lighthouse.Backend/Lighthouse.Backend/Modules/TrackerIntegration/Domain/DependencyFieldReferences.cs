@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.Dependencies
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Domain
 {
     /// <summary>
     /// Reads the references out of a field a person maintains by hand. A parent field holds one value, so a

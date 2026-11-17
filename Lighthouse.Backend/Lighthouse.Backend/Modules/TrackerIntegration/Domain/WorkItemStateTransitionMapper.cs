@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Domain
 {
     public static class WorkItemStateTransitionMapper
     {

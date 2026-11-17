@@ -4,7 +4,7 @@ using NUnit.Framework;
 using System.Collections;
 using System.Reflection;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Domain
 {
     /// <summary>
     /// What applying a choice leaves on a record, with no tracker in sight: the parent and the shown value of

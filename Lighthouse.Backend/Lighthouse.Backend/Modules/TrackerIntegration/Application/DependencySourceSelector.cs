@@ -2,7 +2,7 @@ using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 
-namespace Lighthouse.Backend.Services.Implementation.Dependencies
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {
     /// <summary>
     /// Decides where one Feature's dependencies were read from, and turns them into references.

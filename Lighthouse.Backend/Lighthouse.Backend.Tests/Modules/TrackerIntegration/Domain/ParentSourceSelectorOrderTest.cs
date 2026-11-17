@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Parents;
 using NUnit.Framework;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Domain
 {
     /// <summary>
     /// The order a record's parent sources are read in, with no tracker in sight: what each position found
