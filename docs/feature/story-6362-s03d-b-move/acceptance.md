@@ -354,4 +354,62 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe 'architecture-rules Promises' (filter Architecture+Promises): Total 57, Passed 57, Failed 0. Passed by name: TheUnitTestsOfTheMovedServices_LiveInThePromisesApplicationTestFolder_AndNoneIsLeftUnderServices; TheUnitTestsOfTheTwoForecastsUpdatedHandlers_LiveInThePromisesPoliciesTestFolder_AndNoneIsLeftUnderServices; TheTwoForecastsUpdatedHandlers_LiveInThePromisesApplicationPolicies_AndNoneIsLeftUnderServices; ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed; TheModelsTypesListedToMove_AreExactlyTheDeliveryCandidates...; ADeliveryModelsType_IsJudgedAsTheCompiledCodeShows(DeliveryForecastBlock,admitted) and (DeliveryForecastBlockPercentile,admitted); NoTypeIsOnBothLists; AListedTypeRenamedInTheCode_IsNamedAsMissing. Negative-control rules (ANameThatNoTypeMatches_FailsTheLayoutRuleAsMissing, AHandlerNameThatNoTypeMatches_FailsTheLayoutRuleAsMissing, AMadeUpTypeInTheModule_IsNamedAsUnlisted) also Passed. Full log: /home/benjamin/.local/state/lean-ctx/tee/cd__storage_repos_Lighthouse____nwdes_ex_4155d4d2.log
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Probe 'backend-tests DomainEventHandlerOrderPin': Total 6, Passed 6, Failed 0. Passed by name: HandlersOfAPortfolioForecastUpdate_RecordTheDeliverySnapshotBeforePublishingTheForecasts; HandlersOfAFeatureOrderingPolicyChange_AreTheForecastTriggerAlone; HandlersOfAFeatureRankChange_AreTheForecastTriggerAlone; HandlersOfAPortfolioRefresh_DropTheMetricsCacheBeforeTheRecordersRead; HandlersOfATeamDeletion_ForgetTheRefreshLogBeforeTheForecastsRetrigger; HandlersOfATeamRefresh_UpdateTheTeamMetricsBeforeAnyOtherReaction.
+```
+
+### E8
+
+met
+
+#### Observations
+
+```text
+Probe 'architecture-rules Promises' (filter Architecture+Promises): Total 57, Passed 57, Failed 0. Passed by name: TheUnitTestsOfTheMovedServices_LiveInThePromisesApplicationTestFolder_AndNoneIsLeftUnderServices; TheUnitTestsOfTheTwoForecastsUpdatedHandlers_LiveInThePromisesPoliciesTestFolder_AndNoneIsLeftUnderServices; TheTwoForecastsUpdatedHandlers_LiveInThePromisesApplicationPolicies_AndNoneIsLeftUnderServices; ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed; TheModelsTypesListedToMove_AreExactlyTheDeliveryCandidates...; ADeliveryModelsType_IsJudgedAsTheCompiledCodeShows(DeliveryForecastBlock,admitted) and (DeliveryForecastBlockPercentile,admitted); NoTypeIsOnBothLists; AListedTypeRenamedInTheCode_IsNamedAsMissing. Negative-control rules (ANameThatNoTypeMatches_FailsTheLayoutRuleAsMissing, AHandlerNameThatNoTypeMatches_FailsTheLayoutRuleAsMissing, AMadeUpTypeInTheModule_IsNamedAsUnlisted) also Passed. Full log: /home/benjamin/.local/state/lean-ctx/tee/cd__storage_repos_Lighthouse____nwdes_ex_4155d4d2.log
+```
+
+```text
+Probe 'backend-tests' (no fragment), full backend suite on candidate e4edf893d: Test Run Successful; Total tests 14068; Passed 14056; Skipped 12; Failed 0 (no 'Failed' line). Full output saved at /tmp/claude-1000/-storage-repos-Lighthouse/4dd76b07-80e5-4097-97a0-d5ad05047cf0/scratchpad/backend-tests-r4.log.
+```
+
+### E9
+
+met
+
+#### Observations
+
+```text
+Probe 'deliveries-answers-compare' (no args), base 2b7a00e54 vs candidate e4edf893d: captured 23 answers over 9 scenarios; masked keys lastUpdated, creationTime, concurrencyToken; deliveries 7 compared 0 different; delivery-rules-schema 7 compared 0 different; delivery-sources 7 compared 0 different; metrics-history 2 compared 0 different. VERDICT: IDENTICAL, all 23 Delivery answers match. Source: archive 62c9c162ab7e7711 of the probe output.
+```
+
+```text
+Probe 'refresh-reactions-compare' (no args), base 8a785450c vs candidate e4edf893d: both sides licence imported 200; demo scenario 1 Too Much WIP loaded. Observable reactions compared same: (1) Team refresh runs and is recorded in refresh history - base and candidate both answer Team Voyager 22 Work Items in progress, 5 blocked; (2) changed download refreshes Teams - same; (3) deleted Team leaves refresh history - same. Four blocked-period reactions (Work Item becomes/is no longer blocked; Feature becomes/is no longer blocked) printed NOT OBSERVABLE on either side, no public answer shows them on the day they run. VERDICT: IDENTICAL, all 3 observable reactions give the same outcome on both sides. Source: archive 79129c463d12e7d0 of the probe output.
+```
+
+```text
+Probe 'forecast-answers-compare' (no args), base 39a7f598f vs candidate e4edf893d: licence import 200; captured 128 answers over 9 scenarios; masked keys lastUpdated, creationTime, concurrencyToken. backtest 15/0 different; deliveries 7/0; feature-list 22/0; features 9/0; item-creation-prediction 15/0; manual-how-many 15/0; manual-when-and-how-many 15/0; manual-when-filtered 15/0; reality-check 15/0. VERDICT: IDENTICAL, all 128 forecast answers match. Source: archive 29f7734144b82397 of the probe output.
+```
+
+```text
+Probe 'ef-model-unchanged' (no args): '== Sqlite' then 'No changes have been made to the model since the last migration.'; '== Postgres' then 'No changes have been made to the model since the last migration.' Both providers listed report no model change.
+```
+
+```text
+Probe 'backend-tests' (no fragment), full backend suite on candidate e4edf893d: Test Run Successful; Total tests 14068; Passed 14056; Skipped 12; Failed 0 (no 'Failed' line). Full output saved at /tmp/claude-1000/-storage-repos-Lighthouse/4dd76b07-80e5-4097-97a0-d5ad05047cf0/scratchpad/backend-tests-r4.log.
+```
