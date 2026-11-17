@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 11,
-"F": 113,
+"E": 4,
+"F": 117,
 "K": 5,
 "L": 4,
 "P": 4,
@@ -654,6 +655,38 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F114"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F115"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F116"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F117"
+}
+]
+},
 "facts": {
 "F1": "Story #6359 S03a feature C of three (edges and rules): give Tracker integration, now living in Modules/TrackerIntegration after feature B, its own module rules with inline lists measured from the IL (R-T1..R-T8 of the design's Ratchet design, with D-7's one listed edge and D-14's three Application types that name connectors listed by exact type name, and full-name keys where a short name is shared), retire the old leaf pattern WorkTrackingIntegrationPattern and the old classifier and dev-test alternatives, and pin that every unit test of the module sits under Tests/Modules/TrackerIntegration and no file of the context is left in Services/Interfaces or Services/Implementation apart from the named exceptions. Design authority: docs/feature/story-6359-s03a-package-tracker-integration/feature-delta.md.",
 "F10": "EXAMINE observes through the architecture-rules probe with a class-name fragment, the test-path classifier and ci-live-suites-show; expectations name only what those probes can show (lesson of feature B, 2026-11-17).",
@@ -672,6 +705,10 @@
 "F111": "Feature B mirrored every test under the module, so the current tree passes.",
 "F112": "Runs in the architecture suite; observable through the architecture-rules probe.",
 "F113": "Every unit test file of the module sits under Lighthouse.Backend.Tests/Modules/TrackerIntegration in the folder of its layer with the namespace of its folder; no file of the context is left under Services/Interfaces, Services/Implementation (WorkTrackingConnectors, OAuth, ConnectionHealth) or Factories apart from the named exceptions; a listed folder that is empty or missing fails.",
+"F114": "Running the architecture rules for the tracker integration module shows every module rule passing: Domain reaches only the kernel and base library; outside code reaches the module only through legal namespaces and the measured lists; Application reaches no EF Core, Data, API or other module's Adapters beyond listed entries; the module reaches no other context except the one listed Promises renderer edge; no module type reaches a repository except the listed Application services. Each list is checked both ways (an unlisted real edge and a stale listed entry both fail), and the rules include a made-up offender in each position that is reported as caught.",
+"F115": "Asking test-selection for a changed connector path under the tracker integration module shows that tracker's live suite (and the backend suite) selected, while the recorded selection scenarios all pass; the old WorkTrackingIntegrationPattern leaf pattern and old Services/Factories alternatives no longer select anything, so a change to a path matching only those old forms selects no tracker live suite.",
+"F116": "Running the architecture rules shows the folder-placement rules passing: every unit test of the module sits under Lighthouse.Backend.Tests/Modules/TrackerIntegration, and no context file remains under Services/Interfaces, Services/Implementation or Factories apart from the named exceptions; the rules include a made-up test file and a made-up source file in an old folder reported as caught.",
+"F117": "Users, trackers and the database see no change: the EF model comparison reports no difference from the last migration on SQLite and Postgres, the full architecture rules run has no failing test, and the newest finished CI run shows each tracker's live suite (jira, ado, linear, servicenow, github) with passed counts and no failures. Absence of unforced production code edits is not observable by these probes and is left to candidate review.",
 "F12": "C2: the unit-test placement rule and the no-file-left check for the old folders.",
 "F13": "Confirmed D-8: Tracker integration gets one new boundaries file, Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs, with rules R-T2..R-T8 written through the shared ModuleRules class and a ModuleWording of its own, as the Forecasting and Work Items boundaries files do; no rule body is copied. R-T1 (each listed type lives in its layer, none left under Services or Factories) is already pinned by the four closed layout oracles TrackerIntegrationDomainLayoutArchUnitTest, TrackerIntegrationApplicationLayoutArchUnitTest, TrackerIntegrationConnectorsLayoutArchUnitTest and TrackerIntegrationOAuthAndHealthLayoutArchUnitTest and is cited, not restated.",
 "F14": "Confirmed Ratchet design: the compiled IL decides every list entry. Each list is inline, measured from the IL during C1, keyed by full type name (nested types reduced to their top-level type), and compared both ways (a missing entry and an extra entry both fail). Where a short name is shared, the key is the full name (D-1 outcome record: the moved AzureDevOps WorkItemExtensions versus Lighthouse.Backend.Extensions.WorkItemExtensions). The Expected baseline column of the Ratchet design is a guess: an entry the design did not foresee is recorded in the list and reported to the host with the IL edge that forced it, never silently accepted; an expected entry the IL does not show is left out and reported the same way. Lists only shrink after C.",
