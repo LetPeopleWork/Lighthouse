@@ -106,6 +106,19 @@
 "expected": "F319",
 "stimulus": "F318",
 "user_result": "F320"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F372",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs::RestoreBackup_StoppedForUnreadableCredentials_SendsTheFailureCodeAsTheTextTheSettingsPageReads"
+},
+"expected": "F370",
+"stimulus": "F369",
+"user_result": "F371"
 }
 ],
 "S2": [
@@ -325,7 +338,7 @@
 "C": 2,
 "D": 12,
 "E": 8,
-"F": 368,
+"F": 372,
 "K": 6,
 "L": 9,
 "N": 5,
@@ -2005,7 +2018,11 @@
 "F366": "Clear completes and leaves an empty database file with no tables",
 "F367": "Clear Database works on a fresh installation instead of failing on a missing file",
 "F368": "the folder exists but the file is missing and creation of the folder is broken; this row deletes the folder too, so that break fails it",
+"F369": "A restore stops because none of the backup's stored credentials can be read, and the answer goes back to the settings page",
 "F37": "Owns the SQLite file mechanics; restore and clear change mechanism, and it gains StageBackup and CreateConnection.",
+"F370": "The answer carries failureCode as the text CredentialsUnreadable",
+"F371": "The settings page recognises the stopped restore and opens the unreadable-credentials explanation instead of a generic error",
+"F372": "the application stopped adding the string enum converter at start-up; the test applies the web defaults and that converter itself, because the start-up options cannot be reached without a host",
 "F38": "Owns pg_dump, pg_restore and psql; gains StageBackup over a scratch database and CreateConnection.",
 "F39": "Per-provider staging and connection creation belong on the provider port.",
 "F4": "Before a restore changes any data, Lighthouse checks whether its encryption key can read the stored credentials in the backup; when it can read none of them, the restore stops with a clear message and nothing is changed. The Backup and Restore sections say that a backup does not contain the encryption key.",

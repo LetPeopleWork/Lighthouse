@@ -334,6 +334,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A restore stops because none of the backup&#x27;s stored credentials can be read, and the answer goes back to the settings page
+</code></pre>
+
+<pre><code>The answer carries failureCode as the text CredentialsUnreadable
+</code></pre>
+
+<pre><code>The settings page recognises the stopped restore and opens the unreadable-credentials explanation instead of a generic error
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs::RestoreBackup_StoppedForUnreadableCredentials_SendsTheFailureCodeAsTheTextTheSettingsPageReads</p>
+
+<pre><code>the application stopped adding the string enum converter at start-up; the test applies the web defaults and that converter itself, because the start-up options cannot be reached without a host
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h3>S2</h3>
 
 <h5>Covers</h5>

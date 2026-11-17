@@ -213,6 +213,36 @@ A provider that drops the scratch database only on failure but not after a succe
 ###### Obligations
 
 
+##### Covers
+
+P2
+
+```text
+A restore stops because none of the backup's stored credentials can be read, and the answer goes back to the settings page
+```
+
+```text
+The answer carries failureCode as the text CredentialsUnreadable
+```
+
+```text
+The settings page recognises the stopped restore and opens the unreadable-credentials explanation instead of a generic error
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DatabaseManagementControllerTest\.cs\:\:RestoreBackup\_StoppedForUnreadableCredentials\_SendsTheFailureCodeAsTheTextTheSettingsPageReads
+
+```text
+the application stopped adding the string enum converter at start-up; the test applies the web defaults and that converter itself, because the start-up options cannot be reached without a host
+```
+
+###### Obligations
+
+None.
+
 ### S2
 
 ##### Covers

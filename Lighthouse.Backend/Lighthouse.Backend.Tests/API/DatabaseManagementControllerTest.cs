@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Moq.Language.Flow;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -167,6 +169,22 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task RestoreBackup_StoppedForUnreadableCredentials_SendsTheFailureCodeAsTheTextTheSettingsPageReads()
+        {
+            var stopped = new DatabaseOperationStatus("op-2", DatabaseOperationType.Restore, DatabaseOperationState.Failed,
+                "None of the stored credentials in this backup can be read with this installation's encryption key. Nothing has been changed.",
+                DatabaseOperationFailure.CredentialsUnreadable);
+            ServiceRestoreFor("restorePw").ReturnsAsync(stopped);
+
+            var result = await RestoreThroughTheController(ABackupFile(), "restorePw");
+
+            using var sent = JsonDocument.Parse(JsonSerializer.Serialize(((AcceptedResult)result).Value, AsTheApiSendsIt));
+            Assert.That(sent.RootElement.GetProperty("failureCode").GetString(), Is.EqualTo("CredentialsUnreadable"),
+                "The stopped restore must reach the settings page with failureCode \"CredentialsUnreadable\" as text: the page opens " +
+                "its unreadable-credentials dialog on exactly that text. Keep the enum member's name and send enums as strings.");
+        }
+
+        [Test]
         public async Task RestoreBackup_NoFile_ReturnsBadRequest()
         {
             var result = await RestoreThroughTheController(null!, "pw");
@@ -309,6 +327,10 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(attribute, Is.Not.Null);
             Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
+
+        // The web defaults the controllers use, plus the string enum converter the application adds to them at start-up.
+        // The application's own options are built inside its start-up and cannot be reached without a host.
+        private static readonly JsonSerializerOptions AsTheApiSendsIt = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
 
         private static IFormFile ABackupFile()
         {
