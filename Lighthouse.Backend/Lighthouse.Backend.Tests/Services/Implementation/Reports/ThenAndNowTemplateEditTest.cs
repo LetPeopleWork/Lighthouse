@@ -132,6 +132,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         {
             yield return new TestCaseData(NoMetric, ReportRefusalCodes.NoMetricShown);
             yield return new TestCaseData(NotInTheCatalog, ReportRefusalCodes.UnknownMetric);
+            yield return new TestCaseData(new[] { CycleTimeReportMetric.MetricKey, "velocity" }, ReportRefusalCodes.UnknownMetric);
             yield return new TestCaseData(CycleTimeShownTwice, ReportRefusalCodes.DuplicateMetric);
         }
 

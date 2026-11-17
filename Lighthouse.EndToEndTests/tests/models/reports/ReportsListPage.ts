@@ -51,10 +51,10 @@ export class ReportsListPage {
 		return this.wizard;
 	}
 
-	/** From the Type step to the Then step, which names the days its window covers. */
+	/** From the Type step to the Then step, which names the days Then and Now cover. */
 	async goToThenStep(): Promise<Locator> {
 		await this.nextStep();
-		await this.wizard.getByText(/^= \d{1,2} \w{3,4}/).waitFor();
+		await this.wizard.getByText(/^Then \d{1,2} \w{3,4}/).waitFor();
 		return this.wizard;
 	}
 
@@ -78,8 +78,7 @@ export class ReportsListPage {
 		}
 
 		await this.nextStep();
-		await this.wizard.getByText(/always ending today/).waitFor();
-		await this.nextStep();
+		await this.wizard.getByLabel("Name", { exact: true }).waitFor();
 		if (choices.name !== undefined) {
 			await this.wizard.getByLabel("Name", { exact: true }).fill(choices.name);
 		}

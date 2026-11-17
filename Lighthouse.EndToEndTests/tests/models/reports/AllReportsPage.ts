@@ -68,14 +68,12 @@ export class AllReportsPage {
 			.getByText(/Set today's flow against a window that stays as it was\./)
 			.waitFor();
 		await this.nextStep();
-		await this.dialog.getByText(/^= \d{1,2} \w{3,4}/).waitFor();
-		await this.nextStep();
-		await this.dialog.getByText(/always ending today/).waitFor();
+		await this.dialog.getByText(/^Then \d{1,2} \w{3,4}/).waitFor();
 		await this.nextStep();
 		await this.dialog.getByLabel("Name", { exact: true }).fill(reportName);
 		await this.nextStep();
 		await this.dialog
-			.getByText("Step 5 of 5 — Who gets this report?")
+			.getByText("Step 4 of 4 — Who gets this report?")
 			.waitFor();
 	}
 

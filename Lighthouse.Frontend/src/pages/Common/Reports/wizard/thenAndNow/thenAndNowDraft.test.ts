@@ -14,6 +14,7 @@ import {
 	resolvedThenDays,
 	type ThenAndNowDraft,
 	thenAndNowDraftOf,
+	thenEndOf,
 	thenRefusalOf,
 	windowDaysOf,
 	windowsOf,
@@ -178,6 +179,50 @@ describe("windowsOf", () => {
 	])("names no windows for %s", (_, changes) => {
 		expect(windowsOf(draftWith(changes), midNovember)).toBeNull();
 		expect(windowsRelationOf(draftWith(changes), midNovember)).toBeNull();
+	});
+});
+
+describe("thenEndOf", () => {
+	it("is the day before Now starts when the draft names no end", () => {
+		expect(thenEndOf(draftWith({ thenLength: "30" }), midNovember)).toBe(
+			"2026-10-16",
+		);
+	});
+
+	it("is the entered end when the draft names one", () => {
+		expect(
+			thenEndOf(
+				draftWith({ thenEnd: "2026-10-31", thenLength: "30" }),
+				midNovember,
+			),
+		).toBe("2026-10-31");
+	});
+
+	it.each([
+		["a length that is no whole number of days", "14.5", "2026-11-15"],
+		["a today that is no day", "30", "not a day"],
+		["a length that reaches before the calendar", "100000000000", "2026-11-15"],
+	])("falls back to today for %s", (_, thenLength, today) => {
+		expect(thenEndOf(draftWith({ thenLength }), { ...templates, today })).toBe(
+			today,
+		);
+	});
+});
+
+describe("windowsOf without a usable today or a reachable length", () => {
+	it.each([
+		[
+			"a today that is no day",
+			{ thenEnd: "2026-10-31", thenLength: "30" },
+			"not a day",
+		],
+		[
+			"a length that reaches before the calendar",
+			{ thenEnd: "2026-10-31", thenLength: "100000000000" },
+			"2026-11-15",
+		],
+	])("names no windows for %s", (_, changes, today) => {
+		expect(windowsOf(draftWith(changes), { ...templates, today })).toBeNull();
 	});
 });
 

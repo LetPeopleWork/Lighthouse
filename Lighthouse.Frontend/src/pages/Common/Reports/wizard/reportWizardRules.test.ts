@@ -18,7 +18,7 @@ import {
 } from "./reportWizardRules";
 
 const type = reportTypes["then-and-now"];
-const [thenStep, nowStep] = type.steps;
+const [thenStep, metricsAndNameStep] = type.steps;
 
 const templates: IReportTemplates = {
 	today: "2026-10-02",
@@ -42,7 +42,7 @@ describe("where the wizard opens", () => {
 		expect(firstStepOf(false)).toBe(0);
 	});
 
-	it("opens an edit on Now, because Type and Then are locked", () => {
+	it("opens an edit on Metrics & name, because Type and Then are locked", () => {
 		expect(firstStepOf(true)).toBe(2);
 	});
 });
@@ -53,7 +53,7 @@ describe("whether a step lets the reader move on", () => {
 	it("holds every step until today's bounds have been read", () => {
 		expect(canMoveOn(undefined, false, draft, undefined)).toBe(false);
 		expect(canMoveOn(thenStep, true, draft, undefined)).toBe(false);
-		expect(canMoveOn(nowStep, false, draft, undefined)).toBe(false);
+		expect(canMoveOn(metricsAndNameStep, false, draft, undefined)).toBe(false);
 	});
 
 	it("lets the reader move on from the Type step once the bounds are read", () => {
