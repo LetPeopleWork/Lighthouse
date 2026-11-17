@@ -1419,7 +1419,7 @@ flowchart TB
 | **Tracker integration** (was WorkTracking-Integration; packaged by Story 6359) | `Modules.TrackerIntegration.{Domain, Application, Application.OAuth, Application.ConnectionHealth, Adapters.Connectors.<Tracker>, Adapters.OAuth, Adapters.Background}` (Jira/ADO/Linear/CSV/ServiceNow, OAuth, auth strategies, connection health) | External-system adapters, connector auth, sync ingestion | Feeds WorkItems + Portfolio via `IWorkItemService` |
 | **WorkItems / Sync** | `Services.Implementation.WorkItems`, `TeamData`, `BackgroundServices.Update` | `WorkItem`/`Feature`/`FeatureWork` lifecycle, the update queue, the updaters | Publishes the refresh events (Q1) |
 | **Forecasting** | `Services.Implementation.Forecast.*`, `PercentileCalculator`, `XmRCalculator` | Monte-Carlo / forecast computation, forecast filter rules | Subscribes to `PortfolioFeaturesRefreshed` |
-| **Portfolio / Delivery** | `Services.Implementation.DeliveryRuleService`, `PortfolioMetricsService`, delivery repos | Portfolio + Delivery config, delivery rule recompute | Subscribes to refresh events |
+| **Portfolio / Delivery** (its Delivery half packaged as **Promises** by Story 6362) | `Modules.Promises.{Domain, Application, Application.Policies}` (Delivery rules, sources, forecast publishing, the forecast block); `PortfolioMetricsService`, delivery repos and the update code stay in `Services` | Portfolio + Delivery config, delivery rule recompute | Subscribes to refresh events |
 | **Metrics / Time-in-state** | `Services.Implementation.BaseMetricsService`, `TeamMetricsService`, `PortfolioMetricsService`, `Cache` | Read-side metric projections + cache + invalidation | The CQRS-lite read side (Q3) |
 | **RBAC / Identity** | `Services.Implementation.Authorization.*`, `Auth.*`, `ApiKey*` | Authn/authz, group mappings, API keys | Cross-cutting guard at controller boundary |
 | **Platform / Persistence** | `Services.Implementation.Repositories.*`, `DatabaseManagement.*` | `IRepository<T>`, provider switch, backup/restore, maintenance gate | Shared kernel for all modules |
@@ -11658,3 +11658,99 @@ S03i: the connection save and usage.
 
 ADR-270 (Decision 1 Tracker integration row, "Every edge", "Edges measured by packaging Tracker integration", ratchet
 candidate 3, Decision 6, "Left open" on write-back), ADR-285 (the connector port), ADR-268 (ratchet convention).
+
+## Application Architecture — story-6362 s03d package promises
+
+Feature: S03d Package Promises (Deliveries), Story 6362, Epic 6510. Waves: DESIGN to DELIVER and finalize. Date:
+2026-11-17. Paradigm: OOP, behaviour-free refactoring, with one dependency inversion; no schema change. Workspaces:
+`docs/feature/story-6362-s03d-package-promises-deliveries/` (design), `story-6362-s03d-a-rules-first`,
+`story-6362-s03d-b-move`, `story-6362-s03d-c-edges-and-rules`.
+
+### Module layout (as shipped)
+
+Root `Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/`, inside the one assembly. Namespace = folder. 13 files
+moved from `Services` and 1 from `Models`.
+
+| Layer (namespace under `Lighthouse.Backend.Modules.Promises`) | Files | What it holds |
+|---|---:|---|
+| `Domain` | 1 | `DeliveryForecastBlock` and `DeliveryForecastBlockPercentile`, the one `Models` file that passed the four conditions. The kernel and the .NET base library only |
+| `Application` | 11 | `DeliveryRuleService`, `DeliverySourceResolver` (with `PortfolioSourcePreview`), `DeliverySourceSyncService`, `DeliveryForecastPublishingService`, `DeliveryForecastBlockRenderer`, their five interfaces, and `DeliveryMetricValuesProjector` (with `DeliveryMetricValues`) |
+| `Application.Policies` | 2 | `DeliveryMetricSnapshotRecordingHandler` and `DeliveryForecastPublishingHandler`, the reactions to `PortfolioForecastsUpdated` |
+
+Unit tests moved with the production code: `Lighthouse.Backend.Tests/Modules/Promises/{Application (7),
+Application/Policies (2)}`, 9 files. `PromisesUnitTestPlacementTest` keeps them there and checks that no Delivery source
+file is left in the old folders.
+
+Outside the module, unchanged and each with an owner: the entities and kernel Delivery types, the source types the
+connector port reads, `SourceOptionBlockReason` (the kernel reaches it) and the wire DTOs (S04b, S12c); the Delivery
+controllers (`API`); the two Delivery repositories and `RecordableDeliveries` (platform persistence, S05d); the
+write-back round (#6657); Feature ordering and ranking (Organisation set-up, S03i); the update queue and the Team and
+Portfolio updaters (platform lane and Epic 6474 slice 12). `PromisesUnitTestPlacementTest` names the 22 files that stay.
+
+### The handler order and the one edit
+
+The two reactions to `PortfolioForecastsUpdated` run in registration order. A new entry in
+`DomainEventHandlerOrderPinTest` fixes it: the Delivery snapshot is recorded before the forecasts are published. A
+throwaway swap of the two registrations made the pin fail by name.
+
+| Edge | Reading |
+|---|---|
+| Promises → Tracker integration | `DeliverySourceResolver` and `DeliveryForecastPublishingService` read the connector factory and the capability interfaces in `Modules.TrackerIntegration.Application`. Legal by namespace; the two entries left Tracker integration's R-T4 list |
+| Promises → Work Items | `DeliveryRuleService` calls the Work Item rule evaluator. Legal by namespace; the entry left Work Items' inbound list |
+| Tracker integration → Promises | **Inverted (C2).** The new port `IDescriptionBlockMerger` (`string MergeInto(string? existingDescription, string blockText)`) lives in `Modules.TrackerIntegration.Application`; `DeliveryForecastBlockRenderer` implements it and `IDeliveryForecastBlockRenderer` lost `MergeInto`; `JiraWorkTrackingConnector` takes the port. The renderer is registered twice, once per interface. The text written to Jira is unchanged |
+| Update code → Promises | `PortfolioUpdater` calls the rule service and the sync service: the one listed entry of R-P4, owner Epic 6474 slice 12 |
+
+Rejected: handing the merged text to the connector as data (the connector alone holds the current description, so it
+needs a new read capability), moving the whole renderer into Tracker integration (it splits the markers from the
+composition of the block), a query service in front of the connector factory (a pass-through layer), moving the update
+queue and updaters, the write-back round or the ordering and ranking into Promises (each makes an upstream context reach
+Promises), moving the repositories to `Adapters/Persistence` now (S05d owns the ports), and events for the Portfolio
+refresh's two calls now (not behaviour-free; Epic 6474).
+
+### Rule shapes
+
+Every rule reads the compiled IL through `IlDependencies` and calls the shared `ModuleRules` with Promises' namespaces
+and its own `ModuleWording`; every list is inline and compared both ways (ADR-268), with made-up types that prove a
+newcomer and a stale entry fail and a compliant twin passes.
+
+| Rule | Shape | Baseline (measured from the IL) |
+|---|---|---|
+| R-P1 Layout | Each named type lives in its layer namespace, none left in its former home | `Domain` 2, `Application` 13, `Application.Policies` 2 types |
+| R-P2 Domain outbound | `Domain` → kernel and base library only | empty |
+| R-P3 Domain inbound | Outside → `Domain` only from the list | empty |
+| R-P4 Application inbound | Outside → `Application` only from `API`, `Program`, or the list | 1: `PortfolioUpdater` |
+| R-P5 Policies inbound | Outside → `Application.Policies` only from `Program` or the list | empty |
+| R-P6 Application outbound | No EF Core, `Data`, `API`, module `Adapters`; Work Items' and Tracker integration's `Application` legal; the platform only through the list | 19 edges: the clock, the Delivery repositories, `IRepository<T>`, `RecordableDeliveries`, the blackout periods, `IDomainEventHandler<T>` |
+| R-P7 Upstream | No other module's `Adapters`, no update code, no write-back round, no Access, no Licensing | empty |
+| Neighbours | The Work Items and Tracker integration inbound lists name no Promises type | 3 entries removed |
+| Tracker integration leaf | `TrackerIntegrationReachesNoPromisesArchUnitTest`: no Tracker integration type reaches Promises | empty |
+
+Before the move, `PromisesRulesSeeTheModuleArchUnitTest` widened every rule that named a Promises type, namespace or
+folder to see `Modules/Promises`, each proven with a made-up type; `PromisesMembershipArchUnitTest` fixes the 15 moving
+types and the 2 admitted `Models` types, measured from the IL.
+
+### Behaviour-free proof
+
+Existing tests stayed green apart from moves, `using` lines and rule-file strings. Public commands for the examiner:
+`deliveries-answers-compare` (new, 23 Delivery answers over 9 demo scenarios, identical against the pre-move base) and
+its self-test `deliveries-answers-selftest` (one changed Delivery answer gives DIFFERENT), `forecast-answers-compare`
+(128 answers identical), `refresh-reactions-compare` (3 observable reactions identical; the four blocked-period
+reactions are not observable on any revision), `architecture-rules`, `ef-model-unchanged`, `backend-tests`,
+`test-selection-show`, `ci-live-suites-show`. CI passed with every live suite on the push of C2. Log categories change
+with the namespace to `Lighthouse.Backend.Modules.Promises.*`; no configuration names the old ones. `Program.cs` keeps
+its registrations and their order, with `using` changes and one added registration of the renderer as
+`IDescriptionBlockMerger`; no `AddPromises` extension (S09a).
+
+### Left
+
+S05d: the Delivery repositories and `RecordableDeliveries`. #6657: the write-back round. S03i: Feature ordering and
+ranking, and the Portfolio as a unit. Epic 6474: `PortfolioUpdater`'s two calls into Promises. S04b, S12c: the entities,
+kernel Delivery types and wire DTOs. Test debt: `DeliveryMetricSnapshotRecordingHandlerTest` still starts the app host
+for its whole fixture (its `HostUsersStillToMove` line is renamed, not removed).
+
+### ADR references
+
+ADR-270 (Decision 1 Promises row, "Every edge", "Edges measured by packaging Promises", ratchet candidates 3 and 4,
+Decision 5 glossary: description block merge, Decision 6, "Left open" on Feature ranking, write-back, the update queue
+and `ManualRank`), ADR-285 (the connector port), ADR-268 (ratchet convention), ADR-012 (the rule service's pinned
+signature, unchanged).
