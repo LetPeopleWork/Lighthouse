@@ -7,7 +7,11 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 {
     public class SqliteDatabaseManagementProvider : IDatabaseManagementProvider
     {
+        // The same wait every application connection gets, so writing a restore waits for a busy writer as long as the app does.
+        private const string WaitForABusyWriter = "PRAGMA busy_timeout=10000;";
+
         private readonly string databasePath;
+        private readonly string liveConnectionString;
         private readonly ILogger<SqliteDatabaseManagementProvider> logger;
 
         public SqliteDatabaseManagementProvider(
@@ -16,6 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         {
             var connectionStringBuilder = new SqliteConnectionStringBuilder(dbConfig.Value.ConnectionString);
             databasePath = connectionStringBuilder.DataSource;
+            liveConnectionString = dbConfig.Value.ConnectionString;
             this.logger = logger;
         }
 
@@ -50,47 +55,25 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             return destinationFile;
         }
 
-        public async Task RestoreBackup(string backupContentPath)
+        public Task RestoreBackup(string backupContentPath)
         {
             var backupDbFile = Directory.GetFiles(backupContentPath, "*.db").FirstOrDefault() ?? throw new FileNotFoundException("Backup does not contain a .db file");
 
-            var backupBaseName = Path.GetFileName(backupDbFile);
-
-            if (!File.Exists(backupDbFile))
-            {
-                throw new FileNotFoundException($"Backup does not contain expected database file: {backupBaseName}");
-            }
-
             logger.LogInformation("Restoring SQLite database from {Source} to {Destination}", backupDbFile, databasePath);
 
-            // Ensure target directory exists
-            var directory = Path.GetDirectoryName(databasePath);
-            if (!string.IsNullOrEmpty(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
+            // Opening the staged copy applies a -wal file that was backed up beside it, so its newest rows come along.
+            using var backup = OpenUnpooled(new SqliteConnectionStringBuilder { DataSource = backupDbFile }.ToString());
+            CopyPagesIntoLiveDatabase(backup);
 
-            // Replace main database file
-            await CopyFileAsync(backupDbFile, databasePath);
-
-            // Restore or remove WAL file
-            await RestoreOrRemoveCompanionFile(
-                Path.Combine(backupContentPath, backupBaseName + "-wal"),
-                databasePath + "-wal");
-
-            // Restore or remove SHM file
-            await RestoreOrRemoveCompanionFile(
-                Path.Combine(backupContentPath, backupBaseName + "-shm"),
-                databasePath + "-shm");
+            return Task.CompletedTask;
         }
 
         public Task ClearDatabase()
         {
             logger.LogInformation("Clearing SQLite database at {Path}", databasePath);
 
-            DeleteFileIfExists(databasePath);
-            DeleteFileIfExists(databasePath + "-wal");
-            DeleteFileIfExists(databasePath + "-shm");
+            using var emptyDatabase = OpenUnpooled("Data Source=:memory:");
+            CopyPagesIntoLiveDatabase(emptyDatabase);
 
             return Task.CompletedTask;
         }
@@ -98,6 +81,34 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         public void RecycleConnection()
         {
             SqliteConnection.ClearAllPools();
+        }
+
+        // A running application holds the live file open, and Windows and macOS refuse to replace or delete an open
+        // file. Copying pages through SQLite's online backup writes into the open database instead: every connection
+        // already open on it reads the new content, and the live file keeps its write-ahead-log mode.
+        private void CopyPagesIntoLiveDatabase(SqliteConnection source)
+        {
+            var directory = Path.GetDirectoryName(databasePath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            using var live = OpenUnpooled(liveConnectionString);
+            using (var command = live.CreateCommand())
+            {
+                command.CommandText = WaitForABusyWriter;
+                command.ExecuteNonQuery();
+            }
+
+            source.BackupDatabase(live);
+        }
+
+        private static SqliteConnection OpenUnpooled(string connectionString)
+        {
+            var connection = new SqliteConnection(new SqliteConnectionStringBuilder(connectionString) { Pooling = false }.ToString());
+            connection.Open();
+            return connection;
         }
 
         private static async Task CopyFileAsync(string source, string destination)
@@ -112,26 +123,6 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             if (File.Exists(source))
             {
                 await CopyFileAsync(source, destination);
-            }
-        }
-
-        private static async Task RestoreOrRemoveCompanionFile(string backupPath, string targetPath)
-        {
-            if (File.Exists(backupPath))
-            {
-                await CopyFileAsync(backupPath, targetPath);
-            }
-            else
-            {
-                DeleteFileIfExists(targetPath);
-            }
-        }
-
-        private static void DeleteFileIfExists(string path)
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
             }
         }
     }
