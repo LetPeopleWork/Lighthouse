@@ -1048,4 +1048,162 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+```text
+Backend probe BaselineReportCreation: 19 passed. Reads: default-end report starts back to back with Now as long as Then ending today; 14-day Then ending today reads Now 2 Nov-15 Nov 2026; 90-day Then ending 45 days ago reads 90-day Now 18 Aug-15 Nov 2026; saved report with Now stored 45 days reads 30-day Now ending today, Then and stored member untouched; stored-longer report reads and lists like one never stored it, no notice, past export reads same 30-day Now; several Teams at once each read a Now as long as Then ending today. Create: 90-day Then with Now 45, 0, 14 refused; Now 90 and no Now created. Edit: Now 45 and 120 refused with nothing written; Now 90 and none saved and write no Now length; name and metrics edit leaves window members as stored; Then before oldest kept day edits and stays editable.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Frontend probe ReportsTab.createWizard at HEAD d0e19d1a6: 55 passed. Row says "Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass." for a Then ending today, and still creates the report.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+```text
+Backend probe BaselineReportCreation: 19 passed. Reads: default-end report starts back to back with Now as long as Then ending today; 14-day Then ending today reads Now 2 Nov-15 Nov 2026; 90-day Then ending 45 days ago reads 90-day Now 18 Aug-15 Nov 2026; saved report with Now stored 45 days reads 30-day Now ending today, Then and stored member untouched; stored-longer report reads and lists like one never stored it, no notice, past export reads same 30-day Now; several Teams at once each read a Now as long as Then ending today. Create: 90-day Then with Now 45, 0, 14 refused; Now 90 and no Now created. Edit: Now 45 and 120 refused with nothing written; Now 90 and none saved and write no Now length; name and metrics edit leaves window members as stored; Then before oldest kept day edits and stays editable.
+```
+
+### E7
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+```text
+Backend probe BaselineReportCreation: 19 passed. Reads: default-end report starts back to back with Now as long as Then ending today; 14-day Then ending today reads Now 2 Nov-15 Nov 2026; 90-day Then ending 45 days ago reads 90-day Now 18 Aug-15 Nov 2026; saved report with Now stored 45 days reads 30-day Now ending today, Then and stored member untouched; stored-longer report reads and lists like one never stored it, no notice, past export reads same 30-day Now; several Teams at once each read a Now as long as Then ending today. Create: 90-day Then with Now 45, 0, 14 refused; Now 90 and no Now created. Edit: Now 45 and 120 refused with nothing written; Now 90 and none saved and write no Now length; name and metrics edit leaves window members as stored; Then before oldest kept day edits and stays editable.
+```
+
+### E8
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+```text
+Backend probe BaselineReportCreation: 19 passed. Reads: default-end report starts back to back with Now as long as Then ending today; 14-day Then ending today reads Now 2 Nov-15 Nov 2026; 90-day Then ending 45 days ago reads 90-day Now 18 Aug-15 Nov 2026; saved report with Now stored 45 days reads 30-day Now ending today, Then and stored member untouched; stored-longer report reads and lists like one never stored it, no notice, past export reads same 30-day Now; several Teams at once each read a Now as long as Then ending today. Create: 90-day Then with Now 45, 0, 14 refused; Now 90 and no Now created. Edit: Now 45 and 120 refused with nothing written; Now 90 and none saved and write no Now length; name and metrics edit leaves window members as stored; Then before oldest kept day edits and stays editable.
+```
+
+### E9
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+```text
+Backend probe BaselineReportCreation: 19 passed. Reads: default-end report starts back to back with Now as long as Then ending today; 14-day Then ending today reads Now 2 Nov-15 Nov 2026; 90-day Then ending 45 days ago reads 90-day Now 18 Aug-15 Nov 2026; saved report with Now stored 45 days reads 30-day Now ending today, Then and stored member untouched; stored-longer report reads and lists like one never stored it, no notice, past export reads same 30-day Now; several Teams at once each read a Now as long as Then ending today. Create: 90-day Then with Now 45, 0, 14 refused; Now 90 and no Now created. Edit: Now 45 and 120 refused with nothing written; Now 90 and none saved and write no Now length; name and metrics edit leaves window members as stored; Then before oldest kept day edits and stays editable.
+```
+
+### E10
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+### E11
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+### E12
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+### E13
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
+
+### E14
+
+met
+
+#### Observations
+
+```text
+Frontend probe (Report,report): 74 files 1036 passed 0 failed. Create wizard: steps Type, Then, Metrics & name, no Now step; 30-day report reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)', created with no Now length; same-days row; 'Now overlaps Then until 31 Oct 2026'; too-little-history 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shifting nothing, goes no further; bulk wizard has no Now step; Edit report opens on Metrics & name with no Now length. Throughput: '13 (+25 %)' beside 'Total 65 Work Items' before '0.44 per day (+25 %)' better; 0/0 'No change (both 0)' on both lines no mark; 0 to 30 over 14 days '30 (Then was 0)' no percent; 91/91 grey dash 'No change'; not captured dash no change; CHANGE summary: 52/65 improved, 0/0 unchanged, 91/91 unchanged, 0/30 improved, all-dash metric not listed; WIP and Work Item Age unchanged.
+```
