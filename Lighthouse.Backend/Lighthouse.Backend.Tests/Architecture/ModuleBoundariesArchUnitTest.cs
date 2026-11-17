@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Forecast($|\..*)|^Lighthouse\.Backend\.Modules\.Forecasting(\.|$)";
         internal const string PortfolioDeliveryPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices|Interfaces\.Update)($|\..*)";
+        internal const string PromisesPattern =
+            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.DeliverySources(\.|$)|^Lighthouse\.Backend\.Modules\.Promises(\.|$)";
         private const string RbacIdentityPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)($|\..*)";
         internal const string RefinementPattern =
@@ -55,6 +57,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly GivenTypesConjunctionWithDescription PortfolioDeliveryModule =
             Types().That().ResideInNamespaceMatching(PortfolioDeliveryPattern).As("Portfolio/Delivery");
+
+        private static readonly GivenTypesConjunctionWithDescription PromisesModule =
+            Types().That().ResideInNamespaceMatching(PromisesPattern).As("Promises");
 
         private static readonly GivenTypesConjunctionWithDescription RbacIdentityModule =
             Types().That().ResideInNamespaceMatching(RbacIdentityPattern).As("RBAC/Identity");
@@ -115,6 +120,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(WorkItemsSyncModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(ForecastingModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(PortfolioDeliveryModule.GetObjects(Architecture), Is.Not.Empty);
+                Assert.That(PromisesModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(RbacIdentityModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(PlatformPersistenceModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(RefinementModule.GetObjects(Architecture), Is.Not.Empty);

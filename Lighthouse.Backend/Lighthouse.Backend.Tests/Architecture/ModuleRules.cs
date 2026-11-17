@@ -24,6 +24,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string ForecastingModule = @"^Lighthouse\.Backend\.Modules\.Forecasting(\.|$)";
 
+        public const string PromisesModule = @"^Lighthouse\.Backend\.Modules\.Promises(\.|$)";
+
         public const string FlowMetricsAdapters = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Adapters(\.|$)";
 
         public const string TheCompositionRoot = "Lighthouse.Backend.Program";
