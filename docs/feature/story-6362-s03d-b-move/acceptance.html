@@ -283,6 +283,136 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled production assembly for the two handlers that react to a Portfolio&#x27;s forecasts being updated
+</code></pre>
+
+<pre><code>Both handlers live in the Promises module&#x27;s Application policies and none is left under the Services domain-event folders; a missing or misplaced one is named
+</code></pre>
+
+<pre><code>Nothing visible changes; the Delivery code sits in its module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs::TheTwoForecastsUpdatedHandlers_LiveInThePromisesApplicationPolicies_AndNoneIsLeftUnderServices</p>
+
+<pre><code>A handler is copied into the module and also kept elsewhere outside the Services folders; the old-home pattern covers only Services, which is where both live today
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the compiled test assembly for the two handler unit-test classes
+</code></pre>
+
+<pre><code>Both test classes live in the Promises policies test folder and none is left under the Services tests
+</code></pre>
+
+<pre><code>Nothing visible changes; the unit tests sit beside their module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs::TheUnitTestsOfTheTwoForecastsUpdatedHandlers_LiveInThePromisesPoliciesTestFolder_AndNoneIsLeftUnderServices</p>
+
+<pre><code>A test class is moved to the right namespace but its rows are dropped; only placement is observed, the other tests keep their own outcomes
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Name a handler that no type matches
+</code></pre>
+
+<pre><code>The layout rule fails naming the missing type instead of passing unseen
+</code></pre>
+
+<pre><code>A stale list cannot hide a missing handler
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs::AHandlerNameThatNoTypeMatches_FailsTheLayoutRuleAsMissing_InsteadOfPassingUnseen</p>
+
+<pre><code>A rule that skips a missing name; it would fail here because the missing name must be reported by full name (passes on arrival: it pins the rule)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read the handler registration order of PortfolioForecastsUpdated from the composition root
+</code></pre>
+
+<pre><code>Registered in order: Delivery metric snapshot recording, then Delivery forecast publishing, and no other handler; reversed or a missing registration fails naming the position
+</code></pre>
+
+<pre><code>A Portfolio&#x27;s Delivery snapshot is recorded before its forecasts are published, as today
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs::HandlersOfAPortfolioForecastUpdate_RecordTheDeliverySnapshotBeforePublishingTheForecasts</p>
+
+<pre><code>The handlers keep their order but change DI lifetime, which this pin does not observe; passes on arrival because the order already holds
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the existing order-pin tests unchanged beside the new entry
+</code></pre>
+
+<pre><code>The five existing order pins keep their outcome; nothing user-visible changes
+</code></pre>
+
+<pre><code>Every Delivery answer and forecast publication stays the same
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs::HandlersOfATeamRefresh_UpdateTheTeamMetricsBeforeAnyOtherReaction</p>
+
+<pre><code>A behaviour change outside event order, which the full suite run at the end of the slice observes
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

@@ -86,13 +86,98 @@
 "stimulus": "F154",
 "user_result": "F156"
 }
+],
+"S2": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2",
+"L2/F128"
+],
+"still_passes_if": "F161",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs::TheTwoForecastsUpdatedHandlers_LiveInThePromisesApplicationPolicies_AndNoneIsLeftUnderServices"
+},
+"expected": "F159",
+"stimulus": "F158",
+"user_result": "F160"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F165",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs::TheUnitTestsOfTheTwoForecastsUpdatedHandlers_LiveInThePromisesPoliciesTestFolder_AndNoneIsLeftUnderServices"
+},
+"expected": "F163",
+"stimulus": "F162",
+"user_result": "F164"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F169",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs::AHandlerNameThatNoTypeMatches_FailsTheLayoutRuleAsMissing_InsteadOfPassingUnseen"
+},
+"expected": "F167",
+"stimulus": "F166",
+"user_result": "F168"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L2/F129",
+"L2/F130"
+],
+"still_passes_if": "F173",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs::HandlersOfAPortfolioForecastUpdate_RecordTheDeliverySnapshotBeforePublishingTheForecasts"
+},
+"expected": "F171",
+"stimulus": "F170",
+"user_result": "F172"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F177",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs::HandlersOfATeamRefresh_UpdateTheTeamMetricsBeforeAnyOtherReaction"
+},
+"expected": "F175",
+"stimulus": "F174",
+"user_result": "F176"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 7,
 "E": 4,
-"F": 157,
+"F": 177,
 "K": 3,
 "L": 2,
 "P": 4,
@@ -1215,8 +1300,28 @@
 "F155": "The rule fails naming the missing type",
 "F156": "No user-visible change; a drifted list cannot pass unseen",
 "F157": "a rule that ignores names with no type",
+"F158": "Read the compiled production assembly for the two handlers that react to a Portfolio's forecasts being updated",
+"F159": "Both handlers live in the Promises module's Application policies and none is left under the Services domain-event folders; a missing or misplaced one is named",
 "F16": "Rule lists follow the move and are never loosened: full-name strings in TrackerIntegrationModuleBoundariesArchUnitTest, WorkItemsModuleBoundariesArchUnitTest and DeliveryRuleServiceApiPreservationTest are rewritten to the new names and stay compared both ways; a rule exemption for a moved type is exact (type and nested types by full name), proved by a throwaway probe that is reverted. Old classifier alternatives stay until feature C. PromisesMembership and PromisesMembershipArchUnitTest are namespace-agnostic and stay unedited.",
+"F160": "Nothing visible changes; the Delivery code sits in its module",
+"F161": "A handler is copied into the module and also kept elsewhere outside the Services folders; the old-home pattern covers only Services, which is where both live today",
+"F162": "Read the compiled test assembly for the two handler unit-test classes",
+"F163": "Both test classes live in the Promises policies test folder and none is left under the Services tests",
+"F164": "Nothing visible changes; the unit tests sit beside their module",
+"F165": "A test class is moved to the right namespace but its rows are dropped; only placement is observed, the other tests keep their own outcomes",
+"F166": "Name a handler that no type matches",
+"F167": "The layout rule fails naming the missing type instead of passing unseen",
+"F168": "A stale list cannot hide a missing handler",
+"F169": "A rule that skips a missing name; it would fail here because the missing name must be reported by full name (passes on arrival: it pins the rule)",
 "F17": "Oracles are IL architecture tests through ModuleRules (TypesLiveInTheirLayer, DomainReachesOnlyTheKernelAndTheBaseLibrary), modelled on ForecastingDomainLayoutArchUnitTest and WorkItemsApplicationLayoutArchUnitTest. Each looks every moved type up by name in the compiled assembly and fails when it is not found (never vacuous); top-level types are compared (nested names reduced to the part before the plus sign). Made-up offenders live in a fixture namespace such as Lighthouse.Backend.Modules.PromisesFixtures. They start no host.",
+"F170": "Read the handler registration order of PortfolioForecastsUpdated from the composition root",
+"F171": "Registered in order: Delivery metric snapshot recording, then Delivery forecast publishing, and no other handler; reversed or a missing registration fails naming the position",
+"F172": "A Portfolio's Delivery snapshot is recorded before its forecasts are published, as today",
+"F173": "The handlers keep their order but change DI lifetime, which this pin does not observe; passes on arrival because the order already holds",
+"F174": "Run the existing order-pin tests unchanged beside the new entry",
+"F175": "The five existing order pins keep their outcome; nothing user-visible changes",
+"F176": "Every Delivery answer and forecast publication stays the same",
+"F177": "A behaviour change outside event order, which the full suite run at the end of the slice observes",
 "F18": "Claim-to-checker: namespace placement, Domain reach and handler order are finite facts read from the compiled IL and the composition root, checked by the two ArchUnit oracles (Finite laws) and by EXAMINE probes (architecture-rules, backend-tests, ef-model-unchanged, deliveries-answers-compare, deliveries-answers-selftest, refresh-reactions-show, test-selection-show, ci-live-suites-show). No Quint, TLA+ or Agda model: nothing is a state machine, queue or proof obligation (no handler, schedule or queue moves) and a model would restate the namespace map. Liveness not applicable: no progress property exists. Type strength: native C# namespaces, no new types; invalid placement is excluded by the IL rules, not by construction.",
 "F19": "Push and cost (D-11, maintainer 2026-11-17): B1 and B2 edit Program.cs, a shared path, so each push selects every live suite; push per slice with CI watched; no review window; mutation once at the end of S03d on frozen code. Standard rigor: architect, acceptance designer and crafter on sonnet, reviewers and EXAMINE on haiku. EXAMINE expectations name only what an admitted probe shows.",
 "F2": "Promises lives in its own module folder, so its rules can be enforced by namespace in feature C, with nothing a user, a tracker or the database sees changed",

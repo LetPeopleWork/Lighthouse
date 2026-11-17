@@ -56,6 +56,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             "TeamDeletedForecastRetriggerHandler",
         ];
 
+        private static readonly string[] PortfolioForecastsUpdatedOrder =
+        [
+            "DeliveryMetricSnapshotRecordingHandler",
+            "DeliveryForecastPublishingHandler",
+        ];
+
         private StartUpDomainEventHandlers handlers = null!;
 
         [OneTimeSetUp]
@@ -66,7 +72,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 typeof(PortfolioFeaturesRefreshed),
                 typeof(FeatureOrderingPolicyChanged),
                 typeof(FeatureRankChanged),
-                typeof(TeamDeleted));
+                typeof(TeamDeleted),
+                typeof(PortfolioForecastsUpdated));
         }
 
         [Test]
@@ -123,6 +130,17 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(handedOut, Is.EqualTo(TeamDeletedOrder),
                 "The handlers of a team deletion no longer come in the order the start-up code registers them today. " +
                 "The dispatcher runs them in this order, so a new order changes what the forecast retrigger finds after a team is deleted. " +
+                "Put the registrations back in their old order, or, if the new order is intended, change the list in this test in the same commit and say why.");
+        }
+
+        [Test]
+        public void HandlersOfAPortfolioForecastUpdate_RecordTheDeliverySnapshotBeforePublishingTheForecasts()
+        {
+            var handedOut = HandlersInTheOrderTheContainerHandsThemOut<PortfolioForecastsUpdated>();
+
+            Assert.That(handedOut, Is.EqualTo(PortfolioForecastsUpdatedOrder),
+                "The handlers of a portfolio forecast update no longer come in the order the start-up code registers them today: the Delivery metric snapshot recording, then the Delivery forecast publishing. " +
+                "The dispatcher runs them in this order, so publishing first would publish forecasts before the snapshot of the Delivery metrics is recorded, and a missing handler stops its reaction altogether. " +
                 "Put the registrations back in their old order, or, if the new order is intended, change the list in this test in the same commit and say why.");
         }
 

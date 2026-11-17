@@ -154,6 +154,156 @@ a rule that ignores names with no type
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P1
+
+```text
+Read the compiled production assembly for the two handlers that react to a Portfolio's forecasts being updated
+```
+
+```text
+Both handlers live in the Promises module's Application policies and none is left under the Services domain-event folders; a missing or misplaced one is named
+```
+
+```text
+Nothing visible changes; the Delivery code sits in its module
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesPoliciesLayoutArchUnitTest\.cs\:\:TheTwoForecastsUpdatedHandlers\_LiveInThePromisesApplicationPolicies\_AndNoneIsLeftUnderServices
+
+```text
+A handler is copied into the module and also kept elsewhere outside the Services folders; the old-home pattern covers only Services, which is where both live today
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Read the compiled test assembly for the two handler unit-test classes
+```
+
+```text
+Both test classes live in the Promises policies test folder and none is left under the Services tests
+```
+
+```text
+Nothing visible changes; the unit tests sit beside their module
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesPoliciesLayoutArchUnitTest\.cs\:\:TheUnitTestsOfTheTwoForecastsUpdatedHandlers\_LiveInThePromisesPoliciesTestFolder\_AndNoneIsLeftUnderServices
+
+```text
+A test class is moved to the right namespace but its rows are dropped; only placement is observed, the other tests keep their own outcomes
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Name a handler that no type matches
+```
+
+```text
+The layout rule fails naming the missing type instead of passing unseen
+```
+
+```text
+A stale list cannot hide a missing handler
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesPoliciesLayoutArchUnitTest\.cs\:\:AHandlerNameThatNoTypeMatches\_FailsTheLayoutRuleAsMissing\_InsteadOfPassingUnseen
+
+```text
+A rule that skips a missing name; it would fail here because the missing name must be reported by full name (passes on arrival: it pins the rule)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Read the handler registration order of PortfolioForecastsUpdated from the composition root
+```
+
+```text
+Registered in order: Delivery metric snapshot recording, then Delivery forecast publishing, and no other handler; reversed or a missing registration fails naming the position
+```
+
+```text
+A Portfolio's Delivery snapshot is recorded before its forecasts are published, as today
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventHandlerOrderPinTest\.cs\:\:HandlersOfAPortfolioForecastUpdate\_RecordTheDeliverySnapshotBeforePublishingTheForecasts
+
+```text
+The handlers keep their order but change DI lifetime, which this pin does not observe; passes on arrival because the order already holds
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P4
+
+```text
+Run the existing order-pin tests unchanged beside the new entry
+```
+
+```text
+The five existing order pins keep their outcome; nothing user-visible changes
+```
+
+```text
+Every Delivery answer and forecast publication stays the same
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventHandlerOrderPinTest\.cs\:\:HandlersOfATeamRefresh\_UpdateTheTeamMetricsBeforeAnyOtherReaction
+
+```text
+A behaviour change outside event order, which the full suite run at the end of the slice observes
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
