@@ -35,6 +35,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IConnectionHealthService",
             "IDeliveryForecastPublisher",
             "IDeliverySourceProvider",
+            "IDescriptionBlockMerger",
             "IFeatureSource",
             "IIncrementalSource",
             "IIssueFactory",

@@ -1472,6 +1472,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDeliverySourceResolver, DeliverySourceResolver>();
             builder.Services.AddScoped<IDeliverySourceSyncService, DeliverySourceSyncService>();
             builder.Services.AddScoped<IDeliveryForecastBlockRenderer, DeliveryForecastBlockRenderer>();
+            builder.Services.AddScoped<IDescriptionBlockMerger, DeliveryForecastBlockRenderer>();
             builder.Services.AddScoped<IDeliveryForecastPublishingService, DeliveryForecastPublishingService>();
             builder.Services.AddScoped<IRuleEvaluator<WorkItem>, RuleEvaluator<WorkItem>>();
             builder.Services.AddScoped<IRuleFieldProvider<WorkItem>, WorkItemFieldProvider>();

@@ -1134,7 +1134,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
             services.AddSingleton(AnAuthStrategyFactoryThatSignsNothing());
             services.AddSingleton<Cache<string, object>>();
             services.AddSingleton(TimeProvider.System);
-            services.AddScoped<IDeliveryForecastBlockRenderer, DeliveryForecastBlockRenderer>();
+            services.AddScoped<IDescriptionBlockMerger, DeliveryForecastBlockRenderer>();
             services.AddScoped<JiraWorkTrackingConnector>();
 
             return services.BuildServiceProvider();

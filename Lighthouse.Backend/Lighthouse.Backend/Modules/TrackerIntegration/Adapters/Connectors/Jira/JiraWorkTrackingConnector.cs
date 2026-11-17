@@ -14,7 +14,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.Extensions;
-using Lighthouse.Backend.Modules.Promises.Application;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
 {
@@ -23,7 +22,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
         ILogger<JiraWorkTrackingConnector> logger,
         IWorkTrackingAuthStrategyFactory authStrategyFactory,
         Backend.Cache.Cache<string, object> processWideCache,
-        IDeliveryForecastBlockRenderer forecastBlockRenderer,
+        IDescriptionBlockMerger forecastBlockRenderer,
         TimeProvider timeProvider,
         HttpMessageHandler? httpMessageHandlerForTesting = null)
         : IJiraWorkTrackingConnector

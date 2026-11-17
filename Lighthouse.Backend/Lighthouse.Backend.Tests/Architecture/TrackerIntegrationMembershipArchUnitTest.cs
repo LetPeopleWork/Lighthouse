@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        [TestCase("JiraWorkTrackingConnector", "IDeliveryForecastBlockRenderer", true)]
+        [TestCase("JiraWorkTrackingConnector", "IDescriptionBlockMerger", true)]
         [TestCase("ConnectionHealthService", "ConnectionHealthVerdictRepository", true)]
         [TestCase("ConnectionSaveService", "FetchFingerprint", true)]
         [TestCase("ConnectionSaveService", "ConnectionFetchShapeChanged", true)]

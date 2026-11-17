@@ -131,17 +131,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.WorkTrackingSystemFactory -> Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingOptionNames",
         ];
 
-        // The edges from Tracker integration into another context. The Jira connector merges the forecast block into a
-        // description until the publisher hands it the merged text. The list only shrinks.
-        private static readonly string[] EdgesOfTheModuleIntoOtherContexts =
-        [
-            "Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingConnector -> Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer",
-        ];
-
-        private static readonly string[] TheJiraConnectorMergingTheForecastBlock =
-        [
-            "Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingConnector -> Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer",
-        ];
+        // The edges from Tracker integration into another context. The Jira connector merges the forecast block through a
+        // port Tracker integration owns, so the module reaches no other context. The list only shrinks.
+        private static readonly string[] EdgesOfTheModuleIntoOtherContexts = [];
 
         private static readonly string[] TheApplicationTypesThatNameConnectors =
         [
@@ -227,14 +219,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheOnlyOtherContextTrackerIntegrationReaches_IsPromisesThroughTheJiraConnectorMergingTheForecastBlock()
+        public void TrackerIntegration_ReachesNoOtherContext()
         {
             Assert.That(
                 EdgesOfTheModuleIntoOtherContexts,
-                Is.EqualTo(TheJiraConnectorMergingTheForecastBlock),
-                "Tracker integration's list of edges into other contexts is not exactly the Jira connector's edge to the forecast block renderer. " +
-                "Why it matters: the module is a leaf that translates what trackers send, and that one edge is the only reach into another " +
-                "context the design accepts until the publisher hands the connector the merged text. How to fix: undo any other edge the rule names.");
+                Is.Empty,
+                "Tracker integration's list of edges into other contexts is not empty. " +
+                "Why it matters: the module is a leaf that translates what trackers send, and another context that needs something from " +
+                "a connector implements a port Tracker integration owns. How to fix: undo the edge the rule names, through such a port.");
         }
 
         [Test]

@@ -3,10 +3,11 @@ using System.Text;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Modules.Promises.Domain;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Modules.Promises.Application
 {
-    public class DeliveryForecastBlockRenderer : IDeliveryForecastBlockRenderer
+    public class DeliveryForecastBlockRenderer : IDeliveryForecastBlockRenderer, IDescriptionBlockMerger
     {
         /// <summary>
         /// The crystal ball opens and closes the block. Detection anchors on the whole opening line
