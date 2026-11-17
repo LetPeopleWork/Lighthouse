@@ -345,6 +345,108 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task Checking_a_backup_restores_only_the_credential_tables_into_a_scratch_database_and_drops_it_afterwards()
+        {
+            var commands = RecordCommands(pgRestoreExitCode: 0);
+            var backupDir = await ABackupDirectoryWithADump();
+
+            try
+            {
+                var staged = await StageBackupOf(backupDir);
+                var whileStaged = commands.Count;
+                await staged.DisposeAsync();
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(Describe(commands.Take(whileStaged)), Is.EqualTo(ScratchMadeAndCredentialTablesRestored),
+                        "Checking a backup must make a fresh scratch database and restore into it only the two credential tables, " +
+                        "so the check costs a fraction of a full restore and never touches the live database.");
+                    Assert.That(Describe(commands.Skip(whileStaged)), Is.EqualTo(ScratchDropped),
+                        "Once the check is done the scratch database must be dropped, or every checked backup leaves a database behind.");
+                }
+            }
+            finally
+            {
+                Directory.Delete(backupDir, true);
+            }
+        }
+
+        [Test]
+        public async Task Checking_a_backup_that_pg_restore_cannot_read_fails_drops_the_scratch_database_and_never_drops_the_live_one()
+        {
+            var commands = RecordCommands(pgRestoreExitCode: 1);
+            var backupDir = await ABackupDirectoryWithADump();
+
+            try
+            {
+                var stageBackup = TheProvidersBackupCheck();
+
+                await Assert.ThrowsAsync(Is.InstanceOf<Exception>(), async () => await (Task)stageBackup.Invoke(subject, [backupDir])!,
+                    "A backup whose credential tables cannot be restored must fail the check, so the restore stops before the live database is dropped.");
+                Assert.That(Describe(commands), Is.EqualTo(ScratchMadeRestoredAndDropped),
+                    "When pg_restore fails the scratch database must still be dropped, and the live database never: a failed check changes nothing.");
+            }
+            finally
+            {
+                Directory.Delete(backupDir, true);
+            }
+        }
+
+        private static readonly string[] ScratchMadeAndCredentialTablesRestored = ["drop scratch", "create scratch", "restore credential tables into scratch"];
+
+        private static readonly string[] ScratchDropped = ["drop scratch"];
+
+        private static readonly string[] ScratchMadeRestoredAndDropped = [.. ScratchMadeAndCredentialTablesRestored, .. ScratchDropped];
+
+        private List<ProcessStartInfo> RecordCommands(int pgRestoreExitCode)
+        {
+            var commands = new List<ProcessStartInfo>();
+            commandRunnerMock.Setup(c => c.RunAsync(It.IsAny<ProcessStartInfo>(), It.IsAny<CancellationToken>()))
+                .Callback<ProcessStartInfo, CancellationToken>((command, _) => commands.Add(command))
+                .ReturnsAsync((ProcessStartInfo command, CancellationToken _) =>
+                    command.FileName == "pg_restore" ? new CommandResult(pgRestoreExitCode, "", "pg_restore: error") : new CommandResult(0, "", ""));
+            return commands;
+        }
+
+        private static async Task<string> ABackupDirectoryWithADump()
+        {
+            var backupDir = Path.Combine(Path.GetTempPath(), $"test-pg-stage-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(backupDir);
+            await File.WriteAllBytesAsync(Path.Combine(backupDir, "lighthouse.pgdump"), "data"u8.ToArray());
+            return backupDir;
+        }
+
+        // Each command is named by what it does to which database. Anything else is shown as it was run, so an
+        // unexpected command, such as one that drops the live database, shows up in the failure.
+        private static List<string> Describe(IEnumerable<ProcessStartInfo> commands)
+            => [.. commands.Select(command => (command.FileName, command.Arguments) switch
+            {
+                ("psql", var sql) when sql.Contains("DROP DATABASE IF EXISTS") && sql.Contains("\"lighthouse_restore_check\"") && sql.Contains("WITH (FORCE)") => "drop scratch",
+                ("psql", var sql) when sql.Contains("CREATE DATABASE") && sql.Contains("\"lighthouse_restore_check\"") => "create scratch",
+                ("pg_restore", var arguments) when arguments.Contains("--dbname=lighthouse_restore_check")
+                    && arguments.Contains("--table=WorkTrackingSystemConnectionOption")
+                    && arguments.Contains("--table=OAuthCredentials") => "restore credential tables into scratch",
+                var (tool, arguments) => $"{tool} {arguments}",
+            })];
+
+        // The check is looked up by name so that this class still compiles on a provider that does not offer it;
+        // such a provider then fails these tests with the message below instead of failing the whole build.
+        private System.Reflection.MethodInfo TheProvidersBackupCheck()
+        {
+            var stageBackup = subject.GetType().GetMethod("StageBackup", [typeof(string)]);
+            Assert.That(stageBackup, Is.Not.Null,
+                "The PostgreSQL provider offers no StageBackup(string), so a restore cannot check a backup's credentials before it drops the live database. Add it to the provider port and implement it here.");
+            return stageBackup!;
+        }
+
+        private async Task<IAsyncDisposable> StageBackupOf(string backupDir)
+        {
+            var staging = (Task)TheProvidersBackupCheck().Invoke(subject, [backupDir])!;
+            await staging;
+            return (IAsyncDisposable)staging.GetType().GetProperty("Result")!.GetValue(staging)!;
+        }
+
+        [Test]
         public async Task ClearDatabase_RunsPsqlDropAndRecreate()
         {
             commandRunnerMock.Setup(c => c.RunAsync(It.IsAny<ProcessStartInfo>(), It.IsAny<CancellationToken>()))

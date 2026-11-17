@@ -151,6 +151,189 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The operator opens Settings, Database Management.
+</code></pre>
+
+<pre><code>The Backup section shows the note that the backup does not contain this installation&#x27;s encryption key and its stored credentials can only be read by an installation that uses the same key; the Restore section says Lighthouse checks, before it changes anything, that this installation&#x27;s key can read the backup&#x27;s stored credentials.
+</code></pre>
+
+<pre><code>Before backing up or restoring, the operator knows the key is not in the backup and that a restore checks it first.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx::says in Backup and Restore that a backup does not carry the encryption key and is checked before restoring</p>
+
+<pre><code>The note shown as plain text instead of an info alert would still pass; only the approved words are pinned.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The operator chooses a backup file, enters its password and restores; the restore answers Failed with the code CredentialsUnreadable; the operator clicks Cancel.
+</code></pre>
+
+<pre><code>A dialog titled Stored credentials in this backup cannot be read shows the approved explanation; Cancel closes it and the chosen file and password stay filled in.
+</code></pre>
+
+<pre><code>The operator understands why the restore stopped and can close the message without losing the file and password they entered.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx::explains that the backup&#x27;s credentials cannot be read, and Cancel closes the explanation keeping the chosen file and password</p>
+
+<pre><code>A dialog that also shows the generic error alert behind it would still pass.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The operator restores a backup and the restore answers Failed with the same reason text but without a failure code.
+</code></pre>
+
+<pre><code>The reason shows as the existing error, and no credentials dialog opens.
+</code></pre>
+
+<pre><code>Other restore failures look as they always did; the credentials explanation appears only for unreadable credentials.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx::shows a failed restore without the unreadable-credentials code as an error, not as the credentials explanation</p>
+
+<pre><code>A dialog keyed on a failure code other than CredentialsUnreadable would pass this case; the previous case pins the code that opens it.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The operator restores a backup that holds no credentials, or one credential this installation&#x27;s key can read and one it cannot, or only credentials it can read, after a blackout period was added.
+</code></pre>
+
+<pre><code>Each restore ends Completed and the live database holds exactly the backup&#x27;s blackout periods.
+</code></pre>
+
+<pre><code>Backups that the next start accepts restore as before; only a backup whose credentials cannot be read at all is stopped.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreStopsWhenNoStoredCredentialCanBeReadTest.cs::Restoring_a_backup_with_no_credentials_or_at_least_one_this_key_can_read_restores_the_backup</p>
+
+<pre><code>A restore that completes but keeps the live rows would pass a state-only check; the blackout-period comparison catches it.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On PostgreSQL, a backup is checked and the check is then finished.
+</code></pre>
+
+<pre><code>A scratch database named after the live one with _restore_check is dropped and created, only the connection-option and OAuth credential tables are restored into it, and it is dropped again when the check is finished; nothing else runs.
+</code></pre>
+
+<pre><code>Checking a PostgreSQL backup leaves no extra database behind and never touches the live one.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PostgresDatabaseManagementProviderTest.cs::Checking_a_backup_restores_only_the_credential_tables_into_a_scratch_database_and_drops_it_afterwards</p>
+
+<pre><code>A check that restores further tables in the same pg_restore call would still pass; the argument list is pinned only to the two table names and the scratch database.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Credentials stored under one installation&#x27;s key are backed up, the installation then runs on another key that reads none of them, a blackout period is added, and the operator restores the backup with its password.
+</code></pre>
+
+<pre><code>The restore ends Failed with the code CredentialsUnreadable, sent as text, and the reason that none of the backup&#x27;s credentials can be read and nothing has been changed; the live database holds the same rows as before, nothing was written to it and its file did not change; another backup can be made right after.
+</code></pre>
+
+<pre><code>The operator is told the backup&#x27;s credentials cannot be read and finds Lighthouse exactly as it was, still able to start.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreStopsWhenNoStoredCredentialCanBeReadTest.cs::Restoring_a_backup_whose_credentials_this_key_cannot_read_stops_and_changes_nothing</p>
+
+<pre><code>A check that stops on any credential it cannot read, even when another is readable, still passes this case; the mixed-credentials case catches it.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On PostgreSQL, a backup is checked and pg_restore fails.
+</code></pre>
+
+<pre><code>The check fails with an error, the scratch database is still dropped, and no command drops or creates the live database.
+</code></pre>
+
+<pre><code>A PostgreSQL backup that cannot be checked stops the restore before the live database is dropped, and leaves nothing behind.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PostgresDatabaseManagementProviderTest.cs::Checking_a_backup_that_pg_restore_cannot_read_fails_drops_the_scratch_database_and_never_drops_the_live_one</p>
+
+<pre><code>A provider that drops the scratch database only on failure but not after a successful check passes this case; the success case catches it.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h3>S3</h3>
 
 <h5>Covers</h5>

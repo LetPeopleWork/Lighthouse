@@ -61,20 +61,89 @@ describe("DatabaseManagementSettings", () => {
 		});
 	});
 
-	it("renders backup section", async () => {
+	it("says in Backup and Restore that a backup does not carry the encryption key and is checked before restoring", async () => {
 		renderComponent();
 
 		await waitFor(() => {
 			expect(screen.getByText("Backup")).toBeInTheDocument();
 		});
+		expect(screen.getByText("Restore")).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				"The backup does not contain this installation's encryption key. Its stored credentials can only be read by an installation that uses the same key.",
+			),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				"Before it changes anything, Lighthouse checks that this installation's encryption key can read the backup's stored credentials.",
+			),
+		).toBeInTheDocument();
 	});
 
-	it("renders restore section", async () => {
+	const reasonTheRestoreStopped =
+		"None of the stored credentials in this backup can be read with this installation's encryption key. Nothing has been changed.";
+
+	const restoreThatFailed = (failureCode: string | null) => ({
+		operationId: "op-restore",
+		operationType: "Restore",
+		state: "Failed",
+		failureReason: reasonTheRestoreStopped,
+		failureCode,
+	});
+
+	const restoreTheBackup = async (user: ReturnType<typeof userEvent.setup>) => {
+		await waitFor(() => {
+			expect(screen.getByTestId("restore-button")).toBeInTheDocument();
+		});
+		await user.upload(
+			screen.getByTestId("restore-file-input"),
+			new File(["backup"], "lighthouse-backup.zip", {
+				type: "application/zip",
+			}),
+		);
+		await user.type(screen.getByTestId("restore-password"), "backupPw1");
+		await user.click(screen.getByTestId("restore-button"));
+	};
+
+	it("explains that the backup's credentials cannot be read, and Cancel closes the explanation keeping the chosen file and password", async () => {
+		const user = userEvent.setup();
+		mockDatabaseManagementService.restoreBackup.mockResolvedValue(
+			restoreThatFailed("CredentialsUnreadable"),
+		);
 		renderComponent();
 
-		await waitFor(() => {
-			expect(screen.getByText("Restore")).toBeInTheDocument();
+		await restoreTheBackup(user);
+
+		const explanation = await screen.findByRole("dialog", {
+			name: "Stored credentials in this backup cannot be read",
 		});
+		expect(explanation).toHaveTextContent(reasonTheRestoreStopped);
+		expect(explanation).toHaveTextContent(
+			"If you restore anyway, Lighthouse removes these credentials so it can start. You must then enter each token again in its Connection.",
+		);
+
+		await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		});
+		expect(screen.getByText("lighthouse-backup.zip")).toBeInTheDocument();
+		expect(screen.getByTestId("restore-password")).toHaveValue("backupPw1");
+	});
+
+	it("shows a failed restore without the unreadable-credentials code as an error, not as the credentials explanation", async () => {
+		const user = userEvent.setup();
+		mockDatabaseManagementService.restoreBackup.mockResolvedValue(
+			restoreThatFailed(null),
+		);
+		renderComponent();
+
+		await restoreTheBackup(user);
+
+		await waitFor(() => {
+			expect(screen.getByText(reasonTheRestoreStopped)).toBeInTheDocument();
+		});
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
 	it("renders clear section", async () => {
