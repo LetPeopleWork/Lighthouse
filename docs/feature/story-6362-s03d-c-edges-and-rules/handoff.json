@@ -241,7 +241,7 @@
 "counters": {
 "D": 8,
 "E": 5,
-"F": 203,
+"F": 212,
 "K": 4,
 "L": 3,
 "P": 5,
@@ -946,6 +946,38 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F204"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F205"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F206",
+"F207"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F208",
+"F209",
+"F210",
+"F207",
+"F211",
+"F212"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1094,7 +1126,16 @@
 "F201": "The text written to Jira does not change",
 "F202": "A change to the merge reached only through the Jira connector's publishing path; the unchanged Jira write-back and publishing unit tests cover that path",
 "F203": "C3 dropped as an nwdes slice (host decision in AFK mode, as A4 was): feature B already moved every Promises unit test and source file, so the placement check has no RED; it passes 29/29 on arrival and a throwaway probe proved it names a misplaced file. The check is kept as a regression guard (Architecture/PromisesUnitTestPlacementTest.cs), committed with feature C and judged by the whole-candidate review.",
+"F204": "architecture-rules PromisesModuleBoundaries: 32/32 Passed by name: layer placement (3 layers), Domain only shared kernel, outsiders to Domain/Application/Policies, EF DbSet/unlisted platform/other-module Adapter/WriteBack/Update/Licensing made-up offenders named, both-direction list matching x5 and deletion-named x5, neighbour lists name no Promises type (WorkItems, TrackerIntegration). No Access-named test seen explicitly (Access covered by unlisted platform type name only).",
+"F205": "architecture-rules WorkItemsModuleBoundaries 32/32 Passed; TrackerIntegrationModuleBoundaries 41/41 Passed; both-direction list matches pass. Test name ATrackerIntegrationTypeReachingPromisesBeyondTheListedRenderer_IsNamed remains in TI rules (name suggests a listed renderer; but not a list-size observation). List size not observable.",
+"F206": "architecture-rules TrackerIntegrationReachesNoPromises 9/9 Passed incl TrackerIntegration_ReachesNoPromisesType, TheJiraConnector_MergesTheForecastBlockThroughTrackerIntegrationsOwnPort_ThatThePromisesRendererImplements, ARendererPortThatStillOffersTheMerge_FailsAndIsNamed.",
+"F207": "backend-tests DeliveryForecastBlockRenderer 27/27 Passed; JiraDeliverySourceProvider 59/59 Passed; JiraQuietWriteBack 13/13; JiraBatchedWriteBack 13/13 Passed.",
+"F208": "deliveries-answers-compare (base 2b7a00e54 vs candidate d5b1b8feb): 23 answers over 9 scenarios, deliveries/rules-schema/sources 7 compared 0 different, metrics-history 2/0; VERDICT: IDENTICAL.",
+"F209": "forecast-answers-compare (base 39a7f598f vs candidate d5b1b8feb): 128 answers over 9 scenarios, all categories 0 different; VERDICT: IDENTICAL.",
 "F21": "Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of unchanged pure code: namespace placement, the exact set of edges per rule, the location of each test file, and that MergeInto's body is unchanged. Each is decided exactly by its IL architecture oracle (Finite laws) with a made-up offender per rule as falsifier, and by the existing example tests for the merge. No Quint, TLA+ or Agda model: no state machine, ordering, concurrency, recovery or progress claim changes (no handler, queue or schedule moves), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: IDescriptionBlockMerger narrows what the connector can call to the one merge it uses, checked by the C# compiler; property tests add nothing over a finite edge set.",
+"F210": "refresh-reactions-compare (base 8a785450c vs candidate d5b1b8feb): 3 observable reactions same; VERDICT IDENTICAL. 4 blocked-period reactions NOT OBSERVABLE on either side (outside expectation).",
+"F211": "backend-tests (no fragment): Test Run Successful, total 14138, passed 14126, skipped 12, failed 0.",
+"F212": "ef-model-unchanged re-run after host dotnet tool restore: Sqlite 'No changes have been made to the model since the last migration.'; Postgres same. EF model unchanged per provider. Supersedes O8 (kept as history: tool was not restored then).",
 "F22": "Confirmed (maintainer 2026-11-17): rigor thorough for feature C (architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet); C2 stays as the last edit slice of feature C; push per slice with CI watched, rebase before push allowed; no review window; mutation once at the end of S03d on frozen code (D-13), then finalize. C2 adds a file under Modules/TrackerIntegration/Application and edits Program.cs, so its push runs every live suite (D-11).",
 "F23": "Rule lists only shrink and are never loosened: inline full-name lists compared both ways against the IL (IlDependencies, which misses catch-clause, event and attribute-named-argument references); exemptions are exact per type and its nested types, never a namespace or layer; holdings compare top-level types (nested names reduced to the part before the plus sign). Each rule edit is proved by a throwaway probe that is reverted.",
 "F24": "One oracle file per slice; an approved oracle file is never edited, not even a using line; a crafter target is never an oracle support; oracles name types as strings. Made-up offenders live in a fixture namespace such as Lighthouse.Backend.Modules.PromisesFixtures. Rule tests assert by the failure naming the offender, not by counts. No nWave scenario tags. The oracles are IL architecture tests and start no host.",

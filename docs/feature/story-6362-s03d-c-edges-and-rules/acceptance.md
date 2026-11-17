@@ -471,4 +471,66 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules PromisesModuleBoundaries: 32/32 Passed by name: layer placement (3 layers), Domain only shared kernel, outsiders to Domain/Application/Policies, EF DbSet/unlisted platform/other-module Adapter/WriteBack/Update/Licensing made-up offenders named, both-direction list matching x5 and deletion-named x5, neighbour lists name no Promises type (WorkItems, TrackerIntegration). No Access-named test seen explicitly (Access covered by unlisted platform type name only).
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules WorkItemsModuleBoundaries 32/32 Passed; TrackerIntegrationModuleBoundaries 41/41 Passed; both-direction list matches pass. Test name ATrackerIntegrationTypeReachingPromisesBeyondTheListedRenderer_IsNamed remains in TI rules (name suggests a listed renderer; but not a list-size observation). List size not observable.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+architecture-rules TrackerIntegrationReachesNoPromises 9/9 Passed incl TrackerIntegration_ReachesNoPromisesType, TheJiraConnector_MergesTheForecastBlockThroughTrackerIntegrationsOwnPort_ThatThePromisesRendererImplements, ARendererPortThatStillOffersTheMerge_FailsAndIsNamed.
+```
+
+```text
+backend-tests DeliveryForecastBlockRenderer 27/27 Passed; JiraDeliverySourceProvider 59/59 Passed; JiraQuietWriteBack 13/13; JiraBatchedWriteBack 13/13 Passed.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+deliveries-answers-compare (base 2b7a00e54 vs candidate d5b1b8feb): 23 answers over 9 scenarios, deliveries/rules-schema/sources 7 compared 0 different, metrics-history 2/0; VERDICT: IDENTICAL.
+```
+
+```text
+forecast-answers-compare (base 39a7f598f vs candidate d5b1b8feb): 128 answers over 9 scenarios, all categories 0 different; VERDICT: IDENTICAL.
+```
+
+```text
+refresh-reactions-compare (base 8a785450c vs candidate d5b1b8feb): 3 observable reactions same; VERDICT IDENTICAL. 4 blocked-period reactions NOT OBSERVABLE on either side (outside expectation).
+```
+
+```text
+backend-tests DeliveryForecastBlockRenderer 27/27 Passed; JiraDeliverySourceProvider 59/59 Passed; JiraQuietWriteBack 13/13; JiraBatchedWriteBack 13/13 Passed.
+```
+
+```text
+backend-tests (no fragment): Test Run Successful, total 14138, passed 14126, skipped 12, failed 0.
+```
+
+```text
+ef-model-unchanged re-run after host dotnet tool restore: Sqlite 'No changes have been made to the model since the last migration.'; Postgres same. EF model unchanged per provider. Supersedes O8 (kept as history: tool was not restored then).
+```
