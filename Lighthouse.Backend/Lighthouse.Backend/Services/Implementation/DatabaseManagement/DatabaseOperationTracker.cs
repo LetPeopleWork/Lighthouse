@@ -50,5 +50,18 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 operations[operationId] = current with { State = DatabaseOperationState.Failed, FailureReason = reason };
             }
         }
+
+        public void TransitionToFailed(string operationId, string reason, DatabaseOperationFailure failureCode)
+        {
+            if (operations.TryGetValue(operationId, out var current))
+            {
+                operations[operationId] = current with
+                {
+                    State = DatabaseOperationState.Failed,
+                    FailureReason = reason,
+                    FailureCode = failureCode,
+                };
+            }
+        }
     }
 }

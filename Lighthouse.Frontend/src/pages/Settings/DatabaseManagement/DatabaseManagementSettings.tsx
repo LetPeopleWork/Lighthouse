@@ -44,6 +44,8 @@ const DatabaseManagementSettings: React.FC = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
 	const [clearDialogOpen, setClearDialogOpen] = useState(false);
+	const [unreadableCredentialsReason, setUnreadableCredentialsReason] =
+		useState<string | null>(null);
 
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -52,6 +54,8 @@ const DatabaseManagementSettings: React.FC = () => {
 
 	const dialogTitleId = useId();
 	const dialogDescriptionId = useId();
+	const credentialsDialogTitleId = useId();
+	const credentialsDialogDescriptionId = useId();
 
 	const fetchStatus = useCallback(async () => {
 		try {
@@ -130,6 +134,11 @@ const DatabaseManagementSettings: React.FC = () => {
 				restoreFile,
 				restorePassword,
 			);
+
+			if (result.failureCode === "CredentialsUnreadable") {
+				setUnreadableCredentialsReason(result.failureReason ?? "");
+				return;
+			}
 
 			if (result.state === "Failed") {
 				setError(result.failureReason ?? "Restore failed.");
@@ -283,6 +292,11 @@ const DatabaseManagementSettings: React.FC = () => {
 						Create an encrypted backup of the database. You will be prompted for
 						a password to protect the backup file.
 					</Typography>
+					<Alert severity="info" sx={{ mb: 2 }}>
+						The backup does not contain this installation's encryption key. Its
+						stored credentials can only be read by an installation that uses the
+						same key.
+					</Alert>
 					<Stack
 						direction={isMobile ? "column" : "row"}
 						spacing={2}
@@ -324,6 +338,11 @@ const DatabaseManagementSettings: React.FC = () => {
 					<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
 						Restore the database from a previously created backup file. The
 						application will restart after restore.
+					</Typography>
+					<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+						Before it changes anything, Lighthouse checks that this
+						installation's encryption key can read the backup's stored
+						credentials.
 					</Typography>
 					<Stack spacing={2}>
 						<Button
@@ -436,6 +455,36 @@ const DatabaseManagementSettings: React.FC = () => {
 						data-testid="confirm-clear-button"
 					>
 						Clear Everything
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Unreadable Credentials Dialog */}
+			<Dialog
+				open={unreadableCredentialsReason !== null}
+				onClose={() => setUnreadableCredentialsReason(null)}
+				aria-labelledby={credentialsDialogTitleId}
+				aria-describedby={credentialsDialogDescriptionId}
+			>
+				<DialogTitle id={credentialsDialogTitleId}>
+					Stored credentials in this backup cannot be read
+				</DialogTitle>
+				<DialogContent>
+					<Typography
+						id={credentialsDialogDescriptionId}
+						variant="body2"
+						sx={{ mb: 2 }}
+					>
+						{unreadableCredentialsReason}
+					</Typography>
+					<Typography variant="body2">
+						If you restore anyway, Lighthouse removes these credentials so it
+						can start. You must then enter each token again in its Connection.
+					</Typography>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setUnreadableCredentialsReason(null)}>
+						Cancel
 					</Button>
 				</DialogActions>
 			</Dialog>

@@ -11,6 +11,7 @@ export interface IDatabaseOperationStatus {
 		| "Completed"
 		| "Failed";
 	readonly failureReason: string | null;
+	readonly failureCode?: "CredentialsUnreadable" | null;
 }
 
 export interface IDatabaseCapabilityStatus {

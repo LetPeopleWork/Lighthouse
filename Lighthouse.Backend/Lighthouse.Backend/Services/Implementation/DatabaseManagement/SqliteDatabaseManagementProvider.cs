@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using System.Data.Common;
 
 namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 {
@@ -55,9 +56,14 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             return destinationFile;
         }
 
+        public Task<IStagedBackup> StageBackup(string backupContentPath)
+        {
+            return Task.FromResult<IStagedBackup>(new ExtractedDatabaseFile(DatabaseFileIn(backupContentPath)));
+        }
+
         public Task RestoreBackup(string backupContentPath)
         {
-            var backupDbFile = Directory.GetFiles(backupContentPath, "*.db").FirstOrDefault() ?? throw new FileNotFoundException("Backup does not contain a .db file");
+            var backupDbFile = DatabaseFileIn(backupContentPath);
 
             logger.LogInformation("Restoring SQLite database from {Source} to {Destination}", backupDbFile, databasePath);
 
@@ -104,6 +110,9 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             source.BackupDatabase(live);
         }
 
+        private static string DatabaseFileIn(string backupContentPath)
+            => Directory.GetFiles(backupContentPath, "*.db").FirstOrDefault() ?? throw new FileNotFoundException("Backup does not contain a .db file");
+
         private static SqliteConnection OpenUnpooled(string connectionString)
         {
             var connection = new SqliteConnection(new SqliteConnectionStringBuilder(connectionString) { Pooling = false }.ToString());
@@ -124,6 +133,16 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             {
                 await CopyFileAsync(source, destination);
             }
+        }
+
+        // The extracted file already sits in a temporary directory the caller deletes, so disposing removes
+        // nothing. Unpooled, so no pooled handle keeps the file open and stops that directory from being deleted.
+        private sealed class ExtractedDatabaseFile(string databaseFile) : IStagedBackup
+        {
+            public DbConnection OpenConnection()
+                => new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = databaseFile, Pooling = false }.ToString());
+
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
         }
     }
 }

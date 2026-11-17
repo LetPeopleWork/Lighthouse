@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using System.Data.Common;
 using System.Diagnostics;
 
 namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
@@ -12,6 +13,9 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         private const string BackupToolName = "pg_dump";
         private const string RestoreToolName = "pg_restore";
         private const string PsqlToolName = "psql";
+        private const string ScratchDatabaseSuffix = "_restore_check";
+        private const string CredentialTables = "--table=WorkTrackingSystemConnectionOption --table=OAuthCredentials";
+        private readonly string connectionString;
         private readonly string host;
         private readonly int port;
         private readonly string database;
@@ -25,7 +29,8 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             ICommandRunner commandRunner,
             ILogger<PostgresDatabaseManagementProvider> logger)
         {
-            var builder = new NpgsqlConnectionStringBuilder(dbConfig.Value.ConnectionString);
+            connectionString = dbConfig.Value.ConnectionString;
+            var builder = new NpgsqlConnectionStringBuilder(connectionString);
             host = builder.Host ?? "localhost";
             port = builder.Port;
             database = builder.Database ?? "lighthouse";
@@ -110,7 +115,53 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             return outputFile;
         }
 
+        // Only the two credential tables go into the scratch database: that is all the check reads, and it keeps the
+        // check a fraction of a full restore. The scratch database is dropped again even when pg_restore fails.
+        public async Task<IStagedBackup> StageBackup(string backupContentPath)
+        {
+            var dumpFile = DumpFileIn(backupContentPath);
+            var scratchDatabase = database + ScratchDatabaseSuffix;
+
+            logger.LogInformation("Staging the credential tables of {Source} in {ScratchDatabase}", dumpFile, scratchDatabase);
+
+            await DropDatabase(scratchDatabase);
+            await CreateDatabase(scratchDatabase);
+
+            var staged = new ScratchDatabase(
+                new NpgsqlConnectionStringBuilder(connectionString) { Database = scratchDatabase, Pooling = false }.ToString(),
+                () => DropDatabase(scratchDatabase));
+
+            var restored = false;
+            try
+            {
+                await RunPgRestore(scratchDatabase, $"{CredentialTables} {dumpFile}");
+                restored = true;
+            }
+            finally
+            {
+                if (!restored)
+                {
+                    await staged.DisposeAsync();
+                }
+            }
+
+            return staged;
+        }
+
         public async Task RestoreBackup(string backupContentPath)
+        {
+            var dumpFile = DumpFileIn(backupContentPath);
+
+            await ClearDatabase();
+
+            logger.LogInformation("Restoring PostgreSQL database from {Source}", dumpFile);
+
+            await RunPgRestore(database, dumpFile);
+
+            logger.LogInformation("PostgreSQL restore completed successfully");
+        }
+
+        private static string DumpFileIn(string backupContentPath)
         {
             var dumpFile = Path.Combine(backupContentPath, BackupFileName);
             if (!File.Exists(dumpFile))
@@ -118,14 +169,15 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 throw new FileNotFoundException($"Backup does not contain expected dump file: {BackupFileName}");
             }
 
-            await ClearDatabase();
+            return dumpFile;
+        }
 
-            logger.LogInformation("Restoring PostgreSQL database from {Source}", dumpFile);
-
+        private async Task RunPgRestore(string targetDatabase, string restoreArguments)
+        {
             var startInfo = new ProcessStartInfo
             {
                 FileName = RestoreToolName,
-                Arguments = $"--host={host} --port={port} --username={username} --dbname={database} {dumpFile}",
+                Arguments = $"--host={host} --port={port} --username={username} --dbname={targetDatabase} {restoreArguments}",
             };
             startInfo.Environment["PGPASSWORD"] = password;
 
@@ -135,16 +187,14 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             {
                 throw new InvalidOperationException($"{RestoreToolName} failed (exit code {result.ExitCode}): {result.StandardError}");
             }
-
-            logger.LogInformation("PostgreSQL restore completed successfully");
         }
 
         public async Task ClearDatabase()
         {
             logger.LogInformation("Clearing PostgreSQL database {Database}", database);
 
-            await RunPsqlCommand($"DROP DATABASE IF EXISTS \"{database}\" WITH (FORCE);", "Failed to drop database");
-            await RunPsqlCommand($"CREATE DATABASE \"{database}\" OWNER \"{username}\";", "Failed to create database");
+            await DropDatabase(database);
+            await CreateDatabase(database);
 
             logger.LogInformation("PostgreSQL database {Database} cleared and recreated", database);
         }
@@ -153,6 +203,12 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         {
             NpgsqlConnection.ClearAllPools();
         }
+
+        private Task DropDatabase(string name)
+            => RunPsqlCommand($"DROP DATABASE IF EXISTS \"{name}\" WITH (FORCE);", "Failed to drop database");
+
+        private Task CreateDatabase(string name)
+            => RunPsqlCommand($"CREATE DATABASE \"{name}\" OWNER \"{username}\";", "Failed to create database");
 
         private async Task RunPsqlCommand(string sql, string errorPrefix)
         {
@@ -169,6 +225,13 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             {
                 throw new InvalidOperationException($"{errorPrefix} (exit code {result.ExitCode}): {result.StandardError}");
             }
+        }
+
+        private sealed class ScratchDatabase(string scratchConnectionString, Func<Task> drop) : IStagedBackup
+        {
+            public DbConnection OpenConnection() => new NpgsqlConnection(scratchConnectionString);
+
+            public async ValueTask DisposeAsync() => await drop();
         }
     }
 }

@@ -296,6 +296,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             var provider = new Mock<IDatabaseManagementProvider>();
             provider.Setup(p => p.ProviderName).Returns("sqlite");
             provider.Setup(p => p.IsToolingAvailable()).Returns(true);
+            provider.Setup(p => p.StageBackup(It.IsAny<string>())).ReturnsAsync(() =>
+            {
+                // An empty in-memory database holds no credential tables, so the credential check lets the restore go ahead.
+                var staged = new Mock<IStagedBackup>();
+                staged.Setup(s => s.OpenConnection()).Returns(() => new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:"));
+                staged.Setup(s => s.DisposeAsync()).Returns(ValueTask.CompletedTask);
+                return staged.Object;
+            });
 
             return provider;
         }
@@ -307,7 +315,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
                 Factory.Services.GetRequiredService<DatabaseOperationTracker>(),
                 Factory.Services.GetRequiredService<ILogger<DatabaseManagementService>>(),
                 Factory.Services,
-                Factory.Services.GetRequiredService<TimeProvider>());
+                Factory.Services.GetRequiredService<TimeProvider>(),
+                Factory.Services.GetRequiredService<Lighthouse.Backend.Services.Interfaces.Encryption.IEncryptionKeyRingHolder>());
 
         private void TheBackupsDatabaseIsPutInPlace()
         {

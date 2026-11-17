@@ -1,5 +1,7 @@
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
+using Lighthouse.Backend.Services.Interfaces.Encryption;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -13,9 +15,13 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         DatabaseOperationTracker tracker,
         ILogger<DatabaseManagementService> logger,
         IServiceProvider serviceProvider,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        IEncryptionKeyRingHolder keyRingHolder)
         : IDatabaseManagementService
     {
+        private const string CredentialsUnreadableReason =
+            "None of the stored credentials in this backup can be read with this installation's encryption key. Nothing has been changed.";
+
         private readonly Dictionary<string, string> backupArtifacts = new();
 
         public DatabaseCapabilityStatus GetCapabilityStatus()
@@ -111,6 +117,13 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 {
                     var extractDir = await UnzipBackup(backupFile, password, tempDir);
 
+                    if (await NoStoredCredentialCanBeRead(extractDir))
+                    {
+                        logger.LogWarning("Restore operation {OperationId} stopped: this installation's key reads none of the backup's stored credentials", operationId);
+                        tracker.TransitionToFailed(operationId, CredentialsUnreadableReason, DatabaseOperationFailure.CredentialsUnreadable);
+                        return tracker.GetStatus(operationId)!;
+                    }
+
                     await provider.RestoreBackup(extractDir);
 
                     MigrateAndSeedDatabase();
@@ -135,6 +148,18 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             {
                 gate.Release(operationId);
             }
+        }
+
+        // Restoring a backup whose credentials the running key reads none of leaves a database the next start refuses,
+        // so that one answer stops the restore; any other answer, including not being able to tell, lets it go ahead,
+        // exactly as the start itself decides.
+        private async Task<bool> NoStoredCredentialCanBeRead(string extractDir)
+        {
+            await using var staged = await provider.StageBackup(extractDir);
+
+            var finding = new DatabaseSecretReadabilityProbe(staged.OpenConnection).Look(keyRingHolder.Current);
+
+            return finding.Readability == StoredSecretReadability.NothingReadable;
         }
 
         private static async Task<string> UnzipBackup(Stream backupFile, string password, string tempDir)

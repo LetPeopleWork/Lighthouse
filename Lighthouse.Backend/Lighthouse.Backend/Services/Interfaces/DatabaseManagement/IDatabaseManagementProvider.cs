@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Services.Interfaces.DatabaseManagement
 
         Task<string> CreateBackup(string destinationPath);
 
+        Task<IStagedBackup> StageBackup(string backupContentPath);
+
         Task RestoreBackup(string backupContentPath);
 
         Task ClearDatabase();

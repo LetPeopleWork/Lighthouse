@@ -4,5 +4,6 @@ namespace Lighthouse.Backend.Services.Interfaces.DatabaseManagement
         string OperationId,
         DatabaseOperationType OperationType,
         DatabaseOperationState State,
-        string? FailureReason = null);
+        string? FailureReason = null,
+        DatabaseOperationFailure? FailureCode = null);
 }

@@ -1,4 +1,6 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
@@ -39,6 +41,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             providerMock.Setup(p => p.ProviderName).Returns("sqlite");
             providerMock.Setup(p => p.IsToolingAvailable()).Returns(true);
             providerMock.Setup(p => p.RecycleConnection());
+            providerMock.Setup(p => p.StageBackup(It.IsAny<string>())).ReturnsAsync(ABackupWithNoCredentialTables());
 
             serviceProviderMock = new Mock<IServiceProvider>();
             seederMock = new Mock<ISeeder>();
@@ -85,7 +88,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 tracker,
                 loggerMock.Object,
                 serviceProviderMock.Object,
-                new FakeTimeProvider(BackupInstant));
+                new FakeTimeProvider(BackupInstant),
+                new EncryptionKeyRingHolder(new EncryptionKeyRing(new EncryptionKey("key-test", RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength)))));
+        }
+
+        // An empty in-memory database holds none of the credential tables, so the credential check cannot tell
+        // and lets every restore in this class go ahead, as it did before the check existed.
+        private static IStagedBackup ABackupWithNoCredentialTables()
+        {
+            var staged = new Mock<IStagedBackup>();
+            staged.Setup(s => s.OpenConnection()).Returns(() => new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:"));
+            staged.Setup(s => s.DisposeAsync()).Returns(ValueTask.CompletedTask);
+            return staged.Object;
         }
 
         [Test]
