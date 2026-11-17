@@ -21,8 +21,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TheWholeAssembly = @"^Lighthouse\.Backend\.";
 
-        // The board port sits in the old connector-port namespace until it moves, and in the Application after.
-        private const string WhereTheBoardPortLives = @"^Lighthouse\.Backend\.(Services\.Interfaces\.WorkTrackingConnectors|Modules\.TrackerIntegration\.Application)$";
+        private const string WhereTheBoardPortLives = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.Application$";
 
         private const string AnImplementationNamespace = @"^Lighthouse\.Backend\.(Services\.Implementation|Modules\.TrackerIntegration\.Adapters)(\.|$)";
 

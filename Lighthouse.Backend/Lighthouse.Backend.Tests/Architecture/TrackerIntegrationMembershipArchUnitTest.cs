@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     public class TrackerIntegrationMembershipArchUnitTest
     {
         private const string TrackerIntegrationNamespaces =
-            @"^Lighthouse\.Backend\.(Services\.(Implementation|Interfaces)\.(WorkTrackingConnectors|OAuth|ConnectionHealth)|Services\.Factories|Factories|Modules\.TrackerIntegration)(\.|$)";
+            @"^Lighthouse\.Backend\.(Services\.Factories|Factories|Modules\.TrackerIntegration)(\.|$)";
 
         private const string CandidateModelsNamespaces = @"^Lighthouse\.Backend\.Models\.(OAuth|ConnectionHealth|Validation|WriteBack)$";
 
@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void AMadeUpTypeInTheModuleOrAnOldNamespace_IsNamedAsUnlisted_AndANamesakeOutsideIsNot()
+        public void AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideIsNot()
         {
             var found = WhenTheTrackerIntegrationTypesAreCollectedFrom(ProductionModule.Value)
                 .Concat(WhenTheTrackerIntegrationTypesAreCollectedFrom(TestModule.Value));
@@ -166,8 +166,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 Assert.That(failure, Does.Contain("AMadeUpConnectorInTheModule"),
                     "A made-up type under Modules.TrackerIntegration was not named as unlisted. The collection must take in the module's namespaces, or a type added there during the move would join Tracker integration unseen.");
-                Assert.That(failure, Does.Contain("AMadeUpConnectorInTheOldPlace"),
-                    "A made-up type under Services.Implementation.WorkTrackingConnectors was not named as unlisted. The collection must keep taking in the old namespaces until the last type has moved.");
                 Assert.That(failure, Does.Not.Contain("ANamesakeOutsideTrackerIntegration"),
                     "A type in Modules.TrackerIntegrationMembershipFixtures was named as Tracker integration. The namespace pattern must end at a dot or the end of the name, not take in every namespace that starts with the same letters.");
                 Assert.That(failure, Does.Not.Contain("ANestedConnectorStep"),
@@ -546,13 +544,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.MembershipFixtures
         public static int Fetched(int[] items) => items.Count(item => item > 0);
 
         public static string Started(string value) => global::Lighthouse.Backend.Models.TrackerIntegrationMembershipFixtures.AMadeUpFlow.Start(value).Token.Value;
-    }
-}
 
-namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.MembershipFixtures
-{
-    internal static class AMadeUpConnectorInTheOldPlace
-    {
         public static ANestedConnectorStep Fetch(int id) => new(id);
 
         internal sealed record ANestedConnectorStep(int Id);
