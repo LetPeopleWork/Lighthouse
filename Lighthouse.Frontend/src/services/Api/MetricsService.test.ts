@@ -766,3 +766,63 @@ describe("MetricsService getAllFeaturesForSizeChart", () => {
 		}
 	});
 });
+
+describe("MetricsService getCycleTimeOutliers", () => {
+	const verdict = {
+		status: "Ready" as const,
+		upperNaturalProcessLimit: 30.6,
+		outlierWorkItemIds: [12, 15],
+	};
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it("asks for the outliers of a team's default Cycle Time without a definitionId", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: verdict });
+
+		const result = await new TeamMetricsService().getCycleTimeOutliers(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+			null,
+		);
+
+		expect(result).toEqual(verdict);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/cycleTime/outliers?startDate=2023-01-01&endDate=2023-01-31",
+		);
+	});
+
+	it("appends the definitionId for a portfolio's named Cycle Time", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: verdict });
+
+		await new ProjectMetricsService().getCycleTimeOutliers(
+			4,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+			3,
+		);
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/portfolios/4/metrics/cycleTime/outliers?startDate=2023-01-01&endDate=2023-01-31&definitionId=3",
+		);
+	});
+
+	it("propagates the error when the outliers cannot be fetched", async () => {
+		mockedAxios.get.mockRejectedValueOnce(new Error("Network Error"));
+
+		await expect(
+			new TeamMetricsService().getCycleTimeOutliers(
+				7,
+				new Date("2023-01-01"),
+				new Date("2023-01-31"),
+				null,
+			),
+		).rejects.toThrow("Network Error");
+	});
+});
