@@ -1437,3 +1437,25 @@ awk 'NR == FNR { cls[\$2] = \$1; next }
   }' "\$classes" "\$work/test-timings-backend.csv"
 EOF
 chmod +x "$out/ci-live-suites-show"
+
+cat > "$out/test-selection-show" <<EOF
+#!/usr/bin/env bash
+# Shows what CI selects for a change. Given changed file paths (relative to the repository root, as git diff
+# --name-only prints them), prints which suites CI runs for that change: the backend suite, each tracker's live
+# connector suite (jira, ado, linear, servicenow, github) and "shared", which means every live suite runs.
+# With "scenarios" instead of paths, runs every recorded selection scenario and prints the passed/failed totals
+# (and each failing scenario).
+# Usage: test-selection-show PATH...   |   test-selection-show scenarios   (takes a few seconds)
+set -euo pipefail
+export HOME="$home"
+[ "\$#" -gt 0 ] || { echo "name one or more changed paths, or scenarios"; exit 2; }
+if [ "\$1" = "scenarios" ]; then
+  bash "$repo/Scripts/test-selection/test-path-classifier.sh" 2>&1; exit \$?
+fi
+source "$repo/Scripts/test-selection/path-classifier.sh"
+paths=\$(printf '%s\n' "\$@")
+for kind in backend jira ado linear servicenow github shared; do
+  echo "\$kind: \$("classify_\$kind" "\$paths")"
+done
+EOF
+chmod +x "$out/test-selection-show"

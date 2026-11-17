@@ -59,6 +59,10 @@
     {
       "name": "ci-live-suites-show",
       "path": "Scripts/examine/bin/ci-live-suites-show"
+    },
+    {
+      "name": "test-selection-show",
+      "path": "Scripts/examine/bin/test-selection-show"
     }
   ],
   "build": "Scripts/examine/build-examine-commands"
