@@ -177,7 +177,7 @@
 "C": 1,
 "D": 1,
 "E": 6,
-"F": 229,
+"F": 232,
 "L": 3,
 "P": 5,
 "S": 1,
@@ -825,6 +825,50 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F230",
+"F232"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F230",
+"F231"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F230",
+"F231"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F230",
+"F231"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F230",
+"F231"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F230",
+"F231"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1005,6 +1049,9 @@
 "F228": "The reader sees Not captured for this report, never a Then rebuilt from live data, on screen and in the PDF",
 "F229": "A build that shows zeros or a rebuilt value instead of dashes, or drops the note in the print",
 "F23": "Open the report (ReportView, and the print document) for a Team report whose Then started 1.10 and finished 0.80 and Now 0.90 and 1.00 per day, with Arrivals shown; also a gap of 0.004 and 0.006, and a report with no arrivals capture",
+"F230": "Own probe frontend-tests ArrivalsPanel,MetricsAndNameStep: 2 files, 18 passed, 0 failed. Row titles quote rendered text, report and print: Total started 99 Work Items; Arrivals 1.10 per day; Throughput 0.80 per day; 0.30 more started than finished per day (Then); 0.10 fewer started than finished per day (Now); Change gap per day 0.40 per day marked better, no percent; header lists Arrivals under Improved; 0.004 reads as many started as finished per day, 0.006 reads 0.01 more started than finished per day; Not captured for this report on both sides, Arrivals in no header group; wizard offers Arrivals last, ticking adds it; on pre-release report Arrivals disabled and unticked with Not captured for this report. Limit: producer oracle rows, not a rendered-UI capture; no real PDF file, print document rows only; no row names Team vs Portfolio.",
+"F231": "Probe backend-tests Arrivals: 49 passed, 0 failed, 'Test Run Successful'. Rows include Then_freezes_and_Now_shows_started_and_finished_per_day_with_the_gap_between_them_unrounded with fixtures (90,99,72,1.1,0.8,0.3), (30,27,30,0.9,1.0,-0.1), (30,5,0,0.1667,0,0.1667), (30,0,4,0,0.1333,-0.1333); Then_stays_as_it_was_frozen_and_is_never_rebuilt_from_live_data; A_report_that_froze_nothing_for_arrivals_shows_no_Then_value_and_still_computes_Now. Limit: backend-side values only; no rendered words or print text observed.",
+"F232": "Own probe backend-tests ArrivalsInReportsScenarios (HEAD 1239446a0): 4 passed, 0 failed. Rows: A_report_shows_how_many_Work_Items_the_owner_started_and_finished_in_Then for team and portfolio; A_window_where_nothing_was_started_or_finished_reads_a_real_zero_and_Arrivals_is_offered_last for team and portfolio. So Portfolio owner reports capture and offer Arrivals at the application-service level. Limit: backend scenarios, no Portfolio rendered panel text observed in the frontend.",
 "F24": "Panel reads 0.30 more started than finished per day (Then), 0.10 fewer started than finished per day (Now), change 0.40 per day marked better with no percent, header lists Arrivals under Improved; 0.004 reads as many started as finished per day and 0.006 reads 0.01 more; the old report reads Not captured for this report; the print document shows the same words",
 "F25": "A build that rounds after comparing, keeps a percent, signs a zero gap, rebuilds Then from live data, or omits the print panel fails a named row",
 "F26": "OQ3 Clients: the wire gains one metric key arrivals whose sides carry the members total, perDay, throughputPerDay and gapPerDay (each a CapturedValue, doubles unrounded). lighthouse-clients holds no list of report metric keys or members (packages/client reportWording.ts and mcp-core reportTools.ts pass the raw answer through, per ADR-247), so no client code or release is needed. Only the lighthouse-reports skill reference (separate repo, prose) must learn the gap wording, the lower-is-better direction, and that Then is never rebuilt; the skill evals and drift test there own it. No changeset.",

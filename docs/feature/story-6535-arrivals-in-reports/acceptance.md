@@ -423,4 +423,86 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Own probe frontend-tests ArrivalsPanel,MetricsAndNameStep: 2 files, 18 passed, 0 failed. Row titles quote rendered text, report and print: Total started 99 Work Items; Arrivals 1.10 per day; Throughput 0.80 per day; 0.30 more started than finished per day (Then); 0.10 fewer started than finished per day (Now); Change gap per day 0.40 per day marked better, no percent; header lists Arrivals under Improved; 0.004 reads as many started as finished per day, 0.006 reads 0.01 more started than finished per day; Not captured for this report on both sides, Arrivals in no header group; wizard offers Arrivals last, ticking adds it; on pre-release report Arrivals disabled and unticked with Not captured for this report. Limit: producer oracle rows, not a rendered-UI capture; no real PDF file, print document rows only; no row names Team vs Portfolio.
+```
+
+```text
+Own probe backend-tests ArrivalsInReportsScenarios (HEAD 1239446a0): 4 passed, 0 failed. Rows: A_report_shows_how_many_Work_Items_the_owner_started_and_finished_in_Then for team and portfolio; A_window_where_nothing_was_started_or_finished_reads_a_real_zero_and_Arrivals_is_offered_last for team and portfolio. So Portfolio owner reports capture and offer Arrivals at the application-service level. Limit: backend scenarios, no Portfolio rendered panel text observed in the frontend.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Own probe frontend-tests ArrivalsPanel,MetricsAndNameStep: 2 files, 18 passed, 0 failed. Row titles quote rendered text, report and print: Total started 99 Work Items; Arrivals 1.10 per day; Throughput 0.80 per day; 0.30 more started than finished per day (Then); 0.10 fewer started than finished per day (Now); Change gap per day 0.40 per day marked better, no percent; header lists Arrivals under Improved; 0.004 reads as many started as finished per day, 0.006 reads 0.01 more started than finished per day; Not captured for this report on both sides, Arrivals in no header group; wizard offers Arrivals last, ticking adds it; on pre-release report Arrivals disabled and unticked with Not captured for this report. Limit: producer oracle rows, not a rendered-UI capture; no real PDF file, print document rows only; no row names Team vs Portfolio.
+```
+
+```text
+Probe backend-tests Arrivals: 49 passed, 0 failed, 'Test Run Successful'. Rows include Then_freezes_and_Now_shows_started_and_finished_per_day_with_the_gap_between_them_unrounded with fixtures (90,99,72,1.1,0.8,0.3), (30,27,30,0.9,1.0,-0.1), (30,5,0,0.1667,0,0.1667), (30,0,4,0,0.1333,-0.1333); Then_stays_as_it_was_frozen_and_is_never_rebuilt_from_live_data; A_report_that_froze_nothing_for_arrivals_shows_no_Then_value_and_still_computes_Now. Limit: backend-side values only; no rendered words or print text observed.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Own probe frontend-tests ArrivalsPanel,MetricsAndNameStep: 2 files, 18 passed, 0 failed. Row titles quote rendered text, report and print: Total started 99 Work Items; Arrivals 1.10 per day; Throughput 0.80 per day; 0.30 more started than finished per day (Then); 0.10 fewer started than finished per day (Now); Change gap per day 0.40 per day marked better, no percent; header lists Arrivals under Improved; 0.004 reads as many started as finished per day, 0.006 reads 0.01 more started than finished per day; Not captured for this report on both sides, Arrivals in no header group; wizard offers Arrivals last, ticking adds it; on pre-release report Arrivals disabled and unticked with Not captured for this report. Limit: producer oracle rows, not a rendered-UI capture; no real PDF file, print document rows only; no row names Team vs Portfolio.
+```
+
+```text
+Probe backend-tests Arrivals: 49 passed, 0 failed, 'Test Run Successful'. Rows include Then_freezes_and_Now_shows_started_and_finished_per_day_with_the_gap_between_them_unrounded with fixtures (90,99,72,1.1,0.8,0.3), (30,27,30,0.9,1.0,-0.1), (30,5,0,0.1667,0,0.1667), (30,0,4,0,0.1333,-0.1333); Then_stays_as_it_was_frozen_and_is_never_rebuilt_from_live_data; A_report_that_froze_nothing_for_arrivals_shows_no_Then_value_and_still_computes_Now. Limit: backend-side values only; no rendered words or print text observed.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Own probe frontend-tests ArrivalsPanel,MetricsAndNameStep: 2 files, 18 passed, 0 failed. Row titles quote rendered text, report and print: Total started 99 Work Items; Arrivals 1.10 per day; Throughput 0.80 per day; 0.30 more started than finished per day (Then); 0.10 fewer started than finished per day (Now); Change gap per day 0.40 per day marked better, no percent; header lists Arrivals under Improved; 0.004 reads as many started as finished per day, 0.006 reads 0.01 more started than finished per day; Not captured for this report on both sides, Arrivals in no header group; wizard offers Arrivals last, ticking adds it; on pre-release report Arrivals disabled and unticked with Not captured for this report. Limit: producer oracle rows, not a rendered-UI capture; no real PDF file, print document rows only; no row names Team vs Portfolio.
+```
+
+```text
+Probe backend-tests Arrivals: 49 passed, 0 failed, 'Test Run Successful'. Rows include Then_freezes_and_Now_shows_started_and_finished_per_day_with_the_gap_between_them_unrounded with fixtures (90,99,72,1.1,0.8,0.3), (30,27,30,0.9,1.0,-0.1), (30,5,0,0.1667,0,0.1667), (30,0,4,0,0.1333,-0.1333); Then_stays_as_it_was_frozen_and_is_never_rebuilt_from_live_data; A_report_that_froze_nothing_for_arrivals_shows_no_Then_value_and_still_computes_Now. Limit: backend-side values only; no rendered words or print text observed.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Own probe frontend-tests ArrivalsPanel,MetricsAndNameStep: 2 files, 18 passed, 0 failed. Row titles quote rendered text, report and print: Total started 99 Work Items; Arrivals 1.10 per day; Throughput 0.80 per day; 0.30 more started than finished per day (Then); 0.10 fewer started than finished per day (Now); Change gap per day 0.40 per day marked better, no percent; header lists Arrivals under Improved; 0.004 reads as many started as finished per day, 0.006 reads 0.01 more started than finished per day; Not captured for this report on both sides, Arrivals in no header group; wizard offers Arrivals last, ticking adds it; on pre-release report Arrivals disabled and unticked with Not captured for this report. Limit: producer oracle rows, not a rendered-UI capture; no real PDF file, print document rows only; no row names Team vs Portfolio.
+```
+
+```text
+Probe backend-tests Arrivals: 49 passed, 0 failed, 'Test Run Successful'. Rows include Then_freezes_and_Now_shows_started_and_finished_per_day_with_the_gap_between_them_unrounded with fixtures (90,99,72,1.1,0.8,0.3), (30,27,30,0.9,1.0,-0.1), (30,5,0,0.1667,0,0.1667), (30,0,4,0,0.1333,-0.1333); Then_stays_as_it_was_frozen_and_is_never_rebuilt_from_live_data; A_report_that_froze_nothing_for_arrivals_shows_no_Then_value_and_still_computes_Now. Limit: backend-side values only; no rendered words or print text observed.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Own probe frontend-tests ArrivalsPanel,MetricsAndNameStep: 2 files, 18 passed, 0 failed. Row titles quote rendered text, report and print: Total started 99 Work Items; Arrivals 1.10 per day; Throughput 0.80 per day; 0.30 more started than finished per day (Then); 0.10 fewer started than finished per day (Now); Change gap per day 0.40 per day marked better, no percent; header lists Arrivals under Improved; 0.004 reads as many started as finished per day, 0.006 reads 0.01 more started than finished per day; Not captured for this report on both sides, Arrivals in no header group; wizard offers Arrivals last, ticking adds it; on pre-release report Arrivals disabled and unticked with Not captured for this report. Limit: producer oracle rows, not a rendered-UI capture; no real PDF file, print document rows only; no row names Team vs Portfolio.
+```
+
+```text
+Probe backend-tests Arrivals: 49 passed, 0 failed, 'Test Run Successful'. Rows include Then_freezes_and_Now_shows_started_and_finished_per_day_with_the_gap_between_them_unrounded with fixtures (90,99,72,1.1,0.8,0.3), (30,27,30,0.9,1.0,-0.1), (30,5,0,0.1667,0,0.1667), (30,0,4,0,0.1333,-0.1333); Then_stays_as_it_was_frozen_and_is_never_rebuilt_from_live_data; A_report_that_froze_nothing_for_arrivals_shows_no_Then_value_and_still_computes_Now. Limit: backend-side values only; no rendered words or print text observed.
+```
