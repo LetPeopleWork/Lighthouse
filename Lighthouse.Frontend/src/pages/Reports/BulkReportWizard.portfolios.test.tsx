@@ -15,23 +15,18 @@ import {
 	pickOwner,
 	pressCreateReports,
 	renderTheReportsPage,
-	SAME_AS_THEN,
 	selectAllOf,
 	TEAMS_GROUP,
 	THEN_PRESETS,
 	toTheOwnerStep,
 	ZENITH,
 } from "../../tests/BulkReportsTestKit";
-import {
-	aReportService,
-	nowNeedsAtLeast,
-	thenNeedsAtLeast,
-} from "../../tests/ReportsTestKit";
+import { aReportService, thenNeedsAtLeast } from "../../tests/ReportsTestKit";
 
 /**
  * Portfolios join the selection: one run may create the same comparison for Teams and Portfolios together. The
  * window is chosen the same way whatever mix is picked: Then of 30, 90 or 180 days or a custom number of days of
- * at least 14, and Now as long as Then unless the reader says otherwise.
+ * at least 14, and Now always as long as Then.
  */
 
 const teamsAndPortfolios = creationOptionsFor(
@@ -219,7 +214,7 @@ describe("Choosing the window for several owners", () => {
 		await user.click(await screen.findByRole("button", { name: "Next" }));
 	};
 
-	it(`Then offers 30, 90 and 180 days or a custom length, and Now is as long as Then unless changed`, async () => {
+	it(`Then offers 30, 90 and 180 days or a custom length, and Next leads to Metrics & name with no "Same as Then" choice`, async () => {
 		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
 		await toTheThenStep(user);
@@ -233,8 +228,10 @@ describe("Choosing the window for several owners", () => {
 		await user.click(screen.getByRole("button", { name: "90 days" }));
 		await user.click(screen.getByRole("button", { name: "Next" }));
 		expect(
-			await screen.findByRole("radio", { name: SAME_AS_THEN }),
-		).toBeChecked();
+			await screen.findByRole("textbox", { name: "Name" }),
+		).toBeInTheDocument();
+		expect(screen.queryByRole("radio", { name: "Same as Then" })).toBeNull();
+		expect(screen.queryByRole("radio", { name: "Custom" })).toBeNull();
 	});
 
 	const pressed = (name: string) =>
@@ -262,25 +259,6 @@ describe("Choosing the window for several owners", () => {
 		expect(wordsBesideTheField()).toEqual(["days"]);
 	});
 
-	it(`Now is chosen as Custom without a stray label, and Same as Then hides its field`, async () => {
-		const { user } = renderTheReportsPage({ reportService: creatingWith() });
-
-		await toTheThenStep(user);
-		await user.click(await screen.findByRole("button", { name: "30 days" }));
-		await user.click(screen.getByRole("button", { name: "Next" }));
-		expect(
-			await screen.findByRole("radio", { name: SAME_AS_THEN }),
-		).toBeChecked();
-		expect(screen.queryByRole("spinbutton", { name: /^Now/ })).toBeNull();
-		expect(screen.queryByRole("button", { name: "30 days" })).toBeNull();
-
-		await user.click(screen.getByRole("radio", { name: "Custom" }));
-		expect(screen.getByRole("radio", { name: "Custom" })).toBeChecked();
-		expect(screen.getByRole("radio", { name: SAME_AS_THEN })).not.toBeChecked();
-		expect(screen.getByRole("spinbutton", { name: /^Now/ })).toBeVisible();
-		expect(wordsBesideTheField()).toEqual(["days"]);
-	});
-
 	it(`a custom Then shorter than 14 days is refused before any owner is asked`, async () => {
 		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
@@ -292,60 +270,6 @@ describe("Choosing the window for several owners", () => {
 			await screen.findByText(thenNeedsAtLeast(14), { exact: true }),
 		).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
-	});
-
-	const toTheNowStep = async (
-		user: ReturnType<typeof renderTheReportsPage>["user"],
-	) => {
-		await toTheThenStep(user);
-		await user.click(await screen.findByRole("button", { name: "30 days" }));
-		await user.click(screen.getByRole("button", { name: "Next" }));
-		await user.click(await screen.findByRole("radio", { name: "Custom" }));
-	};
-
-	it(`a custom Now shorter than 14 days is refused`, async () => {
-		const { user } = renderTheReportsPage({ reportService: creatingWith() });
-
-		await toTheNowStep(user);
-		await user.type(screen.getByRole("spinbutton", { name: /^Now/ }), "13");
-
-		expect(
-			await screen.findByText(nowNeedsAtLeast(14), { exact: true }),
-		).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
-	});
-
-	it(`a custom Now left empty cannot be moved past`, async () => {
-		const { user } = renderTheReportsPage({ reportService: creatingWith() });
-
-		await toTheNowStep(user);
-
-		expect(screen.getByRole("spinbutton", { name: /^Now/ })).toHaveValue(null);
-		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
-	});
-
-	it(`going back to Same as Then drops a typed custom Now from the request`, async () => {
-		const createReportsInBulk = vi.fn().mockResolvedValue([]);
-		const { user } = renderTheReportsPage({
-			reportService: creatingWith(createReportsInBulk),
-		});
-
-		await toTheNowStep(user);
-		await user.type(screen.getByRole("spinbutton", { name: /^Now/ }), "21");
-		await user.click(screen.getByRole("radio", { name: SAME_AS_THEN }));
-
-		expect(screen.getByRole("radio", { name: SAME_AS_THEN })).toBeChecked();
-		await createdForZenith(user);
-		await waitFor(() =>
-			expect(createReportsInBulk).toHaveBeenCalledWith(
-				expect.objectContaining({
-					thenAndNow: expect.objectContaining({
-						thenLengthDays: 30,
-						nowLengthDays: null,
-					}),
-				}),
-			),
-		);
 	});
 
 	it(`a custom Then of exactly 14 days is accepted`, async () => {
@@ -370,7 +294,7 @@ describe("Choosing the window for several owners", () => {
 		await user.click(screen.getByRole("button", { name: createCount(1) }));
 	};
 
-	it(`a custom Now length travels with the request`, async () => {
+	it(`a 30-day Then travels with no Now length`, async () => {
 		const createReportsInBulk = vi.fn().mockResolvedValue([]);
 		const { user } = renderTheReportsPage({
 			reportService: creatingWith(createReportsInBulk),
@@ -378,46 +302,17 @@ describe("Choosing the window for several owners", () => {
 
 		await toTheThenStep(user);
 		await user.click(await screen.findByRole("button", { name: "30 days" }));
-		await user.click(screen.getByRole("button", { name: "Next" }));
-		await user.click(await screen.findByRole("radio", { name: "Custom" }));
-		await user.type(screen.getByRole("spinbutton", { name: /^Now/ }), "21");
 		await createdForZenith(user);
 
 		await waitFor(() =>
 			expect(createReportsInBulk).toHaveBeenCalledWith(
 				expect.objectContaining({
-					thenAndNow: expect.objectContaining({
-						thenLengthDays: 30,
-						nowLengthDays: 21,
-					}),
+					thenAndNow: expect.objectContaining({ thenLengthDays: 30 }),
 				}),
 			),
 		);
-	});
-
-	it(`Same as Then travels as no Now length`, async () => {
-		const createReportsInBulk = vi.fn().mockResolvedValue([]);
-		const { user } = renderTheReportsPage({
-			reportService: creatingWith(createReportsInBulk),
-		});
-
-		await toTheThenStep(user);
-		await user.click(await screen.findByRole("button", { name: "30 days" }));
-		await user.click(screen.getByRole("button", { name: "Next" }));
-		expect(
-			await screen.findByRole("radio", { name: SAME_AS_THEN }),
-		).toBeChecked();
-		await createdForZenith(user);
-
-		await waitFor(() =>
-			expect(createReportsInBulk).toHaveBeenCalledWith(
-				expect.objectContaining({
-					thenAndNow: expect.objectContaining({
-						thenLengthDays: 30,
-						nowLengthDays: null,
-					}),
-				}),
-			),
+		expect(createReportsInBulk.mock.calls[0][0].thenAndNow).not.toHaveProperty(
+			"nowLengthDays",
 		);
 	});
 });

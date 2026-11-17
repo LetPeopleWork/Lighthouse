@@ -13,7 +13,8 @@ import {
  * read the same table of edges - one day short of the shortest window, the last day today and tomorrow, the
  * first day on the oldest kept day and the day before, and an owner that keeps every finished item and so
  * has no oldest day - so the browser's check cannot drift from the server's without one of the two suites
- * going red. The backend runs the same rows through the create endpoint.
+ * going red. The backend runs the same rows through the create endpoint. Only Then is checked: Now is always
+ * as long as Then and ends today, so the table's Now rows are no longer the browser's to answer.
  */
 
 interface BoundaryRow {
@@ -25,12 +26,15 @@ interface BoundaryRow {
 	refusal: ReportWindowRefusal | null;
 }
 
-const rows = boundaries.rows as BoundaryRow[];
+const rows = (boundaries.rows as BoundaryRow[]).filter(
+	(row) => row.side === "then",
+);
 
-const entered = (row: BoundaryRow): EnteredReportWindow =>
-	row.side === "then"
-		? { side: "then", end: row.end ?? "", lengthDays: row.lengthDays }
-		: { side: "now", lengthDays: row.lengthDays };
+const entered = (row: BoundaryRow): EnteredReportWindow => ({
+	side: "then",
+	end: row.end ?? "",
+	lengthDays: row.lengthDays,
+});
 
 const boundsFor = (row: BoundaryRow): ReportWindowBounds =>
 	row.keepsEveryFinishedItem
@@ -40,14 +44,11 @@ const boundsFor = (row: BoundaryRow): ReportWindowBounds =>
 const answer = (refusal: ReportWindowRefusal | null) => refusal ?? "accepted";
 
 describe("the edges of a report window, checked as the server checks them", () => {
-	it.each(rows.filter((row) => row.side === "then"))(
-		"answers $case as the server does",
-		(row) => {
-			expect(answer(reportWindowCheck(entered(row), boundsFor(row)))).toBe(
-				answer(row.refusal),
-			);
-		},
-	);
+	it.each(rows)("answers $case as the server does", (row) => {
+		expect(answer(reportWindowCheck(entered(row), boundsFor(row)))).toBe(
+			answer(row.refusal),
+		);
+	});
 
 	// From 2 Oct 2026, 739 891 days reach back exactly to 1 Jan of the year 1, the first day the server can name.
 	it.each([
@@ -68,26 +69,6 @@ describe("the edges of a report window, checked as the server checks them", () =
 			).toBe(expected);
 		},
 	);
-
-	it.each(rows.filter((row) => row.side === "now"))(
-		"answers $case as the server does",
-		(row) => {
-			expect(answer(reportWindowCheck(entered(row), boundsFor(row)))).toBe(
-				answer(row.refusal),
-			);
-		},
-	);
-
-	it.each([
-		[739_891, "accepted"],
-		[739_892, "now-too-long"],
-	])("answers a Now of %i days with %s", (lengthDays, expected) => {
-		const bounds = { ...boundaries.bounds, earliestStart: null };
-
-		expect(answer(reportWindowCheck({ side: "now", lengthDays }, bounds))).toBe(
-			expected,
-		);
-	});
 });
 
 describe("an owner that cannot hold a window, by its own oldest kept day", () => {

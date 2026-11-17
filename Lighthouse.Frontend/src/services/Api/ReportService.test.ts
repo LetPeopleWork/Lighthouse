@@ -121,7 +121,6 @@ const aNewReport = (name: string): INewReport => ({
 	thenAndNow: {
 		thenEndDate: "2026-07-31",
 		thenLengthDays: 90,
-		nowLengthDays: null,
 	},
 });
 
@@ -344,7 +343,6 @@ describe("ReportService", () => {
 			thenAndNow: {
 				thenEndDate: "2026-07-29",
 				thenLengthDays: 90,
-				nowLengthDays: null,
 			},
 		};
 		mockedAxios.post.mockResolvedValueOnce({
@@ -424,7 +422,6 @@ describe("ReportService", () => {
 				thenAndNow: {
 					thenEndDate: "2026-07-29",
 					thenLengthDays: 90,
-					nowLengthDays: null,
 				},
 				owners: [{ ownerKind: "team", ownerId: 21 }],
 			}),

@@ -81,6 +81,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             public const string ThenBeforeCutoff = "then-before-cutoff";
             public const string NowTooShort = "now-too-short";
             public const string NowTooLong = "now-too-long";
+            public const string NowLengthDiffersFromThen = "now-length-differs-from-then";
             public const string NowBeforeCutoff = "now-before-cutoff";
             public const string NameMissing = "name-missing";
             public const string NoMetricShown = "no-metric-shown";
@@ -849,7 +850,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             public string Name { get; init; } = EngagementStart;
             public DateOnly ThenEnd { get; init; } = TodayOnTheInstance;
             public int ThenLengthDays { get; init; } = 90;
-            public int? NowLengthDays { get; init; } = 90;
+            public int? NowLengthDays { get; init; }
             public IReadOnlyList<string> Shown { get; init; } = [CycleTime];
 
             public JsonObject ToJson()

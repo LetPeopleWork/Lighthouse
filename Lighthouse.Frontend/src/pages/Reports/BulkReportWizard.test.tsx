@@ -138,7 +138,7 @@ describe("Create reports for several Teams", () => {
 		expect(rowOf(QUARTER, GRAVITY)).toBeInTheDocument();
 	});
 
-	it(`every Team picked gets the same comparison, in the order the step lists them`, async () => {
+	it(`every Team picked gets the same comparison, in the order the step lists them, with no Now length sent`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValue([created(GRAVITY, 1), created(ZENITH, 2)]);
@@ -155,16 +155,17 @@ describe("Create reports for several Teams", () => {
 		expect(createReportsInBulk).toHaveBeenCalledWith(
 			expect.objectContaining({
 				templateKey: "then-and-now",
-				thenAndNow: expect.objectContaining({
-					thenLengthDays: 90,
-					nowLengthDays: null,
-				}),
+				thenAndNow: expect.objectContaining({ thenLengthDays: 90 }),
 				owners: [
 					{ ownerKind: "team", ownerId: GRAVITY.id },
 					{ ownerKind: "team", ownerId: ZENITH.id },
 				],
 			}),
 		);
+		expect(
+			createReportsInBulk.mock.calls[0][0].thenAndNow,
+			"reports for several owners never send a Now length: each owner's Now is as long as its Then",
+		).not.toHaveProperty("nowLengthDays");
 	});
 
 	// Today is 27 Oct 2026. Now ends today, and Then ends the day before Now starts, so the windows sit back to back.
@@ -189,11 +190,7 @@ describe("Create reports for several Teams", () => {
 			await waitFor(() =>
 				expect(createReportsInBulk).toHaveBeenCalledWith(
 					expect.objectContaining({
-						thenAndNow: {
-							thenEndDate,
-							thenLengthDays: days,
-							nowLengthDays: null,
-						},
+						thenAndNow: { thenEndDate, thenLengthDays: days },
 					}),
 				),
 			);
@@ -701,17 +698,18 @@ describe("Moving through the wizard", () => {
 			permissions,
 		});
 
-	it(`is titled Create reports and names its steps Type, Then, Now, Metrics & name and Owners`, async () => {
+	it(`is titled Create reports and names its steps Type, Then, Metrics & name and Owners, with no Now step`, async () => {
 		const { user } = aWizardFor();
 
 		await pressCreateReports(user);
 
 		const wizard = await screen.findByRole("dialog", { name: CREATE_REPORTS });
-		for (const label of ["Type", "Then", "Now", "Metrics & name", "Owners"]) {
+		for (const label of ["Type", "Then", "Metrics & name", "Owners"]) {
 			expect(
 				within(wizard).getAllByText(label, { exact: true }).length,
 			).toBeGreaterThan(0);
 		}
+		expect(within(wizard).queryByText("Now", { exact: true })).toBeNull();
 	});
 
 	it(`Back leads from Then to the Type step, which offers no Back of its own`, async () => {

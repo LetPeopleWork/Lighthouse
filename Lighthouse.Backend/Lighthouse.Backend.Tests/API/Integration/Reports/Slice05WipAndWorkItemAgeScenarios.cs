@@ -57,12 +57,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // Then is the 15 days to 31 Aug (17-31 Aug): 2 in progress on 17-23 Aug, 4 on 24-31 Aug. Sorted, the
-        // 7th of 15 days is the last 2 - the day just below the middle, where a textbook median would take the
-        // 8th, a 4. Now's 30 days: 4 in progress on 3-17 Sep, 2 on 18 Sep - 2 Oct. Sorted, the 15th and 16th
-        // days are 2 and 4: the Median is the lower, 2, never their mean, 3.
-        [Test]
-        public async Task The_median_is_the_lower_middle_day_for_an_even_and_an_odd_number_of_days()
+        // 2 in progress since 1 Jul, 2 more on 24 Aug - 17 Sep. Then of 15 days (17-31 Aug) has 7 days of 2 and
+        // 8 of 4: sorted, the 7th day is the last 2, where a textbook median would take the 8th, a 4. Then of 16
+        // days (16-31 Aug) has 8 days of 2 and 8 of 4: the Median is the lower middle day, 2, never their mean, 3.
+        // Now is as long as Then and ends 2 Oct: 2 in progress on every day from 18 Sep, 4 on 17 Sep.
+        [TestCase(15, 46d / 15, 2d, 2d, TestName = "The_median_is_the_lower_middle_day_for_an_odd_number_of_days")]
+        [TestCase(16, 3d, 34d / 16, 4d, TestName = "The_median_is_the_lower_middle_day_for_an_even_number_of_days")]
+        public async Task The_median_is_the_lower_middle_day(int lengthDays, double thenAverage, double nowAverage, double nowMax)
         {
             var vega = ATeam("Team Vega");
             TheTeamWorksOn(vega, 2, FirstOfJuly);
@@ -71,16 +72,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var reportId = await GivenTheAdminCreated(vega, new NewReport
             {
                 ThenEnd = ThenEnds,
-                ThenLengthDays = 15,
-                NowLengthDays = 30,
+                ThenLengthDays = lengthDays,
                 Shown = AllFourMetrics,
             });
 
             var report = await TheReport(vega, reportId);
             using (Assert.EnterMultipleScope())
             {
-                ThenTheLinesRead(ThenValueIn, report, Wip, new Lines(Average: 46d / 15, Median: 2, Min: 2, Max: 4, Days: 15));
-                ThenTheLinesRead(NowValueIn, report, Wip, new Lines(Average: 3, Median: 2, Min: 2, Max: 4, Days: 30));
+                ThenTheLinesRead(ThenValueIn, report, Wip, new Lines(Average: thenAverage, Median: 2, Min: 2, Max: 4, Days: lengthDays));
+                ThenTheLinesRead(NowValueIn, report, Wip, new Lines(Average: nowAverage, Median: 2, Min: 2, Max: nowMax, Days: lengthDays));
             }
         }
 

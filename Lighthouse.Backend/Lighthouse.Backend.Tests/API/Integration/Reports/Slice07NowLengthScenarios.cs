@@ -4,11 +4,9 @@ using System.Text.Json;
 namespace Lighthouse.Backend.Tests.API.Integration.Reports
 {
     /// <summary>
-    /// How long Now is, is chosen when the report is created - Then's length unless the coach picks another -
-    /// and stored on the report, so every reader, and later every scheduled send, sees the same window. Now is
-    /// always that many days ending today, used in full even where it overlaps Then. The report also says how
-    /// many days ago Then ended. A Now shorter than 14 days, or reaching back past the oldest finished Work Item
-    /// the Team keeps, is refused; nothing a reader puts in the address changes it.
+    /// Now is always as long as Then and ends today, used in full even where it overlaps Then. The report also
+    /// says how many days ago Then ended. A create asking for a Now of another length is refused; nothing a
+    /// reader puts in the address changes Now.
     ///
     /// Driving ports: POST/GET /teams/{id}/reports.
     /// </summary>
@@ -19,23 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     public class Slice07NowLengthScenarios : ReportsAcceptanceTest
     {
         private static readonly DateOnly EndOfJuly = new(2026, 7, 31);
-
-        [Test]
-        public async Task A_coach_sets_a_shorter_Now_and_every_later_view_uses_it()
-        {
-            var gravity = ATeam("Team Gravity");
-            var reportId = await GivenTheAdminCreated(gravity, new NewReport { NowLengthDays = 30 });
-
-            TodayIs(new DateOnly(2026, 11, 30));
-            TheCallerOnlyReads(gravity);
-            var report = await TheReport(gravity, reportId);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(NowWindowIn(report), Is.EqualTo(new ReportWindow("2026-11-01", "2026-11-30", 30)));
-                Assert.That(DaysSinceThenEndedIn(report), Is.EqualTo(59));
-            }
-        }
 
         // 27 days of this Now lie inside Then; they are compared as they are, never clipped away.
         [Test]
@@ -76,47 +57,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         [TestCase(13)]
         [TestCase(0)]
-        public async Task A_Now_shorter_than_fourteen_days_is_refused(int nowLengthDays)
+        [TestCase(30)]
+        public async Task A_Now_of_another_length_than_Then_is_refused(int nowLengthDays)
         {
             var gravity = ATeam("Team Gravity");
 
             TheCallerAdministers(gravity);
             using var refused = await CreateAReport(gravity, new NewReport { NowLengthDays = nowLengthDays });
 
-            await ThenItIsRefusedFor(refused, Reason.NowTooShort);
+            await ThenItIsRefusedFor(refused, Reason.NowLengthDiffersFromThen);
             await ThenTheOwnerHoldsNoReport(gravity);
         }
 
         // 366 days ending 2 Oct 2026 start on 2 Oct 2025, the oldest day the Team keeps.
         [Test]
-        public async Task A_Now_starting_on_the_oldest_kept_day_is_accepted()
+        public async Task A_Then_and_Now_starting_on_the_oldest_kept_day_are_accepted()
         {
             var gravity = ATeam("Team Gravity");
 
-            var reportId = await GivenTheAdminCreated(gravity, new NewReport { NowLengthDays = 366 });
+            var reportId = await GivenTheAdminCreated(gravity, new NewReport { ThenLengthDays = 366 });
 
             Assert.That(NowWindowIn(await TheReport(gravity, reportId)), Is.EqualTo(new ReportWindow("2025-10-02", "2026-10-02", 366)));
         }
 
-        [TestCase(367)]
-        [TestCase(500)]
-        public async Task A_Now_reaching_past_the_data_cutoff_is_refused(int nowLengthDays)
-        {
-            var gravity = ATeam("Team Gravity");
-
-            TheCallerAdministers(gravity);
-            using var refused = await CreateAReport(gravity, new NewReport { NowLengthDays = nowLengthDays });
-
-            await ThenItIsRefusedFor(refused, Reason.NowBeforeCutoff);
-            await ThenTheOwnerHoldsNoReport(gravity);
-        }
-
-        // Now is stored on the report; a reader cannot change it, not even for one view.
+        // Now follows Then's length; a reader cannot change it, not even for one view.
         [Test]
         public async Task Asking_for_another_Now_in_the_address_changes_nothing()
         {
             var gravity = ATeam("Team Gravity");
-            var reportId = await GivenTheAdminCreated(gravity, new NewReport { NowLengthDays = 30 });
+            var reportId = await GivenTheAdminCreated(gravity, new NewReport { ThenEnd = new DateOnly(2026, 9, 2), ThenLengthDays = 30 });
 
             TheCallerOnlyReads(gravity);
             using var asked = await Client.GetAsync($"{ReportsOf(gravity)}/{reportId}?nowLengthDays=7");
@@ -130,31 +99,5 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(nowLength, Is.EqualTo(30));
         }
 
-        // Totals over different lengths cannot be compared, so the change is read on the per-day average.
-        [Test]
-        public async Task Throughput_with_a_Now_of_another_length_is_compared_per_day()
-        {
-            var dev = ATeam("Team Gravity");
-            var thenEnds = new DateOnly(2026, 8, 31);
-            TheTeamFinishedPerDay(dev, thenEnds.AddDays(-89), [.. Enumerable.Range(0, 90).Select(day => day % 2 == 0 ? 1 : 0)]);
-            TheTeamFinishedPerDay(dev, new DateOnly(2026, 9, 3), [.. Enumerable.Repeat(1, 24)]);
-
-            var reportId = await GivenTheAdminCreated(dev, new NewReport
-            {
-                ThenEnd = thenEnds,
-                ThenLengthDays = 90,
-                NowLengthDays = 30,
-                Shown = [CycleTime, Throughput],
-            });
-
-            var report = await TheReport(dev, reportId);
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(ThenValueIn(report, Throughput, Total), Is.EqualTo(Shown(45, 90)));
-                Assert.That(ThenValueIn(report, Throughput, PerDay), Is.EqualTo(Shown(0.5, 90)));
-                Assert.That(NowValueIn(report, Throughput, Total), Is.EqualTo(Shown(24, 30)));
-                Assert.That(NowValueIn(report, Throughput, PerDay), Is.EqualTo(Shown(0.8, 30)));
-            }
-        }
     }
 }

@@ -13,6 +13,7 @@ import { inSequence } from "../../../tests/inSequence";
 import {
 	A_LATER_METRIC,
 	APOLLO,
+	APOLLO_NAME,
 	aRefusal,
 	aReportList,
 	aReportService,
@@ -24,30 +25,31 @@ import {
 	ENGAGEMENT_START_ID,
 	enterNumber,
 	LIGHTSPEED,
+	LIGHTSPEED_NAME,
 	NO_METRIC,
 	next,
 	renderWithReports,
 	THEN_TOO_LONG,
 	THEN_TOO_SHORT,
-	TODAY_ON_THE_INSTANCE,
 	TYPES_COULD_NOT_LOAD,
 	theMetricBox,
 	theNameField,
-	theNowLengthField,
 	thenNeedsAtLeast,
 	theThenEndField,
 	theThenLengthField,
 	theWizard,
+	tooLittleHistory,
 } from "../../../tests/ReportsTestKit";
 import { useAllReports } from "../../Reports/useAllReports";
 import ReportsTab from "./ReportsTab";
 import { reportsQueryKeyOf } from "./reportOwner";
 
 /**
- * Creating a report is a wizard: the Type, then Then, then Now, then the metrics and the name. Each step
+ * Creating a report is a wizard: the Type, then Then, then the metrics and the name. Nobody is asked about
+ * Now: it is always as long as Then and ends today, and the Then step shows both windows by date. Each step
  * says in words what the numbers entered will mean, refuses what the server would refuse before anything
- * is sent, and the last step creates the report and opens it. The examples are set on 2 Oct 2026, with
- * finished Work Items kept back to 2 Oct 2025.
+ * is sent, and the last step creates the report and opens it. Most examples are set on 2 Oct 2026, with
+ * finished Work Items kept back to 2 Oct 2025; the ones about Now beside Then are set on 15 Nov 2026.
  *
  * The date field is driven as a plain date input; if the wizard uses a date picker instead, only the step
  * in the test kit that picks the date changes.
@@ -93,7 +95,13 @@ const openTheWizard = async (
 	}),
 	owner: IReportOwner = LIGHTSPEED,
 ) => {
-	renderWithReports(<ReportsTab owner={owner} />, { reportService, owner });
+	renderWithReports(
+		<ReportsTab
+			owner={owner}
+			ownerName={owner === APOLLO ? APOLLO_NAME : LIGHTSPEED_NAME}
+		/>,
+		{ reportService, owner },
+	);
 	await userEvent.click(
 		await screen.findByRole("button", { name: "Create Report" }),
 	);
@@ -104,8 +112,35 @@ const openTheWizard = async (
 const onToTheLastStep = async () => {
 	await next();
 	await next();
-	await next();
 };
+
+/** An instance whose day is 15 Nov 2026, keeping finished Work Items from the given day. */
+const onMidNovember = (keptFrom = "2025-11-15") =>
+	aReportService({
+		getReports: vi.fn().mockResolvedValue(aReportList([])),
+		getTemplates: vi
+			.fn()
+			.mockResolvedValue(
+				aTemplateList({ today: "2026-11-15", earliestStart: keptFrom }),
+			),
+	});
+
+const SAME_DAYS =
+	"Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass.";
+
+const pickPreset = async (days: string) =>
+	userEvent.click(
+		within(await theWizard()).getByRole("button", { name: days }),
+	);
+
+const theNextButton = async () =>
+	within(await theWizard()).getByRole("button", { name: "Next" });
+
+/** The one report the wizard asked the server to create. */
+const theCreatedReport = (reportService: { createReport: unknown }) =>
+	vi.mocked(
+		reportService.createReport as (owner: IReportOwner, report: object) => void,
+	).mock.calls[0][1];
 
 const theCreateButton = async () =>
 	within(await theWizard()).findByRole("button", { name: CREATE });
@@ -143,33 +178,39 @@ describe("Step two: Then", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	it("starts as the 90 days ending today and says which days that is", async () => {
+	it('starts as the 90 days ending the day before Now starts, reading "Then 6 Apr – 4 Jul 2026 (90 days)"', async () => {
 		await openTheWizard();
 		await next();
 
-		expect(await theThenEndField()).toHaveValue("2026-10-02");
+		expect(await theThenEndField()).toHaveValue("2026-07-04");
 		expect(await theThenLengthField()).toHaveValue(90);
-		expect(await theWizard()).toHaveTextContent("= 5 Jul – 2 Oct 2026");
+		expect(await theWizard()).toHaveTextContent(
+			"Then 6 Apr – 4 Jul 2026 (90 days)",
+		);
 		expect(await theWizard()).not.toHaveTextContent(/frozen/);
 	});
 
-	it("says the days of a Then that ended in the past", async () => {
+	it('says the days of a Then that ended in the past, "Then 3 May – 31 Jul 2026 (90 days)"', async () => {
 		await openTheWizard();
 		await next();
 
 		await chooseThenEnd("2026-07-31");
 
-		expect(await theWizard()).toHaveTextContent("= 3 May – 31 Jul 2026");
+		expect(await theWizard()).toHaveTextContent(
+			"Then 3 May – 31 Jul 2026 (90 days)",
+		);
 	});
 
-	it("says the days of a Then of a custom length", async () => {
+	it('says the days of a Then of a custom length, "Then 31 Jul – 13 Sep 2026 (45 days)"', async () => {
 		await openTheWizard();
 		await next();
 
 		await chooseThenEnd("2026-09-13");
 		await enterNumber(await theThenLengthField(), 45);
 
-		expect(await theWizard()).toHaveTextContent("= 31 Jul – 13 Sep 2026");
+		expect(await theWizard()).toHaveTextContent(
+			"Then 31 Jul – 13 Sep 2026 (45 days)",
+		);
 	});
 
 	it("cannot end in the future", async () => {
@@ -234,7 +275,7 @@ describe("Step two: Then", () => {
 		).toBeNull();
 	});
 
-	it("refuses a Then starting before the oldest kept day, naming that day, and goes no further", async () => {
+	it('refuses a Then starting before the oldest kept day with "Lightspeed keeps history from 2 Oct 2025: too little for a 90-day Then and Now." and goes no further', async () => {
 		await openTheWizard();
 		await next();
 
@@ -280,7 +321,7 @@ describe("Step two: Then", () => {
 		await enterNumber(await theThenLengthField(), 1_000_000_000);
 
 		expect(await theWizard()).toHaveTextContent(THEN_TOO_LONG);
-		expect(within(await theWizard()).queryByText(/^= /)).toBeNull();
+		expect(within(await theWizard()).queryByText(/^(Then|Now) \d/)).toBeNull();
 		expect(
 			within(await theWizard()).getByRole("button", { name: "Next" }),
 		).toBeDisabled();
@@ -321,7 +362,7 @@ describe("Step two: Then", () => {
 	});
 
 	// A Team keeping 180 days has a later oldest kept day; the refusal names the day the server answered.
-	it("names the oldest kept day the server answers when Then starts before it", async () => {
+	it('names the owner and the oldest kept day the server answers, "Lightspeed keeps history from 5 Apr 2026", when Then starts before it', async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -335,7 +376,7 @@ describe("Step two: Then", () => {
 		await chooseThenEnd("2026-05-31");
 
 		expect(await theWizard()).toHaveTextContent(
-			"The Then window must start on or after 5 Apr 2026 — older finished Work Items are no longer kept.",
+			tooLittleHistory(LIGHTSPEED_NAME, "5 Apr 2026", 90),
 		);
 		expect(
 			within(await theWizard()).getByRole("button", { name: "Next" }),
@@ -355,8 +396,10 @@ describe("Step two: Then", () => {
 
 		await chooseThenEnd("2025-01-31");
 
-		expect(await theWizard()).toHaveTextContent("= 3 Nov 2024 – 31 Jan 2025");
-		expect(await theWizard()).not.toHaveTextContent(/no longer kept/);
+		expect(await theWizard()).toHaveTextContent(
+			"Then 3 Nov 2024 – 31 Jan 2025 (90 days)",
+		);
+		expect(await theWizard()).not.toHaveTextContent(/keeps history from/);
 		expect(
 			within(await theWizard()).getByRole("button", { name: "Next" }),
 		).toBeEnabled();
@@ -388,7 +431,7 @@ describe("The wizard on a slow or failing connection", () => {
 		await act(async () => held.resolve(aTemplateList()));
 		await next();
 
-		expect(await theThenEndField()).toHaveValue(TODAY_ON_THE_INSTANCE);
+		expect(await theThenEndField()).toHaveValue("2026-07-04");
 	});
 
 	it("says the report types could not be loaded and offers Retry, going no further", async () => {
@@ -421,166 +464,122 @@ describe("The wizard on a slow or failing connection", () => {
 	});
 });
 
-describe("Step three: Now", () => {
+describe("Then and Now side by side on the Then step", () => {
 	beforeEach(() => {
 		reportUsage.mockClear();
 		mockNavigate.mockClear();
 		terms.current = { ...defaultTerms };
 	});
 
-	it("is as long as Then until changed, always ending today", async () => {
-		await openTheWizard();
-		await next();
-		await enterNumber(await theThenLengthField(), 45);
+	it('starts a 30-day report back to back, "Then 17 Sep – 16 Oct 2026 (30 days)" and "Now 17 Oct – 15 Nov 2026 (30 days, ends today)", and creates it with no Now length', async () => {
+		const reportService = await openTheWizard(onMidNovember());
 		await next();
 
-		expect(await theNowLengthField()).toHaveValue(45);
-		expect(await theWizard()).toHaveTextContent("= 19 Aug – 2 Oct 2026");
+		await pickPreset("30 days");
+
 		expect(await theWizard()).toHaveTextContent(
-			"Sliding window, always ending today",
+			"Then 17 Sep – 16 Oct 2026 (30 days)",
 		);
-	});
-
-	it("starts on the length Then was given with one click, with that button pressed", async () => {
-		await openTheWizard();
-		await next();
-		await userEvent.click(
-			within(await theWizard()).getByRole("button", { name: "30 days" }),
-		);
-		await next();
-
-		expect(await theNowLengthField()).toHaveValue(30);
-		expect(
-			within(await theWizard()).getByRole("button", { name: "30 days" }),
-		).toHaveAttribute("aria-pressed", "true");
-	});
-
-	it("offers a Team's Now as 30 or 90 days with one click, beside its length in days", async () => {
-		await openTheWizard();
-		await next();
-		await next();
-
-		await userEvent.click(
-			within(await theWizard()).getByRole("button", { name: "30 days" }),
-		);
-
-		expect(await theNowLengthField()).toHaveValue(30);
-		expect(await theWizard()).toHaveTextContent("= 3 Sep – 2 Oct 2026");
 		expect(await theWizard()).toHaveTextContent(
-			"Sliding window, always ending today",
+			"Now 17 Oct – 15 Nov 2026 (30 days, ends today)",
 		);
-		expect(
-			within(await theWizard()).getByRole("button", { name: "90 days" }),
-		).toBeVisible();
-		expect(
-			within(await theWizard()).queryByRole("button", { name: "180 days" }),
-		).toBeNull();
-	});
-
-	it("names its length field with Length and or, and offers no Same as Then choice", async () => {
-		await openTheWizard();
+		expect(await theWizard()).not.toHaveTextContent(/overlaps/);
+		expect(await theWizard()).not.toHaveTextContent(SAME_DAYS);
 		await next();
-		await next();
+		expect(await theNameField()).toBeVisible();
+		await userEvent.click(await theCreateButton());
 
-		const wizard = within(await theWizard());
-		expect(await theNowLengthField()).toBeVisible();
-		expect(wizard.getByText("Length", { exact: true })).toBeVisible();
-		expect(wizard.getByText("or", { exact: true })).toBeVisible();
-		expect(wizard.queryByRole("radio")).toBeNull();
-		expect(wizard.queryByRole("button", { name: "Custom" })).toBeNull();
-	});
-
-	it("offers a Portfolio's Now as 90 or 180 days with one click", async () => {
-		await openTheWizard(
-			aReportService({
-				getReports: vi.fn().mockResolvedValue(aReportList([])),
+		await waitFor(() => expect(reportService.createReport).toHaveBeenCalled());
+		const created = theCreatedReport(reportService);
+		expect(created).toEqual(
+			expect.objectContaining({
+				thenAndNow: { thenEndDate: "2026-10-16", thenLengthDays: 30 },
 			}),
-			APOLLO,
-		);
-		await next();
-		await next();
-
-		await userEvent.click(
-			within(await theWizard()).getByRole("button", { name: "180 days" }),
-		);
-
-		expect(await theNowLengthField()).toHaveValue(180);
-		expect(
-			within(await theWizard()).queryByRole("button", { name: "30 days" }),
-		).toBeNull();
-	});
-
-	it("takes a Now of a custom length in days, pressing no button", async () => {
-		await openTheWizard();
-		await next();
-		await next();
-
-		await enterNumber(await theNowLengthField(), 45);
-
-		expect(await theWizard()).toHaveTextContent("= 19 Aug – 2 Oct 2026");
-		expect(await theWizard()).toHaveTextContent(
-			"Sliding window, always ending today",
-		);
-		await inSequence(["30 days", "90 days"], async (preset) => {
-			expect(
-				within(await theWizard()).getByRole("button", { name: preset }),
-			).toHaveAttribute("aria-pressed", "false");
-		});
-		expect(
-			within(await theWizard()).getByRole("button", { name: "Next" }),
-		).toBeEnabled();
-	});
-
-	it("refuses a Now shorter than 14 days and goes no further", async () => {
-		await openTheWizard();
-		await next();
-		await next();
-
-		await enterNumber(await theNowLengthField(), 13);
-
-		expect(within(await theWizard()).getByRole("alert")).toHaveTextContent(
-			"Now needs at least 14 days.",
 		);
 		expect(
-			within(await theWizard()).getByRole("button", { name: "Next" }),
-		).toBeDisabled();
+			(created as { thenAndNow: object }).thenAndNow,
+			"a new report never sends a Now length: Now is always as long as Then, so the request carries none",
+		).not.toHaveProperty("nowLengthDays");
 	});
 
-	it("refuses a Now reaching back past the oldest kept day and goes no further", async () => {
-		await openTheWizard();
-		await next();
+	it('says "Now and Then are the same days today." for a Then ending today, and still creates the report', async () => {
+		const reportService = await openTheWizard(onMidNovember());
 		await next();
 
-		await enterNumber(await theNowLengthField(), 367);
+		await chooseThenEnd("2026-11-15");
+		await enterNumber(await theThenLengthField(), 14);
 
 		expect(await theWizard()).toHaveTextContent(
-			"The Now window must start on or after 2 Oct 2025 — older finished Work Items are no longer kept.",
+			"Then 2 Nov – 15 Nov 2026 (14 days)",
 		);
-		expect(
-			within(await theWizard()).getByRole("button", { name: "Next" }),
-		).toBeDisabled();
+		expect(await theWizard()).toHaveTextContent(
+			"Now 2 Nov – 15 Nov 2026 (14 days, ends today)",
+		);
+		expect(await theWizard()).toHaveTextContent(SAME_DAYS);
+		expect(await theWizard()).not.toHaveTextContent(/overlaps/);
+		await next();
+		await userEvent.click(await theCreateButton());
+
+		await waitFor(() =>
+			expect(theCreatedReport(reportService)).toEqual(
+				expect.objectContaining({
+					thenAndNow: { thenEndDate: "2026-11-15", thenLengthDays: 14 },
+				}),
+			),
+		);
 	});
 
-	it.each(["", "-5", "14.5"])(
-		"names no window while its length reads %j, not a whole number of days",
-		async (entered) => {
-			await openTheWizard();
-			await next();
-			await next();
+	it('names the last shared day, "Now overlaps Then until 31 Oct 2026", for a Then ending inside Now', async () => {
+		await openTheWizard(onMidNovember());
+		await next();
 
-			await userEvent.clear(await theNowLengthField());
-			if (entered !== "") {
-				await userEvent.type(await theNowLengthField(), entered);
-			}
+		await chooseThenEnd("2026-10-31");
+		await pickPreset("30 days");
 
-			expect(await theWizard()).not.toHaveTextContent("Sliding window");
-			expect(
-				within(await theWizard()).getByRole("button", { name: "Next" }),
-			).toBeDisabled();
-		},
-	);
+		expect(await theWizard()).toHaveTextContent(
+			"Then 2 Oct – 31 Oct 2026 (30 days)",
+		);
+		expect(await theWizard()).toHaveTextContent(
+			"Now 17 Oct – 15 Nov 2026 (30 days, ends today)",
+		);
+		expect(await theWizard()).toHaveTextContent(
+			"Now overlaps Then until 31 Oct 2026",
+		);
+		expect(await theWizard()).not.toHaveTextContent(SAME_DAYS);
+		expect(await theNextButton()).toBeEnabled();
+	});
 
-	it("names the presets of each window for a screen reader", async () => {
+	it('refuses a length the kept history cannot hold with "Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.", shifting nothing', async () => {
+		await openTheWizard(onMidNovember("2026-09-18"));
+		await next();
+
+		await pickPreset("30 days");
+
+		expect(await theWizard()).toHaveTextContent(
+			tooLittleHistory(LIGHTSPEED_NAME, "18 Sep 2026", 30),
+		);
+		expect(await theNextButton()).toBeDisabled();
+		expect(await theThenLengthField()).toHaveValue(30);
+		expect(await theThenEndField()).toHaveValue("2026-10-16");
+
+		await enterNumber(await theThenLengthField(), 29);
+
+		expect(await theWizard()).not.toHaveTextContent(/keeps history from/);
+		expect(await theNextButton()).toBeEnabled();
+	});
+
+	it('names the Portfolio in the too-little-history line, "Apollo keeps history from 18 Sep 2026"', async () => {
+		await openTheWizard(onMidNovember("2026-09-18"), APOLLO);
+		await next();
+
+		await enterNumber(await theThenLengthField(), 30);
+
+		expect(await theWizard()).toHaveTextContent(
+			tooLittleHistory(APOLLO_NAME, "18 Sep 2026", 30),
+		);
+	});
+
+	it("names the Then presets for a screen reader", async () => {
 		await openTheWizard();
 		await next();
 
@@ -589,17 +588,9 @@ describe("Step three: Now", () => {
 				name: "Then length presets",
 			}),
 		).toBeVisible();
-
-		await next();
-
-		expect(
-			within(await theWizard()).getByRole("group", {
-				name: "Now length presets",
-			}),
-		).toBeVisible();
 	});
 
-	it("allows no fewer days in either length field than the server's shortest window", async () => {
+	it("allows no fewer days in the length field than the server's shortest window", async () => {
 		await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -611,44 +602,10 @@ describe("Step three: Now", () => {
 		await next();
 
 		expect(await theThenLengthField()).toHaveAttribute("min", "21");
-
-		await next();
-
-		expect(await theNowLengthField()).toHaveAttribute("min", "21");
-	});
-
-	it("keeps an edited Now when Then changes afterwards", async () => {
-		await openTheWizard();
-		await next();
-		await next();
-		await enterNumber(await theNowLengthField(), 60);
-
-		await userEvent.click(
-			within(await theWizard()).getByRole("button", { name: "Back" }),
-		);
-		await enterNumber(await theThenLengthField(), 45);
-		await next();
-
-		expect(await theNowLengthField()).toHaveValue(60);
-	});
-
-	it("follows a Then changed afterwards while Now is still untouched", async () => {
-		await openTheWizard();
-		await next();
-		await next();
-		expect(await theNowLengthField()).toHaveValue(90);
-
-		await userEvent.click(
-			within(await theWizard()).getByRole("button", { name: "Back" }),
-		);
-		await enterNumber(await theThenLengthField(), 45);
-		await next();
-
-		expect(await theNowLengthField()).toHaveValue(45);
 	});
 });
 
-describe("Step four: metrics and name", () => {
+describe("Step three: metrics and name", () => {
 	beforeEach(() => {
 		reportUsage.mockClear();
 		mockNavigate.mockClear();
@@ -731,7 +688,6 @@ describe("Step four: metrics and name", () => {
 		await next();
 		await chooseThenEnd("2026-07-31");
 		await next();
-		await next();
 
 		expect(await theNameField()).toHaveValue(
 			"Then & Now — 90 days to 31 Jul 2026",
@@ -747,11 +703,7 @@ describe("Step four: metrics and name", () => {
 		await userEvent.click(
 			within(await theWizard()).getByRole("button", { name: "Back" }),
 		);
-		await userEvent.click(
-			within(await theWizard()).getByRole("button", { name: "Back" }),
-		);
 		await chooseThenEnd("2026-07-31");
-		await next();
 		await next();
 
 		expect(await theNameField()).toHaveValue("Engagement start");
@@ -779,8 +731,6 @@ describe("Creating the report", () => {
 		await next();
 		await chooseThenEnd("2026-07-31");
 		await next();
-		await enterNumber(await theNowLengthField(), 30);
-		await next();
 
 		await userEvent.click(await theCreateButton());
 
@@ -796,9 +746,11 @@ describe("Creating the report", () => {
 			thenAndNow: {
 				thenEndDate: "2026-07-31",
 				thenLengthDays: 90,
-				nowLengthDays: 30,
 			},
 		});
+		expect(theCreatedReport(reportService).thenAndNow).not.toHaveProperty(
+			"nowLengthDays",
+		);
 		expect(reportUsage).toHaveBeenCalledWith({
 			name: "ReportCreated",
 			reportTemplate: "ThenAndNow",
@@ -865,7 +817,7 @@ describe("Creating the report", () => {
 	});
 
 	// The oldest kept day moves on at midnight; a wizard left open overnight can still be refused.
-	it("names the oldest kept day the server refuses Then with, not the one the wizard was opened with", async () => {
+	it('names the owner and the oldest kept day the server refuses Then with, "Lightspeed keeps history from 3 Oct 2025", not the one the wizard was opened with', async () => {
 		const reportService = await openTheWizard(
 			aReportService({
 				getReports: vi.fn().mockResolvedValue(aReportList([])),
@@ -882,9 +834,7 @@ describe("Creating the report", () => {
 
 		expect(
 			await within(await theWizard()).findByRole("alert"),
-		).toHaveTextContent(
-			"The Then window must start on or after 3 Oct 2025 — older finished Work Items are no longer kept.",
-		);
+		).toHaveTextContent(tooLittleHistory(LIGHTSPEED_NAME, "3 Oct 2025", 90));
 		await waitFor(() =>
 			expect(reportService.getTemplates).toHaveBeenCalledTimes(
 				templatesAskedFor + 1,
@@ -1046,15 +996,15 @@ describe("The wizard's steps", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	it("names its steps Type, Then, Now and Metrics & name", async () => {
+	it("names its steps Type, Then and Metrics & name, with no Now step", async () => {
 		await openTheWizard();
 
-		await inSequence(
-			["Type", "Then", "Now", "Metrics & name"],
-			async (step) => {
-				expect(within(await theWizard()).getByText(step)).toBeVisible();
-			},
-		);
+		await inSequence(["Type", "Then", "Metrics & name"], async (step) => {
+			expect(within(await theWizard()).getByText(step)).toBeVisible();
+		});
+		expect(
+			within(await theWizard()).queryByText("Now", { exact: true }),
+		).toBeNull();
 	});
 
 	it("offers no way back from the first step", async () => {
@@ -1211,14 +1161,5 @@ describe("The wizard while its bounds are read", () => {
 		expect(queryClient.getQueryState(anotherOwnersList)?.isInvalidated).toBe(
 			false,
 		);
-	});
-
-	it("names Now's length before its presets", async () => {
-		await openTheWizard();
-		await next();
-		await next();
-		await theNowLengthField();
-
-		expect(within(await theWizard()).getByText("Length")).toBeVisible();
 	});
 });

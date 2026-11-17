@@ -20,9 +20,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] CycleTimeShownTwice = [CycleTimeReportMetric.MetricKey, CycleTimeReportMetric.MetricKey];
 
-        [TestCase(14, null)]
-        [TestCase(13, ReportRefusalCodes.NowTooShort)]
-        public void A_Now_of_at_least_fourteen_days_is_accepted(int nowLengthDays, string? expectedRefusal)
+        [TestCase(90, null)]
+        [TestCase(null, null)]
+        [TestCase(45, "now-length-differs-from-then")]
+        [TestCase(13, "now-length-differs-from-then")]
+        public void A_Now_length_is_frozen_only_when_absent_or_equal_to_Thens_and_never_stored(int? nowLengthDays, string? expectedRefusal)
         {
             var frozen = Subject().Freeze(
                 Lightspeed,
@@ -31,8 +33,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(frozen.Code, Is.EqualTo(expectedRefusal));
-                Assert.That(ThenAndNowPayload.FromJson(frozen.Value ?? "null")?.NowLengthDays, Is.EqualTo(expectedRefusal is null ? nowLengthDays : null));
+                Assert.That(frozen.Code, Is.EqualTo(expectedRefusal),
+                    "WHAT: the freeze answered another refusal. WHY: Now is always as long as Then. HOW: refuse an unequal Now with now-length-differs-from-then.");
+                Assert.That(ThenAndNowPayload.FromJson(frozen.Value ?? "null")?.NowLengthDays, Is.Null,
+                    "WHAT: the frozen payload stores a Now length. WHY: Now is worked out from Then's length on every read. HOW: write no Now length.");
             }
         }
 

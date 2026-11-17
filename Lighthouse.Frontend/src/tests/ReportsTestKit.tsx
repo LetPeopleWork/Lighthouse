@@ -42,6 +42,9 @@ import {
 
 export const LIGHTSPEED: IReportOwner = { kind: "team", id: 1 };
 export const APOLLO: IReportOwner = { kind: "portfolio", id: 3 };
+/** The names the detail pages hand to the Reports tab for these owners. */
+export const LIGHTSPEED_NAME = "Lightspeed";
+export const APOLLO_NAME = "Apollo";
 
 /** The instance's day every example is set on; the browser's own clock never decides it. */
 export const TODAY_ON_THE_INSTANCE = "2026-10-02";
@@ -69,13 +72,21 @@ export const defaultTerms: Record<string, string> = {
 
 export const CAP_SENTENCE =
 	"Community includes 1 Then & Now report per Team. Delete it, or use Premium for unlimited reports.";
-export const CUTOFF_REFUSAL =
-	"The Then window must start on or after 2 Oct 2025 — older finished Work Items are no longer kept.";
+/** The line that refuses a Then the owner's kept history cannot hold, naming the owner, the oldest kept day and the length. */
+export const tooLittleHistory = (
+	ownerName: string,
+	keptFrom: string,
+	lengthDays: number,
+) =>
+	`${ownerName} keeps history from ${keptFrom}: too little for a ${lengthDays}-day Then and Now. Pick a shorter length or a later end date.`;
+export const CUTOFF_REFUSAL = tooLittleHistory(
+	LIGHTSPEED_NAME,
+	"2 Oct 2025",
+	90,
+);
 export const thenNeedsAtLeast = (days: number) =>
 	`Then needs at least ${days} days.`;
 export const THEN_TOO_SHORT = thenNeedsAtLeast(14);
-export const nowNeedsAtLeast = (days: number) =>
-	`Now needs at least ${days} days.`;
 export const THEN_TOO_LONG = "Then can't reach back that far.";
 export const NO_METRIC = "Choose at least one metric";
 export const NOT_CAPTURED = "Not captured for this report";
@@ -355,11 +366,6 @@ export const theThenEndField = async () =>
 export const theThenLengthField = async () =>
 	within(await theWizard()).findByRole("spinbutton", {
 		name: "Then length in days",
-	});
-
-export const theNowLengthField = async () =>
-	within(await theWizard()).findByRole("spinbutton", {
-		name: "Now length in days",
 	});
 
 export const theNameField = async () =>

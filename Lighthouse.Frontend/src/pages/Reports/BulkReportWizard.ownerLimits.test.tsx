@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
 	APOLLO_PORTFOLIO,
@@ -15,7 +15,6 @@ import {
 	openSettingsOf,
 	PORTFOLIOS_GROUP,
 	pickOwner,
-	pressCreateReports,
 	renderTheReportsPage,
 	selectAllOf,
 	TEAMS_GROUP,
@@ -224,30 +223,6 @@ describe("Owners that cannot hold the window", () => {
 		expect(screen.getByRole("button", { name: createCount(0) })).toBeDisabled();
 	});
 
-	it("only Now reaching past the kept history names Now, not Then", async () => {
-		const { user } = renderAsAdminOfEquinox({
-			reportService: theOwnersOffered(),
-		});
-
-		await pressCreateReports(user);
-		await user.click(await screen.findByRole("button", { name: "Next" }));
-		await user.click(await screen.findByRole("button", { name: "30 days" }));
-		fireEvent.change(screen.getByLabelText("Then ends on"), {
-			target: { value: "2026-10-20" },
-		});
-		await user.click(screen.getByRole("button", { name: "Next" }));
-		await user.click(screen.getByRole("radio", { name: "Custom" }));
-		await user.type(screen.getByLabelText("Now length in days"), "120");
-		await nextUntil(user, () => screen.queryByText(OWNER_STEP) !== null);
-
-		expect(screen.getByRole("checkbox", { name: EQUINOX.name })).toBeDisabled();
-		expect(
-			screen.getByText(keptHistoryStarts("30 Jul 2026", "30 Jun 2026", "Now"), {
-				exact: true,
-			}),
-		).toBeInTheDocument();
-	});
-
 	it("a Then starting one day before the kept history starts cannot be held", async () => {
 		const { user } = renderAsAdminOfEquinox({
 			reportService: aReportService({
@@ -367,29 +342,6 @@ describe("Owners that cannot hold the window", () => {
 			screen.getByRole("checkbox", { name: EQUINOX.name }),
 		).not.toBeChecked();
 		expect(screen.getByRole("checkbox", { name: ZENITH.name })).toBeChecked();
-	});
-
-	it("when Then and Now both reach past the kept history, the one starting furthest back is named", async () => {
-		const { user } = renderAsAdminOfEquinox({
-			reportService: theOwnersOffered(),
-		});
-
-		await pressCreateReports(user);
-		await user.click(await screen.findByRole("button", { name: "Next" }));
-		await user.click(await screen.findByRole("button", { name: "30 days" }));
-		fireEvent.change(screen.getByLabelText("Then ends on"), {
-			target: { value: "2026-08-10" },
-		});
-		await user.click(screen.getByRole("button", { name: "Next" }));
-		await user.click(screen.getByRole("radio", { name: "Custom" }));
-		await user.type(screen.getByLabelText("Now length in days"), "120");
-		await nextUntil(user, () => screen.queryByText(OWNER_STEP) !== null);
-
-		expect(
-			screen.getByText(keptHistoryStarts("30 Jul 2026", "30 Jun 2026", "Now"), {
-				exact: true,
-			}),
-		).toBeInTheDocument();
 	});
 
 	it("the reason is the description of the greyed checkbox, followed by the settings link, and a pickable owner has none", async () => {

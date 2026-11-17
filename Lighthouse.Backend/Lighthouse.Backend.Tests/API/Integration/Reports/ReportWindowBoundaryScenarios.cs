@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         internal static readonly BoundaryTableFile TheTable = ReadTheTable();
 
         private static IEnumerable<TestCaseData> TheRowsOfTheBoundaryTable()
-            => TheTable.Rows.Select(row => new TestCaseData(row).SetName($"A_window_at_an_edge_is_answered_as_the_table_says({row.Case})"));
+            => TheTable.Rows.Where(row => row.IsThen).Select(row => new TestCaseData(row).SetName($"A_window_at_an_edge_is_answered_as_the_table_says({row.Case})"));
 
         private static BoundaryTableFile ReadTheTable()
         {
@@ -108,11 +108,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             public override string ToString() => Case;
         }
 
-        /// <summary>A Then row moves Then and leaves Now at 90 days; a Now row keeps Then at the 90 days to today.</summary>
-        private static NewReport AsNewReport(BoundaryRow row) => row.IsThen
-            ? new NewReport(ThenAndNowTemplate, EngagementStart, [CycleTime],
-                new NewThenAndNow(DateOnly.ParseExact(row.End ?? string.Empty, "yyyy-MM-dd", CultureInfo.InvariantCulture), row.LengthDays, 90))
-            : new NewReport(ThenAndNowTemplate, EngagementStart, [CycleTime],
-                new NewThenAndNow(new DateOnly(2026, 10, 2), 90, row.LengthDays));
+        /// <summary>A Then row moves Then and asks for a Now of the same length; the table's Now rows can no longer be asked for, since Now is always as long as Then.</summary>
+        private static NewReport AsNewReport(BoundaryRow row) =>
+            new(ThenAndNowTemplate, EngagementStart, [CycleTime],
+                new NewThenAndNow(DateOnly.ParseExact(row.End ?? string.Empty, "yyyy-MM-dd", CultureInfo.InvariantCulture), row.LengthDays, row.LengthDays));
     }
 }

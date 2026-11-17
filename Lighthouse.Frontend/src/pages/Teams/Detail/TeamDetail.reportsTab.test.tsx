@@ -57,9 +57,15 @@ vi.mock("./Refinement/RefinementView", () => ({
 }));
 
 vi.mock("../../Common/Reports/ReportsTab", () => ({
-	default: ({ owner }: { owner: { kind: string; id: number } }) => (
+	default: ({
+		owner,
+		ownerName,
+	}: {
+		owner: { kind: string; id: number };
+		ownerName?: string;
+	}) => (
 		<div data-testid="reports-tab">
-			{owner.kind} {owner.id}
+			{owner.kind} {owner.id} named {ownerName ?? "nobody"}
 		</div>
 	),
 }));
@@ -182,13 +188,13 @@ describe("The Reports tab on a Team page", () => {
 		expect(await theReportsTab()).toBeEnabled();
 	});
 
-	it("opens the Team's reports and puts the tab in the address", async () => {
+	it("opens the Team's reports, handing the tab the Team's name \"Team Lightspeed\", and puts the tab in the address", async () => {
 		renderTheTeamPage("reader");
 
 		await userEvent.click(await theReportsTab());
 
 		expect(await screen.findByTestId("reports-tab")).toHaveTextContent(
-			"team 1",
+			"team 1 named Team Lightspeed",
 		);
 		expect(mockNavigate).toHaveBeenCalledWith("/teams/1/reports", {
 			replace: true,

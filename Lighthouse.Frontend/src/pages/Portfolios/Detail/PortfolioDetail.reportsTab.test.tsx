@@ -27,9 +27,15 @@ vi.mock("./PortfolioMetricsView", () => ({
 }));
 
 vi.mock("../../Common/Reports/ReportsTab", () => ({
-	default: ({ owner }: { owner: { kind: string; id: number } }) => (
+	default: ({
+		owner,
+		ownerName,
+	}: {
+		owner: { kind: string; id: number };
+		ownerName?: string;
+	}) => (
 		<div data-testid="reports-tab">
-			{owner.kind} {owner.id}
+			{owner.kind} {owner.id} named {ownerName ?? "nobody"}
 		</div>
 	),
 }));
@@ -129,13 +135,13 @@ describe("The Reports tab on a Portfolio page", () => {
 		]);
 	});
 
-	it("opens the Portfolio's reports for a reader", async () => {
+	it("opens the Portfolio's reports for a reader, handing the tab the Portfolio's name \"Project Apollo\"", async () => {
 		renderThePortfolioPage(`/portfolios/${APOLLO_ID}`, "reader");
 
 		await userEvent.click(await theReportsTab());
 
 		expect(await screen.findByTestId("reports-tab")).toHaveTextContent(
-			`portfolio ${APOLLO_ID}`,
+			`portfolio ${APOLLO_ID} named Project Apollo`,
 		);
 	});
 

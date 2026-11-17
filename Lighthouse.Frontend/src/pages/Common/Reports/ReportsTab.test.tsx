@@ -648,9 +648,9 @@ describe("Editing a report from the list", () => {
 		return within(row).queryByRole("button", { name: `Edit ${name}` });
 	};
 
-	const theNowLength = async () =>
-		within(await screen.findByRole("dialog")).findByRole("spinbutton", {
-			name: "Now length in days",
+	const theNameInTheWizard = async () =>
+		within(await screen.findByRole("dialog")).findByRole("textbox", {
+			name: "Name",
 		});
 
 	it("offers an admin Edit on a Then & Now report, after Export PDF and before its Delete", async () => {
@@ -699,7 +699,7 @@ describe("Editing a report from the list", () => {
 		expect(await theEditButtonOf(ENGAGEMENT_START)).toBeEnabled();
 	});
 
-	it("reads the report and opens Edit report on Now, with the report's values", async () => {
+	it("reads the report and opens Edit report on Metrics & name, with the report's values and no Now length", async () => {
 		const reportService = aReportService({
 			getReport: vi.fn().mockResolvedValue(
 				theEngagementStartReport({
@@ -722,7 +722,10 @@ describe("Editing a report from the list", () => {
 
 		const wizard = await screen.findByRole("dialog");
 		expect(wizard).toHaveTextContent("Edit report");
-		expect(await theNowLength()).toHaveValue(30);
+		expect(await theNameInTheWizard()).toHaveValue(ENGAGEMENT_START);
+		expect(
+			within(wizard).queryByRole("spinbutton", { name: "Now length in days" }),
+		).toBeNull();
 		expect(reportService.getReport).toHaveBeenCalledWith(
 			LIGHTSPEED,
 			ENGAGEMENT_START_ID,
@@ -745,12 +748,7 @@ describe("Editing a report from the list", () => {
 		await userEvent.click(
 			(await theEditButtonOf(ENGAGEMENT_START)) as HTMLElement,
 		);
-		await theNowLength();
-		await userEvent.click(
-			within(await screen.findByRole("dialog")).getByRole("button", {
-				name: "Next",
-			}),
-		);
+		await theNameInTheWizard();
 		await userEvent.click(
 			await within(await screen.findByRole("dialog")).findByRole("button", {
 				name: "Save",

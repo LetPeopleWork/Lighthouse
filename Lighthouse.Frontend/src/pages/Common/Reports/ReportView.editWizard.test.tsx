@@ -9,18 +9,15 @@ import {
 	defaultTerms,
 	ENGAGEMENT_START,
 	ENGAGEMENT_START_ID,
-	enterNumber,
 	FROZEN,
 	LIGHTSPEED,
 	NO_METRIC,
 	NOT_CAPTURED,
-	next,
 	renderWithReports,
 	STALE_SAVE,
 	theEngagementStartReport,
 	theMetricBox,
 	theNameField,
-	theNowLengthField,
 	thePanelTitles,
 	theThenEndField,
 	theThenLengthField,
@@ -33,8 +30,8 @@ import { useOwnerReports } from "./useOwnerReports";
 
 /**
  * Edit report reopens the create wizard on the report as it is. The Type and Then are shown but locked -
- * Then stays exactly as it was frozen - while how long Now is, which metrics are shown and the name can be
- * changed. A metric the report never captured cannot be ticked. An edit saved over somebody else's is
+ * Then stays exactly as it was frozen - while which metrics are shown and the name can be changed. Now is
+ * always as long as Then, so there is nothing to ask about it. A metric the report never captured cannot be ticked. An edit saved over somebody else's is
  * refused in words, never silently lost or silently winning.
  */
 
@@ -93,8 +90,7 @@ const back = async () =>
 	);
 
 const onToTheLastStep = async () => {
-	await theNowLengthField();
-	await next();
+	await theNameField();
 };
 
 /** The Reports tab's list, mounted beside the report so a refresh of it can be seen. */
@@ -123,10 +119,15 @@ describe("Editing a report", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	it("opens on Now, the first step an edit can change", async () => {
+	it("opens on Metrics & name, the first step an edit can change, and asks nothing about Now", async () => {
 		await openTheEditWizard();
 
-		expect(await theNowLengthField()).toBeEnabled();
+		expect(await theNameField()).toBeEnabled();
+		expect(
+			within(await theWizard()).queryByRole("spinbutton", {
+				name: "Now length in days",
+			}),
+		).toBeNull();
 		expect(
 			within(await theWizard()).queryByLabelText("Then ends on"),
 		).toBeNull();
@@ -137,7 +138,7 @@ describe("Editing a report", () => {
 
 	it("shows the Type locked", async () => {
 		await openTheEditWizard();
-		await theNowLengthField();
+		await theNameField();
 		await back();
 		await theThenEndField();
 		await back();
@@ -153,7 +154,7 @@ describe("Editing a report", () => {
 
 	it("shows Then as it was frozen, locked", async () => {
 		await openTheEditWizard();
-		await theNowLengthField();
+		await theNameField();
 		await back();
 
 		expect(await theThenEndField()).toHaveValue("2026-07-31");
@@ -162,10 +163,9 @@ describe("Editing a report", () => {
 		expect(await theWizard()).toHaveTextContent(FROZEN);
 	});
 
-	it("saves a new name, a new Now and the shown metrics, never Then, over the report as it was read", async () => {
+	it("saves a new name and the shown metrics, never Then, over the report as it was read, sending Then's 90 days as Now's length", async () => {
 		const reportService = await openTheEditWizard();
-		await enterNumber(await theNowLengthField(), 30);
-		await next();
+		await theNameField();
 		await userEvent.click(await theMetricBox("Work Item Age"));
 		await renameTo(SINCE_AUGUST);
 
@@ -179,7 +179,7 @@ describe("Editing a report", () => {
 					name: SINCE_AUGUST,
 					shownMetricKeys: ["cycle-time", "throughput", "wip"],
 					concurrencyToken: "token-1",
-					thenAndNow: { nowLengthDays: 30 },
+					thenAndNow: { nowLengthDays: 90 },
 				},
 			),
 		);

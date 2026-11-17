@@ -129,15 +129,12 @@ export const PERMISSIONS_COULD_NOT_LOAD =
 export const notAdminOfSome = (notAdmin: number, selected: number) =>
 	`${notAdmin} of the ${selected} selected reports ${notAdmin === 1 ? "is" : "are"} on a Team or Portfolio you are not Admin of.`;
 export const NOT_ADMIN_OF_ANY = "You are not Admin of any Team or Portfolio.";
-export const OWNER_STEP = "Step 5 of 5 — Who gets this report?";
+export const OWNER_STEP = "Step 4 of 4 — Who gets this report?";
 export const TEAMS_GROUP = "Teams";
 export const PORTFOLIOS_GROUP = "Portfolios";
 export const selectAllOf = (group: string) => `Select all ${group}`;
-export const keptHistoryStarts = (
-	keptSince: string,
-	windowStarts: string,
-	window: "Then" | "Now" = "Then",
-) => `Kept history starts ${keptSince}; ${window} starts ${windowStarts}.`;
+export const keptHistoryStarts = (keptSince: string, thenStarts: string) =>
+	`Kept history starts ${keptSince}; Then starts ${thenStarts}.`;
 export const openSettingsOf = (name: string) => `Open ${name} settings`;
 export const ONLY_ADMIN_OWNERS =
 	"Only Teams and Portfolios you are Admin of are listed.";
@@ -169,7 +166,6 @@ export const LEAVE_IT_OUT = "Leave it out";
 export const PART_OF_THE_PAGE_FAILED =
 	"Part of the page couldn't be loaded, so no PDF was made.";
 export const THEN_PRESETS = ["30 days", "90 days", "180 days", "Custom"];
-export const SAME_AS_THEN = "Same as Then";
 /** The existing Premium tooltip (`LicenseTooltip`), word for word up to the link's end. */
 export const PREMIUM_LICENSE_TOOLTIP =
 	/^This feature requires a premium license\./;

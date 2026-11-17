@@ -1,10 +1,180 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F478",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx::starts a 30-day report back to back"
+},
+"expected": "F476",
+"stimulus": "F475",
+"user_result": "F477"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F482",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx::for a Then ending today, and still creates the report"
+},
+"expected": "F480",
+"stimulus": "F479",
+"user_result": "F481"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F486",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx::for a Then ending inside Now"
+},
+"expected": "F484",
+"stimulus": "F483",
+"user_result": "F485"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F490",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx::Then and Now side by side on the Then step > refuses a length the kept history cannot hold with \"Lightspeed keeps history from 18 Sep 2026: ...\""
+},
+"expected": "F488",
+"stimulus": "F487",
+"user_result": "F489"
+},
+{
+"covers": [
+"P2",
+"P3",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8",
+"L8/F139",
+"L8/F336",
+"L8/F337"
+],
+"still_passes_if": "F494",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts::relates every Then of 14 to 400 days, ending up to 800 days back or at its default end, to Now by the days they share"
+},
+"expected": "F492",
+"stimulus": "F491",
+"user_result": "F493"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F498",
+"test": "Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.test.tsx::every Team picked gets the same comparison, in the order the step lists them, with no Now length sent"
+},
+"expected": "F496",
+"stimulus": "F495",
+"user_result": "F497"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5",
+"L5/F157",
+"L5/F158",
+"L5/F159",
+"L5/F160"
+],
+"still_passes_if": "F502",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs::A_Now_length_is_accepted_only_when_absent_or_equal_to_Thens"
+},
+"expected": "F500",
+"stimulus": "F499",
+"user_result": "F501"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F506",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs::A_report_left_at_its_default_end_starts_back_to_back_and_reads_a_Now_as_long_as_Then_ending_today"
+},
+"expected": "F504",
+"stimulus": "F503",
+"user_result": "F505"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F510",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs::Reports_created_for_several_Teams_at_once_each_read_a_Now_as_long_as_Then_ending_today"
+},
+"expected": "F508",
+"stimulus": "F507",
+"user_result": "F509"
+},
+{
+"covers": [
+"P1",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"L2/F139",
+"L2/F140"
+],
+"still_passes_if": "F514",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs::A_Then_accepted_at_create_has_a_Now_of_its_length_inside_the_kept_history"
+},
+"expected": "F512",
+"stimulus": "F511",
+"user_result": "F513"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F518",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx::names the owner and the oldest kept day the server refuses Then with"
+},
+"expected": "F516",
+"stimulus": "F515",
+"user_result": "F517"
+}
+]
+},
 "counters": {
 "B": 3,
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 474,
+"F": 518,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -2300,11 +2470,55 @@
 "F472": "NowRefusal and NowWindow removed",
 "F473": "Gains the Now-window owner rule",
 "F474": "S2 adds ReportWindow.NowEndingOn and calls it from Read in the same change; Edit drops its Now check; no structure must move first",
+"F475": "On 15 Nov 2026 a Team Admin of Lightspeed opens Create Report, picks a Then of 30 days, keeps the default end and creates the report",
+"F476": "The Then step reads 'Then 17 Sep – 16 Oct 2026 (30 days)' and 'Now 17 Oct – 15 Nov 2026 (30 days, ends today)' with no overlap or same-days line; Next leads straight to Metrics & name; the create request has Then ending 16 Oct 2026, 30 days, and no Now length",
+"F477": "She sees both windows back to back by date and is never asked about Now",
+"F478": "A wizard that shows the right dates but still sends a Now length equal to Then in the request (the request is checked to have no Now length member)",
+"F479": "On 15 Nov 2026 she sets Then to end 15 Nov 2026 with 14 days and creates the report",
 "F48": "Throughput not captured shows no Total change",
+"F480": "Then and Now both read 2 Nov – 15 Nov 2026 (14 days), the line 'Now and Then are the same days today. Now moves forward from tomorrow; the comparison becomes meaningful as days pass.' shows, no overlap line, and the report is created with Then ending 15 Nov 2026, 14 days",
+"F481": "She is told the windows are the same days today and can still create the report",
+"F482": "A wizard showing the same-days line also for a Then ending yesterday (covered by the windowsRelationOf table and the window law)",
+"F483": "On 15 Nov 2026 she sets Then to end 31 Oct 2026 with 30 days",
+"F484": "Then reads 2 Oct – 31 Oct 2026 (30 days), Now reads 17 Oct – 15 Nov 2026 (30 days, ends today), the line 'Now overlaps Then until 31 Oct 2026' shows and Next stays enabled",
+"F485": "She sees exactly until which day the two windows share days",
+"F486": "A relation that shows the overlap one day early, for a Then ending the day before Now starts (covered by the window law and its table row)",
+"F487": "Lightspeed keeps history from 18 Sep 2026; on 15 Nov 2026 she picks a 30-day Then left at its default end, then tries 29 days; a Portfolio Apollo with the same history gets 30 days",
+"F488": "The line 'Lightspeed keeps history from 18 Sep 2026: too little for a 30-day Then and Now. Pick a shorter length or a later end date.' shows, Next is disabled, length and end stay 30 days and 16 Oct 2026; with 29 days the line goes and Next is enabled; for Apollo the line names Apollo",
+"F489": "She learns which owner's history is too short and what to change, and nothing is shifted silently",
 "F49": "a report created before {Throughput} was captured",
+"F490": "A wizard naming the owner by its kind word only ('This Team') even when the detail page handed it the name (the line is compared in full with the owner's name)",
+"F491": "Any Then of 14 to 400 days ending up to 800 days before 15 Nov 2026, or left at its default end, including the Then ending today, the day before Now starts and the day Now starts",
+"F492": "Then and Now have the same length, Now ends today; the relation is same days exactly when Then ends today, overlap until Then's last day exactly when Then ends on or after Now's first day, else apart; the default end is always apart",
+"F493": "The overlap and same-days lines never show one day early or name the wrong day",
+"F494": "A relation correct for every generated day but wrong for Thens longer than 400 days, outside the generated range",
+"F495": "On the Reports page a Team Admin creates Then & Now reports for several Teams at once with a Then of 30, 90 or 180 days",
+"F496": "The wizard names its steps Type, Then, Metrics & name and Owners with no Now step and no 'Same as Then' or 'Custom' Now choice; each Then ends the day before Now starts; the bulk request carries no Now length",
+"F497": "She is never asked about Now when creating for several owners",
+"F498": "A bulk wizard sending nowLengthDays undefined that serialises away (the request is checked for no Now length member, which undefined would still pass; harmless on the wire)",
+"F499": "At the Reports service on 2 Oct 2026 a 90-day Then ending today is created asking for a Now of 45, 0, 14, 90 days or no Now length",
 "F5": "today is 15 Nov 2026 and Elena, a {Team} Admin of Team Lightspeed, creates a Then & Now report",
 "F50": "no Total change is shown and {Throughput} is not judged in the CHANGE summary",
+"F500": "45, 0 and 14 days are refused with now-length-differs-from-then and the Team holds no report; 90 days and no Now length are created and read back a Now of 2026-07-05 to 2026-10-02, 90 days",
+"F501": "No report can be made with a Now of another length than its Then",
+"F502": "A server that refuses an unequal Now but still stores the requested Now length on an equal one (the frozen payload is checked to hold no Now length in ThenAndNowTemplateTest)",
+"F503": "At the Reports service a 30-day Then ending the day before Now starts is created with no Now length",
+"F504": "The report reads Then 2026-08-04 to 2026-09-02 and Now 2026-09-03 to 2026-10-02, both 30 days",
+"F505": "The saved report has a 30-day Now ending today, back to back with Then",
+"F506": "A server that reads Now from a stored length equal to Then's (indistinguishable at the port in this slice; S2 drops the stored read)",
+"F507": "At the bulk Reports service three Teams get a 30-day Then ending the day before Now starts, with no Now length",
+"F508": "Every Team's report is created and reads a Now of 2026-09-03 to 2026-10-02, 30 days",
+"F509": "Every report made for several owners at once has a Now as long as its Then ending today",
 "F51": "Single-owner Create wizard on the {Team} and {Portfolio} Reports tab: no Now step; back-to-back default; Then step shows both windows by date with the same-days, overlap-until and too-little-history messages.",
+"F510": "A bulk create that accepts a Now length different from Then for several owners (the single-owner refusal rows cover the shared Freeze rule, not the bulk path)",
+"F511": "Seeded Thens of 14 to 400 days ending up to 800 days back, for Teams keeping 1 to 900 days or every item, including a Then ending today and one starting exactly on the oldest kept day",
+"F512": "A Then starting before the oldest kept day is refused then-before-cutoff; every other Then is created and reads a Now of the same length ending today that starts on or after the oldest kept day",
+"F513": "Whenever Then fits the kept history, the matching Now fits too",
+"F514": "A policy wrong only for Thens longer than 400 days or Teams keeping more than 900 days, outside the generated range",
+"F515": "The server refuses a Create for then-before-cutoff naming 3 Oct 2025; the Team and Portfolio pages hand their names to the Reports tab",
+"F516": "After the refused Create the wizard reads 'Lightspeed keeps history from 3 Oct 2025: too little for a 90-day Then and Now. Pick a shorter length or a later end date.'; the Team page hands the tab 'Team Lightspeed' and the Portfolio page 'Project Apollo' (TeamDetail.reportsTab and PortfolioDetail.reportsTab tests)",
+"F517": "The too-little-history line names the owner whose page she is on, also when the server refuses after Create",
+"F518": "A detail page passing a stale or different owner's name (the stand-in shows exactly the loaded owner's name)",
 "F52": "Bulk Create wizard on the app-level Reports page: no 'Same as Then / Custom' Now choice; every saved report's Now = Then.",
 "F54": "Edit report: name and shown metrics only.",
 "F55": "The API refuses a create or edit carrying a Now length different from Then's; absent or equal is accepted.",

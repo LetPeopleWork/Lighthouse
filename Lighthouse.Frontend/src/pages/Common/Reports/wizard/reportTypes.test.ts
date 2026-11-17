@@ -17,7 +17,7 @@ const templates: IReportTemplates = {
 
 const thenAndNow = reportTypes["then-and-now"];
 
-const [thenStep, nowStep, metricsAndNameStep] = thenAndNow.steps;
+const [thenStep, metricsAndNameStep] = thenAndNow.steps;
 
 const draftWith = (changes: Partial<ThenAndNowDraft>): ThenAndNowDraft => ({
 	...newThenAndNowDraft(),
@@ -25,10 +25,9 @@ const draftWith = (changes: Partial<ThenAndNowDraft>): ThenAndNowDraft => ({
 });
 
 describe("the Then & Now report type", () => {
-	it("adds the Then, Now and Metrics & name steps, in that order", () => {
+	it("adds the Then and Metrics & name steps, in that order, and asks nothing about Now", () => {
 		expect(thenAndNow.steps.map((step) => step.label)).toEqual([
 			"Then",
-			"Now",
 			"Metrics & name",
 		]);
 	});
@@ -43,15 +42,6 @@ describe("the Then & Now report type", () => {
 		["the server would refuse it", { thenLength: "13" }],
 	])("leaves Then incomplete while %s", (_, changes) => {
 		expect(thenStep.isComplete(draftWith(changes), templates)).toBe(false);
-	});
-
-	it.each([
-		["30", true],
-		["0", false],
-	])("completes Now of %j days: %j", (nowLength, expected) => {
-		expect(nowStep.isComplete(draftWith({ nowLength }), templates)).toBe(
-			expected,
-		);
 	});
 
 	it.each([

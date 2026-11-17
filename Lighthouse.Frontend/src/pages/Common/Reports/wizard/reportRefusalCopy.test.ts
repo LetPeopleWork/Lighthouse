@@ -13,6 +13,8 @@ const words: RefusalWords = {
 	earliestStart: "2025-10-02",
 	ownerTerm: "Team",
 	workItemsTerm: "Work Items",
+	ownerName: "Lightspeed",
+	thenLengthDays: 90,
 };
 
 const COULD_NOT_CREATE = "The report couldn't be created. Try again.";
@@ -34,13 +36,7 @@ describe("refusalCopyFor", () => {
 		["then-ends-in-the-future", "Then cannot end after today."],
 		[
 			"then-before-cutoff",
-			"The Then window must start on or after 2 Oct 2025 — older finished Work Items are no longer kept.",
-		],
-		["now-too-short", "Now needs at least 14 days."],
-		["now-too-long", "Now can't reach back that far."],
-		[
-			"now-before-cutoff",
-			"The Now window must start on or after 2 Oct 2025 — older finished Work Items are no longer kept.",
+			"Lightspeed keeps history from 2 Oct 2025: too little for a 90-day Then and Now. Pick a shorter length or a later end date.",
 		],
 		["name-missing", "Give the report a name."],
 		["name-too-long", "A report name can be at most 200 characters."],
@@ -69,22 +65,36 @@ describe("refusalCopyFor", () => {
 		expect(refusalCopyFor(refusal(code), words)).toBe(expected);
 	});
 
-	it("names the oldest kept day the refusal gives over the one the wizard opened with", () => {
+	it('names the oldest kept day the refusal gives over the one the wizard opened with, "keeps history from 15 Nov 2025"', () => {
 		expect(
 			refusalCopyFor(refusal("then-before-cutoff", "2025-11-15"), words),
-		).toContain("on or after 15 Nov 2025");
+		).toContain("Lightspeed keeps history from 15 Nov 2025:");
 	});
 
-	it("keeps the day the wizard opened with when the refusal names none", () => {
+	it('keeps the day the wizard opened with when the refusal names none, "keeps history from 2 Oct 2025"', () => {
 		expect(
 			refusalCopyFor(refusal("then-before-cutoff", undefined), words),
-		).toContain("on or after 2 Oct 2025");
+		).toContain("Lightspeed keeps history from 2 Oct 2025:");
 	});
 
-	it("speaks of the oldest kept day when the refusal says no day is cut off", () => {
+	it('names the length the Then was entered with, "too little for a 30-day Then and Now"', () => {
 		expect(
-			refusalCopyFor(refusal("then-before-cutoff", null), words),
-		).toContain("on or after the oldest kept day");
+			refusalCopyFor(refusal("then-before-cutoff"), {
+				...words,
+				thenLengthDays: 30,
+			}),
+		).toContain("too little for a 30-day Then and Now.");
+	});
+
+	it('says "This Team keeps history from 2 Oct 2025" when it has no owner name', () => {
+		expect(
+			refusalCopyFor(refusal("then-before-cutoff"), {
+				...words,
+				ownerName: undefined,
+			}),
+		).toBe(
+			"This Team keeps history from 2 Oct 2025: too little for a 90-day Then and Now. Pick a shorter length or a later end date.",
+		);
 	});
 
 	it.each([

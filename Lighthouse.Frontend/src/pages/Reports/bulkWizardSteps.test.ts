@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { IReportTemplates } from "../../models/Reports/Report";
-import { newBackToBackDraft } from "../Common/Reports/wizard/thenAndNow/thenAndNowDraft";
+import { newThenAndNowDraft } from "../Common/Reports/wizard/thenAndNow/thenAndNowDraft";
 import {
 	createActionOf,
 	createLabelOf,
@@ -21,17 +21,10 @@ const templates: IReportTemplates = {
 };
 
 const THEN_STEP = 1;
-const NOW_STEP = 2;
 
 describe("the steps of the bulk wizard, in order", () => {
 	it("lists Type, then the type's own steps, then Owners", () => {
-		expect(STEP_LABELS).toEqual([
-			"Type",
-			"Then",
-			"Now",
-			"Metrics & name",
-			"Owners",
-		]);
+		expect(STEP_LABELS).toEqual(["Type", "Then", "Metrics & name", "Owners"]);
 	});
 
 	it("puts the owner step last", () => {
@@ -44,9 +37,8 @@ describe("the steps of the bulk wizard, in order", () => {
 	});
 
 	it("answers each step in between with the type's step of that label", () => {
-		expect([1, 2, 3].map((at) => typeStepAt(at)?.label)).toEqual([
+		expect([1, 2].map((at) => typeStepAt(at)?.label)).toEqual([
 			"Then",
-			"Now",
 			"Metrics & name",
 		]);
 	});
@@ -56,7 +48,7 @@ describe("what Next does on each step", () => {
 	const onNext = vi.fn();
 
 	it("is offered on the Type step, enabled", () => {
-		expect(nextActionOf(0, newBackToBackDraft(), templates, onNext)).toEqual({
+		expect(nextActionOf(0, newThenAndNowDraft(), templates, onNext)).toEqual({
 			label: "Next",
 			onClick: onNext,
 			disabled: false,
@@ -65,7 +57,7 @@ describe("what Next does on each step", () => {
 
 	it("is not offered on the owner step", () => {
 		expect(
-			nextActionOf(OWNER_STEP, newBackToBackDraft(), templates, onNext),
+			nextActionOf(OWNER_STEP, newThenAndNowDraft(), templates, onNext),
 		).toBeUndefined();
 	});
 
@@ -78,22 +70,18 @@ describe("what Next does on each step", () => {
 			THEN_STEP,
 			{ thenEnd: "2026-10-03", thenLength: "30" },
 		],
-		["Now's length is not a whole number", NOW_STEP, { nowLength: "14.5" }],
-		["Now is shorter than the shortest Now", NOW_STEP, { nowLength: "13" }],
 	])("is held while %s", (_why, step, entered) => {
-		const draft = { ...newBackToBackDraft(), ...entered };
+		const draft = { ...newThenAndNowDraft(), ...entered };
 
 		expect(nextActionOf(step, draft, templates, onNext)?.disabled).toBe(true);
 	});
 
-	it.each([THEN_STEP, NOW_STEP])(
-		"is enabled on step %i for the draft a new wizard starts with",
-		(step) => {
-			expect(
-				nextActionOf(step, newBackToBackDraft(), templates, onNext)?.disabled,
-			).toBe(false);
-		},
-	);
+	it("is enabled on the Then step for the draft a new wizard starts with", () => {
+		expect(
+			nextActionOf(THEN_STEP, newThenAndNowDraft(), templates, onNext)
+				?.disabled,
+		).toBe(false);
+	});
 });
 
 describe("what Create does on the owner step", () => {
