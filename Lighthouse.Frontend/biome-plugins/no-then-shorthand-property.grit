@@ -1,0 +1,6 @@
+language js
+
+JsShorthandPropertyObjectMember(name=$name) where {
+    $name <: r"^then$",
+    register_diagnostic(span=$name, message="Do not add a `then` member to an object, not even as a shorthand: it turns the object into a thenable that await and Promise.resolve call. Name it after what it holds, for example thenWindow.", severity="error")
+}

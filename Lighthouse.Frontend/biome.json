@@ -11,7 +11,8 @@
 		"./biome-plugins/wrap-own-reducer.grit",
 		"./biome-plugins/merge-consecutive-push.grit",
 		"./biome-plugins/use-concise-digit-class.grit",
-		"./biome-plugins/no-day-count-from-milliseconds.grit"
+		"./biome-plugins/no-day-count-from-milliseconds.grit",
+		"./biome-plugins/no-then-shorthand-property.grit"
 	],
 	"linter": {
 		"rules": {
