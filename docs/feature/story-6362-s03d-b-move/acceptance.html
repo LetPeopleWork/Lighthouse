@@ -151,7 +151,137 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled assembly and look up the two Delivery forecast block records by name
+</code></pre>
+
+<pre><code>Both records live in the Promises Domain, none is left under the old Models folder, the Domain holds exactly them, and it reaches only the shared kernel and the base library
+</code></pre>
+
+<pre><code>Nothing a user sees changes; the Delivery forecast records sit in the Promises module&#x27;s pure layer
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::TheForecastBlockRecords_LiveInThePromisesDomain_AndNoneIsLeftUnderModelsDeliverySources</p>
+
+<pre><code>the Domain holds the records plus a type that reaches a repository (covered by the Domain-reach and exact-holdings tests), or the records are copied into the Domain while the old copy stays
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled assembly and look up the rule service, projector with its values, renderer, publishing service, source resolver with the portfolio source preview, source sync and their interfaces by name
+</code></pre>
+
+<pre><code>Every one lives in the Promises Application and none is left under Services; a missing or renamed name fails as missing
+</code></pre>
+
+<pre><code>Delivery rules, sources and forecast publishing keep working from their new home in the Promises module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::TheDeliveryRuleServiceAndItsInterface_LiveInThePromisesApplication_AndNoneIsLeftUnderServices</p>
+
+<pre><code>an interface moved while its class stays behind, or a list name drifts from the type so the check looks at nothing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the compiled test assembly and look up the seven moved unit-test classes by name
+</code></pre>
+
+<pre><code>Each lives in the matching Promises Application test folder and none is left under the old Services test folders
+</code></pre>
+
+<pre><code>Contributors find the unit tests next to the module they protect
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::TheUnitTestsOfTheMovedServices_LiveInThePromisesApplicationTestFolder_AndNoneIsLeftUnderServices</p>
+
+<pre><code>a test class is copied to the new folder while the old one stays (the left-behind check names it)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the Domain rule on a made-up Domain type that reaches a repository, next to a compliant twin
+</code></pre>
+
+<pre><code>The failure names the offender and the repository it reached; the twin is not reported
+</code></pre>
+
+<pre><code>No user-visible change; the Domain rule cannot go vacuous
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::APromisesDomainTypeThatReachesARepository_IsReported_AndItsCompliantTwinIsNot</p>
+
+<pre><code>a rule that reports every Domain type, or none
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the layout rule on a list name that no type in the assembly matches
+</code></pre>
+
+<pre><code>The rule fails naming the missing type
+</code></pre>
+
+<pre><code>No user-visible change; a drifted list cannot pass unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::ANameThatNoTypeMatches_FailsTheLayoutRuleAsMissing_InsteadOfPassingUnseen</p>
+
+<pre><code>a rule that ignores names with no type
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

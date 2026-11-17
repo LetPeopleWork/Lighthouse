@@ -2,7 +2,157 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Read the compiled assembly and look up the two Delivery forecast block records by name
+```
+
+```text
+Both records live in the Promises Domain, none is left under the old Models folder, the Domain holds exactly them, and it reaches only the shared kernel and the base library
+```
+
+```text
+Nothing a user sees changes; the Delivery forecast records sit in the Promises module's pure layer
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesLayoutArchUnitTest\.cs\:\:TheForecastBlockRecords\_LiveInThePromisesDomain\_AndNoneIsLeftUnderModelsDeliverySources
+
+```text
+the Domain holds the records plus a type that reaches a repository (covered by the Domain-reach and exact-holdings tests), or the records are copied into the Domain while the old copy stays
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Read the compiled assembly and look up the rule service, projector with its values, renderer, publishing service, source resolver with the portfolio source preview, source sync and their interfaces by name
+```
+
+```text
+Every one lives in the Promises Application and none is left under Services; a missing or renamed name fails as missing
+```
+
+```text
+Delivery rules, sources and forecast publishing keep working from their new home in the Promises module
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesLayoutArchUnitTest\.cs\:\:TheDeliveryRuleServiceAndItsInterface\_LiveInThePromisesApplication\_AndNoneIsLeftUnderServices
+
+```text
+an interface moved while its class stays behind, or a list name drifts from the type so the check looks at nothing
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Read the compiled test assembly and look up the seven moved unit-test classes by name
+```
+
+```text
+Each lives in the matching Promises Application test folder and none is left under the old Services test folders
+```
+
+```text
+Contributors find the unit tests next to the module they protect
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesLayoutArchUnitTest\.cs\:\:TheUnitTestsOfTheMovedServices\_LiveInThePromisesApplicationTestFolder\_AndNoneIsLeftUnderServices
+
+```text
+a test class is copied to the new folder while the old one stays (the left-behind check names it)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Run the Domain rule on a made-up Domain type that reaches a repository, next to a compliant twin
+```
+
+```text
+The failure names the offender and the repository it reached; the twin is not reported
+```
+
+```text
+No user-visible change; the Domain rule cannot go vacuous
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesLayoutArchUnitTest\.cs\:\:APromisesDomainTypeThatReachesARepository\_IsReported\_AndItsCompliantTwinIsNot
+
+```text
+a rule that reports every Domain type, or none
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P4
+
+```text
+Run the layout rule on a list name that no type in the assembly matches
+```
+
+```text
+The rule fails naming the missing type
+```
+
+```text
+No user-visible change; a drifted list cannot pass unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesLayoutArchUnitTest\.cs\:\:ANameThatNoTypeMatches\_FailsTheLayoutRuleAsMissing\_InsteadOfPassingUnseen
+
+```text
+a rule that ignores names with no type
+```
+
+###### Obligations
+
 
 ## Expectations
 

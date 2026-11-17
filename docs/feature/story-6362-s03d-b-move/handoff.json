@@ -1,9 +1,98 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1"
+],
+"still_passes_if": "F141",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::TheForecastBlockRecords_LiveInThePromisesDomain_AndNoneIsLeftUnderModelsDeliverySources"
+},
+"expected": "F139",
+"stimulus": "F138",
+"user_result": "F140"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1",
+"L1/F100"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::TheDeliveryRuleServiceAndItsInterface_LiveInThePromisesApplication_AndNoneIsLeftUnderServices"
+},
+"expected": "F143",
+"stimulus": "F142",
+"user_result": "F144"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F149",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::TheUnitTestsOfTheMovedServices_LiveInThePromisesApplicationTestFolder_AndNoneIsLeftUnderServices"
+},
+"expected": "F147",
+"stimulus": "F146",
+"user_result": "F148"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1",
+"L1/F102"
+],
+"still_passes_if": "F153",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::APromisesDomainTypeThatReachesARepository_IsReported_AndItsCompliantTwinIsNot"
+},
+"expected": "F151",
+"stimulus": "F150",
+"user_result": "F152"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F101"
+],
+"still_passes_if": "F157",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs::ANameThatNoTypeMatches_FailsTheLayoutRuleAsMissing_InsteadOfPassingUnseen"
+},
+"expected": "F155",
+"stimulus": "F154",
+"user_result": "F156"
+}
+]
+},
 "counters": {
 "C": 1,
 "D": 7,
 "E": 4,
-"F": 137,
+"F": 157,
 "K": 3,
 "L": 2,
 "P": 4,
@@ -1104,8 +1193,28 @@
 "F135": "The unit tests of each moved Promises type run and pass, and each architecture rule that names a moved type reports Passed for its new place, with the rule comparing both ways. The backend-tests probe lists each moved type unit test class as Passed, and the architecture-rules probe lists those named rules as Passed.",
 "F136": "When a Portfolio forecasts are updated, its Delivery metric snapshot is recorded before its forecasts are published. The order-pin test reports Passed by name, and the forecast-triggers-show probe lists the snapshot recording ahead of the forecast publication.",
 "F137": "Nothing a user, a tracker or the database sees changes. The deliveries-answers-compare probe against the base revision prints IDENTICAL for the Delivery answers over the demo scenarios, the ef-model-unchanged probe reports the database model unchanged, the refresh-reactions-show and forecast-triggers-show probes show the same reactions as before, and the existing backend test classes report Passed.",
+"F138": "Read the compiled assembly and look up the two Delivery forecast block records by name",
+"F139": "Both records live in the Promises Domain, none is left under the old Models folder, the Domain holds exactly them, and it reaches only the shared kernel and the base library",
 "F14": "Behaviour-free (D-0, D-4, D-10): no class is created, split, merged or renamed, no signature changes, no entity, DbSet, migration, route or DTO changes. Repositories, entities, update code, write-back round, ordering and ranking stay. Program.cs lines and order stay; only usings and full type names change, and the two PortfolioForecastsUpdated registrations keep their order (snapshot recording, then publishing).",
+"F140": "Nothing a user sees changes; the Delivery forecast records sit in the Promises module's pure layer",
+"F141": "the Domain holds the records plus a type that reaches a repository (covered by the Domain-reach and exact-holdings tests), or the records are copied into the Domain while the old copy stays",
+"F142": "Read the compiled assembly and look up the rule service, projector with its values, renderer, publishing service, source resolver with the portfolio source preview, source sync and their interfaces by name",
+"F143": "Every one lives in the Promises Application and none is left under Services; a missing or renamed name fails as missing",
+"F144": "Delivery rules, sources and forecast publishing keep working from their new home in the Promises module",
+"F145": "an interface moved while its class stays behind, or a list name drifts from the type so the check looks at nothing",
+"F146": "Read the compiled test assembly and look up the seven moved unit-test classes by name",
+"F147": "Each lives in the matching Promises Application test folder and none is left under the old Services test folders",
+"F148": "Contributors find the unit tests next to the module they protect",
+"F149": "a test class is copied to the new folder while the old one stays (the left-behind check names it)",
 "F15": "Tests move with production (D-9): unit tests of the moved files move in a separate commit to Lighthouse.Backend.Tests/Modules/Promises/<same sub-folder>; integration, acceptance and controller tests stay. The 12 Jira test files that construct the renderer, JiraDeliverySourceProviderTest, WorkTrackingConnectorFactoryTest and JiraConnectorTestSetup get a using line only; the improve-the-tests rule applies to DeliveryMetricSnapshotRecordingHandlerTest in S2 and is waived for move-only and using-only edits.",
+"F150": "Run the Domain rule on a made-up Domain type that reaches a repository, next to a compliant twin",
+"F151": "The failure names the offender and the repository it reached; the twin is not reported",
+"F152": "No user-visible change; the Domain rule cannot go vacuous",
+"F153": "a rule that reports every Domain type, or none",
+"F154": "Run the layout rule on a list name that no type in the assembly matches",
+"F155": "The rule fails naming the missing type",
+"F156": "No user-visible change; a drifted list cannot pass unseen",
+"F157": "a rule that ignores names with no type",
 "F16": "Rule lists follow the move and are never loosened: full-name strings in TrackerIntegrationModuleBoundariesArchUnitTest, WorkItemsModuleBoundariesArchUnitTest and DeliveryRuleServiceApiPreservationTest are rewritten to the new names and stay compared both ways; a rule exemption for a moved type is exact (type and nested types by full name), proved by a throwaway probe that is reverted. Old classifier alternatives stay until feature C. PromisesMembership and PromisesMembershipArchUnitTest are namespace-agnostic and stay unedited.",
 "F17": "Oracles are IL architecture tests through ModuleRules (TypesLiveInTheirLayer, DomainReachesOnlyTheKernelAndTheBaseLibrary), modelled on ForecastingDomainLayoutArchUnitTest and WorkItemsApplicationLayoutArchUnitTest. Each looks every moved type up by name in the compiled assembly and fails when it is not found (never vacuous); top-level types are compared (nested names reduced to the part before the plus sign). Made-up offenders live in a fixture namespace such as Lighthouse.Backend.Modules.PromisesFixtures. They start no host.",
 "F18": "Claim-to-checker: namespace placement, Domain reach and handler order are finite facts read from the compiled IL and the composition root, checked by the two ArchUnit oracles (Finite laws) and by EXAMINE probes (architecture-rules, backend-tests, ef-model-unchanged, deliveries-answers-compare, deliveries-answers-selftest, refresh-reactions-show, test-selection-show, ci-live-suites-show). No Quint, TLA+ or Agda model: nothing is a state machine, queue or proof obligation (no handler, schedule or queue moves) and a model would restate the namespace map. Liveness not applicable: no progress property exists. Type strength: native C# namespaces, no new types; invalid placement is excluded by the IL rules, not by construction.",
