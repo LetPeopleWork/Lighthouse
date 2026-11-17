@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using NUnit.Framework;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Tests.Modules.Promises.Application
 {
     /// <summary>
     /// DISTILL acceptance specifications for Epic 5565 slice 04 - composing the published block and

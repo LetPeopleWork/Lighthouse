@@ -10,7 +10,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Modules.Promises.Application
 {
     public class DeliveryMetricValuesProjectorTest
     {

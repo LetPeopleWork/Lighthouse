@@ -8,7 +8,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Tests.Modules.Promises.Application
 {
     /// <summary>
     /// The pass that makes a bound Delivery follow its Release without anyone asking it to. It runs

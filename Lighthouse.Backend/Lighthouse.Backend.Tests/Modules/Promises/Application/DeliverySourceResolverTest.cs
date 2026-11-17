@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Tests.Modules.Promises.Application
 {
     /// <summary>
     /// Turning what a remote says a bound source is into what it means for one Portfolio: the reference

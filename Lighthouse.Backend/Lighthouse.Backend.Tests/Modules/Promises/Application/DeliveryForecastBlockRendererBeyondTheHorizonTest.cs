@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Services.Implementation.DeliverySources;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Tests.Modules.Promises.Application
 {
     /// <summary>
     /// A Delivery that publishes its forecast into a Jira Release writes one line per percentile. A

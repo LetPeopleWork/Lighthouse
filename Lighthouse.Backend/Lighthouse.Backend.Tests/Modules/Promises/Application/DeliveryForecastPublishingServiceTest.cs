@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
+namespace Lighthouse.Backend.Tests.Modules.Promises.Application
 {
     /// <summary>
     /// The pass that broadcasts a Delivery's forecast back onto the Release it follows. It hangs off the
