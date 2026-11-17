@@ -2,7 +2,8 @@
 "counters": {
 "B": 2,
 "C": 1,
-"F": 165,
+"E": 6,
+"F": 171,
 "L": 3,
 "P": 5,
 "S": 1,
@@ -646,6 +647,52 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F166"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F167"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F168"
+},
+{
+"id": "E4",
+"promises": [
+"P3"
+],
+"text": "F169"
+},
+{
+"id": "E5",
+"promises": [
+"P4"
+],
+"text": "F170"
+},
+{
+"id": "E6",
+"promises": [
+"P5"
+],
+"text": "F171"
+}
+]
+},
 "facts": {
 "F1": "Show Arrivals in reports: have the option to show Arrivals in the (Then & Now) reports as well, compared against Throughput, Then against Now.",
 "F10": "that side reads as many started as finished; a gap of 0.006 reads 0.01 more started than finished per day",
@@ -721,7 +768,13 @@
 "F163": "Sentence and change agree",
 "F164": "A second rounding site",
 "F165": "Covered by both broad laws",
+"F166": "On a Then and Now report for a Team or a Portfolio the reader can tick Arrivals, and the report then shows an Arrivals panel with a Then part and a Now part.",
+"F167": "Each Arrivals part shows Work Items started in total and per day, Throughput per day, and the gap per day (started minus finished) in words with its sign. The gap carries a change mark where a lower gap is better, and no percent change is shown.",
+"F168": "For a Team report with Then started 1.10 and finished 0.80 per day and Now started 0.90 and finished 1.00 per day, the opened report reads 0.30 more started than finished per day for Then and 0.10 fewer started than finished per day for Now, and marks the gap change of 0.40 per day as better, with no percent.",
+"F169": "A gap per day that rounds to zero reads as many started as finished (for example 0.004), and a gap of 0.006 reads 0.01 more started than finished per day.",
 "F17": "the reader exports it as a PDF",
+"F170": "A report created before this release does not offer Arrivals when opened or edited, and wherever Arrivals would appear on it, it reads Not captured for this report.",
+"F171": "Exporting a report that shows Arrivals as a PDF prints the Arrivals panel with the same values and words as on screen.",
 "F18": "the Arrivals panel prints with the same values and words as on screen",
 "F19": "A new Arrivals metric on Then & Now reports for Teams and Portfolios: wizard checkbox, panel, change mark on the gap, header change summary, Not captured on older reports, PDF",
 "F2": "A report reader sees whether the balance between Work Items started and finished got better from Then to Now",

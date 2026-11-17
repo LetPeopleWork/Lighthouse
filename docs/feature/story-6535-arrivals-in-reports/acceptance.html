@@ -155,7 +155,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>On a Then and Now report for a Team or a Portfolio the reader can tick Arrivals, and the report then shows an Arrivals panel with a Then part and a Now part.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Each Arrivals part shows Work Items started in total and per day, Throughput per day, and the gap per day (started minus finished) in words with its sign. The gap carries a change mark where a lower gap is better, and no percent change is shown.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>For a Team report with Then started 1.10 and finished 0.80 per day and Now started 0.90 and finished 1.00 per day, the opened report reads 0.30 more started than finished per day for Then and 0.10 fewer started than finished per day for Now, and marks the gap change of 0.40 per day as better, with no percent.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>A gap per day that rounds to zero reads as many started as finished (for example 0.004), and a gap of 0.006 reads 0.01 more started than finished per day.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>A report created before this release does not offer Arrivals when opened or edited, and wherever Arrivals would appear on it, it reads Not captured for this report.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>Exporting a report that shows Arrivals as a PDF prints the Arrivals panel with the same values and words as on screen.
+</code></pre>
 
 <h2>Charter</h2>
 
