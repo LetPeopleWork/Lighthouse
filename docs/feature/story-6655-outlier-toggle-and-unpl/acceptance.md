@@ -2,7 +2,69 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+P3
+
+```text
+A reader opens the Cycle Time scatterplot with closed Work Items of 2, 3, 3, 4 and 60 days, switches Hide outliers off, then on again
+```
+
+```text
+The switch is on at first, the 60-day item is not drawn and the chip says 1 outlier; switched off all 5 items are drawn, the axis fits 60 days or more, no chip is shown and the switch-off is reported once by name only; switched on again the chip and the shorter axis return and nothing more is reported
+```
+
+```text
+The reader can see every Work Item on demand and bring the outlier handling back
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierSwitch\.test\.tsx
+
+```text
+A switch that only hides the chip but still leaves the 60-day item undrawn or the axis short would pass a chip-only check; the test also reads the drawn items and axis top
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+```text
+A reader switches Hide outliers off, leaves the chart and opens it again
+```
+
+```text
+The switch is on again, the 60-day item is not drawn and the chip says 1 outlier
+```
+
+```text
+Outlier handling starts on every time the chart opens
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierSwitch\.test\.tsx
+
+```text
+A switch kept in a module variable or storage that survives a remount, or one that starts off, would pass a test that only checks the first render
+```
+
+###### Obligations
+
 
 ## Expectations
 

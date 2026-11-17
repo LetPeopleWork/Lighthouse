@@ -1,10 +1,49 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F137",
+"L1/F138",
+"L1/F139"
+],
+"still_passes_if": "F258",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierSwitch.test.tsx"
+},
+"expected": "F256",
+"stimulus": "F255",
+"user_result": "F257"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F261",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierSwitch.test.tsx"
+},
+"expected": "F260",
+"stimulus": "F259",
+"user_result": "F4"
+}
+]
+},
 "counters": {
 "B": 3,
 "C": 1,
 "D": 11,
 "E": 6,
-"F": 254,
+"F": 261,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -1283,7 +1322,14 @@
 "F252": "Switching outlier handling off draws all closed Work Items including the former outliers, raises the y-axis to fit the tallest, and removes the outlier chip; switching it on again restores the chip and the shorter axis.",
 "F253": "With an UNPL of 30 days and Cycle Times of 12, 30, 31 and 90 days, the 31 and 90 day items are outliers and the 12 and 30 day items are drawn; the outlier list and help call the limit the upper natural process limit, never 5 times the median.",
 "F254": "When the process behaviour chart has no limits (invalid baseline such as under 14 days, or fewer than 2 closed Work Items), every closed Work Item is drawn, no outlier count shows, and the reader can see that outliers need the process behaviour chart's limits.",
+"F255": "A reader opens the Cycle Time scatterplot with closed Work Items of 2, 3, 3, 4 and 60 days, switches Hide outliers off, then on again",
+"F256": "The switch is on at first, the 60-day item is not drawn and the chip says 1 outlier; switched off all 5 items are drawn, the axis fits 60 days or more, no chip is shown and the switch-off is reported once by name only; switched on again the chip and the shorter axis return and nothing more is reported",
+"F257": "The reader can see every Work Item on demand and bring the outlier handling back",
+"F258": "A switch that only hides the chip but still leaves the 60-day item undrawn or the axis short would pass a chip-only check; the test also reads the drawn items and axis top",
+"F259": "A reader switches Hide outliers off, leaves the chart and opens it again",
 "F26": "Outlier handling on any chart other than the Cycle Time scatterplot.",
+"F260": "The switch is on again, the 60-day item is not drawn and the chip says 1 outlier",
+"F261": "A switch kept in a module variable or storage that survives a remount, or one that starts off, would pass a test that only checks the first render",
 "F27": "Outlier handling has an on/off control, on by default, its state is not stored, and it starts on at every load (maintainer, in the Request).",
 "F28": "No configuration of the outlier rule in this Story; a later Story may add it (maintainer, in the Request).",
 "F29": "The limit is the UNPL exactly as the Cycle Time process behaviour chart computes it: average plus 2.66 times the average moving range of the baseline Cycle Times, the baseline being the configured baseline dates or, without one, the selected date range. An outlier is a Work Item the chart marks above that UNPL (compared unrounded, as the chart does), so the two charts never disagree on which Work Items are unusual.",

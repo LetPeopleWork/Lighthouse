@@ -151,7 +151,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P3</p>
+
+<pre><code>A reader opens the Cycle Time scatterplot with closed Work Items of 2, 3, 3, 4 and 60 days, switches Hide outliers off, then on again
+</code></pre>
+
+<pre><code>The switch is on at first, the 60-day item is not drawn and the chip says 1 outlier; switched off all 5 items are drawn, the axis fits 60 days or more, no chip is shown and the switch-off is reported once by name only; switched on again the chip and the shorter axis return and nothing more is reported
+</code></pre>
+
+<pre><code>The reader can see every Work Item on demand and bring the outlier handling back
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierSwitch.test.tsx</p>
+
+<pre><code>A switch that only hides the chip but still leaves the 60-day item undrawn or the axis short would pass a chip-only check; the test also reads the drawn items and axis top
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A reader switches Hide outliers off, leaves the chart and opens it again
+</code></pre>
+
+<pre><code>The switch is on again, the 60-day item is not drawn and the chip says 1 outlier
+</code></pre>
+
+<pre><code>Outlier handling starts on every time the chart opens
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierSwitch.test.tsx</p>
+
+<pre><code>A switch kept in a module variable or storage that survives a remount, or one that starts off, would pass a test that only checks the first render
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 
