@@ -682,3 +682,13 @@ The six open confirmations, answered by the maintainer on 2026-11-17 before S03a
   25 candidates judged in the oracle.
 - "E5 and the Forecasting/Flow-metrics edges confirmed" is not in A2's oracle: those edges are measured from the IL in C1,
   where Promises' own lists are written; the handler order is pinned in B2.
+
+### A3 as measured (2026-11-17)
+
+- The shared compare stage takes revisions, not capture folders, so A3 splits it out (the design's fallback): the command
+  gains `--compare-captures BASE_DIR CANDIDATE_DIR`.
+- Found in passing: under `set -euo pipefail` the shared stage's `diff | grep | head` pipe ends the script before the
+  `VERDICT: DIFFERENT` line, in the forecast and refresh comparisons too. Exit codes were right; the verdict line was
+  lost. A3's craft fixes the shared stage (host decision, AFK): only the DIFFERENT branch gains its missing line.
+- Captured per demo scenario: per Portfolio the Delivery list, the Delivery-rules schema and the Delivery sources; per
+  Delivery its metrics history (`DeliveriesController` has no other plain GET).

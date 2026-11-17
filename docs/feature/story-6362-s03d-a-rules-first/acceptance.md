@@ -305,6 +305,181 @@ A behaviour change that no existing test observes would pass; this slice changes
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+The Delivery-answers examine command compares two captures of the Delivery answers in which one Delivery's metrics history changed and everything else matches.
+```
+
+```text
+It exits 1, its last line is a DIFFERENT verdict, it reports that 1 of the 2 Delivery metrics histories compared differs, and it names the changed answer, Delivery 7's metrics history.
+```
+
+```text
+The examiner sees that a Delivery answer changed and which one.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-deliveries\-answers\-compare\.sh\:\:one Delivery answer changed
+
+```text
+A compare that finds the change only through the answer files' bytes, so a change hidden by a masked key or by reordered JSON keys of equal meaning would be reported the same way as a real change.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The Delivery-answers examine command compares two separate copies of the same capture of five Delivery answers: a Portfolio's Delivery list, its Delivery rules schema, its Delivery sources and the metrics history of its two Deliveries.
+```
+
+```text
+It exits 0 and its last line is an IDENTICAL verdict over all 5 answers.
+```
+
+```text
+The examiner sees that no Delivery answer changed, and that every captured answer was compared.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-deliveries\-answers\-compare\.sh\:\:identical Delivery answers
+
+```text
+A compare that skips an answer present in only one of the two captures as long as the count of compared answers still comes to 5.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The Delivery-answers examine command compares two empty captures.
+```
+
+```text
+It does not exit 0, it gives no IDENTICAL verdict, and it says that nothing was compared.
+```
+
+```text
+The examiner cannot mistake an empty capture for unchanged Delivery answers.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-deliveries\-answers\-compare\.sh\:\:nothing captured
+
+```text
+A compare that fails on empty captures but passes a capture holding only error answers; the shared stage refuses those, and this check does not plant one.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The examiner looks up the commands it may run.
+```
+
+```text
+The list admits deliveries-answers-compare at Scripts/examine/bin/deliveries-answers-compare.
+```
+
+```text
+The examiner may run the Delivery-answers comparison.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-deliveries\-answers\-compare\.sh\:\:admitted examine probe
+
+```text
+An admitted entry whose built command captures the wrong Delivery endpoints; only the examiner's real run shows what is captured.
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+The Delivery-answers examine command captures, on two revisions and per demo scenario and Portfolio, the Delivery list, each Delivery's metrics history, the Delivery rules schema and the Delivery sources, and compares them.
+```
+
+```text
+IDENTICAL with exit 0 when the revisions answer the same, DIFFERENT with exit 1 when a Delivery answer changed, and a failure when nothing was captured or an answer is not a success.
+```
+
+```text
+The examiner can show that moving the Promises code changed no Delivery answer.
+```
+
+##### Disposition
+
+NotTested
+
+```text
+A real capture builds and runs two revisions of the backend and takes minutes, beyond a test's time budget; the oracle drives the compare stage on fixture captures, and the capture runs as the examiner's probe.
+```
+
+EXAMINE\: bash Scripts\/examine\/build\-examine\-commands \&\& bash Scripts\/examine\/bin\/deliveries\-answers\-compare
+
+##### Covers
+
+P5
+
+```text
+The existing backend test suite runs after the Delivery-answers examine command is added.
+```
+
+```text
+Every existing test stays green; only files under Scripts and the examine commands list change.
+```
+
+```text
+Nothing a user, a tracker or the database sees changes.
+```
+
+##### Disposition
+
+Tested
+
+dotnet test Lighthouse\.Backend \-\-filter TestCategory\!\=JiraIntegration\&TestCategory\!\=LinearIntegration\&TestCategory\!\=AdoIntegration\&TestCategory\!\=ServiceNowIntegration\&TestCategory\!\=GithubIntegration
+
+```text
+A change to the shared compare piece that alters the output of the existing forecast and refresh comparisons, which no backend test runs.
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

@@ -414,6 +414,157 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The Delivery-answers examine command compares two captures of the Delivery answers in which one Delivery&#x27;s metrics history changed and everything else matches.
+</code></pre>
+
+<pre><code>It exits 1, its last line is a DIFFERENT verdict, it reports that 1 of the 2 Delivery metrics histories compared differs, and it names the changed answer, Delivery 7&#x27;s metrics history.
+</code></pre>
+
+<pre><code>The examiner sees that a Delivery answer changed and which one.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/test-deliveries-answers-compare.sh::one Delivery answer changed</p>
+
+<pre><code>A compare that finds the change only through the answer files&#x27; bytes, so a change hidden by a masked key or by reordered JSON keys of equal meaning would be reported the same way as a real change.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The Delivery-answers examine command compares two separate copies of the same capture of five Delivery answers: a Portfolio&#x27;s Delivery list, its Delivery rules schema, its Delivery sources and the metrics history of its two Deliveries.
+</code></pre>
+
+<pre><code>It exits 0 and its last line is an IDENTICAL verdict over all 5 answers.
+</code></pre>
+
+<pre><code>The examiner sees that no Delivery answer changed, and that every captured answer was compared.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/test-deliveries-answers-compare.sh::identical Delivery answers</p>
+
+<pre><code>A compare that skips an answer present in only one of the two captures as long as the count of compared answers still comes to 5.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The Delivery-answers examine command compares two empty captures.
+</code></pre>
+
+<pre><code>It does not exit 0, it gives no IDENTICAL verdict, and it says that nothing was compared.
+</code></pre>
+
+<pre><code>The examiner cannot mistake an empty capture for unchanged Delivery answers.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/test-deliveries-answers-compare.sh::nothing captured</p>
+
+<pre><code>A compare that fails on empty captures but passes a capture holding only error answers; the shared stage refuses those, and this check does not plant one.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The examiner looks up the commands it may run.
+</code></pre>
+
+<pre><code>The list admits deliveries-answers-compare at Scripts/examine/bin/deliveries-answers-compare.
+</code></pre>
+
+<pre><code>The examiner may run the Delivery-answers comparison.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/test-deliveries-answers-compare.sh::admitted examine probe</p>
+
+<pre><code>An admitted entry whose built command captures the wrong Delivery endpoints; only the examiner&#x27;s real run shows what is captured.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The Delivery-answers examine command captures, on two revisions and per demo scenario and Portfolio, the Delivery list, each Delivery&#x27;s metrics history, the Delivery rules schema and the Delivery sources, and compares them.
+</code></pre>
+
+<pre><code>IDENTICAL with exit 0 when the revisions answer the same, DIFFERENT with exit 1 when a Delivery answer changed, and a failure when nothing was captured or an answer is not a success.
+</code></pre>
+
+<pre><code>The examiner can show that moving the Promises code changed no Delivery answer.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>A real capture builds and runs two revisions of the backend and takes minutes, beyond a test&#x27;s time budget; the oracle drives the compare stage on fixture captures, and the capture runs as the examiner&#x27;s probe.
+</code></pre>
+
+<p>EXAMINE: bash Scripts/examine/build-examine-commands &amp;&amp; bash Scripts/examine/bin/deliveries-answers-compare</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The existing backend test suite runs after the Delivery-answers examine command is added.
+</code></pre>
+
+<pre><code>Every existing test stays green; only files under Scripts and the examine commands list change.
+</code></pre>
+
+<pre><code>Nothing a user, a tracker or the database sees changes.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>dotnet test Lighthouse.Backend --filter TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration</p>
+
+<pre><code>A change to the shared compare piece that alters the output of the existing forecast and refresh comparisons, which no backend test runs.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
