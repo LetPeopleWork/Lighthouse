@@ -151,7 +151,116 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The architecture tests run with a made-up Delivery service in Modules.Promises that reaches a repository, Forecasting&#x27;s adapters or the update code, beside its twin in the old Delivery sources place, a namesake just outside Modules.Promises and a service that reads values only.
+</code></pre>
+
+<pre><code>The module map&#x27;s Promises namespaces name the service in Modules.Promises and its old-place twin for each of the three reaches, and name neither the namesake nor the values-only service.
+</code></pre>
+
+<pre><code>When the Delivery services move into Modules/Promises, the module map still tells them apart, so no Promises rule built on it goes quiet.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesRulesSeeTheModuleArchUnitTest.cs::ADeliveryServiceUnderTheModuleReachingWhatPromisesMayNot_IsNamedByTheModuleMapsPromisesNamespaces_AsItsTwinInTheOldPlaceIs</p>
+
+<pre><code>A module map pattern that keeps the old Implementation half of the Delivery sources place but drops its Interfaces half: only an Implementation twin is planted, so that narrowing still passes.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The architecture tests run with a made-up Delivery service in Modules.Promises that reaches a repository, Forecasting&#x27;s adapters or the update code, beside a namesake just outside Modules.Promises and a service that reads values only.
+</code></pre>
+
+<pre><code>The shared module rules&#x27; Promises namespace names the service in Modules.Promises for each of the three reaches, and names neither the namesake nor the values-only service.
+</code></pre>
+
+<pre><code>The module&#x27;s own rules, written later with the shared module rules, have a Promises namespace that sees Modules/Promises and nothing that only shares its prefix.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesRulesSeeTheModuleArchUnitTest.cs::ADeliveryServiceUnderTheModuleReachingWhatPromisesMayNot_IsNamedByTheSharedModuleRulesPromisesNamespace_WhileANamesakeIsNot</p>
+
+<pre><code>A PromisesModule constant that also takes in the old Delivery sources place: the test plants no old-place type for this key, so a constant broader than the module still passes.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The architecture tests run with three made-up Tracker integration connectors: one reaches a Delivery service in Modules.Promises, one a Delivery service in the old Delivery sources place, one a namesake just outside Modules.Promises.
+</code></pre>
+
+<pre><code>Tracker integration&#x27;s key for Promises and the update code names the connector reaching Modules.Promises exactly as it names the one reaching the old place, and does not name the one reaching the namesake.
+</code></pre>
+
+<pre><code>After the move, a connector that reached into Promises is still reported as reaching another context, so Tracker integration stays a leaf.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesRulesSeeTheModuleArchUnitTest.cs::AConnectorReachingADeliveryServiceUnderTheModule_IsNamedByTheTrackerIntegrationRule_AsOneReachingTheOldPlaceIs</p>
+
+<pre><code>A widening that makes the Tracker integration key match Modules.Promises but drops the update-code alternatives: no connector reaching the update code is planted here, and the existing update-code case in the Tracker integration boundaries test is what catches that.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The whole architecture test suite runs on today&#x27;s code with the made-up Delivery services compiled into the test assembly and the rules widened.
+</code></pre>
+
+<pre><code>Every existing architecture test stays green, the Jira connector&#x27;s listed edge to the forecast block renderer included; no production file changes.
+</code></pre>
+
+<pre><code>Nothing a user, a tracker or the database sees changes.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheOnlyOtherContextTrackerIntegrationReaches_IsPromisesThroughTheJiraConnectorMergingTheForecastBlock</p>
+
+<pre><code>A widening that loosens an unrelated rule elsewhere in the suite while every list still matches: the existing tests guard only what they already pin.
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

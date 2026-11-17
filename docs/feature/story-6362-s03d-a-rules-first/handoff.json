@@ -1,8 +1,85 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F123",
+"L3/F124",
+"L3/F125",
+"L3/F126",
+"T2"
+],
+"still_passes_if": "F154",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesRulesSeeTheModuleArchUnitTest.cs::ADeliveryServiceUnderTheModuleReachingWhatPromisesMayNot_IsNamedByTheModuleMapsPromisesNamespaces_AsItsTwinInTheOldPlaceIs"
+},
+"expected": "F152",
+"stimulus": "F151",
+"user_result": "F153"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F123",
+"L3/F124",
+"L3/F125",
+"L3/F126",
+"T2"
+],
+"still_passes_if": "F158",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesRulesSeeTheModuleArchUnitTest.cs::ADeliveryServiceUnderTheModuleReachingWhatPromisesMayNot_IsNamedByTheSharedModuleRulesPromisesNamespace_WhileANamesakeIsNot"
+},
+"expected": "F156",
+"stimulus": "F155",
+"user_result": "F157"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F126",
+"T2"
+],
+"still_passes_if": "F162",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesRulesSeeTheModuleArchUnitTest.cs::AConnectorReachingADeliveryServiceUnderTheModule_IsNamedByTheTrackerIntegrationRule_AsOneReachingTheOldPlaceIs"
+},
+"expected": "F160",
+"stimulus": "F159",
+"user_result": "F161"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F126"
+],
+"still_passes_if": "F166",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheOnlyOtherContextTrackerIntegrationReaches_IsPromisesThroughTheJiraConnectorMergingTheForecastBlock"
+},
+"expected": "F164",
+"stimulus": "F163",
+"user_result": "F165"
+}
+]
+},
 "counters": {
 "D": 12,
 "E": 5,
-"F": 150,
+"F": 166,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -769,7 +846,23 @@
 "F149": "The test-selection-show probe shows a path under Modules/Promises selects the backend suite only, and the Tracker integration port path for the Jira connector or Program.cs selects every live connector suite; the recorded selection scenarios pass.",
 "F15": "A4: CI selection cases for Promises paths and the C2 port path.",
 "F150": "The ef-model-unchanged probe reports the database model unchanged, deliveries-answers-compare of base against candidate prints IDENTICAL, and the architecture-rules and backend-tests probes show every existing test Passed with none Failed.",
+"F151": "The architecture tests run with a made-up Delivery service in Modules.Promises that reaches a repository, Forecasting's adapters or the update code, beside its twin in the old Delivery sources place, a namesake just outside Modules.Promises and a service that reads values only.",
+"F152": "The module map's Promises namespaces name the service in Modules.Promises and its old-place twin for each of the three reaches, and name neither the namesake nor the values-only service.",
+"F153": "When the Delivery services move into Modules/Promises, the module map still tells them apart, so no Promises rule built on it goes quiet.",
+"F154": "A module map pattern that keeps the old Implementation half of the Delivery sources place but drops its Interfaces half: only an Implementation twin is planted, so that narrowing still passes.",
+"F155": "The architecture tests run with a made-up Delivery service in Modules.Promises that reaches a repository, Forecasting's adapters or the update code, beside a namesake just outside Modules.Promises and a service that reads values only.",
+"F156": "The shared module rules' Promises namespace names the service in Modules.Promises for each of the three reaches, and names neither the namesake nor the values-only service.",
+"F157": "The module's own rules, written later with the shared module rules, have a Promises namespace that sees Modules/Promises and nothing that only shares its prefix.",
+"F158": "A PromisesModule constant that also takes in the old Delivery sources place: the test plants no old-place type for this key, so a constant broader than the module still passes.",
+"F159": "The architecture tests run with three made-up Tracker integration connectors: one reaches a Delivery service in Modules.Promises, one a Delivery service in the old Delivery sources place, one a namesake just outside Modules.Promises.",
 "F16": "Confirmed (D-0, D-12, P5): feature A changes no production code, schema, DI registration or Program.cs. Only test-side architecture rule files, ModuleRules, the EXAMINE command builder, .nwave/examine.json and the classifier test script change; path-classifier.sh only if an A4 case is red. Nothing moves in feature A; the moves are feature B (story-6362-s03d-b-move), the module rules, C2 port and placement are feature C.",
+"F160": "Tracker integration's key for Promises and the update code names the connector reaching Modules.Promises exactly as it names the one reaching the old place, and does not name the one reaching the namesake.",
+"F161": "After the move, a connector that reached into Promises is still reported as reaching another context, so Tracker integration stays a leaf.",
+"F162": "A widening that makes the Tracker integration key match Modules.Promises but drops the update-code alternatives: no connector reaching the update code is planted here, and the existing update-code case in the Tracker integration boundaries test is what catches that.",
+"F163": "The whole architecture test suite runs on today's code with the made-up Delivery services compiled into the test assembly and the rules widened.",
+"F164": "Every existing architecture test stays green, the Jira connector's listed edge to the forecast block renderer included; no production file changes.",
+"F165": "Nothing a user, a tracker or the database sees changes.",
+"F166": "A widening that loosens an unrelated rule elsewhere in the suite while every list still matches: the existing tests guard only what they already pin.",
 "F17": "Confirmed (D-1): the Promises membership is the 13 Services files that move (DeliveryForecastBlockRenderer, IDeliveryForecastBlockRenderer, DeliveryRuleService, IDeliveryRuleService, DeliverySourceResolver, DeliverySourceSyncService, DeliveryForecastPublishingService and their 3 interfaces, DeliveryMetricValuesProjector, DeliveryMetricSnapshotRecordingHandler, DeliveryForecastPublishingHandler) plus the admitted Models value DeliveryForecastBlock. Update code, write-back round, ordering and ranking, repositories, entities, controllers and DTOs stay with a named owner.",
 "F18": "Confirmed (D-2): a Models type is admitted into the module only if it is not an EF entity, not on the wire, not reached by a kernel type and not used by code that stays outside. Expected admitted: DeliveryForecastBlock only (E11). A2 measures every candidate from the IL and pins the answer; if DeliveryForecastBlock fails a condition, A2 records it and the Domain folder is dropped (D-3).",
 "F19": "Confirmed (D-3, D-8, Ratchet design: Rules first): the target namespaces are Lighthouse.Backend.Modules.Promises.Domain, .Application and .Application.Policies. A1 adds a PromisesModule constant to ModuleRules and a PromisesPattern ^Lighthouse\\.Backend\\.Modules\\.Promises(\\.|$) beside the old Delivery namespaces in the module map; every rule keyed on a Promises namespace or folder also matches it. PortfolioDeliveryPattern keeps its update-code meaning and is not renamed (E1).",
