@@ -358,6 +358,79 @@ EOF
   cat "$pieces/pinned.cs"
 } > "$out/forecast-answers-capture.cs"
 
+cat > "$pieces/compare-captures.sh" <<'EOF'
+# Compares two capture folders answer by answer. The capture stage ends here, and a command that offers
+# --compare-captures runs it on folders captured earlier.
+compare_captures() {
+  local base_dir candidate_dir side side_dir file status failing different compared kind same differ
+  local fields fields_different fields_with_parent none a b counts n d w
+  for side_dir in "$1" "$2"; do
+    [ -d "$side_dir" ] || { echo "VERDICT: FAILED, $side_dir is not a capture folder, so nothing was compared"; exit 1; }
+  done
+  base_dir="$(cd "$1" && pwd -P)"
+  candidate_dir="$(cd "$2" && pwd -P)"
+  # An error answer on both sides would match and hide that nothing was @DONE@, so every answer must be a 2xx.
+  failing=0
+  for side in base candidate; do
+    if [ "$side" = base ]; then side_dir="$base_dir"; else side_dir="$candidate_dir"; fi
+    while IFS= read -r file; do
+      status="$(grep -m1 -E '^  "status": ' "$file" | grep -oE '[0-9]+' || true)"
+      case "$status" in
+        2[0-9][0-9]) ;;
+        *) echo "$side: ${file#"$side_dir/"} answered ${status:-no status}"; failing=$((failing + 1)) ;;
+      esac
+    done < <(find "$side_dir" -name '*.json' | sort)
+  done
+  if [ "$failing" -gt 0 ]; then
+    echo "VERDICT: FAILED, $failing captured @ANSWER@s are not a 2xx, so they say nothing about the @SUBJECT@"
+    exit 1
+  fi
+
+  # One line per kind of @ANSWER@: how many were compared and how many differ.
+  different=0
+  compared=0
+  for kind in $( (cd "$base_dir" && find . -name '*.json'; cd "$candidate_dir" && find . -name '*.json') \
+      | sed -E 's|.*/||; s|\.json$||' | sort -u); do
+    same=0; differ=0
+    for file in $( (cd "$base_dir" && find . -name "$kind.json"; cd "$candidate_dir" && find . -name "$kind.json") | sort -u); do
+      if cmp -s "$base_dir/$file" "$candidate_dir/$file"; then same=$((same + 1)); else differ=$((differ + 1)); fi
+    done
+    compared=$((compared + same + differ)); different=$((different + differ))
+    echo "$kind: $((same + differ)) compared, $differ different"
+  done
+  # Parent placement has no answer of its own; where an item hangs shows in the parent reference every Work Item
+  # answer carries. A comparison that sets parent_field reports those fields, compared one by one.
+  if [ -n "${parent_field:-}" ]; then
+    fields=0; fields_different=0; fields_with_parent=0
+    none="$(mktemp)"; echo null > "$none"
+    for file in $( (cd "$base_dir" && find . -name '*.json'; cd "$candidate_dir" && find . -name '*.json') | sort -u); do
+      a="$base_dir/$file"; [ -f "$a" ] || a="$none"
+      b="$candidate_dir/$file"; [ -f "$b" ] || b="$none"
+      counts="$(jq -n -r --arg f "$parent_field" --slurpfile a "$a" --slurpfile b "$b" '
+        def p: [.. | objects | select(has($f)) | .[$f]];
+        ($a[0] | p) as $x | ($b[0] | p) as $y
+        | [($x | length), ([range(0; ([($x | length), ($y | length)] | max))] | map(select($x[.] != $y[.])) | length),
+           ($x | map(select(. != null and . != "")) | length)] | @tsv')"
+      read -r n d w <<< "$counts"
+      fields=$((fields + n)); fields_different=$((fields_different + d)); fields_with_parent=$((fields_with_parent + w))
+    done
+    rm -f "$none"
+    echo "parent-placement: $fields compared, $fields_different different ($fields_with_parent of them name a parent)"
+  fi
+  if [ "$compared" -eq 0 ]; then
+    echo "VERDICT: FAILED, no @ANSWER@ was captured, so nothing was compared"
+    exit 1
+  fi
+  if [ "$different" -gt 0 ]; then
+    echo "differences (first lines):"
+    # diff exits 1 on any difference and head may close the pipe early; neither may end the script before the verdict.
+    { diff -r -u "$base_dir" "$candidate_dir" || true; } | grep -E '^(\+\+\+|Only in|[-+] )' | head -30 || true
+    echo "VERDICT: DIFFERENT, $different of $compared @ANSWER@s differ"
+    exit 1
+  fi
+  echo "VERDICT: IDENTICAL, all $compared @ANSWER@s match"
+}
+EOF
 cat > "$pieces/compare.sh" <<'EOF'
 base="${1:-@BASE@}"
 candidate="${2:-HEAD}"
@@ -416,63 +489,7 @@ wait "$candidate_pid" || { grep -E "^(scenario|licence|FATAL)" "$work/candidate.
 [ "$failed" = 0 ] || { echo "VERDICT: capture failed"; exit 1; }
 grep -E "^(licence|captured)" "$work/base.log" | sed 's/^/base: /'
 grep -E "^masked keys:" "$work/base.log" | head -1 | sed 's/$/ (their values are not compared)/'
-
-# An error answer on both sides would match and hide that nothing was @DONE@, so every answer must be a 2xx.
-failing=0
-for side in base candidate; do
-  while IFS= read -r file; do
-    status="$(grep -m1 -E '^  "status": ' "$file" | grep -oE '[0-9]+' || true)"
-    case "$status" in
-      2[0-9][0-9]) ;;
-      *) echo "$side: ${file#"$work/$side/"} answered ${status:-no status}"; failing=$((failing + 1)) ;;
-    esac
-  done < <(find "$work/$side" -name '*.json' | sort)
-done
-if [ "$failing" -gt 0 ]; then
-  echo "VERDICT: FAILED, $failing captured @ANSWER@s are not a 2xx, so they say nothing about the @SUBJECT@"
-  exit 1
-fi
-
-# One line per kind of @ANSWER@: how many were compared and how many differ.
-different=0
-compared=0
-for kind in $( (cd "$work/base" && find . -name '*.json'; cd "$work/candidate" && find . -name '*.json') \
-    | sed -E 's|.*/||; s|\.json$||' | sort -u); do
-  same=0; differ=0
-  for file in $( (cd "$work/base" && find . -name "$kind.json"; cd "$work/candidate" && find . -name "$kind.json") | sort -u); do
-    if cmp -s "$work/base/$file" "$work/candidate/$file"; then same=$((same + 1)); else differ=$((differ + 1)); fi
-  done
-  compared=$((compared + same + differ)); different=$((different + differ))
-  echo "$kind: $((same + differ)) compared, $differ different"
-done
-# Parent placement has no answer of its own; where an item hangs shows in the parent reference every Work Item
-# answer carries. A comparison that sets parent_field reports those fields, compared one by one.
-if [ -n "${parent_field:-}" ]; then
-  fields=0; fields_different=0; fields_with_parent=0
-  for file in $( (cd "$work/base" && find . -name '*.json'; cd "$work/candidate" && find . -name '*.json') | sort -u); do
-    a="$work/base/$file"; [ -f "$a" ] || { a="$work/none.json"; echo null > "$a"; }
-    b="$work/candidate/$file"; [ -f "$b" ] || { b="$work/none.json"; echo null > "$b"; }
-    counts="$(jq -n -r --arg f "$parent_field" --slurpfile a "$a" --slurpfile b "$b" '
-      def p: [.. | objects | select(has($f)) | .[$f]];
-      ($a[0] | p) as $x | ($b[0] | p) as $y
-      | [($x | length), ([range(0; ([($x | length), ($y | length)] | max))] | map(select($x[.] != $y[.])) | length),
-         ($x | map(select(. != null and . != "")) | length)] | @tsv')"
-    read -r n d w <<< "$counts"
-    fields=$((fields + n)); fields_different=$((fields_different + d)); fields_with_parent=$((fields_with_parent + w))
-  done
-  echo "parent-placement: $fields compared, $fields_different different ($fields_with_parent of them name a parent)"
-fi
-if [ "$compared" -eq 0 ]; then
-  echo "VERDICT: FAILED, no @ANSWER@ was captured, so nothing was compared"
-  exit 1
-fi
-if [ "$different" -gt 0 ]; then
-  echo "differences (first lines):"
-  diff -r -u "$work/base" "$work/candidate" | grep -E '^(\+\+\+|Only in|[-+] )' | head -30
-  echo "VERDICT: DIFFERENT, $different of $compared @ANSWER@s differ"
-  exit 1
-fi
-echo "VERDICT: IDENTICAL, all $compared @ANSWER@s match"
+compare_captures "$work/base" "$work/candidate"
 EOF
 cat > "$out/forecast-answers-compare" <<EOF
 #!/usr/bin/env bash
@@ -496,7 +513,7 @@ repo="$repo"
 driver="$out/forecast-answers-capture.cs"
 EOF
 sed -e 's/@BASE@/39a7f598f/' -e 's/@ANSWER@/forecast answer/g' -e 's/@DONE@/forecast/' -e 's/@SUBJECT@/forecasts/' \
-  "$pieces/compare.sh" >> "$out/forecast-answers-compare"
+  "$pieces/compare-captures.sh" "$pieces/compare.sh" >> "$out/forecast-answers-compare"
 chmod +x "$out/forecast-answers-compare"
 
 cat > "$pieces/refresh-requests.cs" <<'EOF'
@@ -610,8 +627,81 @@ driver="$out/refresh-answers-capture.cs"
 parent_field="parentWorkItemReference"
 EOF
 sed -e 's/@BASE@/8a785450c/' -e 's/@ANSWER@/refresh answer/g' -e 's/@DONE@/refreshed/' -e 's/@SUBJECT@/refreshes/' \
-  "$pieces/compare.sh" >> "$out/refresh-answers-compare"
+  "$pieces/compare-captures.sh" "$pieces/compare.sh" >> "$out/refresh-answers-compare"
 chmod +x "$out/refresh-answers-compare"
+
+cat > "$pieces/deliveries-requests.cs" <<'EOF'
+async Task<List<(string Name, string Path, object? Body)>> RequestsForWhatIsLoaded()
+{
+    var portfolioIds = (await Get("/api/v1/portfolios")).AsArray().Select(p => p!["id"]!.GetValue<int>()).Order().ToList();
+    var requests = new List<(string Name, string Path, object? Body)>();
+    foreach (var portfolio in portfolioIds)
+    {
+        requests.Add(($"portfolio-{portfolio}/deliveries", $"/api/v1/deliveries/portfolio/{portfolio}", null));
+        requests.Add(($"portfolio-{portfolio}/delivery-rules-schema", $"/api/v1/portfolios/{portfolio}/delivery-rules/schema", null));
+        requests.Add(($"portfolio-{portfolio}/delivery-sources", $"/api/v1/portfolios/{portfolio}/delivery-sources", null));
+        // The list holds the running Deliveries and the archived ones; each keeps its own metrics history.
+        var deliveries = await Get($"/api/v1/deliveries/portfolio/{portfolio}");
+        var deliveryIds = new[] { "active", "archived" }
+            .SelectMany(list => deliveries[list]?.AsArray() ?? new JsonArray())
+            .Select(delivery => delivery!["id"]!.GetValue<int>())
+            .Order();
+        foreach (var delivery in deliveryIds)
+        {
+            requests.Add(($"delivery-{delivery}/metrics-history", $"/api/v1/deliveries/{delivery}/metrics-history", null));
+        }
+    }
+    return requests;
+}
+EOF
+{
+  cat "$pieces/project.cs"
+  cat <<'EOF'
+// Starts the backend of one revision in this process with its forecast draws started from one fixed number,
+// loads each demo scenario in turn, waits until its updates and forecasts have run, and writes the body of
+// every Delivery answer: per Portfolio its Delivery list, Delivery rules schema and Delivery sources, and per
+// Delivery its metrics history. Arguments: <output-folder> <work-folder> <seed> [licence-file]
+EOF
+  cat "$pieces/setup.cs"
+  sed 's/@ANSWERS@/Delivery answers/' "$pieces/loop.cs"
+  cat "$pieces/deliveries-requests.cs" "$pieces/round.cs" "$pieces/refresh-masked.cs" "$pieces/pinned.cs"
+} > "$out/deliveries-answers-capture.cs"
+
+cat > "$out/deliveries-answers-compare" <<EOF
+#!/usr/bin/env bash
+# Captures the Delivery answers on two git revisions, on the seeded demo data with the forecast's random numbers
+# pinned, and compares them. Each demo scenario is loaded in turn; per Portfolio it reads the Delivery list, the
+# Delivery rules schema and the Delivery sources, and per Delivery its metrics history (the day-by-day record a
+# forecast update leaves behind). Prints one line per kind of answer and a last VERDICT line; exit 0 and
+# "IDENTICAL" mean every answer was compared, answered with a 2xx status on both sides, and matches; exit 1 and
+# "DIFFERENT" mean at least one answer differs, and the first lines of the differences name the changed answers.
+# It fails when no answer was compared or when any captured answer is not a 2xx. The values of the keys listed
+# under "masked keys" are blanked at any depth and so not compared.
+# Usage: deliveries-answers-compare [base-revision [candidate-revision]]   (takes about 3 to 6 minutes)
+#   no arguments   compares base 2b7a00e54 (a revision before any Delivery code moves) with HEAD;
+#                  this is the before/after check
+#   one argument   is the base revision; the candidate is HEAD
+#   two arguments  are the base and the candidate revision
+# Given the same revision twice it shows the capture itself is repeatable.
+#        deliveries-answers-compare --compare-captures BASE_FOLDER CANDIDATE_FOLDER
+#   compares two capture folders written earlier, without capturing; same report and exit codes
+set -euo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+repo="$repo"
+driver="$out/deliveries-answers-capture.cs"
+EOF
+sed -e 's/@ANSWER@/Delivery answer/g' -e 's/@DONE@/read/' -e 's/@SUBJECT@/Deliveries/' \
+  "$pieces/compare-captures.sh" >> "$out/deliveries-answers-compare"
+cat >> "$out/deliveries-answers-compare" <<'EOF'
+if [ "${1:-}" = --compare-captures ]; then
+  [ "$#" -eq 3 ] || { echo "Usage: deliveries-answers-compare --compare-captures BASE_FOLDER CANDIDATE_FOLDER"; exit 2; }
+  compare_captures "$2" "$3"
+  exit 0
+fi
+EOF
+sed 's/@BASE@/2b7a00e54/' "$pieces/compare.sh" >> "$out/deliveries-answers-compare"
+chmod +x "$out/deliveries-answers-compare"
 
 cat > "$pieces/probe-runner.sh" <<'EOF'
 backend="$repo/Lighthouse.Backend"

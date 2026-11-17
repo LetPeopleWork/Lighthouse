@@ -33,6 +33,10 @@
       "path": "Scripts/examine/bin/refresh-reactions-compare"
     },
     {
+      "name": "deliveries-answers-compare",
+      "path": "Scripts/examine/bin/deliveries-answers-compare"
+    },
+    {
       "name": "workitems-edge-show",
       "path": "Scripts/examine/bin/workitems-edge-show"
     },
