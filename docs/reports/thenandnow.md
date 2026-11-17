@@ -29,7 +29,7 @@ On the Reports tab, click **Create Report**. The wizard has four steps:
 1. **Type**: choose *Then & Now*. It is selected already.
 2. **Then**: choose the day Then ends on (today by default) and its length. A Team offers 30 or 90 days, a Portfolio 90 or 180 days, or you can type any number of days. Below, the wizard shows the days Then covers, for example "= 18 Jul – 15 Oct 2026".
 3. **Now**: choose Now's length, with the same choices. It starts as long as Then. The wizard shows the days Now covers today, with the note "Sliding window, always ending today".
-4. **Metrics & name**: choose which metrics the report shows. All four are selected by default. The report's name follows the window, for example "Then & Now — 90 days to 15 Oct 2026", until you type your own.
+4. **Metrics & name**: choose which metrics the report shows: Cycle Time, Throughput, WIP, Total Work Item Age and Arrivals. All are selected by default. The report's name follows the window, for example "Then & Now — 90 days to 15 Oct 2026", until you type your own.
 
 Both windows need at least 14 days. Lighthouse keeps finished Work Items only for a limited time (365 days by default), so a window cannot start earlier than that. The wizard tells you the earliest day it may start on, for example: "The Then window must start on or after 15 Oct 2025 — older finished Work Items are no longer kept."
 
@@ -73,8 +73,11 @@ Each panel shows **THEN**, **NOW** and **CHANGE** side by side, one line per val
 | **Throughput** | The total number of Work Items closed, and the average per day | Higher |
 | **WIP** | Average, Median, Min and Max of the daily WIP | Lower |
 | **Total Work Item Age** | Average, Median, Min and Max of the daily total age of all Work Items in progress | Lower |
+| **Arrivals** | How many Work Items were started in the window, how many per day, the Throughput per day beside it, and the gap between the two in words, for example "0.30 more started than finished per day" | A smaller gap |
 
-The CHANGE column shows the difference and the percentage, with an arrow, for example "▲ 2 days (+100 %)". A change for the better is green, a change for the worse red. The arrow and the sign carry the same meaning, so you can read it without colour. A line that did not change reads *No change*. When Then was 0, there is no percentage: the line reads, for example, "▲ 1 (Then was 0)".
+**Arrivals** answers whether work comes in faster than it goes out. The gap is the Work Items started per day minus the Work Items finished per day: more started than finished means work piles up. A gap that rounds to 0.00 reads "as many started as finished per day". The ⓘ next to the panel's title explains the gap in one sentence.
+
+The CHANGE column shows the difference and the percentage, with an arrow, for example "▲ 2 days (+100 %)". A change for the better is green, a change for the worse red. The arrow and the sign carry the same meaning, so you can read it without colour. A line that did not change reads *No change*. When Then was 0, there is no percentage: the line reads, for example, "▲ 1 (Then was 0)". The Arrivals gap never shows a percentage, because the gap can be negative or cross zero; its change reads in Work Items per day, for example "0.40 per day".
 
 Some lines cannot be compared:
 
@@ -88,7 +91,7 @@ You can [export a Then & Now report as a PDF](./reports.html#export-pdf) to shar
 - **Every page starts with one line**: the Team or Portfolio, the report's name, both windows, for example "Then 3 Jun – 31 Aug 2026 · Now 23 Jul – 20 Oct 2026", and when the PDF was produced. So a page that gets separated from the rest still says what it shows.
 - **The first page** carries the report's name as its title, then the summary and the panels, as on screen.
 - **Every panel keeps THEN, NOW and CHANGE side by side**, even on paper narrower than your screen, so each CHANGE stays on the same line as the values it compares.
-- **The summary and each panel stay whole.** A panel that does not fit at the bottom of a page moves to the next one. A report with all four panels usually takes two A4 pages.
+- **The summary and each panel stay whole.** A panel that does not fit at the bottom of a page moves to the next one. A report with every panel shown takes two or more A4 pages.
 - **Every page ends with the Lighthouse mark** and "Made with Lighthouse by LetPeopleWork · letpeople.work". There are no page numbers.
 
 The PDF is laid out for A4 portrait, and it is always light, even if you use Lighthouse in the dark theme. The green and red of the CHANGE column print as on screen. The arrows and signs carry the same meaning, so a black-and-white printout still reads correctly.
