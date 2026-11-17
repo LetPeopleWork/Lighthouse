@@ -182,7 +182,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void The_Refinement_module_reaches_neither_the_trackers_nor_the_background_updates()
         {
             Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.RefinementPattern)
-                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern)
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.TrackerIntegrationPattern)
                     .Or().ResideInNamespaceMatching(BackgroundUpdatesPattern))
                 .Because("refinement reads what Lighthouse already holds; it never asks a tracker or starts an update to answer.")
                 .Check(Architecture);

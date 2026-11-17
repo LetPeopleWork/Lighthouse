@@ -22,6 +22,8 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -149,13 +151,21 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] WhatThisEpicAddedToTheBackend =
             [.. TheFoldersThisEpicStartedIn, .. TheModulesDependencyFolders];
 
-        private const string TheConnectors = ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern;
+        private const string TheConnectors = ModuleBoundariesArchUnitTest.TrackerIntegrationPattern;
 
         // The parent source selector decides for every tracker and takes the stored Features by design, so it is
         // not one of the connectors these rules police. Every other type of the Tracker integration stays in scope.
         private static bool IsTheParentSourceSelector(string typeName)
             => typeName == typeof(ParentSourceSelector).FullName
                 || typeName.StartsWith(typeof(ParentSourceSelector).FullName + "+", StringComparison.Ordinal);
+
+        // The OAuth and connection health services keep their own records (credentials, health verdicts) through a
+        // repository; they are not connectors and read no Feature. Each is named whole, with its compiler-made nested types.
+        private static readonly Type[] TheServicesThatKeepTheirOwnRecords = [typeof(OAuthService), typeof(ConnectionHealthService)];
+
+        private static bool IsAServiceThatKeepsItsOwnRecords(string typeName)
+            => Array.Exists(TheServicesThatKeepTheirOwnRecords, service => typeName == service.FullName
+                || typeName.StartsWith(service.FullName + "+", StringComparison.Ordinal));
 
         private static readonly string[] TheTypesThatMaySetAParent =
         [
@@ -732,7 +742,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var offenders = IlDependencies
                 .DependentsIn(module, TheConnectors, ReachesTheStoredFeatures)
                 .Where(offender => !IsTheParentSourceSelector(offender.TypeName))
-                .Where(offender => !System.Text.RegularExpressions.Regex.IsMatch(offender.TypeName, ModuleBoundariesArchUnitTest.TheServicesThatKeepTheirOwnRecordsPattern))
+                .Where(offender => !IsAServiceThatKeepsItsOwnRecords(offender.TypeName))
                 .ToList();
 
             using (Assert.EnterMultipleScope())

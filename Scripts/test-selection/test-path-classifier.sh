@@ -151,8 +151,8 @@ assert "other work item service: jira=false" "$(classify_jira $'Lighthouse.Backe
 assert "parent source tests: jira=false" "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Domain/ParentSourceSelectorTest.cs')" "false"
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Tracker integration on its module path. The connectors and their shared code move to
-# Modules/TrackerIntegration; a change there must select the same live suites as the same change on the old path,
+# Tracker integration on its module path. The connectors and their shared code live in
+# Modules/TrackerIntegration; a change there must select the live suites it can break,
 # or a connector change would reach main without its live suite ever running.
 module=Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration
 module_tests=Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration
@@ -190,7 +190,7 @@ do
   assert "module shared code: shared=true for $shared_path" "$(classify_shared "$shared_path")" "true"
 done
 
-# Scenario 23: module code no live connector depends on selects no live suite, as on the old path
+# Scenario 23: module code no live connector depends on selects no live suite
 for quiet_path in \
   "$module/Adapters/Connectors/Csv/CsvWorkTrackingConnector.cs" \
   "$module/Adapters/Background/ConnectionHealthBackgroundService.cs"
@@ -228,9 +228,6 @@ throws_count_in_checkout_with_connectors_under() {
 expected_throws_count=$'Csv: 1\nLinear: 1\nServiceNow: 1\ntotal: 3\nexit: 0'
 assert "connector-throws-count: counts the connectors on the module path" \
   "$(throws_count_in_checkout_with_connectors_under "$module/Adapters/Connectors")" "$expected_throws_count"
-assert "connector-throws-count: still counts the connectors on the old path" \
-  "$(throws_count_in_checkout_with_connectors_under Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors)" \
-  "$expected_throws_count"
 
 echo
 echo "passed: $pass"

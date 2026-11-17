@@ -10,22 +10,23 @@ BACKEND_REGEX='^(Lighthouse.Backend(/|.Tests/)|Scripts/test-timings/|\.github/ac
 # The parent-source code decides what the Jira connector reads, so a change to it needs the live Jira suite.
 # Its tests and busier neighbours (WorkItemBase, WorkTrackingSystemOptionsOwner) stay out: each run spends live
 # Jira quota, and those change far more often than what the connector reads does.
-JIRA_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Jira/|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/Jira/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/Domain/ParentSourceSelector\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(ParentSource[^/]*|ParentReadings|ParentChoice|ParentResolution)\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/Parents/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/WorkItems/Domain/FetchFingerprint\.cs$'
-ADO_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/AzureDevOps/|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/'
-LINEAR_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Linear/|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/Linear/'
-SERVICENOW_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/ServiceNow/|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/'
+JIRA_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/Jira/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/Domain/ParentSourceSelector\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(ParentSource[^/]*|ParentReadings|ParentChoice|ParentResolution)\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/Parents/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/WorkItems/Domain/FetchFingerprint\.cs$'
+ADO_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/'
+LINEAR_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/Linear/'
+SERVICENOW_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/'
 GITHUB_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/(Implementation|Interfaces)/[^/]*([Gg]it[Hh]ubService|LighthouseReleaseService)[^/]*\.cs$'
 
 # A change in any of these locations must force every integration category to
 # run (a regression here can break any connector):
-#   - Connector base subfolders (Auth/, OAuth/) under production OR tests
-#   - Top-level WorkTrackingConnectors/*.cs in production (schema, keys)
-#   - Connector-shared interfaces (Services/Interfaces/WorkTrackingConnectors/I*.cs)
+#   - The connectors' shared subfolders (Adapters/Connectors/Auth/, Adapters/Connectors/OAuth/) of Tracker
+#     integration, under production OR tests
+#   - Tracker integration's Application and Domain (factories, schema, keys, the connector interfaces) and
+#     its OAuth adapters
 #   - Connector-shared models (Models/WorkTrackingSystemConnection*, Models/OAuth/)
 #   - Models/WorkTrackingSystems.cs, the enum every connector switches on
 #   - Program.cs (DI graph for every connector)
 #   - Solution + csproj files
-SHARED_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/(Auth|OAuth)/|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/(Auth|OAuth)/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/(Application|Domain)/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/Adapters/OAuth/|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/WorkTrackingConnectors/[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Interfaces/WorkTrackingConnectors/I[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(WorkTrackingSystemConnection|OAuth/)|^Lighthouse\.Backend/Lighthouse\.Backend/Models/WorkTrackingSystems\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Program\.cs$|^Lighthouse\.Backend/Lighthouse\.sln$|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/[^/]*\.csproj$'
+SHARED_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/(Auth|OAuth)/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/(Application|Domain)/|^Lighthouse\.Backend/Lighthouse\.Backend/Modules/TrackerIntegration/Adapters/OAuth/|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(WorkTrackingSystemConnection|OAuth/)|^Lighthouse\.Backend/Lighthouse\.Backend/Models/WorkTrackingSystems\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Program\.cs$|^Lighthouse\.Backend/Lighthouse\.sln$|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/[^/]*\.csproj$'
 
 classify_backend() { printf '%s\n' "$1" | grep -Eq "$BACKEND_REGEX" && echo true || echo false; }
 classify_jira()   { printf '%s\n' "$1" | grep -Eq "$JIRA_REGEX"   && echo true || echo false; }

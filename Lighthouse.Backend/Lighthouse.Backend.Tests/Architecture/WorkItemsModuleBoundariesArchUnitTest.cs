@@ -255,7 +255,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void NoConnector_ReachesAWorkItemsType()
         {
-            var verdict = ConnectorsReachNoWorkItemsType(ProductionModule.Value, ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern);
+            var verdict = ConnectorsReachNoWorkItemsType(ProductionModule.Value, ModuleBoundariesArchUnitTest.TrackerIntegrationPattern);
 
             ThenTheRuleHolds(verdict.Check, "the connectors");
         }

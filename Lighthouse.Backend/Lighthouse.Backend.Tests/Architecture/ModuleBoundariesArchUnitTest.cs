@@ -1,8 +1,6 @@
 using ArchUnitNET.Fluent.Syntax.Elements.Types;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Mono.Cecil;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
@@ -12,9 +10,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class ModuleBoundariesArchUnitTest
     {
-        internal const string WorkTrackingIntegrationPattern =
-            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.WorkTrackingConnectors($|\..*)|^Lighthouse\.Backend\.Factories($|\..*)" +
-            @"|^Lighthouse\.Backend\.Services\.Factories$|^Lighthouse\.Backend\.Modules\.TrackerIntegration(\.|$)";
+        internal const string TrackerIntegrationPattern = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration(\.|$)";
         private const string WorkItemsSyncPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(WorkItems|TeamData|WorkItemRules)($|\..*)|^Lighthouse\.Backend\.Modules\.WorkItems(\.|$)";
         internal const string ForecastingPattern =
@@ -44,24 +40,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Models.StoredFeatures",
         ];
 
-        // The two application services of the module that keep their own records (credentials, health verdicts) and
-        // so read them through a repository. Each is named whole, with its compiler-made nested types.
-        internal static readonly string[] TheServicesThatKeepTheirOwnRecords =
-        [
-            typeof(OAuthService).FullName!,
-            typeof(ConnectionHealthService).FullName!,
-        ];
-
-        internal static string TheServicesThatKeepTheirOwnRecordsPattern
-            => "^(" + string.Join("|", TheServicesThatKeepTheirOwnRecords.Select(type => System.Text.RegularExpressions.Regex.Escape(type))) + ")(\\+.*)?$";
-
-
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(BaseMetricsService).Assembly));
 
-        private static readonly GivenTypesConjunctionWithDescription WorkTrackingIntegrationModule =
-            Types().That().ResideInNamespaceMatching(WorkTrackingIntegrationPattern).As("WorkTracking-Integration");
+        private static readonly GivenTypesConjunctionWithDescription TrackerIntegrationModule =
+            Types().That().ResideInNamespaceMatching(TrackerIntegrationPattern).As("Tracker integration");
 
         private static readonly GivenTypesConjunctionWithDescription WorkItemsSyncModule =
             Types().That().ResideInNamespaceMatching(WorkItemsSyncPattern).As("WorkItems/Sync");
@@ -117,35 +101,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void WorkTrackingIntegration_IsALeafInputAdapter()
-        {
-            Types().That().Are(WorkTrackingIntegrationModule)
-                .Should().NotDependOnAny(
-                    Types().That().Are(ForecastingModule)
-                        .Or().Are(PortfolioDeliveryModule)
-                        .Or().Are(WorkItemsSyncModule))
-                .Because(
-                    "WorkTracking-Integration is a leaf input adapter that only depends downward on " +
-                    "Platform/Persistence and the Models shared kernel; it must not reach sideways or upward " +
-                    "into Forecasting, Portfolio/Delivery, or WorkItems/Sync.")
-                .Check(Architecture);
-        }
-
-        [Test]
-        public void WorkTrackingConnectors_DoNotDependOnAnyRepository()
-        {
-            Types().That().Are(WorkTrackingIntegrationModule)
-                .And().DoNotHaveFullNameMatching(TheServicesThatKeepTheirOwnRecordsPattern)
-                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(RepositoryRecognition.StoredRecordsPattern))
-                .Because(
-                    "a connector only translates what the tracker sent, so it must not touch the database context " +
-                    "or any repository, interface or implementation. Whatever it needs to know about stored " +
-                    "records, such as which Features this instance holds, is handed to it by the caller. Other " +
-                    "platform services, such as the OAuth token service, stay allowed.")
-                .Check(Architecture);
-        }
-
-        [Test]
         public void ParentPlacementKernel_DependsOnNoServiceOrData()
         {
             ApplicationCoreRules.ParentPlacementKernelDependsOnNoCoreOrData(ProductionModule.Value, ParentPlacementKernelTypes).Check();
@@ -156,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(WorkTrackingIntegrationModule.GetObjects(Architecture), Is.Not.Empty);
+                Assert.That(TrackerIntegrationModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(WorkItemsSyncModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(ForecastingModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(PortfolioDeliveryModule.GetObjects(Architecture), Is.Not.Empty);
