@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateNotificationHub",
-            "Lighthouse.Backend.Services.Implementation.DeliveryRuleService",
+            "Lighthouse.Backend.Modules.Promises.Application.DeliveryRuleService",
             "Lighthouse.Backend.Services.Implementation.FeatureListService",
             "Lighthouse.Backend.Services.Implementation.Seeding.RefreshLogSeeder",
             "Lighthouse.Backend.Services.Interfaces.FeatureListRead",

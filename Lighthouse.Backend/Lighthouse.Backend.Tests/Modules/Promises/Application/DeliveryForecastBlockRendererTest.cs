@@ -1,7 +1,8 @@
 using System.Globalization;
 using Lighthouse.Backend.Models.DeliverySources;
-using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.Promises.Domain;
+using Lighthouse.Backend.Modules.Promises.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.Promises.Application
 {

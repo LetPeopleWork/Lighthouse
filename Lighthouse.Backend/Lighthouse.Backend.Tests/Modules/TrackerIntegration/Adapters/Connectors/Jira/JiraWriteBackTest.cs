@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -11,6 +10,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.Promises.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira
 {

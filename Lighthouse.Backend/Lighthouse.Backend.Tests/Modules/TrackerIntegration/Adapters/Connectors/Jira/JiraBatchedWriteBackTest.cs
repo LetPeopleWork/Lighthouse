@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -9,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.Promises.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira
 {

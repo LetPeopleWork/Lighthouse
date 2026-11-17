@@ -7,11 +7,11 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
-using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using Lighthouse.Backend.Modules.Promises.Application;
 
 namespace Lighthouse.Backend.Tests.API
 {

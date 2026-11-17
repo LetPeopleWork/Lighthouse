@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
-using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;

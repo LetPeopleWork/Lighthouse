@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
@@ -10,13 +9,13 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDev
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
-using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.Promises.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira
 {

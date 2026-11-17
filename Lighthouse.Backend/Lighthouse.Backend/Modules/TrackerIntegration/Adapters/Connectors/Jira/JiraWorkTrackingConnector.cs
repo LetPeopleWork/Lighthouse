@@ -6,7 +6,6 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Models.Validation;
 using System.Collections.Concurrent;
 using System.Globalization;
@@ -15,6 +14,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.Extensions;
+using Lighthouse.Backend.Modules.Promises.Application;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
 {

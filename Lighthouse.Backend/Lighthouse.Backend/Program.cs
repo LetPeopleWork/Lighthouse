@@ -85,6 +85,7 @@ using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.Promises.Application;
 
 namespace Lighthouse.Backend
 {
@@ -1466,10 +1467,10 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();
             builder.Services.AddScoped<IDeliveryRuleService, DeliveryRuleService>();
-            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliverySourceResolver, Lighthouse.Backend.Services.Implementation.DeliverySources.DeliverySourceResolver>();
-            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliverySourceSyncService, Lighthouse.Backend.Services.Implementation.DeliverySources.DeliverySourceSyncService>();
-            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer, Lighthouse.Backend.Services.Implementation.DeliverySources.DeliveryForecastBlockRenderer>();
-            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastPublishingService, Lighthouse.Backend.Services.Implementation.DeliverySources.DeliveryForecastPublishingService>();
+            builder.Services.AddScoped<IDeliverySourceResolver, DeliverySourceResolver>();
+            builder.Services.AddScoped<IDeliverySourceSyncService, DeliverySourceSyncService>();
+            builder.Services.AddScoped<IDeliveryForecastBlockRenderer, DeliveryForecastBlockRenderer>();
+            builder.Services.AddScoped<IDeliveryForecastPublishingService, DeliveryForecastPublishingService>();
             builder.Services.AddScoped<IRuleEvaluator<WorkItem>, RuleEvaluator<WorkItem>>();
             builder.Services.AddScoped<IRuleFieldProvider<WorkItem>, WorkItemFieldProvider>();
             builder.Services.AddScoped<ForecastFilterRuleService>();

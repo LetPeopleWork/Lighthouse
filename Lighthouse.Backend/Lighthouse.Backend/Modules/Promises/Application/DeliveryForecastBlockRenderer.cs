@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Interfaces.DeliverySources;
+using Lighthouse.Backend.Modules.Promises.Domain;
 
 namespace Lighthouse.Backend.Modules.Promises.Application
 {

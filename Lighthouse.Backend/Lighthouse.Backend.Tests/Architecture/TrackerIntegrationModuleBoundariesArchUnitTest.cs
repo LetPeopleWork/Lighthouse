@@ -100,8 +100,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase`1",
-            "Lighthouse.Backend.Services.Implementation.DeliverySources.DeliveryForecastPublishingService",
-            "Lighthouse.Backend.Services.Implementation.DeliverySources.DeliverySourceResolver",
+            "Lighthouse.Backend.Modules.Promises.Application.DeliveryForecastPublishingService",
+            "Lighthouse.Backend.Modules.Promises.Application.DeliverySourceResolver",
             "Lighthouse.Backend.Services.Implementation.WriteBackService",
         ];
 
@@ -134,12 +134,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         // description until the publisher hands it the merged text. The list only shrinks.
         private static readonly string[] EdgesOfTheModuleIntoOtherContexts =
         [
-            "Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingConnector -> Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer",
+            "Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingConnector -> Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer",
         ];
 
         private static readonly string[] TheJiraConnectorMergingTheForecastBlock =
         [
-            "Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingConnector -> Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer",
+            "Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingConnector -> Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer",
         ];
 
         private static readonly string[] TheApplicationTypesThatNameConnectors =
@@ -428,7 +428,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             yield return OtherContextCase("ReachingWorkItems", "Lighthouse.Backend.Modules.WorkItems.Application.IWorkItemService", "ATrackerIntegrationTypeReachingWorkItems_IsNamed");
             yield return OtherContextCase("ReachingForecasting", "Lighthouse.Backend.Modules.Forecasting.Application.IForecastService", "ATrackerIntegrationTypeReachingForecasting_IsNamed");
             yield return OtherContextCase("ReachingFlowMetrics", "Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService", "ATrackerIntegrationTypeReachingFlowMetrics_IsNamed");
-            yield return OtherContextCase("ReachingASecondPromisesType", "Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastPublishingService", "ATrackerIntegrationTypeReachingPromisesBeyondTheListedRenderer_IsNamed");
+            yield return OtherContextCase("ReachingASecondPromisesType", "Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastPublishingService", "ATrackerIntegrationTypeReachingPromisesBeyondTheListedRenderer_IsNamed");
             yield return OtherContextCase("ReachingTheUpdateCode", "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey", "ATrackerIntegrationTypeReachingTheUpdateCode_IsNamed");
             yield return OtherContextCase("ReachingRefinement", "Lighthouse.Backend.Services.Interfaces.Refinement.IRefinementViewQuery", "ATrackerIntegrationTypeReachingRefinement_IsNamed");
             yield return OtherContextCase("ReachingReports", "Lighthouse.Backend.Services.Interfaces.Reports.IReportQueries", "ATrackerIntegrationTypeReachingReports_IsNamed");
@@ -441,7 +441,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // Every other-context case also holds a connector using the forecast block renderer through a listed edge, which the rule must not name.
         private static string ListedRendererEdge(string caseName)
-            => $"{MadeUpOutboundCases}.{caseName}.Adapters.Connectors.AConnectorMergingTheForecastBlock -> Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer";
+            => $"{MadeUpOutboundCases}.{caseName}.Adapters.Connectors.AConnectorMergingTheForecastBlock -> Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer";
 
         private static (Action Check, Func<IReadOnlyCollection<string>, Action> WithList) TheProductRule(ListedRule rule)
         {
@@ -795,7 +795,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 
     internal static class AConnectorMergingTheForecastBlock
     {
-        public static bool Merges(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
+        public static bool Merges(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
     }
 }
 
@@ -808,7 +808,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 
     internal static class AConnectorMergingTheForecastBlock
     {
-        public static bool Merges(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
+        public static bool Merges(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
     }
 }
 
@@ -821,7 +821,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 
     internal static class AConnectorMergingTheForecastBlock
     {
-        public static bool Merges(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
+        public static bool Merges(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
     }
 }
 
@@ -829,12 +829,12 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 {
     internal static class AConnector
     {
-        public static bool Reaches(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastPublishingService other) => other is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastPublishingService other) => other is not null;
     }
 
     internal static class AConnectorMergingTheForecastBlock
     {
-        public static bool Merges(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
+        public static bool Merges(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
     }
 }
 
@@ -847,7 +847,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 
     internal static class AConnectorMergingTheForecastBlock
     {
-        public static bool Merges(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
+        public static bool Merges(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
     }
 }
 
@@ -860,7 +860,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 
     internal static class AConnectorMergingTheForecastBlock
     {
-        public static bool Merges(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
+        public static bool Merges(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
     }
 }
 
@@ -873,7 +873,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 
     internal static class AConnectorMergingTheForecastBlock
     {
-        public static bool Merges(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
+        public static bool Merges(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
     }
 }
 
@@ -886,7 +886,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 
     internal static class AConnectorMergingTheForecastBlock
     {
-        public static bool Merges(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
+        public static bool Merges(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
     }
 }
 
@@ -899,7 +899,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 
     internal static class AConnectorMergingTheForecastBlock
     {
-        public static bool Merges(global::Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
+        public static bool Merges(global::Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastBlockRenderer renderer) => renderer is not null;
     }
 }
 
