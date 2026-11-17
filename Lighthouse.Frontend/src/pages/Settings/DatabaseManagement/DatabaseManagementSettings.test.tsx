@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -35,6 +35,8 @@ describe("DatabaseManagementSettings", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// A restore answer queued by a test that stopped early must not reach the next test.
+		mockDatabaseManagementService.restoreBackup.mockReset();
 		mockDatabaseManagementService.getStatus.mockResolvedValue(defaultStatus);
 	});
 
@@ -144,6 +146,83 @@ describe("DatabaseManagementSettings", () => {
 			expect(screen.getByText(reasonTheRestoreStopped)).toBeInTheDocument();
 		});
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+	});
+
+	it("restores without credentials from the explanation, showing it is busy, then closes it and reports success", async () => {
+		const user = userEvent.setup();
+		let finishTheRestore: (status: IDatabaseOperationStatus) => void = () => {};
+		mockDatabaseManagementService.restoreBackup
+			.mockResolvedValueOnce(restoreThatFailed("CredentialsUnreadable"))
+			.mockReturnValueOnce(
+				new Promise<IDatabaseOperationStatus>((resolve) => {
+					finishTheRestore = resolve;
+				}),
+			);
+		renderComponent();
+		await restoreTheBackup(user);
+		const explanation = await screen.findByRole("dialog", {
+			name: "Stored credentials in this backup cannot be read",
+		});
+
+		await user.click(
+			within(explanation).getByRole("button", {
+				name: "Restore without credentials",
+			}),
+		);
+
+		const [chosenFile] =
+			mockDatabaseManagementService.restoreBackup.mock.calls[0];
+		expect(mockDatabaseManagementService.restoreBackup).toHaveBeenNthCalledWith(
+			2,
+			chosenFile,
+			"backupPw1",
+			true,
+		);
+		expect(
+			within(explanation).getByRole("button", {
+				name: /Restore without credentials/,
+			}),
+		).toBeDisabled();
+
+		finishTheRestore({
+			operationId: "op-restore",
+			operationType: "Restore",
+			state: "Completed",
+			failureReason: null,
+		});
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		});
+		expect(
+			screen.getByText(
+				"Restore completed successfully. Your data has been restored.",
+			),
+		).toBeInTheDocument();
+	});
+
+	it("shows a failed restore without credentials as an error", async () => {
+		const user = userEvent.setup();
+		mockDatabaseManagementService.restoreBackup
+			.mockResolvedValueOnce(restoreThatFailed("CredentialsUnreadable"))
+			.mockRejectedValueOnce(new Error("The backup could not be restored."));
+		renderComponent();
+		await restoreTheBackup(user);
+		const explanation = await screen.findByRole("dialog", {
+			name: "Stored credentials in this backup cannot be read",
+		});
+
+		await user.click(
+			within(explanation).getByRole("button", {
+				name: "Restore without credentials",
+			}),
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("The backup could not be restored."),
+			).toBeInTheDocument();
+		});
 	});
 
 	it("renders clear section", async () => {

@@ -213,6 +213,244 @@ A provider that drops the scratch database only on failure but not after a succe
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P3
+
+```text
+A backup holds a board connection with a token and a plain option, and an OAuth connection, all saved under the key of another installation; the operator restores it on this installation and chooses to restore without credentials.
+```
+
+```text
+The restore completes; the start-up check over the restored database finds no stored credential, so the next start does not refuse; both connections and the plain option are there, the token is empty and the OAuth credential is gone; the backup's data replaced what was added after it.
+```
+
+```text
+The restore finishes, Lighthouse starts, every Connection is still there and asks for its token again.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DatabaseManagement\/RestoreWithoutUnreadableCredentialsTest\.cs\:\:Restoring\_without\_credentials\_completes\_removes\_the\_unreadable\_credentials\_and\_lets\_the\_application\_start
+
+```text
+A removal that runs after migrations and seeding instead of before them would still pass; the order is not visible at the port.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The operator chooses to restore without credentials a backup that holds no credential, or one credential this installation can read and one it cannot.
+```
+
+```text
+The restore completes and the restored database equals the backup row for row: nothing is removed.
+```
+
+```text
+A backup that the next start would not refuse is restored exactly as it was, including every credential.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DatabaseManagement\/RestoreWithoutUnreadableCredentialsTest\.cs\:\:Restoring\_without\_credentials\_a\_backup\_with\_no\_credentials\_or\_one\_this\_key\_can\_read\_restores\_it\_unchanged
+
+```text
+Removal that runs when the backup holds a readable credential but leaves values untouched by luck (for example a removal that only blanks values of connections with no readable secret) would still pass; the row pins only the two cases DESIGN names.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+The live database holds an unreadable token, a readable token, an empty secret value, plain options, an OAuth credential whose access token is readable but refresh token is not, one with both tokens unreadable and one with both readable; the unreadable credentials are removed with this installation's key.
+```
+
+```text
+Only the unreadable token is blanked; the readable token and the empty value are untouched; plain options stay; both OAuth credentials with any unreadable token are deleted and the fully readable one stays.
+```
+
+```text
+Only credentials Lighthouse cannot read are taken away; everything it can read stays in place.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DatabaseManagement\/RestoreWithoutUnreadableCredentialsTest\.cs\:\:Removing\_unreadable\_credentials\_blanks\_or\_deletes\_only\_what\_this\_key\_cannot\_read
+
+```text
+A removal that deletes the empty secret option row instead of leaving it, then re-creates one with an empty value, would still pass; the empty case cannot tell blanking from leaving alone.
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P3
+
+```text
+The settings page sends a restore with the form field removeUnreadableCredentials set to true, set to false, or absent.
+```
+
+```text
+The service is asked to remove unreadable credentials only for true; for false or an absent field it is asked to stop the restore, as before; the request is accepted.
+```
+
+```text
+Credentials are removed only when the operator chose Restore without credentials.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DatabaseManagementControllerTest\.cs\:\:RestoreBackup\_PassesTheOperatorsChoiceAboutUnreadableCredentialsToTheService
+
+```text
+A controller that reads the field from the request form and also from a parameter, preferring the wrong one when they disagree, would still pass because the test sets both alike.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The settings page asks the client to restore a backup with the choice to remove unreadable credentials, then without it.
+```
+
+```text
+The first request carries removeUnreadableCredentials true with the same file and password; the second carries no such field.
+```
+
+```text
+The server learns of the operator's choice only when it was made.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/services\/Api\/DatabaseManagementService\.test\.ts\:\:sends the choice to restore without unreadable credentials only when it is made
+
+```text
+A client that sends the field as 1 instead of true would fail; a client that sends false when not chosen would fail; a client sending true but to a different route would still pass this assertion (the route is pinned by the existing restore row).
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+After the restore stopped because no credential could be read, the operator clicks Restore without credentials in the explanation dialog.
+```
+
+```text
+The second restore is sent with the same file and password and the choice set; the button shows it is busy while it runs; then the dialog closes and the success message Restore completed successfully. Your data has been restored. shows.
+```
+
+```text
+One click from the explanation finishes the restore and the page says it succeeded.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/DatabaseManagement\/DatabaseManagementSettings\.test\.tsx\:\:restores without credentials from the explanation\, showing it is busy\, then closes it and reports success
+
+```text
+A dialog that closes before the second request ends, with the button disabled for another reason, would fail the busy check only if it closes first; a button that is disabled but shows no spinner would still pass.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The operator clicks Restore without credentials and the second restore request fails.
+```
+
+```text
+The error message from the failed request shows in the existing error alert.
+```
+
+```text
+A failed restore without credentials is reported, never shown as success.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/DatabaseManagement\/DatabaseManagementSettings\.test\.tsx\:\:shows a failed restore without credentials as an error
+
+```text
+Showing the error inside the dialog instead of the page's error alert would still pass, since the test finds the text anywhere on the page.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The source of the secret read path is inspected after the removal and staged-backup code is added.
+```
+
+```text
+The classifier still has no catch clause or exception filter, and no code outside the encryption code catches a cryptographic failure.
+```
+
+```text
+An unreadable credential is never reported as a working one because a failure was swallowed.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/SecretReadPathSourceStructureTest\.cs\:\:NothingOutsideTheEncryptionCode\_CatchesACryptographicFailure
+
+```text
+A catch of a general exception (not a cryptographic one) inside the new removal type in the encryption folder would still pass; the existing law pins only the classifier, the envelope and cryptographic catches outside that folder. Already satisfied, so it passes now, no RED.
+```
+
+###### Obligations
+
+
 ### S3
 
 ##### Covers

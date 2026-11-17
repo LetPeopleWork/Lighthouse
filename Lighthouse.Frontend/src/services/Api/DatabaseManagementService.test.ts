@@ -93,6 +93,35 @@ describe("DatabaseManagementService", () => {
 		);
 	});
 
+	it("sends the choice to restore without unreadable credentials only when it is made", async () => {
+		const mockOp: IDatabaseOperationStatus = {
+			operationId: "op-2",
+			operationType: "Restore",
+			state: "Executing",
+			failureReason: null,
+		};
+		mockedAxios.post.mockResolvedValue({ data: mockOp });
+		const file = new File(["backup-data"], "backup.zip", {
+			type: "application/zip",
+		});
+		const restoreBackup: (
+			file: File,
+			password: string,
+			removeUnreadableCredentials: boolean,
+		) => Promise<IDatabaseOperationStatus> =
+			service.restoreBackup.bind(service);
+
+		await restoreBackup(file, "restorePw", true);
+		await service.restoreBackup(file, "restorePw");
+
+		const sentWithTheChoice = mockedAxios.post.mock.calls[0][1] as FormData;
+		const sentWithoutIt = mockedAxios.post.mock.calls[1][1] as FormData;
+		expect(sentWithTheChoice.get("removeUnreadableCredentials")).toBe("true");
+		expect(sentWithTheChoice.get("password")).toBe("restorePw");
+		expect(sentWithTheChoice.get("file")).toBeInstanceOf(File);
+		expect(sentWithoutIt.has("removeUnreadableCredentials")).toBe(false);
+	});
+
 	it("should clear database", async () => {
 		const mockOp: IDatabaseOperationStatus = {
 			operationId: "op-3",

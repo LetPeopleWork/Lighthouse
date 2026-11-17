@@ -108,6 +108,140 @@
 "user_result": "F320"
 }
 ],
+"S2": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F269"
+],
+"still_passes_if": "F325",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreWithoutUnreadableCredentialsTest.cs::Restoring_without_credentials_completes_removes_the_unreadable_credentials_and_lets_the_application_start"
+},
+"expected": "F323",
+"stimulus": "F322",
+"user_result": "F324"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8/F271",
+"L8/F272"
+],
+"still_passes_if": "F329",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreWithoutUnreadableCredentialsTest.cs::Restoring_without_credentials_a_backup_with_no_credentials_or_one_this_key_can_read_restores_it_unchanged"
+},
+"expected": "F327",
+"stimulus": "F326",
+"user_result": "F328"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L9/F274",
+"L9/F275",
+"L9/F276",
+"L9/F277"
+],
+"still_passes_if": "F333",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreWithoutUnreadableCredentialsTest.cs::Removing_unreadable_credentials_blanks_or_deletes_only_what_this_key_cannot_read"
+},
+"expected": "F331",
+"stimulus": "F330",
+"user_result": "F332"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F269"
+],
+"still_passes_if": "F337",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DatabaseManagementControllerTest.cs::RestoreBackup_PassesTheOperatorsChoiceAboutUnreadableCredentialsToTheService"
+},
+"expected": "F335",
+"stimulus": "F334",
+"user_result": "F336"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F269"
+],
+"still_passes_if": "F341",
+"test": "Lighthouse.Frontend/src/services/Api/DatabaseManagementService.test.ts::sends the choice to restore without unreadable credentials only when it is made"
+},
+"expected": "F339",
+"stimulus": "F338",
+"user_result": "F340"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F269"
+],
+"still_passes_if": "F345",
+"test": "Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx::restores without credentials from the explanation, showing it is busy, then closes it and reports success"
+},
+"expected": "F343",
+"stimulus": "F342",
+"user_result": "F344"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F269"
+],
+"still_passes_if": "F349",
+"test": "Lighthouse.Frontend/src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.test.tsx::shows a failed restore without credentials as an error"
+},
+"expected": "F347",
+"stimulus": "F346",
+"user_result": "F348"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F353",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretReadPathSourceStructureTest.cs::NothingOutsideTheEncryptionCode_CatchesACryptographicFailure"
+},
+"expected": "F351",
+"stimulus": "F350",
+"user_result": "F352"
+}
+],
 "S3": [
 {
 "covers": [
@@ -149,7 +283,7 @@
 "C": 2,
 "D": 12,
 "E": 8,
-"F": 321,
+"F": 353,
 "K": 6,
 "L": 9,
 "N": 5,
@@ -1781,9 +1915,41 @@
 "F32": "Backend acceptance scenarios drive DatabaseManagementService directly under Lighthouse.Backend.Tests/Acceptance/DatabaseManagement, no host; that folder is named in the feature's Stryker test-case filter (Tests.Acceptance.DatabaseManagement). No nWave scenario tags in code. Comments are rare plain-language whys.",
 "F320": "A PostgreSQL backup that cannot be checked stops the restore before the live database is dropped, and leaves nothing behind.",
 "F321": "A provider that drops the scratch database only on failure but not after a successful check passes this case; the success case catches it.",
+"F322": "A backup holds a board connection with a token and a plain option, and an OAuth connection, all saved under the key of another installation; the operator restores it on this installation and chooses to restore without credentials.",
+"F323": "The restore completes; the start-up check over the restored database finds no stored credential, so the next start does not refuse; both connections and the plain option are there, the token is empty and the OAuth credential is gone; the backup's data replaced what was added after it.",
+"F324": "The restore finishes, Lighthouse starts, every Connection is still there and asks for its token again.",
+"F325": "A removal that runs after migrations and seeding instead of before them would still pass; the order is not visible at the port.",
+"F326": "The operator chooses to restore without credentials a backup that holds no credential, or one credential this installation can read and one it cannot.",
+"F327": "The restore completes and the restored database equals the backup row for row: nothing is removed.",
+"F328": "A backup that the next start would not refuse is restored exactly as it was, including every credential.",
+"F329": "Removal that runs when the backup holds a readable credential but leaves values untouched by luck (for example a removal that only blanks values of connections with no readable secret) would still pass; the row pins only the two cases DESIGN names.",
 "F33": "Backups made before this change (file copies with optional -wal and -shm) stay restorable and checkable.",
+"F330": "The live database holds an unreadable token, a readable token, an empty secret value, plain options, an OAuth credential whose access token is readable but refresh token is not, one with both tokens unreadable and one with both readable; the unreadable credentials are removed with this installation's key.",
+"F331": "Only the unreadable token is blanked; the readable token and the empty value are untouched; plain options stay; both OAuth credentials with any unreadable token are deleted and the fully readable one stays.",
+"F332": "Only credentials Lighthouse cannot read are taken away; everything it can read stays in place.",
+"F333": "A removal that deletes the empty secret option row instead of leaving it, then re-creates one with an empty value, would still pass; the empty case cannot tell blanking from leaving alone.",
+"F334": "The settings page sends a restore with the form field removeUnreadableCredentials set to true, set to false, or absent.",
+"F335": "The service is asked to remove unreadable credentials only for true; for false or an absent field it is asked to stop the restore, as before; the request is accepted.",
+"F336": "Credentials are removed only when the operator chose Restore without credentials.",
+"F337": "A controller that reads the field from the request form and also from a parameter, preferring the wrong one when they disagree, would still pass because the test sets both alike.",
+"F338": "The settings page asks the client to restore a backup with the choice to remove unreadable credentials, then without it.",
+"F339": "The first request carries removeUnreadableCredentials true with the same file and password; the second carries no such field.",
 "F34": "Already answers exactly the startup refusal question over any DbConnection factory; pointed at the staged backup it is the pre-check, so the check and the refusal cannot disagree.",
+"F340": "The server learns of the operator's choice only when it was made.",
+"F341": "A client that sends the field as 1 instead of true would fail; a client that sends false when not chosen would fail; a client sending true but to a different route would still pass this assertion (the route is pinned by the existing restore row).",
+"F342": "After the restore stopped because no credential could be read, the operator clicks Restore without credentials in the explanation dialog.",
+"F343": "The second restore is sent with the same file and password and the choice set; the button shows it is busy while it runs; then the dialog closes and the success message Restore completed successfully. Your data has been restored. shows.",
+"F344": "One click from the explanation finishes the restore and the page says it succeeded.",
+"F345": "A dialog that closes before the second request ends, with the button disabled for another reason, would fail the busy check only if it closes first; a button that is disabled but shows no spinner would still pass.",
+"F346": "The operator clicks Restore without credentials and the second restore request fails.",
+"F347": "The error message from the failed request shows in the existing error alert.",
+"F348": "A failed restore without credentials is reported, never shown as success.",
+"F349": "Showing the error inside the dialog instead of the page's error alert would still pass, since the test finds the text anywhere on the page.",
 "F35": "Sole owner of whether one stored value is readable; the removal asks it per value.",
+"F350": "The source of the secret read path is inspected after the removal and staged-backup code is added.",
+"F351": "The classifier still has no catch clause or exception filter, and no code outside the encryption code catches a cryptographic failure.",
+"F352": "An unreadable credential is never reported as a working one because a failure was swallowed.",
+"F353": "A catch of a general exception (not a cryptographic one) inside the new removal type in the encryption folder would still pass; the existing law pins only the classifier, the envelope and cryptographic catches outside that folder. Already satisfied, so it passes now, no RED.",
 "F36": "Singleton holding the running ring; Current is the key the restored database will be read with.",
 "F37": "Owns the SQLite file mechanics; restore and clear change mechanism, and it gains StageBackup and CreateConnection.",
 "F38": "Owns pg_dump, pg_restore and psql; gains StageBackup over a scratch database and CreateConnection.",
