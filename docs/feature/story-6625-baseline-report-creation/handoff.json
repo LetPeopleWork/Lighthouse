@@ -369,7 +369,7 @@
 "L3/F147"
 ],
 "still_passes_if": "F582",
-"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts::L3"
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts::never judges Throughput mixed, because its Total and per day change never point in opposite directions"
 },
 "expected": "F580",
 "stimulus": "F579",
@@ -383,16 +383,14 @@
 "kind": "Tested",
 "obligations": [
 "L4",
-"L4/F152",
-"L4/F153",
-"L4/F154"
+"L4/F152"
 ],
 "still_passes_if": "F586",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs::A_saved_report_whose_Now_was_stored_45_days_long_reads_a_30_day_Now_ending_today_with_Then_and_its_stored_member_untouched"
 },
-"expected": "F584",
-"stimulus": "F583",
-"user_result": "F585"
+"expected": "F592",
+"stimulus": "F591",
+"user_result": "F593"
 },
 {
 "covers": [
@@ -410,6 +408,23 @@
 "expected": "F588",
 "stimulus": "F587",
 "user_result": "F589"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F153",
+"L4/F154"
+],
+"still_passes_if": "F597",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs::A_Then_accepted_at_create_has_a_Now_of_its_length_inside_the_kept_history"
+},
+"expected": "F595",
+"stimulus": "F594",
+"user_result": "F596"
 }
 ]
 },
@@ -418,7 +433,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 590,
+"F": 597,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -2897,14 +2912,18 @@
 "F580": "The Total and per day lines are both judged and never point opposite ways, so Throughput is never placed as mixed; a difference of 1 over a long window is improved; both 0 is unchanged",
 "F581": "Throughput never reads as both better and worse at once",
 "F582": "A Total line judged against the wrong direction of good, or a Total line not judged at all",
-"F583": "Read a saved report whose older version stored a different Now length, and a report whose Then ends today or 45 days ago",
-"F584": "Now is as long as Then, ending today or back to back as the rule says; already covered by the committed derived-Now scenarios",
-"F585": "Every report, new or saved, is a like-for-like comparison",
 "F586": "A Now still read from a stored length",
 "F587": "Edit the name and shown metrics of a report whose Then starts before the oldest kept day",
 "F588": "The edit is accepted and the report stays editable; already covered by the committed scenario",
 "F589": "An old report can still be renamed and its metrics changed",
 "F590": "An edit refused because Then predates the kept history",
+"F591": "Read a saved report whose older version stored a 45-day Now beside a 30-day Then",
+"F592": "Now is 30 days ending today; Then and the stored member are untouched",
+"F593": "A saved report compares equal lengths",
+"F594": "Create reports over generated Thens of 14 to 400 days ending today up to 800 days back, including a 14-day Then ending today and a 90-day Then ending 45 days back",
+"F595": "Each report reads a Now as long as its Then inside the kept history; no dedicated read scenario names the 14-day-ending-today or 90-day-ending-45-days-ago case, so the generated law is its nearest committed observation",
+"F596": "Every new report compares equal lengths",
+"F597": "A Now of another length for one particular Then, if the generator never draws that Then",
 "F6": "she picks a Then length of 30 days and keeps the default end date",
 "F61": "Usage-data events: answered in DEVOPS, not here.",
 "F62": "Now always has the same length as Then (maintainer reply on ADO #6625). Reverses epic-5878 D43 (Now length chosen and saved separately), D59 and D62 (the Now step), and the Now-length part of D44 (Edit report).",

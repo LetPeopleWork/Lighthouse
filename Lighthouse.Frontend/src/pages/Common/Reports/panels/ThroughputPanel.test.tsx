@@ -24,8 +24,8 @@ const aSide = (total: number, perDay: number): IReportMetric["atThen"] => ({
 const changeOf = (panel: HTMLElement) =>
 	panel.querySelector<HTMLElement>('[data-segment="change"]') as HTMLElement;
 
-const theChangeOfThroughput = (metric: IReportMetric) => {
-	const { container } = render(
+const aThroughputPanel = (metric: IReportMetric) =>
+	render(
 		<ThroughputPanel
 			title="Throughput"
 			metric={metric}
@@ -33,9 +33,15 @@ const theChangeOfThroughput = (metric: IReportMetric) => {
 			workItems="Work Items"
 			directionOfGood="higher"
 		/>,
+	).container;
+
+const theChangeOfThroughput = (metric: IReportMetric) =>
+	changeOf(aThroughputPanel(metric));
+
+const theNowOfThroughput = (container: HTMLElement) =>
+	readingOf(
+		container.querySelector<HTMLElement>('[data-segment="now"]') as HTMLElement,
 	);
-	return changeOf(container);
-};
 
 const verdictsDrawn = (change: HTMLElement) =>
 	Array.from(change.querySelectorAll<HTMLElement>("[data-change]")).map(
@@ -43,7 +49,7 @@ const verdictsDrawn = (change: HTMLElement) =>
 	);
 
 const marksDrawn = (change: HTMLElement) =>
-	change.querySelectorAll('[role="img"], [data-testid$="Icon"]').length;
+	change.querySelectorAll("svg").length;
 
 const risesDrawn = (change: HTMLElement) =>
 	change.querySelectorAll('[role="img"][aria-label="rose"]').length;
@@ -51,18 +57,20 @@ const risesDrawn = (change: HTMLElement) =>
 const BOTH_ZERO = "No change (both 0)";
 
 describe("the Throughput panel's change column", () => {
-	it('shows the Total change "13 (+25 %)" before per day, both marked better, when Then finished 52 and Now 65 in 30 days', () => {
-		const change = theChangeOfThroughput({
+	it('shows the Total change "13 (+25 %)" with a rise mark beside "Total 65 Work Items", before per day "0.43 per day (+25 %)", both marked better, when Then finished 52 and Now 65 in 30 days', () => {
+		const container = aThroughputPanel({
 			atThen: aSide(52, 1.73),
-			atNow: aSide(65, 2.17),
+			atNow: aSide(65, 2.16),
 		});
-		const reading = readingOf(change);
-
-		expect(reading).toMatch(/13 \(\+25 %\)/);
-		expect(reading).toMatch(/0\.44 per day \(\+25 %\)/);
-		expect(reading.indexOf("13 (+25 %)")).toBeLessThan(
-			reading.indexOf("0.44 per day"),
+		const change = changeOf(container);
+		const [totalLine, perDayLine] = Array.from(
+			change.querySelectorAll<HTMLElement>("[data-change]"),
 		);
+
+		expect(theNowOfThroughput(container)).toMatch(/^Now Total 65 Work Items/);
+		expect(readingOf(totalLine)).toBe("13 (+25 %)");
+		expect(risesDrawn(totalLine)).toBe(1);
+		expect(readingOf(perDayLine)).toBe("0.43 per day (+25 %)");
 		expect(verdictsDrawn(change)).toEqual(["better", "better"]);
 		expect(risesDrawn(change)).toBe(2);
 	});
@@ -77,6 +85,7 @@ describe("the Throughput panel's change column", () => {
 		expect(reading.split(BOTH_ZERO)).toHaveLength(3);
 		expect(reading).not.toMatch(/%|Then was 0/);
 		expect(marksDrawn(change)).toBe(0);
+		expect(verdictsDrawn(change)).toEqual(["neutral", "neutral"]);
 	});
 
 	it('reads "30 (Then was 0)" with a rise mark and no percent on the Total line when Then finished 0 and Now 30 in 14 days', () => {
@@ -102,13 +111,11 @@ describe("the Throughput panel's change column", () => {
 		expect(reading.split("No change")).toHaveLength(3);
 		expect(reading).not.toMatch(/both 0|%/);
 		expect(verdictsDrawn(change)).toEqual(["neutral", "neutral"]);
-		expect(change.querySelectorAll('[data-testid="RemoveIcon"]')).toHaveLength(
-			2,
-		);
+		expect(marksDrawn(change)).toBe(2);
 		expect(risesDrawn(change)).toBe(0);
 	});
 
-	it("shows a dash and no change mark on the Total and per day lines when Then never captured Throughput", () => {
+	it('shows "\u2014" and no change mark on the Total and per day lines when Then never captured Throughput', () => {
 		const change = theChangeOfThroughput({
 			atThen: {},
 			atNow: aSide(65, 2.17),

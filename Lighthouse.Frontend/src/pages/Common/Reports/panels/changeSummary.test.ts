@@ -223,7 +223,7 @@ describe("the CHANGE summary of a Throughput read", () => {
 	});
 
 	// With equal windows the per day line is the Total over the same number of days, so the two never disagree on direction.
-	it("L3 never judges Throughput mixed, because its Total and per day change never point in opposite directions", () => {
+	it("never judges Throughput mixed, because its Total and per day change never point in opposite directions", () => {
 		const placedOver = (days: number, then: number, now: number) =>
 			summariseChange([
 				{

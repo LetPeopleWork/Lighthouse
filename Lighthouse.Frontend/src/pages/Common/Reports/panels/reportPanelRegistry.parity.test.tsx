@@ -88,3 +88,34 @@ describe("every panel in the registry", () => {
 		},
 	);
 });
+
+describe("the Throughput panel for a read of 0 on both sides", () => {
+	it("draws no change mark where the summary tallies no change on both its lines", () => {
+		const ZERO: IReportMetric = {
+			atThen: { total: aValue(0), perDay: aValue(0) },
+			atNow: { total: aValue(0), perDay: aValue(0) },
+		};
+		const definition = reportPanelRegistry.throughput;
+		const Panel = definition.component;
+		render(
+			<Panel
+				title="A panel"
+				metric={ZERO}
+				workItem="Work Item"
+				workItems="Work Items"
+				directionOfGood={definition.directionOfGood}
+			/>,
+		);
+
+		const tallied = lineComparisonsOf(ZERO, definition).map(
+			(line) => line.change?.verdict,
+		);
+		const drawn = Array.from(
+			changeSegment().querySelectorAll<HTMLElement>("[data-change]"),
+		).map((change) => change.dataset.change);
+
+		expect(tallied).toEqual(["neutral", "neutral"]);
+		expect(drawn).toEqual(tallied);
+		expect(changeSegment().querySelectorAll("svg")).toHaveLength(0);
+	});
+});

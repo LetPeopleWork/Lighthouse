@@ -792,7 +792,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts::L3</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts::never judges Throughput mixed, because its Total and per day change never point in opposite directions</p>
 
 <pre><code>A Total line judged against the wrong direction of good, or a Total line not judged at all
 </code></pre>
@@ -806,13 +806,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>Read a saved report whose older version stored a different Now length, and a report whose Then ends today or 45 days ago
+<pre><code>Read a saved report whose older version stored a 45-day Now beside a 30-day Then
 </code></pre>
 
-<pre><code>Now is as long as Then, ending today or back to back as the rule says; already covered by the committed derived-Now scenarios
+<pre><code>Now is 30 days ending today; Then and the stored member are untouched
 </code></pre>
 
-<pre><code>Every report, new or saved, is a like-for-like comparison
+<pre><code>A saved report compares equal lengths
 </code></pre>
 
 <h5>Disposition</h5>
@@ -825,8 +825,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 </code></pre>
 
 <h6>Obligations</h6>
-
-
 
 
 
@@ -850,6 +848,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs::A_report_whose_Then_lies_before_the_oldest_kept_day_stays_editable</p>
 
 <pre><code>An edit refused because Then predates the kept history
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Create reports over generated Thens of 14 to 400 days ending today up to 800 days back, including a 14-day Then ending today and a 90-day Then ending 45 days back
+</code></pre>
+
+<pre><code>Each report reads a Now as long as its Then inside the kept history; no dedicated read scenario names the 14-day-ending-today or 90-day-ending-45-days-ago case, so the generated law is its nearest committed observation
+</code></pre>
+
+<pre><code>Every new report compares equal lengths
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs::A_Then_accepted_at_create_has_a_Now_of_its_length_inside_the_kept_history</p>
+
+<pre><code>A Now of another length for one particular Then, if the generator never draws that Then
 </code></pre>
 
 <h6>Obligations</h6>

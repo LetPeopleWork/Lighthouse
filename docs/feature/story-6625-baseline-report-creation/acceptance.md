@@ -738,7 +738,7 @@ Throughput never reads as both better and worse at once
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/changeSummary\.test\.ts\:\:L3
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/changeSummary\.test\.ts\:\:never judges Throughput mixed\, because its Total and per day change never point in opposite directions
 
 ```text
 A Total line judged against the wrong direction of good, or a Total line not judged at all
@@ -754,15 +754,15 @@ A Total line judged against the wrong direction of good, or a Total line not jud
 P1
 
 ```text
-Read a saved report whose older version stored a different Now length, and a report whose Then ends today or 45 days ago
+Read a saved report whose older version stored a 45-day Now beside a 30-day Then
 ```
 
 ```text
-Now is as long as Then, ending today or back to back as the rule says; already covered by the committed derived-Now scenarios
+Now is 30 days ending today; Then and the stored member are untouched
 ```
 
 ```text
-Every report, new or saved, is a like-for-like comparison
+A saved report compares equal lengths
 ```
 
 ##### Disposition
@@ -776,8 +776,6 @@ A Now still read from a stored length
 ```
 
 ###### Obligations
-
-
 
 
 
@@ -805,6 +803,36 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreat
 
 ```text
 An edit refused because Then predates the kept history
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Create reports over generated Thens of 14 to 400 days ending today up to 800 days back, including a 14-day Then ending today and a 90-day Then ending 45 days back
+```
+
+```text
+Each report reads a Now as long as its Then inside the kept history; no dedicated read scenario names the 14-day-ending-today or 90-day-ending-45-days-ago case, so the generated law is its nearest committed observation
+```
+
+```text
+Every new report compares equal lengths
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreation\/CreateReportWithEqualNowScenarios\.cs\:\:A\_Then\_accepted\_at\_create\_has\_a\_Now\_of\_its\_length\_inside\_the\_kept\_history
+
+```text
+A Now of another length for one particular Then, if the generator never draws that Then
 ```
 
 ###### Obligations
