@@ -698,9 +698,9 @@ describe("The summary's CHANGE side", () => {
 			"Improved: Throughput",
 		],
 		[
-			"the same total and a per day move too small for the panel to show",
-			0.584,
-			0.576,
+			"the same total of 52 and the same 0.58 per day",
+			0.58,
+			0.58,
 			52,
 			"Unchanged: Throughput",
 		],
@@ -850,13 +850,23 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// Then and Now are equally long, so a Total that rose is a better Throughput even where the per day line shows no move.
-	it('judges Throughput on its Total line as well as per day, so a Total of 52 then and 65 now with the same 0.58 per day reads "Improved: Throughput"', async () => {
+	// Over equally long 400-day windows 52 and 53 finished Work Items are both 0.13 per day, so only the Total moved.
+	it('judges Throughput on its Total line as well as per day, so a Total of 52 then and 53 now with the same 0.13 per day reads "Improved: Throughput"', async () => {
 		const report = withThroughput(
 			theEngagementStartReport(),
-			[52, 0.58],
-			[65, 0.58],
+			[52, 0.13],
+			[53, 0.13],
 		);
+		report.thenAndNow.thenWindow = {
+			start: "2024-07-25",
+			end: "2025-08-28",
+			lengthDays: 400,
+		};
+		report.thenAndNow.nowWindow = {
+			start: "2025-08-29",
+			end: "2026-10-02",
+			lengthDays: 400,
+		};
 		openTheReport(showing(report, ["throughput"]));
 
 		await theReportIsReady();
