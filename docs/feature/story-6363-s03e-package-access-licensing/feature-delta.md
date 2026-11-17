@@ -710,3 +710,11 @@ Independent design review: NEEDS_REVISION, no blocker. Each finding was resolved
 | — | note | D-11 push cadence | Kept: push B1-B3 together only with all three green locally; B1's `csproj` edit and the `Program.cs` `using`s each select all live suites through `SHARED_REGEX`. |
 
 Design review round 1 delta re-assessed: **APPROVED** (2026-11-17), no remaining finding. Note for A1: its re-grep also covers the Promises boundaries file S03d adds.
+
+## Maintainer answers to the open questions (2026-11-17)
+
+- 5 Rigor: **thorough for B2 only** (opus crafter and designer, sonnet reviewers); B1 and B3 standard; A and C thorough.
+- 4 Push cadence: **B1-B3 pushed together**, one commit per slice, all three green locally first.
+- 3 Licence key: **moves with its verifier** (two csproj lines in B1's move commit).
+- 1, 6, 7, 8: agreed (start after S03d closes; size M, about 7 days, 10 slices; Access persistence a catalogue note only; no review window).
+- 2 Licensing test data: **move it too, as its own slice after B1** (B4 in feature B, which grows to 4 slices; size about 7.5 days, 11 slices). Reason (maintainer): the test tree then matches the module one to one, which also prepares a later test assembly per module. Everything under `Tests/Services/Implementation/Licensing` goes to `Tests/Modules/Licensing`: `TestLicenseData`, the two committed licence files, `LicensingIntegrationTest`, and the generated `valid_not_expired_license.json`. Paths follow in `.gitignore`, `ci_backend.yml`, `ci_verifyauth.yml`, the test `csproj`, `LicenseControllerTest`, the examine builder and the `HostUsersStillToMove` entry if it names a path. The host moves the maintainer's local gitignored licence file with a plain file move (not git) when the slice lands, and updates the project memory note that names the path. C3 then has no per-file exception for the old Licensing folder. The CI path edits are checked on the push by `ci-auth-suites-show`.
