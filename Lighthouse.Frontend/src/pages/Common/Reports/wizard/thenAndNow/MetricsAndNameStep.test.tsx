@@ -115,7 +115,7 @@ describe("the Metrics & name step", () => {
 		).not.toHaveAccessibleDescription(NOT_CAPTURED);
 	});
 
-	it("offers Arrivals last under its fixed name, and ticking it adds it to the report", async () => {
+	it('offers "Arrivals" last under its fixed name, and ticking it adds it to the report', async () => {
 		const onChange = renderStep(
 			offering("cycle-time", "throughput", "arrivals"),
 			["cycle-time"],
@@ -131,7 +131,7 @@ describe("the Metrics & name step", () => {
 		);
 	});
 
-	it("shows Arrivals disabled and unticked with its reason on a report made before Arrivals existed", () => {
+	it('shows "Arrivals" disabled and unticked with "Not captured for this report" on a report made before Arrivals existed', () => {
 		renderStep(
 			offering("cycle-time", "arrivals"),
 			["cycle-time"],

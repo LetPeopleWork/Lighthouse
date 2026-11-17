@@ -105,7 +105,7 @@ const theSummaryOfChange = () =>
 
 describe("the Arrivals panel of a Then & Now report", () => {
 	it.each(WHERE)(
-		"reads how many more or fewer Work Items were started than finished per day, Then against Now, with the change marked better and no percent %s",
+		'reads "Total started 99 Work Items", "Arrivals 1.10 per day", "Throughput 0.80 per day" and "0.30 more started than finished per day" for Then, "0.10 fewer started than finished per day" for Now, and "Change gap per day: 0.40 per day" marked better with no percent %s',
 		async (where) => {
 			const panel = await openingTheReport(
 				where,
@@ -128,7 +128,7 @@ describe("the Arrivals panel of a Then & Now report", () => {
 		},
 	);
 
-	it("explains in its info text what Arrivals are, how the gap is made and which way is better", async () => {
+	it('explains in its info text "Arrivals are Work Items started. The gap is started minus finished, per day. Lower is better."', async () => {
 		const panel = await openingTheReport(
 			"on the report",
 			aReportShowingArrivals({
@@ -161,7 +161,7 @@ describe("the Arrivals panel of a Then & Now report", () => {
 	});
 
 	it.each(WHERE)(
-		"reads a gap that rounds to nothing as many started as finished, and rounds before it compares %s",
+		'reads a gap of 0.004 as "as many started as finished per day" and 0.006 as "0.01 more started than finished per day", rounding before it compares, so the change reads "Change gap per day: 0.01 per day" %s',
 		async (where) => {
 			const panel = await openingTheReport(
 				where,
@@ -186,7 +186,7 @@ describe("the Arrivals panel of a Then & Now report", () => {
 	);
 
 	it.each(WHERE)(
-		"reads Not captured for this report on both sides and puts Arrivals in no header group when the report never froze it %s",
+		'reads "Not captured for this report" on both sides and puts Arrivals in no header group when the report never froze it %s',
 		async (where) => {
 			const panel = await openingTheReport(
 				where,
