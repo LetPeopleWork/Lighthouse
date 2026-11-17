@@ -1,9 +1,154 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L1/F111",
+"L1/F112",
+"L1/F113",
+"L1/F114"
+],
+"still_passes_if": "F175",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx::L1"
+},
+"expected": "F173",
+"stimulus": "F172",
+"user_result": "F174"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"L2/F120",
+"L2/F121"
+],
+"still_passes_if": "F179",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx::L2"
+},
+"expected": "F177",
+"stimulus": "F176",
+"user_result": "F178"
+},
+{
+"covers": [
+"P1",
+"P2",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F183",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx"
+},
+"expected": "F181",
+"stimulus": "F180",
+"user_result": "F182"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F187",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx"
+},
+"expected": "F185",
+"stimulus": "F184",
+"user_result": "F186"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F191",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx"
+},
+"expected": "F189",
+"stimulus": "F188",
+"user_result": "F190"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F195",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx"
+},
+"expected": "F193",
+"stimulus": "F192",
+"user_result": "F194"
+},
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F126",
+"L3/F127",
+"L3/F128",
+"L3/F129",
+"L3/F130",
+"L3/F131"
+],
+"still_passes_if": "F199",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs"
+},
+"expected": "F197",
+"stimulus": "F196",
+"user_result": "F198"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F203",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.test.tsx"
+},
+"expected": "F201",
+"stimulus": "F200",
+"user_result": "F202"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F207",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs"
+},
+"expected": "F205",
+"stimulus": "F204",
+"user_result": "F206"
+}
+]
+},
 "counters": {
 "B": 2,
 "C": 1,
 "E": 6,
-"F": 171,
+"F": 207,
 "L": 3,
 "P": 5,
 "S": 1,
@@ -584,7 +729,9 @@
 },
 "supports": [
 "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs",
-"Lighthouse.Frontend/src/tests/ReportsTestKit.ts"
+"Lighthouse.Frontend/src/tests/ReportsTestKit.tsx",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs",
+"Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.test.tsx"
 ],
 "targets": [
 {
@@ -775,10 +922,46 @@
 "F17": "the reader exports it as a PDF",
 "F170": "A report created before this release does not offer Arrivals when opened or edited, and wherever Arrivals would appear on it, it reads Not captured for this report.",
 "F171": "Exporting a report that shows Arrivals as a PDF prints the Arrivals panel with the same values and words as on screen.",
+"F172": "Any finite gap per day, near zero and at half steps, rounded to two decimals",
+"F173": "The sentence reads balanced exactly when the shown gap is zero, more above, fewer below, with the shown magnitude",
+"F174": "The words always agree with the number the reader sees",
+"F175": "A build that tests the sentence on the unrounded gap, so 0.004 reads more started",
+"F176": "Any pair of Then and Now gaps per day to three decimals",
+"F177": "The change equals the difference of the shown gaps and is better exactly when it fell",
+"F178": "The shown Then plus the shown change equals the shown Now",
+"F179": "Already satisfied by the shared comparison: a build that changes it from unrounded gaps would fail, but this row passes before the feature exists",
 "F18": "the Arrivals panel prints with the same values and words as on screen",
+"F180": "Open a Team report, on screen and as its print document, showing Arrivals with Then started 1.10 and finished 0.80 per day and Now 0.90 and 1.00",
+"F181": "Then reads 0.30 more started than finished per day, Now reads 0.10 fewer, the change reads 0.40 per day marked better with no percent, Work Items started in total and Throughput per day shown, same words in the print",
+"F182": "The reader sees whether the gap between Work Items started and finished per day got smaller from Then to Now, on screen and in the PDF",
+"F183": "A build that keeps a percent on the gap, shows it only on screen, or labels the rows differently from the approved copy",
+"F184": "Open a report whose Arrivals gap fell from Then to Now",
+"F185": "The header change summary lists Arrivals under Improved",
+"F186": "The reader sees Arrivals counted as improved in the header",
+"F187": "A build that marks the panel better but leaves Arrivals out of the header, or lists it under Got worse",
+"F188": "Open a report whose gaps are 0.004 per day Then and 0.006 per day Now",
+"F189": "Then reads as many started as finished per day, Now reads 0.01 more started than finished per day, the change reads 0.01 per day marked worse",
 "F19": "A new Arrivals metric on Then & Now reports for Teams and Portfolios: wizard checkbox, panel, change mark on the gap, header change summary, Not captured on older reports, PDF",
+"F190": "The reader never sees a signed zero gap and the change agrees with the shown numbers",
+"F191": "A build that tests the unrounded gap for zero, or rounds after comparing so a shown 0.00 beside 0.01 reads as No change",
+"F192": "Open a report that never froze Arrivals but shows it",
+"F193": "Both sides read Not captured for this report with dashes and no change, and the header lists Arrivals in no group",
+"F194": "The reader sees Not captured for this report, never a Then rebuilt from live data",
+"F195": "A build that shows zeros or a rebuilt value instead of dashes, or drops the Not captured note",
+"F196": "Create and read the Arrivals metric over windows of one, 30 and 90 days: nothing finished, nothing started, balanced, started above and below finished, for a Team and a Portfolio, and for a report that froze nothing",
+"F197": "Total started, started per day, finished per day and the unrounded signed gap per day, each over the window's days; Then stays as frozen; a report that froze nothing shows no Then",
+"F198": "The numbers behind the panel are the Metrics tab's own, frozen for Then and fresh for Now",
+"F199": "A build that rounds the gap in the backend, computes finished per day differently from Throughput, or rebuilds Then on read",
 "F2": "A report reader sees whether the balance between Work Items started and finished got better from Then to Now",
 "F20": "Ratio of arrivals to Throughput; maximum or median per day; percent change on the gap; a 'closer to zero' direction of good; rebuilding Then for reports created before release; charts or limit counts on the panel; changes outside Then & Now reports",
+"F200": "A reader creating a Then & Now report sees the metrics step, with Arrivals on offer, and ticks it",
+"F201": "An Arrivals checkbox is last in the metrics step under the fixed name Arrivals, and ticking it puts arrivals among the shown metrics",
+"F202": "The reader can choose to show Arrivals on the report",
+"F203": "A build that labels the box with a lowercase key or a terminology word, or offers it first",
+"F204": "A Team and a Portfolio each make a Then & Now report showing Arrivals and read it back through the report services",
+"F205": "Arrivals is offered last, and the report carries total, per day, Throughput per day and gap per day on both sides, an empty window being a real zero",
+"F206": "A Team or Portfolio report made with Arrivals shows it",
+"F207": "A build that registers the metric for Teams only, or omits it from the offered types",
 "F21": "A reader ticks Arrivals when creating a Then & Now report and sees whether the gap between Work Items started and finished per day got smaller from Then to Now, on screen and in the PDF, for Team and Portfolio reports",
 "F22": "The arrivals-to-Throughput balance, Then against Now, on the report",
 "F23": "Open the report (ReportView, and the print document) for a Team report whose Then started 1.10 and finished 0.80 and Now 0.90 and 1.00 per day, with Arrivals shown; also a gap of 0.004 and 0.006, and a report with no arrivals capture",

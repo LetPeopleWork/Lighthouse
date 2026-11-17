@@ -82,6 +82,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             return ReportOwner.Team(team.Id);
         }
 
+        /// <summary>A Portfolio is stored that keeps its finished Features for a year.</summary>
+        protected ReportOwner APortfolio(string name)
+        {
+            using var scope = harness.NewScope();
+
+            var portfolio = new Portfolio
+            {
+                Name = name,
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    Name = $"Connection {Guid.NewGuid():N}",
+                    WorkTrackingSystem = WorkTrackingSystems.Jira,
+                },
+                DataRetrievalValue = "project = APOLLO",
+                DoneItemsCutoffDays = 365,
+            };
+
+            var portfolios = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
+            portfolios.Add(portfolio);
+            portfolios.Save().GetAwaiter().GetResult();
+
+            return ReportOwner.Portfolio(portfolio.Id);
+        }
+
+        /// <summary>A made report is read back as the route that opens one reads it.</summary>
+        protected ReportOutcome<ReportRead> ReadAReport(ReportOwner owner, int reportId)
+        {
+            using var scope = harness.NewScope();
+            return scope.ServiceProvider.GetRequiredService<IReportQueries>().Get(owner, reportId);
+        }
+
         /// <summary>The types of report the owner may make, as the route that lists them reads them.</summary>
         protected ReportOutcome<ReportTemplatesRead> TheTypesOfReportFor(ReportOwner owner)
         {
@@ -152,6 +183,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             services.AddScoped<IReportMetric, ThroughputReportMetric>();
             services.AddScoped<IReportMetric, WipReportMetric>();
             services.AddScoped<IReportMetric, WorkItemAgeReportMetric>();
+            services.AddScoped<IReportMetric, ArrivalsReportMetric>();
             services.AddScoped<ReportMetricCatalog>();
             services.AddScoped<IReportTemplate, ThenAndNowTemplate>();
             services.AddScoped<IReportQueries, ReportQueries>();
@@ -175,6 +207,39 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             var licence = new Mock<ILicenseService>();
             licence.Setup(service => service.CanUsePremiumFeatures()).Returns(false);
             return licence.Object;
+        }
+    }
+
+    /// <summary>
+    /// A Team and a Portfolio each make a report that shows Arrivals and read it back: the type offers Arrivals last,
+    /// and the report carries the four values on both sides, with an empty window a real zero and never a dash.
+    /// </summary>
+    [TestFixture]
+    [Category("acceptance")]
+    public class ArrivalsInReportsScenarios : ReportsAtThePortTest
+    {
+        private static readonly string[] Members = ["total", "perDay", "throughputPerDay", "gapPerDay"];
+
+        [TestCase("team")]
+        [TestCase("portfolio")]
+        public async Task A_report_that_shows_Arrivals_keeps_its_four_values_on_both_sides(string ownerKind)
+        {
+            var owner = ownerKind == "team" ? ATeam("Team Lightspeed") : APortfolio("Project Apollo");
+
+            var offered = TheTypesOfReportFor(owner).Value!.Templates.Single().Metrics.Select(metric => metric.Key).ToList();
+            var created = await CreateAReport(owner, new NewReport(
+                "then-and-now", "Started against finished", ["arrivals"], new NewThenAndNow(new DateOnly(2026, 7, 31), 30, 30)));
+            var read = ReadAReport(owner, created.Value!.Id).Value!.ThenAndNow!.Metrics;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(offered.Last(), Is.EqualTo("arrivals"), "Arrivals must be offered, last in the catalog order");
+                Assert.That(created.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report was not created: {created.Code}");
+                Assert.That(read.ContainsKey("arrivals"), Is.True, "the report must carry the Arrivals metric");
+                Assert.That(read["arrivals"].AtThen.Keys, Is.EquivalentTo(Members), "Then must be frozen with all four values");
+                Assert.That(read["arrivals"].AtNow.Keys, Is.EquivalentTo(Members), "Now must be computed with all four values");
+                Assert.That(read["arrivals"].AtThen["gapPerDay"], Is.EqualTo(CapturedValue.Shown(0, 30)), "a window with nothing started or finished is a real zero gap");
+            }
         }
     }
 }

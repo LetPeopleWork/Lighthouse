@@ -151,6 +151,255 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Any finite gap per day, near zero and at half steps, rounded to two decimals
+</code></pre>
+
+<pre><code>The sentence reads balanced exactly when the shown gap is zero, more above, fewer below, with the shown magnitude
+</code></pre>
+
+<pre><code>The words always agree with the number the reader sees
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx::L1</p>
+
+<pre><code>A build that tests the sentence on the unrounded gap, so 0.004 reads more started
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Any pair of Then and Now gaps per day to three decimals
+</code></pre>
+
+<pre><code>The change equals the difference of the shown gaps and is better exactly when it fell
+</code></pre>
+
+<pre><code>The shown Then plus the shown change equals the shown Now
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx::L2</p>
+
+<pre><code>Already satisfied by the shared comparison: a build that changes it from unrounded gaps would fail, but this row passes before the feature exists
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P5</p>
+
+<pre><code>Open a Team report, on screen and as its print document, showing Arrivals with Then started 1.10 and finished 0.80 per day and Now 0.90 and 1.00
+</code></pre>
+
+<pre><code>Then reads 0.30 more started than finished per day, Now reads 0.10 fewer, the change reads 0.40 per day marked better with no percent, Work Items started in total and Throughput per day shown, same words in the print
+</code></pre>
+
+<pre><code>The reader sees whether the gap between Work Items started and finished per day got smaller from Then to Now, on screen and in the PDF
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx</p>
+
+<pre><code>A build that keeps a percent on the gap, shows it only on screen, or labels the rows differently from the approved copy
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Open a report whose Arrivals gap fell from Then to Now
+</code></pre>
+
+<pre><code>The header change summary lists Arrivals under Improved
+</code></pre>
+
+<pre><code>The reader sees Arrivals counted as improved in the header
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx</p>
+
+<pre><code>A build that marks the panel better but leaves Arrivals out of the header, or lists it under Got worse
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Open a report whose gaps are 0.004 per day Then and 0.006 per day Now
+</code></pre>
+
+<pre><code>Then reads as many started as finished per day, Now reads 0.01 more started than finished per day, the change reads 0.01 per day marked worse
+</code></pre>
+
+<pre><code>The reader never sees a signed zero gap and the change agrees with the shown numbers
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx</p>
+
+<pre><code>A build that tests the unrounded gap for zero, or rounds after comparing so a shown 0.00 beside 0.01 reads as No change
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Open a report that never froze Arrivals but shows it
+</code></pre>
+
+<pre><code>Both sides read Not captured for this report with dashes and no change, and the header lists Arrivals in no group
+</code></pre>
+
+<pre><code>The reader sees Not captured for this report, never a Then rebuilt from live data
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx</p>
+
+<pre><code>A build that shows zeros or a rebuilt value instead of dashes, or drops the Not captured note
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>Create and read the Arrivals metric over windows of one, 30 and 90 days: nothing finished, nothing started, balanced, started above and below finished, for a Team and a Portfolio, and for a report that froze nothing
+</code></pre>
+
+<pre><code>Total started, started per day, finished per day and the unrounded signed gap per day, each over the window&#x27;s days; Then stays as frozen; a report that froze nothing shows no Then
+</code></pre>
+
+<pre><code>The numbers behind the panel are the Metrics tab&#x27;s own, frozen for Then and fresh for Now
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs</p>
+
+<pre><code>A build that rounds the gap in the backend, computes finished per day differently from Throughput, or rebuilds Then on read
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A reader creating a Then &amp; Now report sees the metrics step, with Arrivals on offer, and ticks it
+</code></pre>
+
+<pre><code>An Arrivals checkbox is last in the metrics step under the fixed name Arrivals, and ticking it puts arrivals among the shown metrics
+</code></pre>
+
+<pre><code>The reader can choose to show Arrivals on the report
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.test.tsx</p>
+
+<pre><code>A build that labels the box with a lowercase key or a terminology word, or offers it first
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A Team and a Portfolio each make a Then &amp; Now report showing Arrivals and read it back through the report services
+</code></pre>
+
+<pre><code>Arrivals is offered last, and the report carries total, per day, Throughput per day and gap per day on both sides, an empty window being a real zero
+</code></pre>
+
+<pre><code>A Team or Portfolio report made with Arrivals shows it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs</p>
+
+<pre><code>A build that registers the metric for Teams only, or omits it from the offered types
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>

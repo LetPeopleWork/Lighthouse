@@ -115,6 +115,22 @@ describe("the Metrics & name step", () => {
 		).not.toHaveAccessibleDescription(NOT_CAPTURED);
 	});
 
+	it("offers Arrivals last under its fixed name, and ticking it adds it to the report", async () => {
+		const onChange = renderStep(
+			offering("cycle-time", "throughput", "arrivals"),
+			["cycle-time"],
+		);
+
+		const boxes = screen.getAllByRole("checkbox");
+		expect(boxes.at(-1)).toHaveAccessibleName("Arrivals");
+
+		await userEvent.click(screen.getByRole("checkbox", { name: "Arrivals" }));
+
+		expect(onChange).toHaveBeenCalledWith(
+			expect.objectContaining({ shownMetricKeys: ["cycle-time", "arrivals"] }),
+		);
+	});
+
 	it("lets a metric the report shows but never captured be unticked", async () => {
 		const onChange = renderStep(
 			offering("cycle-time", "throughput"),

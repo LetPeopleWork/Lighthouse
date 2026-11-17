@@ -105,7 +105,11 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/Reports\/ArrivalsReportMetricTest\.cs
 
-Lighthouse\.Frontend\/src\/tests\/ReportsTestKit\.ts
+Lighthouse\.Frontend\/src\/tests\/ReportsTestKit\.tsx
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportsAtThePortTest\.cs
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/MetricsAndNameStep\.test\.tsx
 
 #### Public oracle
 
