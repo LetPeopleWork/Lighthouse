@@ -494,16 +494,6 @@ P1
 Running the architecture-rules probe lists the Promises-related architecture tests as Passed, and the tests whose names state a made-up offender is reported (a Delivery service under Modules.Promises reaching a repository, Forecasting or the update code) show Passed, so such an offender is caught.
 ```
 
-#### E2
-
-##### Promises
-
-P2
-
-```text
-The backend-tests probe on the Promises membership test shows it Passed, and its test names state that a missing listed type and an unlisted extra type each make it fail, for both the types that move and the Models types admitted into the module.
-```
-
 #### E3
 
 ##### Promises
@@ -524,10 +514,74 @@ P5
 The ef-model-unchanged probe reports the database model unchanged, deliveries-answers-compare of base against candidate prints IDENTICAL, and the architecture-rules and backend-tests probes show every existing test Passed with none Failed.
 ```
 
+#### E6
+
+##### Promises
+
+P2
+
+```text
+The backend-tests probe on the Promises membership test shows every test Passed, including tests whose names state that a listed type missing from the code and an unlisted extra type each make it fail, and a test whose name states that the Models types listed to move are exactly the Delivery candidates neither stored nor on the wire nor used outside the module.
+```
+
 ## Charter
 
 None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules probe: exit 0, 1214 total, 1214 Passed, 0 Failed; Promises tests Passed incl. ADeliveryServiceUnderTheModuleReachingWhatPromisesMayNot_IsNamedBy... for ARepository, TheForecastingAdapters, TheUpdateCode (both module-map and shared ModuleRules variants), ANewOffenderNotOnTheList_FailsAndNamesIt, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+deliveries-answers-compare (base 2b7a00e54 vs candidate dbab52682): exit 0, 23 answers over 9 scenarios, 0 different in all four groups, VERDICT: IDENTICAL.
+```
+
+```text
+deliveries-answers-selftest: exit ok, RESULT all 10 checks passed: one changed Delivery answer -> exit 1 and DIFFERENT naming Delivery 7 metrics history; identical copy -> exit 0 IDENTICAL over 5 answers; empty pair -> not exit 0, not IDENTICAL, reported nothing compared.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+architecture-rules probe: exit 0, 1214 total, 1214 Passed, 0 Failed; Promises tests Passed incl. ADeliveryServiceUnderTheModuleReachingWhatPromisesMayNot_IsNamedBy... for ARepository, TheForecastingAdapters, TheUpdateCode (both module-map and shared ModuleRules variants), ANewOffenderNotOnTheList_FailsAndNamesIt, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed.
+```
+
+```text
+backend-tests probe 'Promises': exit 0, 41 total, 41 Passed. Includes AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted, AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideAndANestedTypeAreNot, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed, TheModelsTypesListedToMove_AreExactlyTheDeliveryCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule, and per-type ADeliveryModelsType_IsJudgedAsTheCompiledCodeShows rows (DeliveryForecastBlock admitted).
+```
+
+```text
+ef-model-unchanged probe: Sqlite and Postgres both print 'No changes have been made to the model since the last migration.'
+```
+
+```text
+deliveries-answers-compare (base 2b7a00e54 vs candidate dbab52682): exit 0, 23 answers over 9 scenarios, 0 different in all four groups, VERDICT: IDENTICAL.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+backend-tests probe 'Promises': exit 0, 41 total, 41 Passed. Includes AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted, AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideAndANestedTypeAreNot, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed, TheModelsTypesListedToMove_AreExactlyTheDeliveryCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule, and per-type ADeliveryModelsType_IsJudgedAsTheCompiledCodeShows rows (DeliveryForecastBlock admitted).
+```

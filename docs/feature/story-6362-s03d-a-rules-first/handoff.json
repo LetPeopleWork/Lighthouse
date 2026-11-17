@@ -265,8 +265,8 @@
 },
 "counters": {
 "D": 12,
-"E": 5,
-"F": 213,
+"E": 6,
+"F": 219,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -849,6 +849,36 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F215"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F217",
+"F218"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F215",
+"F216",
+"F219",
+"F217"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F216"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -857,13 +887,6 @@
 "P1"
 ],
 "text": "F146"
-},
-{
-"id": "E2",
-"promises": [
-"P2"
-],
-"text": "F147"
 },
 {
 "id": "E3",
@@ -878,6 +901,13 @@
 "P5"
 ],
 "text": "F150"
+},
+{
+"id": "E6",
+"promises": [
+"P2"
+],
+"text": "F214"
 }
 ]
 },
@@ -935,7 +965,6 @@
 "F144": "one answer changed",
 "F145": "nothing compared",
 "F146": "Running the architecture-rules probe lists the Promises-related architecture tests as Passed, and the tests whose names state a made-up offender is reported (a Delivery service under Modules.Promises reaching a repository, Forecasting or the update code) show Passed, so such an offender is caught.",
-"F147": "The backend-tests probe on the Promises membership test shows it Passed, and its test names state that a missing listed type and an unlisted extra type each make it fail, for both the types that move and the Models types admitted into the module.",
 "F148": "The deliveries-answers-compare probe prints DIFFERENT when two revisions differ in one Delivery answer, and IDENTICAL when no Delivery answer differs (including base against candidate of this feature).",
 "F150": "The ef-model-unchanged probe reports the database model unchanged, deliveries-answers-compare of base against candidate prints IDENTICAL, and the architecture-rules and backend-tests probes show every existing test Passed with none Failed.",
 "F151": "The architecture tests run with a made-up Delivery service in Modules.Promises that reaches a repository, Forecasting's adapters or the update code, beside its twin in the old Delivery sources place, a namesake just outside Modules.Promises and a service that reads values only.",
@@ -1008,6 +1037,12 @@
 "F211": "Every existing test stays green; only files under Scripts and the examine commands list change.",
 "F212": "A change to the shared compare piece that alters the output of the existing forecast and refresh comparisons, which no backend test runs.",
 "F213": "A4 dropped (2026-11-17): every case it would pin already holds today (Modules/Promises source and test paths select the backend only; the Tracker integration port path and Program.cs are shared and select every live suite), so it has no RED. The selection stays observable at EXAMINE through the test-selection-show probe.",
+"F214": "The backend-tests probe on the Promises membership test shows every test Passed, including tests whose names state that a listed type missing from the code and an unlisted extra type each make it fail, and a test whose name states that the Models types listed to move are exactly the Delivery candidates neither stored nor on the wire nor used outside the module.",
+"F215": "architecture-rules probe: exit 0, 1214 total, 1214 Passed, 0 Failed; Promises tests Passed incl. ADeliveryServiceUnderTheModuleReachingWhatPromisesMayNot_IsNamedBy... for ARepository, TheForecastingAdapters, TheUpdateCode (both module-map and shared ModuleRules variants), ANewOffenderNotOnTheList_FailsAndNamesIt, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed.",
+"F216": "backend-tests probe 'Promises': exit 0, 41 total, 41 Passed. Includes AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted, AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideAndANestedTypeAreNot, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed, TheModelsTypesListedToMove_AreExactlyTheDeliveryCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule, and per-type ADeliveryModelsType_IsJudgedAsTheCompiledCodeShows rows (DeliveryForecastBlock admitted).",
+"F217": "deliveries-answers-compare (base 2b7a00e54 vs candidate dbab52682): exit 0, 23 answers over 9 scenarios, 0 different in all four groups, VERDICT: IDENTICAL.",
+"F218": "deliveries-answers-selftest: exit ok, RESULT all 10 checks passed: one changed Delivery answer -> exit 1 and DIFFERENT naming Delivery 7 metrics history; identical copy -> exit 0 IDENTICAL over 5 answers; empty pair -> not exit 0, not IDENTICAL, reported nothing compared.",
+"F219": "ef-model-unchanged probe: Sqlite and Postgres both print 'No changes have been made to the model since the last migration.'",
 "F22": "Confirmed (D-9, D-10): tests move with production in feature B; Program.cs lines and handler order stay. Using-only and list-string renames in DeliveryRuleServiceApiPreservationTest, TestHostUseGuardTest.HostUsersStillToMove, WorkItemsModuleBoundariesArchUnitTest and TrackerIntegrationMembershipArchUnitTest belong to B1, not feature A.",
 "F23": "Confirmed (D-11): no classifier widening. A4 adds cases to test-path-classifier.sh: a Modules/Promises source path and test path select the backend suite only; Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs and Program.cs select every live connector suite. path-classifier.sh changes only if one of those cases is red.",
 "F24": "Confirmed (D-12): a new EXAMINE command deliveries-answers-compare (CREATE_NEW, thin, on the shared capture pieces of build-examine-commands like metrics-, forecast- and refresh-answers-compare) reads per demo scenario and Portfolio the Delivery list, deliveries/{id}/metrics-history, portfolios/{id}/delivery-rules/schema and the delivery sources on two revisions and compares the bodies: IDENTICAL exit 0, DIFFERENT exit 1, and it fails when nothing was compared. Its compare stage takes two capture folders (split out in A3 if it cannot today). Declared in .nwave/examine.json before the first EXAMINE.",

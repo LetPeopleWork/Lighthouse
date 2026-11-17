@@ -578,15 +578,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Running the architecture-rules probe lists the Promises-related architecture tests as Passed, and the tests whose names state a made-up offender is reported (a Delivery service under Modules.Promises reaching a repository, Forecasting or the update code) show Passed, so such an offender is caught.
 </code></pre>
 
-<h4>E2</h4>
-
-<h5>Promises</h5>
-
-<p>P2</p>
-
-<pre><code>The backend-tests probe on the Promises membership test shows it Passed, and its test names state that a missing listed type and an unlisted extra type each make it fail, for both the types that move and the Models types admitted into the module.
-</code></pre>
-
 <h4>E3</h4>
 
 <h5>Promises</h5>
@@ -605,12 +596,67 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The ef-model-unchanged probe reports the database model unchanged, deliveries-answers-compare of base against candidate prints IDENTICAL, and the architecture-rules and backend-tests probes show every existing test Passed with none Failed.
 </code></pre>
 
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>The backend-tests probe on the Promises membership test shows every test Passed, including tests whose names state that a listed type missing from the code and an unlisted extra type each make it fail, and a test whose name states that the Models types listed to move are exactly the Delivery candidates neither stored nor on the wire nor used outside the module.
+</code></pre>
+
 <h2>Charter</h2>
 
 <p>None.</p>
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>architecture-rules probe: exit 0, 1214 total, 1214 Passed, 0 Failed; Promises tests Passed incl. ADeliveryServiceUnderTheModuleReachingWhatPromisesMayNot_IsNamedBy... for ARepository, TheForecastingAdapters, TheUpdateCode (both module-map and shared ModuleRules variants), ANewOffenderNotOnTheList_FailsAndNamesIt, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed.
+</code></pre>
+
+<h3>E3</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>deliveries-answers-compare (base 2b7a00e54 vs candidate dbab52682): exit 0, 23 answers over 9 scenarios, 0 different in all four groups, VERDICT: IDENTICAL.
+</code></pre>
+
+<pre><code>deliveries-answers-selftest: exit ok, RESULT all 10 checks passed: one changed Delivery answer -&gt; exit 1 and DIFFERENT naming Delivery 7 metrics history; identical copy -&gt; exit 0 IDENTICAL over 5 answers; empty pair -&gt; not exit 0, not IDENTICAL, reported nothing compared.
+</code></pre>
+
+<h3>E5</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>architecture-rules probe: exit 0, 1214 total, 1214 Passed, 0 Failed; Promises tests Passed incl. ADeliveryServiceUnderTheModuleReachingWhatPromisesMayNot_IsNamedBy... for ARepository, TheForecastingAdapters, TheUpdateCode (both module-map and shared ModuleRules variants), ANewOffenderNotOnTheList_FailsAndNamesIt, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed.
+</code></pre>
+
+<pre><code>backend-tests probe &#x27;Promises&#x27;: exit 0, 41 total, 41 Passed. Includes AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted, AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideAndANestedTypeAreNot, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed, TheModelsTypesListedToMove_AreExactlyTheDeliveryCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule, and per-type ADeliveryModelsType_IsJudgedAsTheCompiledCodeShows rows (DeliveryForecastBlock admitted).
+</code></pre>
+
+<pre><code>ef-model-unchanged probe: Sqlite and Postgres both print &#x27;No changes have been made to the model since the last migration.&#x27;
+</code></pre>
+
+<pre><code>deliveries-answers-compare (base 2b7a00e54 vs candidate dbab52682): exit 0, 23 answers over 9 scenarios, 0 different in all four groups, VERDICT: IDENTICAL.
+</code></pre>
+
+<h3>E6</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>backend-tests probe &#x27;Promises&#x27;: exit 0, 41 total, 41 Passed. Includes AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted, AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideAndANestedTypeAreNot, ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed, TheModelsTypesListedToMove_AreExactlyTheDeliveryCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule, and per-type ADeliveryModelsType_IsJudgedAsTheCompiledCodeShows rows (DeliveryForecastBlock admitted).
+</code></pre>
 
 </body></html>
