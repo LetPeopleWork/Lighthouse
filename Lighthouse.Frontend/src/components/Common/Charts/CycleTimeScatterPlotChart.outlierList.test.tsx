@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	fireEvent,
 	render,
@@ -91,6 +92,45 @@ vi.mock("@mui/x-charts", async () => {
 
 const WIDGET_KEY = "cycleScatter";
 
+interface OutlierVerdict {
+	readonly status: "Ready" | "NoLimits";
+	readonly upperNaturalProcessLimit: number | null;
+	readonly outlierWorkItemIds: number[];
+}
+
+// Stands in for the backend: it answers the ids of the given Work Items whose Cycle Time is above the limit it was given.
+const backendJudgingAbove =
+	(limit: number, items: readonly IWorkItem[]) =>
+	(definitionId: number | null): Promise<OutlierVerdict> =>
+		Promise.resolve({
+			status: "Ready",
+			upperNaturalProcessLimit: limit,
+			outlierWorkItemIds: items
+				.filter(
+					(item) =>
+						(definitionId === null
+							? item.cycleTime
+							: (item.namedCycleTimes?.find(
+									(named) => named.definitionId === definitionId,
+								)?.days ?? 0)) > limit,
+				)
+				.map((item) => item.id),
+		});
+
+let queryClient = new QueryClient();
+
+const aFreshQueryClient = () => {
+	queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+};
+
+const theVerdictHasLanded = async () => {
+	await within(
+		screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`),
+	).findByRole("button", { name: /^\d+ outliers? not drawn/ });
+};
+
 const closedItem = (
 	referenceId: string,
 	cycleTime: number,
@@ -112,7 +152,7 @@ const closedItem = (
 	isBlocked: false,
 });
 
-// 25 typical items put the median at 6 days, so the cut is 30 days.
+// 25 typical items of 6 days, below a limit of 30 days.
 const typicalItems = (): IWorkItem[] =>
 	Array.from({ length: 25 }, (_, index) =>
 		closedItem(`TZ-${200 + index}`, 6, 1 + (index % 28)),
@@ -126,19 +166,22 @@ const elevenOutliers = (type = "Task"): IWorkItem[] =>
 
 const showChart = (items: IWorkItem[]) =>
 	render(
-		<WidgetShell
-			widgetKey={WIDGET_KEY}
-			title="Cycle Time scatterplot"
-			status="ready"
-			hasContentToDim
-		>
-			<CycleTimeScatterPlotChart
-				ownerKind="team"
-				percentileValues={[]}
-				cycleTimeDataPoints={items}
-				serviceLevelExpectation={null}
-			/>
-		</WidgetShell>,
+		<QueryClientProvider client={queryClient}>
+			<WidgetShell
+				widgetKey={WIDGET_KEY}
+				title="Cycle Time scatterplot"
+				status="ready"
+				hasContentToDim
+			>
+				<CycleTimeScatterPlotChart
+					ownerKind="team"
+					percentileValues={[]}
+					cycleTimeDataPoints={items}
+					serviceLevelExpectation={null}
+					onFetchCycleTimeOutliers={backendJudgingAbove(30, items)}
+				/>
+			</WidgetShell>
+		</QueryClientProvider>,
 	);
 
 const outlierChip = () =>
@@ -162,10 +205,12 @@ describe("Cycle Time scatterplot opens the outliers in the Work Items list", () 
 		terms.workItems = "Work Items";
 		terms.cycleTime = "Cycle Time";
 		terms.sle = "SLE";
+		aFreshQueryClient();
 	});
 
 	it("lists every outlier straight from the chip and hands focus back to the chip afterwards", async () => {
 		showChart([...typicalItems(), ...elevenOutliers()]);
+		await theVerdictHasLanded();
 
 		openTheList();
 
@@ -173,7 +218,7 @@ describe("Cycle Time scatterplot opens the outliers in the Work Items list", () 
 		expect(screen.queryAllByText(/Not drawn: longer than/)).toHaveLength(0);
 		expect(
 			within(dialog()).getByText(
-				"Work Items with a Cycle Time more than 5 times the median",
+				"Work Items with a Cycle Time above the upper natural process limit (30 days)",
 			),
 		).toBeVisible();
 		expect(listedIds()).toEqual(
@@ -189,21 +234,22 @@ describe("Cycle Time scatterplot opens the outliers in the Work Items list", () 
 		expect(screen.queryByRole("dialog")).toBeNull();
 	});
 
-	it("titles the list in the reader's own words for Work Items and Cycle Time", () => {
+	it("titles the list in the reader's own words for Work Items and Cycle Time", async () => {
 		terms.workItems = "Tasks";
 		terms.cycleTime = "Lead Time";
 		showChart([...typicalItems(), ...elevenOutliers().slice(0, 2)]);
+		await theVerdictHasLanded();
 
 		openTheList();
 
 		expect(
 			within(dialog()).getByText(
-				"Tasks with a Lead Time more than 5 times the median",
+				"Tasks with a Lead Time above the upper natural process limit (30 days)",
 			),
 		).toBeVisible();
 	});
 
-	it("lists only the outliers of the Work Item types the reader still shows", () => {
+	it("lists only the outliers of the Work Item types the reader still shows", async () => {
 		const bug = closedItem("TZ-301", 58, 12, "Bug");
 		const story = closedItem("TZ-302", 40, 11, "Story");
 		showChart([
@@ -211,6 +257,7 @@ describe("Cycle Time scatterplot opens the outliers in the Work Items list", () 
 			bug,
 			story,
 		]);
+		await theVerdictHasLanded();
 		fireEvent.click(
 			screen.getByRole("button", { name: "Story visibility toggle" }),
 		);
@@ -236,7 +283,7 @@ describe("Cycle Time scatterplot help names the outlier rule", () => {
 			const help = getWidgetInfo(WIDGET_KEY, { kind, terms: renamed });
 
 			expect(help?.description).toMatch(
-				/An outlier is a closed .+ whose Lead Time is more than 5 times the median Lead Time of all closed Tasks in this date range\./,
+				/An outlier is a closed .+ whose Lead Time is above the upper natural process limit of the Lead Time process behaviour chart for this date range\./,
 			);
 			expect(help?.description).not.toMatch(/Work Items?|Cycle Time/);
 		},

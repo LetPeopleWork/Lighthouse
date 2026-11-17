@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -59,6 +60,45 @@ vi.mock("@mui/x-charts", async () => {
 
 const WIDGET_KEY = "cycleScatter";
 
+interface OutlierVerdict {
+	readonly status: "Ready" | "NoLimits";
+	readonly upperNaturalProcessLimit: number | null;
+	readonly outlierWorkItemIds: number[];
+}
+
+// Stands in for the backend: it answers the ids of the given Work Items whose Cycle Time is above the limit it was given.
+const backendJudgingAbove =
+	(limit: number, items: readonly IWorkItem[]) =>
+	(definitionId: number | null): Promise<OutlierVerdict> =>
+		Promise.resolve({
+			status: "Ready",
+			upperNaturalProcessLimit: limit,
+			outlierWorkItemIds: items
+				.filter(
+					(item) =>
+						(definitionId === null
+							? item.cycleTime
+							: (item.namedCycleTimes?.find(
+									(named) => named.definitionId === definitionId,
+								)?.days ?? 0)) > limit,
+				)
+				.map((item) => item.id),
+		});
+
+let queryClient = new QueryClient();
+
+const aFreshQueryClient = () => {
+	queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+};
+
+const theVerdictHasLanded = async () => {
+	await within(
+		screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`),
+	).findByRole("button", { name: /^\d+ outliers? not drawn/ });
+};
+
 const closedItem = (
 	referenceId: string,
 	cycleTime: number,
@@ -79,7 +119,7 @@ const closedItem = (
 	isBlocked: false,
 });
 
-// The median is 3 days, so the 60-day item is the one outlier.
+// Above a limit of 30 days, the 60-day item is the one outlier.
 const closedItems = (): IWorkItem[] =>
 	[
 		closedItem("TZ-101", 2, 2),
@@ -97,19 +137,22 @@ const percentiles: IPercentileValue[] = [
 
 const showChart = () =>
 	render(
-		<WidgetShell
-			widgetKey={WIDGET_KEY}
-			title="Cycle Time scatterplot"
-			status="ready"
-			hasContentToDim
-		>
-			<CycleTimeScatterPlotChart
-				ownerKind="team"
-				percentileValues={percentiles}
-				cycleTimeDataPoints={closedItems()}
-				serviceLevelExpectation={{ percentile: 85, value: 4 }}
-			/>
-		</WidgetShell>,
+		<QueryClientProvider client={queryClient}>
+			<WidgetShell
+				widgetKey={WIDGET_KEY}
+				title="Cycle Time scatterplot"
+				status="ready"
+				hasContentToDim
+			>
+				<CycleTimeScatterPlotChart
+					ownerKind="team"
+					percentileValues={percentiles}
+					cycleTimeDataPoints={closedItems()}
+					serviceLevelExpectation={{ percentile: 85, value: 4 }}
+					onFetchCycleTimeOutliers={backendJudgingAbove(30, closedItems())}
+				/>
+			</WidgetShell>
+		</QueryClientProvider>,
 	);
 
 const header = () => screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`);
@@ -132,10 +175,12 @@ const axisTop = (): number =>
 describe("The reader can switch outlier handling off to see every closed Work Item", () => {
 	beforeEach(() => {
 		reportUsage.mockClear();
+		aFreshQueryClient();
 	});
 
-	it("starts on, draws every item and drops the chip when switched off, and restores both when switched on again", () => {
+	it("starts on, draws every item and drops the chip when switched off, and restores both when switched on again", async () => {
 		showChart();
+		await theVerdictHasLanded();
 
 		expect(
 			hideOutliersSwitch(),
@@ -171,13 +216,15 @@ describe("The reader can switch outlier handling off to see every closed Work It
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
-	it("starts on again when the chart is opened anew after switching it off", () => {
+	it("starts on again when the chart is opened anew after switching it off", async () => {
 		const first = showChart();
+		await theVerdictHasLanded();
 		fireEvent.click(hideOutliersSwitch());
 		expect(hideOutliersSwitch()).not.toBeChecked();
 		first.unmount();
 
 		showChart();
+		await theVerdictHasLanded();
 
 		expect(
 			hideOutliersSwitch(),

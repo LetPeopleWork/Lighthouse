@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	fireEvent,
 	render,
@@ -83,6 +84,45 @@ vi.mock("@mui/x-charts", async () => {
 });
 
 const WIDGET_KEY = "cycleScatter";
+
+interface OutlierVerdict {
+	readonly status: "Ready" | "NoLimits";
+	readonly upperNaturalProcessLimit: number | null;
+	readonly outlierWorkItemIds: number[];
+}
+
+// Stands in for the backend: it answers the ids of the given Work Items whose Cycle Time is above the limit it was given.
+const backendJudgingAbove =
+	(limit: number, items: readonly IWorkItem[]) =>
+	(definitionId: number | null): Promise<OutlierVerdict> =>
+		Promise.resolve({
+			status: "Ready",
+			upperNaturalProcessLimit: limit,
+			outlierWorkItemIds: items
+				.filter(
+					(item) =>
+						(definitionId === null
+							? item.cycleTime
+							: (item.namedCycleTimes?.find(
+									(named) => named.definitionId === definitionId,
+								)?.days ?? 0)) > limit,
+				)
+				.map((item) => item.id),
+		});
+
+let queryClient = new QueryClient();
+
+const aFreshQueryClient = () => {
+	queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+};
+
+const theVerdictHasLanded = async () => {
+	await within(
+		screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`),
+	).findByRole("button", { name: /^\d+ outliers? not drawn/ });
+};
 const AMBER = appColors.status.warning;
 
 const closedItem = (
@@ -105,7 +145,7 @@ const closedItem = (
 	isBlocked: false,
 });
 
-// Team Zenith: five typical items put the median at 6 days, so the cut is 30 days; TZ-301 took 58.
+// Team Zenith: the limit is 30 days and TZ-301 took 58.
 const teamZenith = (): IWorkItem[] =>
 	[
 		closedItem("TZ-101", 2, 2),
@@ -133,21 +173,24 @@ const chartIn = (
 	sleValue: number,
 	status: WidgetStatus,
 ) => (
-	<ThemeProvider theme={lightTheme}>
-		<WidgetShell
-			widgetKey={WIDGET_KEY}
-			title="Cycle Time scatterplot"
-			status={status}
-			hasContentToDim
-		>
-			<CycleTimeScatterPlotChart
-				ownerKind="team"
-				percentileValues={percentiles(p95)}
-				cycleTimeDataPoints={items}
-				serviceLevelExpectation={{ percentile: 85, value: sleValue }}
-			/>
-		</WidgetShell>
-	</ThemeProvider>
+	<QueryClientProvider client={queryClient}>
+		<ThemeProvider theme={lightTheme}>
+			<WidgetShell
+				widgetKey={WIDGET_KEY}
+				title="Cycle Time scatterplot"
+				status={status}
+				hasContentToDim
+			>
+				<CycleTimeScatterPlotChart
+					ownerKind="team"
+					percentileValues={percentiles(p95)}
+					cycleTimeDataPoints={items}
+					serviceLevelExpectation={{ percentile: 85, value: sleValue }}
+					onFetchCycleTimeOutliers={backendJudgingAbove(30, items)}
+				/>
+			</WidgetShell>
+		</ThemeProvider>
+	</QueryClientProvider>
 );
 
 // Team Zenith's lines sit below the axis: the 95% line is at 15 days and the SLE at 7.
@@ -205,14 +248,16 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 		reportUsage.mockClear();
 		dialogProps.length = 0;
 		viewportWidth(false);
+		aFreshQueryClient();
 	});
 
 	afterEach(() => {
 		vi.unstubAllGlobals();
 	});
 
-	it("opens the Work Items list straight from the chip with no step in between and reports the opening once", () => {
+	it("opens the Work Items list straight from the chip with no step in between and reports the opening once", async () => {
 		showChart();
+		await theVerdictHasLanded();
 		const chip = outlierChip();
 		expect(chip).toHaveTextContent("1 outlier");
 		expect(chip).not.toHaveAttribute("aria-haspopup");
@@ -222,7 +267,7 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 
 		expect(
 			within(dialog()).getByText(
-				"Work Items with a Cycle Time more than 5 times the median",
+				"Work Items with a Cycle Time above the upper natural process limit (30 days)",
 			),
 			"One click on the chip must open the Work Items list; do not put a popover or a second button first.",
 		).toBeVisible();
@@ -246,6 +291,7 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 	it("opens the list from the keyboard and hands focus back to the chip when it closes, reporting every opening", async () => {
 		const user = userEvent.setup();
 		showChart();
+		await theVerdictHasLanded();
 		outlierChip().focus();
 
 		await user.keyboard("{Enter}");
@@ -269,6 +315,7 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 
 	it("names the chip and its tooltip the same when no line is above the axis", async () => {
 		showChart();
+		await theVerdictHasLanded();
 
 		expect(outlierChip()).toHaveAccessibleName(
 			"1 outlier not drawn on the chart. Show the list.",
@@ -278,14 +325,16 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 		);
 	});
 
-	it("is amber outlined when ready", () => {
+	it("is amber outlined when ready", async () => {
 		showChart();
+		await theVerdictHasLanded();
 
 		expectAmberOutlined(outlierChip());
 	});
 
 	it("names the lines above the axis in its accessible name and its tooltip only when there are some", async () => {
 		showChart(withSecondOutlier(), 33, 35);
+		await theVerdictHasLanded();
 
 		expect(outlierChip()).toHaveAccessibleName(
 			"2 outliers not drawn on the chart. Above the axis: 95% at 33 days, SLE at 35 days. Show the list.",
@@ -295,9 +344,10 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 		);
 	});
 
-	it("shows only the count at phone width and keeps its accessible name", () => {
+	it("shows only the count at phone width and keeps its accessible name", async () => {
 		viewportWidth(true);
 		showChart();
+		await theVerdictHasLanded();
 
 		expect(outlierChip()).toHaveTextContent(/^1$/);
 		expect(outlierChip()).toHaveAccessibleName(
@@ -305,22 +355,25 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 		);
 	});
 
-	it("stays amber outlined at phone width", () => {
+	it("stays amber outlined at phone width", async () => {
 		viewportWidth(true);
 		showChart();
+		await theVerdictHasLanded();
 
 		expectAmberOutlined(outlierChip());
 	});
 
-	it("shows a disabled amber Outliers chip while loading", () => {
+	it("shows a disabled amber Outliers chip while loading", async () => {
 		const view = showChart();
+		await theVerdictHasLanded();
 		view.rerender(chartIn(teamZenith(), 15, 7, "loading"));
 
 		expectAmberOutlined(outlierChip());
 	});
 
-	it("shows a disabled Outliers chip with no count while loading, and opens and reports nothing when clicked", () => {
+	it("shows a disabled Outliers chip with no count while loading, and opens and reports nothing when clicked", async () => {
 		const view = showChart();
+		await theVerdictHasLanded();
 		view.rerender(chartIn(teamZenith(), 15, 7, "loading"));
 
 		const chip = outlierChip();

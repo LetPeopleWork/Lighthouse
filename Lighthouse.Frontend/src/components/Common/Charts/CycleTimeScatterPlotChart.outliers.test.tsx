@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -5,7 +6,6 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import WidgetShell, {
 	COULD_NOT_LOAD_MESSAGE,
 } from "../../../pages/Common/MetricsView/WidgetShell";
-import type { WidgetStatus } from "../../../pages/Common/MetricsView/widgetStatus";
 import { testTheme } from "../../../tests/testTheme";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 
@@ -66,112 +66,93 @@ vi.mock("@mui/x-charts", async () => {
 
 const WIDGET_KEY = "cycleScatter";
 
-// Closed Work Items whose 50th percentile is 6 days, so the cut is 30 days.
-const closedItem = (
-	referenceId: string,
-	name: string,
-	cycleTime: number,
-	closedDate: Date,
-): IWorkItem => ({
-	id: Number(referenceId.replace(/\D/g, "")),
-	referenceId,
-	name,
+interface OutlierVerdict {
+	readonly status: "Ready" | "NoLimits";
+	readonly upperNaturalProcessLimit: number | null;
+	readonly outlierWorkItemIds: number[];
+}
+
+type FetchOutliers = (definitionId: number | null) => Promise<OutlierVerdict>;
+
+const closedItem = (id: number, cycleTime: number, day: number): IWorkItem => ({
+	id,
+	referenceId: `OE-${id}`,
+	name: `Closed after ${cycleTime} days`,
 	url: null,
 	cycleTime,
 	startedDate: new Date(2026, 1, 1),
-	closedDate,
+	closedDate: new Date(2026, 2, day),
 	workItemAge: cycleTime,
 	state: "Done",
 	stateCategory: "Done",
-	type: "Task",
+	type: "Story",
 	parentWorkItemReference: "",
 	isBlocked: false,
 });
 
-const typicalItems = (): IWorkItem[] => [
-	closedItem("TZ-101", "Login", 2, new Date(2026, 2, 2)),
-	closedItem("TZ-102", "Search", 4, new Date(2026, 2, 3)),
-	closedItem("TZ-103", "Export", 6, new Date(2026, 2, 4)),
-	closedItem("TZ-104", "Import", 6, new Date(2026, 2, 5)),
-	closedItem("TZ-105", "Filter", 8, new Date(2026, 2, 6)),
+// Closed Work Items of 12, 30, 31 and 90 days; the backend judges a limit of 30 days.
+const twelveThirtyThirtyOneNinety = (): IWorkItem[] => [
+	closedItem(101, 12, 2),
+	closedItem(102, 30, 3),
+	closedItem(301, 31, 4),
+	closedItem(302, 90, 5),
 ];
 
-const withLongItem = (cycleTime: number): IWorkItem[] => [
-	...typicalItems(),
-	closedItem(
-		"TZ-301",
-		"Legacy data store migration",
-		cycleTime,
-		new Date(2026, 2, 12),
-	),
-];
+const aboveALimitOf30: OutlierVerdict = {
+	status: "Ready",
+	upperNaturalProcessLimit: 30,
+	outlierWorkItemIds: [301, 302],
+};
 
-const ofType = (items: IWorkItem[], type: string): IWorkItem[] =>
-	items.map((item) => ({ ...item, type }));
+const answering = (verdict: OutlierVerdict) =>
+	vi.fn<FetchOutliers>(() => Promise.resolve(verdict));
 
-// Typical work is Stories; the one 58-day Work Item is a Bug.
-const storiesAndOneLongBug = (): IWorkItem[] => [
-	...ofType(typicalItems(), "Story"),
-	...ofType(withLongItem(58).slice(5), "Bug"),
-];
+const neverAnswering = () =>
+	vi.fn<FetchOutliers>(() => new Promise<OutlierVerdict>(() => {}));
+
+const failing = () =>
+	vi.fn<FetchOutliers>(() => Promise.reject(new Error("could not load")));
 
 const percentiles = (p95: number | null): IPercentileValue[] =>
 	p95 === null
 		? []
 		: [
-				{ percentile: 50, value: 6 },
-				{ percentile: 85, value: 8 },
+				{ percentile: 50, value: 12 },
+				{ percentile: 85, value: 28 },
 				{ percentile: 95, value: p95 },
 			];
 
-const sle = (value: number | null): IPercentileValue | null =>
-	value === null ? null : { percentile: 85, value };
-
-const frozen = <T extends object>(values: T[]): T[] =>
-	Object.freeze(values.map((value) => Object.freeze(value))) as T[];
-
-const chartIn = (
-	items: IWorkItem[],
-	p95: number | null,
-	sleValue: number | null,
-	status: WidgetStatus,
-	hasContentToDim = true,
-) => (
-	<WidgetShell
-		widgetKey={WIDGET_KEY}
-		title="Cycle Time scatterplot"
-		status={status}
-		hasContentToDim={hasContentToDim}
-	>
-		<CycleTimeScatterPlotChart
-			ownerKind="team"
-			percentileValues={frozen(percentiles(p95))}
-			cycleTimeDataPoints={frozen(items)}
-			serviceLevelExpectation={sle(sleValue)}
-		/>
-	</WidgetShell>
-);
-
 const showChart = (
 	items: IWorkItem[],
-	p95: number | null,
-	sleValue: number | null,
-	status: WidgetStatus = "ready",
-	hasContentToDim = true,
-) => render(chartIn(items, p95, sleValue, status, hasContentToDim));
-
-const lineValue = (label: string): number =>
-	Number(screen.getByTestId(`reference-line-${label}`).dataset.y);
-
-const longItems = (cycleTimes: number[]): IWorkItem[] =>
-	cycleTimes.map((days, index) =>
-		closedItem(
-			`TZ-${300 + index}`,
-			`Long ${days}`,
-			days,
-			new Date(2026, 2, 12 - index),
-		),
+	fetchOutliers: FetchOutliers,
+	p95: number | null = null,
+	sleValue: number | null = null,
+) => {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	return render(
+		<QueryClientProvider client={queryClient}>
+			<WidgetShell
+				widgetKey={WIDGET_KEY}
+				title="Cycle Time scatterplot"
+				status="ready"
+			>
+				<CycleTimeScatterPlotChart
+					ownerKind="team"
+					percentileValues={percentiles(p95)}
+					cycleTimeDataPoints={items}
+					serviceLevelExpectation={
+						sleValue === null ? null : { percentile: 85, value: sleValue }
+					}
+					onFetchCycleTimeOutliers={fetchOutliers}
+				/>
+			</WidgetShell>
+		</QueryClientProvider>,
 	);
+};
+
+const frame = () => screen.getByTestId(`widget-shell-${WIDGET_KEY}`);
 
 const header = () => screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`);
 
@@ -190,207 +171,75 @@ const axisTop = (): number =>
 const isDisabled = (element: HTMLElement): boolean =>
 	element.matches(":disabled, [aria-disabled='true']");
 
-describe("Cycle Time scatterplot hides exceptionally long closed Work Items", () => {
+const theVerdictHasLanded = async () => {
+	await screen.findByRole("button", { name: /^\d+ outliers? not drawn/ });
+};
+
+describe("Cycle Time scatterplot sets apart the Work Items above the upper natural process limit", () => {
 	beforeEach(() => {
 		reportUsage.mockClear();
 	});
 
-	it("leaves the chart as it was when no closed Work Item is longer than 5 times the median", () => {
-		// 30 days is exactly 5 times the median of 6: not long enough to be left out.
-		showChart(withLongItem(30), 15, 7);
+	it("sets apart the 31 and 90 day Work Items the backend judges above a limit of 30 days and stops the axis at the limit", async () => {
+		const fetchOutliers = answering(aboveALimitOf30);
+		showChart(twelveThirtyThirtyOneNinety(), fetchOutliers);
 
-		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8, 30]);
-		expect(axisTop()).toBeCloseTo(33, 5);
+		await theVerdictHasLanded();
+
 		expect(
-			within(header()).queryByRole("button", { name: /outlier/i }),
-		).toBeNull();
-	});
-
-	it("shows the one 58-day Work Item as an outlier in the header while the statistics stay the same", () => {
-		showChart(withLongItem(58), 15, 7);
-
-		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
-		expect(axisTop()).toBeCloseTo(16.5, 5);
-		expect(lineValue("50%")).toBe(6);
-		expect(lineValue("85%")).toBe(8);
-		expect(lineValue("95%")).toBe(15);
-		expect(lineValue("SLE: 85% @ 7 days or less")).toBe(7);
-
-		expect(outlierChip()).toHaveTextContent("1 outlier");
+			drawnHeights(),
+			"WHAT: the drawn Work Items are not the ones the verdict leaves. WHY: the outliers must agree with the process behaviour chart. HOW: set apart the plotted items whose ids the verdict names.",
+		).toEqual([12, 30]);
+		expect(axisTop()).toBeCloseTo(30, 5);
+		expect(outlierChip()).toHaveTextContent("2 outliers");
 		expect(isDisabled(outlierChip())).toBe(false);
-		expect(outlierChip()).not.toHaveAccessibleName(/Above the axis/);
+		expect(fetchOutliers).toHaveBeenCalledWith(null);
+
+		fireEvent.click(outlierChip());
+
+		expect(reportUsage).toHaveBeenCalledWith({ name: "OutlierListOpened" });
 	});
 
-	it("flags a Work Item one day over 5 times the median", () => {
-		showChart(withLongItem(31), 15, 7);
+	it("names the percentile and SLE lines that lie above a limit of 30 days", async () => {
+		showChart(
+			[closedItem(101, 12, 2), closedItem(102, 30, 3), closedItem(302, 90, 5)],
+			answering({ ...aboveALimitOf30, outlierWorkItemIds: [302] }),
+			33,
+			35,
+		);
 
-		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
-		expect(outlierChip()).toHaveTextContent("1 outlier");
-	});
+		await theVerdictHasLanded();
 
-	it("tells the reader about a percentile and an SLE line that lie above the axis", () => {
-		showChart(withLongItem(58), 33, 35);
-
-		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
-		expect(axisTop()).toBeCloseTo(8.8, 5);
-		// Lines that fit stay in place; the two that do not are named instead of lost.
-		expect(screen.getByTestId("reference-line-85%")).toBeVisible();
-		expect(screen.queryByTestId("reference-line-95%")).toBeNull();
-		expect(
-			screen.queryByTestId("reference-line-SLE: 85% @ 35 days or less"),
-		).toBeNull();
-		// Each off-scale line is named in a labelled marker at the top edge.
 		expect(screen.getByText("95%: 33 days")).toBeInTheDocument();
-		expect(screen.getByText("SLE: 85% @ 35 days or less")).toBeInTheDocument();
-		// A screen-reader user learns of the two markers from the chip's name.
 		expect(outlierChip()).toHaveAccessibleName(
 			"1 outlier not drawn on the chart. Above the axis: 95% at 33 days, SLE at 35 days. Show the list.",
 		);
 	});
 
-	it("keeps a line that sits exactly at the top of the axis in place", () => {
-		// The 95% line at 30 days is the cut itself, so the axis stops there and the line is not above it.
-		showChart(withLongItem(58), 30, 7);
+	it("sets nothing apart and shows no count while the verdict is on its way", async () => {
+		showChart(twelveThirtyThirtyOneNinety(), neverAnswering());
 
-		expect(axisTop()).toBeCloseTo(30, 5);
-		expect(lineValue("95%")).toBe(30);
-		expect(outlierChip()).not.toHaveAccessibleName(/Above the axis/);
-	});
+		const chip = await within(header()).findByRole("button", {
+			name: "Outliers, loading",
+		});
 
-	it("scales the axis to the typical items when there are no percentile or SLE lines", () => {
-		showChart(withLongItem(58), null, null);
-
-		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
-		expect(axisTop()).toBeCloseTo(8.8, 5);
-		expect(outlierChip()).not.toHaveAccessibleName(/Above the axis/);
-	});
-
-	it("counts two outliers in the plural", () => {
-		showChart([...typicalItems(), ...longItems([58, 40])], null, null);
-
-		expect(outlierChip()).toHaveTextContent("2 outliers");
-		expect(outlierChip()).toHaveAccessibleName(
-			"2 outliers not drawn on the chart. Show the list.",
-		);
-	});
-
-	it("counts every one of eleven outliers", () => {
-		const typical = Array.from({ length: 25 }, (_, index) =>
-			closedItem(
-				`TZ-${200 + index}`,
-				"Typical",
-				6,
-				new Date(2026, 3, 1 + index),
-			),
-		);
-		// 31 to 41 days, listed by reference as TZ-300 (31 days) to TZ-310 (41 days).
-		const eleven = longItems(
-			Array.from({ length: 11 }, (_, index) => 31 + index),
-		);
-		showChart([...typical, ...eleven], null, null);
-
-		expect(outlierChip()).toHaveTextContent("11 outliers");
-	});
-
-	it("replaces the plot and the chip with the could-not-load message when the data fails", () => {
-		const view = showChart(withLongItem(58), 15, 7);
-
-		view.rerender(chartIn(withLongItem(58), 15, 7, "error"));
-
-		expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeVisible();
-		expect(within(header()).queryByText(/outlier/i)).toBeNull();
-		expect(
-			within(header()).queryByRole("button", { name: /outlier/i }),
-		).toBeNull();
+		expect(isDisabled(chip)).toBe(true);
 		expect(header()).not.toHaveTextContent(/\d/);
-	});
-
-	it("shows no outlier count the first time the widget is loading", () => {
-		showChart(withLongItem(58), 15, 7, "loading", false);
-
-		expect(header()).not.toHaveTextContent(/\d/);
-		expect(within(header()).queryByRole("button", { name: /\d/ })).toBeNull();
-	});
-
-	it.each([
-		["a single closed Work Item", [10]],
-		["closed Work Items that all took the same time", [7, 7, 7]],
-	])("shows no outlier chip for %s", (_case, cycleTimes) => {
-		showChart(
-			cycleTimes.map((days, index) =>
-				closedItem(`TZ-${index}`, "Same", days, new Date(2026, 2, 2 + index)),
-			),
-			null,
-			null,
-		);
-
-		expect(drawnHeights()).toEqual(cycleTimes);
+		expect(drawnHeights()).toEqual([12, 30, 31, 90]);
 		expect(
-			within(header()).queryByRole("button", { name: /outlier/i }),
-		).toBeNull();
+			frame(),
+			"WHAT: the frame does not say it is loading. WHY: a reader must not take a partial chart for the answer. HOW: report loading to the widget frame while the verdict is pending.",
+		).toHaveAttribute("data-widget-status", "loading");
 	});
 
-	it("shows no outlier chip when there are no closed Work Items", () => {
-		showChart([], 15, 7);
-
-		expect(screen.getByText("No data available")).toBeVisible();
-		expect(
-			within(header()).queryByRole("button", { name: /outlier/i }),
-		).toBeNull();
-	});
-
-	it("keeps the cut and the axis still while the reader hides and shows Work Item types", () => {
-		showChart(storiesAndOneLongBug(), 15, 7);
-		const toggle = (type: string) =>
-			fireEvent.click(
-				screen.getByRole("button", { name: `${type} visibility toggle` }),
-			);
-		expect(axisTop()).toBeCloseTo(16.5, 5);
-
-		// Only the outlier is left visible: the plot says so and the cut still comes from every item.
-		toggle("Story");
+	it("shows the could-not-load message when the verdict cannot be loaded", async () => {
+		showChart(twelveThirtyThirtyOneNinety(), failing());
 
 		expect(
-			screen.getByText("All visible Work Items are outliers."),
+			await screen.findByText(COULD_NOT_LOAD_MESSAGE),
+			"WHAT: a failed verdict leaves the chart looking current. WHY: a chart without its outliers looks like every Work Item is typical. HOW: report failure to the widget frame when the verdict fails.",
 		).toBeVisible();
-		expect(outlierChip()).toHaveTextContent("1 outlier");
-
-		// The outlier's type is hidden: no chip, same axis.
-		toggle("Story");
-		toggle("Bug");
-
-		expect(
-			within(header()).queryByRole("button", { name: /outlier/i }),
-		).toBeNull();
-		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
-		expect(axisTop()).toBeCloseTo(16.5, 5);
-
-		// Every type hidden: the plot says so, without a chip, and a type can be shown again.
-		toggle("Story");
-
-		expect(screen.getByText("All types are hidden.")).toBeVisible();
-		expect(
-			within(header()).queryByRole("button", { name: /outlier/i }),
-		).toBeNull();
-
-		toggle("Story");
-
-		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
-	});
-
-	it("reports one usage event per click that opens the list and shows no count while the widget reloads", () => {
-		const view = showChart(withLongItem(58), 15, 7);
-
-		fireEvent.click(outlierChip());
-
-		expect(reportUsage).toHaveBeenCalledTimes(1);
-		expect(reportUsage).toHaveBeenCalledWith({ name: "OutlierListOpened" });
-
-		view.rerender(chartIn(withLongItem(58), 15, 7, "loading"));
-
-		expect(isDisabled(outlierChip())).toBe(true);
-		expect(outlierChip()).not.toHaveTextContent(/\d/);
-		expect(outlierChip()).not.toHaveAccessibleName(/\d/);
-		expect(reportUsage).toHaveBeenCalledTimes(1);
+		expect(frame()).toHaveAttribute("data-widget-status", "error");
+		expect(header()).not.toHaveTextContent(/\d/);
 	});
 });

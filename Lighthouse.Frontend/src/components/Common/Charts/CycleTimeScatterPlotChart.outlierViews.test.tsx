@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	act,
 	fireEvent,
@@ -6,7 +7,7 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -77,6 +78,45 @@ vi.mock("@mui/x-charts", async () => {
 });
 
 const WIDGET_KEY = "cycleScatter";
+
+interface OutlierVerdict {
+	readonly status: "Ready" | "NoLimits";
+	readonly upperNaturalProcessLimit: number | null;
+	readonly outlierWorkItemIds: number[];
+}
+
+// Stands in for the backend: it answers the ids of the given Work Items whose Cycle Time is above the limit it was given.
+const backendJudgingAbove =
+	(limit: number, items: readonly IWorkItem[]) =>
+	(definitionId: number | null): Promise<OutlierVerdict> =>
+		Promise.resolve({
+			status: "Ready",
+			upperNaturalProcessLimit: limit,
+			outlierWorkItemIds: items
+				.filter(
+					(item) =>
+						(definitionId === null
+							? item.cycleTime
+							: (item.namedCycleTimes?.find(
+									(named) => named.definitionId === definitionId,
+								)?.days ?? 0)) > limit,
+				)
+				.map((item) => item.id),
+		});
+
+let queryClient = new QueryClient();
+
+const aFreshQueryClient = () => {
+	queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+};
+
+const theVerdictHasLanded = async () => {
+	await within(
+		screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`),
+	).findByRole("button", { name: /^\d+ outliers? not drawn/ });
+};
 const DEV_TIME = 1;
 const REVIEW_TIME = 2;
 const definitions: INamedCycleTimeDefinition[] = [
@@ -141,21 +181,27 @@ const chartOf = (
 	items: IWorkItem[],
 	status: WidgetStatus = "ready",
 	fetcher?: (definitionId: number) => Promise<IPercentileValue[]>,
+	judge: (
+		definitionId: number | null,
+	) => Promise<OutlierVerdict> = backendJudgingAbove(30, items),
 ) => (
-	<WidgetShell
-		widgetKey={WIDGET_KEY}
-		title="Cycle Time scatterplot"
-		status={status}
-		hasContentToDim={true}
-	>
-		<CycleTimeScatterPlotChart
-			ownerKind="team"
-			percentileValues={[]}
-			cycleTimeDataPoints={items}
-			namedCycleTimeDefinitions={definitions}
-			onFetchNamedCycleTimePercentiles={fetcher}
-		/>
-	</WidgetShell>
+	<QueryClientProvider client={queryClient}>
+		<WidgetShell
+			widgetKey={WIDGET_KEY}
+			title="Cycle Time scatterplot"
+			status={status}
+			hasContentToDim={true}
+		>
+			<CycleTimeScatterPlotChart
+				ownerKind="team"
+				percentileValues={[]}
+				cycleTimeDataPoints={items}
+				namedCycleTimeDefinitions={definitions}
+				onFetchNamedCycleTimePercentiles={fetcher}
+				onFetchCycleTimeOutliers={judge}
+			/>
+		</WidgetShell>
+	</QueryClientProvider>
 );
 
 const header = () => screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`);
@@ -194,21 +240,25 @@ const toggle = (type: string) =>
 	);
 
 describe("The outlier chip stays truthful while the reader changes the view", () => {
+	beforeEach(aFreshQueryClient);
+
 	it("finds the outliers on the selected named Cycle Time and follows its percentiles", async () => {
 		const fetcher = vi.fn(async () => answer(7));
 		const items = measuredAs(
 			closedSet([2, 4, 6, 6, 8], 58, 2),
 			[2, 3, 4, 4, 5, 26],
 		);
-		render(chartOf(items, "ready", fetcher));
+		render(chartOf(items, "ready", fetcher, backendJudgingAbove(20, items)));
+		await theVerdictHasLanded();
 
-		// Default Cycle Time: 58 days is far above 5 times the median of 6.
+		// Default Cycle Time: 58 days is far above the limit of 20.
 		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
 		expect(outlierChip()).toHaveTextContent("1 outlier");
 
-		// Development time: the same Work Item took 26 days, the median is 4 and the cut is 20.
+		// Development time: the same Work Item took 26 days, above that Cycle Time's limit of 20.
 		await choose("Development time");
 		await waitFor(() => expect(lineValue("95%")).toBe(7));
+		await theVerdictHasLanded();
 
 		expect(drawnHeights()).toEqual([2, 3, 4, 4, 5]);
 		expect(axisTop()).toBeCloseTo(7.7, 5);
@@ -223,13 +273,22 @@ describe("The outlier chip stays truthful while the reader changes the view", ()
 			closedSet([2, 4, 6, 6, 8], 58, 2),
 			[20, 22, 24, 24, 26, 58],
 		);
-		render(chartOf(items, "ready", fetcher));
+		// Development time's limit is 60 days, so 58 days is ordinary there.
+		render(
+			chartOf(items, "ready", fetcher, (definitionId) =>
+				backendJudgingAbove(
+					definitionId === null ? 30 : 60,
+					items,
+				)(definitionId),
+			),
+		);
+		await theVerdictHasLanded();
 		expect(outlierChip()).toHaveTextContent("1 outlier");
 
 		await choose("Development time");
 		await waitFor(() => expect(lineValue("95%")).toBe(40));
 
-		expect(noOutlierChip()).toBeNull();
+		await waitFor(() => expect(noOutlierChip()).toBeNull());
 		expect(drawnHeights()).toEqual([20, 22, 24, 24, 26, 58]);
 	});
 
@@ -245,53 +304,60 @@ describe("The outlier chip stays truthful while the reader changes the view", ()
 			closedSet([2, 4, 6, 6, 8], 58, 2),
 			[2, 3, 4, 4, 5, 26],
 		);
-		render(chartOf(items, "ready", fetcher));
+		render(chartOf(items, "ready", fetcher, backendJudgingAbove(20, items)));
 
 		await choose("Development time");
 		await choose("Review time");
 		await act(async () => pending.get(REVIEW_TIME)?.(answer(7)));
 		await waitFor(() => expect(lineValue("95%")).toBe(7));
 		await act(async () => pending.get(DEV_TIME)?.(answer(90)));
+		await theVerdictHasLanded();
 
 		expect(lineValue("95%")).toBe(7);
 		expect(axisTop()).toBeCloseTo(7.7, 5);
 		expect(outlierChip()).toHaveTextContent("1 outlier");
 	});
 
-	it("recomputes the median, the cut, the chip and the axis when the date range changes", () => {
+	it("follows the verdict of each date range for the chip and the axis", async () => {
 		const view = render(
 			chartOf(
 				measuredAs(closedSet([2, 4, 6, 6, 8], 58, 2), [1, 1, 1, 1, 1, 1]),
 			),
 		);
+		await theVerdictHasLanded();
 		expect(outlierChip()).toHaveTextContent("1 outlier");
 		expect(drawnHeights()).toEqual([2, 4, 6, 6, 8]);
 
-		// A slower range: 58 days is ordinary next to a median of 24, so it is drawn and the chip goes.
-		view.rerender(chartOf(closedSet([20, 22, 24, 24, 26], 58, 3)));
+		// A slower range with a limit of 60 days: 58 days is ordinary, so it is drawn and the chip goes.
+		const slower = closedSet([20, 22, 24, 24, 26], 58, 3);
+		view.rerender(
+			chartOf(slower, "ready", undefined, backendJudgingAbove(60, slower)),
+		);
 
-		expect(noOutlierChip()).toBeNull();
+		await waitFor(() => expect(noOutlierChip()).toBeNull());
 		expect(drawnHeights()).toEqual([20, 22, 24, 24, 26, 58]);
 		expect(axisTop()).toBeCloseTo(63.8, 5);
 
-		// A faster range: the median is 2 and the cut is 10 days. 20 and 11 days are over it, 10 days is exactly on it and stays drawn.
+		// A faster range with a limit of 10 days: 20 and 11 days are over it, 10 days is exactly on it and stays drawn.
+		const faster = [
+			...closedSet([1, 2, 2, 2, 3], 20, 4),
+			closedItem("TZ-401", 10, new Date(2026, 4, 20)),
+			closedItem("TZ-402", 11, new Date(2026, 4, 21)),
+		];
 		view.rerender(
-			chartOf([
-				...closedSet([1, 2, 2, 2, 3], 20, 4),
-				closedItem("TZ-401", 10, new Date(2026, 4, 20)),
-				closedItem("TZ-402", 11, new Date(2026, 4, 21)),
-			]),
+			chartOf(faster, "ready", undefined, backendJudgingAbove(10, faster)),
 		);
 
-		expect(outlierChip()).toHaveTextContent("2 outliers");
+		await waitFor(() => expect(outlierChip()).toHaveTextContent("2 outliers"));
 		expect(drawnHeights()).toEqual([1, 2, 2, 2, 3, 10]);
 		expect(axisTop()).toBeCloseTo(10, 5);
 		fireEvent.click(outlierChip());
 		expect(listedIds()).toEqual(["TZ-301", "TZ-402"]);
 	});
 
-	it("shows no count of the previous range while the next range loads", () => {
+	it("shows no count of the previous range while the next range loads", async () => {
 		const view = render(chartOf(closedSet([2, 4, 6, 6, 8], 58, 2)));
+		await theVerdictHasLanded();
 		expect(outlierChip()).toHaveTextContent("1 outlier");
 
 		const nextRange = [
@@ -308,15 +374,16 @@ describe("The outlier chip stays truthful while the reader changes the view", ()
 
 		view.rerender(chartOf(nextRange, "ready"));
 
-		expect(outlierChip()).toHaveTextContent("2 outliers");
+		await waitFor(() => expect(outlierChip()).toHaveTextContent("2 outliers"));
 	});
 
-	it("counts a Work Item without a type as visible whichever types are hidden", () => {
+	it("counts a Work Item without a type as visible whichever types are hidden", async () => {
 		const items = [
 			...closedSet([2, 4, 6, 6, 8], 58, 2).slice(0, 5),
 			closedItem("TZ-301", 58, new Date(2026, 2, 12), ""),
 		];
 		render(chartOf(items));
+		await theVerdictHasLanded();
 		expect(outlierChip()).toHaveTextContent("1 outlier");
 
 		toggle("Story");
