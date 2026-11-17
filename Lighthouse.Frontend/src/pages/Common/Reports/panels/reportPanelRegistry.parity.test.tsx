@@ -17,7 +17,7 @@ const aValue = (value: number): IReportValue => ({
 
 /**
  * One read that gives every panel a better, a worse, an unmoved and a dash line where it has that many lines. Then
- * never captured the 95th or the max; Throughput's per day differs only below what the panel shows, so it is unmoved.
+ * never captured the 95th or the max; Throughput's total rises and its per day differs only below what the panel shows, so that is unmoved.
  */
 const MIXED: IReportMetric = {
 	atThen: {
@@ -56,7 +56,7 @@ const changeSegment = () =>
 describe("every panel in the registry", () => {
 	it.each<[ReportMetricKey, Mark[]]>([
 		["cycle-time", ["dash", "better", "worse", "neutral"]],
-		["throughput", ["neutral"]],
+		["throughput", ["better", "neutral"]],
 		["wip", ["better", "worse", "neutral", "dash"]],
 		["work-item-age", ["better", "worse", "neutral", "dash"]],
 	])(

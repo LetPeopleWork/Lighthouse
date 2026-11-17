@@ -1,15 +1,22 @@
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import type { ReportMetricKey } from "../../../../models/Reports/Report";
+import type {
+	IReportMetric,
+	IReportValue,
+	ReportMetricKey,
+} from "../../../../models/Reports/Report";
 import {
 	type ChangeGroup,
 	type ShownMetricLines,
 	summariseChange,
 } from "./changeSummary";
-import type {
-	ChangeVerdict,
-	LineComparison,
-	ReportMetricSideKey,
-	ThenNowChange,
+import { reportPanelRegistry } from "./reportPanelRegistry";
+import {
+	type ChangeVerdict,
+	type LineComparison,
+	lineComparisonsOf,
+	type ReportMetricSideKey,
+	type ThenNowChange,
 } from "./thenNowComparison";
 
 /**
@@ -156,5 +163,110 @@ describe("summariseChange", () => {
 		],
 	])("gives no group when %s", (_, shown) => {
 		expect(summariseChange(shown)).toEqual([]);
+	});
+});
+
+describe("the CHANGE summary of a Throughput read", () => {
+	const aValue = (value: number): IReportValue => ({
+		value,
+		sampleSize: 30,
+		absentReason: null,
+	});
+	const placedAs = (read: IReportMetric) =>
+		summariseChange([
+			{
+				key: "throughput",
+				lines: lineComparisonsOf(read, reportPanelRegistry.throughput),
+			},
+		]);
+
+	it.each<[string, IReportMetric, readonly ChangeGroup[]]>([
+		[
+			"a Total of 52 then and 65 now with the same 1.73 per day improved, because its Total line is judged too",
+			{
+				atThen: { total: aValue(52), perDay: aValue(1.73) },
+				atNow: { total: aValue(65), perDay: aValue(1.73) },
+			},
+			[{ kind: "improved", keys: ["throughput"] }],
+		],
+		[
+			"a Total of 0 then and 0 now unchanged",
+			{
+				atThen: { total: aValue(0), perDay: aValue(0) },
+				atNow: { total: aValue(0), perDay: aValue(0) },
+			},
+			[{ kind: "unchanged", keys: ["throughput"] }],
+		],
+		[
+			"a Total of 91 then and 91 now unchanged",
+			{
+				atThen: { total: aValue(91), perDay: aValue(3.03) },
+				atNow: { total: aValue(91), perDay: aValue(3.03) },
+			},
+			[{ kind: "unchanged", keys: ["throughput"] }],
+		],
+		[
+			"a Total of 0 then and 30 now improved",
+			{
+				atThen: { total: aValue(0), perDay: aValue(0) },
+				atNow: { total: aValue(30), perDay: aValue(2.14) },
+			},
+			[{ kind: "improved", keys: ["throughput"] }],
+		],
+		[
+			"a Then that never captured Throughput not judged",
+			{ atThen: {}, atNow: { total: aValue(65), perDay: aValue(2.17) } },
+			[],
+		],
+	])("places %s", (_, read, groups) => {
+		expect(placedAs(read)).toEqual(groups);
+	});
+
+	// With equal windows the per day line is the Total over the same number of days, so the two never disagree on direction.
+	it("L3 never judges Throughput mixed, because its Total and per day change never point in opposite directions", () => {
+		const placedOver = (days: number, then: number, now: number) =>
+			summariseChange([
+				{
+					key: "throughput",
+					lines: lineComparisonsOf(
+						{
+							atThen: { total: aValue(then), perDay: aValue(then / days) },
+							atNow: { total: aValue(now), perDay: aValue(now / days) },
+						},
+						reportPanelRegistry.throughput,
+					),
+				},
+			]);
+		const comparedLines = (days: number, then: number, now: number) =>
+			lineComparisonsOf(
+				{
+					atThen: { total: aValue(then), perDay: aValue(then / days) },
+					atNow: { total: aValue(now), perDay: aValue(now / days) },
+				},
+				reportPanelRegistry.throughput,
+			).map(({ key }) => key);
+
+		fc.assert(
+			fc.property(
+				fc.integer({ min: 14, max: 400 }),
+				fc.integer({ min: 0, max: 3000 }),
+				fc.integer({ min: 0, max: 3000 }),
+				(days, then, now) => {
+					expect(comparedLines(days, then, now)).toEqual(["total", "perDay"]);
+					expect(
+						placedOver(days, then, now),
+						`${then} then, ${now} now over ${days} days`,
+					).not.toContainEqual(expect.objectContaining({ kind: "mixed" }));
+				},
+			),
+		);
+		// Totals differing by 1 over a long window move the Total and leave per day unmoved: improved, not mixed.
+		expect(placedOver(365, 1000, 1001)).toEqual([
+			{ kind: "improved", keys: ["throughput"] },
+		]);
+		// Both totals 0 move nothing.
+		expect(placedOver(30, 0, 0)).toEqual([
+			{ kind: "unchanged", keys: ["throughput"] },
+		]);
 	});
 });

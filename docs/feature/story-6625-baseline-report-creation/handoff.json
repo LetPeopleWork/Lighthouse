@@ -239,6 +239,178 @@
 "stimulus": "F547",
 "user_result": "F549"
 }
+],
+"S3": [
+{
+"covers": [
+"P10",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F261"
+],
+"still_passes_if": "F554",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx"
+},
+"expected": "F552",
+"stimulus": "F551",
+"user_result": "F553"
+},
+{
+"covers": [
+"P11"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F258"
+],
+"still_passes_if": "F558",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx"
+},
+"expected": "F556",
+"stimulus": "F555",
+"user_result": "F557"
+},
+{
+"covers": [
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F260"
+],
+"still_passes_if": "F562",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx"
+},
+"expected": "F560",
+"stimulus": "F559",
+"user_result": "F561"
+},
+{
+"covers": [
+"P13"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F259"
+],
+"still_passes_if": "F566",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx"
+},
+"expected": "F564",
+"stimulus": "F563",
+"user_result": "F565"
+},
+{
+"covers": [
+"P14"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F262"
+],
+"still_passes_if": "F570",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts"
+},
+"expected": "F568",
+"stimulus": "F567",
+"user_result": "F569"
+},
+{
+"covers": [
+"P10",
+"P11",
+"P12",
+"P13"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7"
+],
+"still_passes_if": "F574",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.test.ts"
+},
+"expected": "F572",
+"stimulus": "F571",
+"user_result": "F573"
+},
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7"
+],
+"still_passes_if": "F578",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.parity.test.tsx"
+},
+"expected": "F576",
+"stimulus": "F575",
+"user_result": "F577"
+},
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F146",
+"L3/F147"
+],
+"still_passes_if": "F582",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts::L3"
+},
+"expected": "F580",
+"stimulus": "F579",
+"user_result": "F581"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"L4/F152",
+"L4/F153",
+"L4/F154"
+],
+"still_passes_if": "F586",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs::A_saved_report_whose_Now_was_stored_45_days_long_reads_a_30_day_Now_ending_today_with_Then_and_its_stored_member_untouched"
+},
+"expected": "F584",
+"stimulus": "F583",
+"user_result": "F585"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6",
+"L6/F163"
+],
+"still_passes_if": "F590",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs::A_report_whose_Then_lies_before_the_oldest_kept_day_stays_editable"
+},
+"expected": "F588",
+"stimulus": "F587",
+"user_result": "F589"
+}
 ]
 },
 "counters": {
@@ -246,7 +418,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 550,
+"F": 590,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -2690,9 +2862,49 @@
 "F549": "After the update nothing new is shown on the old report and its exports read the equal-length Now",
 "F55": "The API refuses a create or edit carrying a Now length different from Then's; absent or equal is accepted.",
 "F550": "A notice flag or changed list entry is added for old reports, or the export Now window stays 45 days",
+"F551": "Open a 30-day report whose Throughput Total is 52 in Then and 65 in Now",
+"F552": "The Total line shows 13 (+25 %) marked better, before per day, which keeps its own change; the summary header lists Throughput as improved even when per day is unmoved",
+"F553": "Martin reads the Throughput Total compared between Then and Now",
+"F554": "The Total line is drawn with the per day magnitude (13 per day), or a Total mark without a percent, or the summary judging only per day",
+"F555": "Open a report whose Throughput Total and per day are 0 in Then and 0 in Now",
+"F556": "Both lines read No change (both 0) with no mark and no percent; Throughput counts as unchanged in the summary; WIP and Work Item Age panels keep their No change look with a mark",
+"F557": "A zero Throughput reads as no change on both lines",
+"F558": "The both-0 line shows the grey dash mark, or the both-0 wording leaks into WIP or Work Item Age panels, or only the Total line has the wording",
+"F559": "Open a 14-day report whose Throughput Total is 0 in Then and 30 in Now",
 "F56": "{Throughput} Total line gains change and % change and counts in the CHANGE summary.",
+"F560": "The Total line reads 30 (Then was 0) with a rise mark and no percent",
+"F561": "Martin sees the rise from nothing without a meaningless percent",
+"F562": "A percent or infinity shown over a Then of 0, or the rise mark missing",
+"F563": "Open a 30-day report whose Throughput Total is 91 in Then and 91 in Now",
+"F564": "Total and per day show the grey dash mark and No change, never both 0, and count as unchanged in the summary",
+"F565": "Equal non-zero Throughput reads as no change",
+"F566": "Equal non-zero sides reading both 0 or showing 0 percent",
+"F567": "Open a report whose Then never captured Throughput",
+"F568": "No Total change is shown (a dash, no mark) and Throughput is not judged in the summary",
+"F569": "An older report shows no invented Throughput change",
 "F57": "Which metrics and aggregations a Then & Now report shows (the 'Numberwang' feedback) - ADO Story #6649.",
+"F570": "A change drawn against a missing Then, or the metric counted as unchanged",
+"F571": "Compare the Throughput Total line for 52 to 65, 65 to 52, 0 to 30, 91 to 91, 0 to 0 and a missing Then, through the panel's change lines",
+"F572": "Total is a change line before per day; delta, percent, mark and verdict as the shown values give, percent absent over a Then of 0, no change for a missing Then",
+"F573": "The report summary and panel judge Throughput the same way",
+"F574": "A percent over a Then of 0 or a Total judged with the wrong direction of good",
+"F575": "Draw every panel from one read and tally the summary",
+"F576": "Throughput draws better and neutral marks, equal to what the summary tallies; other panels unchanged",
+"F577": "What the reader sees equals what the header counts",
+"F578": "A panel drawing a Total line the summary does not tally",
+"F579": "Compare Throughput over any equal windows of 14 to 400 days with totals 0 to 3000, including totals differing by 1 over 365 days and both totals 0",
 "F58": "Finding Edit and Delete in the report list: split out to ADO Story #6650 'Tables: fit the width and show when columns are off screen', which fixes it for every table in the shared DataGridBase.",
+"F580": "The Total and per day lines are both judged and never point opposite ways, so Throughput is never placed as mixed; a difference of 1 over a long window is improved; both 0 is unchanged",
+"F581": "Throughput never reads as both better and worse at once",
+"F582": "A Total line judged against the wrong direction of good, or a Total line not judged at all",
+"F583": "Read a saved report whose older version stored a different Now length, and a report whose Then ends today or 45 days ago",
+"F584": "Now is as long as Then, ending today or back to back as the rule says; already covered by the committed derived-Now scenarios",
+"F585": "Every report, new or saved, is a like-for-like comparison",
+"F586": "A Now still read from a stored length",
+"F587": "Edit the name and shown metrics of a report whose Then starts before the oldest kept day",
+"F588": "The edit is accepted and the report stays editable; already covered by the committed scenario",
+"F589": "An old report can still be renamed and its metrics changed",
+"F590": "An edit refused because Then predates the kept history",
 "F6": "she picks a Then length of 30 days and keeps the default end date",
 "F61": "Usage-data events: answered in DEVOPS, not here.",
 "F62": "Now always has the same length as Then (maintainer reply on ADO #6625). Reverses epic-5878 D43 (Now length chosen and saved separately), D59 and D62 (the Now step), and the Now-length part of D44 (Edit report).",

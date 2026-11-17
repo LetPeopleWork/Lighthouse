@@ -590,6 +590,272 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<p>P1</p>
+
+<pre><code>Open a 30-day report whose Throughput Total is 52 in Then and 65 in Now
+</code></pre>
+
+<pre><code>The Total line shows 13 (+25 %) marked better, before per day, which keeps its own change; the summary header lists Throughput as improved even when per day is unmoved
+</code></pre>
+
+<pre><code>Martin reads the Throughput Total compared between Then and Now
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx</p>
+
+<pre><code>The Total line is drawn with the per day magnitude (13 per day), or a Total mark without a percent, or the summary judging only per day
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P11</p>
+
+<pre><code>Open a report whose Throughput Total and per day are 0 in Then and 0 in Now
+</code></pre>
+
+<pre><code>Both lines read No change (both 0) with no mark and no percent; Throughput counts as unchanged in the summary; WIP and Work Item Age panels keep their No change look with a mark
+</code></pre>
+
+<pre><code>A zero Throughput reads as no change on both lines
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx</p>
+
+<pre><code>The both-0 line shows the grey dash mark, or the both-0 wording leaks into WIP or Work Item Age panels, or only the Total line has the wording
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P12</p>
+
+<pre><code>Open a 14-day report whose Throughput Total is 0 in Then and 30 in Now
+</code></pre>
+
+<pre><code>The Total line reads 30 (Then was 0) with a rise mark and no percent
+</code></pre>
+
+<pre><code>Martin sees the rise from nothing without a meaningless percent
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx</p>
+
+<pre><code>A percent or infinity shown over a Then of 0, or the rise mark missing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P13</p>
+
+<pre><code>Open a 30-day report whose Throughput Total is 91 in Then and 91 in Now
+</code></pre>
+
+<pre><code>Total and per day show the grey dash mark and No change, never both 0, and count as unchanged in the summary
+</code></pre>
+
+<pre><code>Equal non-zero Throughput reads as no change
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx</p>
+
+<pre><code>Equal non-zero sides reading both 0 or showing 0 percent
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P14</p>
+
+<pre><code>Open a report whose Then never captured Throughput
+</code></pre>
+
+<pre><code>No Total change is shown (a dash, no mark) and Throughput is not judged in the summary
+</code></pre>
+
+<pre><code>An older report shows no invented Throughput change
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts</p>
+
+<pre><code>A change drawn against a missing Then, or the metric counted as unchanged
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<p>P11</p>
+
+<p>P12</p>
+
+<p>P13</p>
+
+<pre><code>Compare the Throughput Total line for 52 to 65, 65 to 52, 0 to 30, 91 to 91, 0 to 0 and a missing Then, through the panel&#x27;s change lines
+</code></pre>
+
+<pre><code>Total is a change line before per day; delta, percent, mark and verdict as the shown values give, percent absent over a Then of 0, no change for a missing Then
+</code></pre>
+
+<pre><code>The report summary and panel judge Throughput the same way
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.test.ts</p>
+
+<pre><code>A percent over a Then of 0 or a Total judged with the wrong direction of good
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Draw every panel from one read and tally the summary
+</code></pre>
+
+<pre><code>Throughput draws better and neutral marks, equal to what the summary tallies; other panels unchanged
+</code></pre>
+
+<pre><code>What the reader sees equals what the header counts
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.parity.test.tsx</p>
+
+<pre><code>A panel drawing a Total line the summary does not tally
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Compare Throughput over any equal windows of 14 to 400 days with totals 0 to 3000, including totals differing by 1 over 365 days and both totals 0
+</code></pre>
+
+<pre><code>The Total and per day lines are both judged and never point opposite ways, so Throughput is never placed as mixed; a difference of 1 over a long window is improved; both 0 is unchanged
+</code></pre>
+
+<pre><code>Throughput never reads as both better and worse at once
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts::L3</p>
+
+<pre><code>A Total line judged against the wrong direction of good, or a Total line not judged at all
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read a saved report whose older version stored a different Now length, and a report whose Then ends today or 45 days ago
+</code></pre>
+
+<pre><code>Now is as long as Then, ending today or back to back as the rule says; already covered by the committed derived-Now scenarios
+</code></pre>
+
+<pre><code>Every report, new or saved, is a like-for-like comparison
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs::A_saved_report_whose_Now_was_stored_45_days_long_reads_a_30_day_Now_ending_today_with_Then_and_its_stored_member_untouched</p>
+
+<pre><code>A Now still read from a stored length
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Edit the name and shown metrics of a report whose Then starts before the oldest kept day
+</code></pre>
+
+<pre><code>The edit is accepted and the report stays editable; already covered by the committed scenario
+</code></pre>
+
+<pre><code>An old report can still be renamed and its metrics changed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs::A_report_whose_Then_lies_before_the_oldest_kept_day_stays_editable</p>
+
+<pre><code>An edit refused because Then predates the kept history
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

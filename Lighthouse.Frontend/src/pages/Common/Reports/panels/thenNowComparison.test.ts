@@ -240,10 +240,10 @@ const changeOn = (metric: IReportMetric, key: ReportMetricKey, line: string) =>
  * either side reads as a dash.
  */
 describe("lineComparisonsOf", () => {
-	// Throughput's total carries no change mark, so it is no change line; the 95th sits above the 85th.
+	// The 95th sits above the 85th; Throughput compares its total before its average per day.
 	it.each<[ReportMetricKey, string[]]>([
 		["cycle-time", ["p95", "p85", "p70", "p50"]],
-		["throughput", ["perDay"]],
+		["throughput", ["total", "perDay"]],
 		["wip", ["average", "median", "min", "max"]],
 		["work-item-age", ["average", "median", "min", "max"]],
 	])(
@@ -346,5 +346,56 @@ describe("lineComparisonsOf", () => {
 			key: "perDay",
 			change: { delta: 0.27, percent: null, mark: "up", verdict: "better" },
 		});
+	});
+});
+
+describe("the Throughput Total line, compared as its panel shows it", () => {
+	const totalChange = (then: number | null, now: number) =>
+		changeOn(
+			withSides(
+				{ total: then === null ? undefined : aValue(then) },
+				{ total: aValue(now) },
+			),
+			"throughput",
+			"total",
+		)?.change;
+
+	it.each<[string, number, number, object]>([
+		[
+			"52 then and 65 now is 13 more, +25 %, marked up and better",
+			52,
+			65,
+			{ delta: 13, percent: 25, mark: "up", verdict: "better" },
+		],
+		[
+			"65 then and 52 now is 13 fewer, −20 %, marked down and worse",
+			65,
+			52,
+			{ delta: -13, percent: -20, mark: "down", verdict: "worse" },
+		],
+		[
+			"0 then and 30 now is 30 more with no percent, marked up and better",
+			0,
+			30,
+			{ delta: 30, percent: null, mark: "up", verdict: "better" },
+		],
+		[
+			"91 then and 91 now is no change, with the grey dash mark",
+			91,
+			91,
+			{ delta: 0, percent: 0, mark: "none", verdict: "neutral" },
+		],
+		[
+			"0 then and 0 now is no change",
+			0,
+			0,
+			{ delta: 0, percent: null, mark: "none", verdict: "neutral" },
+		],
+	])("reads %s", (_, then, now, change) => {
+		expect(totalChange(then, now)).toEqual(change);
+	});
+
+	it("gives no change when Then never captured the Total, whatever Now says", () => {
+		expect(totalChange(null, 65)).toBeNull();
 	});
 });

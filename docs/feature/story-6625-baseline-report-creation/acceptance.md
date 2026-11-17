@@ -505,6 +505,312 @@ A notice flag or changed list entry is added for old reports, or the export Now 
 
 None.
 
+### S3
+
+##### Covers
+
+P10
+
+P1
+
+```text
+Open a 30-day report whose Throughput Total is 52 in Then and 65 in Now
+```
+
+```text
+The Total line shows 13 (+25 %) marked better, before per day, which keeps its own change; the summary header lists Throughput as improved even when per day is unmoved
+```
+
+```text
+Martin reads the Throughput Total compared between Then and Now
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ThroughputPanel\.test\.tsx
+
+```text
+The Total line is drawn with the per day magnitude (13 per day), or a Total mark without a percent, or the summary judging only per day
+```
+
+###### Obligations
+
+
+##### Covers
+
+P11
+
+```text
+Open a report whose Throughput Total and per day are 0 in Then and 0 in Now
+```
+
+```text
+Both lines read No change (both 0) with no mark and no percent; Throughput counts as unchanged in the summary; WIP and Work Item Age panels keep their No change look with a mark
+```
+
+```text
+A zero Throughput reads as no change on both lines
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ThroughputPanel\.test\.tsx
+
+```text
+The both-0 line shows the grey dash mark, or the both-0 wording leaks into WIP or Work Item Age panels, or only the Total line has the wording
+```
+
+###### Obligations
+
+
+##### Covers
+
+P12
+
+```text
+Open a 14-day report whose Throughput Total is 0 in Then and 30 in Now
+```
+
+```text
+The Total line reads 30 (Then was 0) with a rise mark and no percent
+```
+
+```text
+Martin sees the rise from nothing without a meaningless percent
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ThroughputPanel\.test\.tsx
+
+```text
+A percent or infinity shown over a Then of 0, or the rise mark missing
+```
+
+###### Obligations
+
+
+##### Covers
+
+P13
+
+```text
+Open a 30-day report whose Throughput Total is 91 in Then and 91 in Now
+```
+
+```text
+Total and per day show the grey dash mark and No change, never both 0, and count as unchanged in the summary
+```
+
+```text
+Equal non-zero Throughput reads as no change
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ThroughputPanel\.test\.tsx
+
+```text
+Equal non-zero sides reading both 0 or showing 0 percent
+```
+
+###### Obligations
+
+
+##### Covers
+
+P14
+
+```text
+Open a report whose Then never captured Throughput
+```
+
+```text
+No Total change is shown (a dash, no mark) and Throughput is not judged in the summary
+```
+
+```text
+An older report shows no invented Throughput change
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/changeSummary\.test\.ts
+
+```text
+A change drawn against a missing Then, or the metric counted as unchanged
+```
+
+###### Obligations
+
+
+##### Covers
+
+P10
+
+P11
+
+P12
+
+P13
+
+```text
+Compare the Throughput Total line for 52 to 65, 65 to 52, 0 to 30, 91 to 91, 0 to 0 and a missing Then, through the panel's change lines
+```
+
+```text
+Total is a change line before per day; delta, percent, mark and verdict as the shown values give, percent absent over a Then of 0, no change for a missing Then
+```
+
+```text
+The report summary and panel judge Throughput the same way
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/thenNowComparison\.test\.ts
+
+```text
+A percent over a Then of 0 or a Total judged with the wrong direction of good
+```
+
+###### Obligations
+
+
+##### Covers
+
+P10
+
+```text
+Draw every panel from one read and tally the summary
+```
+
+```text
+Throughput draws better and neutral marks, equal to what the summary tallies; other panels unchanged
+```
+
+```text
+What the reader sees equals what the header counts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/reportPanelRegistry\.parity\.test\.tsx
+
+```text
+A panel drawing a Total line the summary does not tally
+```
+
+###### Obligations
+
+
+##### Covers
+
+P10
+
+```text
+Compare Throughput over any equal windows of 14 to 400 days with totals 0 to 3000, including totals differing by 1 over 365 days and both totals 0
+```
+
+```text
+The Total and per day lines are both judged and never point opposite ways, so Throughput is never placed as mixed; a difference of 1 over a long window is improved; both 0 is unchanged
+```
+
+```text
+Throughput never reads as both better and worse at once
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/changeSummary\.test\.ts\:\:L3
+
+```text
+A Total line judged against the wrong direction of good, or a Total line not judged at all
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Read a saved report whose older version stored a different Now length, and a report whose Then ends today or 45 days ago
+```
+
+```text
+Now is as long as Then, ending today or back to back as the rule says; already covered by the committed derived-Now scenarios
+```
+
+```text
+Every report, new or saved, is a like-for-like comparison
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreation\/EqualLengthReportsScenarios\.cs\:\:A\_saved\_report\_whose\_Now\_was\_stored\_45\_days\_long\_reads\_a\_30\_day\_Now\_ending\_today\_with\_Then\_and\_its\_stored\_member\_untouched
+
+```text
+A Now still read from a stored length
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Edit the name and shown metrics of a report whose Then starts before the oldest kept day
+```
+
+```text
+The edit is accepted and the report stays editable; already covered by the committed scenario
+```
+
+```text
+An old report can still be renamed and its metrics changed
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreation\/EqualLengthReportsScenarios\.cs\:\:A\_report\_whose\_Then\_lies\_before\_the\_oldest\_kept\_day\_stays\_editable
+
+```text
+An edit refused because Then predates the kept history
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows
