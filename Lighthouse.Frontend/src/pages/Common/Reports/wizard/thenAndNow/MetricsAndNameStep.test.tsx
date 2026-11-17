@@ -131,6 +131,19 @@ describe("the Metrics & name step", () => {
 		);
 	});
 
+	it("shows Arrivals disabled and unticked with its reason on a report made before Arrivals existed", () => {
+		renderStep(
+			offering("cycle-time", "arrivals"),
+			["cycle-time"],
+			["cycle-time"],
+		);
+
+		const arrivals = screen.getByRole("checkbox", { name: "Arrivals" });
+		expect(arrivals).toBeDisabled();
+		expect(arrivals).not.toBeChecked();
+		expect(arrivals).toHaveAccessibleDescription(NOT_CAPTURED);
+	});
+
 	it("lets a metric the report shows but never captured be unticked", async () => {
 		const onChange = renderStep(
 			offering("cycle-time", "throughput"),

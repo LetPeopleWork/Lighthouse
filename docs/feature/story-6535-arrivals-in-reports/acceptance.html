@@ -170,7 +170,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx::L1</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx::gapSentenceOf</p>
 
 <pre><code>A build that tests the sentence on the unrounded gap, so 0.004 reads more started
 </code></pre>
@@ -199,9 +199,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx::L2</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx::lineComparisonsOf</p>
 
-<pre><code>Already satisfied by the shared comparison: a build that changes it from unrounded gaps would fail, but this row passes before the feature exists
+<pre><code>A regression guard over the existing shared comparison: it passes before the feature exists, and only a build that changes that comparison to work from unrounded gaps would fail it. Absence of a percent is pinned on the rendered change text, not here
 </code></pre>
 
 <h6>Obligations</h6>
@@ -380,13 +380,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>A Team and a Portfolio each make a Then &amp; Now report showing Arrivals and read it back through the report services
+<pre><code>A Team and a Portfolio that started three Work Items in Then and finished two make a report showing Arrivals, and one with nothing started or finished
 </code></pre>
 
-<pre><code>Arrivals is offered last, and the report carries total, per day, Throughput per day and gap per day on both sides, an empty window being a real zero
+<pre><code>Then freezes total 3, 0.10 started per day, 0.07 finished per day and a 0.03 gap per day; an empty window is a real zero; Arrivals is offered last
 </code></pre>
 
-<pre><code>A Team or Portfolio report made with Arrivals shows it
+<pre><code>A Team or Portfolio report made with Arrivals shows what the owner really started and finished
 </code></pre>
 
 <h5>Disposition</h5>
@@ -395,7 +395,59 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs</p>
 
-<pre><code>A build that registers the metric for Teams only, or omits it from the offered types
+<pre><code>A build that registers the metric for Teams only, reads the wrong reader for Portfolios, or returns zeros for every window
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The reader opens the info control on the Arrivals panel
+</code></pre>
+
+<pre><code>It reads: Arrivals are Work Items started. The gap is started minus finished, per day. Lower is better.
+</code></pre>
+
+<pre><code>The reader learns what the gap is and which way is better
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx</p>
+
+<pre><code>A build with no info control or different words
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A reader edits a report made before Arrivals existed
+</code></pre>
+
+<pre><code>Arrivals is shown disabled and unticked with the helper Not captured for this report
+</code></pre>
+
+<pre><code>The reader is told Arrivals cannot be added to an old report
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.test.tsx</p>
+
+<pre><code>A build that lets the box be ticked, or hides it
 </code></pre>
 
 <h6>Obligations</h6>

@@ -106,6 +106,66 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             return ReportOwner.Portfolio(portfolio.Id);
         }
 
+        /// <summary>
+        /// The owner starts this many Work Items (a Portfolio, Features) on one day; they finish on <paramref name="finishedOn"/>,
+        /// or are still in progress when it is not given.
+        /// </summary>
+        protected void TheOwnerStarted(ReportOwner owner, int count, DateOnly startedOn, DateOnly? finishedOn = null)
+        {
+            using var scope = harness.NewScope();
+            var done = finishedOn is not null;
+            var stateCategory = done ? StateCategories.Done : StateCategories.Doing;
+            DateTime During(DateOnly day) => day.ToDateTime(new TimeOnly(10, 0), DateTimeKind.Utc);
+
+            if (owner.Kind == ReportOwnerKind.Team)
+            {
+                var team = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(owner.Id)!;
+                var workItems = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
+                for (var i = 0; i < count; i++)
+                {
+                    workItems.Add(new WorkItem
+                    {
+                        Team = team,
+                        TeamId = team.Id,
+                        ReferenceId = $"WI-{Guid.NewGuid():N}",
+                        Name = "Work Item",
+                        Type = "User Story",
+                        State = done ? "Done" : "In Progress",
+                        StateCategory = stateCategory,
+                        CreatedDate = During(startedOn.AddDays(-1)),
+                        StartedDate = During(startedOn),
+                        ClosedDate = done ? During(finishedOn!.Value) : null,
+                        Order = "1",
+                    });
+                }
+
+                workItems.Save().GetAwaiter().GetResult();
+                return;
+            }
+
+            var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(owner.Id)!;
+            var features = scope.ServiceProvider.GetRequiredService<IFeatureRepository>();
+            for (var i = 0; i < count; i++)
+            {
+                var feature = new Feature
+                {
+                    ReferenceId = $"FT-{Guid.NewGuid():N}",
+                    Name = "Feature",
+                    Type = "Epic",
+                    State = done ? "Done" : "In Progress",
+                    StateCategory = stateCategory,
+                    CreatedDate = During(startedOn.AddDays(-1)),
+                    StartedDate = During(startedOn),
+                    ClosedDate = done ? During(finishedOn!.Value) : null,
+                    Order = "1",
+                };
+                feature.Portfolios.Add(portfolio);
+                features.Add(feature);
+            }
+
+            features.Save().GetAwaiter().GetResult();
+        }
+
         /// <summary>A made report is read back as the route that opens one reads it.</summary>
         protected ReportOutcome<ReportRead> ReadAReport(ReportOwner owner, int reportId)
         {
@@ -209,10 +269,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             return licence.Object;
         }
     }
-
     /// <summary>
     /// A Team and a Portfolio each make a report that shows Arrivals and read it back: the type offers Arrivals last,
-    /// and the report carries the four values on both sides, with an empty window a real zero and never a dash.
+    /// the report carries what the owner really started and finished, and an empty window is a real zero, never a dash.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -220,26 +279,58 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     {
         private static readonly string[] Members = ["total", "perDay", "throughputPerDay", "gapPerDay"];
 
+        private const double Tolerance = 1e-9;
+
+        private static readonly NewReport ArrivalsOverThirtyDays = new(
+            "then-and-now", "Started against finished", ["arrivals"], new NewThenAndNow(new DateOnly(2026, 7, 31), 30, 30));
+
         [TestCase("team")]
         [TestCase("portfolio")]
-        public async Task A_report_that_shows_Arrivals_keeps_its_four_values_on_both_sides(string ownerKind)
+        public async Task A_report_shows_how_many_Work_Items_the_owner_started_and_finished_in_Then(string ownerKind)
         {
-            var owner = ownerKind == "team" ? ATeam("Team Lightspeed") : APortfolio("Project Apollo");
+            var owner = AnOwner(ownerKind);
+            TheOwnerStarted(owner, 2, new DateOnly(2026, 7, 10), new DateOnly(2026, 7, 12));
+            TheOwnerStarted(owner, 1, new DateOnly(2026, 7, 10));
+
+            var created = await CreateAReport(owner, ArrivalsOverThirtyDays);
+            Assert.That(created.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report was not created: {created.Code}");
+            var read = ReadAReport(owner, created.Value!.Id);
+            Assert.That(read.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report could not be read: {read.Code}");
+            var then = read.Value!.ThenAndNow!.Metrics["arrivals"].AtThen;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(then.Keys, Is.EquivalentTo(Members), "Then must be frozen with all four values");
+                Assert.That(then["total"], Is.EqualTo(CapturedValue.Shown(3, 30)), "three started in the window, over its thirty days");
+                Assert.That(then["perDay"].Value, Is.EqualTo(3.0 / 30).Within(Tolerance), "started per day must be three over thirty days");
+                Assert.That(then["throughputPerDay"].Value, Is.EqualTo(2.0 / 30).Within(Tolerance), "only two finished, so finished per day is two over thirty days");
+                Assert.That(then["gapPerDay"].Value, Is.EqualTo(1.0 / 30).Within(Tolerance), "one more started than finished, so the gap is one over thirty days");
+            }
+        }
+
+        [TestCase("team")]
+        [TestCase("portfolio")]
+        public async Task A_window_where_nothing_was_started_or_finished_reads_a_real_zero_and_Arrivals_is_offered_last(string ownerKind)
+        {
+            var owner = AnOwner(ownerKind);
 
             var offered = TheTypesOfReportFor(owner).Value!.Templates.Single().Metrics.Select(metric => metric.Key).ToList();
-            var created = await CreateAReport(owner, new NewReport(
-                "then-and-now", "Started against finished", ["arrivals"], new NewThenAndNow(new DateOnly(2026, 7, 31), 30, 30)));
-            var read = ReadAReport(owner, created.Value!.Id).Value!.ThenAndNow!.Metrics;
+            var created = await CreateAReport(owner, ArrivalsOverThirtyDays);
+            Assert.That(created.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report was not created: {created.Code}");
+            var read = ReadAReport(owner, created.Value!.Id);
+            Assert.That(read.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report could not be read: {read.Code}");
+            var arrivals = read.Value!.ThenAndNow!.Metrics["arrivals"];
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(offered.Last(), Is.EqualTo("arrivals"), "Arrivals must be offered, last in the catalog order");
-                Assert.That(created.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report was not created: {created.Code}");
-                Assert.That(read.ContainsKey("arrivals"), Is.True, "the report must carry the Arrivals metric");
-                Assert.That(read["arrivals"].AtThen.Keys, Is.EquivalentTo(Members), "Then must be frozen with all four values");
-                Assert.That(read["arrivals"].AtNow.Keys, Is.EquivalentTo(Members), "Now must be computed with all four values");
-                Assert.That(read["arrivals"].AtThen["gapPerDay"], Is.EqualTo(CapturedValue.Shown(0, 30)), "a window with nothing started or finished is a real zero gap");
+                Assert.That(arrivals.AtThen.Keys, Is.EquivalentTo(Members), "Then must be frozen with all four values");
+                Assert.That(arrivals.AtNow.Keys, Is.EquivalentTo(Members), "Now must be computed with all four values");
+                Assert.That(arrivals.AtThen["gapPerDay"], Is.EqualTo(CapturedValue.Shown(0, 30)), "nothing started or finished is a real zero gap");
             }
         }
+
+        private ReportOwner AnOwner(string ownerKind)
+            => ownerKind == "team" ? ATeam("Team Lightspeed") : APortfolio("Project Apollo");
     }
 }

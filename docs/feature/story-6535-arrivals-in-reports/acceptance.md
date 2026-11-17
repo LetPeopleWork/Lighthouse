@@ -24,7 +24,7 @@ The words always agree with the number the reader sees
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ArrivalsPanel\.test\.tsx\:\:L1
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ArrivalsPanel\.test\.tsx\:\:gapSentenceOf
 
 ```text
 A build that tests the sentence on the unrounded gap, so 0.004 reads more started
@@ -57,10 +57,10 @@ The shown Then plus the shown change equals the shown Now
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ArrivalsPanel\.test\.tsx\:\:L2
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ArrivalsPanel\.test\.tsx\:\:lineComparisonsOf
 
 ```text
-Already satisfied by the shared comparison: a build that changes it from unrounded gaps would fail, but this row passes before the feature exists
+A regression guard over the existing shared comparison: it passes before the feature exists, and only a build that changes that comparison to work from unrounded gaps would fail it. Absence of a percent is pinned on the rendered change text, not here
 ```
 
 ###### Obligations
@@ -264,15 +264,15 @@ None.
 P1
 
 ```text
-A Team and a Portfolio each make a Then & Now report showing Arrivals and read it back through the report services
+A Team and a Portfolio that started three Work Items in Then and finished two make a report showing Arrivals, and one with nothing started or finished
 ```
 
 ```text
-Arrivals is offered last, and the report carries total, per day, Throughput per day and gap per day on both sides, an empty window being a real zero
+Then freezes total 3, 0.10 started per day, 0.07 finished per day and a 0.03 gap per day; an empty window is a real zero; Arrivals is offered last
 ```
 
 ```text
-A Team or Portfolio report made with Arrivals shows it
+A Team or Portfolio report made with Arrivals shows what the owner really started and finished
 ```
 
 ##### Disposition
@@ -282,7 +282,67 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportsAtThePortTest\.cs
 
 ```text
-A build that registers the metric for Teams only, or omits it from the offered types
+A build that registers the metric for Teams only, reads the wrong reader for Portfolios, or returns zeros for every window
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The reader opens the info control on the Arrivals panel
+```
+
+```text
+It reads: Arrivals are Work Items started. The gap is started minus finished, per day. Lower is better.
+```
+
+```text
+The reader learns what the gap is and which way is better
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ArrivalsPanel\.test\.tsx
+
+```text
+A build with no info control or different words
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P4
+
+```text
+A reader edits a report made before Arrivals existed
+```
+
+```text
+Arrivals is shown disabled and unticked with the helper Not captured for this report
+```
+
+```text
+The reader is told Arrivals cannot be added to an old report
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/MetricsAndNameStep\.test\.tsx
+
+```text
+A build that lets the box be ticked, or hides it
 ```
 
 ###### Obligations

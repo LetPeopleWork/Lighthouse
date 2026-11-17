@@ -1,4 +1,5 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
 import { afterEach, describe, expect, it } from "vitest";
 import type {
@@ -127,6 +128,24 @@ describe("the Arrivals panel of a Then & Now report", () => {
 		},
 	);
 
+	it("explains in its info text what Arrivals are, how the gap is made and which way is better", async () => {
+		const panel = await openingTheReport(
+			"on the report",
+			aReportShowingArrivals({
+				atThen: THEN_STARTED_MORE,
+				atNow: NOW_STARTED_FEWER,
+			}),
+		);
+
+		await userEvent.click(within(panel).getByRole("button"));
+
+		expect(
+			await screen.findByText(
+				"Arrivals are Work Items started. The gap is started minus finished, per day. Lower is better.",
+			),
+		).toBeVisible();
+	});
+
 	it("lists Arrivals under Improved in the header when the gap got smaller", async () => {
 		await openingTheReport(
 			"on the report",
@@ -141,7 +160,7 @@ describe("the Arrivals panel of a Then & Now report", () => {
 		);
 	});
 
-	it("reads a gap that rounds to nothing as as many started as finished, and rounds before it compares", async () => {
+	it("reads a gap that rounds to nothing as many started as finished, and rounds before it compares", async () => {
 		const panel = await openingTheReport(
 			"on the report",
 			aReportShowingArrivals({
@@ -185,7 +204,7 @@ const expectedSentenceKind = (rounded: number): GapSentenceKind => {
 };
 
 describe("the gap sentence follows the number the reader sees", () => {
-	it("L1 reads balanced exactly when the gap rounds to zero at two decimals, and its magnitude is the shown number", () => {
+	it("reads balanced exactly when the gap rounds to zero at two decimals, and its magnitude is the shown number", () => {
 		const aGap = fc.oneof(
 			fc.double({ min: -50, max: 50, noNaN: true }),
 			fc.double({ min: -0.012, max: 0.012, noNaN: true }),
@@ -213,7 +232,7 @@ describe("the gap sentence follows the number the reader sees", () => {
 		}
 	});
 
-	it("L2 changes by the difference of the shown gaps, better exactly when it fell", () => {
+	it("keeps the change as the difference of the shown gaps, better exactly when it fell", () => {
 		const wholeThousandths = fc
 			.integer({ min: -5000, max: 5000 })
 			.filter((value) => Math.abs(value) % 10 !== 5);
