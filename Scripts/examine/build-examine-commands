@@ -1219,16 +1219,11 @@ cat > "$out/connector-throws-count" <<EOF
 # ConnectorsDeclareNoUnsupportedMembersArchUnitTest reads the compiled code and names each such method.
 # Usage: connector-throws-count
 set -euo pipefail
-# The connectors are moving into the Tracker integration module; each folder is counted wherever it lives now.
-backend="$repo/Lighthouse.Backend/Lighthouse.Backend"
-locations=("\$backend/Modules/TrackerIntegration/Adapters/Connectors" "\$backend/Services/Implementation/WorkTrackingConnectors")
+connectors="$repo/Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors"
 total=0
 for folder in Csv Linear ServiceNow; do
-  found=""
-  for location in "\${locations[@]}"; do
-    if [ -d "\$location/\$folder" ]; then found="\$location/\$folder"; break; fi
-  done
-  [ -n "\$found" ] || { echo "\$folder: folder not found under \${locations[*]}"; exit 1; }
+  found="\$connectors/\$folder"
+  [ -d "\$found" ] || { echo "\$folder: folder not found under \$connectors"; exit 1; }
   count=\$(grep -rhE --include='*.cs' 'new +(System\.)?NotSupportedException *\(' "\$found" \\
     | grep -cvE '^ *(//|\*)' || true)
   echo "\$folder: \$count"
