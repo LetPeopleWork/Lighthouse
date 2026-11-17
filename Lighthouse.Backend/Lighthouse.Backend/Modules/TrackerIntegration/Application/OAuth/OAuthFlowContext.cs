@@ -1,0 +1,12 @@
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth
+{
+    public record OAuthFlowContext(
+        int ConnectionId,
+        string ProviderKey,
+        string ClientId,
+        string ClientSecret,
+        Uri RedirectUri,
+        string State,
+        IReadOnlyList<string> Scopes,
+        string? TenantId = null);
+}
