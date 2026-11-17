@@ -1,11 +1,21 @@
 # ADR-282: An outlier is a value above a fixed multiple of the median, computed in the frontend, per chart
 
+> **Superseded in part.** Decisions 1 to 3 below no longer hold. An outlier on the Cycle Time scatterplot is now a
+> closed Work Item whose Cycle Time is above the upper natural process limit of the Cycle Time process behaviour chart
+> for the same Team or Portfolio and date range. The backend judges it; the frontend only follows that verdict and
+> no longer computes a median. The rule is recorded in the Flow metrics glossary of
+> [adr-270-bounded-contexts-context-map-and-module-layout.md](adr-270-bounded-contexts-context-map-and-module-layout.md)
+> (entries "Outlier" and "Upper natural process limit"). The other decisions here still describe how the chart hides
+> outliers.
+
 **Feature**: `docs/feature/story-6502-hide-outliers/`
 
 ## Status
 **Date**: 2026-11-14
 
-Accepted (decided and shipped 2026-11-14).
+Accepted (decided and shipped 2026-11-14). Decisions 1 to 3 superseded on 2026-11-17 by the upper natural process
+limit rule, recorded in the Flow metrics glossary of
+[adr-270-bounded-contexts-context-map-and-module-layout.md](adr-270-bounded-contexts-context-map-and-module-layout.md).
 
 ## Context
 

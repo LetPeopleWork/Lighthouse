@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             IPortfolioMetricsService
     {
         private static readonly IReadOnlyList<int> DefaultPacePercentiles = [50, 70, 85, 95];
-        private readonly ICycleTimeOutlierDefinition cycleTimeOutlierDefinition = outlierDefinition ?? new UpperNaturalProcessLimitOutlierDefinition();
+        private readonly ICycleTimeOutlierDefinition cycleTimeOutlierDefinition = outlierDefinition ?? ICycleTimeOutlierDefinition.Default;
 
         public RunChartData GetThroughputForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {

@@ -23,6 +23,7 @@ import {
 import {
 	QueryClient,
 	QueryClientContext,
+	skipToken,
 	useQuery,
 } from "@tanstack/react-query";
 import type React from "react";
@@ -257,8 +258,7 @@ function useOutlierVerdict({
 				fetcherIdOf(fetcher),
 				definitionId ?? "default",
 			],
-			queryFn: () => (fetcher as OutlierFetcher)(definitionId),
-			enabled: fetcher !== undefined,
+			queryFn: fetcher ? () => fetcher(definitionId) : skipToken,
 		},
 		client,
 	);

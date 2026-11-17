@@ -29,6 +29,9 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
     /// </summary>
     public interface ICycleTimeOutlierDefinition
     {
+        /// <summary>The rule the metrics use when nothing else is registered: above the upper natural process limit.</summary>
+        static ICycleTimeOutlierDefinition Default { get; } = new UpperNaturalProcessLimitOutlierDefinition();
+
         OutlierVerdict Judge(IReadOnlyList<int> baselineCycleTimes, IReadOnlyList<CycleTimeObservation> shown);
     }
 

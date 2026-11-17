@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         private const string FeatureWipMetricIdentifier = "FeatureWIP";
         private static readonly IReadOnlyList<int> DefaultPacePercentiles = [50, 70, 85, 95];
         internal const string EmptyFilteredSampleWarning = "Filter excluded all throughput; showing unfiltered forecast";
-        private readonly ICycleTimeOutlierDefinition cycleTimeOutlierDefinition = outlierDefinition ?? new UpperNaturalProcessLimitOutlierDefinition();
+        private readonly ICycleTimeOutlierDefinition cycleTimeOutlierDefinition = outlierDefinition ?? ICycleTimeOutlierDefinition.Default;
 
         public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team, DateTime asOfDate)
         {
