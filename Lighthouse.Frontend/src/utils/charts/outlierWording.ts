@@ -58,6 +58,7 @@ export function outlierWording(terms: OutlierTerms) {
 			`Above the axis: ${lines.map(aboveAxisPhrase).join(", ")}.`,
 		listTitle: (limit: number) =>
 			`${terms.workItems} with a ${terms.cycleTime} above the upper natural process limit (${limitInDays(limit)} days)`,
+		noLimits: `No outliers: the ${terms.cycleTime} process behaviour chart has no limits for this date range`,
 		allVisibleAreOutliers: `All visible ${terms.workItems} are outliers.`,
 		allTypesHidden: "All types are hidden.",
 	};

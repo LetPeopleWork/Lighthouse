@@ -199,6 +199,26 @@ const fetcherIdOf = (fetcher: OutlierFetcher | undefined): number | null => {
 	return id;
 };
 
+interface OutlierHandling {
+	readonly hideOutliers: boolean;
+	readonly verdict: ICycleTimeOutliers | null;
+}
+
+// Without limits nobody judged the items, so a count would mislead: the reason takes the chip's place.
+function outlierHeaderSlot(
+	{ hideOutliers, verdict }: OutlierHandling,
+	chip: Parameters<typeof outlierHeaderChip>[0],
+): React.ReactNode {
+	if (hideOutliers && verdict?.status === "NoLimits") {
+		return (
+			<Typography variant="body2" color="text.secondary">
+				{chip.wording.noLimits}
+			</Typography>
+		);
+	}
+	return outlierHeaderChip(chip);
+}
+
 // A chart without a fetcher asks nothing, and may be drawn outside a query provider.
 const withoutAProvider = new QueryClient();
 
@@ -491,22 +511,25 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	);
 
 	useHeaderSlotContent(
-		outlierHeaderChip({
-			wording,
-			outliers: visibleOutliers,
-			offScaleLines,
-			disabled: !frameIsReady,
-			verdictPending,
-			onOpen: () => {
-				reportUsage({ name: UsageDataEventName.OutlierListOpened });
-				setDialogContent({
-					title: wording.listTitle(analysis.cut ?? 0),
-					items: [...visibleOutliers],
-				});
-				setDialogOpen(true);
+		outlierHeaderSlot(
+			{ hideOutliers, verdict: outlierVerdict.verdict },
+			{
+				wording,
+				outliers: visibleOutliers,
+				offScaleLines,
+				disabled: !frameIsReady,
+				verdictPending,
+				onOpen: () => {
+					reportUsage({ name: UsageDataEventName.OutlierListOpened });
+					setDialogContent({
+						title: wording.listTitle(analysis.cut ?? 0),
+						items: [...visibleOutliers],
+					});
+					setDialogOpen(true);
+				},
+				chipRef,
 			},
-			chipRef,
-		}),
+		),
 	);
 
 	const outlierSwitch = (
