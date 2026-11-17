@@ -190,6 +190,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task RestoreBackup_AnotherOperationHoldsTheGate_ReturnsFailedWithBlockedReasonAndLeavesTheDatabaseAlone()
+        {
+            var held = gate.TryAcquire(DatabaseOperationType.Backup, "another-operation");
+            Assert.That(held.Acquired, Is.True);
+
+            using var backupFile = new MemoryStream([1, 2, 3]);
+            var status = await subject.RestoreBackup(backupFile, "password123", UnreadableCredentials.Remove);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(status.OperationType, Is.EqualTo(DatabaseOperationType.Restore));
+                Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Failed));
+                Assert.That(status.FailureReason, Is.EqualTo(gate.BlockedReason));
+                Assert.That(gate.IsBlocked, Is.True);
+            }
+
+            providerMock.Verify(p => p.StageBackup(It.IsAny<string>()), Times.Never);
+            providerMock.Verify(p => p.RestoreBackup(It.IsAny<string>()), Times.Never);
+        }
+
+        [Test]
         public async Task CreateBackup_ProviderThrows_ReturnsFailedStatus()
         {
             providerMock.Setup(p => p.CreateBackup(It.IsAny<string>())).ThrowsAsync(new InvalidOperationException("Disk full"));

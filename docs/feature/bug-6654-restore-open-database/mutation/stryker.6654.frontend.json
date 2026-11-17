@@ -1,0 +1,31 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts", "related": false },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6654.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports"],
+  "mutate": [
+    "src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:47-48",
+    "src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:57-58",
+    "src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:125-131",
+    "src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:139-153",
+    "src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:171-173",
+    "src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:310-314",
+    "src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:357-361",
+    "src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx:476-513",
+    "src/services/Api/DatabaseManagementService.ts:14-14",
+    "src/services/Api/DatabaseManagementService.ts:58-58",
+    "src/services/Api/DatabaseManagementService.ts:64-66"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "reports/mutation/stryker-6654-frontend.json" },
+  "tempDirName": ".stryker-tmp-6654"
+}

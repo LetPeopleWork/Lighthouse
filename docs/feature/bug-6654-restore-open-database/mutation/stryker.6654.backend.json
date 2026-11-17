@@ -1,0 +1,38 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/DatabaseManagementController.cs",
+      "**/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs",
+      "**/Services/Implementation/DatabaseManagement/DatabaseOperationTracker.cs",
+      "**/Services/Implementation/DatabaseManagement/PostgresDatabaseManagementProvider.cs",
+      "**/Services/Implementation/DatabaseManagement/SqliteDatabaseManagementProvider.cs",
+      "**/Services/Implementation/Encryption/StoredSecretLocations.cs",
+      "**/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs",
+      "**/Services/Implementation/Encryption/UnreadableStoredSecrets.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "ignore-methods": [
+      "*Log*",
+      "Console.*"
+    ],
+    "coverage-analysis": "perTest",
+    "test-case-filter": "(FullyQualifiedName~Tests.API.DatabaseManagementControllerTest|FullyQualifiedName~Tests.Services.Implementation.DatabaseManagementServiceTest|FullyQualifiedName~Tests.Services.Implementation.DatabaseManagementCompatibilityTest|FullyQualifiedName~Tests.Services.Implementation.DatabaseOperationTrackerTest|FullyQualifiedName~Tests.Services.Implementation.SqliteDatabaseManagementProviderTest|FullyQualifiedName~Tests.Services.Implementation.PostgresDatabaseManagementProviderTest|FullyQualifiedName~Tests.Services.Implementation.Encryption.StoredSecretReadabilityProbeTests|FullyQualifiedName~Tests.Services.Implementation.Encryption.EncryptionKeyRingBootstrapperTests|FullyQualifiedName~Tests.Acceptance.DatabaseManagement)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 3,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

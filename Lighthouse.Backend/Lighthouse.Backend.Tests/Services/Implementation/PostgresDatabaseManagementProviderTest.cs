@@ -65,6 +65,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             commandRunnerMock.Setup(c => c.IsToolAvailable("pg_dump")).Returns(false);
             commandRunnerMock.Setup(c => c.IsToolAvailable("pg_restore")).Returns(true);
+            commandRunnerMock.Setup(c => c.IsToolAvailable("psql")).Returns(true);
 
             Assert.That(subject.IsToolingAvailable(), Is.False);
         }
@@ -74,6 +75,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             commandRunnerMock.Setup(c => c.IsToolAvailable("pg_dump")).Returns(true);
             commandRunnerMock.Setup(c => c.IsToolAvailable("pg_restore")).Returns(false);
+            commandRunnerMock.Setup(c => c.IsToolAvailable("psql")).Returns(true);
 
             Assert.That(subject.IsToolingAvailable(), Is.False);
         }
@@ -131,6 +133,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetServerVersion_ReturnsNull_WhenPgDumpNotAvailable()
         {
             commandRunnerMock.Setup(c => c.IsToolAvailable("pg_dump")).Returns(false);
+
+            Assert.That(subject.GetServerVersion(), Is.Null);
+            commandRunnerMock.Verify(c => c.RunAsync(It.IsAny<ProcessStartInfo>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Test]
+        public void GetServerVersion_ReturnsNull_WhenPgDumpReportsAFailure()
+        {
+            commandRunnerMock.Setup(c => c.IsToolAvailable("pg_dump")).Returns(true);
+            commandRunnerMock.Setup(c => c.RunAsync(It.IsAny<ProcessStartInfo>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CommandResult(1, "pg_dump (PostgreSQL) 16.2", "could not run"));
 
             Assert.That(subject.GetServerVersion(), Is.Null);
         }

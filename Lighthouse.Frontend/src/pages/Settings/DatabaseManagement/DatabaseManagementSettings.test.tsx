@@ -133,6 +133,41 @@ describe("DatabaseManagementSettings", () => {
 		expect(screen.getByTestId("restore-password")).toHaveValue("backupPw1");
 	});
 
+	it("closes the credentials explanation with Escape", async () => {
+		const user = userEvent.setup();
+		mockDatabaseManagementService.restoreBackup.mockResolvedValue(
+			restoreThatFailed("CredentialsUnreadable"),
+		);
+		renderComponent();
+
+		await restoreTheBackup(user);
+		await screen.findByRole("dialog", {
+			name: "Stored credentials in this backup cannot be read",
+		});
+
+		await user.keyboard("{Escape}");
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		});
+	});
+
+	it("still explains unreadable credentials when the restore gives no reason, without inventing one", async () => {
+		const user = userEvent.setup();
+		mockDatabaseManagementService.restoreBackup.mockResolvedValue({
+			...restoreThatFailed("CredentialsUnreadable"),
+			failureReason: null,
+		});
+		renderComponent();
+
+		await restoreTheBackup(user);
+
+		const explanation = await screen.findByRole("dialog", {
+			name: "Stored credentials in this backup cannot be read",
+		});
+		expect(explanation).toHaveAccessibleDescription("");
+	});
+
 	it("shows a failed restore without the unreadable-credentials code as an error, not as the credentials explanation", async () => {
 		const user = userEvent.setup();
 		mockDatabaseManagementService.restoreBackup.mockResolvedValue(
