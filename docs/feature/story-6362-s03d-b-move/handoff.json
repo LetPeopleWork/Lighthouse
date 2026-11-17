@@ -1,0 +1,1244 @@
+{
+"counters": {
+"C": 1,
+"D": 7,
+"F": 133,
+"K": 3,
+"L": 2,
+"P": 4,
+"S": 2,
+"T": 3,
+"Y": 2
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F26",
+"driven_ports": [
+"F25"
+],
+"driving_port": "F24"
+},
+"claims": [
+{
+"admitted_input": "F32",
+"bypass": "F34",
+"constructor": "git mv plus namespace line, then using and full-name edits",
+"consumer": "ModuleRules.TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary",
+"harm": "F31",
+"id": "C1",
+"owner": "PromisesLayoutArchUnitTest and PromisesPoliciesLayoutArchUnitTest",
+"proposition": "F30",
+"public_observation": "F33"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F39",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F38"
+},
+{
+"axis": "Inhabitation",
+"basis": "F40",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F38"
+},
+{
+"axis": "PublicReachability",
+"basis": "F41",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F38"
+},
+{
+"axis": "Liveness",
+"basis": "F42",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F38"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F20"
+},
+{
+"id": "K2",
+"text": "F21"
+},
+{
+"id": "K3",
+"text": "F22"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F13"
+},
+{
+"id": "D2",
+"text": "F14"
+},
+{
+"id": "D3",
+"text": "F15"
+},
+{
+"id": "D4",
+"text": "F16"
+},
+{
+"id": "D5",
+"text": "F17"
+},
+{
+"id": "D6",
+"text": "F18"
+},
+{
+"id": "D7",
+"text": "F19"
+}
+],
+"equality": [
+{
+"definition": "F29",
+"under": "layout observation"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F23"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F28",
+"description": "F27",
+"result_type": "IReadOnlyList of full type names with a verdict naming each offender; ordered list of handler type names"
+}
+],
+"risks": [
+{
+"allowed": "F45",
+"forbidden": "F46",
+"id": "Y1",
+"kind": "Bypass",
+"owner": "acceptance designer and reviewer",
+"preserved": "F44",
+"residue": "F47",
+"source": "F43"
+},
+{
+"allowed": "F50",
+"forbidden": "F51",
+"id": "Y2",
+"kind": "SinglePointOfFailure",
+"owner": "host",
+"preserved": "F49",
+"residue": "F52",
+"source": "F48"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "crafter",
+"state": "F35"
+},
+{
+"kind": "Excluded",
+"owner": "layout oracles",
+"state": "F36"
+},
+{
+"kind": "Unknown",
+"owner": "maintainer",
+"state": "F37"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F78",
+"falsifier": "F79",
+"promises": [
+"P1",
+"P2",
+"P4"
+],
+"stimulus": "F77"
+},
+"records": {
+"agreement": [
+{
+"contract": "Namespaces of the Promises Application and Domain types",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"party": "Consumer",
+"reason": "F93"
+},
+{
+"contract": "Namespaces of the Promises Application and Domain types",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs:1",
+"party": "Consumer",
+"reason": "F94"
+},
+{
+"contract": "Namespaces of the Promises Application and Domain types",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryRuleService.cs:1",
+"party": "Producer",
+"reason": "F95"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesLayoutArchUnitTest\"",
+"id": "T1",
+"obligation": "F104",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "production file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryRuleService.cs:1",
+"reason": "F80"
+},
+{
+"decision": "Migrated",
+"kind": "unit test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryRuleServiceTest.cs:1",
+"reason": "F81"
+},
+{
+"decision": "Changed",
+"kind": "composition root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F82"
+},
+{
+"decision": "Changed",
+"kind": "API controller",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs:1",
+"reason": "F83"
+},
+{
+"decision": "Changed",
+"kind": "consumer service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs:1",
+"reason": "F84"
+},
+{
+"decision": "Changed",
+"kind": "rule list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:103",
+"reason": "F85"
+},
+{
+"decision": "Changed",
+"kind": "rule list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:129",
+"reason": "F86"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "rule list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs:195",
+"reason": "F87"
+},
+{
+"decision": "Changed",
+"kind": "test using",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWriteBackTest.cs:1",
+"reason": "F88"
+},
+{
+"decision": "Changed",
+"kind": "test using",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs:1",
+"reason": "F89"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "EF model, scripts, Stryker, test-time budget",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F90"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Domain/DeliveryForecastBlock.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliveryRuleService.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryMetricValuesProjector.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliveryForecastBlockRenderer.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastPublishingService.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliveryForecastPublishingService.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliverySourceResolver.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliverySourceResolver.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliverySourceSyncService.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliverySourceSyncService.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastBlockRendererTest.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastBlockRendererBeyondTheHorizonTest.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastPublishingServiceTest.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliverySourceResolverTest.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliverySourceSyncServiceTest.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/BlockedItemService.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerArchiveTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ArchivedDeliveryStaleAggregateRaceIntegrationTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DeliveryRuleServiceApiPreservationTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBatchedWriteBackTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDependencyDogfoodTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraLinkTypeDogfoodTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNamesLiveTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDirectionDogfoodTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDogfoodTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraQuietWriteBackTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraScopedTokenIntegrationTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraSuppressionRetryIntegrationTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactoryTest.cs:1",
+"reason": "F92"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/JiraConnectorTestSetup.cs:1",
+"reason": "F92"
+}
+],
+"laws": [
+{
+"evidence": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembership.cs"
+],
+"id": "L1",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "PromisesLayoutArchUnitTest",
+"statement": "F99",
+"treatment": {
+"cases": [
+"F100",
+"F101",
+"F102"
+],
+"kind": "Finite",
+"reason": "F103"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F96"
+},
+{
+"analysis": "contract_tests",
+"reason": "F97"
+},
+{
+"analysis": "reuse",
+"reason": "F98"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Domain/DeliveryForecastBlock.cs",
+"reason": "F53"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryRuleService.cs",
+"reason": "F54"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliveryRuleService.cs",
+"reason": "F55"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryMetricValuesProjector.cs",
+"reason": "F56"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs",
+"reason": "F57"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliveryForecastBlockRenderer.cs",
+"reason": "F58"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastPublishingService.cs",
+"reason": "F59"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliveryForecastPublishingService.cs",
+"reason": "F60"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliverySourceResolver.cs",
+"reason": "F61"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliverySourceResolver.cs",
+"reason": "F62"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliverySourceSyncService.cs",
+"reason": "F63"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliverySourceSyncService.cs",
+"reason": "F64"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryRuleServiceTest.cs",
+"reason": "F65"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryMetricValuesProjectorTest.cs",
+"reason": "F66"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastBlockRendererTest.cs",
+"reason": "F67"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastBlockRendererBeyondTheHorizonTest.cs",
+"reason": "F68"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastPublishingServiceTest.cs",
+"reason": "F69"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliverySourceResolverTest.cs",
+"reason": "F70"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliverySourceSyncServiceTest.cs",
+"reason": "F71"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F72"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/BlockedItemService.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerArchiveTest.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryRulesControllerTest.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ArchivedDeliveryStaleAggregateRaceIntegrationTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+"reason": "F73"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DeliveryRuleServiceApiPreservationTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F75"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F76"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBatchedWriteBackTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDependencyDogfoodTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraLinkTypeDogfoodTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNamesLiveTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDirectionDogfoodTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDogfoodTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraQuietWriteBackTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraScopedTokenIntegrationTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraSuppressionRetryIntegrationTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWriteBackTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactoryTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/JiraConnectorTestSetup.cs",
+"reason": "F74"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesLayoutArchUnitTest\"",
+"pwsh Lighthouse.Backend/Test-Fast.ps1",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F112",
+"falsifier": "F113",
+"promises": [
+"P1",
+"P2",
+"P3",
+"P4"
+],
+"stimulus": "F111"
+},
+"records": {
+"agreement": [
+{
+"contract": "PortfolioForecastsUpdated handler registration order",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1633",
+"party": "Producer",
+"reason": "F122"
+},
+{
+"contract": "PortfolioForecastsUpdated handler registration order",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DomainEventDispatcher.cs:1",
+"party": "Consumer",
+"reason": "F123"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesPoliciesLayoutArchUnitTest\"",
+"id": "T2",
+"obligation": "F132",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~DomainEventHandlerOrderPinTest\"",
+"id": "T3",
+"obligation": "F133",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "production file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandler.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Migrated",
+"kind": "unit test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandlerTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "unit test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs:1",
+"reason": "F116"
+},
+{
+"decision": "Changed",
+"kind": "host-user list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:295",
+"reason": "F117"
+},
+{
+"decision": "Changed",
+"kind": "composition root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1633",
+"reason": "F118"
+},
+{
+"decision": "Changed",
+"kind": "test using",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs:484",
+"reason": "F119"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test comment",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/DeliveryJointForecastTest.cs:298",
+"reason": "F120"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "EF model, scripts, Stryker",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1633",
+"reason": "F121"
+},
+{
+"decision": "Migrated",
+"kind": "moved file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandler.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs:1",
+"reason": "F92"
+}
+],
+"laws": [
+{
+"evidence": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+],
+"id": "L2",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "PromisesPoliciesLayoutArchUnitTest",
+"statement": "F127",
+"treatment": {
+"cases": [
+"F128",
+"F129",
+"F130"
+],
+"kind": "Finite",
+"reason": "F131"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F124"
+},
+{
+"analysis": "contract_tests",
+"reason": "F125"
+},
+{
+"analysis": "reuse",
+"reason": "F126"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandler.cs",
+"reason": "F105"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandler.cs",
+"reason": "F106"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryForecastPublishingHandlerTest.cs",
+"reason": "F107"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/Policies/DeliveryMetricSnapshotRecordingHandlerTest.cs",
+"reason": "F108"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F109"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",
+"reason": "F110"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs",
+"reason": "F74"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs",
+"reason": "F74"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesPoliciesLayoutArchUnitTest|FullyQualifiedName~DomainEventHandlerOrderPinTest\"",
+"pwsh Lighthouse.Backend/Test-Fast.ps1",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+}
+}
+},
+"facts": {
+"F1": "Story #6362 S03d Package Promises (Deliveries), feature B of three (the move): move the Promises types measured in feature A into Modules/Promises (DeliveryForecastBlock with its percentile record into Domain; the rule service, source resolver, source sync, forecast publishing, forecast block renderer, their interfaces and the metric-values projector into Application; the two 'forecasts updated' handlers into Application/Policies) with their unit tests, behaviour-free, and pin the order of the two PortfolioForecastsUpdated handlers. Design authority: docs/feature/story-6362-s03d-package-promises-deliveries/feature-delta.md.",
+"F10": "EXAMINE observes through admitted probes only (architecture-rules, backend-tests, ef-model-unchanged, deliveries-answers-compare and deliveries-answers-selftest, refresh-reactions-show, test-selection-show, ci-live-suites-show); expectations name only what those can show, and only what a test name or a probe line states.",
+"F100": "all 13 production files' types in the old namespaces fail the layer rule naming each",
+"F101": "a list name with no matching type fails as missing",
+"F102": "a made-up Domain type reaching a repository fails the Domain rule",
+"F103": "Closed finite set of 17 named types read from the compiled assembly; a native example table with both-ways comparison is exact, a generative property adds nothing",
+"F104": "Promises types live in Modules/Promises Domain and Application by namespace, Domain reaches only the kernel, lists compared both ways and never vacuous",
+"F105": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs; namespace line only",
+"F106": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DeliveryForecastPublishingHandler.cs; namespace line only",
+"F107": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DeliveryForecastPublishingHandlerTest.cs; namespace line only, plus usings",
+"F108": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandlerTest.cs; then host-starting rows move down to the mock-built handler (improve-the-tests rule)",
+"F109": "usings and full names of the two registrations; order and lines stay",
+"F11": "B1: the forecast block records, services, interfaces and projector live in Modules/Promises Domain and Application, with their tests.",
+"F110": "remove or rename the DeliveryMetricSnapshotRecordingHandlerTest line",
+"F111": "Run PromisesPoliciesLayoutArchUnitTest over the compiled assembly (look DeliveryMetricSnapshotRecordingHandler and DeliveryForecastPublishingHandler up by name and read their namespace) and run the new PortfolioForecastsUpdated entry of DomainEventHandlerOrderPinTest, which reads the handler registration order from the composition root",
+"F112": "Both handlers live in Lighthouse.Backend.Modules.Promises.Application.Policies and none is left under Services.Implementation.DomainEvents; the registered handlers of PortfolioForecastsUpdated are, in order, DeliveryMetricSnapshotRecordingHandler then DeliveryForecastPublishingHandler; no existing test changes outcome",
+"F113": "A handler left in the old namespace or a list name matching no type fails by name; the two registrations swapped in Program.cs, or either one missing, fails the order entry naming the position; today the entry does not exist so the order pin is RED until added",
+"F114": "git mv plus namespace line for both handlers",
+"F115": "DeliveryForecastPublishingHandlerTest moves with its handler; no host reference, move only",
+"F116": "Moves with its handler; derives from IntegrationFixture and builds a TestWebApplicationFactory in some rows. Each row that starts the host moves down to the mock-built handler the class already uses; if no host reference remains the HostUsersStillToMove line comes off, otherwise it is renamed to the new namespace (D-9)",
+"F117": "The line naming Services.Implementation.DomainEvents.DeliveryMetricSnapshotRecordingHandlerTest comes off when no host reference remains, else follows the new namespace; the list stays compared both ways",
+"F118": "usings and full names of the two PortfolioForecastsUpdated registrations only; lines, order and scoped lifetimes stay",
+"F119": "using line only: resolves DeliveryMetricSnapshotRecordingHandler through OfType; same for SnapshotRecordedDayInstanceZoneTest",
+"F12": "B2: the two forecasts-updated handlers live in Modules/Promises/Application/Policies, and their order is pinned.",
+"F120": "Names the handler only in a comment; no reference to change",
+"F121": "No entity, migration, script or Stryker config names either handler (git grep finds none outside the files listed)",
+"F122": "The two registrations keep their order; only namespaces in the lines change",
+"F123": "The dispatcher runs handlers in registration order as today; nothing in it changes",
+"F124": "Behaviour-free move done as separate pure-move commits; the order pin is added by the oracle owner before the move, so no further preserving move is needed",
+"F125": "No wire or persisted shape changes; the handlers and their event ship in one deployable and the order pin plus the unchanged suite cover the consumers",
+"F126": "Every target is an existing owner relocated by git mv with a namespace line, or an existing consumer edited by using lines; no new type or responsibility is created. Candidates consulted and reused unchanged: DomainEventHandlerOrderPinTest (extended with one entry by the oracle owner; a second pin class would duplicate the mechanism), DeliveryMetricSnapshotRecordingHandler, DeliveryForecastPublishingHandler, ModuleRules (as the Work Items and Forecasting Policies layout oracles use it). Only the oracle PromisesPoliciesLayoutArchUnitTest is new: the S1 oracle is frozen by approval and governs other layers. Future paths do not resolve as locators until the pure move.",
+"F127": "The two PortfolioForecastsUpdated handlers live in Modules.Promises.Application.Policies and are registered in the order snapshot recording, then publishing",
+"F128": "each handler in the old namespace fails the layer rule naming it",
+"F129": "registration order reversed fails the order pin",
+"F13": "Placement (feature-delta D-1, D-2, D-3): the 15 types of PromisesMembership.Moves and the two admitted Models records (DeliveryForecastBlock, DeliveryForecastBlockPercentile, one file) move by git mv into Lighthouse.Backend/Modules/Promises, namespace equals folder. Domain: DeliveryForecastBlock.cs. Application (flat): rule service, source resolver, source sync, forecast publishing, forecast block renderer, their five interfaces and the metric-values projector. Application/Policies: the two PortfolioForecastsUpdated handlers. Slice order S1 then S2.",
+"F130": "a missing registration fails the order pin",
+"F131": "Two named types and one ordered pair of registrations: a closed finite domain; native examples are exact and no generative property adds coverage",
+"F132": "Both forecasts-updated handlers live in Modules/Promises/Application/Policies by namespace, lists compared both ways and never vacuous",
+"F133": "PortfolioForecastsUpdated handlers are registered snapshot recording first, then publishing",
+"F14": "Behaviour-free (D-0, D-4, D-10): no class is created, split, merged or renamed, no signature changes, no entity, DbSet, migration, route or DTO changes. Repositories, entities, update code, write-back round, ordering and ranking stay. Program.cs lines and order stay; only usings and full type names change, and the two PortfolioForecastsUpdated registrations keep their order (snapshot recording, then publishing).",
+"F15": "Tests move with production (D-9): unit tests of the moved files move in a separate commit to Lighthouse.Backend.Tests/Modules/Promises/<same sub-folder>; integration, acceptance and controller tests stay. The 12 Jira test files that construct the renderer, JiraDeliverySourceProviderTest, WorkTrackingConnectorFactoryTest and JiraConnectorTestSetup get a using line only; the improve-the-tests rule applies to DeliveryMetricSnapshotRecordingHandlerTest in S2 and is waived for move-only and using-only edits.",
+"F16": "Rule lists follow the move and are never loosened: full-name strings in TrackerIntegrationModuleBoundariesArchUnitTest, WorkItemsModuleBoundariesArchUnitTest and DeliveryRuleServiceApiPreservationTest are rewritten to the new names and stay compared both ways; a rule exemption for a moved type is exact (type and nested types by full name), proved by a throwaway probe that is reverted. Old classifier alternatives stay until feature C. PromisesMembership and PromisesMembershipArchUnitTest are namespace-agnostic and stay unedited.",
+"F17": "Oracles are IL architecture tests through ModuleRules (TypesLiveInTheirLayer, DomainReachesOnlyTheKernelAndTheBaseLibrary), modelled on ForecastingDomainLayoutArchUnitTest and WorkItemsApplicationLayoutArchUnitTest. Each looks every moved type up by name in the compiled assembly and fails when it is not found (never vacuous); top-level types are compared (nested names reduced to the part before the plus sign). Made-up offenders live in a fixture namespace such as Lighthouse.Backend.Modules.PromisesFixtures. They start no host.",
+"F18": "Claim-to-checker: namespace placement, Domain reach and handler order are finite facts read from the compiled IL and the composition root, checked by the two ArchUnit oracles (Finite laws) and by EXAMINE probes (architecture-rules, backend-tests, ef-model-unchanged, deliveries-answers-compare, deliveries-answers-selftest, refresh-reactions-show, test-selection-show, ci-live-suites-show). No Quint, TLA+ or Agda model: nothing is a state machine, queue or proof obligation (no handler, schedule or queue moves) and a model would restate the namespace map. Liveness not applicable: no progress property exists. Type strength: native C# namespaces, no new types; invalid placement is excluded by the IL rules, not by construction.",
+"F19": "Push and cost (D-11, maintainer 2026-11-17): B1 and B2 edit Program.cs, a shared path, so each push selects every live suite; push per slice with CI watched; no review window; mutation once at the end of S03d on frozen code. Standard rigor: architect, acceptance designer and crafter on sonnet, reviewers and EXAMINE on haiku. EXAMINE expectations name only what an admitted probe shows.",
+"F2": "Promises lives in its own module folder, so its rules can be enforced by namespace in feature C, with nothing a user, a tracker or the database sees changed",
+"F20": "No schema, route, DTO, DI lifetime, forecast or Delivery answer changes; the EF model stays the same (ef-model-unchanged) and every existing test stays green unmodified apart from moves, usings and rule-file strings.",
+"F21": "Approved oracle files are never edited, not even a using line; a crafter target is never an oracle support. The pure-move commit contains git mv and the namespace line only and need not build; GREEN and every review run on a clean committed tree.",
+"F22": "WorkTrackingConnectorFactory, WorkTrackingSystemFactory and AuthenticationMethodSchema stay in Application and get no namespace-wide exemption. Update code, repositories, the write-back round and the Jira port inversion are out of scope. Input bounds: no stored or validated input changes; none is introduced.",
+"F23": "Producer and consumer ship in one deployable and change in the same commit; the move changes no wire or persisted shape, so the unchanged existing tests and the layout oracles cover it",
+"F24": "ArchUnit layout oracles reading the compiled Lighthouse.Backend assembly (IlDependencies and ModuleRules) and the DI composition root for handler order; existing HTTP and application-service ports unchanged",
+"F25": "none changed (repositories and tracker ports stay behind their existing interfaces)",
+"F26": "Promises Domain reaches only the shared kernel and the base library; Promises Application reaches what it reaches today (Domain, kernel, Models entities, repositories, the Tracker integration port); no edge is added or removed, only namespaces change",
+"F27": "Layout verdict: the full names of moved types per layer namespace, and the offending type named by a failing rule; registration order of the two PortfolioForecastsUpdated handlers",
+"F28": "Behaviour: a placement check cannot see a changed answer, publication or snapshot; the unchanged tests and EXAMINE probes carry that. Nested types are compared at top level",
+"F29": "Two layouts are equal when every moved top-level type has the same simple name and lives in the same designed namespace, and the registration order of the two handlers is the same list",
+"F3": "Every Promises type measured in feature A lives under Modules/Promises in its designed layer: the forecast block records in Domain, the services, interfaces and projector in Application, the two forecasts-updated handlers in Application/Policies; none is left in its old namespace, and the Domain reaches only the shared kernel.",
+"F30": "After the move every Promises type lives in its designed layer and Domain reaches only the kernel",
+"F31": "A type left behind or a Domain edge hides Promises from namespace rules in feature C",
+"F32": "The compiled assembly after git mv plus namespace edits",
+"F33": "Rule verdict naming each offender by full type name",
+"F34": "Reflection and string-named types are not seen by IL rules; DI strings and Program.cs full names are covered by compilation and the unchanged test suite",
+"F35": "Moved types under Modules.Promises.Domain, Modules.Promises.Application and Modules.Promises.Application.Policies; unmoved neighbours (repositories, update code, entities, DTOs) in their old namespaces",
+"F36": "A moved type left in an old namespace, a Domain type reaching anything beyond the kernel and base library, a missing type that would make a list vacuous, handlers registered in the other order",
+"F37": "Behaviour against a live Jira release (publishing, syncing) is not observable locally; it stays with the existing acceptance tests and the Jira live suite in CI",
+"F38": "Promises layout move",
+"F39": "Excluded states are failed by the IL rules over the whole governed scope; the finite ArchUnit oracles are the checker",
+"F4": "The unit tests of the moved types live under the matching Modules/Promises test folder, and the architecture rules that list a moved type name it in its new place, still compared both ways.",
+"F40": "Admitted input is the existing 15 types and 2 records; the constructor is git mv plus namespace line, reaching the oracles through the real build",
+"F41": "The oracles read the compiled assembly and the composition root; HTTP answers are read by EXAMINE probes",
+"F42": "Not applicable: no queue, schedule or handler behaviour changes, so there is no progress property to check",
+"F43": "IL rules miss catch-clause, event and attribute-argument references",
+"F44": "Domain reaches only the kernel on every path the IL shows",
+"F45": "A reference kind the IL cannot see exists",
+"F46": "A visible edge from Promises Domain beyond the kernel",
+"F47": "Unseen reference kinds",
+"F48": "Program.cs is a shared path and the composition root: a wrong using or a swapped order is invisible to unit tests",
+"F49": "Every route and DI registration; handler order",
+"F5": "When a Portfolio's forecasts are updated, its Delivery metric snapshot is recorded before its forecasts are published, and a test pins that order.",
+"F50": "A longer CI run (all live suites) on each push",
+"F51": "A changed registration order or lifetime",
+"F52": "Linear key rate limit (429) across repeated live runs",
+"F53": "git mv from Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliveryForecastBlock.cs (holds DeliveryForecastBlock and DeliveryForecastBlockPercentile); namespace line only",
+"F54": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryRuleService.cs; namespace line only",
+"F55": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IDeliveryRuleService.cs; namespace line only",
+"F56": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryMetricValuesProjector.cs; namespace line only",
+"F57": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliveryForecastBlockRenderer.cs; namespace line only",
+"F58": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DeliverySources/IDeliveryForecastBlockRenderer.cs; namespace line only",
+"F59": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliveryForecastPublishingService.cs; namespace line only",
+"F6": "Nothing a user, a tracker or the database sees changes: every Delivery answer, forecast publication, route, DI registration and the EF model stay the same, and every existing test stays green.",
+"F60": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DeliverySources/IDeliveryForecastPublishingService.cs; namespace line only",
+"F61": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs; namespace line only",
+"F62": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DeliverySources/IDeliverySourceResolver.cs; namespace line only",
+"F63": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceSyncService.cs; namespace line only",
+"F64": "git mv from Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DeliverySources/IDeliverySourceSyncService.cs; namespace line only",
+"F65": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliveryRuleServiceTest.cs; namespace line only, plus usings",
+"F66": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliveryMetricValuesProjectorTest.cs; namespace line only, plus usings",
+"F67": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliveryForecastBlockRendererTest.cs; namespace line only, plus usings",
+"F68": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliveryForecastBlockRendererBeyondTheHorizonTest.cs; namespace line only, plus usings",
+"F69": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliveryForecastPublishingServiceTest.cs; namespace line only, plus usings",
+"F7": "Promises' own module rules, the Jira connector port inversion and the test-placement rule (feature C); repositories, the update code, the write-back round (#6657), ordering and ranking (S03i); any rename or signature change.",
+"F70": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceResolverTest.cs; namespace line only, plus usings",
+"F71": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceSyncServiceTest.cs; namespace line only, plus usings",
+"F72": "usings and full type names only; order and lines stay",
+"F73": "using lines only",
+"F74": "using line only",
+"F75": "full-name strings and fixture types follow the new namespaces; lists stay compared both ways",
+"F76": "DeliveryRuleService full name follows the new namespace; list stays compared both ways",
+"F77": "Run PromisesLayoutArchUnitTest over the compiled Lighthouse.Backend assembly: look each of the 11 Application and Domain types (and the Models record DeliveryForecastBlockPercentile) up by name and read its namespace; run the shared Domain-reaches-only-the-kernel rule over Modules.Promises.Domain",
+"F78": "DeliveryForecastBlock and DeliveryForecastBlockPercentile live in Lighthouse.Backend.Modules.Promises.Domain; the rule service, source resolver, source sync, forecast publishing, forecast block renderer, their five interfaces, PortfolioSourcePreview, DeliveryMetricValues and the projector live in Lighthouse.Backend.Modules.Promises.Application; none is left in its old namespace; Domain reaches only the kernel and the base library; the existing unit, integration and controller tests stay green",
+"F79": "A moved type left in Services.Implementation, Services.Interfaces or Models.DeliverySources, a list name that no type in the assembly matches (vacuous list), or a made-up Domain type under Modules.PromisesFixtures that reaches a repository: the rule fails naming that type",
+"F8": "Rigor standard for feature B: architect, acceptance designer and crafter on sonnet; reviewers and EXAMINE on haiku (maintainer, 2026-11-17).",
+"F80": "git mv plus namespace line for the 11 Application files (rule service and interface, projector, renderer and interface, resolver and interface, sync and interface, publishing service and interface) and Domain/DeliveryForecastBlock.cs",
+"F81": "7 unit tests move with their files, separate commit: DeliveryRuleServiceTest, DeliveryMetricValuesProjectorTest, DeliveryForecastBlockRendererTest, DeliveryForecastBlockRendererBeyondTheHorizonTest, DeliveryForecastPublishingServiceTest, DeliverySourceResolverTest, DeliverySourceSyncServiceTest",
+"F82": "usings and full type names in the registrations of the moved services change; lines and order stay (D-10)",
+"F83": "usings for IDeliveryRuleService, IDeliverySourceResolver, PortfolioSourcePreview and the projector; same for DeliveryRulesController and DeliverySourcesController",
+"F84": "usings for IDeliveryRuleService and IDeliverySourceSyncService; BlockedItemService (Work Items) uses DeliveryRuleService and JiraWorkTrackingConnector uses IDeliveryForecastBlockRenderer: usings only",
+"F85": "full-name strings and made-up-offender types that name DeliveryForecastPublishingService, DeliverySourceResolver, IDeliveryForecastBlockRenderer and IDeliveryForecastPublishingService follow the new namespaces; PromisesAndTheUpdateCode regex already holds Modules.Promises; lists stay compared both ways",
+"F86": "the DeliveryRuleService full name follows the new namespace; DeliveryRuleServiceApiPreservationTest changes its using for the same type",
+"F87": "names IDeliveryForecastBlockRenderer by simple name only; PromisesMembership and PromisesMembershipArchUnitTest are namespace-agnostic and stay unedited",
+"F88": "using line only (no row touched): the 12 Jira tests that construct the renderer (JiraBatchedWriteBack, JiraDependencyDogfood, JiraLinkTypeDogfood, JiraOriginalNamesLive, JiraParentLinkDirectionDogfood, JiraParentLinkDogfood, JiraQuietWriteBack, JiraScopedTokenIntegration, JiraSuppressionRetryIntegration, JiraWorkTrackingConnectorAuthDelegation, JiraWorkTrackingConnector, JiraWriteBack), JiraDeliverySourceProviderTest, WorkTrackingConnectorFactoryTest and TestHelpers/JiraConnectorTestSetup",
+"F89": "using lines only: DeliveriesControllerTest, DeliveriesControllerArchiveTest, DeliveriesControllerUtcTest, DeliveryRulesControllerTest, DeliverySourcesControllerTest, ArchivedDeliveryStaleAggregateRaceIntegrationTest and PortfolioUpdaterTest; any further file the old namespaces' removal breaks is a using-only edit found by dotnet build",
+"F9": "Push per slice with CI watched; rebase before push allowed; no review window (behaviour-free); mutation once at the end of S03d on frozen code (maintainer, 2026-11-17).",
+"F90": "Entities, migrations, test-selection scripts, EXAMINE config and Stryker config name none of the moved types (git grep finds none); the three Delivery entities and DTOs stay",
+"F91": "git mv plus namespace line (and usings for the tests); no member changes",
+"F92": "Using lines or full-name strings follow the moved types; no behaviour change",
+"F93": "The composition root registers the moved types under their new namespaces; registrations and lifetimes are unchanged",
+"F94": "The Jira connector takes IDeliveryForecastBlockRenderer under its new namespace by using only; the edge itself is retired later in feature C",
+"F95": "Producer of the moved types; names change, members do not",
+"F96": "The slice is itself a behaviour-free move done as separate pure-move commits (git mv plus namespace line, then tests, then edits); no further preserving move is needed to make it easier",
+"F97": "No wire or persisted shape changes and every caller changes in the same commit inside one deployable; the layout oracle and the unchanged suite cover the consumers",
+"F98": "Every target is an existing owner relocated by git mv with a namespace line, or an existing consumer edited by using lines; no new type or responsibility is created. Candidates consulted and reused unchanged: ModuleRules (shared layer and Domain rules, PromisesModule already declared), PromisesMembership (lists the 15 types and 2 records), ForecastingDomainLayoutArchUnitTest (oracle shape), DeliveryForecastBlock, DeliveryRuleService, DeliveryMetricValuesProjector, DeliveryForecastBlockRenderer, DeliverySourceResolver, DeliverySourceSyncService, DeliveryForecastPublishingService with their interfaces. Only the oracle PromisesLayoutArchUnitTest is new: no existing oracle states the Promises Domain and Application layout. Future paths do not resolve as locators until the pure move.",
+"F99": "Every Promises type measured in PromisesMembership (Domain and Application sets) lives in its designed layer namespace, every list name resolves to a type, and Promises Domain reaches only the kernel and base library"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F8"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F9"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F10"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+}
+],
+"scope_out": [
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F11",
+"promises": [
+"P1",
+"P2",
+"P4"
+]
+},
+{
+"id": "S2",
+"observation": "F12",
+"promises": [
+"P1",
+"P2",
+"P3",
+"P4"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6362-s03d-b-move",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
