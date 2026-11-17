@@ -3,7 +3,7 @@
 "B": 3,
 "C": 1,
 "D": 11,
-"F": 240,
+"F": 241,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -1169,6 +1169,7 @@
 "F239": "14 days and 2 items: Limited",
 "F24": "Remembering the on/off choice across loads, sessions or users: the maintainer said no need to store it; it starts on every time.",
 "F240": "closed boundary cases of the baseline rule",
+"F241": "Maintainer 2026-11-17: no separate check of the UNPL count on the team that showed 20+ outliers is needed before DELIVER; the UNPL rule is accepted as designed.",
 "F25": "Changes to the process behaviour chart itself, its baseline rules or its special-cause rules.",
 "F26": "Outlier handling on any chart other than the Cycle Time scatterplot.",
 "F27": "Outlier handling has an on/off control, on by default, its state is not stored, and it starts on at every load (maintainer, in the Request).",
@@ -1181,7 +1182,6 @@
 "F33": "While the limit is loading or could not be loaded, the scatterplot shows no stale outlier count: it reuses the existing loading chip wording (Outliers, loading) and the WidgetShell failure look; DESIGN sketches both states.",
 "F34": "Control: a labelled MUI Switch, copy Hide outliers, in the scatterplot title row next to the Cycle Time selector, on by default. Switched off: every Work Item drawn, y-axis fits all, outlier chip hidden. Wording finalised at the DELIVER sketch review.",
 "F35": "New help sentence: An outlier is a closed Work Item whose Cycle Time is above the upper natural process limit of the Cycle Time process behaviour chart for this date range. List title: Work Items with a Cycle Time above the upper natural process limit (N days). Terms come from Terminology.",
-"F37": "Does the UNPL rule still work for the team that showed 20+ outliers? Recommendation: accept the rule if, on that team's data, the maintainer judges the count useful (agreement with the process behaviour chart holds by construction); if the UNPL is lower than the old cut on some data and flags more items, the maintainer decides whether that is acceptable. Needs the maintainer's look at that team's data at the DELIVER sketch review; does not block slice 1.",
 "F38": "DISCUSS checklist, RBAC impact: N/A, because the control is view-only and local, adds no action, page or data, and the limit comes from Cycle Time data a reader of the Metrics tab can already see.",
 "F39": "DISCUSS checklist, Lighthouse-Clients CLI and MCP: N/A, because no API route or DTO changes if the scatterplot uses the existing Cycle Time process behaviour chart answer; DESIGN revisits this if the named-definition answer needs a new field or route.",
 "F4": "Outlier handling starts on every time the chart opens",
@@ -1315,10 +1315,9 @@
 },
 {
 "status": {
-"kind": "Open",
-"owner": "Product"
+"kind": "Confirmed"
 },
-"text": "F37"
+"text": "F241"
 },
 {
 "status": {

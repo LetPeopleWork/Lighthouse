@@ -235,14 +235,13 @@ Confirmed
 
 
 ```text
-Does the UNPL rule still work for the team that showed 20+ outliers? Recommendation: accept the rule if, on that team's data, the maintainer judges the count useful (agreement with the process behaviour chart holds by construction); if the UNPL is lower than the old cut on some data and flags more items, the maintainer decides whether that is acceptable. Needs the maintainer's look at that team's data at the DELIVER sketch review; does not block slice 1.
+Maintainer 2026-11-17: no separate check of the UNPL count on the team that showed 20+ outliers is needed before DELIVER; the UNPL rule is accepted as designed.
 ```
 
 #### Status
 
-Open
+Confirmed
 
-Product
 
 ```text
 DISCUSS checklist, RBAC impact: N/A, because the control is view-only and local, adds no action, page or data, and the limit comes from Cycle Time data a reader of the Metrics tab can already see.

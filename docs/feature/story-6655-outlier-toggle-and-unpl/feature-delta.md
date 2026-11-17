@@ -9,8 +9,8 @@
   way over that definition's Cycle Times with the same baseline.
 - **Future-proofing (2026-11-17):** the outlier rule is a replaceable definition (strategy passed in), so a
   different outlier definition can be supplied later without reworking callers. No configuration UI now.
-- **Open, for the sketch review at the start of DELIVER:** does the UNPL count look useful on the team that
-  showed 20+ outliers?
+- **UNPL count on the team that showed 20+ outliers (2026-11-17):** no separate check needed; the rule is
+  accepted as designed.
 
 ## DISCUSS checklist (proposed by the product owner, root-reviewed)
 
@@ -40,4 +40,28 @@ Accepted design and ADR in the nwdes handoff (`architecture.md`). Summary: backe
 Portfolio; the chart fetches the verdict with a keyed query; no-limits, loading and failure looks as in the
 design.
 
-## Sketch review (start of DELIVER) — pending
+## Sketch review — approved by the maintainer (2026-11-17, "Design looks good")
+
+Reuses the scatterplot title-row `Stack`, the Cycle Time `Select`, the outlier header chip and `WidgetShell`.
+
+```
+Switch ON (default, every load)
+| Cycle Time  [Default v]   [x] Hide outliers         (3 outliers ▸)  ⓘ |
+|  axis stops at the upper natural process limit                        |
+
+Switch OFF
+| Cycle Time  [Default v]   [ ] Hide outliers                       ⓘ   |
+|  axis fits every Work Item, no outlier chip                           |
+
+No usable limits (baseline < 14 days or fewer than 2 items)
+| ... [x] Hide outliers   No outliers: the Cycle Time process behaviour chart has no limits for this date range  ⓘ |
+```
+
+- Outlier list title: "{Work Items} with a {Cycle Time} above the upper natural process limit (N days)", N unrounded
+  with at most one decimal.
+- Help: "An outlier is a closed {Work Item} whose {Cycle Time} is above the upper natural process limit of the
+  {Cycle Time} process behaviour chart for this date range."
+- Loading: chip disabled with "Outliers, loading", chart frame dimmed under its spinner, no count shown.
+- Failure: the widget's could-not-load message.
+
+## Rigor profile — to agree at the start of 6655 DELIVER
