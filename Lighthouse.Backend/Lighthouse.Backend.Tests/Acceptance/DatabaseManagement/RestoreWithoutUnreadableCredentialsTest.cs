@@ -48,6 +48,8 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
 
         private const string ScratchConnection = "Northwind Jira";
 
+        private const string AnotherOAuthConnection = "Woodgrove Jira";
+
         private const string OrganisationInTheBackup = "contoso";
 
         private static readonly EncryptionKey KeyOfTheInstallationThatMadeTheBackup =
@@ -128,10 +130,12 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
             await GivenAnOAuthCredentialIsStored(ScratchConnection);
             GivenThisInstallationRunsOnAnotherKey();
             await GivenAConnectionWithASecretAndAPlainOptionIsStored(OtherBoardConnection);
-            await GivenAnEmptySecretOptionIsStoredOn(OtherBoardConnection);
+            GivenAnEmptySecretOptionIsStoredOn(OtherBoardConnection);
             await GivenAnOAuthCredentialIsStored(OtherOAuthConnection);
             await GivenAnOAuthCredentialIsStored(OAuthConnection);
-            GivenItsRefreshTokenWasStoredUnderAnotherKey(OAuthConnection, takenFrom: ScratchConnection);
+            GivenItsTokenWasStoredUnderAnotherKey(OAuthConnection, "RefreshToken", takenFrom: ScratchConnection);
+            await GivenAnOAuthCredentialIsStored(AnotherOAuthConnection);
+            GivenItsTokenWasStoredUnderAnotherKey(AnotherOAuthConnection, "AccessToken", takenFrom: ScratchConnection);
 
             await WhenTheUnreadableCredentialsAreRemovedFromTheLiveDatabase();
 
@@ -213,13 +217,16 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
             await context.SaveChangesAsync();
         }
 
-        private async Task GivenAnEmptySecretOptionIsStoredOn(string connectionName)
+        // Written past the application, because saving through it would encrypt the empty value and store
+        // something readable instead of nothing.
+        private void GivenAnEmptySecretOptionIsStoredOn(string connectionName)
         {
-            using var scope = harness.NewScope();
-            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            var connection = context.WorkTrackingSystemConnections.Single(c => c.Name == connectionName);
-            connection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "EmptyToken", Value = string.Empty, IsSecret = true });
-            await context.SaveChangesAsync();
+            Write(
+                """
+                INSERT INTO WorkTrackingSystemConnectionOption (Key, Value, IsSecret, IsOptional, WorkTrackingSystemConnectionId)
+                VALUES ('EmptyToken', '', 1, 0, (SELECT Id FROM WorkTrackingSystemConnections WHERE Name = $name));
+                """,
+                ("$name", connectionName));
         }
 
         private async Task GivenAnOAuthCredentialIsStored(string connectionName)
@@ -241,14 +248,15 @@ namespace Lighthouse.Backend.Tests.Acceptance.DatabaseManagement
             await context.SaveChangesAsync();
         }
 
-        // The stored refresh token is copied over as it lies in the database, so this row ends up with a readable
-        // access token and a refresh token that only the other key can read.
-        private void GivenItsRefreshTokenWasStoredUnderAnotherKey(string connectionName, string takenFrom)
+        // The stored token is copied over as it lies in the database, so this row ends up with one token this key
+        // reads and one that only the other key can read.
+        private void GivenItsTokenWasStoredUnderAnotherKey(string connectionName, string tokenColumn, string takenFrom)
         {
+            Assert.That(tokenColumn, Is.AnyOf("AccessToken", "RefreshToken"), "Set-up: only an OAuth token column can be copied.");
             Write(
-                """
-                UPDATE OAuthCredentials SET RefreshToken =
-                    (SELECT o.RefreshToken FROM OAuthCredentials o JOIN WorkTrackingSystemConnections c ON c.Id = o.WorkTrackingSystemConnectionId WHERE c.Name = $from)
+                $"""
+                UPDATE OAuthCredentials SET {tokenColumn} =
+                    (SELECT o.{tokenColumn} FROM OAuthCredentials o JOIN WorkTrackingSystemConnections c ON c.Id = o.WorkTrackingSystemConnectionId WHERE c.Name = $from)
                 WHERE WorkTrackingSystemConnectionId = (SELECT Id FROM WorkTrackingSystemConnections WHERE Name = $to);
                 """,
                 ("$from", takenFrom),

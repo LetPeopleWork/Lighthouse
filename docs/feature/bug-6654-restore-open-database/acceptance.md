@@ -279,11 +279,11 @@ Removal that runs when the backup holds a readable credential but leaves values 
 P3
 
 ```text
-The live database holds an unreadable token, a readable token, an empty secret value, plain options, an OAuth credential whose access token is readable but refresh token is not, one with both tokens unreadable and one with both readable; the unreadable credentials are removed with this installation's key.
+The live database holds an unreadable token, a readable token, an empty secret value, plain options, and OAuth credentials: one with a readable access token and an unreadable refresh token, one with an unreadable access token and a readable refresh token, one with both unreadable and one with both readable; the unreadable credentials are removed with this installation's key.
 ```
 
 ```text
-Only the unreadable token is blanked; the readable token and the empty value are untouched; plain options stay; both OAuth credentials with any unreadable token are deleted and the fully readable one stays.
+Only the unreadable token is blanked; the readable token and the empty value are untouched; plain options stay; every OAuth credential with any unreadable token is deleted and only the fully readable one stays.
 ```
 
 ```text
@@ -297,7 +297,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DatabaseManagement\/RestoreWithoutUnreadableCredentialsTest\.cs\:\:Removing\_unreadable\_credentials\_blanks\_or\_deletes\_only\_what\_this\_key\_cannot\_read
 
 ```text
-A removal that deletes the empty secret option row instead of leaving it, then re-creates one with an empty value, would still pass; the empty case cannot tell blanking from leaving alone.
+A removal that blanks the empty secret value instead of leaving it alone would still pass, since blanking an empty value leaves it empty; the case only proves the row is neither deleted nor changed to something else.
 ```
 
 ###### Obligations
