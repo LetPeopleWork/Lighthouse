@@ -266,7 +266,7 @@
 "counters": {
 "D": 12,
 "E": 5,
-"F": 212,
+"F": 213,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -379,9 +379,6 @@
 },
 {
 "id": "D8",
-"slices": [
-"S4"
-],
 "text": "F23"
 },
 {
@@ -849,89 +846,6 @@
 "dotnet build Lighthouse.Backend",
 "dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
 ]
-},
-"S4": {
-"oracle": "Scripts/test-selection/test-path-classifier.sh",
-"public_oracle": {
-"expected": "F87",
-"falsifier": "F88",
-"promises": [
-"P4",
-"P5"
-],
-"stimulus": "F86"
-},
-"records": {
-"impact": [
-{
-"decision": "UnchangedCompatible",
-"kind": "script",
-"locator": "Scripts/test-selection/path-classifier.sh:29",
-"reason": "F91"
-},
-{
-"decision": "UnchangedCompatible",
-"kind": "ci",
-"locator": ".github/workflows/ci_changes.yml:1",
-"reason": "F92"
-}
-],
-"laws": [
-{
-"id": "L2",
-"kind": "Invariant",
-"layer": "Infrastructure",
-"owner": "path-classifier.sh",
-"statement": "F95",
-"treatment": {
-"cases": [
-"F96",
-"F97",
-"F98",
-"F99"
-],
-"kind": "Finite",
-"reason": "F83"
-}
-}
-],
-"not_applicable": [
-{
-"analysis": "architectural_tests",
-"reason": "F93"
-},
-{
-"analysis": "prefactoring",
-"reason": "F94"
-}
-],
-"reuse": [
-{
-"decision": "Reuse",
-"locator": "Scripts/test-selection/path-classifier.sh:29",
-"reason": "F89",
-"symbol": "SHARED_REGEX"
-},
-{
-"decision": "Reuse",
-"locator": "Scripts/test-selection/path-classifier.sh:9",
-"reason": "F90",
-"symbol": "BACKEND_REGEX"
-}
-]
-},
-"targets": [
-{
-"change": "Extend",
-"path": "Scripts/test-selection/path-classifier.sh",
-"reason": "F85"
-}
-],
-"verification": [
-"bash Scripts/test-selection/test-path-classifier.sh",
-"dotnet build Lighthouse.Backend",
-"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
-]
 }
 }
 },
@@ -957,13 +871,6 @@
 "P3"
 ],
 "text": "F148"
-},
-{
-"id": "E4",
-"promises": [
-"P4"
-],
-"text": "F149"
 },
 {
 "id": "E5",
@@ -1030,8 +937,6 @@
 "F146": "Running the architecture-rules probe lists the Promises-related architecture tests as Passed, and the tests whose names state a made-up offender is reported (a Delivery service under Modules.Promises reaching a repository, Forecasting or the update code) show Passed, so such an offender is caught.",
 "F147": "The backend-tests probe on the Promises membership test shows it Passed, and its test names state that a missing listed type and an unlisted extra type each make it fail, for both the types that move and the Models types admitted into the module.",
 "F148": "The deliveries-answers-compare probe prints DIFFERENT when two revisions differ in one Delivery answer, and IDENTICAL when no Delivery answer differs (including base against candidate of this feature).",
-"F149": "The test-selection-show probe shows a path under Modules/Promises selects the backend suite only, and the Tracker integration port path for the Jira connector or Program.cs selects every live connector suite; the recorded selection scenarios pass.",
-"F15": "A4: CI selection cases for Promises paths and the C2 port path.",
 "F150": "The ef-model-unchanged probe reports the database model unchanged, deliveries-answers-compare of base against candidate prints IDENTICAL, and the architecture-rules and backend-tests probes show every existing test Passed with none Failed.",
 "F151": "The architecture tests run with a made-up Delivery service in Modules.Promises that reaches a repository, Forecasting's adapters or the update code, beside its twin in the old Delivery sources place, a namesake just outside Modules.Promises and a service that reads values only.",
 "F152": "The module map's Promises namespaces name the service in Modules.Promises and its old-place twin for each of the three reaches, and name neither the namesake nor the values-only service.",
@@ -1102,6 +1007,7 @@
 "F210": "The existing backend test suite runs after the Delivery-answers examine command is added.",
 "F211": "Every existing test stays green; only files under Scripts and the examine commands list change.",
 "F212": "A change to the shared compare piece that alters the output of the existing forecast and refresh comparisons, which no backend test runs.",
+"F213": "A4 dropped (2026-11-17): every case it would pin already holds today (Modules/Promises source and test paths select the backend only; the Tracker integration port path and Program.cs are shared and select every live suite), so it has no RED. The selection stays observable at EXAMINE through the test-selection-show probe.",
 "F22": "Confirmed (D-9, D-10): tests move with production in feature B; Program.cs lines and handler order stay. Using-only and list-string renames in DeliveryRuleServiceApiPreservationTest, TestHostUseGuardTest.HostUsersStillToMove, WorkItemsModuleBoundariesArchUnitTest and TrackerIntegrationMembershipArchUnitTest belong to B1, not feature A.",
 "F23": "Confirmed (D-11): no classifier widening. A4 adds cases to test-path-classifier.sh: a Modules/Promises source path and test path select the backend suite only; Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs and Program.cs select every live connector suite. path-classifier.sh changes only if one of those cases is red.",
 "F24": "Confirmed (D-12): a new EXAMINE command deliveries-answers-compare (CREATE_NEW, thin, on the shared capture pieces of build-examine-commands like metrics-, forecast- and refresh-answers-compare) reads per demo scenario and Portfolio the Delivery list, deliveries/{id}/metrics-history, portfolios/{id}/delivery-rules/schema and the delivery sources on two revisions and compares the bodies: IDENTICAL exit 0, DIFFERENT exit 1, and it fails when nothing was compared. Its compare stage takes two capture folders (split out in A3 if it cannot today). Declared in .nwave/examine.json before the first EXAMINE.",
@@ -1143,7 +1049,6 @@
 "F57": "Edges through signatures, fields, calls and constructors",
 "F58": "Those three reference kinds stay unseen",
 "F59": "Claiming the rules see them",
-"F6": "CI selection is pinned: a change under Modules/Promises selects the backend suite only; a change to the Tracker integration port the Jira connector will take, or to Program.cs, selects every live connector suite.",
 "F60": "Reviewer reads moved files for those kinds in feature B",
 "F61": "Assumption negated: the EXAMINE demo data holds a Delivery",
 "F62": "No false IDENTICAL",
@@ -1171,22 +1076,7 @@
 "F82": "nested type: reduced to its outer type",
 "F83": "Closed finite set of cases; each case is enumerated, no generator adds coverage.",
 "F84": "The Promises membership and Models admissions are measured from the IL and pinned both ways by full type name.",
-"F85": "Only if one of the new cases is red; no widening otherwise (D-11).",
-"F86": "bash Scripts/test-selection/test-path-classifier.sh runs the new cases: a source path and a test path under Lighthouse.Backend/(Lighthouse.Backend|Lighthouse.Backend.Tests)/Modules/Promises, Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs and Lighthouse.Backend/Lighthouse.Backend/Program.cs.",
-"F87": "The two Promises paths select the backend suite and no live connector suite; IDescriptionBlockMerger.cs and Program.cs select every live connector suite (Jira, ADO, Linear, ServiceNow, GitHub); all existing cases stay green.",
-"F88": "Today no case names a Promises path or the merger port (RED by absence). A classifier that sends a Promises path to a live suite, or lets the port or Program.cs skip one, fails a case.",
-"F89": "Already names Program.cs and Modules/TrackerIntegration/(Application|Domain); expected to select all live suites unchanged.",
-"F9": "Rigor thorough for feature A: architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet (maintainer, 2026-11-17).",
-"F90": "Already selects the backend suite for any Lighthouse.Backend path.",
-"F91": "Expected unchanged; edited only if a case is red.",
-"F92": "Reads the classifier output, whose shape does not change.",
-"F93": "Selection cases, not a dependency or boundary law.",
-"F94": "Test cases only; no move.",
-"F95": "classify(path) gives the listed suite flags for each listed path.",
-"F96": "Modules/Promises source: backend only",
-"F97": "Modules/Promises test: backend only",
-"F98": "IDescriptionBlockMerger.cs: all live suites",
-"F99": "Program.cs: all live suites"
+"F9": "Rigor thorough for feature A: architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet (maintainer, 2026-11-17)."
 },
 "product": {
 "decisions": [
@@ -1207,6 +1097,12 @@
 "kind": "Confirmed"
 },
 "text": "F11"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F213"
 }
 ],
 "promises": [
@@ -1224,11 +1120,6 @@
 "id": "P3",
 "kind": "Outcome",
 "text": "F5"
-},
-{
-"id": "P4",
-"kind": "Outcome",
-"text": "F6"
 },
 {
 "id": "P5",
@@ -1261,14 +1152,6 @@
 "observation": "F14",
 "promises": [
 "P3",
-"P5"
-]
-},
-{
-"id": "S4",
-"observation": "F15",
-"promises": [
-"P4",
 "P5"
 ]
 }

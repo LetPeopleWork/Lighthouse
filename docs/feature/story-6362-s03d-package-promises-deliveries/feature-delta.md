@@ -692,3 +692,10 @@ The six open confirmations, answered by the maintainer on 2026-11-17 before S03a
   lost. A3's craft fixes the shared stage (host decision, AFK): only the DIFFERENT branch gains its missing line.
 - Captured per demo scenario: per Portfolio the Delivery list, the Delivery-rules schema and the Delivery sources; per
   Delivery its metrics history (`DeliveriesController` has no other plain GET).
+
+### A4 dropped (2026-11-17, host decision in AFK mode)
+
+Measured with `test-selection-show` before its oracle: a `Modules/Promises/**` source or test path already selects the
+backend only, and `Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs` and `Program.cs` already select every
+live suite (shared). A4 had no missing behaviour, so no RED; it is removed from nwdes (slice S4, promise P4, expectation E4
+withdrawn by nwdes). The selection stays observable at EXAMINE through `test-selection-show`. Feature A is A1-A3.

@@ -188,13 +188,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A Delivery-answers examine command compares the Delivery answers of two revisions and says DIFFERENT when one Delivery answer changed and IDENTICAL when none did.
 </code></pre>
 
-<h3>P4</h3>
-
-<p>Outcome</p>
-
-<pre><code>CI selection is pinned: a change under Modules/Promises selects the backend suite only; a change to the Tracker integration port the Jira connector will take, or to Program.cs, selects every live connector suite.
-</code></pre>
-
 <h3>P5</h3>
 
 <p>Outcome</p>
@@ -228,6 +221,14 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 <pre><code>EXAMINE observes through admitted probes only (architecture-rules with a class fragment, test-selection-show, ci-live-suites-show, ef-model-unchanged, and the Delivery-answers command once A3 adds it); expectations name only what those can show.
+</code></pre>
+
+<h4>Status</h4>
+
+<p>Confirmed</p>
+
+
+<pre><code>A4 dropped (2026-11-17): every case it would pin already holds today (Modules/Promises source and test paths select the backend only; the Tracker integration port path and Program.cs are shared and select every live suite), so it has no RED. The selection stays observable at EXAMINE through the test-selection-show probe.
 </code></pre>
 
 <h4>Status</h4>
@@ -287,25 +288,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h4>Promises</h4>
 
 <p>P3</p>
-
-<p>P5</p>
-
-<h4>Depends on</h4>
-
-<p>None.</p>
-
-<h4>Slice work</h4>
-
-<p>None.</p>
-
-<h3>S4</h3>
-
-<pre><code>A4: CI selection cases for Promises paths and the C2 port path.
-</code></pre>
-
-<h4>Promises</h4>
-
-<p>P4</p>
 
 <p>P5</p>
 

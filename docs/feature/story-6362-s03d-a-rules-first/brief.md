@@ -44,14 +44,6 @@ Outcome
 A Delivery-answers examine command compares the Delivery answers of two revisions and says DIFFERENT when one Delivery answer changed and IDENTICAL when none did.
 ```
 
-### P4
-
-Outcome
-
-```text
-CI selection is pinned: a change under Modules/Promises selects the backend suite only; a change to the Tracker integration port the Jira connector will take, or to Program.cs, selects every live connector suite.
-```
-
 ### P5
 
 Outcome
@@ -90,6 +82,15 @@ Confirmed
 
 ```text
 EXAMINE observes through admitted probes only (architecture-rules with a class fragment, test-selection-show, ci-live-suites-show, ef-model-unchanged, and the Delivery-answers command once A3 adds it); expectations name only what those can show.
+```
+
+#### Status
+
+Confirmed
+
+
+```text
+A4 dropped (2026-11-17): every case it would pin already holds today (Modules/Promises source and test paths select the backend only; the Tracker integration port path and Program.cs are shared and select every live suite), so it has no RED. The selection stays observable at EXAMINE through the test-selection-show probe.
 ```
 
 #### Status
@@ -152,26 +153,6 @@ A3: the Delivery-answers examine command and its behavioural test.
 #### Promises
 
 P3
-
-P5
-
-#### Depends on
-
-None.
-
-#### Slice work
-
-None.
-
-### S4
-
-```text
-A4: CI selection cases for Promises paths and the C2 port path.
-```
-
-#### Promises
-
-P4
 
 P5
 
