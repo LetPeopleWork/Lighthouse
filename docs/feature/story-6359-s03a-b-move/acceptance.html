@@ -151,7 +151,182 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Look up the state-transition mapper, the parent source selector and the dependency field references in the Tracker integration Domain
+</code></pre>
+
+<pre><code>Each is found in the Domain and none is left under Services; a missing or renamed one is reported by name
+</code></pre>
+
+<pre><code>The maintainer sees the three pure translation rules in the Tracker integration Domain and no copy under Services
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::TheStateTransitionMapperTheParentSourceSelectorAndTheDependencyFieldReferences_LiveInTheTrackerIntegrationDomain_AndNoneIsLeftUnderServices</p>
+
+<pre><code>A fourth, foreign type sits in the Domain (closed by the exact-holdings test)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Look up the category crossing and the dependency source selector in the Tracker integration Application
+</code></pre>
+
+<pre><code>Both are found in the Application and none is left under Services; a missing one is reported by name
+</code></pre>
+
+<pre><code>The maintainer sees the two rules that use shared extensions in the Application, not the Domain
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::TheCategoryCrossingAndTheDependencySourceSelector_LiveInTheTrackerIntegrationApplication_AndNoneIsLeftUnderServices</p>
+
+<pre><code>One of them is put in the Domain instead (closed by the Domain holdings and reach tests)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>List every type the Tracker integration Domain holds
+</code></pre>
+
+<pre><code>The Domain holds exactly the three translation rules
+</code></pre>
+
+<pre><code>The Domain stays a short list of the pure rules
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::TheTrackerIntegrationDomain_HoldsExactlyTheThreeTranslationRulesThatReachOnlyTheKernel</p>
+
+<pre><code>A type that reaches Services or Extensions is moved in with the three (closed by the reach test)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Domain-reaches-only-the-kernel rule on the real Tracker integration Domain
+</code></pre>
+
+<pre><code>No Domain type reaches Services, the module&#x27;s Adapters or the shared Extensions, and the Domain is not empty
+</code></pre>
+
+<pre><code>Nothing the Domain calculates can change because of a service or an extension
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::TheTrackerIntegrationDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary</p>
+
+<pre><code>The Domain holds no type at all (the rule fails on an empty Domain)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the same rule on made-up Domain types that reach Services, Adapters or Extensions, each beside a compliant twin
+</code></pre>
+
+<pre><code>Each offender is reported by name with the forbidden type it reached and the twin is not
+</code></pre>
+
+<pre><code>A Domain type that starts reaching a forbidden layer is named in the failure
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::ATrackerIntegrationDomainTypeThatReachesAForbiddenLayer_IsReportedAndItsCompliantTwinIsNot</p>
+
+<pre><code>The rule flags every type, twin included (the twin must stay unreported)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Domain rule on a Domain namespace that holds no type
+</code></pre>
+
+<pre><code>The rule fails and names the empty Domain
+</code></pre>
+
+<pre><code>A rule pointed at the wrong place cannot pass unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::ATrackerIntegrationDomainThatHoldsNoType_FailsTheRuleInsteadOfPassingUnseen</p>
+
+<pre><code>An empty Domain is treated as clean
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Work Items&#x27; membership rule compares its list of notes with the types that stay in Work Items
+</code></pre>
+
+<pre><code>Once the selectors leave Work Items, a stale note for one fails the existing rule, which compares both ways
+</code></pre>
+
+<pre><code>Work Items&#x27; notes list no selector after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs</p>
+
+<pre><code>Stale selector notes stay in the list (only fails once the move lands; craft edits that file)
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

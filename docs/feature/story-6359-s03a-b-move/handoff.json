@@ -1,9 +1,125 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F431"
+],
+"still_passes_if": "F681",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::TheStateTransitionMapperTheParentSourceSelectorAndTheDependencyFieldReferences_LiveInTheTrackerIntegrationDomain_AndNoneIsLeftUnderServices"
+},
+"expected": "F679",
+"stimulus": "F678",
+"user_result": "F680"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F432"
+],
+"still_passes_if": "F685",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::TheCategoryCrossingAndTheDependencySourceSelector_LiveInTheTrackerIntegrationApplication_AndNoneIsLeftUnderServices"
+},
+"expected": "F683",
+"stimulus": "F682",
+"user_result": "F684"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5"
+],
+"still_passes_if": "F689",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::TheTrackerIntegrationDomain_HoldsExactlyTheThreeTranslationRulesThatReachOnlyTheKernel"
+},
+"expected": "F687",
+"stimulus": "F686",
+"user_result": "F688"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5"
+],
+"still_passes_if": "F693",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::TheTrackerIntegrationDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary"
+},
+"expected": "F691",
+"stimulus": "F690",
+"user_result": "F692"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F433"
+],
+"still_passes_if": "F697",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::ATrackerIntegrationDomainTypeThatReachesAForbiddenLayer_IsReportedAndItsCompliantTwinIsNot"
+},
+"expected": "F695",
+"stimulus": "F694",
+"user_result": "F696"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T5"
+],
+"still_passes_if": "F701",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationDomainLayoutArchUnitTest.cs::ATrackerIntegrationDomainThatHoldsNoType_FailsTheRuleInsteadOfPassingUnseen"
+},
+"expected": "F699",
+"stimulus": "F698",
+"user_result": "F700"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5"
+],
+"still_passes_if": "F705",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs"
+},
+"expected": "F703",
+"stimulus": "F702",
+"user_result": "F704"
+}
+]
+},
 "counters": {
 "C": 2,
 "D": 24,
 "E": 6,
-"F": 677,
+"F": 705,
 "K": 8,
 "L": 8,
 "P": 6,
@@ -3372,7 +3488,35 @@
 "F675": "four layer folders",
 "F676": "no leftover Moves type",
 "F677": "S4: listed types live in their layer, none under Services or Factories, layer edges as the shared boundaries; falsified by made-up offenders in a fixture namespace Modules.TrackerIntegrationFixtures",
+"F678": "Look up the state-transition mapper, the parent source selector and the dependency field references in the Tracker integration Domain",
+"F679": "Each is found in the Domain and none is left under Services; a missing or renamed one is reported by name",
+"F680": "The maintainer sees the three pure translation rules in the Tracker integration Domain and no copy under Services",
+"F681": "A fourth, foreign type sits in the Domain (closed by the exact-holdings test)",
+"F682": "Look up the category crossing and the dependency source selector in the Tracker integration Application",
+"F683": "Both are found in the Application and none is left under Services; a missing one is reported by name",
+"F684": "The maintainer sees the two rules that use shared extensions in the Application, not the Domain",
+"F685": "One of them is put in the Domain instead (closed by the Domain holdings and reach tests)",
+"F686": "List every type the Tracker integration Domain holds",
+"F687": "The Domain holds exactly the three translation rules",
+"F688": "The Domain stays a short list of the pure rules",
+"F689": "A type that reaches Services or Extensions is moved in with the three (closed by the reach test)",
+"F690": "Run the Domain-reaches-only-the-kernel rule on the real Tracker integration Domain",
+"F691": "No Domain type reaches Services, the module's Adapters or the shared Extensions, and the Domain is not empty",
+"F692": "Nothing the Domain calculates can change because of a service or an extension",
+"F693": "The Domain holds no type at all (the rule fails on an empty Domain)",
+"F694": "Run the same rule on made-up Domain types that reach Services, Adapters or Extensions, each beside a compliant twin",
+"F695": "Each offender is reported by name with the forbidden type it reached and the twin is not",
+"F696": "A Domain type that starts reaching a forbidden layer is named in the failure",
+"F697": "The rule flags every type, twin included (the twin must stay unreported)",
+"F698": "Run the Domain rule on a Domain namespace that holds no type",
+"F699": "The rule fails and names the empty Domain",
 "F7": "The OAuth service, registry, state tokens, exceptions and provider port live in Application.OAuth with the four admitted Models value types; connection health in Application.ConnectionHealth; the OAuth providers in Adapters.OAuth; the health prober in Adapters.Background; no type of the membership Moves list is left under Services or Factories",
+"F700": "A rule pointed at the wrong place cannot pass unseen",
+"F701": "An empty Domain is treated as clean",
+"F702": "Work Items' membership rule compares its list of notes with the types that stay in Work Items",
+"F703": "Once the selectors leave Work Items, a stale note for one fails the existing rule, which compares both ways",
+"F704": "Work Items' notes list no selector after the move",
+"F705": "Stale selector notes stay in the list (only fails once the move lands; craft edits that file)",
 "F8": "Every existing test is green unmodified apart from moves, using lines and rule-list strings; refresh answers, forecasts, routes, DTOs, DI lifetimes, handler order and the EF model are identical; the live connector suites are green in CI",
 "F9": "B1: move the five translation-rule types and their unit tests into Modules/TrackerIntegration/Domain; Work Items' rules lose the selectors."
 },
