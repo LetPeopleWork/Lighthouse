@@ -2,7 +2,542 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Run each listed Tracker integration rule over the compiled product with the list measured from it
+```
+
+```text
+Every rule holds: what reaches the module's Domain, Application and Adapters from outside, what its Application reaches below it, into its own adapters or the platform, what it reaches in other contexts and which of its types reach a repository all equal their lists exactly
+```
+
+```text
+The examiner sees each rule pass on today's code, so the lists describe the code as it is
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:AListedTrackerIntegrationRule\_MatchesWhatTheCompiledCodeReaches\_InBothDirections
+
+```text
+A list held more entries than the code needs; the deletion test below closes that
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the Domain rule over the compiled Tracker integration Domain
+```
+
+```text
+The Domain reaches only the shared kernel and the base library, and holds at least one type
+```
+
+```text
+The examiner sees the Domain rule pass on today's code
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:TheTrackerIntegrationDomain\_ReachesOnlyTheSharedKernelAndTheBaseLibrary
+
+```text
+The rule looked at an empty namespace; the shared rule fails on an empty Domain
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Delete each entry in turn from each measured list, then add an entry that reaches nothing
+```
+
+```text
+Each deleted entry fails its rule and is named as offending; the entry with no edge fails and is named for deletion
+```
+
+```text
+The examiner sees that no list entry is spare and no stale entry can stay
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:EveryEntryDeletedFromATrackerIntegrationList\_FailsTheRuleAndIsNamed\_AndAnEntryWithNoEdgeIsNamedForDeletion
+
+```text
+Two entries were only needed together; each is still deleted alone and named
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Read the list of edges from Tracker integration into other contexts
+```
+
+```text
+It holds exactly one edge, the Jira connector to the forecast block renderer
+```
+
+```text
+The examiner sees the one accepted reach into Promises named and nothing else
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:TheOnlyOtherContextTrackerIntegrationReaches\_IsPromisesThroughTheJiraConnectorMergingTheForecastBlock
+
+```text
+The edge targets a second renderer type; the both-ways rule names it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Read which Application types are listed as reaching the module's own adapters
+```
+
+```text
+Exactly the two factories and the auth schema, each by its exact name
+```
+
+```text
+The examiner sees the three connector-naming types listed one by one, with no namespace exemption
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:TheFactoriesAndTheAuthSchemaThatNameConnectors\_AreListedByTheirExactNames\_AndNoOtherApplicationTypeReachesTheAdapters
+
+```text
+One of the three reached an extra adapter type; the both-ways rule names that edge
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Read which module types are listed as reaching a repository
+```
+
+```text
+Exactly the OAuth service and the connection health service
+```
+
+```text
+The examiner sees that no connector reaches stored records and only the two services that keep their own records do
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:OnlyTheOAuthAndConnectionHealthServices\_ReachARepository\_AndBothAreListed
+
+```text
+One of the two reached a second repository; the both-ways rule names that edge
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+A made-up Domain type that asks the licence
+```
+
+```text
+The Domain rule fails naming it and not its compliant twin
+```
+
+```text
+A Domain type reaching beyond the kernel is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:ATrackerIntegrationDomainTypeAskingTheLicence\_IsNamed\_AndItsCompliantTwinIsNot
+
+```text
+The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+A made-up outside type off the list that reaches the Domain
+```
+
+```text
+The Domain inbound rule fails naming it and not the listed caller
+```
+
+```text
+An unlisted outside caller of the Domain is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:AnOutsideTypeOffTheList\_ReachingTheTrackerIntegrationDomain\_IsNamed\_AndTheListedCallerIsNot
+
+```text
+The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+A made-up outside type off the list that reaches the Application inside an async method
+```
+
+```text
+The Application inbound rule fails naming it and not the API, Work Items, the composition root or the listed caller
+```
+
+```text
+An unlisted outside caller of the Application is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:AnOutsideTypeOffTheList\_ReachingTheTrackerIntegrationApplication\_IsNamed\_AndTheApiWorkItemsTheCompositionRootAndTheListedCallerAreNot
+
+```text
+The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+A made-up outside type off the list that reaches the Adapters
+```
+
+```text
+The Adapters inbound rule fails naming it and not the composition root or the listed caller
+```
+
+```text
+An unlisted outside caller of the Adapters is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:AnOutsideTypeOffTheList\_ReachingTheTrackerIntegrationAdapters\_IsNamed\_AndTheCompositionRootAndTheListedCallerAreNot
+
+```text
+The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Made-up Application types holding a DbSet, reading the database context, shaping an API type, building an unlisted connector, running another module's adapter, reading an unlisted repository or the key ring
+```
+
+```text
+The Application outbound rule fails naming each edge
+```
+
+```text
+Each forbidden Application edge is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:ATrackerIntegrationApplicationTypeReachingBelowItAnAdapterOrThePlatformOffTheList\_IsNamed
+
+```text
+The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+A made-up factory building a connector through a listed edge
+```
+
+```text
+The Application outbound rule holds
+```
+
+```text
+A listed edge is accepted
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:ATrackerIntegrationApplicationTypeBuildingAConnectorThroughAListedEdge\_PassesTheRule
+
+```text
+The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Made-up module types reaching Work Items, Forecasting, Flow metrics, a second Promises type, the update code, Refinement, Reports, Access or the licence, beside a listed renderer edge
+```
+
+```text
+The other-contexts rule fails naming each new edge and not the listed one
+```
+
+```text
+Each other context is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:ATrackerIntegrationTypeReachingAnotherContextOffTheList\_IsNamed
+
+```text
+The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+A made-up connector reading a repository beside a listed service doing the same
+```
+
+```text
+The repository rule fails naming the connector and not the listed service
+```
+
+```text
+A connector reaching stored records is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:ATrackerIntegrationConnectorReachingARepository\_IsNamed\_AndTheListedServiceKeepingItsRecordsIsNot
+
+```text
+The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Look for the old leaf pattern and its two rules on the former module rules
+```
+
+```text
+The pattern and both rules are gone
+```
+
+```text
+The examiner sees the old connector-folder definition retired, so only the module rules guard Tracker integration
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:TheOldLeafRuleOverTheConnectorFolders\_IsRetired\_SoOnlyTheModuleRulesGuardTrackerIntegration
+
+```text
+The pattern was renamed but kept; a renamed copy is caught by review, not by this test
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Read the CI path classifier and the local dev-test selection
+```
+
+```text
+Neither names the old connector folders or Factories, and both still select each tracker and the shared connector code under the module
+```
+
+```text
+The examiner sees live-suite selection follow the module paths only
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs\:\:LiveSuiteSelection\_NoLongerKnowsTheOldConnectorFolders\_AndStillSelectsEachTrackerUnderTheModule
+
+```text
+A module alternative is present but misspelled elsewhere; the classifier scenarios run by test-path-classifier.sh close that
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the classifier scenarios
+```
+
+```text
+Every module-path scenario selects its tracker live suite, shared module paths select every suite, all pass
+```
+
+```text
+A change to a connector under the module still runs that tracker's live suite
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/test\-selection\/test\-path\-classifier\.sh
+
+```text
+A scenario for one tracker was deleted with the old-path ones; review of the removed scenarios closes that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Build the backend and run the filtered backend suite
+```
+
+```text
+The build has no warning and every test passes; production code is unchanged
+```
+
+```text
+Nothing a user, a tracker or the database sees changes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend \(dotnet build\; dotnet test with the live\-connector categories excluded\)
+
+```text
+A behaviour change no existing test observes; the whole-candidate review and EXAMINE cover it
+```
+
+###### Obligations
+
 
 ## Expectations
 

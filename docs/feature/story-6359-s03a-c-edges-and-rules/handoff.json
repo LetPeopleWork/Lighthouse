@@ -1,8 +1,313 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F70",
+"T1"
+],
+"still_passes_if": "F121",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::AListedTrackerIntegrationRule_MatchesWhatTheCompiledCodeReaches_InBothDirections"
+},
+"expected": "F119",
+"stimulus": "F118",
+"user_result": "F120"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F70",
+"T1"
+],
+"still_passes_if": "F125",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheTrackerIntegrationDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary"
+},
+"expected": "F123",
+"stimulus": "F122",
+"user_result": "F124"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F71",
+"L1/F72",
+"T1"
+],
+"still_passes_if": "F129",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::EveryEntryDeletedFromATrackerIntegrationList_FailsTheRuleAndIsNamed_AndAnEntryWithNoEdgeIsNamedForDeletion"
+},
+"expected": "F127",
+"stimulus": "F126",
+"user_result": "F128"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F133",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheOnlyOtherContextTrackerIntegrationReaches_IsPromisesThroughTheJiraConnectorMergingTheForecastBlock"
+},
+"expected": "F131",
+"stimulus": "F130",
+"user_result": "F132"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F137",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheFactoriesAndTheAuthSchemaThatNameConnectors_AreListedByTheirExactNames_AndNoOtherApplicationTypeReachesTheAdapters"
+},
+"expected": "F135",
+"stimulus": "F134",
+"user_result": "F136"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F141",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::OnlyTheOAuthAndConnectionHealthServices_ReachARepository_AndBothAreListed"
+},
+"expected": "F139",
+"stimulus": "F138",
+"user_result": "F140"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F75",
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationDomainTypeAskingTheLicence_IsNamed_AndItsCompliantTwinIsNot"
+},
+"expected": "F143",
+"stimulus": "F142",
+"user_result": "F144"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F75",
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::AnOutsideTypeOffTheList_ReachingTheTrackerIntegrationDomain_IsNamed_AndTheListedCallerIsNot"
+},
+"expected": "F147",
+"stimulus": "F146",
+"user_result": "F148"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F75",
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::AnOutsideTypeOffTheList_ReachingTheTrackerIntegrationApplication_IsNamed_AndTheApiWorkItemsTheCompositionRootAndTheListedCallerAreNot"
+},
+"expected": "F150",
+"stimulus": "F149",
+"user_result": "F151"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F75",
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::AnOutsideTypeOffTheList_ReachingTheTrackerIntegrationAdapters_IsNamed_AndTheCompositionRootAndTheListedCallerAreNot"
+},
+"expected": "F153",
+"stimulus": "F152",
+"user_result": "F154"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F75",
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationApplicationTypeReachingBelowItAnAdapterOrThePlatformOffTheList_IsNamed"
+},
+"expected": "F156",
+"stimulus": "F155",
+"user_result": "F157"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F75",
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationApplicationTypeBuildingAConnectorThroughAListedEdge_PassesTheRule"
+},
+"expected": "F159",
+"stimulus": "F158",
+"user_result": "F160"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F75",
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationTypeReachingAnotherContextOffTheList_IsNamed"
+},
+"expected": "F162",
+"stimulus": "F161",
+"user_result": "F163"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F75",
+"T1"
+],
+"still_passes_if": "F145",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationConnectorReachingARepository_IsNamed_AndTheListedServiceKeepingItsRecordsIsNot"
+},
+"expected": "F165",
+"stimulus": "F164",
+"user_result": "F166"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F170",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheOldLeafRuleOverTheConnectorFolders_IsRetired_SoOnlyTheModuleRulesGuardTrackerIntegration"
+},
+"expected": "F168",
+"stimulus": "F167",
+"user_result": "F169"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F78",
+"L3/F77"
+],
+"still_passes_if": "F174",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::LiveSuiteSelection_NoLongerKnowsTheOldConnectorFolders_AndStillSelectsEachTrackerUnderTheModule"
+},
+"expected": "F172",
+"stimulus": "F171",
+"user_result": "F173"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F77"
+],
+"still_passes_if": "F178",
+"test": "Scripts/test-selection/test-path-classifier.sh"
+},
+"expected": "F176",
+"stimulus": "F175",
+"user_result": "F177"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F182",
+"test": "Lighthouse.Backend (dotnet build; dotnet test with the live-connector categories excluded)"
+},
+"expected": "F180",
+"stimulus": "F179",
+"user_result": "F181"
+}
+]
+},
 "counters": {
 "D": 11,
 "E": 4,
-"F": 117,
+"F": 182,
 "K": 5,
 "L": 4,
 "P": 4,
@@ -709,13 +1014,78 @@
 "F115": "Asking test-selection for a changed connector path under the tracker integration module shows that tracker's live suite (and the backend suite) selected, while the recorded selection scenarios all pass; the old WorkTrackingIntegrationPattern leaf pattern and old Services/Factories alternatives no longer select anything, so a change to a path matching only those old forms selects no tracker live suite.",
 "F116": "Running the architecture rules shows the folder-placement rules passing: every unit test of the module sits under Lighthouse.Backend.Tests/Modules/TrackerIntegration, and no context file remains under Services/Interfaces, Services/Implementation or Factories apart from the named exceptions; the rules include a made-up test file and a made-up source file in an old folder reported as caught.",
 "F117": "Users, trackers and the database see no change: the EF model comparison reports no difference from the last migration on SQLite and Postgres, the full architecture rules run has no failing test, and the newest finished CI run shows each tracker's live suite (jira, ado, linear, servicenow, github) with passed counts and no failures. Absence of unforced production code edits is not observable by these probes and is left to candidate review.",
+"F118": "Run each listed Tracker integration rule over the compiled product with the list measured from it",
+"F119": "Every rule holds: what reaches the module's Domain, Application and Adapters from outside, what its Application reaches below it, into its own adapters or the platform, what it reaches in other contexts and which of its types reach a repository all equal their lists exactly",
 "F12": "C2: the unit-test placement rule and the no-file-left check for the old folders.",
+"F120": "The examiner sees each rule pass on today's code, so the lists describe the code as it is",
+"F121": "A list held more entries than the code needs; the deletion test below closes that",
+"F122": "Run the Domain rule over the compiled Tracker integration Domain",
+"F123": "The Domain reaches only the shared kernel and the base library, and holds at least one type",
+"F124": "The examiner sees the Domain rule pass on today's code",
+"F125": "The rule looked at an empty namespace; the shared rule fails on an empty Domain",
+"F126": "Delete each entry in turn from each measured list, then add an entry that reaches nothing",
+"F127": "Each deleted entry fails its rule and is named as offending; the entry with no edge fails and is named for deletion",
+"F128": "The examiner sees that no list entry is spare and no stale entry can stay",
+"F129": "Two entries were only needed together; each is still deleted alone and named",
 "F13": "Confirmed D-8: Tracker integration gets one new boundaries file, Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs, with rules R-T2..R-T8 written through the shared ModuleRules class and a ModuleWording of its own, as the Forecasting and Work Items boundaries files do; no rule body is copied. R-T1 (each listed type lives in its layer, none left under Services or Factories) is already pinned by the four closed layout oracles TrackerIntegrationDomainLayoutArchUnitTest, TrackerIntegrationApplicationLayoutArchUnitTest, TrackerIntegrationConnectorsLayoutArchUnitTest and TrackerIntegrationOAuthAndHealthLayoutArchUnitTest and is cited, not restated.",
+"F130": "Read the list of edges from Tracker integration into other contexts",
+"F131": "It holds exactly one edge, the Jira connector to the forecast block renderer",
+"F132": "The examiner sees the one accepted reach into Promises named and nothing else",
+"F133": "The edge targets a second renderer type; the both-ways rule names it",
+"F134": "Read which Application types are listed as reaching the module's own adapters",
+"F135": "Exactly the two factories and the auth schema, each by its exact name",
+"F136": "The examiner sees the three connector-naming types listed one by one, with no namespace exemption",
+"F137": "One of the three reached an extra adapter type; the both-ways rule names that edge",
+"F138": "Read which module types are listed as reaching a repository",
+"F139": "Exactly the OAuth service and the connection health service",
 "F14": "Confirmed Ratchet design: the compiled IL decides every list entry. Each list is inline, measured from the IL during C1, keyed by full type name (nested types reduced to their top-level type), and compared both ways (a missing entry and an extra entry both fail). Where a short name is shared, the key is the full name (D-1 outcome record: the moved AzureDevOps WorkItemExtensions versus Lighthouse.Backend.Extensions.WorkItemExtensions). The Expected baseline column of the Ratchet design is a guess: an entry the design did not foresee is recorded in the list and reported to the host with the IL edge that forced it, never silently accepted; an expected entry the IL does not show is left out and reported the same way. Lists only shrink after C.",
+"F140": "The examiner sees that no connector reaches stored records and only the two services that keep their own records do",
+"F141": "One of the two reached a second repository; the both-ways rule names that edge",
+"F142": "A made-up Domain type that asks the licence",
+"F143": "The Domain rule fails naming it and not its compliant twin",
+"F144": "A Domain type reaching beyond the kernel is caught",
+"F145": "The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace",
+"F146": "A made-up outside type off the list that reaches the Domain",
+"F147": "The Domain inbound rule fails naming it and not the listed caller",
+"F148": "An unlisted outside caller of the Domain is caught",
+"F149": "A made-up outside type off the list that reaches the Application inside an async method",
 "F15": "Confirmed D-7: the Promises port edge is legal; R-T4 lists DeliverySourceResolver and DeliveryForecastPublishingService by full name as outside callers of Application until Promises has a namespace (S03d). R-T7 (the module reaches no other context: Work Items, Forecasting, Flow metrics, Promises and update code, Refinement, Reports, Access, Licensing) carries exactly one listed edge, JiraWorkTrackingConnector to IDeliveryForecastBlockRenderer, owner S03d.",
+"F150": "The Application inbound rule fails naming it and not the API, Work Items, the composition root or the listed caller",
+"F151": "An unlisted outside caller of the Application is caught",
+"F152": "A made-up outside type off the list that reaches the Adapters",
+"F153": "The Adapters inbound rule fails naming it and not the composition root or the listed caller",
+"F154": "An unlisted outside caller of the Adapters is caught",
+"F155": "Made-up Application types holding a DbSet, reading the database context, shaping an API type, building an unlisted connector, running another module's adapter, reading an unlisted repository or the key ring",
+"F156": "The Application outbound rule fails naming each edge",
+"F157": "Each forbidden Application edge is caught",
+"F158": "A made-up factory building a connector through a listed edge",
+"F159": "The Application outbound rule holds",
 "F16": "Confirmed D-14: WorkTrackingConnectorFactory, WorkTrackingSystemFactory and AuthenticationMethodSchema stay in Application. Their Application to own-Adapters edges are listed by exact source type full name in the R-T6 Application outbound list, owner S09a. No namespace-wide or layer-wide exemption is added for them or for any other type; every exemption is exact per type.",
+"F160": "A listed edge is accepted",
+"F161": "Made-up module types reaching Work Items, Forecasting, Flow metrics, a second Promises type, the update code, Refinement, Reports, Access or the licence, beside a listed renderer edge",
+"F162": "The other-contexts rule fails naming each new edge and not the listed one",
+"F163": "Each other context is caught",
+"F164": "A made-up connector reading a repository beside a listed service doing the same",
+"F165": "The repository rule fails naming the connector and not the listed service",
+"F166": "A connector reaching stored records is caught",
+"F167": "Look for the old leaf pattern and its two rules on the former module rules",
+"F168": "The pattern and both rules are gone",
+"F169": "The examiner sees the old connector-folder definition retired, so only the module rules guard Tracker integration",
 "F17": "Confirmed D-1, D-4 and D-6 (stays): the three repositories (WorkTrackingSystemConnectionRepository, OAuthCredentialRepository, ConnectionHealthVerdictRepository), the connection save service and its types, connection usage, the write-back round, Encryption, demo data and Health stay where they are. R-T6 and R-T8 list the Application repository edges of ConnectionHealthService and OAuthService by full name; these entries replace the OAuthService and ConnectionHealthService exemptions of ModuleBoundariesArchUnitTest. The same staying types are the named exceptions of the C2 no-file-left check, read from TrackerIntegrationMembership.Stays rather than restated.",
+"F170": "The pattern was renamed but kept; a renamed copy is caught by review, not by this test",
+"F171": "Read the CI path classifier and the local dev-test selection",
+"F172": "Neither names the old connector folders or Factories, and both still select each tracker and the shared connector code under the module",
+"F173": "The examiner sees live-suite selection follow the module paths only",
+"F174": "A module alternative is present but misspelled elsewhere; the classifier scenarios run by test-path-classifier.sh close that",
+"F175": "Run the classifier scenarios",
+"F176": "Every module-path scenario selects its tracker live suite, shared module paths select every suite, all pass",
+"F177": "A change to a connector under the module still runs that tracker's live suite",
+"F178": "A scenario for one tracker was deleted with the old-path ones; review of the removed scenarios closes that",
+"F179": "Build the backend and run the filtered backend suite",
 "F18": "Confirmed D-2 as amended: Models types that do not meet all four admission conditions stay in the kernel (entities, wire types, the write-back vocabulary, ConnectionFetchShapeChanged, OAuthCompleteResult). Domain and Application reaching Models is therefore legal by namespace and needs no list entry; nothing moves in feature C.",
+"F180": "The build has no warning and every test passes; production code is unchanged",
+"F181": "Nothing a user, a tracker or the database sees changes",
+"F182": "A behaviour change no existing test observes; the whole-candidate review and EXAMINE cover it",
 "F19": "Confirmed Reuse Analysis (REPLACE row): ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern and its two rules WorkTrackingIntegration_IsALeafInputAdapter and WorkTrackingConnectors_DoNotDependOnAnyRepository are retired; R-T7 and R-T8 replace them. Every consumer of the pattern migrates to the module namespace pattern ^Lighthouse\\.Backend\\.Modules\\.TrackerIntegration(\\.|$) in the same slice: DependencySingleDecisionArchUnitTest (TheConnectors), WorkItemsModuleBoundariesArchUnitTest, RefinementModuleArchUnitTest, and the TrackerIntegrationRulesSeeTheModuleArchUnitTest rows that key on the pattern by name. Feature B exact exemptions (ParentSourceSelector, IWorkTrackingConnectorFactory, IWorkTrackingSystemFactory, OAuthService, ConnectionHealthService) are kept or replaced by C1 list entries, never widened.",
 "F2": "A change that makes Tracker integration reach another context, or another context reach its adapters, fails a named rule instead of passing unnoticed",
 "F20": "Confirmed D-11: C1 removes the old alternatives from Scripts/test-selection/path-classifier.sh and dev-test.ps1 (Services/Implementation/WorkTrackingConnectors/<Tracker>/, Services/Implementation/WorkTrackingConnectors/(Auth|OAuth)/, top-level Services/Implementation/WorkTrackingConnectors/*.cs, Services/Interfaces/WorkTrackingConnectors/I*.cs, Factories); module-path alternatives and alternatives outside the context (Parents, Models, FetchFingerprint, Program.cs, the solution and project files) stay. test-path-classifier.sh scenarios that exist only for old paths are removed; every module-path scenario stays green, so a change to a connector under the module still selects that tracker live suite.",

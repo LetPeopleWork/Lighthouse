@@ -151,7 +151,470 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run each listed Tracker integration rule over the compiled product with the list measured from it
+</code></pre>
+
+<pre><code>Every rule holds: what reaches the module&#x27;s Domain, Application and Adapters from outside, what its Application reaches below it, into its own adapters or the platform, what it reaches in other contexts and which of its types reach a repository all equal their lists exactly
+</code></pre>
+
+<pre><code>The examiner sees each rule pass on today&#x27;s code, so the lists describe the code as it is
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::AListedTrackerIntegrationRule_MatchesWhatTheCompiledCodeReaches_InBothDirections</p>
+
+<pre><code>A list held more entries than the code needs; the deletion test below closes that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Domain rule over the compiled Tracker integration Domain
+</code></pre>
+
+<pre><code>The Domain reaches only the shared kernel and the base library, and holds at least one type
+</code></pre>
+
+<pre><code>The examiner sees the Domain rule pass on today&#x27;s code
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheTrackerIntegrationDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary</p>
+
+<pre><code>The rule looked at an empty namespace; the shared rule fails on an empty Domain
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Delete each entry in turn from each measured list, then add an entry that reaches nothing
+</code></pre>
+
+<pre><code>Each deleted entry fails its rule and is named as offending; the entry with no edge fails and is named for deletion
+</code></pre>
+
+<pre><code>The examiner sees that no list entry is spare and no stale entry can stay
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::EveryEntryDeletedFromATrackerIntegrationList_FailsTheRuleAndIsNamed_AndAnEntryWithNoEdgeIsNamedForDeletion</p>
+
+<pre><code>Two entries were only needed together; each is still deleted alone and named
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the list of edges from Tracker integration into other contexts
+</code></pre>
+
+<pre><code>It holds exactly one edge, the Jira connector to the forecast block renderer
+</code></pre>
+
+<pre><code>The examiner sees the one accepted reach into Promises named and nothing else
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheOnlyOtherContextTrackerIntegrationReaches_IsPromisesThroughTheJiraConnectorMergingTheForecastBlock</p>
+
+<pre><code>The edge targets a second renderer type; the both-ways rule names it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read which Application types are listed as reaching the module&#x27;s own adapters
+</code></pre>
+
+<pre><code>Exactly the two factories and the auth schema, each by its exact name
+</code></pre>
+
+<pre><code>The examiner sees the three connector-naming types listed one by one, with no namespace exemption
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheFactoriesAndTheAuthSchemaThatNameConnectors_AreListedByTheirExactNames_AndNoOtherApplicationTypeReachesTheAdapters</p>
+
+<pre><code>One of the three reached an extra adapter type; the both-ways rule names that edge
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read which module types are listed as reaching a repository
+</code></pre>
+
+<pre><code>Exactly the OAuth service and the connection health service
+</code></pre>
+
+<pre><code>The examiner sees that no connector reaches stored records and only the two services that keep their own records do
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::OnlyTheOAuthAndConnectionHealthServices_ReachARepository_AndBothAreListed</p>
+
+<pre><code>One of the two reached a second repository; the both-ways rule names that edge
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up Domain type that asks the licence
+</code></pre>
+
+<pre><code>The Domain rule fails naming it and not its compliant twin
+</code></pre>
+
+<pre><code>A Domain type reaching beyond the kernel is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationDomainTypeAskingTheLicence_IsNamed_AndItsCompliantTwinIsNot</p>
+
+<pre><code>The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up outside type off the list that reaches the Domain
+</code></pre>
+
+<pre><code>The Domain inbound rule fails naming it and not the listed caller
+</code></pre>
+
+<pre><code>An unlisted outside caller of the Domain is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::AnOutsideTypeOffTheList_ReachingTheTrackerIntegrationDomain_IsNamed_AndTheListedCallerIsNot</p>
+
+<pre><code>The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up outside type off the list that reaches the Application inside an async method
+</code></pre>
+
+<pre><code>The Application inbound rule fails naming it and not the API, Work Items, the composition root or the listed caller
+</code></pre>
+
+<pre><code>An unlisted outside caller of the Application is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::AnOutsideTypeOffTheList_ReachingTheTrackerIntegrationApplication_IsNamed_AndTheApiWorkItemsTheCompositionRootAndTheListedCallerAreNot</p>
+
+<pre><code>The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up outside type off the list that reaches the Adapters
+</code></pre>
+
+<pre><code>The Adapters inbound rule fails naming it and not the composition root or the listed caller
+</code></pre>
+
+<pre><code>An unlisted outside caller of the Adapters is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::AnOutsideTypeOffTheList_ReachingTheTrackerIntegrationAdapters_IsNamed_AndTheCompositionRootAndTheListedCallerAreNot</p>
+
+<pre><code>The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Made-up Application types holding a DbSet, reading the database context, shaping an API type, building an unlisted connector, running another module&#x27;s adapter, reading an unlisted repository or the key ring
+</code></pre>
+
+<pre><code>The Application outbound rule fails naming each edge
+</code></pre>
+
+<pre><code>Each forbidden Application edge is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationApplicationTypeReachingBelowItAnAdapterOrThePlatformOffTheList_IsNamed</p>
+
+<pre><code>The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up factory building a connector through a listed edge
+</code></pre>
+
+<pre><code>The Application outbound rule holds
+</code></pre>
+
+<pre><code>A listed edge is accepted
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationApplicationTypeBuildingAConnectorThroughAListedEdge_PassesTheRule</p>
+
+<pre><code>The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Made-up module types reaching Work Items, Forecasting, Flow metrics, a second Promises type, the update code, Refinement, Reports, Access or the licence, beside a listed renderer edge
+</code></pre>
+
+<pre><code>The other-contexts rule fails naming each new edge and not the listed one
+</code></pre>
+
+<pre><code>Each other context is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationTypeReachingAnotherContextOffTheList_IsNamed</p>
+
+<pre><code>The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up connector reading a repository beside a listed service doing the same
+</code></pre>
+
+<pre><code>The repository rule fails naming the connector and not the listed service
+</code></pre>
+
+<pre><code>A connector reaching stored records is caught
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::ATrackerIntegrationConnectorReachingARepository_IsNamed_AndTheListedServiceKeepingItsRecordsIsNot</p>
+
+<pre><code>The rule matched the offender only by its exact made-up namespace; the production run of the same rule covers the real namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Look for the old leaf pattern and its two rules on the former module rules
+</code></pre>
+
+<pre><code>The pattern and both rules are gone
+</code></pre>
+
+<pre><code>The examiner sees the old connector-folder definition retired, so only the module rules guard Tracker integration
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::TheOldLeafRuleOverTheConnectorFolders_IsRetired_SoOnlyTheModuleRulesGuardTrackerIntegration</p>
+
+<pre><code>The pattern was renamed but kept; a renamed copy is caught by review, not by this test
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the CI path classifier and the local dev-test selection
+</code></pre>
+
+<pre><code>Neither names the old connector folders or Factories, and both still select each tracker and the shared connector code under the module
+</code></pre>
+
+<pre><code>The examiner sees live-suite selection follow the module paths only
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs::LiveSuiteSelection_NoLongerKnowsTheOldConnectorFolders_AndStillSelectsEachTrackerUnderTheModule</p>
+
+<pre><code>A module alternative is present but misspelled elsewhere; the classifier scenarios run by test-path-classifier.sh close that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the classifier scenarios
+</code></pre>
+
+<pre><code>Every module-path scenario selects its tracker live suite, shared module paths select every suite, all pass
+</code></pre>
+
+<pre><code>A change to a connector under the module still runs that tracker&#x27;s live suite
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh</p>
+
+<pre><code>A scenario for one tracker was deleted with the old-path ones; review of the removed scenarios closes that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Build the backend and run the filtered backend suite
+</code></pre>
+
+<pre><code>The build has no warning and every test passes; production code is unchanged
+</code></pre>
+
+<pre><code>Nothing a user, a tracker or the database sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend (dotnet build; dotnet test with the live-connector categories excluded)</p>
+
+<pre><code>A behaviour change no existing test observes; the whole-candidate review and EXAMINE cover it
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

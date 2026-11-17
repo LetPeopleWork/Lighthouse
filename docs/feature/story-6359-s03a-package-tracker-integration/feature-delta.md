@@ -690,3 +690,17 @@ gathered all of it through its own public probes on candidate 4a5b91296 (code as
 The examiner recorded no contradicting observation. Before the next move feature, give the examiner probes for the
 behaviours its expectations name (OAuth connect and health, auth setup, board listing, forecasts) while the expectations
 are written, not after.
+
+## Wave: DESIGN / [REF] C1 lists as measured from the IL (C1 oracle, 2026-11-17)
+
+The "Expected baseline" column of the Ratchet design was a guess; C1's oracle measured each list from the compiled
+code on `main` at b17155160. Differences, all of them edges that exist today (nothing new is allowed):
+
+| Rule | Design expected | IL shows |
+|---|---|---|
+| R-T3 outside → `Domain` | `Program`, `WorkItemService` | `WorkItemService` only; `Program` does not reach `Domain`. |
+| R-T4 outside → `Application` | the update code, D-7's two, `WriteBackService`, `ConnectionSaveService`?, Encryption/demo readers? | as expected plus `DemoDataFactory` (it reads `IWorkTrackingSystemFactory`); `ConnectionSaveService` and the Encryption readers do not appear. |
+| R-T5 outside → `Adapters` | the two demo backfill handlers, the connection controllers | only `WorkTrackingSystemConnectionController` and `WorkTrackingSystemConnectionsController` (both read `JiraSiteAddress`); the demo handlers no longer reach `Adapters`. |
+| R-T6 `Application` → platform | `ConnectionHealthService` → verdict repository, `UnreadableSecretException`; `OAuthService` → Encryption | `ConnectionHealthService` → `ConnectionSecrets`, `ConnectionHealthVerdictRepository`, `RepositoryBase<T>`, `IRepository<T>`; `OAuthService` → `UnreadableSecretException`, `IRepository<T>` (D-4 option a); D-14's five edges; `WorkTrackingConnectorFactory` names only `CsvWorkTrackingConnector`. |
+| R-T7 module → other contexts | 1 (D-7) | 1, as designed. |
+| R-T8 repositories | the R-T6 entries | ConnectionHealthService ×3 and OAuthService ×1, derived from R-T6 so the two lists cannot drift; no connector reaches a repository. |
