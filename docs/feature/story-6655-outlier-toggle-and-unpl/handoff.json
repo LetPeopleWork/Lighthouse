@@ -3,7 +3,8 @@
 "B": 3,
 "C": 1,
 "D": 11,
-"F": 248,
+"E": 6,
+"F": 254,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -1061,6 +1062,53 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F249"
+},
+{
+"id": "E2",
+"promises": [
+"P1",
+"P4"
+],
+"text": "F250"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F251"
+},
+{
+"id": "E4",
+"promises": [
+"P3"
+],
+"text": "F252"
+},
+{
+"id": "E5",
+"promises": [
+"P4"
+],
+"text": "F253"
+},
+{
+"id": "E6",
+"promises": [
+"P5"
+],
+"text": "F254"
+}
+]
+},
 "facts": {
 "F1": "Story 6655 Outlier Config and on/off: Was playing around with the new outliers in the cycle time scatterplot, and while I like it, I think it should be adjusted like this: - would be nice to toggle it on/off, so if I really wanna see all items, it should show (on by default, no need to store the state and start on always...) - been thinking if we should use the UNPL from the CT PBC as a limit instead of 5x median... I think basing it on UNPL does make more sense (in my mind). Later we *may* configure it more but for now I would not configure it at all. With the UNPL the question is, does it still work. Following an example from a team, where we have 20+ outliers, and comparison with the CT PBC (way less).",
 "F10": "the reader switches outlier handling off",
@@ -1228,7 +1276,13 @@
 "F246": "One new enum member; names only, so no stored data or wire shape changes.",
 "F247": "One new name in the frontend mirror; existing events unchanged.",
 "F248": "One new event row listed for readers of the usage-data page.",
+"F249": "A reader can switch outlier handling off and then sees every closed Work Item drawn on the Cycle Time scatterplot.",
 "F25": "Changes to the process behaviour chart itself, its baseline rules or its special-cause rules.",
+"F250": "With outlier handling on, the Work Items set apart as outliers are exactly those the Cycle Time process behaviour chart of the same Team and date range shows above its UNPL; none above it is drawn, none at or below it is set apart.",
+"F251": "Every time the chart opens, or the Metrics tab is reloaded after switching outlier handling off, outlier handling is on: Work Items above the UNPL are not drawn and the outlier chip counts them.",
+"F252": "Switching outlier handling off draws all closed Work Items including the former outliers, raises the y-axis to fit the tallest, and removes the outlier chip; switching it on again restores the chip and the shorter axis.",
+"F253": "With an UNPL of 30 days and Cycle Times of 12, 30, 31 and 90 days, the 31 and 90 day items are outliers and the 12 and 30 day items are drawn; the outlier list and help call the limit the upper natural process limit, never 5 times the median.",
+"F254": "When the process behaviour chart has no limits (invalid baseline such as under 14 days, or fewer than 2 closed Work Items), every closed Work Item is drawn, no outlier count shows, and the reader can see that outliers need the process behaviour chart's limits.",
 "F26": "Outlier handling on any chart other than the Cycle Time scatterplot.",
 "F27": "Outlier handling has an on/off control, on by default, its state is not stored, and it starts on at every load (maintainer, in the Request).",
 "F28": "No configuration of the outlier rule in this Story; a later Story may add it (maintainer, in the Request).",

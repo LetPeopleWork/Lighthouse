@@ -155,7 +155,63 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A reader can switch outlier handling off and then sees every closed Work Item drawn on the Cycle Time scatterplot.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>With outlier handling on, the Work Items set apart as outliers are exactly those the Cycle Time process behaviour chart of the same Team and date range shows above its UNPL; none above it is drawn, none at or below it is set apart.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>Every time the chart opens, or the Metrics tab is reloaded after switching outlier handling off, outlier handling is on: Work Items above the UNPL are not drawn and the outlier chip counts them.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>Switching outlier handling off draws all closed Work Items including the former outliers, raises the y-axis to fit the tallest, and removes the outlier chip; switching it on again restores the chip and the shorter axis.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>With an UNPL of 30 days and Cycle Times of 12, 30, 31 and 90 days, the 31 and 90 day items are outliers and the 12 and 30 day items are drawn; the outlier list and help call the limit the upper natural process limit, never 5 times the median.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>When the process behaviour chart has no limits (invalid baseline such as under 14 days, or fewer than 2 closed Work Items), every closed Work Item is drawn, no outlier count shows, and the reader can see that outliers need the process behaviour chart&#x27;s limits.
+</code></pre>
 
 <h2>Charter</h2>
 
