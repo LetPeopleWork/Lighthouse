@@ -1,10 +1,47 @@
 {
+"acceptance": {
+"S3": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F189",
+"L2/F190"
+],
+"still_passes_if": "F289",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreAndClearWhileTheDatabaseIsOpenTest.cs::Restoring_a_backup_while_the_application_holds_the_database_open_shows_exactly_the_backups_data"
+},
+"expected": "F287",
+"stimulus": "F286",
+"user_result": "F288"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F193"
+],
+"still_passes_if": "F293",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreAndClearWhileTheDatabaseIsOpenTest.cs::Clearing_the_database_while_the_application_holds_it_open_shows_an_empty_seeded_database"
+},
+"expected": "F291",
+"stimulus": "F290",
+"user_result": "F292"
+}
+]
+},
 "counters": {
 "B": 4,
 "C": 2,
 "D": 12,
 "E": 8,
-"F": 285,
+"F": 293,
 "K": 6,
 "L": 9,
 "N": 5,
@@ -1595,7 +1632,15 @@
 "F283": "When the key can read at least one credential in the backup, the restore is not blocked by the check.",
 "F284": "When the check finds no readable credential, I am offered Restore without credentials, and choosing it completes the restore with the backup data restored.",
 "F285": "After Restore without credentials, the unreadable credentials are gone, the application starts normally, and I can enter each token again in its Connection.",
+"F286": "While the application keeps its database open and another handle holds the file, the operator restores a backup made earlier (one whose rows are all in its database file, and one whose newest rows are only in its write-ahead log), after a further blackout period was added",
+"F287": "Restore completes, and the connection the application opened before the restore reads exactly the backup's blackout periods, without the one added after the backup",
+"F288": "On Windows, macOS and Linux, Restore Backup succeeds while Lighthouse runs and Lighthouse then shows the backup's data",
+"F289": "A restore that wrote the backup's rows but left rows from the live database's own write-ahead log visible to a connection opened later than the scenario's (only rows read through the already-open connection are checked)",
 "F29": "The destination connection of the backup API sets PRAGMA busy_timeout=10000, the same wait DatabaseConfigurator gives every application connection; no longer wait is introduced.",
+"F290": "While the application keeps its database open, a blackout period is stored and the operator clears the database",
+"F291": "Clear completes, and the connection the application opened before the clear no longer sees the blackout period and sees the seeded terminology",
+"F292": "On Windows, macOS and Linux, Clear Database succeeds while Lighthouse runs and Lighthouse then shows an empty, re-seeded database",
+"F293": "A clear that emptied only the tables the scenario checks (blackout periods) and left other user data in place",
 "F3": "Restore Backup and Clear Database complete on the SQLite provider while the running application holds the database file open, on Windows, macOS and Linux; afterwards the application reads the restored (or empty, re-seeded) data.",
 "F30": "No schema change and no EF migration (migrations are expand-only).",
 "F31": "Postgres staging needs the CREATEDB privilege the provider already needs for ClearDatabase; the scratch database is always dropped, also on failure.",

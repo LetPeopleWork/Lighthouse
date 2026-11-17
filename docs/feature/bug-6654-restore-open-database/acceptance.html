@@ -151,7 +151,58 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>While the application keeps its database open and another handle holds the file, the operator restores a backup made earlier (one whose rows are all in its database file, and one whose newest rows are only in its write-ahead log), after a further blackout period was added
+</code></pre>
+
+<pre><code>Restore completes, and the connection the application opened before the restore reads exactly the backup&#x27;s blackout periods, without the one added after the backup
+</code></pre>
+
+<pre><code>On Windows, macOS and Linux, Restore Backup succeeds while Lighthouse runs and Lighthouse then shows the backup&#x27;s data
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreAndClearWhileTheDatabaseIsOpenTest.cs::Restoring_a_backup_while_the_application_holds_the_database_open_shows_exactly_the_backups_data</p>
+
+<pre><code>A restore that wrote the backup&#x27;s rows but left rows from the live database&#x27;s own write-ahead log visible to a connection opened later than the scenario&#x27;s (only rows read through the already-open connection are checked)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>While the application keeps its database open, a blackout period is stored and the operator clears the database
+</code></pre>
+
+<pre><code>Clear completes, and the connection the application opened before the clear no longer sees the blackout period and sees the seeded terminology
+</code></pre>
+
+<pre><code>On Windows, macOS and Linux, Clear Database succeeds while Lighthouse runs and Lighthouse then shows an empty, re-seeded database
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DatabaseManagement/RestoreAndClearWhileTheDatabaseIsOpenTest.cs::Clearing_the_database_while_the_application_holds_it_open_shows_an_empty_seeded_database</p>
+
+<pre><code>A clear that emptied only the tables the scenario checks (blackout periods) and left other user data in place
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

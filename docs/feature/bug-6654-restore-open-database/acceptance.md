@@ -2,7 +2,66 @@
 
 ## Slices
 
-None.
+### S3
+
+##### Covers
+
+P1
+
+```text
+While the application keeps its database open and another handle holds the file, the operator restores a backup made earlier (one whose rows are all in its database file, and one whose newest rows are only in its write-ahead log), after a further blackout period was added
+```
+
+```text
+Restore completes, and the connection the application opened before the restore reads exactly the backup's blackout periods, without the one added after the backup
+```
+
+```text
+On Windows, macOS and Linux, Restore Backup succeeds while Lighthouse runs and Lighthouse then shows the backup's data
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DatabaseManagement\/RestoreAndClearWhileTheDatabaseIsOpenTest\.cs\:\:Restoring\_a\_backup\_while\_the\_application\_holds\_the\_database\_open\_shows\_exactly\_the\_backups\_data
+
+```text
+A restore that wrote the backup's rows but left rows from the live database's own write-ahead log visible to a connection opened later than the scenario's (only rows read through the already-open connection are checked)
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+While the application keeps its database open, a blackout period is stored and the operator clears the database
+```
+
+```text
+Clear completes, and the connection the application opened before the clear no longer sees the blackout period and sees the seeded terminology
+```
+
+```text
+On Windows, macOS and Linux, Clear Database succeeds while Lighthouse runs and Lighthouse then shows an empty, re-seeded database
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DatabaseManagement\/RestoreAndClearWhileTheDatabaseIsOpenTest\.cs\:\:Clearing\_the\_database\_while\_the\_application\_holds\_it\_open\_shows\_an\_empty\_seeded\_database
+
+```text
+A clear that emptied only the tables the scenario checks (blackout periods) and left other user data in place
+```
+
+###### Obligations
+
 
 ## Expectations
 

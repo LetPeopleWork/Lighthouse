@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -13,6 +14,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private string testDbDirectory;
         
         private string testDbPath;
+
+        private static readonly string[] OnlyTheBackupsPeriod = ["Backup period"];
+
+        private static readonly string[] TheBackupsTwoPeriods = ["Backup period", "Newest backup period"];
 
         private readonly string testDbFileName = "TestLighthouse.db";
 
@@ -157,58 +162,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task RestoreBackup_ReplacesDatabaseFile()
+        public async Task RestoreBackup_LeavesTheLiveDatabaseHoldingTheBackupsRows()
         {
-            await File.WriteAllBytesAsync(testDbPath, "original"u8.ToArray());
-
-            var restoreDir = Path.Combine(testDbDirectory, "restore");
-            Directory.CreateDirectory(restoreDir);
-            await File.WriteAllBytesAsync(Path.Combine(restoreDir, "LighthouseAppContext.db"), "restored"u8.ToArray());
+            WriteDatabase(testDbPath, "Live period");
+            var restoreDir = BackupDirectoryHolding("Backup period");
 
             await subject.RestoreBackup(restoreDir);
 
-            var restoredContent = await File.ReadAllBytesAsync(testDbPath);
-            Assert.That(restoredContent, Is.EqualTo("restored"u8.ToArray()));
+            Assert.That(PeriodsIn(testDbPath), Is.EqualTo(OnlyTheBackupsPeriod),
+                "After a restore the live database must hold exactly the backup's rows, and none of the rows it held before.");
         }
 
         [Test]
-        public async Task RestoreBackup_RestoresWalAndShmFiles_WhenPresent()
+        public async Task RestoreBackup_IncludesRowsThatAreOnlyInTheBackupsWriteAheadLog()
         {
-            await File.WriteAllBytesAsync(testDbPath, "original"u8.ToArray());
-
-            var restoreDir = Path.Combine(testDbDirectory, "restore");
-            Directory.CreateDirectory(restoreDir);
-            await File.WriteAllBytesAsync(Path.Combine(restoreDir, "LighthouseAppContext.db"), "newdb"u8.ToArray());
-            await File.WriteAllBytesAsync(Path.Combine(restoreDir, "LighthouseAppContext.db-wal"), "newwal"u8.ToArray());
-            await File.WriteAllBytesAsync(Path.Combine(restoreDir, "LighthouseAppContext.db-shm"), "newshm"u8.ToArray());
+            WriteDatabase(testDbPath, "Live period");
+            var restoreDir = LegacyBackupDirectoryWithItsNewestRowInTheLog("Backup period", "Newest backup period");
 
             await subject.RestoreBackup(restoreDir);
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(await File.ReadAllBytesAsync(testDbPath + "-wal"), Is.EqualTo("newwal"u8.ToArray()));
-                Assert.That(await File.ReadAllBytesAsync(testDbPath + "-shm"), Is.EqualTo("newshm"u8.ToArray()));
-            }
+            Assert.That(PeriodsIn(testDbPath), Is.EqualTo(TheBackupsTwoPeriods),
+                "A backup made while the database was in write-ahead-log mode keeps its newest rows in its -wal file. " +
+                "The restore must apply that log, or the newest data of the backup is lost.");
         }
 
         [Test]
-        public async Task RestoreBackup_RemovesExistingWalAndShm_WhenNotInBackup()
+        public async Task RestoreBackup_DropsRowsTheLiveWriteAheadLogHeldThatTheBackupDoesNot()
         {
-            await File.WriteAllBytesAsync(testDbPath, "original"u8.ToArray());
-            await File.WriteAllBytesAsync(testDbPath + "-wal", "old-wal"u8.ToArray());
-            await File.WriteAllBytesAsync(testDbPath + "-shm", "old-shm"u8.ToArray());
-
-            var restoreDir = Path.Combine(testDbDirectory, "restore");
-            Directory.CreateDirectory(restoreDir);
-            await File.WriteAllBytesAsync(Path.Combine(restoreDir, "LighthouseAppContext.db"), "newdb"u8.ToArray());
-
-            await subject.RestoreBackup(restoreDir);
-
-            using (Assert.EnterMultipleScope())
+            using (var live = OpenInWriteAheadLogMode(testDbPath))
             {
-                Assert.That(File.Exists(testDbPath + "-wal"), Is.False);
-                Assert.That(File.Exists(testDbPath + "-shm"), Is.False);
+                Execute(live, "CREATE TABLE Periods (Description TEXT NOT NULL); INSERT INTO Periods VALUES ('Live period in the log');");
+                var restoreDir = BackupDirectoryHolding("Backup period");
+
+                await subject.RestoreBackup(restoreDir);
             }
+
+            Assert.That(PeriodsIn(testDbPath), Is.EqualTo(OnlyTheBackupsPeriod),
+                "Rows the live database still held in its write-ahead log must not survive a restore of a backup that does not hold them.");
         }
 
         [Test]
@@ -222,38 +212,142 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task ClearDatabase_DeletesDatabaseFile()
+        public async Task ClearDatabase_LeavesAnEmptyDatabaseWithNoTables()
         {
-            await File.WriteAllBytesAsync(testDbPath, "data"u8.ToArray());
+            WriteDatabase(testDbPath, "Live period");
 
             await subject.ClearDatabase();
 
-            Assert.That(File.Exists(testDbPath), Is.False);
+            Assert.That(TableCountIn(testDbPath), Is.Zero,
+                "Clear Database must leave an empty database, so migrations build the schema afresh and seeding starts from nothing.");
         }
 
         [Test]
-        public async Task ClearDatabase_DeletesWalAndShmFiles()
+        public async Task ClearDatabase_AlsoEmptiesRowsTheLiveWriteAheadLogHeld()
         {
-            await File.WriteAllBytesAsync(testDbPath, "data"u8.ToArray());
-            await File.WriteAllBytesAsync(testDbPath + "-wal", "wal"u8.ToArray());
-            await File.WriteAllBytesAsync(testDbPath + "-shm", "shm"u8.ToArray());
-
-            await subject.ClearDatabase();
-
-            using (Assert.EnterMultipleScope())
+            using (var live = OpenInWriteAheadLogMode(testDbPath))
             {
-                Assert.That(File.Exists(testDbPath), Is.False);
-                Assert.That(File.Exists(testDbPath + "-wal"), Is.False);
-                Assert.That(File.Exists(testDbPath + "-shm"), Is.False);
+                Execute(live, "CREATE TABLE Periods (Description TEXT NOT NULL); INSERT INTO Periods VALUES ('Live period in the log');");
+
+                await subject.ClearDatabase();
+            }
+
+            Assert.That(TableCountIn(testDbPath), Is.Zero,
+                "Rows the live database still held in its write-ahead log must not survive Clear Database.");
+        }
+
+        private string BackupDirectoryHolding(params string[] periods)
+        {
+            var restoreDir = Path.Combine(testDbDirectory, "restore");
+            Directory.CreateDirectory(restoreDir);
+            WriteDatabase(Path.Combine(restoreDir, "LighthouseAppContext.db"), periods);
+            return restoreDir;
+        }
+
+        // Copies a database and its -wal file while a connection still holds it open, the way a backup taken
+        // from the running application did: the newest row is then in the copied log, not in the copied file.
+        private string LegacyBackupDirectoryWithItsNewestRowInTheLog(string checkpointedPeriod, string periodOnlyInTheLog)
+        {
+            var sourceDir = Path.Combine(testDbDirectory, "running");
+            Directory.CreateDirectory(sourceDir);
+            var source = Path.Combine(sourceDir, "LighthouseAppContext.db");
+
+            var restoreDir = Path.Combine(testDbDirectory, "restore");
+            Directory.CreateDirectory(restoreDir);
+            var backedUp = Path.Combine(restoreDir, "LighthouseAppContext.db");
+
+            using (var running = OpenInWriteAheadLogMode(source))
+            {
+                Execute(running, "CREATE TABLE Periods (Description TEXT NOT NULL);");
+                Insert(running, checkpointedPeriod);
+                Execute(running, "PRAGMA wal_checkpoint(TRUNCATE);");
+                Insert(running, periodOnlyInTheLog);
+
+                File.Copy(source, backedUp);
+                File.Copy(source + "-wal", backedUp + "-wal");
+            }
+
+            Assert.That(PeriodsInTheFileAlone(backedUp), Is.EqualTo(new[] { checkpointedPeriod }),
+                "Set-up: the copied backup file was meant to lack its newest row, which only its -wal file holds.");
+
+            return restoreDir;
+        }
+
+        private static void WriteDatabase(string path, params string[] periods)
+        {
+            using var connection = Open(path);
+            Execute(connection, "CREATE TABLE Periods (Description TEXT NOT NULL);");
+            foreach (var period in periods)
+            {
+                Insert(connection, period);
             }
         }
 
-        [Test]
-        public async Task ClearDatabase_NoOpWhenDatabaseFileDoesNotExist()
+        private static SqliteConnection OpenInWriteAheadLogMode(string path)
         {
-            await subject.ClearDatabase();
+            var connection = Open(path);
+            Execute(connection, "PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0;");
+            return connection;
+        }
 
-            Assert.That(File.Exists(testDbPath), Is.False);
+        private static List<string> PeriodsIn(string path)
+        {
+            using var connection = Open(path);
+            return ReadPeriods(connection);
+        }
+
+        // Reads a copy of the main file with no -wal beside it, so only what the file itself holds is seen.
+        private List<string> PeriodsInTheFileAlone(string path)
+        {
+            var fileAlone = Path.Combine(testDbDirectory, "file-alone.db");
+            File.Copy(path, fileAlone);
+            using var connection = Open(fileAlone);
+            return ReadPeriods(connection);
+        }
+
+        private static long TableCountIn(string path)
+        {
+            using var connection = Open(path);
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table';";
+            return (long)command.ExecuteScalar()!;
+        }
+
+        private static List<string> ReadPeriods(SqliteConnection connection)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT Description FROM Periods ORDER BY Description;";
+            using var reader = command.ExecuteReader();
+
+            var periods = new List<string>();
+            while (reader.Read())
+            {
+                periods.Add(reader.GetString(0));
+            }
+
+            return periods;
+        }
+
+        private static SqliteConnection Open(string path)
+        {
+            var connection = new SqliteConnection($"Data Source={path};Pooling=False");
+            connection.Open();
+            return connection;
+        }
+
+        private static void Insert(SqliteConnection connection, string period)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = "INSERT INTO Periods VALUES ($period);";
+            command.Parameters.AddWithValue("$period", period);
+            command.ExecuteNonQuery();
+        }
+
+        private static void Execute(SqliteConnection connection, string statements)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = statements;
+            command.ExecuteNonQuery();
         }
 
         [Test]
