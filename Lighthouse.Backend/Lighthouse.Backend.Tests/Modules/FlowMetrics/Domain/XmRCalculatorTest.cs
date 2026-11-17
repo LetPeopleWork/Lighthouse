@@ -767,5 +767,32 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
                 Assert.That(result.LowerNaturalProcessLimit, Is.Zero);
             }
         }
+
+        [TestCase(new int[0])]
+        [TestCase(new[] { 7 })]
+        public void UpperNaturalProcessLimitOf_FewerThanTwoValues_RefusesAndSaysHowManyAreNeeded(int[] baseline)
+        {
+            var refusal = Assert.Throws<ArgumentException>(() => XmRCalculator.UpperNaturalProcessLimitOf(baseline),
+                $"WHAT: a baseline of {baseline.Length} values gave a limit. WHY: with fewer than 2 values there is no moving range. " +
+                "HOW: refuse below 2 values, so a caller asks only when the baseline holds enough.");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal!.ParamName, Is.EqualTo("baselineValues"));
+                Assert.That(refusal.Message, Does.Contain($"at least 2 baseline values, but {baseline.Length} were given"),
+                    "WHAT: the refusal does not say how many values were given and how many are needed. " +
+                    "WHY: the reader of the error must see what to change. HOW: name both counts in the message.");
+            }
+        }
+
+        [Test]
+        public void UpperNaturalProcessLimitOf_TwoValues_IsTheirAveragePlus2Point66TimesTheirMovingRange()
+        {
+            var limit = XmRCalculator.UpperNaturalProcessLimitOf([10, 12]);
+
+            Assert.That(limit.Days, Is.EqualTo(16.32).Within(1e-9),
+                "WHAT: the limit of 10 and 12 is not 11 + 2.66 x 2. WHY: two values are the smallest baseline with a limit. " +
+                "HOW: average plus 2.66 times the average moving range, unrounded.");
+        }
     }
 }

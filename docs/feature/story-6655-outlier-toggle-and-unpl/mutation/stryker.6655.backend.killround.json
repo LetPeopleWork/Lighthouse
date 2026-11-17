@@ -1,0 +1,32 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Modules/FlowMetrics/Application/CycleTimeOutlierDefinition.cs",
+      "**/Modules/FlowMetrics/Domain/XmRCalculator.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "ignore-methods": [
+      "*Log*",
+      "Console.*"
+    ],
+    "coverage-analysis": "perTest",
+    "test-case-filter": "(FullyQualifiedName~Tests.Modules.FlowMetrics.Domain.XmRCalculatorTest|FullyQualifiedName~Tests.Modules.FlowMetrics.Application.CycleTimeOutlierDefinitionTest|FullyQualifiedName~Tests.API.DTO.CycleTimeOutliersDtoTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Tests.Contracts",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 3,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
