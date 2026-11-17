@@ -809,6 +809,220 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<p>P1</p>
+
+<pre><code>A Team with no configured baseline is asked for the outliers of a 10-day range holding Work Items of 5, 5, 5 and 90 days
+</code></pre>
+
+<pre><code>No limits: no Work Item is set apart, the 90-day one included
+</code></pre>
+
+<pre><code>The reader is never shown outliers from a limit that does not exist, and no 5 x median rule sets the 90-day Work Item apart
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_10_day_range_without_a_configured_baseline_has_no_limits_so_no_Work_Item_is_set_apart</p>
+
+<pre><code>A 13-day range judged as valid; only 10 and 14 days are pinned, so a minimum moved between 11 and 14 days passes
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Team whose configured baseline is 10 days long, holding 8 closed Work Items with a limit of 30 days, is asked for the outliers of a 28-day range holding Work Items of 12, 31 and 90 days
+</code></pre>
+
+<pre><code>No limits: no Work Item is set apart, although the baseline holds enough Work Items
+</code></pre>
+
+<pre><code>An invalid configured baseline never gives outliers, however many Work Items it holds
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_configured_baseline_of_10_days_has_no_limits_even_with_enough_closed_Work_Items_in_it</p>
+
+<pre><code>A rule that validates the configured baseline but then judges against the selected range instead of the baseline dates
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Team with no configured baseline is asked for the outliers of a 28-day range holding a single 90-day Work Item
+</code></pre>
+
+<pre><code>No limits: the single Work Item is not set apart
+</code></pre>
+
+<pre><code>One Work Item is never treated as a limit; the reader sees it drawn
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_30_day_range_with_a_single_closed_Work_Item_has_no_limits</p>
+
+<pre><code>A rule that counts 0-day Work Items towards the 2 needed; no 0-day Work Item is in the range
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Team whose configured 24-day baseline holds no closed Work Item is asked for the outliers of a 28-day range holding Work Items of 5, 5, 5 and 90 days
+</code></pre>
+
+<pre><code>No limits: no Work Item of the range is set apart
+</code></pre>
+
+<pre><code>An empty baseline never gives outliers from the range&#x27;s own Work Items
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_configured_baseline_without_any_closed_Work_Item_has_no_limits_so_no_Work_Item_of_the_range_is_set_apart</p>
+
+<pre><code>A rule that falls back to the selected range only when the baseline holds exactly 1 Work Item
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<p>P1</p>
+
+<pre><code>A Team with no configured baseline is asked for the outliers of a 14-day range holding Work Items of 10 and 12 days
+</code></pre>
+
+<pre><code>Limits: the verdict has limits (neither Work Item is above them)
+</code></pre>
+
+<pre><code>A valid 14-day baseline with 2 Work Items gives the reader limits, as the process behaviour chart does
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_14_day_range_with_2_closed_Work_Items_has_limits</p>
+
+<pre><code>Limits with a wrong value; the limit and the ids are pinned by the rows that follow the process behaviour chart, not here
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Team with a valid configured baseline whose limit is 30 days is asked for the outliers of a 28-day range of Work Items of 12, 31 and 90 days, for a named Cycle Time it does not have
+</code></pre>
+
+<pre><code>No limits: no Work Item is set apart, although the default Cycle Time would set apart the 31 and 90 day ones
+</code></pre>
+
+<pre><code>An unknown named Cycle Time never shows outliers judged on another Cycle Time
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.An_unknown_named_Cycle_Time_has_no_limits_even_when_the_default_Cycle_Time_has_them</p>
+
+<pre><code>A named Cycle Time that exists but is invalid judged as valid; only the unknown id is pinned
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Portfolio whose configured baseline is 10 days long, holding 8 closed Features with a limit of 30 days, is asked for the outliers of a 28-day range holding Features of 12, 31 and 90 days
+</code></pre>
+
+<pre><code>No limits: no Feature is set apart
+</code></pre>
+
+<pre><code>A Portfolio reader is never shown outliers from a limit that does not exist
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_Portfolio_whose_configured_baseline_is_10_days_has_no_limits_so_no_Feature_is_set_apart</p>
+
+<pre><code>A Portfolio with fewer than 2 baseline Features judged as limited; only the invalid baseline is pinned for a Portfolio
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<p>P1</p>
+
+<pre><code>The Cycle Time scatterplot of Work Items of 2, 4, 6, 6, 8 and 58 days gets an answer that the process behaviour chart has no limits
+</code></pre>
+
+<pre><code>All six Work Items are drawn, the axis reaches 58 days, no outlier chip or count shows, the chip place reads &#x27;No outliers: the Cycle Time process behaviour chart has no limits for this date range&#x27;, and the frame is ready
+</code></pre>
+
+<pre><code>The reader sees every Work Item, no outlier count, and that outliers need the process behaviour chart&#x27;s limits
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx::Without process behaviour chart limits no Work Item is set apart &gt; draws every Work Item, shows no outlier count and says the process behaviour chart has no limits for this date range</p>
+
+<pre><code>The no-limits text with a hard-coded &#x27;Cycle Time&#x27; instead of the configured term; the test renders the default term only, and the info popover&#x27;s no-limits sentence is not pinned
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

@@ -71,8 +71,23 @@ vi.mock("@mui/x-charts", async () => {
 	const actual = await vi.importActual("@mui/x-charts");
 	return {
 		...actual,
-		ChartsContainer: ({ children }: { children: React.ReactNode }) => (
-			<div>{children}</div>
+		// The chart container publishes what it was asked to draw.
+		ChartsContainer: ({
+			series,
+			yAxis,
+			children,
+		}: {
+			series: unknown;
+			yAxis: unknown;
+			children: React.ReactNode;
+		}) => (
+			<div
+				data-testid="drawn-chart"
+				data-series={JSON.stringify(series)}
+				data-yaxis={JSON.stringify(yAxis)}
+			>
+				{children}
+			</div>
 		),
 		ScatterPlot: () => null,
 		ChartsXAxis: () => null,
@@ -172,6 +187,9 @@ const chartIn = (
 	p95: number,
 	sleValue: number,
 	status: WidgetStatus,
+	fetchOutliers: (
+		definitionId: number | null,
+	) => Promise<OutlierVerdict> = backendJudgingAbove(30, items),
 ) => (
 	<QueryClientProvider client={queryClient}>
 		<ThemeProvider theme={lightTheme}>
@@ -186,7 +204,7 @@ const chartIn = (
 					percentileValues={percentiles(p95)}
 					cycleTimeDataPoints={items}
 					serviceLevelExpectation={{ percentile: 85, value: sleValue }}
-					onFetchCycleTimeOutliers={backendJudgingAbove(30, items)}
+					onFetchCycleTimeOutliers={fetchOutliers}
 				/>
 			</WidgetShell>
 		</ThemeProvider>
@@ -200,6 +218,55 @@ const showChart = (
 	sleValue = 7,
 	status: WidgetStatus = "ready",
 ) => render(chartIn(items, p95, sleValue, status));
+
+// The process behaviour chart has no limits for the range, so the backend sets no Work Item apart.
+const backendWithoutLimits = (): Promise<OutlierVerdict> =>
+	Promise.resolve({
+		status: "NoLimits",
+		upperNaturalProcessLimit: null,
+		outlierWorkItemIds: [],
+	});
+
+const header = () => screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`);
+
+const drawnHeights = (): number[] =>
+	(
+		JSON.parse(screen.getByTestId("drawn-chart").dataset.series ?? "[]")[0]
+			.data as { y: number }[]
+	).map((dot) => dot.y);
+
+const axisTop = (): number =>
+	JSON.parse(screen.getByTestId("drawn-chart").dataset.yaxis ?? "[]")[0].max;
+
+const NO_LIMITS_TEXT =
+	/^No outliers: the Cycle Time process behaviour chart has no limits for this date range\.?$/;
+
+const theNoLimitsAnswerHasLanded = async () => {
+	await within(header()).findByText(NO_LIMITS_TEXT);
+};
+
+const thenEveryWorkItemIsDrawn = (longest: number) => {
+	expect(
+		drawnHeights().sort((a, b) => a - b),
+		"WHAT: a Work Item is missing from the plot although the process behaviour chart has no limits. WHY: without limits no Work Item may be set apart, and there is no fallback to 5 x the median. HOW: on a NoLimits verdict draw every plotted Work Item.",
+	).toEqual([2, 4, 6, 6, 8, 58]);
+	expect(
+		axisTop(),
+		"WHAT: the axis stops below the longest Work Item. WHY: every Work Item is drawn without limits, so the axis must fit them all. HOW: on a NoLimits verdict use the axis the chart uses with outlier handling off.",
+	).toBeGreaterThanOrEqual(longest);
+};
+
+const thenNoOutlierCountIsShownButTheReasonIs = () => {
+	expect(
+		within(header()).queryAllByRole("button", { name: /outlier/i }),
+		"WHAT: an outlier chip shows although the process behaviour chart has no limits. WHY: a count would read as a judgement nobody made. HOW: show the no-limits text in the chip place instead of the chip.",
+	).toHaveLength(0);
+	expect(
+		within(header()).getByText(NO_LIMITS_TEXT),
+		"WHAT: the reader is not told why nothing is set apart. WHY: outliers need the limits of the Cycle Time process behaviour chart, and the reader must see that they are missing. HOW: show 'No outliers: the {Cycle Time} process behaviour chart has no limits for this date range' in the chip place, with the configured Cycle Time term.",
+	).toBeVisible();
+	expect(header()).not.toHaveTextContent(/\d/);
+};
 
 const outlierChip = () =>
 	within(screen.getByTestId(`widget-shell-header-${WIDGET_KEY}`)).getByRole(
@@ -385,5 +452,30 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 
 		expect(screen.queryByRole("dialog")).toBeNull();
 		expect(reportUsage).not.toHaveBeenCalled();
+	});
+});
+
+describe("Without process behaviour chart limits no Work Item is set apart", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		viewportWidth(false);
+		aFreshQueryClient();
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it("draws every Work Item, shows no outlier count and says the process behaviour chart has no limits for this date range", async () => {
+		render(chartIn(teamZenith(), 15, 7, "ready", backendWithoutLimits));
+
+		await theNoLimitsAnswerHasLanded();
+
+		thenEveryWorkItemIsDrawn(58);
+		thenNoOutlierCountIsShownButTheReasonIs();
+		expect(screen.getByTestId(`widget-shell-${WIDGET_KEY}`)).toHaveAttribute(
+			"data-widget-status",
+			"ready",
+		);
 	});
 });

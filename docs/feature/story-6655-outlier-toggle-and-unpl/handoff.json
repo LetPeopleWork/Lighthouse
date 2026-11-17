@@ -384,6 +384,145 @@
 "stimulus": "F354",
 "user_result": "F356"
 }
+],
+"S3": [
+{
+"covers": [
+"P5",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F236",
+"T1"
+],
+"still_passes_if": "F361",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_10_day_range_without_a_configured_baseline_has_no_limits_so_no_Work_Item_is_set_apart"
+},
+"expected": "F359",
+"stimulus": "F358",
+"user_result": "F360"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F236",
+"T1"
+],
+"still_passes_if": "F365",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_configured_baseline_of_10_days_has_no_limits_even_with_enough_closed_Work_Items_in_it"
+},
+"expected": "F363",
+"stimulus": "F362",
+"user_result": "F364"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F237",
+"T1"
+],
+"still_passes_if": "F369",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_30_day_range_with_a_single_closed_Work_Item_has_no_limits"
+},
+"expected": "F367",
+"stimulus": "F366",
+"user_result": "F368"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F238",
+"T1"
+],
+"still_passes_if": "F373",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_configured_baseline_without_any_closed_Work_Item_has_no_limits_so_no_Work_Item_of_the_range_is_set_apart"
+},
+"expected": "F371",
+"stimulus": "F370",
+"user_result": "F372"
+},
+{
+"covers": [
+"P5",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F239",
+"T1"
+],
+"still_passes_if": "F377",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_14_day_range_with_2_closed_Work_Items_has_limits"
+},
+"expected": "F375",
+"stimulus": "F374",
+"user_result": "F376"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F381",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.An_unknown_named_Cycle_Time_has_no_limits_even_when_the_default_Cycle_Time_has_them"
+},
+"expected": "F379",
+"stimulus": "F378",
+"user_result": "F380"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F236",
+"T1"
+],
+"still_passes_if": "F385",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/CycleTimeOutliers/CycleTimeOutliersWithoutProcessLimitsTest.cs::Lighthouse.Backend.Tests.Acceptance.CycleTimeOutliers.CycleTimeOutliersWithoutProcessLimitsTest.A_Portfolio_whose_configured_baseline_is_10_days_has_no_limits_so_no_Feature_is_set_apart"
+},
+"expected": "F383",
+"stimulus": "F382",
+"user_result": "F384"
+},
+{
+"covers": [
+"P5",
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F389",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierChip.test.tsx::Without process behaviour chart limits no Work Item is set apart > draws every Work Item, shows no outlier count and says the process behaviour chart has no limits for this date range"
+},
+"expected": "F387",
+"stimulus": "F386",
+"user_result": "F388"
+}
 ]
 },
 "counters": {
@@ -391,7 +530,7 @@
 "C": 1,
 "D": 11,
 "E": 6,
-"F": 357,
+"F": 389,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -1807,7 +1946,39 @@
 "F355": "Stories with a Lead Time above the upper natural process limit (30.6 days)",
 "F356": "The list title names the limit in the reader's words",
 "F357": "a title that rounds 30.65 up where the product rounds it to nearest even",
+"F358": "A Team with no configured baseline is asked for the outliers of a 10-day range holding Work Items of 5, 5, 5 and 90 days",
+"F359": "No limits: no Work Item is set apart, the 90-day one included",
+"F360": "The reader is never shown outliers from a limit that does not exist, and no 5 x median rule sets the 90-day Work Item apart",
+"F361": "A 13-day range judged as valid; only 10 and 14 days are pinned, so a minimum moved between 11 and 14 days passes",
+"F362": "A Team whose configured baseline is 10 days long, holding 8 closed Work Items with a limit of 30 days, is asked for the outliers of a 28-day range holding Work Items of 12, 31 and 90 days",
+"F363": "No limits: no Work Item is set apart, although the baseline holds enough Work Items",
+"F364": "An invalid configured baseline never gives outliers, however many Work Items it holds",
+"F365": "A rule that validates the configured baseline but then judges against the selected range instead of the baseline dates",
+"F366": "A Team with no configured baseline is asked for the outliers of a 28-day range holding a single 90-day Work Item",
+"F367": "No limits: the single Work Item is not set apart",
+"F368": "One Work Item is never treated as a limit; the reader sees it drawn",
+"F369": "A rule that counts 0-day Work Items towards the 2 needed; no 0-day Work Item is in the range",
+"F370": "A Team whose configured 24-day baseline holds no closed Work Item is asked for the outliers of a 28-day range holding Work Items of 5, 5, 5 and 90 days",
+"F371": "No limits: no Work Item of the range is set apart",
+"F372": "An empty baseline never gives outliers from the range's own Work Items",
+"F373": "A rule that falls back to the selected range only when the baseline holds exactly 1 Work Item",
+"F374": "A Team with no configured baseline is asked for the outliers of a 14-day range holding Work Items of 10 and 12 days",
+"F375": "Limits: the verdict has limits (neither Work Item is above them)",
+"F376": "A valid 14-day baseline with 2 Work Items gives the reader limits, as the process behaviour chart does",
+"F377": "Limits with a wrong value; the limit and the ids are pinned by the rows that follow the process behaviour chart, not here",
+"F378": "A Team with a valid configured baseline whose limit is 30 days is asked for the outliers of a 28-day range of Work Items of 12, 31 and 90 days, for a named Cycle Time it does not have",
+"F379": "No limits: no Work Item is set apart, although the default Cycle Time would set apart the 31 and 90 day ones",
 "F38": "DISCUSS checklist, RBAC impact: N/A, because the control is view-only and local, adds no action, page or data, and the limit comes from Cycle Time data a reader of the Metrics tab can already see.",
+"F380": "An unknown named Cycle Time never shows outliers judged on another Cycle Time",
+"F381": "A named Cycle Time that exists but is invalid judged as valid; only the unknown id is pinned",
+"F382": "A Portfolio whose configured baseline is 10 days long, holding 8 closed Features with a limit of 30 days, is asked for the outliers of a 28-day range holding Features of 12, 31 and 90 days",
+"F383": "No limits: no Feature is set apart",
+"F384": "A Portfolio reader is never shown outliers from a limit that does not exist",
+"F385": "A Portfolio with fewer than 2 baseline Features judged as limited; only the invalid baseline is pinned for a Portfolio",
+"F386": "The Cycle Time scatterplot of Work Items of 2, 4, 6, 6, 8 and 58 days gets an answer that the process behaviour chart has no limits",
+"F387": "All six Work Items are drawn, the axis reaches 58 days, no outlier chip or count shows, the chip place reads 'No outliers: the Cycle Time process behaviour chart has no limits for this date range', and the frame is ready",
+"F388": "The reader sees every Work Item, no outlier count, and that outliers need the process behaviour chart's limits",
+"F389": "The no-limits text with a hard-coded 'Cycle Time' instead of the configured term; the test renders the default term only, and the info popover's no-limits sentence is not pinned",
 "F39": "DISCUSS checklist, Lighthouse-Clients CLI and MCP: N/A, because no API route or DTO changes if the scatterplot uses the existing Cycle Time process behaviour chart answer; DESIGN revisits this if the named-definition answer needs a new field or route.",
 "F4": "Outlier handling starts on every time the chart opens",
 "F40": "DISCUSS checklist, website marketing surface: no new line or page, because this refines an existing chart behaviour; at finalize, check that no website or docs copy still says 5 times the median.",
