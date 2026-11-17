@@ -539,6 +539,180 @@ A behaviour change no existing test observes; the whole-candidate review and EXA
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P3
+
+```text
+Run the Tracker integration unit-test placement rules on the current tree
+```
+
+```text
+Each of the 99 measured Tracker integration unit-test files sits only in the module folder mirroring its subject and keeps its class name in that folder namespace; every module test folder mirrors a module folder; every listed folder holds a test; a made-up file left in an old folder, a copy elsewhere, another tracker folder, a folder the module lacks, an empty or missing listed folder each fail naming the path
+```
+
+```text
+An examiner sees Passed lines saying every Tracker integration unit test sits in its module folder
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationUnitTestPlacementTest\.cs\:\:ATrackerIntegrationUnitTestFile\_SitsOnlyInItsModuleFolder\_AndKeepsItsClassInThatFolder
+
+```text
+A new unlisted test file placed outside Modules/TrackerIntegration under a new name in a folder that is neither old nor mirrored
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Run the old-folder test check on the current tree and on made-up trees
+```
+
+```text
+No test file sits in the old connector, OAuth, connection-health or Factories test folders apart from the two demo data tests, which must still exist; a made-up test under Services/Implementation/WorkTrackingConnectors is named by path
+```
+
+```text
+An examiner sees a Passed line saying the old Tracker integration test folders hold no test file apart from the demo data tests
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationUnitTestPlacementTest\.cs\:\:TheOldTrackerIntegrationTestFolders\_HoldNoTestFile\_ApartFromTheDemoDataTests
+
+```text
+A new test placed in Factories under the exact name of a listed demo data test after the original was deleted
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the old-folder source check on the current tree and on made-up trees
+```
+
+```text
+No source file sits in the old connector, OAuth, connection-health folders or Factories apart from types named as staying, and no file under Services, Factories or Models is named after a type that moved; a made-up interface under Services/Interfaces/WorkTrackingConnectors is named
+```
+
+```text
+An examiner sees a Passed line saying the old Tracker integration source folders hold no file of the context apart from the types that stay
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationUnitTestPlacementTest\.cs\:\:TheOldTrackerIntegrationSourceFolders\_HoldNoFileOfTheContext\_ApartFromTheTypesThatStay
+
+```text
+A moved type re-declared under a different file name in a shared Services folder outside the listed old folders
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the source check with a staying repository, the demo data, the connection save and a module file
+```
+
+```text
+None of them is reported
+```
+
+```text
+An examiner sees a Passed line saying a type that stays is not reported
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationUnitTestPlacementTest\.cs\:\:AMadeUpSourceFileOfTheContextLeftInAnOldFolder\_IsReported\_AndATypeThatStaysIsNot
+
+```text
+A Stays entry widened to a non-demo type, since the exceptions are read from the membership list
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the legacy Work Items and Forecast source folder check
+```
+
+```text
+The old WorkItems, TeamData, WorkItemRules and Forecast folders under Services hold no .cs file; a made-up newcomer there or in a subfolder is named
+```
+
+```text
+An examiner sees a Passed line saying the old Work Items and Forecast source folders hold no source file
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationUnitTestPlacementTest\.cs\:\:TheOldWorkItemsAndForecastSourceFolders\_HoldNoSourceFile
+
+```text
+A non-.cs file left in those folders
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Run the full backend build and suite
+```
+
+```text
+Production unchanged; every existing test stays green
+```
+
+```text
+Nothing a user, tracker or database sees changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+The slice adds one test file and no production code; behaviour preservation is the full-suite gate, not this oracle
+```
+
+host
+
 ## Expectations
 
 ### Rows

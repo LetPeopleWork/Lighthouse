@@ -302,12 +302,108 @@
 "stimulus": "F179",
 "user_result": "F181"
 }
+],
+"S2": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2",
+"L4/F108"
+],
+"still_passes_if": "F186",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs::ATrackerIntegrationUnitTestFile_SitsOnlyInItsModuleFolder_AndKeepsItsClassInThatFolder"
+},
+"expected": "F184",
+"stimulus": "F183",
+"user_result": "F185"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F105"
+],
+"still_passes_if": "F190",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs::TheOldTrackerIntegrationTestFolders_HoldNoTestFile_ApartFromTheDemoDataTests"
+},
+"expected": "F188",
+"stimulus": "F187",
+"user_result": "F189"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F106"
+],
+"still_passes_if": "F194",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs::TheOldTrackerIntegrationSourceFolders_HoldNoFileOfTheContext_ApartFromTheTypesThatStay"
+},
+"expected": "F192",
+"stimulus": "F191",
+"user_result": "F193"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F107"
+],
+"still_passes_if": "F198",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs::AMadeUpSourceFileOfTheContextLeftInAnOldFolder_IsReported_AndATypeThatStaysIsNot"
+},
+"expected": "F196",
+"stimulus": "F195",
+"user_result": "F197"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F202",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationUnitTestPlacementTest.cs::TheOldWorkItemsAndForecastSourceFolders_HoldNoSourceFile"
+},
+"expected": "F200",
+"stimulus": "F199",
+"user_result": "F201"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "host",
+"reason": "F206"
+},
+"expected": "F204",
+"stimulus": "F203",
+"user_result": "F205"
+}
 ]
 },
 "counters": {
 "D": 11,
 "E": 4,
-"F": 182,
+"F": 206,
 "K": 5,
 "L": 4,
 "P": 4,
@@ -1086,9 +1182,33 @@
 "F180": "The build has no warning and every test passes; production code is unchanged",
 "F181": "Nothing a user, a tracker or the database sees changes",
 "F182": "A behaviour change no existing test observes; the whole-candidate review and EXAMINE cover it",
+"F183": "Run the Tracker integration unit-test placement rules on the current tree",
+"F184": "Each of the 99 measured Tracker integration unit-test files sits only in the module folder mirroring its subject and keeps its class name in that folder namespace; every module test folder mirrors a module folder; every listed folder holds a test; a made-up file left in an old folder, a copy elsewhere, another tracker folder, a folder the module lacks, an empty or missing listed folder each fail naming the path",
+"F185": "An examiner sees Passed lines saying every Tracker integration unit test sits in its module folder",
+"F186": "A new unlisted test file placed outside Modules/TrackerIntegration under a new name in a folder that is neither old nor mirrored",
+"F187": "Run the old-folder test check on the current tree and on made-up trees",
+"F188": "No test file sits in the old connector, OAuth, connection-health or Factories test folders apart from the two demo data tests, which must still exist; a made-up test under Services/Implementation/WorkTrackingConnectors is named by path",
+"F189": "An examiner sees a Passed line saying the old Tracker integration test folders hold no test file apart from the demo data tests",
 "F19": "Confirmed Reuse Analysis (REPLACE row): ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern and its two rules WorkTrackingIntegration_IsALeafInputAdapter and WorkTrackingConnectors_DoNotDependOnAnyRepository are retired; R-T7 and R-T8 replace them. Every consumer of the pattern migrates to the module namespace pattern ^Lighthouse\\.Backend\\.Modules\\.TrackerIntegration(\\.|$) in the same slice: DependencySingleDecisionArchUnitTest (TheConnectors), WorkItemsModuleBoundariesArchUnitTest, RefinementModuleArchUnitTest, and the TrackerIntegrationRulesSeeTheModuleArchUnitTest rows that key on the pattern by name. Feature B exact exemptions (ParentSourceSelector, IWorkTrackingConnectorFactory, IWorkTrackingSystemFactory, OAuthService, ConnectionHealthService) are kept or replaced by C1 list entries, never widened.",
+"F190": "A new test placed in Factories under the exact name of a listed demo data test after the original was deleted",
+"F191": "Run the old-folder source check on the current tree and on made-up trees",
+"F192": "No source file sits in the old connector, OAuth, connection-health folders or Factories apart from types named as staying, and no file under Services, Factories or Models is named after a type that moved; a made-up interface under Services/Interfaces/WorkTrackingConnectors is named",
+"F193": "An examiner sees a Passed line saying the old Tracker integration source folders hold no file of the context apart from the types that stay",
+"F194": "A moved type re-declared under a different file name in a shared Services folder outside the listed old folders",
+"F195": "Run the source check with a staying repository, the demo data, the connection save and a module file",
+"F196": "None of them is reported",
+"F197": "An examiner sees a Passed line saying a type that stays is not reported",
+"F198": "A Stays entry widened to a non-demo type, since the exceptions are read from the membership list",
+"F199": "Run the legacy Work Items and Forecast source folder check",
 "F2": "A change that makes Tracker integration reach another context, or another context reach its adapters, fails a named rule instead of passing unnoticed",
 "F20": "Confirmed D-11: C1 removes the old alternatives from Scripts/test-selection/path-classifier.sh and dev-test.ps1 (Services/Implementation/WorkTrackingConnectors/<Tracker>/, Services/Implementation/WorkTrackingConnectors/(Auth|OAuth)/, top-level Services/Implementation/WorkTrackingConnectors/*.cs, Services/Interfaces/WorkTrackingConnectors/I*.cs, Factories); module-path alternatives and alternatives outside the context (Parents, Models, FetchFingerprint, Program.cs, the solution and project files) stay. test-path-classifier.sh scenarios that exist only for old paths are removed; every module-path scenario stays green, so a change to a connector under the module still selects that tracker live suite.",
+"F200": "The old WorkItems, TeamData, WorkItemRules and Forecast folders under Services hold no .cs file; a made-up newcomer there or in a subfolder is named",
+"F201": "An examiner sees a Passed line saying the old Work Items and Forecast source folders hold no source file",
+"F202": "A non-.cs file left in those folders",
+"F203": "Run the full backend build and suite",
+"F204": "Production unchanged; every existing test stays green",
+"F205": "Nothing a user, tracker or database sees changes",
+"F206": "The slice adds one test file and no production code; behaviour preservation is the full-suite gate, not this oracle",
 "F21": "Confirmed D-9, decided here: C2 writes a sibling TrackerIntegrationUnitTestPlacementTest modelled on WorkItemsUnitTestPlacementTest, as ForecastingUnitTestPlacementTest already is, instead of parameterising the existing placement tests: those are approved oracles of other features and would become craft targets. Test files are found on disk and classes read from the compiled test assembly with symbols. The no-file-left check lists the files under Services/Interfaces, Services/Implementation (WorkTrackingConnectors, OAuth, ConnectionHealth) and Factories that belong to the context and fails on any that is not a named exception.",
 "F22": "Layer algebra, test side only (production unchanged, D-0, D-10, D-12): state = the finite set of top-level type-to-type IL edges of the production assembly and the finite set of source and test file paths; operation = evaluate a rule over that state with an inline list; observation = a verdict naming each offender, each missing list entry and each extra list entry. Carriers: InboundVerdict, OutboundVerdict and KernelRuleVerdict owned by Lighthouse.Backend.Tests/Architecture/ModuleRules.cs; the module wording is a ModuleWording value owned by the new boundaries file; membership facts are owned by TrackerIntegrationMembership. No per-process state.",
 "F23": "Formal verification not applicable (feature-delta Formal verification section, Confirmed): every claim is an exact equality over finite sets read from the compiled IL and the file tree, decided exhaustively by the rule itself with a made-up offender per position as falsifier. There is no state transition, ordering, concurrency, recovery or liveness claim, so no Quint, TLA+/TLC or Agda model is selected; a model would restate the namespace map and could not fail. Liveness is not applicable: nothing runs over time. Treatment of each law is Finite; property-based testing is not applicable to a closed finite domain.",
