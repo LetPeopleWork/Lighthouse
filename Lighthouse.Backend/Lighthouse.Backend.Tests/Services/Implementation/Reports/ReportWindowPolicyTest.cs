@@ -71,24 +71,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 .Where(row => row.IsThen)
                 .Select(row => new TestCaseData(row).SetName($"ThenRefusal_answers_every_Then_row_of_the_boundary_table_as_it_says({row.Case})"));
 
-        // The same Now rows the browser's wizard and the server's acceptance suite are checked against.
-        [TestCaseSource(nameof(TheNowRowsOfTheBoundaryTable))]
-        public void NowRefusal_answers_every_Now_row_of_the_boundary_table_as_it_says(ReportWindowBoundaryScenarios.BoundaryRow row)
-        {
-            var bounds = ReportWindowBoundaryScenarios.TheTable.Bounds;
-            var today = Day(bounds.Today);
-            var doneItemsCutoffDays = row.KeepsEveryFinishedItem ? KeepsEverything : today.DayNumber - Day(bounds.EarliestStart!).DayNumber;
-
-            var refusal = ReportWindowPolicy.NowRefusal(row.LengthDays, today, doneItemsCutoffDays);
-
-            Assert.That(refusal, Is.EqualTo(row.Refusal));
-        }
-
-        private static IEnumerable<TestCaseData> TheNowRowsOfTheBoundaryTable()
-            => ReportWindowBoundaryScenarios.TheTable.Rows
-                .Where(row => !row.IsThen)
-                .Select(row => new TestCaseData(row).SetName($"NowRefusal_answers_every_Now_row_of_the_boundary_table_as_it_says({row.Case})"));
-
         private static DateOnly Day(string yearMonthDay) => DateOnly.ParseExact(yearMonthDay, "yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         [TestCase(365, "2025-10-02")]
@@ -113,44 +95,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         public void ThenRebuildable_holds_while_Then_starts_on_or_after_the_oldest_kept_day(int doneItemsCutoffDays, string thenStart, bool expected)
         {
             Assert.That(ReportWindowPolicy.ThenRebuildable(Day(thenStart), Today, doneItemsCutoffDays), Is.EqualTo(expected));
-        }
-
-        // Today is 2 Oct 2026, so a Team keeping 365 days holds finished items from 2 Oct 2025 on.
-        [TestCase(365, 14, null)]
-        [TestCase(365, 90, null)]
-        [TestCase(365, 366, null)]
-        [TestCase(365, 13, ReportRefusalCodes.NowTooShort)]
-        [TestCase(365, 0, ReportRefusalCodes.NowTooShort)]
-        [TestCase(365, -30, ReportRefusalCodes.NowTooShort)]
-        [TestCase(365, 367, ReportRefusalCodes.NowBeforeCutoff)]
-        [TestCase(365, 500, ReportRefusalCodes.NowBeforeCutoff)]
-        [TestCase(180, 181, null)]
-        [TestCase(180, 182, ReportRefusalCodes.NowBeforeCutoff)]
-        [TestCase(365, int.MaxValue, ReportRefusalCodes.NowTooLong)]
-        [TestCase(KeepsEverything, 730, null)]
-        [TestCase(KeepsEverything, 13, ReportRefusalCodes.NowTooShort)]
-        [TestCase(KeepsEverything, int.MaxValue, ReportRefusalCodes.NowTooLong)]
-        public void NowRefusal_refuses_a_Now_too_short_or_starting_before_the_oldest_kept_day(int doneItemsCutoffDays, int lengthDays, string? expected)
-        {
-            var refusal = ReportWindowPolicy.NowRefusal(lengthDays, Today, doneItemsCutoffDays);
-
-            Assert.That(refusal, Is.EqualTo(expected));
-        }
-
-        // From 2 Oct 2026, 739 891 days reach back exactly to 1 Jan of the year 1, the first day the calendar can name.
-        [TestCase(739_891, null)]
-        [TestCase(739_892, ReportRefusalCodes.NowTooLong)]
-        public void NowRefusal_refuses_a_Now_reaching_back_before_the_first_day_the_calendar_can_name(int lengthDays, string? expected)
-        {
-            var refusal = ReportWindowPolicy.NowRefusal(lengthDays, Today, KeepsEverything);
-
-            Assert.That(refusal, Is.EqualTo(expected));
-        }
-
-        [Test]
-        public void NowWindow_of_a_single_day_is_today_alone()
-        {
-            Assert.That(ReportWindowPolicy.NowWindow(Today, 1), Is.EqualTo(new ReportWindow(Today, Today, 1)));
         }
     }
 }

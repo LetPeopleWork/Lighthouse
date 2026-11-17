@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             {
                 Assert.That(frozen.Code, Is.EqualTo(expectedRefusal),
                     "WHAT: the freeze answered another refusal. WHY: Now is always as long as Then. HOW: refuse an unequal Now with now-length-differs-from-then.");
-                Assert.That(ThenAndNowPayload.FromJson(frozen.Value ?? "null")?.NowLengthDays, Is.Null,
+                Assert.That(frozen.Value?.Contains("nowLengthDays", StringComparison.OrdinalIgnoreCase) ?? false, Is.False,
                     "WHAT: the frozen payload stores a Now length. WHY: Now is worked out from Then's length on every read. HOW: write no Now length.");
             }
         }

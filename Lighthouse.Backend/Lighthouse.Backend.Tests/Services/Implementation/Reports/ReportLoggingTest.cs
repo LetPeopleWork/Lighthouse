@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
                 Assert.That(line.Fields["TemplateKey"], Is.EqualTo(ThenAndNowTemplate.TemplateKey));
                 Assert.That(line.Fields["ThenLengthDays"], Is.EqualTo(90));
-                Assert.That(line.Fields["NowLengthDays"], Is.EqualTo(30));
+                Assert.That(line.Fields["NowLengthDays"], Is.EqualTo(90));
                 Assert.That(line.Fields["ElapsedMs"], Is.EqualTo(3000d));
                 Assert.That(line.Message, Does.Not.Contain(SecretName));
                 Assert.That(line.Fields.Values, Has.None.EqualTo(SecretName));
@@ -132,7 +132,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             var tooLong = SecretName + new string('x', Report.LongestName);
 
             var outcome = await Subject(seconds: 0).Create(Lightspeed, new NewReport(
-                ThenAndNowTemplate.TemplateKey, tooLong, ["cycle-time"], new NewThenAndNow(new DateOnly(2026, 10, 2), 90, 30)));
+                ThenAndNowTemplate.TemplateKey, tooLong, ["cycle-time"], new NewThenAndNow(new DateOnly(2026, 10, 2), 90, 90)));
 
             var line = logger.Lines.Single();
             using (Assert.EnterMultipleScope())
@@ -228,7 +228,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             var created = await CreateTakingSeconds(0);
             logger.Lines.Clear();
 
-            var outcome = await Subject(seconds: 0).Edit(Lightspeed, 17, new ReportEdit(SecretName, OnlyCycleTime, created.ConcurrencyToken, 30));
+            var outcome = await Subject(seconds: 0).Edit(Lightspeed, 17, new ReportEdit(SecretName, OnlyCycleTime, created.ConcurrencyToken, 90));
 
             var line = logger.Lines.Single();
             using (Assert.EnterMultipleScope())
@@ -279,7 +279,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Refused));
                 Assert.That(line.Level, Is.EqualTo(LogLevel.Information));
                 Assert.That(line.Fields.Keys.Where(key => key != "{OriginalFormat}"), Is.EquivalentTo(LoggedRefusedEditFields));
-                Assert.That(line.Fields["Reason"], Is.EqualTo(ReportRefusalCodes.NowTooShort));
+                Assert.That(line.Fields["Reason"], Is.EqualTo(ReportRefusalCodes.NowLengthDiffersFromThen));
                 Assert.That(line.Fields["ReportId"], Is.EqualTo(17));
                 Assert.That(line.Fields["OwnerKind"], Is.EqualTo(ReportOwnerKind.Team));
                 Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
@@ -387,7 +387,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         private async Task<ReportRead> CreateTakingSeconds(int seconds)
         {
             var outcome = await Subject(seconds).Create(Lightspeed, new NewReport(
-                ThenAndNowTemplate.TemplateKey, SecretName, ["cycle-time"], new NewThenAndNow(new DateOnly(2026, 10, 2), 90, 30)));
+                ThenAndNowTemplate.TemplateKey, SecretName, ["cycle-time"], new NewThenAndNow(new DateOnly(2026, 10, 2), 90, 90)));
 
             Assert.That(outcome.Status, Is.EqualTo(ReportOutcomeStatus.Done));
             return outcome.Value!;

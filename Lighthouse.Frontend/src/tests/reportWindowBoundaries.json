@@ -69,44 +69,6 @@
 			"lengthDays": 1000000,
 			"keepsEveryFinishedItem": true,
 			"refusal": "then-too-long"
-		},
-		{
-			"case": "a Now of 13 days",
-			"side": "now",
-			"lengthDays": 13,
-			"refusal": "now-too-short"
-		},
-		{
-			"case": "a Now of 14 days",
-			"side": "now",
-			"lengthDays": 14,
-			"refusal": null
-		},
-		{
-			"case": "a Now starting on the earliest day",
-			"side": "now",
-			"lengthDays": 366,
-			"refusal": null
-		},
-		{
-			"case": "a Now starting the day before the earliest day",
-			"side": "now",
-			"lengthDays": 367,
-			"refusal": "now-before-cutoff"
-		},
-		{
-			"case": "a Now reaching back two years, when every finished item is kept",
-			"side": "now",
-			"lengthDays": 730,
-			"keepsEveryFinishedItem": true,
-			"refusal": null
-		},
-		{
-			"case": "a Now starting before the first day the calendar can name, when every finished item is kept",
-			"side": "now",
-			"lengthDays": 1000000,
-			"keepsEveryFinishedItem": true,
-			"refusal": "now-too-long"
 		}
 	]
 }

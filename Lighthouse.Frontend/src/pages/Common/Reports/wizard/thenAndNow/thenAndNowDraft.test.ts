@@ -282,7 +282,7 @@ describe("the report the server is asked to create", () => {
 });
 
 describe("reportChangeOf", () => {
-	it("sends the frozen Then length as the Now length, whatever Now the report was read with", () => {
+	it("sends no Now length, whatever Now the report was read with", () => {
 		const report = theEngagementStartReport();
 		const draft = thenAndNowDraftOf({
 			...report,
@@ -292,8 +292,6 @@ describe("reportChangeOf", () => {
 			},
 		});
 
-		expect(reportChangeOf(draft, templates).thenAndNow).toEqual({
-			nowLengthDays: 90,
-		});
+		expect(reportChangeOf(draft, templates)).not.toHaveProperty("thenAndNow");
 	});
 });

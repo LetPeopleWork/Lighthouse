@@ -167,6 +167,65 @@
 "stimulus": "F515",
 "user_result": "F517"
 }
+],
+"S2": [
+{
+"covers": [
+"P1",
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F534",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs"
+},
+"expected": "F532",
+"stimulus": "F531",
+"user_result": "F533"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F538",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs"
+},
+"expected": "F536",
+"stimulus": "F535",
+"user_result": "F537"
+},
+{
+"covers": [
+"P9",
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F542",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs"
+},
+"expected": "F540",
+"stimulus": "F539",
+"user_result": "F541"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F546",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs"
+},
+"expected": "F544",
+"stimulus": "F543",
+"user_result": "F545"
+}
 ]
 },
 "counters": {
@@ -174,7 +233,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 530,
+"F": 546,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -2596,7 +2655,23 @@
 "F528": "Edit row sends a Now length through AnEdit",
 "F529": "The stored-Now-of-800000 read row goes: Read no longer reads a stored Now",
 "F530": "The reportChangeOf row expects a change with no Now length",
+"F531": "Read a saved report with a 30-day Then whose stored Now was 45 days, on 15 Nov 2026",
+"F532": "The Now shows 30 days ending today, Then window and frozen values are unchanged, the stored payload is not rewritten",
+"F533": "An old report compares equal lengths after the update",
+"F534": "Now still shows the stored 45 days, or the read rewrites the stored member",
+"F535": "Edit, with no Now length or Now 30, a report whose Then now lies before the oldest kept day",
+"F536": "Edit is saved; Now is 30 days ending today",
+"F537": "An old report stays editable",
+"F538": "Edit re-checks Then or Now against the kept history",
+"F539": "Edit a 90-day Then report with Now 45, 120, 90 and no Now length",
 "F54": "Edit report: name and shown metrics only.",
+"F540": "45 and 120 refused with now-length-differs-from-then and nothing written; 90 and none saved with no Now length written",
+"F541": "A different Now length is refused with a clear reason, an equal or absent one is accepted",
+"F542": "A server that accepts Now 45 or writes the Now length it was given",
+"F543": "Inspect the Reports module for who builds a Now window",
+"F544": "Only the window value builds a Now window, the template reads Now through it, and the policy keeps no Now members",
+"F545": "Every report's Now comes from one place, so equal length cannot drift",
+"F546": "A second type computes a Now window or the policy keeps NowWindow",
 "F55": "The API refuses a create or edit carrying a Now length different from Then's; absent or equal is accepted.",
 "F56": "{Throughput} Total line gains change and % change and counts in the CHANGE summary.",
 "F57": "Which metrics and aggregations a Then & Now report shows (the 'Numberwang' feedback) - ADO Story #6649.",

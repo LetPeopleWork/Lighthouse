@@ -491,7 +491,6 @@ describe("ReportService", () => {
 			name: "Renamed",
 			shownMetricKeys: ["wip"],
 			concurrencyToken: "token-1",
-			thenAndNow: { nowLengthDays: 30 },
 		};
 		const saved = theEngagementStartReport({ name: "Renamed" });
 		mockedAxios.put.mockResolvedValueOnce({ data: saved });

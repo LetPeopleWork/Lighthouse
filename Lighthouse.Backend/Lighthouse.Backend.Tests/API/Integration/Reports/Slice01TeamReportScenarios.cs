@@ -417,29 +417,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // Crafter-written: a stored Now length no window can hold is a report this version cannot read.
-        [Test]
-        public async Task A_stored_report_whose_Now_the_calendar_cannot_reach_is_refused_with_a_warning_not_a_crash()
-        {
-            var lightspeed = GivenLightspeedFinishedTwentyWorkItemsSinceEarlyJuly();
-            var reportId = await GivenTheAdminCreated(lightspeed, new NewReport());
-            TheStoredPayloadIsReshaped(reportId, payload => payload["nowLengthDays"] = 800_000);
-
-            using var opened = await AskForTheReport(lightspeed, reportId);
-            var answer = await opened.Content.ReadAsStringAsync();
-            TheCallerAdministersTheInstance();
-            var warnings = (await ThePlaceOperatorsReadAboutProblems()).EnumerateArray()
-                .Where(problem => TextOf(problem, "level") == "Warning" && (TextOf(problem, "message") ?? string.Empty).Contains($"Stored report {reportId} "))
-                .ToList();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(opened.StatusCode, Is.EqualTo(HttpStatusCode.UnprocessableEntity), answer);
-                Assert.That(CodeIn(answer), Is.EqualTo(Reason.TemplateNotSupported));
-                Assert.That(warnings, Is.Not.Empty, "nothing tells the operator why the report will not open");
-            }
-        }
-
         // Crafter-written: the store holds names of up to 200 characters; a longer one is refused, not crashed on.
         [Test]
         public async Task A_name_longer_than_the_store_holds_is_refused_and_stores_nothing()

@@ -350,6 +350,131 @@ A detail page passing a stale or different owner's name (the stand-in shows exac
 
 None.
 
+### S2
+
+##### Covers
+
+P1
+
+P7
+
+```text
+Read a saved report with a 30-day Then whose stored Now was 45 days, on 15 Nov 2026
+```
+
+```text
+The Now shows 30 days ending today, Then window and frozen values are unchanged, the stored payload is not rewritten
+```
+
+```text
+An old report compares equal lengths after the update
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreation\/EqualLengthReportsScenarios\.cs
+
+```text
+Now still shows the stored 45 days, or the read rewrites the stored member
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P8
+
+```text
+Edit, with no Now length or Now 30, a report whose Then now lies before the oldest kept day
+```
+
+```text
+Edit is saved; Now is 30 days ending today
+```
+
+```text
+An old report stays editable
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreation\/EqualLengthReportsScenarios\.cs
+
+```text
+Edit re-checks Then or Now against the kept history
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P9
+
+P8
+
+```text
+Edit a 90-day Then report with Now 45, 120, 90 and no Now length
+```
+
+```text
+45 and 120 refused with now-length-differs-from-then and nothing written; 90 and none saved with no Now length written
+```
+
+```text
+A different Now length is refused with a clear reason, an equal or absent one is accepted
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreation\/EqualLengthReportsScenarios\.cs
+
+```text
+A server that accepts Now 45 or writes the Now length it was given
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Inspect the Reports module for who builds a Now window
+```
+
+```text
+Only the window value builds a Now window, the template reads Now through it, and the policy keeps no Now members
+```
+
+```text
+Every report's Now comes from one place, so equal length cannot drift
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleArchUnitTest\.cs
+
+```text
+A second type computes a Now window or the policy keeps NowWindow
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

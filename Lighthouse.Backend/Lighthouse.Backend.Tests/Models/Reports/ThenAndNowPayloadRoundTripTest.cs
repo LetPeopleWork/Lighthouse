@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.Models.Reports
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(payload.ThenWindow, Is.EqualTo(Then));
-                Assert.That(payload.NowLengthDays, Is.EqualTo(30));
                 Assert.That(The85thIn(payload), Is.EqualTo(Frozen85th));
             }
         }
@@ -43,7 +42,6 @@ namespace Lighthouse.Backend.Tests.Models.Reports
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(payload.ThenWindow, Is.EqualTo(Then));
-                Assert.That(payload.NowLengthDays, Is.Null);
                 Assert.That(payload.Captures, Is.Null);
             }
         }
@@ -56,7 +54,6 @@ namespace Lighthouse.Backend.Tests.Models.Reports
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(payload.ThenWindow, Is.EqualTo(Then));
-                Assert.That(payload.NowLengthDays, Is.EqualTo(30));
                 Assert.That(The85thIn(payload), Is.EqualTo(Frozen85th));
             }
         }
@@ -76,9 +73,18 @@ namespace Lighthouse.Backend.Tests.Models.Reports
         [Test]
         public void A_payload_reads_back_as_it_was_written()
         {
-            var written = new ThenAndNowPayload { ThenWindow = Then, NowLengthDays = 30 };
+            var written = new ThenAndNowPayload { ThenWindow = Then };
 
             Assert.That(ThenAndNowPayload.FromJson(written.ToJson()), Is.EqualTo(written));
+        }
+
+        [Test]
+        public void A_payload_written_by_this_version_carries_no_Now_length_member()
+        {
+            var written = JsonDocument.Parse(new ThenAndNowPayload { ThenWindow = Then }.ToJson()).RootElement;
+
+            Assert.That(written.TryGetProperty("nowLengthDays", out _), Is.False,
+                "WHAT: the written payload carries a Now length member. WHY: Now is derived from Then's length, so nothing is stored for it. HOW: the payload record names no Now length.");
         }
 
         private static CapturedValue? The85thIn(ThenAndNowPayload payload)

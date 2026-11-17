@@ -290,6 +290,33 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void Only_the_report_window_builds_a_Now_window_and_the_template_asks_it_when_reading()
+        {
+            using var module = IlDependencies.ReadModule(typeof(Program).Assembly);
+            var policyMembers = typeof(ReportWindowPolicy).GetMembers(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                .Select(member => member.Name)
+                .Where(name => name is "NowRefusal" or "NowWindow")
+                .ToList();
+            var callersOfNowEndingOn = module.Types
+                .SelectMany(TypeAndItsNestedTypes)
+                .Where(type => type.Methods.Any(method => method.HasBody && method.Body.Instructions.Any(instruction =>
+                    instruction.Operand is MethodReference call && call.DeclaringType.FullName == typeof(ReportWindow).FullName && call.Name == "NowEndingOn")))
+                .Select(type => IlDependencies.DeclaringTypeOf(type.FullName.Replace('/', '+')))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(typeof(ReportWindow).GetMethod("NowEndingOn"), Is.Not.Null,
+                    "WHAT: the window value has no way to build its Now. WHY: equal length is a property of construction. HOW: add NowEndingOn(today) to the window.");
+                Assert.That(policyMembers, Is.Empty,
+                    "WHAT: the policy still computes a Now window. WHY: only the window value does. HOW: remove NowRefusal and NowWindow once Edit and Read stop calling them.");
+                Assert.That(callersOfNowEndingOn, Is.EqualTo(new[] { typeof(ThenAndNowTemplate).FullName }),
+                    "WHAT: the template does not read Now through the window. WHY: Now is derived from Then's window on every read. HOW: call NowEndingOn in Read.");
+            }
+        }
+
+        [Test]
         public void The_owner_write_access_is_built_in_the_API()
         {
             var adapters = Implementations(typeof(IReportOwnerWriteAccess));

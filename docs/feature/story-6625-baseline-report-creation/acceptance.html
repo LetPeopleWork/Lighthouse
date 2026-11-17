@@ -455,6 +455,115 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P7</p>
+
+<pre><code>Read a saved report with a 30-day Then whose stored Now was 45 days, on 15 Nov 2026
+</code></pre>
+
+<pre><code>The Now shows 30 days ending today, Then window and frozen values are unchanged, the stored payload is not rewritten
+</code></pre>
+
+<pre><code>An old report compares equal lengths after the update
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs</p>
+
+<pre><code>Now still shows the stored 45 days, or the read rewrites the stored member
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>Edit, with no Now length or Now 30, a report whose Then now lies before the oldest kept day
+</code></pre>
+
+<pre><code>Edit is saved; Now is 30 days ending today
+</code></pre>
+
+<pre><code>An old report stays editable
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs</p>
+
+<pre><code>Edit re-checks Then or Now against the kept history
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<p>P8</p>
+
+<pre><code>Edit a 90-day Then report with Now 45, 120, 90 and no Now length
+</code></pre>
+
+<pre><code>45 and 120 refused with now-length-differs-from-then and nothing written; 90 and none saved with no Now length written
+</code></pre>
+
+<pre><code>A different Now length is refused with a clear reason, an equal or absent one is accepted
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs</p>
+
+<pre><code>A server that accepts Now 45 or writes the Now length it was given
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Inspect the Reports module for who builds a Now window
+</code></pre>
+
+<pre><code>Only the window value builds a Now window, the template reads Now through it, and the policy keeps no Now members
+</code></pre>
+
+<pre><code>Every report&#x27;s Now comes from one place, so equal length cannot drift
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
+
+<pre><code>A second type computes a Now window or the policy keeps NowWindow
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

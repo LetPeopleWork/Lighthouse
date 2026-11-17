@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
     {
         private const string Name = "Engagement start";
 
+        private const int StoredByAnOlderVersion = 45;
+
         private static readonly ReportOwner Lightspeed = ReportOwner.Team(42);
 
         private static readonly DateOnly Today = new(2026, 10, 2);
@@ -30,36 +32,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] CycleTimeShownTwice = [CycleTimeReportMetric.MetricKey, CycleTimeReportMetric.MetricKey];
 
-        [TestCase(14)]
-        [TestCase(30)]
-        [TestCase(365)]
-        public void An_edit_sets_the_Now_length_and_keeps_every_other_member_including_one_this_version_does_not_know(int nowLengthDays)
+        [TestCase(null)]
+        [TestCase(90)]
+        public void An_edit_writes_no_window_member_and_keeps_every_member_including_a_Now_length_an_older_version_stored_and_one_this_version_does_not_know(int? requestedNowLengthDays)
         {
             var report = AReportWithALaterVersionsMember();
             var before = JsonNode.Parse(report.TemplatePayloadJson)!.AsObject();
 
-            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, nowLengthDays), Calendar);
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, requestedNowLengthDays), Calendar);
 
             var after = JsonNode.Parse(edited.Value ?? "{}")!.AsObject();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Done));
-                Assert.That(after["nowLengthDays"]!.GetValue<int>(), Is.EqualTo(nowLengthDays));
-                Assert.That(JsonNode.DeepEquals(WithoutNowLength(after), WithoutNowLength(before)), Is.True, edited.Value);
+                Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Done),
+                    "WHAT: the edit was not accepted. WHY: a Now length that is absent or equal to Then's is accepted. HOW: accept it and write nothing for the window.");
+                Assert.That(after["nowLengthDays"]!.GetValue<int>(), Is.EqualTo(StoredByAnOlderVersion),
+                    "WHAT: the Now length an older version stored changed. WHY: Now is derived and the stored member is left unread and unchanged. HOW: write no Now length on Edit.");
+                Assert.That(JsonNode.DeepEquals(after, before), Is.True,
+                    $"WHAT: the edit changed the stored payload: {edited.Value}. WHY: only the name and shown metrics change, and those are not in the payload. HOW: return the payload as it was.");
             }
         }
 
-        [TestCase(13, ReportRefusalCodes.NowTooShort)]
-        [TestCase(367, ReportRefusalCodes.NowBeforeCutoff)]
-        [TestCase(int.MaxValue, ReportRefusalCodes.NowTooLong)]
-        public void An_edit_to_a_Now_a_new_report_could_not_have_is_refused_and_changes_nothing(int nowLengthDays, string expectedRefusal)
+        [TestCase(45)]
+        [TestCase(30)]
+        [TestCase(13)]
+        [TestCase(367)]
+        [TestCase(int.MaxValue)]
+        public void An_edit_naming_a_Now_length_other_than_Thens_is_refused_and_changes_nothing(int requestedNowLengthDays)
         {
             var report = AReportWithALaterVersionsMember();
             var stored = report.TemplatePayloadJson;
 
-            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, nowLengthDays), Calendar);
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, requestedNowLengthDays), Calendar);
 
-            ThenItIsRefused(edited, expectedRefusal, report, stored);
+            ThenItIsRefused(edited, ReportRefusalCodes.NowLengthDiffersFromThen, report, stored);
+        }
+
+        [Test]
+        public void An_edit_never_checks_Then_against_the_kept_history_again()
+        {
+            var report = AReportWithALaterVersionsMember();
+
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, 90), new ReportCalendar(Today.AddDays(800), 365));
+
+            Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Done),
+                $"WHAT: the edit was {edited.Status} {edited.Code} once Then lay far before the oldest kept day. WHY: an old report stays editable. HOW: do not check Then or Now against the kept history on Edit.");
         }
 
         [TestCaseSource(nameof(ShownListsANewReportCouldNotHave))]
@@ -68,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             var report = AReportWithALaterVersionsMember();
             var stored = report.TemplatePayloadJson;
 
-            var edited = Subject().Edit(report, new ReportEdit(Name, shown, report.ConcurrencyToken, 30), Calendar);
+            var edited = Subject().Edit(report, new ReportEdit(Name, shown, report.ConcurrencyToken, null), Calendar);
 
             ThenItIsRefused(edited, expectedRefusal, report, stored);
         }
@@ -82,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             report.TemplatePayloadJson = payload.ToJsonString();
             var stored = report.TemplatePayloadJson;
 
-            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeAndThroughput, report.ConcurrencyToken, 30), Calendar);
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeAndThroughput, report.ConcurrencyToken, null), Calendar);
 
             ThenItIsRefused(edited, ReportRefusalCodes.MetricNotCaptured, report, stored);
         }
@@ -92,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         {
             var report = AReportWithALaterVersionsMember();
 
-            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeAndThroughput, report.ConcurrencyToken, 30), Calendar);
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeAndThroughput, report.ConcurrencyToken, null), Calendar);
 
             Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Done));
         }
@@ -106,47 +123,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             report.TemplatePayloadJson = payload.ToJsonString();
             var stored = report.TemplatePayloadJson;
 
-            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, 30), Calendar);
+            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, null), Calendar);
 
             ThenItIsRefused(edited, ReportRefusalCodes.MetricNotCaptured, report, stored);
-        }
-
-        [Test]
-        public void An_edit_of_a_payload_that_never_stored_a_Now_length_adds_one()
-        {
-            var report = AReportWithALaterVersionsMember();
-            var payload = JsonNode.Parse(report.TemplatePayloadJson)!.AsObject();
-            payload.Remove("nowLengthDays");
-            report.TemplatePayloadJson = payload.ToJsonString();
-
-            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, 30), Calendar);
-
-            var after = JsonNode.Parse(edited.Value ?? "{}")!.AsObject();
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(edited.Status, Is.EqualTo(ReportOutcomeStatus.Done));
-                Assert.That(after["nowLengthDays"]?.GetValue<int>(), Is.EqualTo(30));
-                Assert.That(JsonNode.DeepEquals(WithoutNowLength(after), payload), Is.True, edited.Value);
-            }
-        }
-
-        [Test]
-        public void An_edit_overwrites_a_Now_length_stored_under_another_casing_rather_than_adding_a_second_one()
-        {
-            var report = AReportWithALaterVersionsMember();
-            var payload = JsonNode.Parse(report.TemplatePayloadJson)!.AsObject();
-            payload.Remove("nowLengthDays");
-            payload["NowLengthDays"] = 90;
-            report.TemplatePayloadJson = payload.ToJsonString();
-
-            var edited = Subject().Edit(report, new ReportEdit(Name, CycleTimeShown, report.ConcurrencyToken, 30), Calendar);
-
-            var after = JsonNode.Parse(edited.Value ?? "{}")!.AsObject();
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(after["NowLengthDays"]?.GetValue<int>(), Is.EqualTo(30));
-                Assert.That(after.ContainsKey("nowLengthDays"), Is.False, edited.Value);
-            }
         }
 
         private static IEnumerable<TestCaseData> ShownListsANewReportCouldNotHave()
@@ -174,18 +153,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 new NewReport(ThenAndNowTemplate.TemplateKey, Name, CycleTimeShown, new NewThenAndNow(Today, 90, 90)),
                 Calendar);
             var payload = JsonNode.Parse(frozen.Value!)!.AsObject();
+            payload["nowLengthDays"] = StoredByAnOlderVersion;
             payload["authorNotes"] = new JsonObject { [CycleTimeReportMetric.MetricKey] = "a note a later version wrote" };
 
             var report = Report.For(Lightspeed, ThenAndNowTemplate.TemplateKey, Name, new DateTime(2026, 10, 2, 7, 0, 0, DateTimeKind.Utc));
             report.TemplatePayloadJson = payload.ToJsonString();
             return report;
-        }
-
-        private static JsonObject WithoutNowLength(JsonObject payload)
-        {
-            var copy = payload.DeepClone().AsObject();
-            copy.Remove("nowLengthDays");
-            return copy;
         }
 
         private static ThenAndNowTemplate Subject()

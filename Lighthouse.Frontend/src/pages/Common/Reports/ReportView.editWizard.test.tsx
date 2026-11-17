@@ -163,7 +163,7 @@ describe("Editing a report", () => {
 		expect(await theWizard()).toHaveTextContent(FROZEN);
 	});
 
-	it("saves a new name and the shown metrics, never Then, over the report as it was read, sending Then's 90 days as Now's length", async () => {
+	it("saves a new name and the shown metrics, never Then and no Now length, over the report as it was read", async () => {
 		const reportService = await openTheEditWizard();
 		await theNameField();
 		await userEvent.click(await theMetricBox("Work Item Age"));
@@ -179,7 +179,6 @@ describe("Editing a report", () => {
 					name: SINCE_AUGUST,
 					shownMetricKeys: ["cycle-time", "throughput", "wip"],
 					concurrencyToken: "token-1",
-					thenAndNow: { nowLengthDays: 90 },
 				},
 			),
 		);

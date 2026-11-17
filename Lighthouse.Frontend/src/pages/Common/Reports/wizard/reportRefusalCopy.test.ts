@@ -38,6 +38,10 @@ describe("refusalCopyFor", () => {
 			"then-before-cutoff",
 			"Lightspeed keeps history from 2 Oct 2025: too little for a 90-day Then and Now. Pick a shorter length or a later end date.",
 		],
+		[
+			"now-length-differs-from-then",
+			"Now is always as long as Then.",
+		],
 		["name-missing", "Give the report a name."],
 		["name-too-long", "A report name can be at most 200 characters."],
 		["no-metric-shown", "Choose at least one metric"],

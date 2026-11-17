@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Text.Json;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports;
@@ -113,6 +114,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public void An_opened_report_reads_a_Now_as_long_as_Then_ending_today_whatever_Now_length_an_older_version_stored()
+        {
+            var legacy = JsonNode.Parse(PayloadOf(ThenInsideTheKeptYear))!.AsObject();
+            legacy["nowLengthDays"] = 45;
+            var report = Stored(legacy.ToJsonString());
+
+            var read = Subject().Get(Lightspeed, report.Id).Value!.ThenAndNow!;
+
+            Assert.That(read.NowWindow, Is.EqualTo(new ReportWindow(new DateOnly(2026, 7, 5), new DateOnly(2026, 10, 2), 90)),
+                "WHAT: Now is not 90 days ending today. WHY: Now is always as long as Then, whatever an older version stored. HOW: derive Now from Then's length and never read the stored Now length.");
+        }
+
+        [Test]
         public void Reports_across_owners_name_their_owner_and_come_Teams_before_Portfolios_then_by_owner_name()
         {
             var ofApollo = Stored(PayloadOf(ThenInsideTheKeptYear), Apollo);
@@ -207,7 +221,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         private static string PayloadOf(ReportWindow thenWindow)
-            => new ThenAndNowPayload { ThenWindow = thenWindow, NowLengthDays = 30 }.ToJson();
+            => new ThenAndNowPayload { ThenWindow = thenWindow }.ToJson();
 
         private ReportQueries Subject(IReadOnlyList<ReportOwnerRow>? ownerRows = null)
         {

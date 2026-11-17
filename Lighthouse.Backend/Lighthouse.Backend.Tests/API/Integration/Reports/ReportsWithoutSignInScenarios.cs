@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using var created = await CreateAReport(lightspeed, new NewReport());
             var reportId = await ThenItWasCreated(created);
 
-            using var saved = await EditTheReport(lightspeed, reportId, AnEdit(await TheReport(lightspeed, reportId), nowLengthDays: 30));
+            using var saved = await EditTheReport(lightspeed, reportId, AnEdit(await TheReport(lightspeed, reportId), name: "Lightspeed engagement"));
 
             Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
         }

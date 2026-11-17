@@ -117,13 +117,35 @@ namespace Lighthouse.Backend.Tests.API
 
             await Subject().EditReport(TeamId, 17, new ReportEditRequest { ConcurrencyToken = concurrencyToken });
 
+            var (name, shownMetricKeys, token, requestedNowLengthDays) = edit!;
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(edit!.Name, Is.Empty);
-                Assert.That(edit.ShownMetricKeys, Is.Empty);
-                Assert.That(edit.ConcurrencyToken, Is.EqualTo(concurrencyToken));
-                Assert.That(edit.NowLengthDays, Is.Null);
+                Assert.That(name, Is.Empty);
+                Assert.That(shownMetricKeys, Is.Empty);
+                Assert.That(token, Is.EqualTo(concurrencyToken));
+                Assert.That(requestedNowLengthDays, Is.Null, "WHAT: an edit that names no Now length asked for one. WHY: Now is always as long as Then. HOW: map an absent Now length to none.");
             }
+        }
+
+        [Test]
+        public async Task An_edit_naming_a_Now_length_hands_it_on_only_so_that_the_service_can_refuse_it()
+        {
+            ReportEdit? edit = null;
+            commands.Setup(c => c.Edit(Lightspeed, 17, It.IsAny<ReportEdit>()))
+                .Callback<ReportOwner, int, ReportEdit>((_, _, sent) => edit = sent)
+                .ReturnsAsync(ReportOutcome<ReportRead>.Refused(ReportRefusalCodes.NowLengthDiffersFromThen));
+
+            await Subject().EditReport(TeamId, 17, new ReportEditRequest
+            {
+                Name = "Engagement start",
+                ShownMetricKeys = ["cycle-time"],
+                ConcurrencyToken = Guid.NewGuid(),
+                ThenAndNow = new ReportEditThenAndNowRequest { NowLengthDays = 45 },
+            });
+
+            var (_, _, _, requestedNowLengthDays) = edit!;
+            Assert.That(requestedNowLengthDays, Is.EqualTo(45),
+                "WHAT: the Now length of the request did not reach the service. WHY: the service refuses an unequal Now, so it has to see it. HOW: map the optional Now length of the request.");
         }
 
         private void AnswerCreateWith(ReportOutcome<ReportRead> outcome)

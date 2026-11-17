@@ -79,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             public const string ThenTooLong = "then-too-long";
             public const string ThenEndsInTheFuture = "then-ends-in-the-future";
             public const string ThenBeforeCutoff = "then-before-cutoff";
-            public const string NowTooShort = "now-too-short";
             public const string NowTooLong = "now-too-long";
             public const string NowLengthDiffersFromThen = "now-length-differs-from-then";
             public const string NowBeforeCutoff = "now-before-cutoff";
@@ -802,16 +801,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             return thenAndNow;
         }
 
-        /// <summary>The edit an editor saves: name, shown metrics and Now length, echoing the token it read.</summary>
-        protected static JsonObject AnEdit(JsonElement asRead, string? name = null, string[]? shown = null, int? nowLengthDays = null)
+        /// <summary>The edit an editor saves: name and shown metrics, echoing the token it read. It names no Now length: Now is always as long as Then.</summary>
+        protected static JsonObject AnEdit(JsonElement asRead, string? name = null, string[]? shown = null)
         {
-            var currentNow = NowWindowIn(asRead).LengthDays;
             return new JsonObject
             {
                 ["name"] = name ?? TextOf(asRead, "name"),
                 ["shownMetricKeys"] = new JsonArray([.. (shown ?? [.. ShownMetricsIn(asRead).Select(key => key ?? string.Empty)]).Select(key => (JsonNode)JsonValue.Create(key))]),
                 ["concurrencyToken"] = TextOf(asRead, "concurrencyToken"),
-                ["thenAndNow"] = new JsonObject { ["nowLengthDays"] = nowLengthDays ?? currentNow },
             };
         }
 
