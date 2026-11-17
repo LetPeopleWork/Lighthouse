@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        public async Task A_Portfolio_can_be_reported_on_all_four_metrics()
+        public async Task A_Portfolio_can_be_reported_on_every_offered_metric()
         {
             var apollo = APortfolio(Apollo);
 
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(MetricKeysOfThenAndNowIn(templates), Is.EquivalentTo(AllFourMetrics));
+                Assert.That(MetricKeysOfThenAndNowIn(templates), Is.EquivalentTo([.. AllFourMetrics, "arrivals"]));
                 Assert.That(TextOf(templates, "earliestStart"), Is.EqualTo("2025-10-02"));
             }
         }

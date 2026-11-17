@@ -173,8 +173,9 @@
 "counters": {
 "B": 2,
 "C": 1,
+"D": 1,
 "E": 6,
-"F": 220,
+"F": 221,
 "L": 3,
 "P": 5,
 "S": 1,
@@ -309,7 +310,7 @@
 "constructors": [
 {
 "name": "gapSentenceOf",
-"signature": "gapSentenceOf(rounded: number): { kind: 'more' | 'fewer' | 'balanced'; magnitude: number }"
+"signature": "gapSentenceOf(rounded: number): { kind: 'more' | 'fewer' | 'balanced'; magnitude: number } -- input is the ROUNDED gap (two decimals); balanced iff rounded == 0 (so |gap| < 0.005); a real 0 Throughput is 0.00 per day, a dash only for Not captured"
 },
 {
 "name": "ArrivalsReportMetric.ValuesOver",
@@ -330,11 +331,11 @@
 "F36",
 "F37",
 "F38",
-"F39",
 "F40",
 "F41",
 "F42",
-"F43"
+"F43",
+"F221"
 ],
 "equality": [
 {
@@ -757,7 +758,9 @@
 "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs",
 "Lighthouse.Frontend/src/tests/ReportsTestKit.tsx",
 "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs",
-"Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.test.tsx"
+"Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/MetricsAndNameStep.test.tsx",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice05WipAndWorkItemAgeScenarios.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice06PortfolioReportScenarios.cs"
 ],
 "targets": [
 {
@@ -998,6 +1001,7 @@
 "F219": "The reader is told Arrivals cannot be added to an old report",
 "F22": "The arrivals-to-Throughput balance, Then against Now, on the report",
 "F220": "A build that lets the box be ticked, or hides it",
+"F221": "Carriers and owners: decisions about the balance live in ArrivalsReportMetric (C#, Services/Implementation/Reports/Metrics); effects in the two series adapters; errors as ReportOwnerGoneException (existing); presentation decision in ArrivalsPanel.tsx plus a pure exported function gapSentenceOf(rounded) in the panel module (testable with no render); direction in reportPanelRegistry. gapSentenceOf takes the ROUNDED gap (two decimals, the value the panel shows): a rounded gap below 0.005 in size reads 'as many started as finished per day', so 0.004 is balanced and 0.006 reads 0.01 more. A window where nothing finished is a real Throughput of 0, shown as 0.00 per day, not a dash; a dash appears only with 'Not captured for this report'. ArrivalsPanel reads the Throughput term with useTerminology instead of a new prop (accepted deviation: two support tests build ReportPanelProps literally). Per-process state: none.",
 "F23": "Open the report (ReportView, and the print document) for a Team report whose Then started 1.10 and finished 0.80 and Now 0.90 and 1.00 per day, with Arrivals shown; also a gap of 0.004 and 0.006, and a report with no arrivals capture",
 "F24": "Panel reads 0.30 more started than finished per day (Then), 0.10 fewer started than finished per day (Now), change 0.40 per day marked better with no percent, header lists Arrivals under Improved; 0.004 reads as many started as finished per day and 0.006 reads 0.01 more; the old report reads Not captured for this report; the print document shows the same words",
 "F25": "A build that rounds after comparing, keeps a percent, signs a zero gap, rebuilds Then from live data, or omits the print panel fails a named row",
@@ -1015,7 +1019,6 @@
 "F36": "Metric order and name: the catalog order is cycle-time, throughput, wip, work-item-age, arrivals (Arrivals last, a new metric in a later version goes last). Backend catalog order follows DI registration: register ArrivalsReportMetric last. Name Arrivals is a fixed name through a new fixedName on the frontend METRIC_CATALOG entry read by a new metricNameOf(key,getTerm) used by the wizard checkbox, UnsupportedMetricPanel title and panelTitle; no terminology key.",
 "F37": "Default ticking (open, see question to maintainer): ThenAndNowDraft defaults to every offered metric ticked; Arrivals follows that rule unless the maintainer wants it off by default. DESIGN records the default-on rule because changing it would add a new per-metric default concept.",
 "F38": "Cross-layer algebra. Domain (Reports metric): state = per-window CapturedValue members {total, perDay, throughputPerDay, gapPerDay} with total integer and gapPerDay = perDay - throughputPerDay; operations CaptureThen/Read over a window; observation = the four values per side; equality = field-wise CapturedValue equality. Application/port: IReportMetricSeries gains DailyArrivals(owner, window) returning one count per day; outcome is values or ReportOwnerGoneException like the other series. Adapter: TeamReportMetricSeries/PortfolioReportMetricSeries map the Metrics services' RunChartData to counts through DailyCounts (the order and the day count are the window's). Presentation: ArrivalsPanel maps four values to rows plus one gap sentence; absent values map to dash and note. Infrastructure/recovery: none new; the Then payload is the existing JSON column captures, a new key in the existing JsonObject, no migration (EF migrations N/A); old payloads lack the key and read as not captured.",
-"F39": "Carriers and owners: decisions about the balance live in ArrivalsReportMetric (C#, Services/Implementation/Reports/Metrics); effects in the two series adapters; errors as ReportOwnerGoneException (existing); presentation decision in ArrivalsPanel.tsx plus a pure exported function gapSentenceOf(gap) in the panel module (testable with no render); direction in reportPanelRegistry. Per-process state: none.",
 "F4": "The balance improved",
 "F40": "Checker mapping: no state machine, concurrency or liveness is introduced, so Quint (installed, 0.33.1) and TLC/Agda are not applicable; the claims are total pure arithmetic on two numbers and a sign-word mapping, falsified by native properties: fast-check (frontend package.json, fast-check 4.10.2) for the rounding and sign-word laws, and NUnit TestCase rows for the backend capture (no FsCheck in the backend manifest). Type strength: the C# CapturedValue record and the TS union of sentence kinds; invalid states (a plus-signed zero, '0.00 more') are excluded by a three-way closed sum returned by gapSentenceOf, but the TS wire type stays a nullable number as for other members. Property tests: see laws.",
 "F41": "Prefactoring: none needed on behavior; one small move before the feature, extracting the 'metric name or term key' choice behind metricNameOf in reportPanelRegistry is part of the feature itself, not a preserving move. No smell blocks the new metric: code-fact (code-fact query.callers-of) was not run; readings were by hand with ctx_shell/grep, which is noisy and could miss dynamic callers, so a consumer of ReportMetricSide keys outside the grepped Reports tree is unknown.",

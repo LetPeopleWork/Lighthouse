@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using var scope = harness.NewScope();
             var done = finishedOn is not null;
             var stateCategory = done ? StateCategories.Done : StateCategories.Doing;
-            DateTime During(DateOnly day) => day.ToDateTime(new TimeOnly(10, 0), DateTimeKind.Utc);
+            static DateTime During(DateOnly day) => day.ToDateTime(new TimeOnly(10, 0), DateTimeKind.Utc);
 
             if (owner.Kind == ReportOwnerKind.Team)
             {
@@ -323,7 +323,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(offered.Last(), Is.EqualTo("arrivals"), "Arrivals must be offered, last in the catalog order");
+                Assert.That(offered[^1], Is.EqualTo("arrivals"), "Arrivals must be offered, last in the catalog order");
                 Assert.That(arrivals.AtThen.Keys, Is.EquivalentTo(Members), "Then must be frozen with all four values");
                 Assert.That(arrivals.AtNow.Keys, Is.EquivalentTo(Members), "Now must be computed with all four values");
                 Assert.That(arrivals.AtThen["gapPerDay"], Is.EqualTo(CapturedValue.Shown(0, 30)), "nothing started or finished is a real zero gap");

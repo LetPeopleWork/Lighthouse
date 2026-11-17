@@ -30,14 +30,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         private static readonly DateOnly ThenEnds = new(2026, 8, 31);
 
         [Test]
-        public async Task A_Team_can_be_reported_on_all_four_metrics()
+        public async Task A_Team_can_be_reported_on_every_offered_metric()
         {
             var gravity = ATeam("Team Gravity");
 
             TheCallerAdministers(gravity);
             var templates = await TheTypesOfReportFor(gravity);
 
-            Assert.That(MetricKeysOfThenAndNowIn(templates), Is.EquivalentTo(AllFourMetrics));
+            Assert.That(MetricKeysOfThenAndNowIn(templates), Is.EquivalentTo([.. AllFourMetrics, "arrivals"]));
         }
 
         // Then: 6 in progress on 2-11 Aug, 9 on 12-21 Aug, 12 on 22-31 Aug.

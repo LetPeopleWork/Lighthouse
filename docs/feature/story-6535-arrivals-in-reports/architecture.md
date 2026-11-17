@@ -111,6 +111,10 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Repo
 
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/MetricsAndNameStep\.test\.tsx
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice05WipAndWorkItemAgeScenarios\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice06PortfolioReportScenarios\.cs
+
 #### Public oracle
 
 ```text
@@ -198,10 +202,6 @@ Cross-layer algebra. Domain (Reports metric): state = per-window CapturedValue m
 ```
 
 ```text
-Carriers and owners: decisions about the balance live in ArrivalsReportMetric (C#, Services/Implementation/Reports/Metrics); effects in the two series adapters; errors as ReportOwnerGoneException (existing); presentation decision in ArrivalsPanel.tsx plus a pure exported function gapSentenceOf(gap) in the panel module (testable with no render); direction in reportPanelRegistry. Per-process state: none.
-```
-
-```text
 Checker mapping: no state machine, concurrency or liveness is introduced, so Quint (installed, 0.33.1) and TLC/Agda are not applicable; the claims are total pure arithmetic on two numbers and a sign-word mapping, falsified by native properties: fast-check (frontend package.json, fast-check 4.10.2) for the rounding and sign-word laws, and NUnit TestCase rows for the backend capture (no FsCheck in the backend manifest). Type strength: the C# CapturedValue record and the TS union of sentence kinds; invalid states (a plus-signed zero, '0.00 more') are excluded by a three-way closed sum returned by gapSentenceOf, but the TS wire type stays a nullable number as for other members. Property tests: see laws.
 ```
 
@@ -215,6 +215,10 @@ UI sketch and visualization section 8 (DESIGN answers): one question (did the st
 
 ```text
 Usage data is left to DEVOPS (OQ4); no event is designed. ADR/context map: ADR-270 and ARCHITECTURE.md section 4 need no change (a metric-catalog entry inside the Reports context); no new ADR; ADR-220's catalog gains an entry within its decision, and ADR-247's table of web presentation rules (the skill reference, a drift list) gains a row at DELIVER finalize.
+```
+
+```text
+Carriers and owners: decisions about the balance live in ArrivalsReportMetric (C#, Services/Implementation/Reports/Metrics); effects in the two series adapters; errors as ReportOwnerGoneException (existing); presentation decision in ArrivalsPanel.tsx plus a pure exported function gapSentenceOf(rounded) in the panel module (testable with no render); direction in reportPanelRegistry. gapSentenceOf takes the ROUNDED gap (two decimals, the value the panel shows): a rounded gap below 0.005 in size reads 'as many started as finished per day', so 0.004 is balanced and 0.006 reads 0.01 more. A window where nothing finished is a real Throughput of 0, shown as 0.00 per day, not a dash; a dash appears only with 'Not captured for this report'. ArrivalsPanel reads the Throughput term with useTerminology instead of a new prop (accepted deviation: two support tests build ReportPanelProps literally). Per-process state: none.
 ```
 
 ##### Constraints
@@ -821,7 +825,7 @@ Two gaps are equal iff they round half away from zero to the same value at 2 dec
 
 gapSentenceOf
 
-gapSentenceOf\(rounded\: number\)\: \{ kind\: \'more\' \| \'fewer\' \| \'balanced\'\; magnitude\: number \}
+gapSentenceOf\(rounded\: number\)\: \{ kind\: \'more\' \| \'fewer\' \| \'balanced\'\; magnitude\: number \} \-\- input is the ROUNDED gap \(two decimals\)\; balanced iff rounded \=\= 0 \(so \|gap\| \< 0\.005\)\; a real 0 Throughput is 0\.00 per day\, a dash only for Not captured
 
 ArrivalsReportMetric\.ValuesOver
 
