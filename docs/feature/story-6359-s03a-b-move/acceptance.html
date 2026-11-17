@@ -608,6 +608,83 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the layout test: OAuth service, registry, issuer, options, seven exceptions and four interfaces; the four OAuth value types; health service, cadence and interface; the three providers; the prober
+</code></pre>
+
+<pre><code>Each named type is found in its layer namespace and none is left under Services, Factories or (value types) Models; a missing or renamed type is named in the failure
+</code></pre>
+
+<pre><code>OAuth and connection health sit in the module layers the design names, so the maintainer sees the module&#x27;s layers in the tree
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs</p>
+
+<pre><code>Moving a type into the wrong layer folder of the module, or leaving a copy under the old home that shares the simple name of a moved one in another namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the leftover check over the whole module move list and the stay check over the Models types that must not move
+</code></pre>
+
+<pre><code>No move-list type is left under Services or Factories, and OAuthCompleteResult, ConnectionFetchShapeChanged and the write-back vocabulary are still in Models
+</code></pre>
+
+<pre><code>Feature B ends with nothing of Tracker integration left in the old homes and no wire type pulled into the module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs</p>
+
+<pre><code>A nested type or a type renamed outside the move list lingering under Services; a Models type moved but another same-named type left in Models
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run each rule on made-up types in a fixture namespace: a left-behind type, a well-placed twin, a renamed type, a leftover move-list type, a Models type that left Models
+</code></pre>
+
+<pre><code>The offender is named and the twin is not for every rule, so each rule can fail
+</code></pre>
+
+<pre><code>A layout rule that passes only when it can also report an offender protects the maintainer from a green that checks nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs</p>
+
+<pre><code>A rule that checks fewer types than it names, or that flags a correct move
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

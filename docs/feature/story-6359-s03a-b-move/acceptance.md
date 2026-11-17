@@ -531,6 +531,95 @@ a connector reaching a repository through a catch clause, event or attribute arg
 
 
 
+### S4
+
+##### Covers
+
+P1
+
+```text
+Run the layout test: OAuth service, registry, issuer, options, seven exceptions and four interfaces; the four OAuth value types; health service, cadence and interface; the three providers; the prober
+```
+
+```text
+Each named type is found in its layer namespace and none is left under Services, Factories or (value types) Models; a missing or renamed type is named in the failure
+```
+
+```text
+OAuth and connection health sit in the module layers the design names, so the maintainer sees the module's layers in the tree
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest\.cs
+
+```text
+Moving a type into the wrong layer folder of the module, or leaving a copy under the old home that shares the simple name of a moved one in another namespace
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the leftover check over the whole module move list and the stay check over the Models types that must not move
+```
+
+```text
+No move-list type is left under Services or Factories, and OAuthCompleteResult, ConnectionFetchShapeChanged and the write-back vocabulary are still in Models
+```
+
+```text
+Feature B ends with nothing of Tracker integration left in the old homes and no wire type pulled into the module
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest\.cs
+
+```text
+A nested type or a type renamed outside the move list lingering under Services; a Models type moved but another same-named type left in Models
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run each rule on made-up types in a fixture namespace: a left-behind type, a well-placed twin, a renamed type, a leftover move-list type, a Models type that left Models
+```
+
+```text
+The offender is named and the twin is not for every rule, so each rule can fail
+```
+
+```text
+A layout rule that passes only when it can also report an offender protects the maintainer from a green that checks nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest\.cs
+
+```text
+A rule that checks fewer types than it names, or that flags a correct move
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

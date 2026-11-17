@@ -294,13 +294,63 @@
 "stimulus": "F746",
 "user_result": "F748"
 }
+],
+"S4": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8/F675"
+],
+"still_passes_if": "F753",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs"
+},
+"expected": "F751",
+"stimulus": "F750",
+"user_result": "F752"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8/F676"
+],
+"still_passes_if": "F757",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs"
+},
+"expected": "F755",
+"stimulus": "F754",
+"user_result": "F756"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T8"
+],
+"still_passes_if": "F761",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs"
+},
+"expected": "F759",
+"stimulus": "F758",
+"user_result": "F760"
+}
 ]
 },
 "counters": {
 "C": 2,
 "D": 24,
 "E": 6,
-"F": 749,
+"F": 761,
 "K": 8,
 "L": 8,
 "P": 6,
@@ -3742,6 +3792,18 @@
 "F747": "No connector reaches a stored-records type; the OAuth token service stays allowed; a made-up connector below the module that reaches the database is named",
 "F748": "Connectors still only translate what the tracker sent; the move opens no path to stored data",
 "F749": "a connector reaching a repository through a catch clause, event or attribute argument, which the compiled-code reader does not see",
+"F750": "Run the layout test: OAuth service, registry, issuer, options, seven exceptions and four interfaces; the four OAuth value types; health service, cadence and interface; the three providers; the prober",
+"F751": "Each named type is found in its layer namespace and none is left under Services, Factories or (value types) Models; a missing or renamed type is named in the failure",
+"F752": "OAuth and connection health sit in the module layers the design names, so the maintainer sees the module's layers in the tree",
+"F753": "Moving a type into the wrong layer folder of the module, or leaving a copy under the old home that shares the simple name of a moved one in another namespace",
+"F754": "Run the leftover check over the whole module move list and the stay check over the Models types that must not move",
+"F755": "No move-list type is left under Services or Factories, and OAuthCompleteResult, ConnectionFetchShapeChanged and the write-back vocabulary are still in Models",
+"F756": "Feature B ends with nothing of Tracker integration left in the old homes and no wire type pulled into the module",
+"F757": "A nested type or a type renamed outside the move list lingering under Services; a Models type moved but another same-named type left in Models",
+"F758": "Run each rule on made-up types in a fixture namespace: a left-behind type, a well-placed twin, a renamed type, a leftover move-list type, a Models type that left Models",
+"F759": "The offender is named and the twin is not for every rule, so each rule can fail",
+"F760": "A layout rule that passes only when it can also report an offender protects the maintainer from a green that checks nothing",
+"F761": "A rule that checks fewer types than it names, or that flags a correct move",
 "F8": "Every existing test is green unmodified apart from moves, using lines and rule-list strings; refresh answers, forecasts, routes, DTOs, DI lifetimes, handler order and the EF model are identical; the live connector suites are green in CI",
 "F9": "B1: move the five translation-rule types and their unit tests into Modules/TrackerIntegration/Domain; Work Items' rules lose the selectors."
 },
