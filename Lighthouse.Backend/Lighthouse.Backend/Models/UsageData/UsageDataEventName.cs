@@ -101,5 +101,11 @@ namespace Lighthouse.Backend.Models.UsageData
         /// outliers, not which items.
         /// </summary>
         OutlierListOpened = 27,
+
+        /// <summary>
+        /// Somebody switched outlier handling off on a Cycle Time scatterplot, to see every closed Work Item. It
+        /// carries nothing: not which Team or Portfolio, not how many outliers, not which items.
+        /// </summary>
+        OutlierHandlingSwitchedOff = 28,
     }
 }

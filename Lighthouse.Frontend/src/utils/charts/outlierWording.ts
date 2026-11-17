@@ -40,6 +40,7 @@ export function outlierWording(terms: OutlierTerms) {
 	};
 
 	return {
+		hideOutliersLabel: "Hide outliers",
 		chipLabel: (count: number) => `${count} ${plural(count)}`,
 		// A count shown while the widget reloads would belong to the previous answer.
 		chipLabelWhileLoading: "Outliers",

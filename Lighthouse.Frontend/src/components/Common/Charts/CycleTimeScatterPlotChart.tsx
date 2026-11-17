@@ -2,9 +2,11 @@ import {
 	Card,
 	CardContent,
 	FormControl,
+	FormControlLabel,
 	MenuItem,
 	Select,
 	Stack,
+	Switch,
 	type Theme,
 	Typography,
 	useTheme,
@@ -290,10 +292,21 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		items: IWorkItem[];
 	}>({ title: "", items: [] });
 
+	// Never stored: every time the chart opens, outliers are hidden again.
+	const [hideOutliers, setHideOutliers] = useState<boolean>(true);
+
 	// The cut and the axis come from every item, so hiding a type never moves them.
 	const analysis = useMemo(
-		() => findOutliers(effectiveDataPoints, (item) => item.cycleTime),
-		[effectiveDataPoints],
+		() =>
+			hideOutliers
+				? findOutliers(effectiveDataPoints, (item) => item.cycleTime)
+				: {
+						median: null,
+						cut: null,
+						outliers: [],
+						typical: [...effectiveDataPoints],
+					},
+		[effectiveDataPoints, hideOutliers],
 	);
 
 	const fixedXAxisDomain = useMemo((): [number, number] | null => {
@@ -394,6 +407,25 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		}),
 	);
 
+	const outlierSwitch = (
+		<FormControlLabel
+			label={wording.hideOutliersLabel}
+			control={
+				<Switch
+					checked={hideOutliers}
+					onChange={(event) => {
+						if (!event.target.checked) {
+							reportUsage({
+								name: UsageDataEventName.OutlierHandlingSwitchedOff,
+							});
+						}
+						setHideOutliers(event.target.checked);
+					}}
+				/>
+			}
+		/>
+	);
+
 	const cycleTimeSelector =
 		namedCycleTimeDefinitions.length > 0 ? (
 			<FormControl size="small" sx={{ minWidth: 200 }}>
@@ -451,6 +483,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 					>
 						<Typography variant="h6">{cycleTimeTerm}</Typography>
 						{cycleTimeSelector}
+						{outlierSwitch}
 					</Stack>
 
 					{effectiveDataPoints.length > 0 ? (

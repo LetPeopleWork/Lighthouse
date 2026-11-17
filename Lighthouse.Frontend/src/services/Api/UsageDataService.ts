@@ -50,6 +50,7 @@ export const UsageDataEventName = {
 	ParentSourcesSavedWithSeveralEntries: "ParentSourcesSavedWithSeveralEntries",
 	SystemWideAccessGranted: "SystemWideAccessGranted",
 	OutlierListOpened: "OutlierListOpened",
+	OutlierHandlingSwitchedOff: "OutlierHandlingSwitchedOff",
 } as const;
 
 export type UsageDataEventName =
