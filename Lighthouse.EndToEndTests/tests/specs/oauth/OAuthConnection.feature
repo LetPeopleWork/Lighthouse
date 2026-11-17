@@ -122,7 +122,7 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
     Then the diff between slice-01 main and slice-03 PR shows changes ONLY in
       """
       Lighthouse.Backend/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs
-      Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs
+      Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodSchema.cs
       Lighthouse.Backend/Program.cs (DI registration only)
       docs/* (new ADO setup page)
       Lighthouse.Frontend/src/components/Common/Connections/AuthMethodDropdown.tsx (label only)

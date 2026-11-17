@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Is.Not.Null,
                 $"WHAT: there is no {FeatureSourceCapabilityName} in Lighthouse.Backend. WHY: without a Feature-reading capability of its " +
                 "own, every connector is asked to read Portfolio Features, and ServiceNow can only refuse what it claims to do. HOW: add the " +
-                $"interface in Services/Interfaces/WorkTrackingConnectors, move {FeatureReadMember}(Portfolio, CancellationToken) and " +
+                $"interface in Modules/TrackerIntegration/Application, move {FeatureReadMember}(Portfolio, CancellationToken) and " +
                 $"{ParentReadMember} onto it, and let only the Jira, Azure DevOps, Linear and CSV connectors take it on.");
             Assert.That(capability!.IsInterface, Is.True, $"WHAT: {FeatureSourceCapabilityName} is not an interface. WHY: a connector takes a capability on by implementing it. HOW: declare it as an interface.");
 

@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
                 Is.Not.Null,
                 $"WHAT: there is no {IncrementalSourceCapabilityName} in Lighthouse.Backend. WHY: without a sweeping capability of its own, " +
                 "every connector is asked to sweep and to fetch by id, and CSV, Linear and ServiceNow can only refuse what they claim to do. " +
-                "HOW: add the interface in Services/Interfaces/WorkTrackingConnectors, move the per-connection probe, the three sweeps and " +
+                "HOW: add the interface in Modules/TrackerIntegration/Application, move the per-connection probe, the three sweeps and " +
                 "the two fetches by id onto it, and let only the Jira and Azure DevOps connectors take it on.");
             Assert.That(capability!.IsInterface, Is.True, $"WHAT: {IncrementalSourceCapabilityName} is not an interface. WHY: a connector takes a capability on by implementing it. HOW: declare it as an interface.");
 

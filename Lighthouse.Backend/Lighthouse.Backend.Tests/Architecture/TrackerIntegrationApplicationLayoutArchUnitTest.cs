@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.TrackerIntegrationFixtures.ApplicationLayout.Ports;
 using Mono.Cecil;
-using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

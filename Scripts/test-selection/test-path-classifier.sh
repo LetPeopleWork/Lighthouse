@@ -55,11 +55,11 @@ diff_shared_auth=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation
 assert "shared-auth: shared=true"        "$(classify_shared "$diff_shared_auth")"  "true"
 
 # Scenario 6: shared connector top-level (AuthenticationMethodSchema.cs)
-diff_shared_top=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs'
+diff_shared_top=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodSchema.cs'
 assert "shared-top: shared=true"         "$(classify_shared "$diff_shared_top")"   "true"
 
 # Scenario 7: shared interfaces
-diff_shared_iface=$'Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs'
+diff_shared_iface=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IWorkTrackingConnector.cs'
 assert "shared-iface: shared=true"       "$(classify_shared "$diff_shared_iface")" "true"
 
 # Scenario 8: shared models

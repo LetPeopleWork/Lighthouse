@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Is.Not.Null,
                 $"WHAT: there is no {WriteBackCapabilityName} in Lighthouse.Backend. WHY: without a write-back capability of its own, " +
                 "every connector is asked to write back, and CSV, Linear and ServiceNow can only refuse what they claim to do. HOW: add " +
-                "the interface in Services/Interfaces/WorkTrackingConnectors, move WriteFieldsToWorkItems onto it, and let only the Jira " +
+                "the interface in Modules/TrackerIntegration/Application, move WriteFieldsToWorkItems onto it, and let only the Jira " +
                 "and Azure DevOps connectors take it on.");
             Assert.That(capability!.IsInterface, Is.True, $"WHAT: {WriteBackCapabilityName} is not an interface. WHY: a connector takes a capability on by implementing it. HOW: declare it as an interface.");
 
