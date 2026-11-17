@@ -508,6 +508,65 @@ namespace Lighthouse.Backend.Tests.Modules.Promises.Application
             }
         }
 
+        [Test]
+        public void GetRuleSchema_AdditionalField_HoldsASingleValue()
+        {
+            var portfolio = CreatePortfolioWithAdditionalFields(new AdditionalFieldDefinition { Id = 1, DisplayName = "Sprint" });
+
+            var schema = subject.GetRuleSchema(portfolio);
+
+            var sprint = schema.Fields.Single(f => f.FieldKey == "additionalField.1");
+            Assert.That(sprint.IsMultiValue, Is.False);
+        }
+
+        [TestCase("")]
+        [TestCase("null")]
+        public void RecomputeRuleBasedDeliveries_StoredRuleThatReadsAsNoRule_LeavesTheFeaturesAsTheyAre(string storedRule)
+        {
+            var portfolio = CreatePortfolio();
+            portfolio.Features.Add(CreateFeature("Epic1", type: "Epic"));
+
+            var delivery = new Delivery("Rule-Based", DateTime.UtcNow.AddDays(30), 1)
+            {
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                RuleDefinitionJson = storedRule,
+                RuleSchemaVersion = 1
+            };
+            delivery.ReplaceFeatures([CreateFeature("OriginalFeature")]);
+
+            subject.RecomputeRuleBasedDeliveries(portfolio, new RecordableDeliveries([delivery]));
+
+            Assert.That(delivery.Features.Select(f => f.Name), Is.EquivalentTo(["OriginalFeature"]));
+        }
+
+        [Test]
+        public void RecomputeRuleBasedDeliveries_RuleNamingOnlyADeletedAdditionalField_LeavesTheFeaturesAsTheyAre()
+        {
+            var portfolio = CreatePortfolio();
+            portfolio.Features.Add(CreateFeature("Epic1", type: "Epic"));
+            portfolio.Features.Add(CreateFeature("Bug1", type: "Bug"));
+
+            // Every Feature reads a deleted field as empty, so this condition alone would match the
+            // whole Portfolio and replace the Delivery's Features with all of them.
+            var ruleSet = new WorkItemRuleSet
+            {
+                Version = 1,
+                Conditions = [new WorkItemRuleCondition { FieldKey = "additionalField.7", Operator = "notEquals", Value = "Sprint 3" }]
+            };
+
+            var delivery = new Delivery("Rule-Based", DateTime.UtcNow.AddDays(30), 1)
+            {
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                RuleDefinitionJson = System.Text.Json.JsonSerializer.Serialize(ruleSet),
+                RuleSchemaVersion = 1
+            };
+            delivery.ReplaceFeatures([CreateFeature("OriginalFeature")]);
+
+            subject.RecomputeRuleBasedDeliveries(portfolio, new RecordableDeliveries([delivery]));
+
+            Assert.That(delivery.Features.Select(f => f.Name), Is.EquivalentTo(["OriginalFeature"]));
+        }
+
         private static Feature CreateFeature(
             string name,
             string type = "Feature",

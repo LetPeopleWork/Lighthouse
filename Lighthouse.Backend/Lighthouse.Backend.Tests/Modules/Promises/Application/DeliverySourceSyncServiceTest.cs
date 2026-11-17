@@ -270,6 +270,16 @@ namespace Lighthouse.Backend.Tests.Modules.Promises.Application
                 .SetName("A connection that no longer offers Releases says so");
 
             yield return new TestCaseData(
+                    new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.SourceNotFound),
+                    DeliverySourceUnavailableReason.SourceNotFound)
+                .SetName("A Release reported unavailable because it is gone says it is gone");
+
+            yield return new TestCaseData(
+                    new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.SourceHasNoDate),
+                    DeliverySourceUnavailableReason.SourceHasNoDate)
+                .SetName("A Release reported unavailable because it has no date says that instead");
+
+            yield return new TestCaseData(
                     new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.SourceReadFailed),
                     null)
                 .SetName("A Release that could not be read says nothing at all");
