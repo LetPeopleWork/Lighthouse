@@ -2,7 +2,8 @@
 "counters": {
 "C": 1,
 "D": 7,
-"F": 133,
+"E": 4,
+"F": 137,
 "K": 3,
 "L": 2,
 "P": 4,
@@ -1027,6 +1028,38 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F134"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F135"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F136"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F137"
+}
+]
+},
 "facts": {
 "F1": "Story #6362 S03d Package Promises (Deliveries), feature B of three (the move): move the Promises types measured in feature A into Modules/Promises (DeliveryForecastBlock with its percentile record into Domain; the rule service, source resolver, source sync, forecast publishing, forecast block renderer, their interfaces and the metric-values projector into Application; the two 'forecasts updated' handlers into Application/Policies) with their unit tests, behaviour-free, and pin the order of the two PortfolioForecastsUpdated handlers. Design authority: docs/feature/story-6362-s03d-package-promises-deliveries/feature-delta.md.",
 "F10": "EXAMINE observes through admitted probes only (architecture-rules, backend-tests, ef-model-unchanged, deliveries-answers-compare and deliveries-answers-selftest, refresh-reactions-show, test-selection-show, ci-live-suites-show); expectations name only what those can show, and only what a test name or a probe line states.",
@@ -1067,6 +1100,10 @@
 "F131": "Two named types and one ordered pair of registrations: a closed finite domain; native examples are exact and no generative property adds coverage",
 "F132": "Both forecasts-updated handlers live in Modules/Promises/Application/Policies by namespace, lists compared both ways and never vacuous",
 "F133": "PortfolioForecastsUpdated handlers are registered snapshot recording first, then publishing",
+"F134": "Every Promises type sits in its designed place: the forecast block in Domain, the services, interfaces and projector in Application, and the two forecasts-updated handlers in Application Policies. No Promises type is left in its old namespace, and Domain reaches only the shared kernel. The architecture-rules probe reports each rule that places or bounds these types as Passed, by name.",
+"F135": "The unit tests of each moved Promises type run and pass, and each architecture rule that names a moved type reports Passed for its new place, with the rule comparing both ways. The backend-tests probe lists each moved type unit test class as Passed, and the architecture-rules probe lists those named rules as Passed.",
+"F136": "When a Portfolio forecasts are updated, its Delivery metric snapshot is recorded before its forecasts are published. The order-pin test reports Passed by name, and the forecast-triggers-show probe lists the snapshot recording ahead of the forecast publication.",
+"F137": "Nothing a user, a tracker or the database sees changes. The deliveries-answers-compare probe against the base revision prints IDENTICAL for the Delivery answers over the demo scenarios, the ef-model-unchanged probe reports the database model unchanged, the refresh-reactions-show and forecast-triggers-show probes show the same reactions as before, and the existing backend test classes report Passed.",
 "F14": "Behaviour-free (D-0, D-4, D-10): no class is created, split, merged or renamed, no signature changes, no entity, DbSet, migration, route or DTO changes. Repositories, entities, update code, write-back round, ordering and ranking stay. Program.cs lines and order stay; only usings and full type names change, and the two PortfolioForecastsUpdated registrations keep their order (snapshot recording, then publishing).",
 "F15": "Tests move with production (D-9): unit tests of the moved files move in a separate commit to Lighthouse.Backend.Tests/Modules/Promises/<same sub-folder>; integration, acceptance and controller tests stay. The 12 Jira test files that construct the renderer, JiraDeliverySourceProviderTest, WorkTrackingConnectorFactoryTest and JiraConnectorTestSetup get a using line only; the improve-the-tests rule applies to DeliveryMetricSnapshotRecordingHandlerTest in S2 and is waived for move-only and using-only edits.",
 "F16": "Rule lists follow the move and are never loosened: full-name strings in TrackerIntegrationModuleBoundariesArchUnitTest, WorkItemsModuleBoundariesArchUnitTest and DeliveryRuleServiceApiPreservationTest are rewritten to the new names and stay compared both ways; a rule exemption for a moved type is exact (type and nested types by full name), proved by a throwaway probe that is reverted. Old classifier alternatives stay until feature C. PromisesMembership and PromisesMembershipArchUnitTest are namespace-agnostic and stay unedited.",
