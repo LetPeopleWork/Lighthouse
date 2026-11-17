@@ -77,7 +77,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheTrackerIntegrationDomain_HoldsExactlyTheThreeTranslationRulesThatReachOnlyTheKernel()
         {
-            var held = IlDependencies.TypesIn(ProductionModule.Value, TrackerIntegrationDomain);
+            // A nested type belongs to the type that declares it, so only the outermost types count.
+            var held = IlDependencies.TypesIn(ProductionModule.Value, TrackerIntegrationDomain)
+                .Select(fullName => fullName.Split('+')[0])
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
             var expected = DomainTypes.Select(name => $"{DomainNamespace}.{name}").ToList();
 
             Assert.That(
