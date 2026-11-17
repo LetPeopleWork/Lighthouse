@@ -30,6 +30,10 @@ export interface ChangeLine {
 	readonly decimals: number;
 	/** False for a line whose change is not a share of Then, such as a gap that can cross zero. */
 	readonly showPercent?: boolean;
+	/** The line's own way of writing a change's size, where it differs from the other lines of its panel. */
+	readonly magnitudeText?: (magnitude: number) => string;
+	/** True for a line that reads "No change (both 0)" when both shown sides are 0, rather than a mark and "No change". */
+	readonly readsBothZero?: boolean;
 }
 
 const MINUS = "−";
@@ -137,6 +141,18 @@ export const lineComparisonsOf = (
 					: compareThenNow(then, now, panel.directionOfGood, decimals),
 		};
 	});
+
+/** What a line whose two sides are both 0 reads, where its definition opts into it. */
+export const BOTH_ZERO_TEXT = "No change (both 0)";
+
+/** Whether the line opts into the both-0 form and both its sides are shown as 0. */
+export const readsBothZero = (
+	metric: IReportMetric,
+	{ key, decimals, readsBothZero: optedIn }: ChangeLine,
+): boolean =>
+	optedIn === true &&
+	shownValue(metric.atThen[key], decimals) === 0 &&
+	shownValue(metric.atNow[key], decimals) === 0;
 
 /** "3 days (−20 %)", where the magnitude already carries its unit; a change of nothing reads "No change". Its mark is drawn apart. */
 export const changeText = (

@@ -20,12 +20,27 @@ import {
 export const TOTAL_DECIMALS = 0;
 export const PER_DAY_DECIMALS = 2;
 
-export const CHANGE_LINES = [
-	{ key: "perDay", label: "per day", decimals: PER_DAY_DECIMALS },
-] as const;
+const totalChangeText = (value: number) => `${value}`;
 
 const perDayText = (value: number) =>
 	`${value.toFixed(PER_DAY_DECIMALS)} per day`;
+
+export const CHANGE_LINES = [
+	{
+		key: "total",
+		label: "total",
+		decimals: TOTAL_DECIMALS,
+		magnitudeText: totalChangeText,
+		readsBothZero: true,
+	},
+	{
+		key: "perDay",
+		label: "per day",
+		decimals: PER_DAY_DECIMALS,
+		magnitudeText: perDayText,
+		readsBothZero: true,
+	},
+] as const;
 
 /** One note for the side however many of its values are dashes, preferring one the server gave a reason for. */
 const absenceNotesOf = ({
@@ -102,15 +117,12 @@ const ThroughputPanel: React.FC<Readonly<ReportPanelProps>> = ({
 			/>
 		}
 		change={
-			<>
-				<PanelLine>{null}</PanelLine>
-				<LineChanges
-					metric={metric}
-					lines={CHANGE_LINES}
-					directionOfGood={directionOfGood}
-					magnitudeText={perDayText}
-				/>
-			</>
+			<LineChanges
+				metric={metric}
+				lines={CHANGE_LINES}
+				directionOfGood={directionOfGood}
+				magnitudeText={perDayText}
+			/>
 		}
 	/>
 );

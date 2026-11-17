@@ -8,6 +8,7 @@ import type {
 import { ChangeMarkIcon } from "./ChangeMarkIcon";
 import { PanelLine } from "./ThenNowPanelFrame";
 import {
+	BOTH_ZERO_TEXT,
 	type ChangeLine,
 	type ChangeVerdict,
 	changeText,
@@ -15,6 +16,7 @@ import {
 	type DirectionOfGood,
 	lineComparisonsOf,
 	type ReportSide,
+	readsBothZero,
 	type ThenNowChange,
 } from "./thenNowComparison";
 
@@ -66,9 +68,21 @@ const LineChange: React.FC<{
 	readonly change: ThenNowChange | null;
 	readonly magnitudeText: (magnitude: number) => string;
 	readonly showPercent: boolean;
-}> = ({ change, magnitudeText, showPercent }) => {
+	readonly bothZero: boolean;
+}> = ({ change, magnitudeText, showPercent, bothZero }) => {
 	if (change === null) {
 		return <Typography component="span">{DASH}</Typography>;
+	}
+	if (bothZero) {
+		return (
+			<Typography
+				component="span"
+				data-change={change.verdict}
+				sx={{ color: verdictColours[change.verdict], fontWeight: "bold" }}
+			>
+				{BOTH_ZERO_TEXT}
+			</Typography>
+		);
 	}
 	return (
 		<Typography
@@ -96,13 +110,14 @@ export const LineChanges: React.FC<{
 		changeLines: lines,
 		directionOfGood,
 	});
-	return lines.map(({ key, label, showPercent = true }, index) => (
-		<PanelLine key={key}>
-			<LineName label={label} />
+	return lines.map((line, index) => (
+		<PanelLine key={line.key}>
+			<LineName label={line.label} />
 			<LineChange
 				change={comparisons[index].change}
-				magnitudeText={magnitudeText}
-				showPercent={showPercent}
+				magnitudeText={line.magnitudeText ?? magnitudeText}
+				showPercent={line.showPercent ?? true}
+				bothZero={readsBothZero(metric, line)}
 			/>
 		</PanelLine>
 	));
