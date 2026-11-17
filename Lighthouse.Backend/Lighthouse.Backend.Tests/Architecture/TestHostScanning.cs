@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using System.Runtime.CompilerServices;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -66,9 +67,16 @@ namespace Lighthouse.Backend.Tests.Architecture
         public static bool IsAConcreteClass(TypeDefinition type)
             => type is { IsClass: true, IsAbstract: false } && !type.Name.StartsWith('<');
 
+        // Building a full name allocates a string, and the walk asks for the same few thousand types once per call instruction.
+        private static readonly ConditionalWeakTable<TypeReference, string> ElementNames = new();
+
+        /// <summary>The full name of the type without its type arguments, built once per type reference.</summary>
+        public static string ElementNameOf(TypeReference type)
+            => ElementNames.GetValue(type, each => each.GetElementType().FullName);
+
         /// <summary>Whether the type is one of the two host factories, whatever its type argument.</summary>
         public static bool NamesAFactory(TypeReference type)
-            => FactoryTypeNames.Contains(type.GetElementType().FullName);
+            => FactoryTypeNames.Contains(ElementNameOf(type));
 
         /// <summary>The full names of the types that are a factory or derive from one, however deep.</summary>
         public static HashSet<string> FactoryTypesIn(List<TypeDefinition> allTypes)
@@ -83,7 +91,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 grew = false;
 
-                foreach (var type in allTypes.Where(type => type.BaseType is not null && factories.Contains(type.BaseType.GetElementType().FullName)))
+                foreach (var type in allTypes.Where(type => type.BaseType is not null && factories.Contains(ElementNameOf(type.BaseType))))
                 {
                     grew |= factories.Add(type.FullName);
                 }
@@ -102,7 +110,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                     || instruction.OpCode.Code == Code.Newobj && called.DeclaringType.FullName == TestServerTypeName);
 
         private static bool IsAFactoryType(TypeReference type, HashSet<string> factoryTypeNames)
-            => NamesAFactory(type) || factoryTypeNames.Contains(type.GetElementType().FullName);
+            => NamesAFactory(type) || factoryTypeNames.Contains(ElementNameOf(type));
 
         /// <summary>What a list of type names says against the names a scan found: the ones missing from the list, and the ones on it that were not found.</summary>
         public static ListComparison Compare(IEnumerable<string> listed, IEnumerable<string> found)
@@ -123,7 +131,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public static string KeyOf(MethodReference method)
         {
             var declared = method is GenericInstanceMethod generic ? generic.ElementMethod : method;
-            return declared.DeclaringType.GetElementType().FullName + "::" + declared.Name + "/" + declared.Parameters.Count;
+            return ElementNameOf(declared.DeclaringType) + "::" + declared.Name + "/" + declared.Parameters.Count;
         }
 
         /// <summary>
@@ -139,9 +147,14 @@ namespace Lighthouse.Backend.Tests.Architecture
             private readonly Func<MethodDefinition, bool> isInTheRootSet;
             private readonly List<MethodDefinition> allMethods;
             private readonly Dictionary<string, List<MethodDefinition>> methodsByKey;
+            private readonly ILookup<string, MethodDefinition> virtualMethodsByName;
             private readonly Dictionary<string, TypeDefinition> typesByName;
             private readonly HashSet<string> factoryTypeNames;
             private readonly HashSet<MethodDefinition> knownToStartNoHost = [];
+            private readonly HashSet<MethodDefinition> knownToStartAHost = [];
+            private readonly Dictionary<MethodDefinition, bool> startsAHostItself = [];
+            private readonly Dictionary<MethodDefinition, List<MethodDefinition>> methodsRunByMethod = [];
+            private readonly Dictionary<string, List<MethodDefinition>> overridesByCall = new(StringComparer.Ordinal);
 
             public HostBuildingScan(ModuleDefinition module, Func<MethodDefinition, bool> isInTheRootSet)
             {
@@ -149,6 +162,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
                 var allTypes = module.Types.SelectMany(TypeAndItsNestedTypes).ToList();
                 allMethods = [.. allTypes.SelectMany(type => type.Methods)];
+                virtualMethodsByName = allMethods.Where(method => method.IsVirtual).ToLookup(method => method.Name, StringComparer.Ordinal);
                 methodsByKey = allMethods.GroupBy(KeyOf).ToDictionary(group => group.Key, group => group.ToList());
                 typesByName = allTypes.ToDictionary(type => type.FullName, type => type);
                 factoryTypeNames = FactoryTypesIn(allTypes);
@@ -176,14 +190,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             private TypeDefinition? BaseWrittenHere(TypeDefinition type)
-                => type.BaseType is null ? null : typesByName.GetValueOrDefault(type.BaseType.GetElementType().FullName);
+                => type.BaseType is null ? null : typesByName.GetValueOrDefault(ElementNameOf(type.BaseType));
 
             private bool IsARoot(MethodDefinition method)
                 => !method.DeclaringType.Name.StartsWith('<') && isInTheRootSet(method);
 
+            // Fixtures share base classes and helpers, so a walk keeps what it learned: every method on the path to a
+            // host start reaches one, and every method of a walk that found none does not.
             private bool ReachesAHostStart(MethodDefinition root)
             {
+                if (knownToStartAHost.Contains(root))
+                {
+                    return true;
+                }
+
                 var visited = new HashSet<MethodDefinition>();
+                var cameFrom = new Dictionary<MethodDefinition, MethodDefinition>();
                 var pending = new Stack<MethodDefinition>([root]);
 
                 while (pending.Count > 0)
@@ -195,13 +217,15 @@ namespace Lighthouse.Backend.Tests.Architecture
                         continue;
                     }
 
-                    if (method.HasBody && method.Body.Instructions.Any(instruction => IsAHostStart(instruction, factoryTypeNames)))
+                    if (knownToStartAHost.Contains(method) || StartsAHostItself(method))
                     {
+                        MarkTheWayBack(method, cameFrom);
                         return true;
                     }
 
                     foreach (var next in MethodsRunBy(method))
                     {
+                        cameFrom.TryAdd(next, method);
                         pending.Push(next);
                     }
                 }
@@ -210,11 +234,45 @@ namespace Lighthouse.Backend.Tests.Architecture
                 return false;
             }
 
-            private IEnumerable<MethodDefinition> MethodsRunBy(MethodDefinition method)
-                => CompilerMadeBodiesOf(method).Concat(
-                    method.HasBody
-                        ? method.Body.Instructions.SelectMany(instruction => MethodsStartedBy(instruction).Concat(StaticConstructorsRunBy(instruction)))
-                        : []);
+            private void MarkTheWayBack(MethodDefinition reached, Dictionary<MethodDefinition, MethodDefinition> cameFrom)
+            {
+                var step = reached;
+                knownToStartAHost.Add(step);
+
+                while (cameFrom.TryGetValue(step, out var previous))
+                {
+                    knownToStartAHost.Add(previous);
+                    step = previous;
+                }
+            }
+
+            private bool StartsAHostItself(MethodDefinition method)
+            {
+                if (!startsAHostItself.TryGetValue(method, out var starts))
+                {
+                    starts = method.HasBody && method.Body.Instructions.Any(instruction => IsAHostStart(instruction, factoryTypeNames));
+                    startsAHostItself[method] = starts;
+                }
+
+                return starts;
+            }
+
+            private List<MethodDefinition> MethodsRunBy(MethodDefinition method)
+            {
+                if (!methodsRunByMethod.TryGetValue(method, out var run))
+                {
+                    run =
+                    [
+                        .. CompilerMadeBodiesOf(method).Concat(
+                            method.HasBody
+                                ? method.Body.Instructions.SelectMany(instruction => MethodsStartedBy(instruction).Concat(StaticConstructorsRunBy(instruction)))
+                                : []),
+                    ];
+                    methodsRunByMethod[method] = run;
+                }
+
+                return run;
+            }
 
             private IEnumerable<MethodDefinition> StaticConstructorsRunBy(Instruction instruction)
             {
@@ -227,7 +285,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
                 return touched is null || IsAFactoryType(touched, factoryTypeNames)
                     ? []
-                    : typesByName.GetValueOrDefault(touched.GetElementType().FullName)?.Methods.Where(candidate => candidate is { IsConstructor: true, IsStatic: true }) ?? [];
+                    : typesByName.GetValueOrDefault(ElementNameOf(touched))?.Methods.Where(candidate => candidate is { IsConstructor: true, IsStatic: true }) ?? [];
             }
 
             // An async method's own body lives in the MoveNext of a type the compiler names "<Method>d__N".
@@ -241,25 +299,36 @@ namespace Lighthouse.Backend.Tests.Architecture
                 if (instruction.Operand is not MethodReference called
                     || instruction.OpCode.Code is not (Code.Call or Code.Callvirt or Code.Newobj or Code.Ldftn or Code.Ldvirtftn)
                     || NamesAFactory(called.DeclaringType)
-                    || factoryTypeNames.Contains(called.DeclaringType.GetElementType().FullName))
+                    || factoryTypeNames.Contains(ElementNameOf(called.DeclaringType)))
                 {
                     return [];
                 }
 
                 var declared = methodsByKey.GetValueOrDefault(KeyOf(called)) ?? [];
 
-                var calledOnATypeWrittenHere = typesByName.ContainsKey(called.DeclaringType.GetElementType().FullName);
+                var calledOnATypeWrittenHere = typesByName.ContainsKey(ElementNameOf(called.DeclaringType));
 
                 return instruction.OpCode.Code is Code.Callvirt or Code.Ldvirtftn && calledOnATypeWrittenHere
                     ? declared.Concat(OverridesOf(called))
                     : declared;
             }
 
-            private IEnumerable<MethodDefinition> OverridesOf(MethodReference called)
-                => allMethods.Where(candidate => candidate.IsVirtual
-                    && candidate.Name == called.Name
-                    && candidate.Parameters.Count == called.Parameters.Count
-                    && DerivesFrom(candidate.DeclaringType, called.DeclaringType.GetElementType().FullName));
+            private List<MethodDefinition> OverridesOf(MethodReference called)
+            {
+                var key = KeyOf(called);
+
+                if (!overridesByCall.TryGetValue(key, out var overrides))
+                {
+                    overrides = FindOverridesOf(called);
+                    overridesByCall[key] = overrides;
+                }
+
+                return overrides;
+            }
+
+            private List<MethodDefinition> FindOverridesOf(MethodReference called)
+                => [.. virtualMethodsByName[called.Name].Where(candidate => candidate.Parameters.Count == called.Parameters.Count
+                    && DerivesFrom(candidate.DeclaringType, ElementNameOf(called.DeclaringType)))];
 
             public bool DerivesFrom(TypeDefinition type, string baseTypeName)
             {
@@ -267,7 +336,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
                 while (current is not null)
                 {
-                    var name = current.GetElementType().FullName;
+                    var name = ElementNameOf(current);
 
                     if (name == baseTypeName)
                     {
