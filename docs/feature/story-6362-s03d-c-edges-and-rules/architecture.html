@@ -1,0 +1,1535 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: story-6362-s03d-c-edges-and-rules</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Confirmed (feature-delta D-8, Ratchet design New rules C1): Promises gets its own module rules in Architecture/PromisesModuleBoundariesArchUnitTest.cs, R-P1..R-P7, written with the shared ModuleRules (its PromisesModule namespace constant already exists, ModuleRules.cs:27) and a Promises ModuleWording built in the oracle from two strings, as ForecastingModuleBoundariesArchUnitTest does (ModuleWording.cs:7 already takes the name and the legal callers), so ModuleRules.cs and ModuleWording.cs stay unchanged. Every list is inline, measured from the compiled IL and compared both ways; designed baselines: R-P1 the D-1 lists (types in their layer, none left under Services); R-P2 Domain reaches only Models and the base library, empty; R-P3 outside to Domain, empty; R-P4 outside to Application besides the API and the composition root: PortfolioUpdater; R-P5 outside to Application/Policies besides the composition root: empty; R-P6 Application reaches no EF Core, Data, API or any module&#x27;s Adapters, Work Items and Tracker integration Application legal by namespace, Forecasting and Flow metrics Application legal if found, platform only through the list ILighthouseClock, IDeliveryRepository, IDeliveryMetricSnapshotRepository, RecordableDeliveries and the dispatcher contract, by name; R-P7 no other module&#x27;s Adapters, update code, write-back round, Access or Licensing, empty. A neighbour without a namespace is listed by type name. Anything else the IL finds is added only with a reason.
+</code></pre>
+<p>Governed slices: S1</p>
+
+<h4>D2</h4>
+
+<pre><code>Confirmed (Ratchet design, D-7 edge Promises to Tracker integration option b): Promises&#x27; Application is legal by namespace as an inbound caller in the Work Items and Tracker integration rules, so their lists lose exactly the three Promises entries: WorkItemsModuleBoundariesArchUnitTest.OtherOutsideTypesReachingTheApplication loses Modules.Promises.Application.DeliveryRuleService (line 129); TrackerIntegrationModuleBoundariesArchUnitTest.OtherOutsideTypesReachingTheApplication loses Modules.Promises.Application.DeliveryForecastPublishingService and DeliverySourceResolver (lines 103-104). Promises may reach Tracker integration Application, never its Adapters. No other entry or pattern of those files changes in C1; the R-T7 edge list stays one entry until C2.
+</code></pre>
+<p>Governed slices: S1, S2</p>
+
+<h4>D3</h4>
+
+<pre><code>Confirmed (D-7 option b, D-10): the Tracker integration to Promises edge is inverted. New Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs declares one method with the renderer&#x27;s measured signature kept exactly: string MergeInto(string? existingDescription, string blockText) (IDeliveryForecastBlockRenderer.cs:25; the authority&#x27;s shorthand parameter name existing is not used). MergeInto leaves IDeliveryForecastBlockRenderer, which keeps Render only; DeliveryForecastBlockRenderer implements both interfaces and keeps Render and MergeInto in one class with unchanged bodies. JiraWorkTrackingConnector&#x27;s fifth constructor parameter (JiraWorkTrackingConnector.cs:26) changes type from IDeliveryForecastBlockRenderer to IDescriptionBlockMerger, its call at line 3968 and its parameter name stay, and its using of Modules.Promises.Application goes. Program.cs keeps line 1474 and the order of every line and adds one registration AddScoped&lt;IDescriptionBlockMerger, DeliveryForecastBlockRenderer&gt;() beside it; the connector is built only by DI (Program.cs:1493 via WorkTrackingConnectorFactory). The class is stateless and pure, so two scoped instances behave the same. No AddPromises extension. Carrier: the port is a Tracker integration Application interface owned by that module; the implementation is owned by Promises Application; no per-process state.
+</code></pre>
+<p>Governed slices: S2</p>
+
+<h4>D4</h4>
+
+<pre><code>Confirmed (D-7, Ratchet design R-P8): after C2 Tracker integration reaches no Promises type. Test-side lists that hold the edge follow it in C2: TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts (line 135) goes to empty, and TheJiraConnectorMergingTheForecastBlock (line 140) with the test that pins that one edge (line 229) follow; TrackerIntegrationMembershipArchUnitTest&#x27;s case (JiraWorkTrackingConnector, IDeliveryForecastBlockRenderer, true) at line 195 follows; TrackerIntegrationMembership.Moves gains IDescriptionBlockMerger, because the membership test names any unlisted type under Modules.TrackerIntegration. Made-up offender fixtures in that file that name IDeliveryForecastBlockRenderer still compile and stay. The test constructions that pass new DeliveryForecastBlockRenderer() to the connector compile unchanged (the class implements the port); only JiraDeliverySourceProviderTest&#x27;s service registration (line 1137) changes so DI can build the connector (D-9).
+</code></pre>
+<p>Governed slices: S2</p>
+
+<h4>D5</h4>
+
+<pre><code>Confirmed (D-9, D-1, D-4, D-5, D-6): Architecture/PromisesUnitTestPlacementTest.cs checks that every unit test of a Promises type (the PromisesMembership types) lives under Tests/Modules/Promises in the sub-folder of its subject, and that no Promises source file is left under Services apart from the named exceptions with their owners: the Delivery repositories (DeliveryRepository, DeliveryMetricSnapshotRepository, IDeliveryRepository, IDeliveryMetricSnapshotRepository, RecordableDeliveries; repository split owner S05d), the write-back round (owner #6657), the update code (S03f, Epic 6474) and feature ordering and ranking (S03i). Integration, acceptance and controller tests stay where they are. Modelled on TrackerIntegrationUnitTestPlacementTest and ForecastingUnitTestPlacementTest. Measured today: the nine Promises unit tests already sit under Tests/Modules/Promises; DeliverySourceBindabilityTest tests a kernel Models type and is not a Promises unit test; no file moves in C3.
+</code></pre>
+<p>Governed slices: S3</p>
+
+<h4>D6</h4>
+
+<pre><code>Confirmed (D-0, D-12, P5): behaviour-free. No schema, entity, migration, route, DTO, forecast, Delivery answer, handler order or DI lifetime changes, and the bytes written to Jira stay the same. Production changes only in C2. Behaviour-preservation evidence for C2, unchanged and green: the renderer merge tests DeliveryForecastBlockRendererTest and DeliveryForecastBlockRendererBeyondTheHorizonTest, the Jira write-back unit tests JiraBatchedWriteBackTest and JiraQuietWriteBackTest, and the connector publishing tests JiraDeliverySourceProviderTest and JiraDeliveryForecastPublisherTest; the live JiraWriteBackTest and JiraSuppressionRetryIntegrationTest run in CI on the push. EXAMINE observes through admitted probes only (architecture-rules, test-selection-show, ci-live-suites-show, ef-model-unchanged, the answers-compare probes) and names up front the four blocked-period reactions refresh-reactions-compare cannot observe.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D7</h4>
+
+<pre><code>Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of unchanged pure code: namespace placement, the exact set of edges per rule, the location of each test file, and that MergeInto&#x27;s body is unchanged. Each is decided exactly by its IL architecture oracle (Finite laws) with a made-up offender per rule as falsifier, and by the existing example tests for the merge. No Quint, TLA+ or Agda model: no state machine, ordering, concurrency, recovery or progress claim changes (no handler, queue or schedule moves), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: IDescriptionBlockMerger narrows what the connector can call to the one merge it uses, checked by the C# compiler; property tests add nothing over a finite edge set.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>D8</h4>
+
+<pre><code>Confirmed (maintainer 2026-11-17): rigor thorough for feature C (architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet); C2 stays as the last edit slice of feature C; push per slice with CI watched, rebase before push allowed; no review window; mutation once at the end of S03d on frozen code (D-13), then finalize. C2 adds a file under Modules/TrackerIntegration/Application and edits Program.cs, so its push runs every live suite (D-11).
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Rule lists only shrink and are never loosened: inline full-name lists compared both ways against the IL (IlDependencies, which misses catch-clause, event and attribute-named-argument references); exemptions are exact per type and its nested types, never a namespace or layer; holdings compare top-level types (nested names reduced to the part before the plus sign). Each rule edit is proved by a throwaway probe that is reverted.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K2</h4>
+
+<pre><code>One oracle file per slice; an approved oracle file is never edited, not even a using line; a crafter target is never an oracle support; oracles name types as strings. Made-up offenders live in a fixture namespace such as Lighthouse.Backend.Modules.PromisesFixtures. Rule tests assert by the failure naming the offender, not by counts. No nWave scenario tags. The oracles are IL architecture tests and start no host.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K3</h4>
+
+<pre><code>Input bounds unchanged: MergeInto takes a nullable description of unbounded length and a block text of unbounded length, as today; the authority states no bound and C2 adds none. Scope out: no rename or signature change beyond the extracted port; repositories, update code, write-back round, ordering and ranking stay.
+</code></pre>
+<p>Governed slices: S2</p>
+
+<h4>K4</h4>
+
+<pre><code>Order: S2 and S3 run after S1. S1&#x27;s Tracker integration rule file holds the one edge C2 empties, and the placement check relies on the Promises rule set being in place.
+</code></pre>
+<p>Governed slices: S2, S3</p>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Every producer and consumer of IDescriptionBlockMerger and of the rule lists is in one deployable and changes in the same commit; the compiler and the primary oracles cover them, and no persisted or wire data changes.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>The compiled Lighthouse.Backend assembly read through IlDependencies by the NUnit architecture oracles (dotnet test on Lighthouse.Backend.Tests); for C2 behaviour, JiraWorkTrackingConnector&#x27;s description publishing driven by the existing connector tests through a fake HTTP handler
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>IDescriptionBlockMerger (Tracker integration Application) implemented by DeliveryForecastBlockRenderer (Promises Application)
+</code></pre>
+
+<pre><code>Promises Application may reach Tracker integration Application and Work Items Application by namespace; Tracker integration reaches no Promises type; Promises Domain reaches only Models and the base library; nothing outside reaches Promises Application/Policies except the composition root
+</code></pre>
+
+<h4>Failures</h4>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<p>None.</p>
+
+<h3>Equality</h3>
+
+<p>None.</p>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<p>None.</p>
+
+<h3>States</h3>
+
+<p>None.</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>Promises module boundaries and the inverted merge edge
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Each rule&#x27;s inline list is compared both ways with the IL and a made-up offender per rule must be named; R-P8 empty excludes any Tracker integration to Promises edge
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Promises module boundaries and the inverted merge edge
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>DeliveryForecastBlockRenderer is a concrete IDescriptionBlockMerger constructible with no arguments; DI builds the connector from Program.cs registrations
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Promises module boundaries and the inverted merge edge
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>The connector&#x27;s publish path calls MergeInto at JiraWorkTrackingConnector.cs:3968 through the port, reached from WorkTrackingConnectorFactory and exercised by the existing connector publishing tests
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Promises module boundaries and the inverted merge edge
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: no waiting, queue, schedule or progress behaviour changes; every check is a finite synchronous read of the IL
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: the extracted port keeps the bytes written to Jira
+</code></pre>
+
+<pre><code>MergeInto body and markers unchanged in one class with Render
+</code></pre>
+
+<pre><code>Only the declaring interface and the connector&#x27;s parameter type change
+</code></pre>
+
+<pre><code>Any change to merged description text
+</code></pre>
+
+<pre><code>Renderer merge tests and Jira publishing tests unchanged and green; the Jira live suite in CI
+</code></pre>
+
+<p>crafter</p>
+
+<h4>Y2</h4>
+
+<p>Bypass</p>
+
+<pre><code>Assumption negated: IL sees every reference
+</code></pre>
+
+<pre><code>Rules over IL method bodies, signatures and fields
+</code></pre>
+
+<pre><code>Catch-clause, event and attribute-named-argument references are invisible to IlDependencies
+</code></pre>
+
+<pre><code>Claiming those edges are checked
+</code></pre>
+
+<pre><code>Stated limit of the rule set; reviewers read the diff
+</code></pre>
+
+<p>acceptance-designer</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption negated: DI resolves the connector after the parameter type change
+</code></pre>
+
+<pre><code>Program.cs registers IDescriptionBlockMerger and every existing line in order
+</code></pre>
+
+<pre><code>One added registration
+</code></pre>
+
+<pre><code>A missing registration that fails only at runtime
+</code></pre>
+
+<pre><code>Host-starting tests and the full CI suite resolve the connector; JiraDeliverySourceProviderTest builds it from DI
+</code></pre>
+
+<p>crafter</p>
+
+<h4>Y4</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set, walkthrough: a new type added under Modules.TrackerIntegration fails the membership list
+</code></pre>
+
+<pre><code>Membership lists name every module type
+</code></pre>
+
+<pre><code>IDescriptionBlockMerger added to TrackerIntegrationMembership.Moves in C2
+</code></pre>
+
+<pre><code>A namespace-wide exemption
+</code></pre>
+
+<pre><code>None found beyond that list
+</code></pre>
+
+<p>crafter</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Its inbound list loses DeliveryRuleService (line 129) and its legal callers take Promises Application by namespace
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Its inbound list loses DeliveryForecastPublishingService and DeliverySourceResolver (lines 103-104) and its legal callers take Promises Application by namespace; the edge list R-T7 stays for C2
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~PromisesModuleBoundariesArchUnitTest&quot;
+pwsh Lighthouse.Backend/Test-Fast.ps1
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run PromisesModuleBoundariesArchUnitTest over the compiled Lighthouse.Backend assembly and the test assembly&#x27;s made-up offenders: R-P1..R-P7 through ModuleRules with a Promises ModuleWording, and the inbound lists of the Work Items and Tracker integration rule files read by field name
+</code></pre>
+
+<pre><code>Every Promises type lives in its layer and none is left under Services; each rule&#x27;s measured inline list equals the IL both ways (R-P4 holds PortfolioUpdater, R-P6 the five platform types by name, the others empty); the Work Items and Tracker integration inbound lists name no Promises type, Promises Application being legal there by namespace; each rule names its made-up offender in the Promises fixture namespace; no other test changes outcome
+</code></pre>
+
+<pre><code>Today the Work Items list names DeliveryRuleService and the Tracker integration list names DeliveryForecastPublishingService and DeliverySourceResolver, so the oracle is RED naming them; a list entry the IL does not hold, or an edge the list misses, fails naming it; a rule that does not name its made-up offender fails
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P5</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>ModuleRules</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:129</p>
+
+<p>Reuse</p>
+
+<pre><code>Shared rule set (TypesLiveInTheirLayer, DomainReachesOnlyTheKernelAndTheBaseLibrary, the inbound and adapter rules) with the PromisesModule constant at line 27 already present; the Forecasting and Work Items oracles use it unchanged
+</code></pre>
+
+<p>ModuleWording</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:7</p>
+
+<p>Reuse</p>
+
+<pre><code>Already built from a module name and its legal callers in words; the oracle builds the Promises wording as ForecastingModuleBoundariesArchUnitTest does (line 63), so no new wording type or static member is needed
+</code></pre>
+
+<p>IlDependencies</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Reads the compiled IL for every module rule; one reader keeps the measured lists comparable with the other modules
+</code></pre>
+
+<p>OtherOutsideTypesReachingTheApplication</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:124</p>
+
+<p>Extend</p>
+
+<pre><code>The existing inbound list of Work Items shrinks by one entry; a second list would duplicate the inbound rule
+</code></pre>
+
+<p>OtherOutsideTypesReachingTheApplication</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:97</p>
+
+<p>Extend</p>
+
+<pre><code>The existing inbound list of Tracker integration shrinks by two entries; a second list would duplicate the inbound rule
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:129</p>
+
+<p>Changed</p>
+
+<pre><code>One Promises entry removed; Promises legal by namespace
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:103</p>
+
+<p>Changed</p>
+
+<pre><code>Two Promises entries removed; Promises legal by namespace
+</code></pre>
+
+<p>test-support</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:27</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>PromisesModule constant and the rules are used as they are
+</code></pre>
+
+<p>test-support</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:7</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructed by the oracle from two strings
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:20</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>PromisesPattern already sees Modules.Promises since feature A
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryRuleService.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No production file changes in C1; the rules only read the IL
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>agreement</p>
+
+<pre><code>No schema, wire format or shared configuration changes; the inbound lists are private to their test classes and keep their field names, which the new oracle may read by name
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>Test-side list edits and a new oracle file; no production structure changes and no preserving move makes C1 easier
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L2</h6>
+
+<pre><code>For each rule R-P1..R-P7 the set of offending edges the IL shows equals the rule&#x27;s inline list, and the Work Items and Tracker integration inbound lists hold no Promises type
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>PromisesModuleBoundariesArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>a listed entry the IL does not hold is named as no longer offending
+</code></pre>
+
+<pre><code>an edge the list misses is named as offending
+</code></pre>
+
+<pre><code>a made-up offender per rule in the Promises fixture namespace is named
+</code></pre>
+
+<pre><code>a Promises type left on a Work Items or Tracker integration list is named
+</code></pre>
+
+<pre><code>The compiled assembly holds a finite set of types and edges; exact comparison decides each rule and generation adds no coverage
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T2</h6>
+
+<pre><code>Promises keeps its shape: each type in its layer, Domain reaches only the kernel and the base library, outsiders reach Domain, Application and Policies only as listed, Application reaches no EF Core, Data, API, other Adapters, update code, write-back round, Access or Licensing except as listed; Work Items and Tracker integration take Promises by namespace and list no Promises type
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~PromisesModuleBoundariesArchUnitTest&quot;
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs</p>
+
+<p>Create</p>
+
+<pre><code>The port Tracker integration defines for merging a block into a tracker description
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliveryForecastBlockRenderer.cs</p>
+
+<p>Extend</p>
+
+<pre><code>MergeInto leaves it; Render stays
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Implements IDescriptionBlockMerger as well; bodies unchanged
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Constructor parameter type becomes IDescriptionBlockMerger; Promises using removed
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>One added registration of the renderer as IDescriptionBlockMerger
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>The edge list into other contexts goes to empty and the test pinning the one edge follows
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>The design-edge case for the connector and the renderer no longer holds
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Moves gains IDescriptionBlockMerger, a new type under Modules.TrackerIntegration
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Its service registration (line 1137) must offer IDescriptionBlockMerger so DI builds the connector
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~TrackerIntegrationReachesNoPromisesArchUnitTest&quot;
+pwsh Lighthouse.Backend/Test-Fast.ps1
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run TrackerIntegrationReachesNoPromisesArchUnitTest over the compiled assembly: collect every IL edge from a Tracker integration type into Modules.Promises, and read where IDescriptionBlockMerger lives, its one method, who implements it and the Jira connector&#x27;s constructor parameter types
+</code></pre>
+
+<pre><code>No Tracker integration type reaches a Promises type; IDescriptionBlockMerger lives in Modules.TrackerIntegration.Application with string MergeInto(string?, string); DeliveryForecastBlockRenderer implements it; JiraWorkTrackingConnector takes IDescriptionBlockMerger; IDeliveryForecastBlockRenderer no longer declares MergeInto; the renderer merge tests and Jira publishing and write-back unit tests pass unchanged
+</code></pre>
+
+<pre><code>Today JiraWorkTrackingConnector reaches IDeliveryForecastBlockRenderer, so the oracle is RED naming that edge and the missing port; a made-up Tracker integration type reaching a Promises type is named; any change to the merged text fails the unchanged renderer merge tests
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<p>P5</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>DeliveryForecastBlockRenderer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs:9</p>
+
+<p>Extend</p>
+
+<pre><code>The one owner of the block&#x27;s markers keeps Render and MergeInto together and implements the port
+</code></pre>
+
+<p>IDeliveryForecastBlockRenderer</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliveryForecastBlockRenderer.cs:10</p>
+
+<p>Extend</p>
+
+<pre><code>Keeps Render for Promises&#x27; publishing service; MergeInto moves to the port so no client depends on an operation it does not use
+</code></pre>
+
+<p>JiraWorkTrackingConnector</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs:21</p>
+
+<p>Extend</p>
+
+<pre><code>Its constructor parameter type changes; the merge call at line 3968 is unchanged
+</code></pre>
+
+<p>Program</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1474</p>
+
+<p>Extend</p>
+
+<pre><code>The composition root registers the renderer once more for the port
+</code></pre>
+
+<p>IDescriptionBlockMerger</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No Tracker integration port owns merging a block into a description: IWriteBackTarget, IDeliveryForecastPublisher and IDeliverySourceProvider were consulted and name other jobs; handing merged text in needs a new connector read of the current description, and moving the renderer splits Render from MergeInto, which share the markers
+</code></pre>
+
+<p>EdgesOfTheModuleIntoOtherContexts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:135</p>
+
+<p>Extend</p>
+
+<pre><code>The existing edge list of Tracker integration goes to empty; the oracle checks the IL itself, so no second list is made
+</code></pre>
+
+<p>AnEdgeNamedAtDesign_IsInTheCompiledCode</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs:200</p>
+
+<p>Extend</p>
+
+<pre><code>The existing design-edge cases follow the inversion
+</code></pre>
+
+<p>TrackerIntegrationMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembership.cs:11</p>
+
+<p>Extend</p>
+
+<pre><code>The one membership list of Tracker integration gains the new port
+</code></pre>
+
+<p>AddScoped</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs:1137</p>
+
+<p>Extend</p>
+
+<pre><code>The existing test service registration offers the port so DI builds the connector
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:135</p>
+
+<p>Changed</p>
+
+<pre><code>Edge list into other contexts emptied
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs:195</p>
+
+<p>Changed</p>
+
+<pre><code>Design-edge case follows the inversion
+</code></pre>
+
+<p>test-support</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembership.cs:36</p>
+
+<p>Changed</p>
+
+<pre><code>New port listed
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>New port
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/IDeliveryForecastBlockRenderer.cs:25</p>
+
+<p>Changed</p>
+
+<pre><code>MergeInto removed
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs:9</p>
+
+<p>Changed</p>
+
+<pre><code>Implements the port
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs:26</p>
+
+<p>Changed</p>
+
+<pre><code>Parameter type
+</code></pre>
+
+<p>composition-root</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1474</p>
+
+<p>Changed</p>
+
+<pre><code>One added registration; order kept
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs:1137</p>
+
+<p>Changed</p>
+
+<pre><code>DI registration offers the port
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastPublishingService.cs:12</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Calls Render only
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactory.cs:30</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Resolves the connector from DI
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastPublishingServiceTest.cs:44</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Mocks IDeliveryForecastBlockRenderer without MergeInto
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastBlockRendererTest.cs:45</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Calls MergeInto on the concrete class; behaviour evidence
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastBlockRendererBeyondTheHorizonTest.cs:71</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Calls MergeInto on the concrete class; behaviour evidence
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:38</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>TypesLiveInTheirLayer checks listed types only
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/JiraConnectorTestSetup.cs:61</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Passes new DeliveryForecastBlockRenderer(), which converts to the port
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/WorkTrackingConnectorFactoryTest.cs:27</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Passes new DeliveryForecastBlockRenderer(), which converts to the port
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraBatchedWriteBackTest.cs:318</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDeliverySourceProviderTest.cs:1482</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraDependencyDogfoodTest.cs:75</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraLinkTypeDogfoodTest.cs:132</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraOriginalNamesLiveTest.cs:246</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDirectionDogfoodTest.cs:167</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraParentLinkDogfoodTest.cs:178</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraQuietWriteBackTest.cs:337</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraScopedTokenIntegrationTest.cs:178</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraSuppressionRetryIntegrationTest.cs:173</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs:172</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnectorTest.cs:916</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWriteBackTest.cs:651</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Constructs the connector with new DeliveryForecastBlockRenderer(), which converts to the port; using line still needed
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>MergeInto(string? existingDescription, string blockText) returning the description to write</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastBlockRenderer.cs:90</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Same body, now declared by IDescriptionBlockMerger
+</code></pre>
+
+<p>MergeInto(string? existingDescription, string blockText) returning the description to write</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs:3968</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Calls the same method through the port
+</code></pre>
+
+<p>MergeInto(string? existingDescription, string blockText) returning the description to write</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastBlockRendererTest.cs:45</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Calls the concrete class; unchanged
+</code></pre>
+
+<p>IDeliveryForecastBlockRenderer.Render</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Promises/Application/DeliveryForecastPublishingService.cs:12</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Uses Render only
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The extraction is the change itself and is small; the unchanged renderer merge tests and Jira tests preserve behaviour across it, so no separate preserving move helps
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L3</h6>
+
+<pre><code>The set of IL edges from Tracker integration types into Promises types is empty, and the text MergeInto returns is the same for every input as before the extraction
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>TrackerIntegrationReachesNoPromisesArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>the Jira connector reaching IDeliveryForecastBlockRenderer is named
+</code></pre>
+
+<pre><code>a made-up Tracker integration type reaching a Promises type is named
+</code></pre>
+
+<pre><code>the renderer merge examples (replace in place, append on broken markers, idempotent rewrite) return the same text
+</code></pre>
+
+<pre><code>Edges are a finite set read exactly from the IL; the merge body does not change, so its existing example tests are the preservation check and a generator would test the old code against itself
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastBlockRendererTest.cs</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T3</h6>
+
+<pre><code>Tracker integration reaches no Promises type; the merge port lives in Tracker integration Application and the renderer implements it
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~TrackerIntegrationReachesNoPromisesArchUnitTest&quot;
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~PromisesUnitTestPlacementTest&quot;
+pwsh Lighthouse.Backend/Test-Fast.ps1
+dotnet build Lighthouse.Backend
+dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run PromisesUnitTestPlacementTest over the test assembly and the source tree: find the unit tests of the PromisesMembership types and the Promises source files
+</code></pre>
+
+<pre><code>Every Promises unit test lives under Tests/Modules/Promises in its subject&#x27;s sub-folder; no Promises source file is under Services apart from the named exceptions (Delivery repositories, write-back round, update code, ordering and ranking); integration, acceptance and controller tests are not judged
+</code></pre>
+
+<pre><code>A made-up Promises unit test in an old test folder, or a made-up Promises source file under Services, is named with its path; a named exception that no longer exists is named
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<p>P5</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>None.</p>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>reuse</p>
+
+<pre><code>No code target: the move is done. Consulted and reused by the oracle as they are: TrackerIntegrationUnitTestPlacementTest and ForecastingUnitTestPlacementTest (the placement pattern), PromisesMembership (the Promises types). A second membership list would duplicate it.
+</code></pre>
+
+<p>impact</p>
+
+<pre><code>No production or test file moves or changes: measured, the nine Promises unit tests sit under Tests/Modules/Promises and no Promises source is under Services apart from the named exceptions
+</code></pre>
+
+<p>agreement</p>
+
+<pre><code>No shared contract changes; the oracle only reads the test assembly, the source tree and PromisesMembership
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>No code target
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L1</h6>
+
+<pre><code>The set of Promises unit tests outside Tests/Modules/Promises and the set of Promises source files under Services beyond the named exceptions are both empty
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>PromisesUnitTestPlacementTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>a made-up Promises unit test in an old folder is named
+</code></pre>
+
+<pre><code>a made-up Promises source file under Services is named
+</code></pre>
+
+<pre><code>a named exception that no longer exists is named
+</code></pre>
+
+<pre><code>Files and test types are a finite set read exactly; generation adds no coverage
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>Every Promises unit test lives under the Promises test folders and no Promises source file is left under Services apart from the named exceptions
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~PromisesUnitTestPlacementTest&quot;
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>
