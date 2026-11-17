@@ -642,7 +642,7 @@ describe("The summary's CHANGE side", () => {
 	});
 
 	// Every Cycle Time line, Throughput per day and every WIP line are better in Now; every Total Work Item Age
-	// line is worse. Throughput's total carries no change mark and does not count.
+	// line is worse. Throughput's total and its per day both rose.
 	it("names the metrics that improved and the one that got worse", async () => {
 		openTheReport();
 
@@ -689,28 +689,30 @@ describe("The summary's CHANGE side", () => {
 	});
 
 	// The header judges a line as its panel shows it: a move the panel cannot show is no move, the smallest it can is one.
-	it.each<[string, number, number, string]>([
+	it.each<[string, number, number, number, string]>([
 		[
-			"a hundredth of a Work Item more per day",
+			"one Work Item more in total and a hundredth more per day",
 			0.58,
 			0.59,
+			53,
 			"Improved: Throughput",
 		],
 		[
-			"a move too small for the panel to show",
+			"the same total and a per day move too small for the panel to show",
 			0.584,
 			0.576,
+			52,
 			"Unchanged: Throughput",
 		],
 	])(
 		"judges %s as the panel shows it",
-		async (_, thenPerDay, nowPerDay, group) => {
+		async (_, thenPerDay, nowPerDay, nowTotal, group) => {
 			openTheReport(
 				showing(
 					withThroughput(
 						theEngagementStartReport(),
 						[52, thenPerDay],
-						[53, nowPerDay],
+						[nowTotal, nowPerDay],
 					),
 					["throughput"],
 				),
@@ -848,18 +850,13 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// A 30-day Now finishes fewer Work Items than a 90-day Then at a higher rate; only the rate carries a change mark.
-	it("judges Throughput by its rate per day, never by its total", async () => {
+	// Then and Now are equally long, so a Total that rose is a better Throughput even where the per day line shows no move.
+	it('judges Throughput on its Total line as well as per day, so a Total of 52 then and 65 now with the same 0.58 per day reads "Improved: Throughput"', async () => {
 		const report = withThroughput(
 			theEngagementStartReport(),
 			[52, 0.58],
-			[22, 0.73],
+			[65, 0.58],
 		);
-		report.thenAndNow.nowWindow = {
-			start: "2026-09-03",
-			end: "2026-10-02",
-			lengthDays: 30,
-		};
 		openTheReport(showing(report, ["throughput"]));
 
 		await theReportIsReady();
@@ -1058,7 +1055,7 @@ describe("The panels of a report", () => {
 		expect(theOneMarkOf(unchanged)).toHaveAttribute("aria-hidden", "true");
 	});
 
-	it("shows Throughput as a total and a per-day average, compared per day", async () => {
+	it('shows Throughput as a total and a per-day average, compared on both: "13 (+25 %)" and "0.14 per day (+24 %)"', async () => {
 		openTheReport();
 
 		const panel = await thePanel(THROUGHPUT_PANEL);
@@ -1070,9 +1067,14 @@ describe("The panels of a report", () => {
 			/^NOW Total 65 Work Items .*0\.72 per day$/i,
 		);
 		expect(readingOf(panel)).not.toMatch(/\d+ days|limit|beyond/i);
-		expect(changesIn(panel)).toHaveLength(1);
-		expect(readingOf(changesIn(panel)[0])).toBe("0.14 per day (+24 %)");
-		expect(changesIn(panel)[0].dataset.change).toBe("better");
+		expect(changesIn(panel).map(readingOf)).toEqual([
+			"13 (+25 %)",
+			"0.14 per day (+24 %)",
+		]);
+		expect(changesIn(panel).map((change) => change.dataset.change)).toEqual([
+			"better",
+			"better",
+		]);
 	});
 
 	// The average 8.62 shows as 9 and 7.38 as 7, and the change is worked out from what is shown.
@@ -1164,7 +1166,10 @@ describe("The panels of a report", () => {
 			AGE_PANEL,
 			/^CHANGE Average: 270 days \(\+44 %\) Median: 270 days \(\+45 %\) Min: 220 days \(\+52 %\) Max: 230 days \(\+30 %\)$/i,
 		],
-		[THROUGHPUT_PANEL, /^CHANGE per day: 0\.14 per day \(\+24 %\)$/i],
+		[
+			THROUGHPUT_PANEL,
+			/^CHANGE total: 13 \(\+25 %\) per day: 0\.14 per day \(\+24 %\)$/i,
+		],
 	])(
 		"names the line of every change on the %s panel",
 		async (title, reading) => {

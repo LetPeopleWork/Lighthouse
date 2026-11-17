@@ -3183,6 +3183,8 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/changeSummary\.test\.
 
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/reportPanelRegistry\.parity\.test\.tsx
 
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportView\.test\.tsx
+
 #### Public oracle
 
 ```text

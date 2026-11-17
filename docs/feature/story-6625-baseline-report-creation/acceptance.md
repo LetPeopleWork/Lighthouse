@@ -839,6 +839,35 @@ A Now of another length for one particular Then, if the generator never draws th
 
 
 
+##### Covers
+
+P10
+
+```text
+Open the whole report of equal 90-day windows with Throughput Total 52 then and 65 now, and variants with the same Total and tiny per day moves
+```
+
+```text
+The Throughput panel shows two change lines 13 (+25 %) and 0.14 per day (+24 %), named total and per day; the header judges Throughput on its Total line too
+```
+
+```text
+The report page and its header agree on how Throughput moved
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportView\.test\.tsx
+
+```text
+A header that judges per day only
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

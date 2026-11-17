@@ -425,6 +425,22 @@
 "expected": "F595",
 "stimulus": "F594",
 "user_result": "F596"
+},
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F261"
+],
+"still_passes_if": "F603",
+"test": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx"
+},
+"expected": "F601",
+"stimulus": "F600",
+"user_result": "F602"
 }
 ]
 },
@@ -433,7 +449,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 599,
+"F": 603,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -2281,7 +2297,8 @@
 "supports": [
 "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.test.ts",
 "Lighthouse.Frontend/src/pages/Common/Reports/panels/changeSummary.test.ts",
-"Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.parity.test.tsx"
+"Lighthouse.Frontend/src/pages/Common/Reports/panels/reportPanelRegistry.parity.test.tsx",
+"Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx"
 ],
 "targets": [
 {
@@ -2925,6 +2942,10 @@
 "F598": "The Total line shows 13 (+25 %) marked better beside Total 65 Work Items, before per day, which keeps its own change 0.44 per day (+25 %); the summary header lists Throughput as improved even when per day is unmoved",
 "F599": "A 30-day report with Throughput Total 52 in Then and 65 in Now shows beside 'Total 65 Work Items' the change '▲ 13 (+25 %)' marked as better; the per-day line keeps its own change '▲ 0.44 per day (+25 %)'; and the CHANGE summary judges Throughput on its Total line.",
 "F6": "she picks a Then length of 30 days and keeps the default end date",
+"F600": "Open the whole report of equal 90-day windows with Throughput Total 52 then and 65 now, and variants with the same Total and tiny per day moves",
+"F601": "The Throughput panel shows two change lines 13 (+25 %) and 0.14 per day (+24 %), named total and per day; the header judges Throughput on its Total line too",
+"F602": "The report page and its header agree on how Throughput moved",
+"F603": "A header that judges per day only",
 "F61": "Usage-data events: answered in DEVOPS, not here.",
 "F62": "Now always has the same length as Then (maintainer reply on ADO #6625). Reverses epic-5878 D43 (Now length chosen and saved separately), D59 and D62 (the Now step), and the Now-length part of D44 (Edit report).",
 "F63": "Q1: new reports default to Then and Now back to back (Then ends the day before the last L days). Ending Then today stays allowed (5878 D38 kept: Now may overlap Then).",
