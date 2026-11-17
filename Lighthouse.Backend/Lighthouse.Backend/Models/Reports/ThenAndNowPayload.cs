@@ -13,8 +13,6 @@ namespace Lighthouse.Backend.Models.Reports
 
         public ReportWindow? ThenWindow { get; init; }
 
-        public int? NowLengthDays { get; init; }
-
         public Dictionary<string, JsonObject>? Captures { get; init; }
 
         public string ToJson() => JsonSerializer.Serialize(this, JsonOptions);
@@ -33,6 +31,9 @@ namespace Lighthouse.Backend.Models.Reports
                 ? new(DateOnly.FromDayNumber((int)startDayNumber), end, lengthDays)
                 : null;
         }
+
+        /// <summary>The Now of this Then: a window of the same length ending on <paramref name="today"/>, or null when it would start before the first day the calendar can name.</summary>
+        public ReportWindow? NowEndingOn(DateOnly today) => EndingOn(today, LengthDays);
     }
 
     /// <summary>A value with what it rests on, or no value and the reason there is none - never a 0 standing in for nothing.</summary>

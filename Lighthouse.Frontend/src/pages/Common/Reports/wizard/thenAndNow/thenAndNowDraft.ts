@@ -248,8 +248,8 @@ export const newReportOf = (
 export const newReportForOwnersOf = newReportOf;
 
 /**
- * What saving an edit changes; Then is left out, it stays as it was frozen. Now's length is sent as Then's, the
- * only length Now can have. Only called once every step is complete.
+ * What saving an edit changes: the name and the shown metrics. Then stays as it was frozen and Now is always as long
+ * as Then, so neither is sent. Only called once every step is complete.
  */
 export const reportChangeOf = (
 	draft: ThenAndNowDraft,
@@ -257,5 +257,4 @@ export const reportChangeOf = (
 ): ReportChange => ({
 	name: nameOf(draft, templates),
 	shownMetricKeys: shownMetricsOf(draft, templates),
-	thenAndNow: { nowLengthDays: lengthOf(draft.thenLength) ?? 0 },
 });

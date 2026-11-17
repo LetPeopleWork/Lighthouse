@@ -14,6 +14,7 @@ import type {
 /** Every reason the server gives for refusing a report it was asked to create or change. */
 export type ReportRefusalCode =
 	| ReportWindowRefusal
+	| "now-length-differs-from-then"
 	| "name-missing"
 	| "name-too-long"
 	| "no-metric-shown"
@@ -104,6 +105,7 @@ const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 		"then-too-long": () => "Then can't reach back that far.",
 		"then-ends-in-the-future": () => "Then cannot end after today.",
 		"then-before-cutoff": tooLittleHistory,
+		"now-length-differs-from-then": () => "Now is always as long as Then.",
 		"name-missing": () => "Give the report a name.",
 		"name-too-long": () => "A report name can be at most 200 characters.",
 		"no-metric-shown": () => "Choose at least one metric",

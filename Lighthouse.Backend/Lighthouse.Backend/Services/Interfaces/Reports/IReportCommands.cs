@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models.Reports;
 namespace Lighthouse.Backend.Services.Interfaces.Reports
 {
     /// <summary>What an editor may change on a report, with the concurrency token of the version they read.</summary>
-    public sealed record ReportEdit(string Name, IReadOnlyList<string> ShownMetricKeys, Guid ConcurrencyToken, int? NowLengthDays);
+    public sealed record ReportEdit(string Name, IReadOnlyList<string> ShownMetricKeys, Guid ConcurrencyToken, int? RequestedNowLengthDays);
 
     public interface IReportCommands
     {

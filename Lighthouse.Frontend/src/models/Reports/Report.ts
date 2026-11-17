@@ -135,7 +135,6 @@ export interface IReportEdit {
 	name: string;
 	shownMetricKeys: ReportMetricKey[];
 	concurrencyToken: string;
-	thenAndNow: { nowLengthDays: number };
 }
 
 /** An edit as the wizard makes it; the token comes from the report as it was read. */

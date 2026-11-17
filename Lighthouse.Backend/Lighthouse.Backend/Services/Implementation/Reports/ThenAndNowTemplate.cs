@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 {
     /// <summary>
     /// Then is frozen at creation: every metric that applies to the owner is captured over Then's window and kept on
-    /// the row. Only Now's length is stored; each read computes Now afresh over that many days ending today.
+    /// the row. Now is never stored: each read computes it afresh, as long as Then and ending today.
     /// </summary>
     public class ThenAndNowTemplate(ReportMetricCatalog catalog, ILighthouseClock clock, ILogger<ThenAndNowTemplate> logger) : IReportTemplate
     {
@@ -68,7 +68,8 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<string>.Refused(shownRefusal);
             }
 
-            var captured = PayloadOf(report).Captures ?? [];
+            var stored = PayloadOf(report);
+            var captured = stored.Captures ?? [];
             if (!edit.ShownMetricKeys.All(captured.ContainsKey))
             {
                 return ReportOutcome<string>.Refused(ReportRefusalCodes.MetricNotCaptured);
@@ -77,14 +78,10 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             var payload = JsonNode.Parse(report.TemplatePayloadJson) as JsonObject
                 ?? throw new JsonException($"Report {report.Id} holds no Then & Now payload");
 
-            if (edit.NowLengthDays is int nowLengthDays)
+            var thenLengthDays = (stored.ThenWindow ?? throw new JsonException($"Report {report.Id} holds no Then window")).LengthDays;
+            if (ReportWindowPolicy.NowLengthRefusal(edit.RequestedNowLengthDays, thenLengthDays) is string nowRefusal)
             {
-                if (ReportWindowPolicy.NowRefusal(nowLengthDays, calendar.Today, calendar.DoneItemsCutoffDays) is string nowRefusal)
-                {
-                    return ReportOutcome<string>.Refused(nowRefusal);
-                }
-
-                payload[NowLengthMemberOf(payload)] = nowLengthDays;
+                return ReportOutcome<string>.Refused(nowRefusal);
             }
 
             return ReportOutcome<string>.Done(payload.ToJsonString());
@@ -95,9 +92,8 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             var payload = PayloadOf(report);
             var owner = report.OwnedBy();
             var thenWindow = payload.ThenWindow ?? throw new JsonException($"Report {report.Id} holds no Then window");
-            var nowLengthDays = payload.NowLengthDays ?? thenWindow.LengthDays;
-            var nowWindow = ReportWindowPolicy.NowWindow(calendar.Today, nowLengthDays)
-                ?? throw new JsonException($"Report {report.Id} holds a Now of {nowLengthDays} days, longer than the calendar reaches");
+            var nowWindow = thenWindow.NowEndingOn(calendar.Today)
+                ?? throw new JsonException($"Report {report.Id} holds a Then of {thenWindow.LengthDays} days, longer than the calendar reaches");
 
             var known = KnownMetricKeys(owner.Kind);
             var storedShown = ShownMetricKeysOf(report);
@@ -161,10 +157,6 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
         private static ThenAndNowPayload PayloadOf(Report report)
             => ThenAndNowPayload.FromJson(report.TemplatePayloadJson) ?? throw new JsonException($"Report {report.Id} holds no Then & Now payload");
-
-        private static string NowLengthMemberOf(JsonObject payload)
-            => payload.Select(member => member.Key).FirstOrDefault(key => key.Equals(nameof(ThenAndNowPayload.NowLengthDays), StringComparison.OrdinalIgnoreCase))
-                ?? JsonNamingPolicy.CamelCase.ConvertName(nameof(ThenAndNowPayload.NowLengthDays));
 
         private static JsonObject? CaptureOf(ThenAndNowPayload payload, string metricKey)
             => payload.Captures?.GetValueOrDefault(metricKey);
