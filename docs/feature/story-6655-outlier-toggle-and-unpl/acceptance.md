@@ -1078,4 +1078,74 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart: 41/41 pass in 6 files. Named rows: outlierSwitch 'starts on, draws every item and drops the chip when switched off, and restores both when switched on again'; 'starts on again when the chart is opened anew after switching it off'; outliers 'sets apart the 31 and 90 day Work Items the backend judges above a limit of 30 days and stops the axis at the limit'; outlierList 'help names the outlier rule' (team and portfolio, terms in reader words, outlier fixed); 'titles the list in the reader's own words'; outlierChip 'Without process behaviour chart limits no Work Item is set apart > draws every Work Item, shows no outlier count and says the process behaviour chart has no limits for this date range'; loading shows no stale count; load failure shows could-not-load message. Limit: producer tests run by me, no live browser; wording of help text not read verbatim.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart: 41/41 pass in 6 files. Named rows: outlierSwitch 'starts on, draws every item and drops the chip when switched off, and restores both when switched on again'; 'starts on again when the chart is opened anew after switching it off'; outliers 'sets apart the 31 and 90 day Work Items the backend judges above a limit of 30 days and stops the axis at the limit'; outlierList 'help names the outlier rule' (team and portfolio, terms in reader words, outlier fixed); 'titles the list in the reader's own words'; outlierChip 'Without process behaviour chart limits no Work Item is set apart > draws every Work Item, shows no outlier count and says the process behaviour chart has no limits for this date range'; loading shows no stale count; load failure shows could-not-load message. Limit: producer tests run by me, no live browser; wording of help text not read verbatim.
+```
+
+```text
+Probe backend-tests CycleTimeOutliers: 15/15 pass at the application-service port. Named rows: 'Work_Items_above_a_limit_of_30_days_are_the_outliers_and_the_PBC_marks_the_same_ones_above_its_limit'; '31_day_Work_Item_is_an_outlier_when_the_limit_is_30_point_6'; 'Work_Item_far_below_the_lower_limit_is_not_an_outlier_although_the_chart_marks_it_as_a_large_change'; named Cycle Time judged by named durations; Portfolio equivalent; no limits for 10-day range, 1 item (30-day range), 10-day configured baseline, empty baseline, unknown named definition; 14-day range with 2 items has limits. Limit: no discriminator for the exact-30 boundary named explicitly beyond the 30-day-limit row; producer-authored rows, my run only.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart: 41/41 pass in 6 files. Named rows: outlierSwitch 'starts on, draws every item and drops the chip when switched off, and restores both when switched on again'; 'starts on again when the chart is opened anew after switching it off'; outliers 'sets apart the 31 and 90 day Work Items the backend judges above a limit of 30 days and stops the axis at the limit'; outlierList 'help names the outlier rule' (team and portfolio, terms in reader words, outlier fixed); 'titles the list in the reader's own words'; outlierChip 'Without process behaviour chart limits no Work Item is set apart > draws every Work Item, shows no outlier count and says the process behaviour chart has no limits for this date range'; loading shows no stale count; load failure shows could-not-load message. Limit: producer tests run by me, no live browser; wording of help text not read verbatim.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart: 41/41 pass in 6 files. Named rows: outlierSwitch 'starts on, draws every item and drops the chip when switched off, and restores both when switched on again'; 'starts on again when the chart is opened anew after switching it off'; outliers 'sets apart the 31 and 90 day Work Items the backend judges above a limit of 30 days and stops the axis at the limit'; outlierList 'help names the outlier rule' (team and portfolio, terms in reader words, outlier fixed); 'titles the list in the reader's own words'; outlierChip 'Without process behaviour chart limits no Work Item is set apart > draws every Work Item, shows no outlier count and says the process behaviour chart has no limits for this date range'; loading shows no stale count; load failure shows could-not-load message. Limit: producer tests run by me, no live browser; wording of help text not read verbatim.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart: 41/41 pass in 6 files. Named rows: outlierSwitch 'starts on, draws every item and drops the chip when switched off, and restores both when switched on again'; 'starts on again when the chart is opened anew after switching it off'; outliers 'sets apart the 31 and 90 day Work Items the backend judges above a limit of 30 days and stops the axis at the limit'; outlierList 'help names the outlier rule' (team and portfolio, terms in reader words, outlier fixed); 'titles the list in the reader's own words'; outlierChip 'Without process behaviour chart limits no Work Item is set apart > draws every Work Item, shows no outlier count and says the process behaviour chart has no limits for this date range'; loading shows no stale count; load failure shows could-not-load message. Limit: producer tests run by me, no live browser; wording of help text not read verbatim.
+```
+
+```text
+Probe backend-tests CycleTimeOutliers: 15/15 pass at the application-service port. Named rows: 'Work_Items_above_a_limit_of_30_days_are_the_outliers_and_the_PBC_marks_the_same_ones_above_its_limit'; '31_day_Work_Item_is_an_outlier_when_the_limit_is_30_point_6'; 'Work_Item_far_below_the_lower_limit_is_not_an_outlier_although_the_chart_marks_it_as_a_large_change'; named Cycle Time judged by named durations; Portfolio equivalent; no limits for 10-day range, 1 item (30-day range), 10-day configured baseline, empty baseline, unknown named definition; 14-day range with 2 items has limits. Limit: no discriminator for the exact-30 boundary named explicitly beyond the 30-day-limit row; producer-authored rows, my run only.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart: 41/41 pass in 6 files. Named rows: outlierSwitch 'starts on, draws every item and drops the chip when switched off, and restores both when switched on again'; 'starts on again when the chart is opened anew after switching it off'; outliers 'sets apart the 31 and 90 day Work Items the backend judges above a limit of 30 days and stops the axis at the limit'; outlierList 'help names the outlier rule' (team and portfolio, terms in reader words, outlier fixed); 'titles the list in the reader's own words'; outlierChip 'Without process behaviour chart limits no Work Item is set apart > draws every Work Item, shows no outlier count and says the process behaviour chart has no limits for this date range'; loading shows no stale count; load failure shows could-not-load message. Limit: producer tests run by me, no live browser; wording of help text not read verbatim.
+```
+
+```text
+Probe backend-tests CycleTimeOutliers: 15/15 pass at the application-service port. Named rows: 'Work_Items_above_a_limit_of_30_days_are_the_outliers_and_the_PBC_marks_the_same_ones_above_its_limit'; '31_day_Work_Item_is_an_outlier_when_the_limit_is_30_point_6'; 'Work_Item_far_below_the_lower_limit_is_not_an_outlier_although_the_chart_marks_it_as_a_large_change'; named Cycle Time judged by named durations; Portfolio equivalent; no limits for 10-day range, 1 item (30-day range), 10-day configured baseline, empty baseline, unknown named definition; 14-day range with 2 items has limits. Limit: no discriminator for the exact-30 boundary named explicitly beyond the 30-day-limit row; producer-authored rows, my run only.
+```
