@@ -29,13 +29,13 @@ import {
 import type React from "react";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
+import { useReportWidgetStatus } from "../../../hooks/useReportWidgetStatus";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { ICycleTimeOutliers } from "../../../models/Metrics/CycleTimeOutliers";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
-import { useReportWidgetStatus } from "../../../pages/Common/MetricsView/widgetStatus";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
