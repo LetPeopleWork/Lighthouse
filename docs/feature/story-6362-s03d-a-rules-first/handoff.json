@@ -1,0 +1,917 @@
+{
+"counters": {
+"D": 12,
+"F": 145,
+"K": 4,
+"L": 4,
+"P": 5,
+"S": 4,
+"T": 2,
+"Y": 4
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F42",
+"driven_ports": [
+"F40",
+"F41"
+],
+"driving_port": "F39"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F47",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F46"
+},
+{
+"axis": "Inhabitation",
+"basis": "F48",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F46"
+},
+{
+"axis": "PublicReachability",
+"basis": "F49",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F46"
+},
+{
+"axis": "Liveness",
+"basis": "F50",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F46"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F28"
+},
+{
+"id": "K2",
+"text": "F29"
+},
+{
+"id": "K3",
+"text": "F30"
+},
+{
+"id": "K4",
+"text": "F31"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F16"
+},
+{
+"id": "D2",
+"slices": [
+"S2"
+],
+"text": "F17"
+},
+{
+"id": "D3",
+"slices": [
+"S2"
+],
+"text": "F18"
+},
+{
+"id": "D4",
+"slices": [
+"S1"
+],
+"text": "F19"
+},
+{
+"id": "D5",
+"slices": [
+"S1"
+],
+"text": "F20"
+},
+{
+"id": "D6",
+"slices": [
+"S1"
+],
+"text": "F21"
+},
+{
+"id": "D7",
+"text": "F22"
+},
+{
+"id": "D8",
+"slices": [
+"S4"
+],
+"text": "F23"
+},
+{
+"id": "D9",
+"slices": [
+"S3"
+],
+"text": "F24"
+},
+{
+"id": "D10",
+"text": "F25"
+},
+{
+"id": "D11",
+"text": "F26"
+},
+{
+"id": "D12",
+"text": "F27"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F37"
+},
+{
+"analysis": "contract_tests",
+"reason": "F38"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15",
+"reason": "F32",
+"symbol": "ModuleRules"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingRulesSeeTheModuleArchUnitTest.cs:25",
+"reason": "F33",
+"symbol": "ForecastingRulesSeeTheModuleArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembership.cs:1",
+"reason": "F34",
+"symbol": "TrackerIntegrationMembership"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:18",
+"reason": "F35",
+"symbol": "PortfolioDeliveryPattern"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:586",
+"reason": "F36",
+"symbol": "refresh-answers-compare"
+}
+],
+"risks": [
+{
+"allowed": "F53",
+"forbidden": "F54",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "story-6362-s03d-a-rules-first",
+"preserved": "F52",
+"residue": "F55",
+"source": "F51"
+},
+{
+"allowed": "F58",
+"forbidden": "F59",
+"id": "Y2",
+"kind": "Bypass",
+"owner": "story-6362-s03d-b-move",
+"preserved": "F57",
+"residue": "F60",
+"source": "F56"
+},
+{
+"allowed": "F63",
+"forbidden": "F64",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "story-6362-s03d-a-rules-first",
+"preserved": "F62",
+"residue": "F65",
+"source": "F61"
+},
+{
+"allowed": "F68",
+"forbidden": "F69",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "story-6362-s03d-a-rules-first",
+"preserved": "F67",
+"residue": "F70",
+"source": "F66"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "story-6362-s03d-a-rules-first",
+"state": "F43"
+},
+{
+"kind": "Excluded",
+"owner": "story-6362-s03d-a-rules-first",
+"state": "F44"
+},
+{
+"kind": "Unknown",
+"owner": "story-6362-s03d-a-rules-first",
+"state": "F45"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesRulesSeeTheModuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F106",
+"falsifier": "F107",
+"promises": [
+"P1",
+"P5"
+],
+"stimulus": "F105"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesRulesSeeTheModuleArchUnitTest\"",
+"id": "T2",
+"obligation": "F127",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesRulesSeeTheModuleArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15",
+"reason": "F112"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:18",
+"reason": "F113"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:53",
+"reason": "F114"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DeliveryRuleServiceApiPreservationTest.cs:44",
+"reason": "F115"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:1",
+"reason": "F116"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs:197",
+"reason": "F117"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F118"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:129",
+"reason": "F119"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:124",
+"reason": "F120"
+}
+],
+"laws": [
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "PromisesRulesSeeTheModuleArchUnitTest",
+"statement": "F122",
+"treatment": {
+"cases": [
+"F123",
+"F124",
+"F125",
+"F126"
+],
+"kind": "Finite",
+"reason": "F83"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F121"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:53",
+"reason": "F108",
+"symbol": "PromisesAndTheUpdateCode"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:129",
+"reason": "F109",
+"symbol": "WorkItemsModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:41",
+"reason": "F110",
+"symbol": "RefinementModuleArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:124",
+"reason": "F111",
+"symbol": "RepositoryLeakRatchetArchUnitTest"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs",
+"reason": "F100"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F101"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F102"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F103"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+"reason": "F104"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesRulesSeeTheModuleArchUnitTest\"",
+"bash Scripts/test-selection/test-path-classifier.sh",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs",
+"public_oracle": {
+"expected": "F72",
+"falsifier": "F73",
+"promises": [
+"P2",
+"P5"
+],
+"stimulus": "F71"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesMembershipArchUnitTest\"",
+"id": "T1",
+"obligation": "F84",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "PromisesMembershipArchUnitTest",
+"statement": "F78",
+"treatment": {
+"cases": [
+"F79",
+"F80",
+"F81",
+"F82"
+],
+"kind": "Finite",
+"reason": "F83"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "impact",
+"reason": "F76"
+},
+{
+"analysis": "prefactoring",
+"reason": "F77"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationMembershipArchUnitTest.cs:1",
+"reason": "F74",
+"symbol": "TrackerIntegrationMembershipArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:116",
+"reason": "F75",
+"symbol": "IlDependencies"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembership.cs"
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PromisesMembershipArchUnitTest\"",
+"bash Scripts/test-selection/test-path-classifier.sh",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S3": {
+"oracle": "Scripts/examine/test-deliveries-answers-compare.sh",
+"public_oracle": {
+"expected": "F131",
+"falsifier": "F132",
+"promises": [
+"P3",
+"P5"
+],
+"stimulus": "F130"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "script",
+"locator": "Scripts/examine/build-examine-commands:586",
+"reason": "F137"
+},
+{
+"decision": "Changed",
+"kind": "config",
+"locator": ".nwave/examine.json:1",
+"reason": "F138"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "script",
+"locator": "Scripts/examine/build-examine-commands:477",
+"reason": "F139"
+}
+],
+"laws": [
+{
+"id": "L4",
+"kind": "Algebraic",
+"layer": "Adapter",
+"owner": "deliveries-answers-compare",
+"statement": "F142",
+"treatment": {
+"cases": [
+"F143",
+"F144",
+"F145"
+],
+"kind": "Finite",
+"reason": "F83"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F140"
+},
+{
+"analysis": "prefactoring",
+"reason": "F141"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:52",
+"reason": "F133",
+"symbol": "metrics-answers-compare"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:477",
+"reason": "F134",
+"symbol": "forecast-answers-compare"
+},
+{
+"decision": "Extend",
+"locator": "Scripts/examine/build-examine-commands:99",
+"reason": "F135",
+"symbol": "build-examine-commands"
+},
+{
+"decision": "Extend",
+"locator": ".nwave/examine.json:2",
+"reason": "F136",
+"symbol": "commands"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Scripts/examine/build-examine-commands",
+"reason": "F128"
+},
+{
+"change": "Extend",
+"path": ".nwave/examine.json",
+"reason": "F129"
+}
+],
+"verification": [
+"bash Scripts/examine/test-deliveries-answers-compare.sh",
+"bash Scripts/examine/build-examine-commands",
+"bash Scripts/test-selection/test-path-classifier.sh",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S4": {
+"oracle": "Scripts/test-selection/test-path-classifier.sh",
+"public_oracle": {
+"expected": "F87",
+"falsifier": "F88",
+"promises": [
+"P4",
+"P5"
+],
+"stimulus": "F86"
+},
+"records": {
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "script",
+"locator": "Scripts/test-selection/path-classifier.sh:29",
+"reason": "F91"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "ci",
+"locator": ".github/workflows/ci_changes.yml:1",
+"reason": "F92"
+}
+],
+"laws": [
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "path-classifier.sh",
+"statement": "F95",
+"treatment": {
+"cases": [
+"F96",
+"F97",
+"F98",
+"F99"
+],
+"kind": "Finite",
+"reason": "F83"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F93"
+},
+{
+"analysis": "prefactoring",
+"reason": "F94"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Scripts/test-selection/path-classifier.sh:29",
+"reason": "F89",
+"symbol": "SHARED_REGEX"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/test-selection/path-classifier.sh:9",
+"reason": "F90",
+"symbol": "BACKEND_REGEX"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Scripts/test-selection/path-classifier.sh",
+"reason": "F85"
+}
+],
+"verification": [
+"bash Scripts/test-selection/test-path-classifier.sh",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+}
+}
+},
+"facts": {
+"F1": "Story #6362 S03d Package Promises (Deliveries), feature A of three (rules first): before any Promises file moves into Modules/Promises, make every architecture rule that names a Promises type, namespace or folder also see Modules/Promises; measure the Promises membership and the Models admissions from the IL and fix them in a test; add a Delivery-answers EXAMINE command that reports a changed Delivery answer; pin the CI test selection for Promises paths and for the C2 port path. Design authority: docs/feature/story-6362-s03d-package-promises-deliveries/feature-delta.md.",
+"F10": "Push per slice with CI watched; rebase before push allowed; no review window (behaviour-free); mutation once at the end of S03d on frozen code (maintainer, 2026-11-17).",
+"F100": "Add the PromisesModule namespace constant.",
+"F101": "Add PromisesPattern (Modules.Promises plus the old Delivery namespaces) to the module map; PortfolioDeliveryPattern unchanged.",
+"F102": "PromisesAndTheUpdateCode (line 53) names only the old DeliverySources namespaces; it also matches Modules.Promises. Listed entries keep their names until B1.",
+"F103": "Only if the oracle shows a rule here keyed on a Promises namespace misses Modules.Promises; its list string for DeliveryRuleService is renamed in B1, not here.",
+"F104": "Only if the oracle shows the repository rule misses a Modules.Promises type reaching a repository; the Delivery controller entries stay.",
+"F105": "The architecture rule tests run (dotnet test, Architecture namespace) with a made-up Delivery service under Lighthouse.Backend.Modules.Promises (fixture namespace, compiled into the IL the rules read) that reaches a repository, Forecasting adapters or the update code, beside its twin under the old Services DeliverySources namespace.",
+"F106": "Each rule that names a Promises type, namespace or folder names the made-up Modules.Promises offender exactly as it names the same type under the old namespace; every existing architecture test stays green on today code.",
+"F107": "Today the made-up offender under Modules.Promises passes the rules (RED). A widening that misses Modules.Promises in ModuleRules, the module map or the Tracker integration rule leaves the offender unreported; a widening that loosens a rule or turns the listed Jira to renderer edge red fails the existing tests.",
+"F108": "The one namespace key in the Tracker integration rules that names Promises; widened, never narrowed.",
+"F109": "Lists DeliveryRuleService by full name; an unlisted caller under Modules.Promises is already named by the both-ways comparison.",
+"F11": "EXAMINE observes through admitted probes only (architecture-rules with a class fragment, test-selection-show, ci-live-suites-show, ef-model-unchanged, and the Delivery-answers command once A3 adds it); expectations name only what those can show.",
+"F110": "Keys on PortfolioDeliveryPattern, the update code only; unchanged meaning.",
+"F111": "Owns the repository-dependency ratchet; extended only if the oracle shows a Modules.Promises type reaching a repository goes unreported.",
+"F112": "New PromisesModule constant.",
+"F113": "New PromisesPattern beside PortfolioDeliveryPattern.",
+"F114": "Promises key also sees Modules.Promises.",
+"F115": "typeof reference; using-only edit in B1.",
+"F116": "Test class names; the moving handler test line follows in B2 per D-9.",
+"F117": "Short type names; unchanged by a namespace move.",
+"F118": "No production edit in feature A.",
+"F119": "Expected unchanged: its full-name list already names an unlisted Modules.Promises caller; edited only if the oracle shows a namespace key missing Modules.Promises.",
+"F12": "A1: the existing rules see Modules/Promises; a made-up offender there is caught.",
+"F120": "Expected unchanged; edited only if the oracle shows a Modules.Promises type reaching a repository goes unreported.",
+"F121": "The rule files are widened in place; no preserving move makes the widening easier.",
+"F122": "For each widened rule, a made-up offender under Modules.Promises is named exactly when its twin under the old Promises namespace is named.",
+"F123": "offender reaching a repository",
+"F124": "offender reaching Forecasting adapters",
+"F125": "offender reaching the update code",
+"F126": "today code: no offender named",
+"F127": "Every architecture rule that names a Promises type, namespace or folder also sees Lighthouse.Backend.Modules.Promises, proved by a made-up offender there.",
+"F128": "Generate deliveries-answers-compare on the shared capture and compare pieces; split the compare stage so it takes two capture folders if it cannot today.",
+"F129": "Declare deliveries-answers-compare as an admitted EXAMINE probe.",
+"F13": "A2: the Promises membership and Models admissions measured from the IL and pinned.",
+"F130": "bash Scripts/examine/test-deliveries-answers-compare.sh builds the EXAMINE commands and runs the deliveries-answers-compare compare stage on two fixture capture folders that differ in one Delivery answer, then on two identical capture folders.",
+"F131": "The first pair prints DIFFERENT naming the changed answer and exits 1; the identical pair prints IDENTICAL and exits 0; an empty pair fails because nothing was compared.",
+"F132": "Today the command does not exist (RED). A command that always prints IDENTICAL, always prints DIFFERENT, or answers IDENTICAL when nothing was compared fails the script.",
+"F133": "Model for a thin answers-compare command on the shared pieces.",
+"F134": "Already compares Delivery likelihoods; stays the likelihood probe, the new command reads the other Delivery endpoints.",
+"F135": "Owns the shared pieces and every generated command; one more command, no copy of the pieces.",
+"F136": "The commands list owns the admitted EXAMINE probes; one entry added for deliveries-answers-compare.",
+"F137": "New generated command beside refresh-answers-compare.",
+"F138": "New probe entry.",
+"F139": "Existing compare commands keep their behaviour; shared pieces only gain a folder-input entry if A3 splits the compare stage.",
+"F14": "A3: the Delivery-answers examine command and its behavioural test.",
+"F140": "No dependency, boundary or owner law; the obligation is behavioural and covered by the script oracle.",
+"F141": "If the compare stage cannot take capture folders, A3 splits it inside the slice under the oracle; no separate preserving move.",
+"F142": "compare(X, X) is IDENTICAL with exit 0; compare(X, Y) with one Delivery answer changed is DIFFERENT with exit 1; compare of empty captures fails.",
+"F143": "identical pair",
+"F144": "one answer changed",
+"F145": "nothing compared",
+"F15": "A4: CI selection cases for Promises paths and the C2 port path.",
+"F16": "Confirmed (D-0, D-12, P5): feature A changes no production code, schema, DI registration or Program.cs. Only test-side architecture rule files, ModuleRules, the EXAMINE command builder, .nwave/examine.json and the classifier test script change; path-classifier.sh only if an A4 case is red. Nothing moves in feature A; the moves are feature B (story-6362-s03d-b-move), the module rules, C2 port and placement are feature C.",
+"F17": "Confirmed (D-1): the Promises membership is the 13 Services files that move (DeliveryForecastBlockRenderer, IDeliveryForecastBlockRenderer, DeliveryRuleService, IDeliveryRuleService, DeliverySourceResolver, DeliverySourceSyncService, DeliveryForecastPublishingService and their 3 interfaces, DeliveryMetricValuesProjector, DeliveryMetricSnapshotRecordingHandler, DeliveryForecastPublishingHandler) plus the admitted Models value DeliveryForecastBlock. Update code, write-back round, ordering and ranking, repositories, entities, controllers and DTOs stay with a named owner.",
+"F18": "Confirmed (D-2): a Models type is admitted into the module only if it is not an EF entity, not on the wire, not reached by a kernel type and not used by code that stays outside. Expected admitted: DeliveryForecastBlock only (E11). A2 measures every candidate from the IL and pins the answer; if DeliveryForecastBlock fails a condition, A2 records it and the Domain folder is dropped (D-3).",
+"F19": "Confirmed (D-3, D-8, Ratchet design: Rules first): the target namespaces are Lighthouse.Backend.Modules.Promises.Domain, .Application and .Application.Policies. A1 adds a PromisesModule constant to ModuleRules and a PromisesPattern ^Lighthouse\\.Backend\\.Modules\\.Promises(\\.|$) beside the old Delivery namespaces in the module map; every rule keyed on a Promises namespace or folder also matches it. PortfolioDeliveryPattern keeps its update-code meaning and is not renamed (E1).",
+"F2": "The Promises move in feature B is guarded from its first file: a rule that would miss a moved type, a CI selection that would skip a suite, or a changed Delivery answer is caught",
+"F20": "Confirmed (D-4, D-5, D-6): Delivery repositories, Feature ordering and ranking and the write-back round (#6657) stay outside Promises. A Modules.Promises type that reaches a repository outside the listed platform ports, Forecasting adapters or the update code is an offender for the widened rules.",
+"F21": "Confirmed (D-7): Promises Application reaching Modules.TrackerIntegration.Application is legal by namespace (written in C1); the Jira connector to renderer edge stays listed until C2 inverts it. Feature A widens the Tracker integration rule that names the Promises namespaces so it also sees Modules.Promises, without making the existing Jira to renderer entry red.",
+"F22": "Confirmed (D-9, D-10): tests move with production in feature B; Program.cs lines and handler order stay. Using-only and list-string renames in DeliveryRuleServiceApiPreservationTest, TestHostUseGuardTest.HostUsersStillToMove, WorkItemsModuleBoundariesArchUnitTest and TrackerIntegrationMembershipArchUnitTest belong to B1, not feature A.",
+"F23": "Confirmed (D-11): no classifier widening. A4 adds cases to test-path-classifier.sh: a Modules/Promises source path and test path select the backend suite only; Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs and Program.cs select every live connector suite. path-classifier.sh changes only if one of those cases is red.",
+"F24": "Confirmed (D-12): a new EXAMINE command deliveries-answers-compare (CREATE_NEW, thin, on the shared capture pieces of build-examine-commands like metrics-, forecast- and refresh-answers-compare) reads per demo scenario and Portfolio the Delivery list, deliveries/{id}/metrics-history, portfolios/{id}/delivery-rules/schema and the delivery sources on two revisions and compares the bodies: IDENTICAL exit 0, DIFFERENT exit 1, and it fails when nothing was compared. Its compare stage takes two capture folders (split out in A3 if it cannot today). Declared in .nwave/examine.json before the first EXAMINE.",
+"F25": "Confirmed (D-13 and the start of DELIVER): rigor thorough for feature A; push per slice with CI watched; no review window; mutation once at the end of S03d on frozen code, 80 percent kill rate and no new survivor in moved code.",
+"F26": "Carriers: rule baselines are inline string lists in their test classes, keyed by full type name and compared both ways (ADR-268); the IL is read through IlDependencies over Mono.Cecil; the membership and admissions list is a static class PromisesMembership in the Architecture folder (shape of TrackerIntegrationMembership), owner the A2 oracle; made-up offenders live in a fixture namespace such as Lighthouse.Backend.Modules.PromisesFixtures; the EXAMINE command is a generated bash script under Scripts/examine/bin, owner build-examine-commands. No production carrier, effect or per-process state changes.",
+"F27": "Formal verification not applicable (feature-delta Formal verification): the claims are decided exactly by the compiled IL with a made-up offender per rule, by two fixture capture pairs for the compare command and by finite classifier cases. No state, ordering, concurrency, recovery or liveness claim changes; a Quint, TLA+ or Agda model would restate the namespace map and could not fail. No checker was run. Property tests: not applicable, every domain here is finite and enumerated.",
+"F28": "Behaviour-free: routes, DTOs, responses, Delivery answers, forecasts, DI, handler order and the EF model stay the same; every existing test stays green.",
+"F29": "Never loosen a rule: a widening adds the Modules.Promises namespace to what a rule sees; exemptions are exact per type (that type and its nested types by full name), never a namespace or layer. Every rule edit is proved by a reverted throwaway probe.",
+"F3": "Every architecture rule that names a Promises type, namespace or folder also sees Modules/Promises: a made-up Delivery service under Modules.Promises that reaches a repository, Forecasting or the update code is caught by today's rules.",
+"F30": "IlDependencies.TypesIn also returns nested types; an exact-set check compares top-level types (the part before +). IlDependencies misses catch-clause, event and attribute named-argument references.",
+"F31": "One oracle file per slice; an approved oracle or support file of this feature is never edited, not even a using line; oracles name production types as strings. No nWave scenario tags in code; Lighthouse test-writing skill wins over nWave timing and PBT defaults.",
+"F32": "Owns the module namespace constants and shared rules; gains a PromisesModule constant beside FlowMetricsModule and ForecastingModule; no rule copied.",
+"F33": "Its made-up offender under a module namespace, asserted by the rule naming that offender, is the approach A1 follows.",
+"F34": "Shape for the Promises membership list and its both-ways IL comparison in A2.",
+"F35": "Names the update code only (E1); kept as is; a new PromisesPattern sits beside it.",
+"F36": "Its shared capture and compare pieces carry the new deliveries-answers-compare; the new command needs other endpoints and its own nothing-compared message.",
+"F37": "No shared contract changes shape: path-classifier.sh output is unchanged (A4 adds test cases only), .nwave/examine.json gains one command entry within its existing format, and no wire, DTO or schema changes.",
+"F38": "No producer and consumer change apart: one deployable, no wire or persisted format changes.",
+"F39": "Architecture rule tests over the compiled production IL (dotnet test, Architecture namespace); the classifier test script; the EXAMINE command builder and its generated deliveries-answers-compare",
+"F4": "The Promises membership (the types that move) and the Models types admitted into the module are measured from the compiled code and fixed in a test that fails when a listed type is missing or an unlisted one appears.",
+"F40": "IlDependencies module reader over Mono.Cecil",
+"F41": "git revisions and the backend HTTP API on demo data for the answers capture",
+"F42": "Tests and scripts read production; production never references a test, fixture or script.",
+"F43": "Production unchanged; every rule naming a Promises namespace also sees Modules.Promises; membership and admissions pinned by full type name.",
+"F44": "A type under Modules.Promises that a rule keyed on the old Promises namespaces would miss; a loosened rule or a namespace-wide exemption.",
+"F45": "Whether demo data holds a Delivery (A3 reports it); whether the two PortfolioForecastsUpdated handlers depend on each other and whether Promises reaches Forecasting or Flow metrics Application (A2 measures).",
+"F46": "Feature A guards for the Promises move",
+"F47": "A made-up offender under Modules.Promises is named by each widened rule; a list check fails on a missing and on an extra entry; the compare command cannot answer IDENTICAL for a changed answer.",
+"F48": "Today code passes every widened rule and the pinned membership list; two identical capture folders answer IDENTICAL.",
+"F49": "Each guard is reached through its public driver: dotnet test on the Architecture namespace, bash on the classifier and compare test scripts, and the examiner probes architecture-rules, test-selection-show and deliveries-answers-compare.",
+"F5": "A Delivery-answers examine command compares the Delivery answers of two revisions and says DIFFERENT when one Delivery answer changed and IDENTICAL when none did.",
+"F50": "Not applicable: no queue, schedule, retry or eventual progress claim; every guard is a bounded synchronous run.",
+"F51": "Assumption negated: rules see Promises wherever it lives. A rule keyed on Services...DeliverySources misses a moved type.",
+"F52": "Every rule naming Promises names the made-up Modules.Promises offender",
+"F53": "Rule files gain the Modules.Promises key",
+"F54": "A moved type escaping a rule; widening that turns the listed Jira to renderer edge red",
+"F55": "Rules keyed on single type names follow in B1",
+"F56": "IlDependencies misses catch-clause, event and attribute named-argument references",
+"F57": "Edges through signatures, fields, calls and constructors",
+"F58": "Those three reference kinds stay unseen",
+"F59": "Claiming the rules see them",
+"F6": "CI selection is pinned: a change under Modules/Promises selects the backend suite only; a change to the Tracker integration port the Jira connector will take, or to Program.cs, selects every live connector suite.",
+"F60": "Reviewer reads moved files for those kinds in feature B",
+"F61": "Assumption negated: the EXAMINE demo data holds a Delivery",
+"F62": "No false IDENTICAL",
+"F63": "The command fails loudly when nothing was compared",
+"F64": "IDENTICAL on an empty comparison",
+"F65": "A3 reports whether demo data holds a Delivery",
+"F66": "Assumption negated: a path under Scripts is not shared; a Scripts edit could select live suites",
+"F67": "A4 pins the selection for Promises, IDescriptionBlockMerger and Program.cs paths",
+"F68": "A3 and A4 pushes run what the classifier selects",
+"F69": "A Promises path silently skipping or forcing live suites",
+"F7": "Nothing a user, a tracker or the database sees changes: production code is unchanged and every existing test stays green.",
+"F70": "Linear key 429 risk on pushes that select live suites (D-11)",
+"F71": "The architecture rule tests run the membership check over the compiled production IL: the 13 moving types and the admitted Models types listed by full type name in PromisesMembership, compared with the top-level types the IL finds in the Promises namespaces and the Models candidates evaluated against the four admission conditions.",
+"F72": "The check passes on today code and its failure names each missing listed type and each unlisted type that appears; the admissions list holds DeliveryForecastBlock, or A2 records why not.",
+"F73": "A list with one entry removed, one made-up entry added, or a type that does not exist fails and names it; a check that compares one way only, counts entries or matches short names passes those cases and is rejected.",
+"F74": "Shape of the both-ways membership comparison by full type name.",
+"F75": "TypesIn reads the namespaces from the IL; nested types reduced to the top-level part.",
+"F76": "No crafter target: the acceptance designer authors the oracle and its membership list; no production or rule file changes.",
+"F77": "No code target.",
+"F78": "The listed membership equals the set of top-level types the IL finds, both ways, keyed by full type name.",
+"F79": "list equals IL: pass",
+"F8": "Moving any Promises file (feature B); the module's own rules, the C2 port and test placement (feature C); repositories, the update code, the write-back round (#6657), ordering and ranking (S03i).",
+"F80": "listed type missing: named",
+"F81": "unlisted type present: named",
+"F82": "nested type: reduced to its outer type",
+"F83": "Closed finite set of cases; each case is enumerated, no generator adds coverage.",
+"F84": "The Promises membership and Models admissions are measured from the IL and pinned both ways by full type name.",
+"F85": "Only if one of the new cases is red; no widening otherwise (D-11).",
+"F86": "bash Scripts/test-selection/test-path-classifier.sh runs the new cases: a source path and a test path under Lighthouse.Backend/(Lighthouse.Backend|Lighthouse.Backend.Tests)/Modules/Promises, Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs and Lighthouse.Backend/Lighthouse.Backend/Program.cs.",
+"F87": "The two Promises paths select the backend suite and no live connector suite; IDescriptionBlockMerger.cs and Program.cs select every live connector suite (Jira, ADO, Linear, ServiceNow, GitHub); all existing cases stay green.",
+"F88": "Today no case names a Promises path or the merger port (RED by absence). A classifier that sends a Promises path to a live suite, or lets the port or Program.cs skip one, fails a case.",
+"F89": "Already names Program.cs and Modules/TrackerIntegration/(Application|Domain); expected to select all live suites unchanged.",
+"F9": "Rigor thorough for feature A: architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet (maintainer, 2026-11-17).",
+"F90": "Already selects the backend suite for any Lighthouse.Backend path.",
+"F91": "Expected unchanged; edited only if a case is red.",
+"F92": "Reads the classifier output, whose shape does not change.",
+"F93": "Selection cases, not a dependency or boundary law.",
+"F94": "Test cases only; no move.",
+"F95": "classify(path) gives the listed suite flags for each listed path.",
+"F96": "Modules/Promises source: backend only",
+"F97": "Modules/Promises test: backend only",
+"F98": "IDescriptionBlockMerger.cs: all live suites",
+"F99": "Program.cs: all live suites"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F9"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F10"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F11"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+},
+{
+"id": "P5",
+"kind": "Outcome",
+"text": "F7"
+}
+],
+"scope_out": [
+"F8"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F12",
+"promises": [
+"P1",
+"P5"
+]
+},
+{
+"id": "S2",
+"observation": "F13",
+"promises": [
+"P2",
+"P5"
+]
+},
+{
+"id": "S3",
+"observation": "F14",
+"promises": [
+"P3",
+"P5"
+]
+},
+{
+"id": "S4",
+"observation": "F15",
+"promises": [
+"P4",
+"P5"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6362-s03d-a-rules-first",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
