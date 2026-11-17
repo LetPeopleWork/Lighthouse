@@ -741,3 +741,11 @@ full backend 0 failed). E5 was an observation gap: its named probe argument `Tes
 which nwdes reads as a path outside the workspace and refuses. **Maintainer decision (option 1):** reword E5 to
 what the probes show (the architecture rules that place the moved unit tests in the Promises test folder pass by
 name, and the full backend run has 0 failed) and examine once more. What is promised is unchanged.
+
+### Feature B EXAMINE round 3 (2026-11-17)
+
+Not closed: E1, E6 and E8 met; E7 judged an observation gap on the same evidence round 2 judged met (Delivery,
+refresh-reaction and forecast answers IDENTICAL against their pre-move base, EF model unchanged, 0 failed). The gap
+is the four blocked-period reactions (Work Item and Feature blocked / unblocked), which no public answer shows on any
+revision; they are Work Items code this move did not touch. **Maintainer decision (option 1):** reword E7 to every
+*observable* reaction, name the four as outside what this behaviour-free move can show, and examine once more.
