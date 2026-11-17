@@ -714,7 +714,7 @@ probes show.
 ### B2 as measured (2026-11-17)
 
 - `DeliveryMetricSnapshotRecordingHandlerTest` keeps the host for the whole fixture (it derives from `IntegrationFixture`
-  and about 25 helpers seed through host-resolved repositories and `LighthouseAppContext`), so D-9's second case applies:
+  and its 23 tests seed through host-resolved repositories and `LighthouseAppContext`), so D-9's second case applies:
   its `HostUsersStillToMove` line is renamed to the new namespace, not removed. Rewriting the fixture onto the
   mock-built handler is a follow-up for the Promises tests, outside this behaviour-free move.
 - The order pin was proven by a throwaway swap of the two registrations: the new pin failed with
