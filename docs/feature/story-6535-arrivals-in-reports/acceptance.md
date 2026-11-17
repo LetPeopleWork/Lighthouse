@@ -136,16 +136,18 @@ None.
 
 P3
 
+P5
+
 ```text
-Open a report whose gaps are 0.004 per day Then and 0.006 per day Now
+Open, on screen and as its print document, a report whose gaps are 0.004 per day Then and 0.006 per day Now
 ```
 
 ```text
-Then reads as many started as finished per day, Now reads 0.01 more started than finished per day, the change reads 0.01 per day marked worse
+Then reads as many started as finished per day, Now reads 0.01 more started than finished per day, the change reads 0.01 per day marked worse, the same in the print
 ```
 
 ```text
-The reader never sees a signed zero gap and the change agrees with the shown numbers
+The reader never sees a signed zero gap and the change agrees with the shown numbers, on screen and in the PDF
 ```
 
 ##### Disposition
@@ -155,7 +157,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ArrivalsPanel\.test\.tsx
 
 ```text
-A build that tests the unrounded gap for zero, or rounds after comparing so a shown 0.00 beside 0.01 reads as No change
+A build that tests the unrounded gap for zero, rounds after comparing, or rounds only in the screen path
 ```
 
 ###### Obligations
@@ -166,16 +168,18 @@ None.
 
 P4
 
+P5
+
 ```text
-Open a report that never froze Arrivals but shows it
+Open, on screen and as its print document, a report that never froze Arrivals but shows it
 ```
 
 ```text
-Both sides read Not captured for this report with dashes and no change, and the header lists Arrivals in no group
+Both sides read Not captured for this report with dashes and no change, and the header lists Arrivals in no group, the same in the print
 ```
 
 ```text
-The reader sees Not captured for this report, never a Then rebuilt from live data
+The reader sees Not captured for this report, never a Then rebuilt from live data, on screen and in the PDF
 ```
 
 ##### Disposition
@@ -185,7 +189,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/panels\/ArrivalsPanel\.test\.tsx
 
 ```text
-A build that shows zeros or a rebuilt value instead of dashes, or drops the Not captured note
+A build that shows zeros or a rebuilt value instead of dashes, or drops the note in the print
 ```
 
 ###### Obligations

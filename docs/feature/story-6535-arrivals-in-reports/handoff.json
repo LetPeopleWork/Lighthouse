@@ -69,29 +69,31 @@
 },
 {
 "covers": [
-"P3"
+"P3",
+"P5"
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F191",
+"still_passes_if": "F225",
 "test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx"
 },
-"expected": "F189",
-"stimulus": "F188",
-"user_result": "F190"
+"expected": "F223",
+"stimulus": "F222",
+"user_result": "F224"
 },
 {
 "covers": [
-"P4"
+"P4",
+"P5"
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F195",
+"still_passes_if": "F229",
 "test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ArrivalsPanel.test.tsx"
 },
-"expected": "F193",
-"stimulus": "F192",
-"user_result": "F194"
+"expected": "F227",
+"stimulus": "F226",
+"user_result": "F228"
 },
 {
 "covers": [
@@ -175,7 +177,7 @@
 "C": 1,
 "D": 1,
 "E": 6,
-"F": 221,
+"F": 229,
 "L": 3,
 "P": 5,
 "S": 1,
@@ -967,15 +969,7 @@
 "F185": "The header change summary lists Arrivals under Improved",
 "F186": "The reader sees Arrivals counted as improved in the header",
 "F187": "A build that marks the panel better but leaves Arrivals out of the header, or lists it under Got worse",
-"F188": "Open a report whose gaps are 0.004 per day Then and 0.006 per day Now",
-"F189": "Then reads as many started as finished per day, Now reads 0.01 more started than finished per day, the change reads 0.01 per day marked worse",
 "F19": "A new Arrivals metric on Then & Now reports for Teams and Portfolios: wizard checkbox, panel, change mark on the gap, header change summary, Not captured on older reports, PDF",
-"F190": "The reader never sees a signed zero gap and the change agrees with the shown numbers",
-"F191": "A build that tests the unrounded gap for zero, or rounds after comparing so a shown 0.00 beside 0.01 reads as No change",
-"F192": "Open a report that never froze Arrivals but shows it",
-"F193": "Both sides read Not captured for this report with dashes and no change, and the header lists Arrivals in no group",
-"F194": "The reader sees Not captured for this report, never a Then rebuilt from live data",
-"F195": "A build that shows zeros or a rebuilt value instead of dashes, or drops the Not captured note",
 "F196": "Create and read the Arrivals metric over windows of one, 30 and 90 days: nothing finished, nothing started, balanced, started above and below finished, for a Team and a Portfolio, and for a report that froze nothing",
 "F197": "Total started, started per day, finished per day and the unrounded signed gap per day, each over the window's days; Then stays as frozen; a report that froze nothing shows no Then",
 "F198": "The numbers behind the panel are the Metrics tab's own, frozen for Then and fresh for Now",
@@ -1002,6 +996,14 @@
 "F22": "The arrivals-to-Throughput balance, Then against Now, on the report",
 "F220": "A build that lets the box be ticked, or hides it",
 "F221": "Carriers and owners: decisions about the balance live in ArrivalsReportMetric (C#, Services/Implementation/Reports/Metrics); effects in the two series adapters; errors as ReportOwnerGoneException (existing); presentation decision in ArrivalsPanel.tsx plus a pure exported function gapSentenceOf(rounded) in the panel module (testable with no render); direction in reportPanelRegistry. gapSentenceOf takes the ROUNDED gap (two decimals, the value the panel shows): a rounded gap below 0.005 in size reads 'as many started as finished per day', so 0.004 is balanced and 0.006 reads 0.01 more. A window where nothing finished is a real Throughput of 0, shown as 0.00 per day, not a dash; a dash appears only with 'Not captured for this report'. ArrivalsPanel reads the Throughput term with useTerminology instead of a new prop (accepted deviation: two support tests build ReportPanelProps literally). Per-process state: none.",
+"F222": "Open, on screen and as its print document, a report whose gaps are 0.004 per day Then and 0.006 per day Now",
+"F223": "Then reads as many started as finished per day, Now reads 0.01 more started than finished per day, the change reads 0.01 per day marked worse, the same in the print",
+"F224": "The reader never sees a signed zero gap and the change agrees with the shown numbers, on screen and in the PDF",
+"F225": "A build that tests the unrounded gap for zero, rounds after comparing, or rounds only in the screen path",
+"F226": "Open, on screen and as its print document, a report that never froze Arrivals but shows it",
+"F227": "Both sides read Not captured for this report with dashes and no change, and the header lists Arrivals in no group, the same in the print",
+"F228": "The reader sees Not captured for this report, never a Then rebuilt from live data, on screen and in the PDF",
+"F229": "A build that shows zeros or a rebuilt value instead of dashes, or drops the note in the print",
 "F23": "Open the report (ReportView, and the print document) for a Team report whose Then started 1.10 and finished 0.80 and Now 0.90 and 1.00 per day, with Arrivals shown; also a gap of 0.004 and 0.006, and a report with no arrivals capture",
 "F24": "Panel reads 0.30 more started than finished per day (Then), 0.10 fewer started than finished per day (Now), change 0.40 per day marked better with no percent, header lists Arrivals under Improved; 0.004 reads as many started as finished per day and 0.006 reads 0.01 more; the old report reads Not captured for this report; the print document shows the same words",
 "F25": "A build that rounds after comparing, keeps a percent, signs a zero gap, rebuilds Then from live data, or omits the print panel fails a named row",

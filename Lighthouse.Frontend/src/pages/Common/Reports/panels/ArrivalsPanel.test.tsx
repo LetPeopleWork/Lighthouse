@@ -160,40 +160,46 @@ describe("the Arrivals panel of a Then & Now report", () => {
 		);
 	});
 
-	it("reads a gap that rounds to nothing as many started as finished, and rounds before it compares", async () => {
-		const panel = await openingTheReport(
-			"on the report",
-			aReportShowingArrivals({
-				atThen: aSideOf(90, 1.004, 1.0, 0.004),
-				atNow: aSideOf(90, 1.006, 1.0, 0.006),
-			}),
-		);
+	it.each(WHERE)(
+		"reads a gap that rounds to nothing as many started as finished, and rounds before it compares %s",
+		async (where) => {
+			const panel = await openingTheReport(
+				where,
+				aReportShowingArrivals({
+					atThen: aSideOf(90, 1.004, 1.0, 0.004),
+					atNow: aSideOf(90, 1.006, 1.0, 0.006),
+				}),
+			);
 
-		expect(segment(panel, "then")).toMatch(
-			/ as many started as finished per day$/,
-		);
-		expect(segment(panel, "then")).not.toMatch(/0\.00 (more|fewer)/);
-		expect(segment(panel, "now")).toMatch(
-			/ 0\.01 more started than finished per day$/,
-		);
-		expect(segment(panel, "change")).toMatch(
-			/^Change gap per day: 0\.01 per day$/,
-		);
-		expect(theChangeMark(panel)).toBe("worse");
-	});
+			expect(segment(panel, "then")).toMatch(
+				/ as many started as finished per day$/,
+			);
+			expect(segment(panel, "then")).not.toMatch(/0\.00 (more|fewer)/);
+			expect(segment(panel, "now")).toMatch(
+				/ 0\.01 more started than finished per day$/,
+			);
+			expect(segment(panel, "change")).toMatch(
+				/^Change gap per day: 0\.01 per day$/,
+			);
+			expect(theChangeMark(panel)).toBe("worse");
+		},
+	);
 
-	it("reads Not captured for this report on both sides and puts Arrivals in no header group when the report never froze it", async () => {
-		const panel = await openingTheReport(
-			"on the report",
-			aReportShowingArrivals(undefined),
-		);
+	it.each(WHERE)(
+		"reads Not captured for this report on both sides and puts Arrivals in no header group when the report never froze it %s",
+		async (where) => {
+			const panel = await openingTheReport(
+				where,
+				aReportShowingArrivals(undefined),
+			);
 
-		expect(segment(panel, "then")).toContain(NOT_CAPTURED);
-		expect(segment(panel, "now")).toContain(NOT_CAPTURED);
-		expect(segment(panel, "then")).not.toMatch(/\d/);
-		expect(segment(panel, "change")).toMatch(/—/);
-		expect(theSummaryOfChange()).not.toContain(ARRIVALS);
-	});
+			expect(segment(panel, "then")).toContain(NOT_CAPTURED);
+			expect(segment(panel, "now")).toContain(NOT_CAPTURED);
+			expect(segment(panel, "then")).not.toMatch(/\d/);
+			expect(segment(panel, "change")).toMatch(/—/);
+			expect(theSummaryOfChange()).not.toContain(ARRIVALS);
+		},
+	);
 });
 
 /** What the gap line must say for a rounded gap, written out from the approved rule. */
