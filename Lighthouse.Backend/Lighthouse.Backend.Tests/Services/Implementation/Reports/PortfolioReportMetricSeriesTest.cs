@@ -59,6 +59,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public void Only_the_Features_with_a_Cycle_Time_count_as_finished()
+        {
+            var finished = new Feature { StateCategory = StateCategories.Done, StartedDate = new DateTime(2026, 8, 3, 9, 0, 0, DateTimeKind.Utc), ClosedDate = new DateTime(2026, 8, 5, 9, 0, 0, DateTimeKind.Utc) };
+            var stillOpen = new Feature { StateCategory = StateCategories.Doing, StartedDate = new DateTime(2026, 8, 3, 9, 0, 0, DateTimeKind.Utc) };
+            metrics.Setup(service => service.GetCycleTimeDataForPortfolio(portfolio, FirstDay, LastDay)).Returns([finished, stillOpen]);
+
+            var percentiles = subject.CycleTimePercentiles(ReportOwner.Portfolio(SharedId), Window);
+
+            Assert.That(percentiles.FinishedItems, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void A_Team_asking_the_Portfolio_series_is_told_what_it_asked_for_and_what_it_is()
+        {
+            Assert.That(() => subject.CycleTimePercentiles(ReportOwner.Team(SharedId), Window),
+                Throws.ArgumentException.With.Message.StartWith("Only a Portfolio's series can be read here, not a Team's"));
+        }
+
+        [Test]
         public void A_Portfolio_with_no_finished_Features_reads_no_percentiles_and_no_finished_Features()
         {
             metrics.Setup(service => service.GetCycleTimePercentilesForPortfolio(portfolio, FirstDay, LastDay)).Returns([]);

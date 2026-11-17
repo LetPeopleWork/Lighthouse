@@ -48,6 +48,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public void Only_the_closed_items_with_a_Cycle_Time_count_as_finished()
+        {
+            var team = new Team { Name = "Team Lightspeed", Id = SharedId };
+            var finished = new WorkItem { StateCategory = StateCategories.Done, StartedDate = new DateTime(2026, 8, 3, 9, 0, 0, DateTimeKind.Utc), ClosedDate = new DateTime(2026, 8, 5, 9, 0, 0, DateTimeKind.Utc) };
+            var stillOpen = new WorkItem { StateCategory = StateCategories.Doing, StartedDate = new DateTime(2026, 8, 3, 9, 0, 0, DateTimeKind.Utc) };
+            var metrics = new Mock<ITeamMetricsService>();
+            metrics.Setup(service => service.GetCycleTimePercentilesForTeam(team, FirstDay, LastDay)).Returns(Percentiles);
+            metrics.Setup(service => service.GetClosedItemsForTeam(team, FirstDay, LastDay)).Returns([finished, stillOpen]);
+            teams.Setup(repository => repository.GetById(SharedId)).Returns(team);
+            var reading = new TeamReportMetricSeries(teams.Object, metrics.Object, new FakeLighthouseClock(DateTimeOffset.UtcNow));
+
+            var percentiles = reading.CycleTimePercentiles(ReportOwner.Team(SharedId), Window);
+
+            Assert.That(percentiles.FinishedItems, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void A_Portfolio_asking_the_Team_series_is_told_what_it_asked_for_and_what_it_is()
+        {
+            Assert.That(() => subject.CycleTimePercentiles(ReportOwner.Portfolio(SharedId), Window),
+                Throws.ArgumentException.With.Message.StartWith("Only a Team's series can be read here, not a Portfolio's"));
+        }
+
+        [Test]
         public void The_95th_is_the_one_the_Metrics_tab_gives_for_the_95th_percentile()
         {
             var percentiles = subject.CycleTimePercentiles(ReportOwner.Team(SharedId), Window);

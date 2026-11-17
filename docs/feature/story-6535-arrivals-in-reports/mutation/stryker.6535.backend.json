@@ -1,0 +1,36 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/Reports/Metrics/ArrivalsReportMetric.cs",
+      "**/Services/Implementation/Reports/Metrics/ThroughputReportMetric.cs",
+      "**/Services/Implementation/Reports/Metrics/WindowedReportMetric.cs",
+      "**/Services/Implementation/Reports/TeamReportMetricSeries.cs",
+      "**/Services/Implementation/Reports/PortfolioReportMetricSeries.cs",
+      "**/Services/Implementation/Reports/ReportMetricSeriesByOwner.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "ignore-methods": [
+      "*Log*",
+      "Console.*"
+    ],
+    "coverage-analysis": "perTest",
+    "test-case-filter": "FullyQualifiedName~ArrivalsInReportsScenarios|((FullyQualifiedName~Tests.Services.Implementation.Reports)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Tests.Contracts&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration)",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 3,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
