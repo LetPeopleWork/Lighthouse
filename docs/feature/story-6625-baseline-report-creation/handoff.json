@@ -433,7 +433,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 598,
+"F": 599,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -2376,7 +2376,7 @@
 "promises": [
 "P10"
 ],
-"text": "F402"
+"text": "F599"
 },
 {
 "id": "E11",
@@ -2714,7 +2714,6 @@
 "F40": "a Then & Now report whose {Throughput} Total is 0 in Then and 0 in Now",
 "F400": "A 30-day report with Throughput Total 91 in both Then and Now shows the Total line with the existing grey dash mark and 'No change', counted as no change in the CHANGE summary.",
 "F401": "A report created before Throughput was captured shows no Total change and Throughput is not judged in the CHANGE summary.",
-"F402": "A 30-day report with Throughput Total 52 in Then and 65 in Now shows beside 'Total 65 Work Items' the change '▲ 13 (+25 %)' marked as better; the per-day line keeps its own change '▲ 0.43 per day (+25 %)'; and the CHANGE summary judges Throughput on its Total line.",
 "F403": "Copy decided at the start of DELIVER (feature-delta.md, maintainer decisions 2026-11-17): the too-little-history line reads '{owner name} keeps history from {d MMM yyyy}: too little for a {L}-day Then and Now. Pick a shorter length or a later end date.' and the Throughput Total change reads like '▲ 13 (+25 %)'. Configurable terms render through the terminology hook.",
 "F404": "Remove nowLength and thenEndsBeforeNow; back-to-back default end; windowsOf and windowsRelationOf as recorded in this slice's constructors; newReportOf and newReportForOwnersOf send no Now length; reportChangeOf sends the frozen Then length as Now length until S2 drops it; thenAndNowDraftOf drops nowLength",
 "F405": "Show Then and Now by date and the relation line; the too-little-history line names the owner from the ownerName step prop",
@@ -2924,6 +2923,7 @@
 "F596": "Every new report compares equal lengths",
 "F597": "A Now of another length for one particular Then, if the generator never draws that Then",
 "F598": "The Total line shows 13 (+25 %) marked better beside Total 65 Work Items, before per day, which keeps its own change 0.44 per day (+25 %); the summary header lists Throughput as improved even when per day is unmoved",
+"F599": "A 30-day report with Throughput Total 52 in Then and 65 in Now shows beside 'Total 65 Work Items' the change '▲ 13 (+25 %)' marked as better; the per-day line keeps its own change '▲ 0.44 per day (+25 %)'; and the CHANGE summary judges Throughput on its Total line.",
 "F6": "she picks a Then length of 30 days and keeps the default end date",
 "F61": "Usage-data events: answered in DEVOPS, not here.",
 "F62": "Now always has the same length as Then (maintainer reply on ADO #6625). Reverses epic-5878 D43 (Now length chosen and saved separately), D59 and D62 (the Now step), and the Now-length part of D44 (Edit report).",

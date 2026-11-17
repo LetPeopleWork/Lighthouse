@@ -940,7 +940,7 @@ A create or edit request with Then 90 days and Now length 45 days is refused wit
 P10
 
 ```text
-A 30-day report with Throughput Total 52 in Then and 65 in Now shows beside 'Total 65 Work Items' the change '▲ 13 (+25 %)' marked as better; the per-day line keeps its own change '▲ 0.43 per day (+25 %)'; and the CHANGE summary judges Throughput on its Total line.
+A 30-day report with Throughput Total 52 in Then and 65 in Now shows beside 'Total 65 Work Items' the change '▲ 13 (+25 %)' marked as better; the per-day line keeps its own change '▲ 0.44 per day (+25 %)'; and the CHANGE summary judges Throughput on its Total line.
 ```
 
 #### E11
