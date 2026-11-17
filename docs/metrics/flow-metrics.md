@@ -33,9 +33,19 @@ The chart also distinguishes items by type, using different colors for each item
 
 ## Outliers
 
-One very long Work Item would stretch the y-axis and squeeze every other dot into the bottom of the chart. So the chart does not draw outliers. An outlier is a closed Work Item whose Cycle Time is more than 5 times the median Cycle Time of the closed Work Items in the chart. The median is the same value as the 50% line. The rule is applied to the value the chart plots, so with a named Cycle Time selected it uses that Cycle Time.
+One very long Work Item would stretch the y-axis and squeeze every other dot into the bottom of the chart. So by default the chart does not draw outliers. An outlier is a closed Work Item whose Cycle Time is above the **upper natural process limit** of the Cycle Time [Process Behaviour Chart](predictability.html#process-behaviour-charts) for the same date range: the same limit, from the same [baseline](predictability.html#process-behaviour-charts), that the Process Behaviour Chart draws. A Work Item exactly on the limit is not an outlier. With a named Cycle Time selected, the rule uses that Cycle Time's own Process Behaviour Chart.
 
-The y-axis then fits the rest of the Work Items. When there are outliers, a chip such as **(!) 2 outliers** appears in the widget header (on a phone it reads **(!) 2**). The chip is amber. Select it to open the list of the outliers in the Work Items dialog, longest first. Hiding them changes the picture only, never a number: outliers stay in the percentiles, the SLE and **View Data**.
+The y-axis then fits the rest of the Work Items. When there are outliers, a chip such as **(!) 2 outliers** appears in the widget header (on a phone it reads **(!) 2**). The chip is amber. Select it to open the list of the outliers in the Work Items dialog, longest first; its title names the limit, for example "Work Items with a Cycle Time above the upper natural process limit (30 days)". Hiding them changes the picture only, never a number: outliers stay in the percentiles, the SLE and **View Data**.
+
+### Show every Work Item
+
+The **Hide outliers** switch next to the Cycle Time selector is on whenever you open the chart. Switch it off to draw every closed Work Item: the y-axis grows to fit the longest one and the chip goes away. Switch it on again to set the outliers apart once more. The switch is not stored, so the chart starts with it on the next time you open it.
+
+### When there are no limits
+
+If the Process Behaviour Chart has no limits for the date range (for example, the [baseline](predictability.html#process-behaviour-charts) is not valid or holds fewer than two Work Items), nothing is set apart: every Work Item is drawn, no count is shown, and the header says "No outliers: the Cycle Time process behaviour chart has no limits for this date range".
+
+While Lighthouse works out which Work Items are outliers, the chip reads **Outliers** without a count and nothing is set apart yet. If that answer cannot be loaded, the widget shows its could-not-load message.
 
 If a percentile or SLE line lies above the top of the axis, it is shown as a labelled marker at the top edge of the plot, for example "▲ 95%: 34 days". The chip's accessible name and its tooltip name that line too, for example "2 outliers not drawn on the chart. Above the axis: 95% at 34 days. Show the list."
 
