@@ -763,4 +763,50 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Full architecture-rules probe: Total 1176, Passed 1176, no failure. Tracker rules passed: TheTrackerIntegrationDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary, ATrackerIntegrationDomainTypeThatReachesAForbiddenLayer_IsReportedAndItsCompliantTwinIsNot(Services/ModuleAdapters/Extensions), AListedTrackerIntegrationRule_MatchesWhatTheCompiledCodeReaches_InBothDirections(OutsideTypesReachingTheDomain/Application/Adapters, ApplicationEdgesBelowItIntoAdaptersOrThePlatform), ATrackerIntegrationDomainThatHoldsNoType_FailsTheRuleInsteadOfPassingUnseen. I did not separately see made-up-offender names for the Promises renderer edge or the repository rule in the grepped lines; the many other *_IsNamed tests passed.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+test-selection-show with the new Jira connector path plus the old Services/Implementation Jira path together: backend true, jira true, ado/linear/servicenow/github false. test-selection-show scenarios: passed 92, failed 0. I did not probe an old-only path alone, so the old-form-selects-nothing claim is not directly observed.
+```
+
+```text
+test-selection-show with ONLY the old Services/Implementation Jira connector path: backend true; jira, ado, linear, servicenow, github, shared all false. The old form selects no tracker live suite.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Folder-placement rules passed in the full run: Jira/Ado/Csv/Linear/ServiceNow connectors 'LiveInTheirTrackerFolder_AndNoneIsLeftUnderServices', factories 'AndNoneIsLeftUnderFactories', board types, auth schema, connector port; plus FlowMetrics/Forecasting made-up-test-file-is-reported tests. I saw no name of a TrackerIntegrationUnitTestPlacement made-up offender in my grep; the fragment run was not made separately.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+ef-model-unchanged: Sqlite and Postgres both 'No changes have been made to the model since the last migration.' ci-live-suites-show 303c88bf7: CI run 44073793376 on commit 2f96575e9 (previous, not candidate); backend success; Jira passed 1, Ado 5, Github 26, Linear 0 passed, ServiceNow 0 passed (all failed 0, skipped 0). Linear and ServiceNow show no passed count; the run is not the candidate's.
+```
+
+```text
+ci-live-suites-show 6968d2c84: CI run 44061766628 on commit 6968d2c84 (the push that carried the moved connector code); backend success; Jira passed 72, Ado 58, Linear 20, ServiceNow 20, Github 32, all failed 0, skipped 0. Not the candidate's own run (303c88bf7); later feature-C commits changed only tests and scripts per the host, which I did not verify.
+```

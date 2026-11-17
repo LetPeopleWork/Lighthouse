@@ -403,7 +403,7 @@
 "counters": {
 "D": 11,
 "E": 4,
-"F": 206,
+"F": 212,
 "K": 5,
 "L": 4,
 "P": 4,
@@ -1056,6 +1056,34 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F207"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F209",
+"F210"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F208"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F211",
+"F212"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1209,7 +1237,13 @@
 "F204": "Production unchanged; every existing test stays green",
 "F205": "Nothing a user, tracker or database sees changes",
 "F206": "The slice adds one test file and no production code; behaviour preservation is the full-suite gate, not this oracle",
+"F207": "Full architecture-rules probe: Total 1176, Passed 1176, no failure. Tracker rules passed: TheTrackerIntegrationDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary, ATrackerIntegrationDomainTypeThatReachesAForbiddenLayer_IsReportedAndItsCompliantTwinIsNot(Services/ModuleAdapters/Extensions), AListedTrackerIntegrationRule_MatchesWhatTheCompiledCodeReaches_InBothDirections(OutsideTypesReachingTheDomain/Application/Adapters, ApplicationEdgesBelowItIntoAdaptersOrThePlatform), ATrackerIntegrationDomainThatHoldsNoType_FailsTheRuleInsteadOfPassingUnseen. I did not separately see made-up-offender names for the Promises renderer edge or the repository rule in the grepped lines; the many other *_IsNamed tests passed.",
+"F208": "Folder-placement rules passed in the full run: Jira/Ado/Csv/Linear/ServiceNow connectors 'LiveInTheirTrackerFolder_AndNoneIsLeftUnderServices', factories 'AndNoneIsLeftUnderFactories', board types, auth schema, connector port; plus FlowMetrics/Forecasting made-up-test-file-is-reported tests. I saw no name of a TrackerIntegrationUnitTestPlacement made-up offender in my grep; the fragment run was not made separately.",
+"F209": "test-selection-show with the new Jira connector path plus the old Services/Implementation Jira path together: backend true, jira true, ado/linear/servicenow/github false. test-selection-show scenarios: passed 92, failed 0. I did not probe an old-only path alone, so the old-form-selects-nothing claim is not directly observed.",
 "F21": "Confirmed D-9, decided here: C2 writes a sibling TrackerIntegrationUnitTestPlacementTest modelled on WorkItemsUnitTestPlacementTest, as ForecastingUnitTestPlacementTest already is, instead of parameterising the existing placement tests: those are approved oracles of other features and would become craft targets. Test files are found on disk and classes read from the compiled test assembly with symbols. The no-file-left check lists the files under Services/Interfaces, Services/Implementation (WorkTrackingConnectors, OAuth, ConnectionHealth) and Factories that belong to the context and fails on any that is not a named exception.",
+"F210": "test-selection-show with ONLY the old Services/Implementation Jira connector path: backend true; jira, ado, linear, servicenow, github, shared all false. The old form selects no tracker live suite.",
+"F211": "ef-model-unchanged: Sqlite and Postgres both 'No changes have been made to the model since the last migration.' ci-live-suites-show 303c88bf7: CI run 44073793376 on commit 2f96575e9 (previous, not candidate); backend success; Jira passed 1, Ado 5, Github 26, Linear 0 passed, ServiceNow 0 passed (all failed 0, skipped 0). Linear and ServiceNow show no passed count; the run is not the candidate's.",
+"F212": "ci-live-suites-show 6968d2c84: CI run 44061766628 on commit 6968d2c84 (the push that carried the moved connector code); backend success; Jira passed 72, Ado 58, Linear 20, ServiceNow 20, Github 32, all failed 0, skipped 0. Not the candidate's own run (303c88bf7); later feature-C commits changed only tests and scripts per the host, which I did not verify.",
 "F22": "Layer algebra, test side only (production unchanged, D-0, D-10, D-12): state = the finite set of top-level type-to-type IL edges of the production assembly and the finite set of source and test file paths; operation = evaluate a rule over that state with an inline list; observation = a verdict naming each offender, each missing list entry and each extra list entry. Carriers: InboundVerdict, OutboundVerdict and KernelRuleVerdict owned by Lighthouse.Backend.Tests/Architecture/ModuleRules.cs; the module wording is a ModuleWording value owned by the new boundaries file; membership facts are owned by TrackerIntegrationMembership. No per-process state.",
 "F23": "Formal verification not applicable (feature-delta Formal verification section, Confirmed): every claim is an exact equality over finite sets read from the compiled IL and the file tree, decided exhaustively by the rule itself with a made-up offender per position as falsifier. There is no state transition, ordering, concurrency, recovery or liveness claim, so no Quint, TLA+/TLC or Agda model is selected; a model would restate the namespace map and could not fail. Liveness is not applicable: nothing runs over time. Treatment of each law is Finite; property-based testing is not applicable to a closed finite domain.",
 "F24": "Production code does not change: routes, DTOs, refresh answers, forecasts, DI registrations and handler order, and the EF model stay the same (D-0, D-10, D-12, P4).",
