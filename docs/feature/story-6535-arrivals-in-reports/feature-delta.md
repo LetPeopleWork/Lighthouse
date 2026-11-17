@@ -210,3 +210,18 @@ Jev is refused by configuration, so no semantic call was made.
   `docs/settings/usagedata.md`. The maintainer can revisit it at the sketch review.
 - **Continuous-improvement check:** N/A, because this is a single Story with no parent Epic, not a new feature
   Epic (the same answer as Story 6655).
+
+## Start of DELIVER: maintainer decisions (2026-11-17, sketch review)
+
+- **Sketch: approved as sketched.** Wizard: an Arrivals checkbox, last in the metrics step. Report page: the Then &
+  Now panel frame with, per side, "Total started N {Work Items}", "Arrivals X.XX per day", "{Throughput} X.XX per
+  day" and the worded gap ("0.30 more started than finished per day", "0.10 fewer…", "as many started as finished
+  per day" below 0.005); the change mark and per-day change sit on the gap, lower is better, no percent; the header
+  summary lists Arrivals. A report made before Arrivals existed shows dashes and "Not captured for this report".
+  Loading and failure: the report page's existing looks, nothing new. ⓘ: "Arrivals are Work Items started. The gap
+  is started minus finished, per day. Lower is better."
+- **Usage data: N/A**, because knowing the report type is enough: `ReportCreated` already says which kind of report
+  was made (today only Then & Now), and which metrics a report shows is not worth an event. This replaces the
+  DEVOPS proposal `ReportCreatedWithArrivals` above; no event is added.
+- **Rigor: standard** for the one slice (Sonnet for the acceptance designer and crafter, Haiku for reviewers and
+  EXAMINE).
