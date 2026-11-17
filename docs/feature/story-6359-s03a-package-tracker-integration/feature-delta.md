@@ -660,3 +660,17 @@ module rules of C1 forbid by default.
 | c Give `Application` its own option-name source for the schema | Rejected now: an edit inside a move Story; the option names are each connector's vocabulary. |
 
 Exemptions are exact per type, never per namespace or layer (S1 learning). C1 owns the list entries.
+
+## Wave: DESIGN / [REF] D-1 outcome of the B1 Domain rule (candidate review, 2026-11-17)
+
+The D-1 row "WorkItemCategoryCrossing … DependencyFieldReferences → Domain (rejects go to Application,
+recorded)" resolved in B1 as follows, and this record is that recording:
+
+| Type | Layer | Why |
+|---|---|---|
+| `WorkItemStateTransitionMapper`, `ParentSourceSelector`, `DependencyFieldReferences` | `Domain` | They reach only the kernel and the base library. |
+| `WorkItemCategoryCrossing`, `DependencySourceSelector` | `Application` | They call helpers in `Lighthouse.Backend.Extensions`, which the Domain rule rejects. |
+
+Feature C keys the module lists by full name where a short name is shared: the moved AzureDevOps
+`WorkItemExtensions` and the unmoved `Lighthouse.Backend.Extensions.WorkItemExtensions` have the same
+short name, and the name-only lists in `TrackerIntegrationMembership` cannot tell them apart.
