@@ -2361,6 +2361,8 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &#x27;FullyQual
 <pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
 pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportView.editWizard.test.tsx src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportWindowPolicyTest|FullyQualifiedName~ThenAndNowTemplateEditTest|FullyQualifiedName~ThenAndNowTemplateTest|FullyQualifiedName~ReportLoggingTest|FullyQualifiedName~ReportQueriesTest|FullyQualifiedName~ThenAndNowPayloadRoundTripTest|FullyQualifiedName~TeamReportsControllerTest|FullyQualifiedName~Slice10EditReportScenarios|FullyQualifiedName~ReportsWithoutSignInScenarios|FullyQualifiedName~Slice01TeamReportScenarios|FullyQualifiedName~ReportWindowBoundaryScenarios
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts src/services/Api/ReportService.test.ts src/pages/Common/Reports/wizard/reportWindowCheck.test.ts
 </code></pre>
 
 <h4>Supports</h4>
@@ -2370,6 +2372,34 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs</p>
+
+<p>Lighthouse.Frontend/src/tests/reportWindowBoundaries.json</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateEditTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportQueriesTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Reports/ThenAndNowPayloadRoundTripTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamReportsControllerTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice10EditReportScenarios.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsWithoutSignInScenarios.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice01TeamReportScenarios.cs</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts</p>
+
+<p>Lighthouse.Frontend/src/services/Api/ReportService.test.ts</p>
 
 <h4>Public oracle</h4>
 
@@ -2410,7 +2440,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>Edit</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:66</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:64</p>
 
 <p>Extend</p>
 
@@ -2428,7 +2458,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>REFUSAL_COPY</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:82</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:100</p>
 
 <p>Extend</p>
 
@@ -2455,7 +2485,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>reportChangeOf</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:234</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:254</p>
 
 <p>Extend</p>
 
@@ -2464,7 +2494,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>ReportChange</p>
 
-<p>Lighthouse.Frontend/src/models/Reports/Report.ts:140</p>
+<p>Lighthouse.Frontend/src/models/Reports/Report.ts:142</p>
 
 <p>Extend</p>
 
@@ -2493,7 +2523,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>production</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:82</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:80</p>
 
 <p>Changed</p>
 
@@ -2502,7 +2532,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>production</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:100</p>
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:98</p>
 
 <p>Changed</p>
 
@@ -2538,7 +2568,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>production</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:234</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:254</p>
 
 <p>Changed</p>
 
@@ -2556,7 +2586,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>production</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:82</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:100</p>
 
 <p>Changed</p>
 
@@ -2662,11 +2692,92 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>Gains the Now-window owner rule
 </code></pre>
 
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Reports/ThenAndNowPayloadRoundTripTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>The payload record no longer carries NowLengthDays: rows read and write the stored member only as an unread JSON member
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:76</p>
+
+<p>Migrated</p>
+
+<pre><code>NowRefusal and NowWindow rows go with the members; the Now rows of the boundary table go too
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/tests/reportWindowBoundaries.json:74</p>
+
+<p>Migrated</p>
+
+<pre><code>Now rows removed; the Then rows stay and both readers already keep only the Then side
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs:231</p>
+
+<p>Migrated</p>
+
+<pre><code>Edit rows: the Now-too-short refusal row goes, the other edit rows carry the Then length as Now
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs:38</p>
+
+<p>Migrated</p>
+
+<pre><code>A create test reads payload.NowLengthDays, a member the record loses: it observes the stored JSON has no Now length member instead
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs:806</p>
+
+<p>Migrated</p>
+
+<pre><code>AnEdit helper and the NowTooShort reason constant lose the Now length; create helpers keep it
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsWithoutSignInScenarios.cs:49</p>
+
+<p>Migrated</p>
+
+<pre><code>Edit row sends a Now length through AnEdit
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice01TeamReportScenarios.cs:426</p>
+
+<p>Migrated</p>
+
+<pre><code>The stored-Now-of-800000 read row goes: Read no longer reads a stored Now
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts:285</p>
+
+<p>Migrated</p>
+
+<pre><code>The reportChangeOf row expects a change with no Now length
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>ReportEditRequest thenAndNow.nowLengthDays</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:234</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:254</p>
 
 <p>Producer</p>
 
@@ -2699,7 +2810,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>Refusal code set (ReportRefusalCodes)</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:82</p>
+<p>Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:100</p>
 
 <p>Consumer</p>
 

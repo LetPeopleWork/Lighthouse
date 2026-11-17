@@ -174,7 +174,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 521,
+"F": 530,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -1479,7 +1479,7 @@
 {
 "contract": "ReportEditRequest thenAndNow.nowLengthDays",
 "decision": "Migrated",
-"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:234",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:254",
 "party": "Producer",
 "reason": "F377"
 },
@@ -1500,7 +1500,7 @@
 {
 "contract": "Refusal code set (ReportRefusalCodes)",
 "decision": "Migrated",
-"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:82",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:100",
 "party": "Consumer",
 "reason": "F380"
 },
@@ -1558,13 +1558,13 @@
 {
 "decision": "Changed",
 "kind": "production",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:82",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:80",
 "reason": "F362"
 },
 {
 "decision": "Changed",
 "kind": "production",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:100",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:98",
 "reason": "F363"
 },
 {
@@ -1588,7 +1588,7 @@
 {
 "decision": "Changed",
 "kind": "production",
-"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:234",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:254",
 "reason": "F366"
 },
 {
@@ -1600,7 +1600,7 @@
 {
 "decision": "Changed",
 "kind": "production",
-"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:82",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:100",
 "reason": "F368"
 },
 {
@@ -1668,6 +1668,60 @@
 "kind": "test",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:1",
 "reason": "F473"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Reports/ThenAndNowPayloadRoundTripTest.cs:1",
+"reason": "F522"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:76",
+"reason": "F523"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/tests/reportWindowBoundaries.json:74",
+"reason": "F524"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs:231",
+"reason": "F525"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs:38",
+"reason": "F526"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs:806",
+"reason": "F527"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsWithoutSignInScenarios.cs:49",
+"reason": "F528"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice01TeamReportScenarios.cs:426",
+"reason": "F529"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts:285",
+"reason": "F530"
 }
 ],
 "not_applicable": [
@@ -1679,7 +1733,7 @@
 "reuse": [
 {
 "decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:66",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ThenAndNowTemplate.cs:64",
 "reason": "F355",
 "symbol": "Edit"
 },
@@ -1691,7 +1745,7 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:82",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.ts:100",
 "reason": "F357",
 "symbol": "REFUSAL_COPY"
 },
@@ -1709,13 +1763,13 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:234",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts:254",
 "reason": "F360",
 "symbol": "reportChangeOf"
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/models/Reports/Report.ts:140",
+"locator": "Lighthouse.Frontend/src/models/Reports/Report.ts:142",
 "reason": "F361",
 "symbol": "ReportChange"
 },
@@ -1736,7 +1790,21 @@
 "supports": [
 "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.editWizard.test.tsx",
 "Lighthouse.Frontend/src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts",
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs",
+"Lighthouse.Frontend/src/tests/reportWindowBoundaries.json",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateEditTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportQueriesTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Reports/ThenAndNowPayloadRoundTripTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamReportsControllerTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice10EditReportScenarios.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsWithoutSignInScenarios.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/Slice01TeamReportScenarios.cs",
+"Lighthouse.Frontend/src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts",
+"Lighthouse.Frontend/src/services/Api/ReportService.test.ts"
 ],
 "targets": [
 {
@@ -1788,7 +1856,9 @@
 "verification": [
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation",
 "pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportView.editWizard.test.tsx src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts",
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest"
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportWindowPolicyTest|FullyQualifiedName~ThenAndNowTemplateEditTest|FullyQualifiedName~ThenAndNowTemplateTest|FullyQualifiedName~ReportLoggingTest|FullyQualifiedName~ReportQueriesTest|FullyQualifiedName~ThenAndNowPayloadRoundTripTest|FullyQualifiedName~TeamReportsControllerTest|FullyQualifiedName~Slice10EditReportScenarios|FullyQualifiedName~ReportsWithoutSignInScenarios|FullyQualifiedName~Slice01TeamReportScenarios|FullyQualifiedName~ReportWindowBoundaryScenarios",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts src/services/Api/ReportService.test.ts src/pages/Common/Reports/wizard/reportWindowCheck.test.ts"
 ]
 },
 "S3": {
@@ -2517,6 +2587,15 @@
 "F52": "Bulk Create wizard on the app-level Reports page: no 'Same as Then / Custom' Now choice; every saved report's Now = Then.",
 "F520": "NowStep (removed in S1 craft) asked a question that no longer exists; its replacement owner is the Then step, which shows the derived Now",
 "F521": "Existing copy for then-before-cutoff (cutoffRefusal) becomes the too-little-history line naming the owner",
+"F522": "The payload record no longer carries NowLengthDays: rows read and write the stored member only as an unread JSON member",
+"F523": "NowRefusal and NowWindow rows go with the members; the Now rows of the boundary table go too",
+"F524": "Now rows removed; the Then rows stay and both readers already keep only the Then side",
+"F525": "Edit rows: the Now-too-short refusal row goes, the other edit rows carry the Then length as Now",
+"F526": "A create test reads payload.NowLengthDays, a member the record loses: it observes the stored JSON has no Now length member instead",
+"F527": "AnEdit helper and the NowTooShort reason constant lose the Now length; create helpers keep it",
+"F528": "Edit row sends a Now length through AnEdit",
+"F529": "The stored-Now-of-800000 read row goes: Read no longer reads a stored Now",
+"F530": "The reportChangeOf row expects a change with no Now length",
 "F54": "Edit report: name and shown metrics only.",
 "F55": "The API refuses a create or edit carrying a Now length different from Then's; absent or equal is accepted.",
 "F56": "{Throughput} Total line gains change and % change and counts in the CHANGE summary.",

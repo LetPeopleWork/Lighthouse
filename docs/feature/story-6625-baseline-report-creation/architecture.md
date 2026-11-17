@@ -2483,6 +2483,8 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreat
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
 pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/ReportView.editWizard.test.tsx src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportWindowPolicyTest|FullyQualifiedName~ThenAndNowTemplateEditTest|FullyQualifiedName~ThenAndNowTemplateTest|FullyQualifiedName~ReportLoggingTest|FullyQualifiedName~ReportQueriesTest|FullyQualifiedName~ThenAndNowPayloadRoundTripTest|FullyQualifiedName~TeamReportsControllerTest|FullyQualifiedName~Slice10EditReportScenarios|FullyQualifiedName~ReportsWithoutSignInScenarios|FullyQualifiedName~Slice01TeamReportScenarios|FullyQualifiedName~ReportWindowBoundaryScenarios
+pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts src/services/Api/ReportService.test.ts src/pages/Common/Reports/wizard/reportWindowCheck.test.ts
 ```
 
 #### Supports
@@ -2492,6 +2494,34 @@ Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/ReportView\.editWizard\.test\
 Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportRefusalCopy\.test\.ts
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleArchUnitTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/Reports\/ReportWindowPolicyTest\.cs
+
+Lighthouse\.Frontend\/src\/tests\/reportWindowBoundaries\.json
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/Reports\/ThenAndNowTemplateEditTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/Reports\/ThenAndNowTemplateTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/Reports\/ReportLoggingTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/Reports\/ReportQueriesTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Models\/Reports\/ThenAndNowPayloadRoundTripTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/TeamReportsControllerTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportsAcceptanceTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice10EditReportScenarios\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportsWithoutSignInScenarios\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice01TeamReportScenarios\.cs
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/thenAndNowDraft\.test\.ts
+
+Lighthouse\.Frontend\/src\/services\/Api\/ReportService\.test\.ts
 
 #### Public oracle
 
@@ -2535,7 +2565,7 @@ None.
 
 Edit
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Reports\/ThenAndNowTemplate\.cs\:66
+Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Reports\/ThenAndNowTemplate\.cs\:64
 
 Extend
 
@@ -2555,7 +2585,7 @@ Existing edit carrier
 
 REFUSAL\_COPY
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportRefusalCopy\.ts\:82
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportRefusalCopy\.ts\:100
 
 Extend
 
@@ -2585,7 +2615,7 @@ Existing edit DTO keeps the optional member so an unequal Now can be refused
 
 reportChangeOf
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/thenAndNowDraft\.ts\:234
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/thenAndNowDraft\.ts\:254
 
 Extend
 
@@ -2595,7 +2625,7 @@ Existing builder of the edit request; stops sending a Now length
 
 ReportChange
 
-Lighthouse\.Frontend\/src\/models\/Reports\/Report\.ts\:140
+Lighthouse\.Frontend\/src\/models\/Reports\/Report\.ts\:142
 
 Extend
 
@@ -2627,7 +2657,7 @@ Single owner of window refusals; its Now members leave with their last callers
 
 production
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Reports\/ThenAndNowTemplate\.cs\:82
+Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Reports\/ThenAndNowTemplate\.cs\:80
 
 Changed
 
@@ -2637,7 +2667,7 @@ Edit Now rule; no Now write
 
 production
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Reports\/ThenAndNowTemplate\.cs\:100
+Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Reports\/ThenAndNowTemplate\.cs\:98
 
 Changed
 
@@ -2677,7 +2707,7 @@ Member kept; meaning narrowed to refusal input
 
 production
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/thenAndNowDraft\.ts\:234
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/thenAndNowDraft\.ts\:254
 
 Changed
 
@@ -2697,7 +2727,7 @@ ReportChange and ReportRefusalCode
 
 production
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportRefusalCopy\.ts\:82
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportRefusalCopy\.ts\:100
 
 Changed
 
@@ -2815,11 +2845,101 @@ Changed
 Gains the Now-window owner rule
 ```
 
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Models\/Reports\/ThenAndNowPayloadRoundTripTest\.cs\:1
+
+Migrated
+
+```text
+The payload record no longer carries NowLengthDays: rows read and write the stored member only as an unread JSON member
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/Reports\/ReportWindowPolicyTest\.cs\:76
+
+Migrated
+
+```text
+NowRefusal and NowWindow rows go with the members; the Now rows of the boundary table go too
+```
+
+test
+
+Lighthouse\.Frontend\/src\/tests\/reportWindowBoundaries\.json\:74
+
+Migrated
+
+```text
+Now rows removed; the Then rows stay and both readers already keep only the Then side
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/Reports\/ReportLoggingTest\.cs\:231
+
+Migrated
+
+```text
+Edit rows: the Now-too-short refusal row goes, the other edit rows carry the Then length as Now
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/Reports\/ThenAndNowTemplateTest\.cs\:38
+
+Migrated
+
+```text
+A create test reads payload.NowLengthDays, a member the record loses: it observes the stored JSON has no Now length member instead
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportsAcceptanceTest\.cs\:806
+
+Migrated
+
+```text
+AnEdit helper and the NowTooShort reason constant lose the Now length; create helpers keep it
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportsWithoutSignInScenarios\.cs\:49
+
+Migrated
+
+```text
+Edit row sends a Now length through AnEdit
+```
+
+test
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/Slice01TeamReportScenarios\.cs\:426
+
+Migrated
+
+```text
+The stored-Now-of-800000 read row goes: Read no longer reads a stored Now
+```
+
+test
+
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/thenAndNowDraft\.test\.ts\:285
+
+Migrated
+
+```text
+The reportChangeOf row expects a change with no Now length
+```
+
 ##### Agreement
 
 ReportEditRequest thenAndNow\.nowLengthDays
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/thenAndNowDraft\.ts\:234
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/thenAndNow\/thenAndNowDraft\.ts\:254
 
 Producer
 
@@ -2855,7 +2975,7 @@ Adds now-length-differs-from-then; keeps every shipped spelling
 
 Refusal code set \(ReportRefusalCodes\)
 
-Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportRefusalCopy\.ts\:82
+Lighthouse\.Frontend\/src\/pages\/Common\/Reports\/wizard\/reportRefusalCopy\.ts\:100
 
 Consumer
 
