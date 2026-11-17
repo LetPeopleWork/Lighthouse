@@ -732,3 +732,12 @@ and `forecast-answers-compare` compare two revisions. The restart recompute the 
 behaviour of `forecast-triggers-show` (the start-up seeding forgets what stored forecasts were computed from).
 Taken on the maintainer's feature A precedent (fix the observation, reword the expectation, re-run): E2–E4 are
 reworded to name the probe and fragment that shows each, without changing what is promised; EXAMINE re-runs.
+
+### Feature B EXAMINE round 2 (2026-11-17)
+
+Not closed: E1, E6 and E7 met (57/57 Promises architecture rules; the PortfolioForecastsUpdated order pin passed by
+name; Delivery, refresh-reaction and forecast answers IDENTICAL against their pre-move base; EF model unchanged;
+full backend 0 failed). E5 was an observation gap: its named probe argument `Tests.Modules.Promises` holds dots,
+which nwdes reads as a path outside the workspace and refuses. **Maintainer decision (option 1):** reword E5 to
+what the probes show (the architecture rules that place the moved unit tests in the Promises test folder pass by
+name, and the full backend run has 0 failed) and examine once more. What is promised is unchanged.
