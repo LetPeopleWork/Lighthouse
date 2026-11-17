@@ -149,10 +149,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] WhatThisEpicAddedToTheBackend =
             [.. TheFoldersThisEpicStartedIn, .. TheModulesDependencyFolders];
 
-        // The translation rules in the Tracker integration Domain decide for every tracker, so they are not
-        // the connectors these rules police.
-        private const string TheConnectors =
-            @"^(?!Lighthouse\.Backend\.Modules\.TrackerIntegration\.Domain(\.|$))(" + ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern + ")";
+        private const string TheConnectors = ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern;
+
+        // The parent source selector decides for every tracker and takes the stored Features by design, so it is
+        // not one of the connectors these rules police. Every other type of the Tracker integration stays in scope.
+        private static bool IsTheParentSourceSelector(string typeName)
+            => typeName == typeof(ParentSourceSelector).FullName
+                || typeName.StartsWith(typeof(ParentSourceSelector).FullName + "+", StringComparison.Ordinal);
 
         private static readonly string[] TheTypesThatMaySetAParent =
         [
@@ -625,7 +628,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         private static bool ReachesAConnector(Mono.Cecil.TypeReference type)
-            => IlDependencies.ResidesInNamespaceMatching(type, TheConnectors);
+            => IlDependencies.ResidesInNamespaceMatching(type, TheConnectors)
+                && !IsTheParentSourceSelector(type.FullName.Replace('/', '+'));
 
         /// <summary>
         /// A tracker that reads the owner's list and then decides for itself would honour the list until the
@@ -640,6 +644,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var readers = IlDependencies
                 .DependentsIn(module, TheConnectors, type => Names(typeof(ParentSources), type))
                 .Select(dependent => dependent.TypeName)
+                .Where(typeName => !IsTheParentSourceSelector(typeName))
                 .ToList();
 
             var askers = IlDependencies
@@ -726,6 +731,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var offenders = IlDependencies
                 .DependentsIn(module, TheConnectors, ReachesTheStoredFeatures)
+                .Where(offender => !IsTheParentSourceSelector(offender.TypeName))
                 .ToList();
 
             using (Assert.EnterMultipleScope())

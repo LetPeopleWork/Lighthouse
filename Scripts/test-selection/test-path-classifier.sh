@@ -132,13 +132,17 @@ for parent_source_path in \
   Lighthouse.Backend/Lighthouse.Backend/Models/ParentReadings.cs \
   Lighthouse.Backend/Lighthouse.Backend/Models/ParentChoice.cs \
   Lighthouse.Backend/Lighthouse.Backend/Models/ParentResolution.cs \
-  Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentSourceSelector.cs \
   Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Domain/FetchFingerprint.cs
 do
   assert "parent sources: jira=true for $parent_source_path"    "$(classify_jira "$parent_source_path")"   "true"
   assert "parent sources: ado=false for $parent_source_path"    "$(classify_ado "$parent_source_path")"    "false"
   assert "parent sources: shared=false for $parent_source_path" "$(classify_shared "$parent_source_path")" "false"
 done
+
+# The selector now lives in the Tracker integration Domain, which every live suite shares, so it also selects them.
+parent_source_selector=Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Domain/ParentSourceSelector.cs
+assert "parent sources: jira=true for $parent_source_selector" "$(classify_jira "$parent_source_selector")" "true"
+assert "parent sources: ado=false for $parent_source_selector" "$(classify_ado "$parent_source_selector")" "false"
 
 # Scenario 19: files that change often stay out, because every live run spends Jira quota
 assert "work item base: jira=false"      "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs')" "false"
