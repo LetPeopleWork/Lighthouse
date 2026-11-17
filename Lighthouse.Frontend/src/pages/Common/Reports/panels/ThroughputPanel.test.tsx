@@ -57,10 +57,10 @@ const risesDrawn = (change: HTMLElement) =>
 const BOTH_ZERO = "No change (both 0)";
 
 describe("the Throughput panel's change column", () => {
-	it('shows the Total change "13 (+25 %)" with a rise mark beside "Total 65 Work Items", before per day "0.43 per day (+25 %)", both marked better, when Then finished 52 and Now 65 in 30 days', () => {
+	it('shows the Total change "13 (+25 %)" with a rise mark beside "Total 65 Work Items", before per day "0.44 per day (+25 %)", both marked better, when Then finished 52 and Now 65 in 30 days', () => {
 		const container = aThroughputPanel({
 			atThen: aSide(52, 1.73),
-			atNow: aSide(65, 2.16),
+			atNow: aSide(65, 2.17),
 		});
 		const change = changeOf(container);
 		const [totalLine, perDayLine] = Array.from(
@@ -70,7 +70,7 @@ describe("the Throughput panel's change column", () => {
 		expect(theNowOfThroughput(container)).toMatch(/^Now Total 65 Work Items/);
 		expect(readingOf(totalLine)).toBe("13 (+25 %)");
 		expect(risesDrawn(totalLine)).toBe(1);
-		expect(readingOf(perDayLine)).toBe("0.43 per day (+25 %)");
+		expect(readingOf(perDayLine)).toBe("0.44 per day (+25 %)");
 		expect(verdictsDrawn(change)).toEqual(["better", "better"]);
 		expect(risesDrawn(change)).toBe(2);
 	});

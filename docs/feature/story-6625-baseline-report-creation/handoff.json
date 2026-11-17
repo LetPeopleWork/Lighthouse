@@ -254,7 +254,7 @@
 "still_passes_if": "F554",
 "test": "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThroughputPanel.test.tsx"
 },
-"expected": "F552",
+"expected": "F598",
 "stimulus": "F551",
 "user_result": "F553"
 },
@@ -433,7 +433,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 597,
+"F": 598,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -2878,7 +2878,6 @@
 "F55": "The API refuses a create or edit carrying a Now length different from Then's; absent or equal is accepted.",
 "F550": "A notice flag or changed list entry is added for old reports, or the export Now window stays 45 days",
 "F551": "Open a 30-day report whose Throughput Total is 52 in Then and 65 in Now",
-"F552": "The Total line shows 13 (+25 %) marked better, before per day, which keeps its own change; the summary header lists Throughput as improved even when per day is unmoved",
 "F553": "Martin reads the Throughput Total compared between Then and Now",
 "F554": "The Total line is drawn with the per day magnitude (13 per day), or a Total mark without a percent, or the summary judging only per day",
 "F555": "Open a report whose Throughput Total and per day are 0 in Then and 0 in Now",
@@ -2924,6 +2923,7 @@
 "F595": "Each report reads a Now as long as its Then inside the kept history; no dedicated read scenario names the 14-day-ending-today or 90-day-ending-45-days-ago case, so the generated law is its nearest committed observation",
 "F596": "Every new report compares equal lengths",
 "F597": "A Now of another length for one particular Then, if the generator never draws that Then",
+"F598": "The Total line shows 13 (+25 %) marked better beside Total 65 Work Items, before per day, which keeps its own change 0.44 per day (+25 %); the summary header lists Throughput as improved even when per day is unmoved",
 "F6": "she picks a Then length of 30 days and keeps the default end date",
 "F61": "Usage-data events: answered in DEVOPS, not here.",
 "F62": "Now always has the same length as Then (maintainer reply on ADO #6625). Reverses epic-5878 D43 (Now length chosen and saved separately), D59 and D62 (the Now step), and the Now-length part of D44 (Edit report).",

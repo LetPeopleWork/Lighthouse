@@ -518,7 +518,7 @@ Open a 30-day report whose Throughput Total is 52 in Then and 65 in Now
 ```
 
 ```text
-The Total line shows 13 (+25 %) marked better, before per day, which keeps its own change; the summary header lists Throughput as improved even when per day is unmoved
+The Total line shows 13 (+25 %) marked better beside Total 65 Work Items, before per day, which keeps its own change 0.44 per day (+25 %); the summary header lists Throughput as improved even when per day is unmoved
 ```
 
 ```text
