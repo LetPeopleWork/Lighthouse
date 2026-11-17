@@ -184,6 +184,243 @@ This slice changes no production code; preservation is observed by the declared 
 
 host full gates and EXAMINE
 
+### S2
+
+##### Covers
+
+P3
+
+```text
+Read every dependency in the compiled backend from a Tracker integration type, in any layer and with its nested types, into a Promises type
+```
+
+```text
+No such dependency exists; the check also fails when Tracker integration holds no type at all
+```
+
+```text
+Tracker integration no longer depends on Promises, so the two modules form no cycle; today the Jira connector holding the forecast block renderer is named as the one offending dependency
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationReachesNoPromisesArchUnitTest\.cs\:\:TrackerIntegration\_ReachesNoPromisesType
+
+```text
+A Tracker integration type that names a Promises type only in a catch clause, an event or a named attribute argument, which the compiled-code reader cannot see
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Look up the merge port, the forecast block renderer, the renderer's own port and the Jira connector by name in the compiled backend
+```
+
+```text
+The merge port is an interface in Tracker integration's Application declaring only the merge of a block into an existing description with the renderer's parameter names; the Promises renderer implements it; the Jira connector takes it in its constructor; the renderer's own port no longer offers the merge
+```
+
+```text
+The Jira connector merges the Delivery forecast block through a port Tracker integration owns and Promises answers; today the port is missing, the renderer does not implement it, the renderer's port still offers the merge and the connector takes the renderer
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationReachesNoPromisesArchUnitTest\.cs\:\:TheJiraConnector\_MergesTheForecastBlockThroughTrackerIntegrationsOwnPort\_ThatThePromisesRendererImplements
+
+```text
+The port's description parameter loses its may-be-empty marking, which the check does not read; the compiler checks callers instead
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run both rules on a made-up Tracker integration whose connector merges only through its own port, which a made-up Promises renderer implements
+```
+
+```text
+The dependency rule looks at that connector and finds nothing; the port rule finds no problem
+```
+
+```text
+A compliant connector is not reported, so the rules can stay switched on
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationReachesNoPromisesArchUnitTest\.cs\:\:ATrackerIntegrationTypeMergingOnlyThroughItsOwnPort\_PassesBothRules
+
+```text
+A rule that ignores adapters would still pass this row, but it fails the offender rows
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the dependency rule on made-up Tracker integration types that take a Promises renderer in a constructor, call a static Promises helper, or nest a type holding a Promises renderer
+```
+
+```text
+Each run fails and names exactly that type and the Promises type it reaches
+```
+
+```text
+A new dependency from Tracker integration on Promises cannot come back unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationReachesNoPromisesArchUnitTest\.cs\:\:ATrackerIntegrationTypeReachingPromises\_FailsAndIsNamedWithWhatItReaches
+
+```text
+A dependency reached only through reflection or a type name held as text, which no compiled-code rule can see
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Run the dependency rule with a Tracker integration namespace that holds no type
+```
+
+```text
+The rule fails, saying it checked nothing
+```
+
+```text
+A renamed or emptied module cannot leave the rule green while it guards nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationReachesNoPromisesArchUnitTest\.cs\:\:ATrackerIntegrationPatternThatMatchesNoType\_FailsInsteadOfPassing
+
+```text
+A Promises namespace that matches no type; the port row catches that, because the renderer must be found under Promises
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the port rule on a made-up case whose merge port is declared in Promises instead of Tracker integration
+```
+
+```text
+The rule fails, naming the missing Tracker integration port and where the type of that name lives
+```
+
+```text
+The merge port cannot slip back into Promises, which would make the connector depend on Promises again
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationReachesNoPromisesArchUnitTest\.cs\:\:AMergePortDeclaredInPromisesInsteadOfTrackerIntegration\_FailsAndIsNamedWithWhereItLives
+
+```text
+A port declared in a third module; the rule then says no type of that name exists in Tracker integration's Application, still failing, only with a less helpful message
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the port rule on a made-up case whose renderer port still declares the merge beside rendering
+```
+
+```text
+The rule fails, naming the renderer port that still declares the merge
+```
+
+```text
+No client can reach the merge through the Promises renderer's port again
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationReachesNoPromisesArchUnitTest\.cs\:\:ARendererPortThatStillOffersTheMerge\_FailsAndIsNamed
+
+```text
+The merge offered under another method name on the renderer port; the rule looks for the merge by name
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Merge a forecast block into a description through the renderer: replace in place, append when the markers are broken, rewrite the same block again
+```
+
+```text
+The same text as before the port was extracted, pinned by the unchanged renderer merge examples
+```
+
+```text
+The text written to Jira does not change
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/Promises\/Application\/DeliveryForecastBlockRendererTest\.cs
+
+```text
+A change to the merge reached only through the Jira connector's publishing path; the unchanged Jira write-back and publishing unit tests cover that path
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows

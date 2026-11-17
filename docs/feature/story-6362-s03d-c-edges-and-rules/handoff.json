@@ -103,12 +103,145 @@
 "stimulus": "F167",
 "user_result": "F169"
 }
+],
+"S2": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F137"
+],
+"still_passes_if": "F174",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs::TrackerIntegration_ReachesNoPromisesType"
+},
+"expected": "F172",
+"stimulus": "F171",
+"user_result": "F173"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F178",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs::TheJiraConnector_MergesTheForecastBlockThroughTrackerIntegrationsOwnPort_ThatThePromisesRendererImplements"
+},
+"expected": "F176",
+"stimulus": "F175",
+"user_result": "F177"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F182",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs::ATrackerIntegrationTypeMergingOnlyThroughItsOwnPort_PassesBothRules"
+},
+"expected": "F180",
+"stimulus": "F179",
+"user_result": "F181"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F138"
+],
+"still_passes_if": "F186",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs::ATrackerIntegrationTypeReachingPromises_FailsAndIsNamedWithWhatItReaches"
+},
+"expected": "F184",
+"stimulus": "F183",
+"user_result": "F185"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F190",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs::ATrackerIntegrationPatternThatMatchesNoType_FailsInsteadOfPassing"
+},
+"expected": "F188",
+"stimulus": "F187",
+"user_result": "F189"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F194",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs::AMergePortDeclaredInPromisesInsteadOfTrackerIntegration_FailsAndIsNamedWithWhereItLives"
+},
+"expected": "F192",
+"stimulus": "F191",
+"user_result": "F193"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F198",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationReachesNoPromisesArchUnitTest.cs::ARendererPortThatStillOffersTheMerge_FailsAndIsNamed"
+},
+"expected": "F196",
+"stimulus": "F195",
+"user_result": "F197"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F139"
+],
+"still_passes_if": "F202",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Promises/Application/DeliveryForecastBlockRendererTest.cs"
+},
+"expected": "F200",
+"stimulus": "F199",
+"user_result": "F201"
+}
 ]
 },
 "counters": {
 "D": 8,
 "E": 5,
-"F": 170,
+"F": 202,
 "K": 4,
 "L": 3,
 "P": 5,
@@ -1009,10 +1142,42 @@
 "F169": "Nothing a user, a tracker or the database sees changes",
 "F17": "Confirmed (D-7 option b, D-10): the Tracker integration to Promises edge is inverted. New Modules/TrackerIntegration/Application/IDescriptionBlockMerger.cs declares one method with the renderer's measured signature kept exactly: string MergeInto(string? existingDescription, string blockText) (IDeliveryForecastBlockRenderer.cs:25; the authority's shorthand parameter name existing is not used). MergeInto leaves IDeliveryForecastBlockRenderer, which keeps Render only; DeliveryForecastBlockRenderer implements both interfaces and keeps Render and MergeInto in one class with unchanged bodies. JiraWorkTrackingConnector's fifth constructor parameter (JiraWorkTrackingConnector.cs:26) changes type from IDeliveryForecastBlockRenderer to IDescriptionBlockMerger, its call at line 3968 and its parameter name stay, and its using of Modules.Promises.Application goes. Program.cs keeps line 1474 and the order of every line and adds one registration AddScoped<IDescriptionBlockMerger, DeliveryForecastBlockRenderer>() beside it; the connector is built only by DI (Program.cs:1493 via WorkTrackingConnectorFactory). The class is stateless and pure, so two scoped instances behave the same. No AddPromises extension. Carrier: the port is a Tracker integration Application interface owned by that module; the implementation is owned by Promises Application; no per-process state.",
 "F170": "This slice changes no production code; preservation is observed by the declared full backend test run and by EXAMINE's compare probes, not by an architecture oracle",
+"F171": "Read every dependency in the compiled backend from a Tracker integration type, in any layer and with its nested types, into a Promises type",
+"F172": "No such dependency exists; the check also fails when Tracker integration holds no type at all",
+"F173": "Tracker integration no longer depends on Promises, so the two modules form no cycle; today the Jira connector holding the forecast block renderer is named as the one offending dependency",
+"F174": "A Tracker integration type that names a Promises type only in a catch clause, an event or a named attribute argument, which the compiled-code reader cannot see",
+"F175": "Look up the merge port, the forecast block renderer, the renderer's own port and the Jira connector by name in the compiled backend",
+"F176": "The merge port is an interface in Tracker integration's Application declaring only the merge of a block into an existing description with the renderer's parameter names; the Promises renderer implements it; the Jira connector takes it in its constructor; the renderer's own port no longer offers the merge",
+"F177": "The Jira connector merges the Delivery forecast block through a port Tracker integration owns and Promises answers; today the port is missing, the renderer does not implement it, the renderer's port still offers the merge and the connector takes the renderer",
+"F178": "The port's description parameter loses its may-be-empty marking, which the check does not read; the compiler checks callers instead",
+"F179": "Run both rules on a made-up Tracker integration whose connector merges only through its own port, which a made-up Promises renderer implements",
 "F18": "Confirmed (D-7, Ratchet design R-P8): after C2 Tracker integration reaches no Promises type. Test-side lists that hold the edge follow it in C2: TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts (line 135) goes to empty, and TheJiraConnectorMergingTheForecastBlock (line 140) with the test that pins that one edge (line 229) follow; TrackerIntegrationMembershipArchUnitTest's case (JiraWorkTrackingConnector, IDeliveryForecastBlockRenderer, true) at line 195 follows; TrackerIntegrationMembership.Moves gains IDescriptionBlockMerger, because the membership test names any unlisted type under Modules.TrackerIntegration. Made-up offender fixtures in that file that name IDeliveryForecastBlockRenderer still compile and stay. The test constructions that pass new DeliveryForecastBlockRenderer() to the connector compile unchanged (the class implements the port); only JiraDeliverySourceProviderTest's service registration (line 1137) changes so DI can build the connector (D-9).",
+"F180": "The dependency rule looks at that connector and finds nothing; the port rule finds no problem",
+"F181": "A compliant connector is not reported, so the rules can stay switched on",
+"F182": "A rule that ignores adapters would still pass this row, but it fails the offender rows",
+"F183": "Run the dependency rule on made-up Tracker integration types that take a Promises renderer in a constructor, call a static Promises helper, or nest a type holding a Promises renderer",
+"F184": "Each run fails and names exactly that type and the Promises type it reaches",
+"F185": "A new dependency from Tracker integration on Promises cannot come back unseen",
+"F186": "A dependency reached only through reflection or a type name held as text, which no compiled-code rule can see",
+"F187": "Run the dependency rule with a Tracker integration namespace that holds no type",
+"F188": "The rule fails, saying it checked nothing",
+"F189": "A renamed or emptied module cannot leave the rule green while it guards nothing",
 "F19": "Confirmed (D-9, D-1, D-4, D-5, D-6): Architecture/PromisesUnitTestPlacementTest.cs checks that every unit test of a Promises type (the PromisesMembership types) lives under Tests/Modules/Promises in the sub-folder of its subject, and that no Promises source file is left under Services apart from the named exceptions with their owners: the Delivery repositories (DeliveryRepository, DeliveryMetricSnapshotRepository, IDeliveryRepository, IDeliveryMetricSnapshotRepository, RecordableDeliveries; repository split owner S05d), the write-back round (owner #6657), the update code (S03f, Epic 6474) and feature ordering and ranking (S03i). Integration, acceptance and controller tests stay where they are. Modelled on TrackerIntegrationUnitTestPlacementTest and ForecastingUnitTestPlacementTest. Measured today: the nine Promises unit tests already sit under Tests/Modules/Promises; DeliverySourceBindabilityTest tests a kernel Models type and is not a Promises unit test; no file moves in C3.",
+"F190": "A Promises namespace that matches no type; the port row catches that, because the renderer must be found under Promises",
+"F191": "Run the port rule on a made-up case whose merge port is declared in Promises instead of Tracker integration",
+"F192": "The rule fails, naming the missing Tracker integration port and where the type of that name lives",
+"F193": "The merge port cannot slip back into Promises, which would make the connector depend on Promises again",
+"F194": "A port declared in a third module; the rule then says no type of that name exists in Tracker integration's Application, still failing, only with a less helpful message",
+"F195": "Run the port rule on a made-up case whose renderer port still declares the merge beside rendering",
+"F196": "The rule fails, naming the renderer port that still declares the merge",
+"F197": "No client can reach the merge through the Promises renderer's port again",
+"F198": "The merge offered under another method name on the renderer port; the rule looks for the merge by name",
+"F199": "Merge a forecast block into a description through the renderer: replace in place, append when the markers are broken, rewrite the same block again",
 "F2": "The Promises module keeps its shape on its own: a new reach across its border fails a named rule, and Tracker integration no longer depends on Promises, with nothing a user, a tracker or the database sees changed",
 "F20": "Confirmed (D-0, D-12, P5): behaviour-free. No schema, entity, migration, route, DTO, forecast, Delivery answer, handler order or DI lifetime changes, and the bytes written to Jira stay the same. Production changes only in C2. Behaviour-preservation evidence for C2, unchanged and green: the renderer merge tests DeliveryForecastBlockRendererTest and DeliveryForecastBlockRendererBeyondTheHorizonTest, the Jira write-back unit tests JiraBatchedWriteBackTest and JiraQuietWriteBackTest, and the connector publishing tests JiraDeliverySourceProviderTest and JiraDeliveryForecastPublisherTest; the live JiraWriteBackTest and JiraSuppressionRetryIntegrationTest run in CI on the push. EXAMINE observes through admitted probes only (architecture-rules, test-selection-show, ci-live-suites-show, ef-model-unchanged, the answers-compare probes) and names up front the four blocked-period reactions refresh-reactions-compare cannot observe.",
+"F200": "The same text as before the port was extracted, pinned by the unchanged renderer merge examples",
+"F201": "The text written to Jira does not change",
+"F202": "A change to the merge reached only through the Jira connector's publishing path; the unchanged Jira write-back and publishing unit tests cover that path",
 "F21": "Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of unchanged pure code: namespace placement, the exact set of edges per rule, the location of each test file, and that MergeInto's body is unchanged. Each is decided exactly by its IL architecture oracle (Finite laws) with a made-up offender per rule as falsifier, and by the existing example tests for the merge. No Quint, TLA+ or Agda model: no state machine, ordering, concurrency, recovery or progress claim changes (no handler, queue or schedule moves), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: IDescriptionBlockMerger narrows what the connector can call to the one merge it uses, checked by the C# compiler; property tests add nothing over a finite edge set.",
 "F22": "Confirmed (maintainer 2026-11-17): rigor thorough for feature C (architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet); C2 stays as the last edit slice of feature C; push per slice with CI watched, rebase before push allowed; no review window; mutation once at the end of S03d on frozen code (D-13), then finalize. C2 adds a file under Modules/TrackerIntegration/Application and edits Program.cs, so its push runs every live suite (D-11).",
 "F23": "Rule lists only shrink and are never loosened: inline full-name lists compared both ways against the IL (IlDependencies, which misses catch-clause, event and attribute-named-argument references); exemptions are exact per type and its nested types, never a namespace or layer; holdings compare top-level types (nested names reduced to the part before the plus sign). Each rule edit is proved by a throwaway probe that is reverted.",
