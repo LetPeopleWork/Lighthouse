@@ -1,6 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {

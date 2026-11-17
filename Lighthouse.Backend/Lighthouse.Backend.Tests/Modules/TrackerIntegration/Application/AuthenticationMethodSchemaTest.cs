@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
@@ -134,7 +134,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
             {
                 Assert.That(method!.Options, Has.Count.EqualTo(3));
 
-                var url = method.Options.Single(o => o.Key == Backend.Services.Implementation.WorkTrackingConnectors.Jira.JiraWorkTrackingOptionNames.Url);
+                var url = method.Options.Single(o => o.Key == Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingOptionNames.Url);
                 Assert.That(url.DisplayName, Is.EqualTo("Jira URL"));
                 Assert.That(url.IsSecret, Is.False);
 
@@ -178,7 +178,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
             {
                 Assert.That(method!.Options, Has.Count.EqualTo(4));
 
-                var url = method.Options.Single(o => o.Key == Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps.AzureDevOpsWorkTrackingOptionNames.Url);
+                var url = method.Options.Single(o => o.Key == Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps.AzureDevOpsWorkTrackingOptionNames.Url);
                 Assert.That(url.DisplayName, Is.EqualTo("Organization URL"));
                 Assert.That(url.IsSecret, Is.False);
 

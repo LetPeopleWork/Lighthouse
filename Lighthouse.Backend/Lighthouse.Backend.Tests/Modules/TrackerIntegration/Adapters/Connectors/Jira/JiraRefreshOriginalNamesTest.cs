@@ -1,6 +1,6 @@
 using System.Net;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira

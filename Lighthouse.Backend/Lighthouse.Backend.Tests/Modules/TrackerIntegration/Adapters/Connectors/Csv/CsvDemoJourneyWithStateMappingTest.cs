@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
             var team = new Team
             {
                 Id = 1886,
-                DataRetrievalValue = File.ReadAllText("Services/Implementation/WorkTrackingConnectors/Csv/team-valid-demo-journey-synthesis.csv"),
+                DataRetrievalValue = File.ReadAllText("Modules/TrackerIntegration/Adapters/Connectors/Csv/team-valid-demo-journey-synthesis.csv"),
                 ToDoStates = ["To Do"],
                 DoingStates = ["In Progress", "Code Review", "Testing"],
                 DoneStates = ["Done"],

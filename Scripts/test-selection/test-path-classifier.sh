@@ -26,32 +26,32 @@ assert() {
 }
 
 # Scenario 1: only Jira connector code changed
-diff_jira_only=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs\nLighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWriteBackTest.cs'
+diff_jira_only=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs\nLighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWriteBackTest.cs'
 assert "jira-only: jira=true"            "$(classify_jira "$diff_jira_only")"     "true"
 assert "jira-only: ado=false"            "$(classify_ado "$diff_jira_only")"      "false"
 assert "jira-only: linear=false"         "$(classify_linear "$diff_jira_only")"   "false"
 assert "jira-only: shared=false"         "$(classify_shared "$diff_jira_only")"   "false"
 
 # Scenario 2: only ADO connector code changed
-diff_ado_only=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs'
+diff_ado_only=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs'
 assert "ado-only: ado=true"              "$(classify_ado "$diff_ado_only")"       "true"
 assert "ado-only: jira=false"            "$(classify_jira "$diff_ado_only")"      "false"
 assert "ado-only: linear=false"          "$(classify_linear "$diff_ado_only")"    "false"
 assert "ado-only: shared=false"          "$(classify_shared "$diff_ado_only")"    "false"
 
 # Scenario 3: only Linear connector test changed
-diff_linear_only=$'Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorTest.cs'
+diff_linear_only=$'Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/Connectors/Linear/LinearWorkTrackingConnectorTest.cs'
 assert "linear-only: linear=true"        "$(classify_linear "$diff_linear_only")" "true"
 assert "linear-only: ado=false"          "$(classify_ado "$diff_linear_only")"    "false"
 assert "linear-only: jira=false"         "$(classify_jira "$diff_linear_only")"   "false"
 assert "linear-only: shared=false"       "$(classify_shared "$diff_linear_only")" "false"
 
 # Scenario 4: shared connector base (OAuth subfolder)
-diff_shared_oauth=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/OAuth/OAuthSchemaExtensions.cs'
+diff_shared_oauth=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/OAuth/OAuthSchemaExtensions.cs'
 assert "shared-oauth: shared=true"       "$(classify_shared "$diff_shared_oauth")" "true"
 
 # Scenario 5: shared connector Auth subfolder
-diff_shared_auth=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/WorkTrackingAuthStrategyFactory.cs'
+diff_shared_auth=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Auth/WorkTrackingAuthStrategyFactory.cs'
 assert "shared-auth: shared=true"        "$(classify_shared "$diff_shared_auth")"  "true"
 
 # Scenario 6: shared connector top-level (AuthenticationMethodSchema.cs)
@@ -86,7 +86,7 @@ assert "docs-only: linear=false"         "$(classify_linear "$diff_docs_only")" 
 assert "docs-only: shared=false"         "$(classify_shared "$diff_docs_only")"    "false"
 
 # Scenario 12: mixed Jira + shared -> jira true, shared also true (shared wins in caller)
-diff_mixed=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs\nLighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/OAuth/OAuthSchemaExtensions.cs'
+diff_mixed=$'Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs\nLighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/Connectors/OAuth/OAuthSchemaExtensions.cs'
 assert "mixed: jira=true"                "$(classify_jira "$diff_mixed")"          "true"
 assert "mixed: shared=true"              "$(classify_shared "$diff_mixed")"        "true"
 

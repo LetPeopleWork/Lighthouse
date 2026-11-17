@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models.DeliverySources;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 

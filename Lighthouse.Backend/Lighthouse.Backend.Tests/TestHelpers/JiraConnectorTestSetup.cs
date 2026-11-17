@@ -1,8 +1,7 @@
 using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using Lighthouse.Backend.Cache;
-using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;

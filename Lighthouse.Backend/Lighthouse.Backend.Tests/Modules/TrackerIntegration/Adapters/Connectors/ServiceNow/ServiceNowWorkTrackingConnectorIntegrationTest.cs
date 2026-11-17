@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;

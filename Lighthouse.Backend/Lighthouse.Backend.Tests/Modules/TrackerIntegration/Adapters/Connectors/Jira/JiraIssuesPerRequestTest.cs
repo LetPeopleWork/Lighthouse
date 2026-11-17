@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 using Moq.Protected;

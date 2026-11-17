@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;

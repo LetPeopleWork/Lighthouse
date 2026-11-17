@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
 using static Lighthouse.Backend.Tests.TestHelpers.AzureDevOpsOrganisation;

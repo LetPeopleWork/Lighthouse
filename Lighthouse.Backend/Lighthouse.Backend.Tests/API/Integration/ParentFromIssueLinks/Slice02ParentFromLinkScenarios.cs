@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks

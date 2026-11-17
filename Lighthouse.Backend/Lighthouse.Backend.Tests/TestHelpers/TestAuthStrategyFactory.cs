@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Auth;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Moq;

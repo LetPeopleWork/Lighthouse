@@ -315,7 +315,7 @@ class TheConnectorListFollowsTheWorkflow(unittest.TestCase):
 class TheRealTreeLeavesOutWhatItShould(unittest.TestCase):
     def test_the_real_tree_leaves_out_the_mixed_classes_and_keeps_their_regular_neighbours(self):
         found = trx_to_csv.discover_connector_class_names(REAL_SOURCE_ROOT)
-        connectors = "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors"
+        connectors = "Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors"
 
         for left_out in (
             f"{connectors}.Jira.JiraWriteBackTest",

@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 

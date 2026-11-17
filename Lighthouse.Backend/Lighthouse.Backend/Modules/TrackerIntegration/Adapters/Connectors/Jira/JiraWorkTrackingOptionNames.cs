@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
+﻿namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
 {
     public static class JiraWorkTrackingOptionNames
     {

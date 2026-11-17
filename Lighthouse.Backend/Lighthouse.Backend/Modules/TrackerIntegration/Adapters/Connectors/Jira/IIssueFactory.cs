@@ -1,5 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira

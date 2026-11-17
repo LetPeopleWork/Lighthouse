@@ -1,8 +1,7 @@
-using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.DeliverySources;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;

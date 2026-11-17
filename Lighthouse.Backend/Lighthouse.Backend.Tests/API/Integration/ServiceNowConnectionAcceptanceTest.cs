@@ -6,7 +6,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;

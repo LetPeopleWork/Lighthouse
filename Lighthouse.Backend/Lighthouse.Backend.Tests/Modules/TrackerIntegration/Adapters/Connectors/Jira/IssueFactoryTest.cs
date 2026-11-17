@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text.Json;

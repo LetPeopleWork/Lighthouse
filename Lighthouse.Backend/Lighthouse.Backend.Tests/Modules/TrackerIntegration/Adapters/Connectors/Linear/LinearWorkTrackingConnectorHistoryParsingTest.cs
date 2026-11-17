@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;

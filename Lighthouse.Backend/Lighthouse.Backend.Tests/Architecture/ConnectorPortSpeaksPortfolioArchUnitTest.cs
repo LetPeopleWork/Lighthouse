@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Microsoft.Extensions.Logging;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 

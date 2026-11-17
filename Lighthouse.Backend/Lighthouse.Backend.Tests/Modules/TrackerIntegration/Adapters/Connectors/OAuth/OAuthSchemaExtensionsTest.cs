@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.OAuth;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.OAuth
 {

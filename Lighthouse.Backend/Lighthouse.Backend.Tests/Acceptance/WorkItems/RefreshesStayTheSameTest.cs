@@ -15,7 +15,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.Repositories;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

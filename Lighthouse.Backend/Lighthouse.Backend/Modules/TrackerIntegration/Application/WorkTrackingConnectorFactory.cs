@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {

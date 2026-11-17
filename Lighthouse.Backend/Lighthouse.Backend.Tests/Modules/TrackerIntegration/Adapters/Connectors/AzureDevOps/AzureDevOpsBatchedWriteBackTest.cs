@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
 using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;

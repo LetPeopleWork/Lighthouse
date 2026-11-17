@@ -1,7 +1,7 @@
 using System.Text;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;

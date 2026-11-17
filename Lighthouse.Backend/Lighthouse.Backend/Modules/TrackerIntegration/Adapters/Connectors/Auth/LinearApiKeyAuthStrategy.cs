@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 

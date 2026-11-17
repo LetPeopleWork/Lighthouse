@@ -6,7 +6,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;

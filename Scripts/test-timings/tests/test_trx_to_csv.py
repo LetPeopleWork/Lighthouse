@@ -940,7 +940,7 @@ class TheRealTreeTests(unittest.TestCase):
             "Integration",
         ),
         "live": (
-            f"{TESTS}.Services.Implementation.WorkTrackingConnectors.Jira"
+            f"{TESTS}.Modules.TrackerIntegration.Adapters.Connectors.Jira"
             ".JiraOriginalNamesLiveTest",
             "Integration",
         ),

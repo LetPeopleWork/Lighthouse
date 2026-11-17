@@ -5,7 +5,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
 using Lighthouse.Backend.Services.Implementation.Repositories;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Modules.WorkItems.Application;

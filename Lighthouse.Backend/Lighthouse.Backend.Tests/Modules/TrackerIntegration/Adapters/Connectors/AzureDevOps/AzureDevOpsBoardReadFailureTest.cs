@@ -2,7 +2,7 @@ using System.Net;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;

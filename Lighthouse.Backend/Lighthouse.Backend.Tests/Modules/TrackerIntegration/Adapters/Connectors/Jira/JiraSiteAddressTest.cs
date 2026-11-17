@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira
 {

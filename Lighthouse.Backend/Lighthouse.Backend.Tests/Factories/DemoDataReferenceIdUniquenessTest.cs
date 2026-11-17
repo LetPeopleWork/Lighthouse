@@ -1,6 +1,6 @@
 using System.Reflection;
 using Lighthouse.Backend.Factories;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;

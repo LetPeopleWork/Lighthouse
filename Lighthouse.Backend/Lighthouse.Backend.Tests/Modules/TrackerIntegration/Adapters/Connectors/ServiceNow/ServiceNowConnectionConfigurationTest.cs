@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;

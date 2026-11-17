@@ -1,7 +1,7 @@
 ﻿﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Services.Interfaces;
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;

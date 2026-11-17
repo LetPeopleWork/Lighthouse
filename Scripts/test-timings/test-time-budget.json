@@ -56,7 +56,7 @@
         "ceiling_seconds": 91
       },
       {
-        "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps.AzureDevOpsWorkTrackingConnectorTest",
+        "unit": "Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps.AzureDevOpsWorkTrackingConnectorTest",
         "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
         "ceiling_seconds": 83
       },
@@ -111,22 +111,22 @@
         "ceiling_seconds": 37
       },
       {
-        "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira.JiraWorkTrackingConnectorTest",
+        "unit": "Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingConnectorTest",
         "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
         "ceiling_seconds": 127
       },
       {
-        "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.ServiceNow.ServiceNowWorkTrackingConnectorIntegrationTest",
+        "unit": "Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow.ServiceNowWorkTrackingConnectorIntegrationTest",
         "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
         "ceiling_seconds": 79
       },
       {
-        "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira.JiraWriteBackTest",
+        "unit": "Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWriteBackTest",
         "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
         "ceiling_seconds": 67
       },
       {
-        "unit": "Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira.JiraOriginalNamesLiveTest",
+        "unit": "Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraOriginalNamesLiveTest",
         "reason": "calls the live work tracking system over the network; runs only when that connector's code changes",
         "ceiling_seconds": 524
       },

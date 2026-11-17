@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
             {
                 Name = "A Portfolio from a spreadsheet",
                 WorkTrackingSystemConnection = connection,
-                DataRetrievalValue = File.ReadAllText("Services/Implementation/WorkTrackingConnectors/Csv/project-valid-required-only.csv"),
+                DataRetrievalValue = File.ReadAllText("Modules/TrackerIntegration/Adapters/Connectors/Csv/project-valid-required-only.csv"),
             };
 
             portfolio.WorkItemTypes.Clear();

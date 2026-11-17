@@ -2,7 +2,7 @@ using System.Reflection;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;

@@ -1,5 +1,5 @@
 using ArchUnitNET.NUnit;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheBoardPickersDecisions_LiveInPureCoresOfTheirOwn()
         {
-            var production = typeof(Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow.ServiceNowValidationVerdict).Assembly;
+            var production = typeof(Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow.ServiceNowValidationVerdict).Assembly;
 
             using (Assert.EnterMultipleScope())
             {

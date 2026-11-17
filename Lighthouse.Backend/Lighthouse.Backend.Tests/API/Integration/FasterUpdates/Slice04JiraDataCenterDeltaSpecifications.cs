@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// The connector is faked here by policy, which is what makes this fixture deployment-agnostic: it
     /// describes what a refresh does with a repeated record, not how Jira Data Center comes to repeat one.
     /// The Data Center transport itself is asserted in
-    /// <c>Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest</c>, where the stub
+    /// <c>Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraIncrementalSyncTest</c>, where the stub
     /// transport can see the actual requests.
     /// </summary>
     public partial class Slice04JiraDataCenterDeltaTest : FasterUpdatesAcceptanceTest

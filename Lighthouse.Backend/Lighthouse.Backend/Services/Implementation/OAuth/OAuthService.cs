@@ -3,7 +3,7 @@ using System.Diagnostics;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation.Encryption;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.OAuth;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

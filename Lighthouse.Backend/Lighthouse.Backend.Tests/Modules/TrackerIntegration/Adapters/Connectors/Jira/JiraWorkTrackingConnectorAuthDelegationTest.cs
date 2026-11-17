@@ -1,10 +1,9 @@
 using System.Net;
 using System.Text;
 using Lighthouse.Backend.Services.Implementation.DeliverySources;
-using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.OAuth;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;

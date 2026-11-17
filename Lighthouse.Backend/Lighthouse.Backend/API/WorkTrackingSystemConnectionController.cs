@@ -3,7 +3,7 @@ using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

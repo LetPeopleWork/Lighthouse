@@ -1,10 +1,9 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
 {

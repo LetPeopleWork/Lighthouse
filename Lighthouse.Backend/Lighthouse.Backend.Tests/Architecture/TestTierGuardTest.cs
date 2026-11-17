@@ -27,9 +27,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         // as live too, and CI would stop running them.
         private static readonly IReadOnlyDictionary<string, string> LiveClassesWithOfflineTests = new Dictionary<string, string>
         {
-            ["Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps.AzureDevOpsWriteBackTest"] =
+            ["Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps.AzureDevOpsWriteBackTest"] =
                 "writes to a real Azure DevOps, but its empty-update and bad-id tests touch no tracker and must run in every CI build",
-            ["Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira.JiraWriteBackTest"] =
+            ["Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWriteBackTest"] =
                 "writes to a real Jira, but its empty-update test touches no tracker and must run in every CI build",
         };
 

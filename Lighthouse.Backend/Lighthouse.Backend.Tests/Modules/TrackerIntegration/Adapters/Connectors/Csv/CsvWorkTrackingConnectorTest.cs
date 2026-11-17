@@ -2,7 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Repositories;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -677,7 +677,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
 
         private static string LoadCsvFile(string csvFileName)
         {
-            var csvFileContent = File.ReadAllText($"Services/Implementation/WorkTrackingConnectors/Csv/{csvFileName}");
+            var csvFileContent = File.ReadAllText($"Modules/TrackerIntegration/Adapters/Connectors/Csv/{csvFileName}");
             return csvFileContent;
         }
 

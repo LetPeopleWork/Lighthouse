@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;

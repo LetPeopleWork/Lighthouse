@@ -9,7 +9,7 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.Validation;
 
-using static Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear.LinearWorkTrackingConnector.LinearResponses;
+using static Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear.LinearWorkTrackingConnector.LinearResponses;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear
 {

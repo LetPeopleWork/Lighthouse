@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// This fixture is deliberately small, and the reason is worth stating. Slice 04 is transport work: what
     /// changes is which requests the Jira connector issues for an on-premise instance, and the acceptance
     /// suite fakes the connector by policy, so it cannot see a single one of them. Those assertions live in
-    /// <c>Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest</c>, against a stub
+    /// <c>Modules/TrackerIntegration/Adapters/Connectors/Jira/JiraIncrementalSyncTest</c>, against a stub
     /// transport that records the requests.
     ///
     /// What is left for this level is AC-4.3, and only AC-4.3: a repeated reference id is collapsed before

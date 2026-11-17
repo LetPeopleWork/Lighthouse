@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Text;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;

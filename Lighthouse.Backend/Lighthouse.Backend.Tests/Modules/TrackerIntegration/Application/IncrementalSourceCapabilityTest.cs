@@ -1,8 +1,8 @@
 using System.Reflection;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
