@@ -11,14 +11,14 @@ object_oriented
 #### D1
 
 ```text
-Where the rule lives: the outlier rule moves to the backend, Flow metrics module, behind a replaceable definition. Domain interface ICycleTimeOutlierDefinition (Modules/FlowMetrics/Domain/CycleTimeOutlierDefinition.cs) has one method: OutlierVerdict Judge(IReadOnlyList<int> baselineCycleTimes, IReadOnlyList<CycleTimeObservation> shown). The only implementation now is UpperNaturalProcessLimitOutlierDefinition, registered once as a singleton in Program.cs next to the metrics services and injected by constructor into TeamMetricsService and PortfolioMetricsService. A later definition is supplied by registering another implementation; the route, the DTO, the services and the frontend do not change. The frontend keeps no rule: it partitions the plotted items by the outlier ids of the verdict. Confirms the DISCUSS proposals: limit = the Cycle Time PBC UNPL (average + 2.66 x average moving range of the baseline Cycle Times, configured baseline or else the selected range), compared unrounded; only above-UNPL sets an item apart; no silent 5 x median fallback.
+Where the rule lives: the outlier rule moves to the backend, Flow metrics module, behind a replaceable definition. Interface ICycleTimeOutlierDefinition (Modules/FlowMetrics/Application/CycleTimeOutlierDefinition.cs) has one method: OutlierVerdict Judge(IReadOnlyList<int> baselineCycleTimes, IReadOnlyList<CycleTimeObservation> shown). It lives in Application, not Domain, because the Architecture.FlowMetrics rule lets only its listed types reach the module Domain and that list only shrinks. The only implementation now is UpperNaturalProcessLimitOutlierDefinition, in the same file, registered once as a singleton in Program.cs next to the metrics services and injected by constructor into TeamMetricsService and PortfolioMetricsService. A later definition is supplied by registering another implementation; the route, the DTO, the services and the frontend do not change. The frontend keeps no rule: it partitions the plotted items by the outlier ids of the verdict. Confirms the DISCUSS proposals: limit = the Cycle Time PBC UNPL (average + 2.66 x average moving range of the baseline Cycle Times, configured baseline or else the selected range), compared unrounded; only above-UNPL sets an item apart; no silent 5 x median fallback.
 ```
 Governed slices: S2, S3
 
 #### D2
 
 ```text
-Carriers and owners. Domain (Modules/FlowMetrics/Domain): UpperNaturalProcessLimit value object in XmRCalculator.cs, holding the unrounded double, built by XmRCalculator.UpperNaturalProcessLimitOf(int[] baseline) and answering IsExceededBy(int days) as days > limit; XmRCalculator.Calculate and its large-change rule use the same object, so the PBC marker and the outlier rule share one formula and one comparison. OutlierVerdict closed choice (abstract record with two cases): Limited(UpperNaturalProcessLimit Limit, IReadOnlyList<int> OutlierWorkItemIds) and NoLimits. CycleTimeObservation(int WorkItemId, int Days) record. Application (Modules/FlowMetrics/Application): GetCycleTimeOutliers(owner, startDate, endDate, int? definitionId) on ITeamMetricsService and IPortfolioMetricsService, built once in BaseMetricsService.BuildCycleTimeOutliers: it resolves the baseline with ResolveBaseline, collects baseline and shown Cycle Times with the same window, filter (Cycle Time > 0) and order as BuildCycleTimeProcessBehaviourChart (a named definition uses each item named duration, items without one are skipped), and asks the injected definition; cached through GetFromCacheIfExists with a key that includes the definition id. API: GET cycleTime/outliers?startDate&endDate&definitionId on TeamMetricsController and PortfolioMetricsController, next to cycleTime/pbc, under the same RbacGuard read requirement; DTO CycleTimeOutliersDto (API/DTO) with Status (CycleTimeOutlierStatus Ready or NoLimits, serialised as a string), UpperNaturalProcessLimit (double or null) and OutlierWorkItemIds (int array). Frontend: ICycleTimeOutliers model, MetricsService.getCycleTimeOutliers for Team and Portfolio, and a keyed TanStack query in the chart. Per-process state: none new beyond the existing metrics cache; the switch is React component state only.
+Carriers and owners. Domain (Modules/FlowMetrics/Domain): UpperNaturalProcessLimit value object in XmRCalculator.cs, holding the unrounded double, built by XmRCalculator.UpperNaturalProcessLimitOf(int[] baseline) and answering IsExceededBy(int days) as days > limit; XmRCalculator.Calculate and its large-change rule use the same object, so the PBC marker and the outlier rule share one formula and one comparison. Application (Modules/FlowMetrics/Application/CycleTimeOutlierDefinition.cs): OutlierVerdict closed choice (abstract record with two cases): Limited(UpperNaturalProcessLimit Limit, IReadOnlyList<int> OutlierWorkItemIds), which exposes UpperNaturalProcessLimitDays so the DTO never touches the Domain type, and NoLimits; CycleTimeObservation(int WorkItemId, int Days) record; ICycleTimeOutlierDefinition and UpperNaturalProcessLimitOutlierDefinition. Application services: GetCycleTimeOutliers(owner, startDate, endDate, int? definitionId) on ITeamMetricsService and IPortfolioMetricsService, built once in BaseMetricsService.BuildCycleTimeOutliers: it resolves the baseline with ResolveBaseline, collects baseline and shown Cycle Times with the same window, filter (Cycle Time > 0) and order as BuildCycleTimeProcessBehaviourChart (a named definition uses each item named duration, items without one are skipped), and asks the injected definition; cached through GetFromCacheIfExists with a key that includes the definition id. API: GET cycleTime/outliers?startDate&endDate&definitionId on TeamMetricsController and PortfolioMetricsController, next to cycleTime/pbc, under the same RbacGuard read requirement; DTO CycleTimeOutliersDto (API/DTO) with Status (CycleTimeOutlierStatus Ready or NoLimits, serialised as a string), UpperNaturalProcessLimit (double or null, read from UpperNaturalProcessLimitDays) and OutlierWorkItemIds (int array). Frontend: ICycleTimeOutliers model (models/Metrics/CycleTimeOutliers.ts), MetricsService.getCycleTimeOutliers for Team and Portfolio, a keyed TanStack query in the chart, owner and range passed to the chart through widgetNodes and BaseMetricsView, and a verdict-pending state of the outlier header chip while the verdict loads. Per-process state: none new beyond the existing metrics cache; the switch is React component state only.
 ```
 Governed slices: S2, S3
 
@@ -591,7 +591,7 @@ owns the outlier partition, axis and chip today; the switch gates them in the sa
 
 axisTop
 
-Lighthouse\.Frontend\/src\/utils\/charts\/outliers\.ts\:79
+Lighthouse\.Frontend\/src\/utils\/charts\/outliers\.ts\:55
 
 Reuse
 
@@ -819,7 +819,7 @@ Extend
 UpperNaturalProcessLimit value object shared by the PBC and the outlier rule
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Domain\/CycleTimeOutlierDefinition\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Application\/CycleTimeOutlierDefinition\.cs
 
 Create
 
@@ -951,6 +951,14 @@ Extend
 glossary: Outlier rewritten, Upper natural process limit added
 ```
 
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/outlierHeaderChip\.tsx
+
+Extend
+
+```text
+a verdict-pending chip state while the outlier verdict loads
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/CycleTimeOutliers\/CycleTimeOutliersFollowTheProcessBehaviourChartTest\.cs
 
 #### Verification
@@ -975,6 +983,10 @@ Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart
 Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierViews\.test\.tsx
 
 Lighthouse\.Frontend\/src\/components\/Common\/Charts\/CycleTimeScatterPlotChart\.outlierSwitch\.test\.tsx
+
+Lighthouse\.Frontend\/src\/utils\/charts\/outliers\.mutation\.test\.ts
+
+Lighthouse\.Frontend\/src\/utils\/charts\/outlierWording\.mutation\.test\.ts
 
 #### Public oracle
 
@@ -1068,7 +1080,7 @@ already yields each item with its named durations
 
 ICycleTimeOutlierDefinition
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Domain\/CycleTimeOutlierDefinition\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Application\/CycleTimeOutlierDefinition\.cs\:1
 
 CreateNew
 
@@ -1226,6 +1238,16 @@ Extend
 the existing glossary row is rewritten, UNPL row added
 ```
 
+outlierHeaderChip
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/outlierHeaderChip\.tsx\:20
+
+Extend
+
+```text
+single owner of the outlier header chip; it gains a verdict-pending state shown while the outlier verdict loads
+```
+
 ##### Impact
 
 domain
@@ -1318,9 +1340,9 @@ Migrated
 decisions 1 to 3 superseded by the new ADR
 ```
 
-domain
+application
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Domain\/CycleTimeOutlierDefinition\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Application\/CycleTimeOutlierDefinition\.cs\:1
 
 Changed
 
@@ -1426,6 +1448,16 @@ Changed
 
 ```text
 glossary rows
+```
+
+frontend
+
+Lighthouse\.Frontend\/src\/components\/Common\/Charts\/outlierHeaderChip\.tsx\:20
+
+Changed
+
+```text
+verdict-pending chip state; the ready and no-limits states keep their copy
 ```
 
 ##### Agreement
@@ -1652,7 +1684,7 @@ None.
 
 #### Targets
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Domain\/CycleTimeOutlierDefinition\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Application\/CycleTimeOutlierDefinition\.cs
 
 Extend
 
@@ -1743,7 +1775,7 @@ None.
 
 OutlierVerdict
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Domain\/CycleTimeOutlierDefinition\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Application\/CycleTimeOutlierDefinition\.cs\:1
 
 CreateNew
 
@@ -1803,9 +1835,9 @@ not shown on NoLimits; the no-limits text takes its place
 
 ##### Impact
 
-domain
+application
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Domain\/CycleTimeOutlierDefinition\.cs\:1
+Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/FlowMetrics\/Application\/CycleTimeOutlierDefinition\.cs\:1
 
 Changed
 

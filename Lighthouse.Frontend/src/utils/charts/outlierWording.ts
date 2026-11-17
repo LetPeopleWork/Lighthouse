@@ -1,5 +1,3 @@
-import { OUTLIER_MEDIAN_MULTIPLE } from "./outliers";
-
 export interface OutlierTerms {
 	readonly workItems: string;
 	readonly sle: string;
@@ -24,10 +22,13 @@ export interface OutlierRuleTerms {
 /** The rule as the widget's help states it. */
 export const outlierRuleSentence = ({
 	workItem,
-	workItems,
 	cycleTime,
 }: OutlierRuleTerms): string =>
-	`An outlier is a closed ${workItem} whose ${cycleTime} is more than ${OUTLIER_MEDIAN_MULTIPLE} times the median ${cycleTime} of all closed ${workItems} in this date range.`;
+	`An outlier is a closed ${workItem} whose ${cycleTime} is above the upper natural process limit of the ${cycleTime} process behaviour chart for this date range.`;
+
+// At most one decimal, so a limit of 30.6 days is not shown as 31 while a 31-day Work Item is listed above it.
+const limitInDays = (limit: number): string =>
+	String(Math.round(limit * 10) / 10);
 
 const plural = (count: number): string =>
 	count === 1 ? "outlier" : "outliers";
@@ -55,7 +56,8 @@ export function outlierWording(terms: OutlierTerms) {
 		chipAccessibleNameWhileLoading: "Outliers, loading",
 		aboveTheAxis: (lines: readonly AboveAxisLine[]) =>
 			`Above the axis: ${lines.map(aboveAxisPhrase).join(", ")}.`,
-		listTitle: `${terms.workItems} with a ${terms.cycleTime} more than ${OUTLIER_MEDIAN_MULTIPLE} times the median`,
+		listTitle: (limit: number) =>
+			`${terms.workItems} with a ${terms.cycleTime} above the upper natural process limit (${limitInDays(limit)} days)`,
 		allVisibleAreOutliers: `All visible ${terms.workItems} are outliers.`,
 		allTypesHidden: "All types are hidden.",
 	};

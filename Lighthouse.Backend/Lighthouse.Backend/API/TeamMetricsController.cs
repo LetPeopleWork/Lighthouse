@@ -501,6 +501,18 @@ namespace Lighthouse.Backend.API
                 AnnotateBlackoutDays(teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate), startDate, endDate));
         }
 
+        [HttpGet("cycleTime/outliers")]
+        public ActionResult<CycleTimeOutliersDto> GetCycleTimeOutliers(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? definitionId = null)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                CycleTimeOutliersDto.From(teamMetricsService.GetCycleTimeOutliers(team, startDate, endDate, definitionId)));
+        }
+
         [HttpGet("estimationVsCycleTime")]
         public ActionResult<EstimationVsCycleTimeResponse> GetEstimationVsCycleTimeData(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

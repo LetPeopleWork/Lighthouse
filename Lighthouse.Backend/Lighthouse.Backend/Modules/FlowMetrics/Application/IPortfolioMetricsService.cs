@@ -16,6 +16,8 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
+        OutlierVerdict GetCycleTimeOutliers(Portfolio portfolio, DateTime startDate, DateTime endDate, int? definitionId);
+
         ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
         RunChartData GetThroughputForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);

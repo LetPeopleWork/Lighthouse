@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
+        OutlierVerdict GetCycleTimeOutliers(Team team, DateTime startDate, DateTime endDate, int? definitionId);
+
         RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
         RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode);

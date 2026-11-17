@@ -13,11 +13,13 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         IAppSettingService appSettingService,
         IServiceProvider serviceProvider,
         IFeatureStateTransitionRepository featureStateTransitionRepository,
-        ILighthouseClock clock)
+        ILighthouseClock clock,
+        ICycleTimeOutlierDefinition? outlierDefinition = null)
         : BaseMetricsService(appSettingService.GetFeatureRefreshSettings().Interval, serviceProvider, clock),
             IPortfolioMetricsService
     {
         private static readonly IReadOnlyList<int> DefaultPacePercentiles = [50, 70, 85, 95];
+        private readonly ICycleTimeOutlierDefinition cycleTimeOutlierDefinition = outlierDefinition ?? new UpperNaturalProcessLimitOutlierDefinition();
 
         public RunChartData GetThroughputForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
@@ -65,6 +67,14 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                  return BuildCycleTimeProcessBehaviourChart(portfolio, startDate, endDate,
                      (s, e) => GetFeaturesClosedInDateRange(portfolio, s, e), asOf);
              }, logger);
+        }
+
+        public OutlierVerdict GetCycleTimeOutliers(Portfolio portfolio, DateTime startDate, DateTime endDate, int? definitionId)
+        {
+            return GetFromCacheIfExists(portfolio, $"CycleTimeOutliers_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{CycleTimeOutliersCacheKeyPart(definitionId)}{AsOfCacheKeyPart(null)}", () =>
+                BuildCycleTimeOutliers(portfolio, startDate, endDate, definitionId, cycleTimeOutlierDefinition,
+                    (s, e) => GetFeaturesClosedInDateRange(portfolio, s, e).ToList(),
+                    AssociateSyncedTransitions), logger);
         }
 
         public ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null)

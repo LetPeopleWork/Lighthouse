@@ -34,6 +34,7 @@ import type { IForecastPredictabilityScore } from "../../../models/Forecasts/For
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { ICumulativeStateTimeResponse } from "../../../models/Metrics/CumulativeStateTime";
 import type { ICumulativeStateTimeCandidateRow } from "../../../models/Metrics/CumulativeStateTimeCandidates";
+import type { ICycleTimeOutliers } from "../../../models/Metrics/CycleTimeOutliers";
 import type { IEstimationVsCycleTimeResponse } from "../../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
 import type { IFlowEfficiencyInfo } from "../../../models/Metrics/FlowEfficiencyInfo";
@@ -244,6 +245,9 @@ export function buildWidgetNodes(ctx: {
 	onFetchNamedCycleTimePercentiles: (
 		definitionId: number,
 	) => Promise<IPercentileValue[]>;
+	onFetchCycleTimeOutliers?: (
+		definitionId: number | null,
+	) => Promise<ICycleTimeOutliers>;
 	cycleTimePercentileValues: IPercentileValue[];
 	percentilesScopeDefinitionId: number | null;
 	onPercentilesScopeChange: (definitionId: number | null) => void;
@@ -368,6 +372,10 @@ export function buildWidgetNodes(ctx: {
 				namedCycleTimeDefinitions={ctx.namedCycleTimeDefinitions}
 				onFetchNamedCycleTimePercentiles={ctx.onFetchNamedCycleTimePercentiles}
 				ownerKind={ctx.ownerType}
+				onFetchCycleTimeOutliers={ctx.onFetchCycleTimeOutliers}
+				ownerId={ctx.entity.id}
+				startDate={ctx.startDate}
+				endDate={ctx.endDate}
 			/>
 		),
 		workDistribution: (

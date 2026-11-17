@@ -19,7 +19,8 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         IThroughputFilter throughputFilter,
         IForecastDataSufficiency forecastDataSufficiency,
         IWorkItemStateTransitionRepository workItemStateTransitionRepository,
-        ILighthouseClock clock)
+        ILighthouseClock clock,
+        ICycleTimeOutlierDefinition? outlierDefinition = null)
 #pragma warning restore S107
         : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider, clock),
             ITeamMetricsService
@@ -28,6 +29,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         private const string FeatureWipMetricIdentifier = "FeatureWIP";
         private static readonly IReadOnlyList<int> DefaultPacePercentiles = [50, 70, 85, 95];
         internal const string EmptyFilteredSampleWarning = "Filter excluded all throughput; showing unfiltered forecast";
+        private readonly ICycleTimeOutlierDefinition cycleTimeOutlierDefinition = outlierDefinition ?? new UpperNaturalProcessLimitOutlierDefinition();
 
         public IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team, DateTime asOfDate)
         {
@@ -214,6 +216,14 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 return BuildCycleTimeProcessBehaviourChart(team, startDate, endDate,
                     (s, e) => GetClosedItemsForTeam(team, s, e), asOf);
             }, logger);
+        }
+
+        public OutlierVerdict GetCycleTimeOutliers(Team team, DateTime startDate, DateTime endDate, int? definitionId)
+        {
+            return GetFromCacheIfExists(team, $"CycleTimeOutliers_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{CycleTimeOutliersCacheKeyPart(definitionId)}{AsOfCacheKeyPart(null)}", () =>
+                BuildCycleTimeOutliers(team, startDate, endDate, definitionId, cycleTimeOutlierDefinition,
+                    (s, e) => GetWorkItemsClosedInDateRange(team, s, e).ToList(),
+                    AssociateSyncedTransitions), logger);
         }
 
         public RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate)

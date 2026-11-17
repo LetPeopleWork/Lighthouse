@@ -8,9 +8,49 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
         int LowerNaturalProcessLimit,
         IReadOnlyList<IReadOnlyList<SpecialCauseType>> SpecialCauseClassifications);
 
+    /// <summary>
+    /// The upper natural process limit of a baseline, unrounded. A value above it is a large change on the process
+    /// behaviour chart and an outlier on the Cycle Time scatterplot, so both ask this one object.
+    /// </summary>
+    public sealed record UpperNaturalProcessLimit
+    {
+        internal UpperNaturalProcessLimit(double days)
+        {
+            Days = days;
+        }
+
+        public double Days { get; }
+
+        public bool IsExceededBy(int days) => days > Days;
+    }
+
     public static class XmRCalculator
     {
         private const double MovingRangeMultiplier = 2.66;
+
+        public static UpperNaturalProcessLimit UpperNaturalProcessLimitOf(int[] baselineValues)
+        {
+            if (baselineValues.Length < 2)
+            {
+                throw new ArgumentException(
+                    $"An upper natural process limit needs at least 2 baseline values, but {baselineValues.Length} were given: " +
+                    "with fewer there is no moving range. Ask for the limit only when the baseline holds 2 values or more.",
+                    nameof(baselineValues));
+            }
+
+            return new UpperNaturalProcessLimit(baselineValues.Average() + MovingRangeMultiplier * AverageMovingRange(baselineValues));
+        }
+
+        private static double AverageMovingRange(int[] baselineValues)
+        {
+            var movingRanges = new double[baselineValues.Length - 1];
+            for (var i = 1; i < baselineValues.Length; i++)
+            {
+                movingRanges[i - 1] = Math.Abs(baselineValues[i] - baselineValues[i - 1]);
+            }
+
+            return movingRanges.Average();
+        }
 
         public static XmRResult Calculate(int[] baselineValues, int[] displayValues)
         {
@@ -29,15 +69,9 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
                 return new XmRResult(roundedAverage, roundedAverage, roundedAverage, classifications);
             }
 
-            var movingRanges = new double[baselineValues.Length - 1];
-            for (var i = 1; i < baselineValues.Length; i++)
-            {
-                movingRanges[i - 1] = Math.Abs(baselineValues[i] - baselineValues[i - 1]);
-            }
+            var mrBar = AverageMovingRange(baselineValues);
 
-            var mrBar = movingRanges.Average();
-
-            var unpl = average + MovingRangeMultiplier * mrBar;
+            var unpl = UpperNaturalProcessLimitOf(baselineValues);
             var lnpl = average - MovingRangeMultiplier * mrBar;
 
             // Zero-bounded data: clamp negative lower sigma lines to zero.
@@ -50,7 +84,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
             var specialCauseClassifications = ClassifyAllPoints(
                 displayValues, average, unpl, lnpl, sigma);
 
-            return new XmRResult((int)Math.Round(average), (int)Math.Round(unpl), (int)Math.Round(lnpl), specialCauseClassifications);
+            return new XmRResult((int)Math.Round(average), (int)Math.Round(unpl.Days), (int)Math.Round(lnpl), specialCauseClassifications);
         }
 
         private static SpecialCauseType[][] CreateEmptyClassifications(int length)
@@ -67,7 +101,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
         private static List<List<SpecialCauseType>> ClassifyAllPoints(
             int[] values,
             double average,
-            double unpl,
+            UpperNaturalProcessLimit unpl,
             double lnpl,
             double sigma)
         {
@@ -98,7 +132,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 
         private static void ApplyLargeChangeRule(
             int[] values,
-            double unpl,
+            UpperNaturalProcessLimit unpl,
             double lnpl,
             HashSet<SpecialCauseType>[] causeSets)
         {
@@ -106,7 +140,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 
             for (var i = 0; i < values.Length; i++)
             {
-                if (values[i] > unpl || (isLnplValid && values[i] < lnpl))
+                if (unpl.IsExceededBy(values[i]) || (isLnplValid && values[i] < lnpl))
                 {
                     causeSets[i].Add(SpecialCauseType.LargeChange);
                 }

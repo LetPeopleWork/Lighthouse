@@ -232,6 +232,14 @@ export const BaseMetricsView = <
 		[metricsService, entity.id, startDate, endDate],
 	);
 
+	const onFetchCycleTimeOutliers = useMemo(() => {
+		const getCycleTimeOutliers =
+			metricsService.getCycleTimeOutliers?.bind(metricsService);
+		if (!getCycleTimeOutliers) return undefined;
+		return (definitionId: number | null) =>
+			getCycleTimeOutliers(entity.id, startDate, endDate, definitionId);
+	}, [metricsService, entity.id, startDate, endDate]);
+
 	const {
 		percentilesScopeDefinitionId,
 		scopedPercentileValues,
@@ -381,6 +389,7 @@ export const BaseMetricsView = <
 		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
 		namedCycleTimeDefinitions,
 		onFetchNamedCycleTimePercentiles,
+		onFetchCycleTimeOutliers,
 		cycleTimePercentileValues: displayedPercentileValues,
 		percentilesScopeDefinitionId,
 		onPercentilesScopeChange: handlePercentilesScopeChange,

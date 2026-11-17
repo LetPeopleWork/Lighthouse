@@ -1396,6 +1396,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();
             builder.Services.AddSingleton<Lighthouse.Backend.Cache.Cache<string, object>>();
+            builder.Services.AddSingleton<ICycleTimeOutlierDefinition, UpperNaturalProcessLimitOutlierDefinition>();
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
             builder.Services.AddScoped<IPortfolioMetricsService, PortfolioMetricsService>();
             // The shipped read is registered as itself and wrapped: the interface resolves to the

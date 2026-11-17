@@ -10,6 +10,8 @@ interface OutlierHeaderChipInput {
 	readonly outliers: readonly IWorkItem[];
 	readonly offScaleLines: readonly IPlotLine[];
 	readonly disabled: boolean;
+	/** The verdict is on its way: the chip holds its place, disabled and without a count. */
+	readonly verdictPending: boolean;
 	readonly onOpen: () => void;
 	readonly chipRef: Ref<HTMLDivElement>;
 }
@@ -20,10 +22,11 @@ export function outlierHeaderChip({
 	outliers,
 	offScaleLines,
 	disabled,
+	verdictPending,
 	onOpen,
 	chipRef,
 }: OutlierHeaderChipInput): ReactNode {
-	if (outliers.length === 0) return null;
+	if (outliers.length === 0 && !verdictPending) return null;
 
 	return (
 		<OutlierChip
@@ -34,7 +37,7 @@ export function outlierHeaderChip({
 					? wording.aboveTheAxis(offScaleLines.map((line) => line.aboveAxis))
 					: null
 			}
-			disabled={disabled}
+			disabled={disabled || verdictPending}
 			onOpen={onOpen}
 			chipRef={chipRef}
 		/>

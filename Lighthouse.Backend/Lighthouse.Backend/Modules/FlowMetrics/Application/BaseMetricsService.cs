@@ -692,16 +692,12 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 return InvalidBaselineChart(baseline, XAxisKind.DateTime);
             }
 
-            var baselineItems = getClosedItems(baseline.Start!.Value, baseline.End!.Value)
-                .Where(i => i.CycleTime(Clock.Zone) > 0)
-                .OrderBy(i => i.ClosedDate)
-                .ThenBy(i => i.Id)
+            var baselineItems = InClosingOrder(getClosedItems(baseline.Start!.Value, baseline.End!.Value)
+                .Where(i => i.CycleTime(Clock.Zone) > 0))
                 .ToList();
 
-            var displayItems = getClosedItems(displayStart, displayEnd)
-                .Where(i => i.CycleTime(Clock.Zone) > 0)
-                .OrderBy(i => i.ClosedDate)
-                .ThenBy(i => i.Id)
+            var displayItems = InClosingOrder(getClosedItems(displayStart, displayEnd)
+                .Where(i => i.CycleTime(Clock.Zone) > 0))
                 .ToList();
 
             var baselineValues = baselineItems.Select(i => i.CycleTime(Clock.Zone)).ToArray();
@@ -733,6 +729,81 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 DataPoints = dataPoints,
             };
         }
+
+        /// <summary>
+        /// Judges the shown closed items against the same baseline, items and order the Cycle Time process behaviour
+        /// chart uses, measured with the default Cycle Time or the named one. An unknown or invalid named Cycle Time
+        /// has no limits.
+        /// </summary>
+        protected OutlierVerdict BuildCycleTimeOutliers<TItem>(
+            WorkTrackingSystemOptionsOwner owner,
+            DateTime displayStart,
+            DateTime displayEnd,
+            int? definitionId,
+            ICycleTimeOutlierDefinition outlierDefinition,
+            Func<DateTime, DateTime, IReadOnlyCollection<TItem>> getClosedItems,
+            Func<IReadOnlyCollection<TItem>, IReadOnlyList<WorkItem>> associateTransitions) where TItem : WorkItemBase
+        {
+            var baseline = ResolveBaseline(owner, displayStart, displayEnd, null);
+            var measure = CycleTimeMeasure(owner, definitionId, associateTransitions);
+            if (!baseline.Validation.IsValid || measure == null)
+            {
+                return new OutlierVerdict.NoLimits();
+            }
+
+            var baselineCycleTimes = CycleTimeObservations(getClosedItems(baseline.Start!.Value, baseline.End!.Value), measure)
+                .Select(observation => observation.Days)
+                .ToList();
+            var shown = CycleTimeObservations(getClosedItems(displayStart, displayEnd), measure);
+
+            return outlierDefinition.Judge(baselineCycleTimes, shown);
+        }
+
+        protected static string CycleTimeOutliersCacheKeyPart(int? definitionId) => definitionId.HasValue ? $"_Def_{definitionId.Value}" : "_Default";
+
+        private Func<IReadOnlyCollection<TItem>, Func<TItem, int?>>? CycleTimeMeasure<TItem>(
+            WorkTrackingSystemOptionsOwner owner,
+            int? definitionId,
+            Func<IReadOnlyCollection<TItem>, IReadOnlyList<WorkItem>> associateTransitions) where TItem : WorkItemBase
+        {
+            if (!definitionId.HasValue)
+            {
+                return _ => item => item.CycleTime(Clock.Zone);
+            }
+
+            var definition = owner.CycleTimeDefinitions.FirstOrDefault(candidate => candidate.Id == definitionId.Value);
+            if (definition == null || !owner.IsCycleTimeDefinitionValid(definition))
+            {
+                return null;
+            }
+
+            var statesInOrder = DisplayStatesInOrder(owner);
+            var startState = ResolveBoundaryState(owner, statesInOrder, definition.StartState);
+            var endState = ResolveBoundaryState(owner, statesInOrder, definition.EndState);
+
+            return items =>
+            {
+                var namedDaysById = associateTransitions(items)
+                    .ToDictionary(item => item.Id, item => NamedCycleTimeDays(item, statesInOrder, startState, endState));
+                return item => namedDaysById.GetValueOrDefault(item.Id);
+            };
+        }
+
+        private static List<CycleTimeObservation> CycleTimeObservations<TItem>(
+            IReadOnlyCollection<TItem> closedItems,
+            Func<IReadOnlyCollection<TItem>, Func<TItem, int?>> measure) where TItem : WorkItemBase
+        {
+            var cycleTimeOf = measure(closedItems);
+
+            return InClosingOrder(closedItems)
+                .Select(item => (item.Id, Days: cycleTimeOf(item)))
+                .Where(entry => entry.Days > 0)
+                .Select(entry => new CycleTimeObservation(entry.Id, entry.Days!.Value))
+                .ToList();
+        }
+
+        private static IOrderedEnumerable<TItem> InClosingOrder<TItem>(IEnumerable<TItem> items) where TItem : WorkItemBase
+            => items.OrderBy(item => item.ClosedDate).ThenBy(item => item.Id);
 
         private static int[] ExtractDailyCounts(RunChartData runChartData)
         {

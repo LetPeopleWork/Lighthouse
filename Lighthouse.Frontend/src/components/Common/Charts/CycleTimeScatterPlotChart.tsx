@@ -20,14 +20,21 @@ import {
 	type ScatterMarkerProps,
 	ScatterPlot,
 } from "@mui/x-charts";
+import {
+	QueryClient,
+	QueryClientContext,
+	useQuery,
+} from "@tanstack/react-query";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
+import type { ICycleTimeOutliers } from "../../../models/Metrics/CycleTimeOutliers";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { useReportWidgetStatus } from "../../../pages/Common/MetricsView/widgetStatus";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
@@ -165,6 +172,81 @@ interface CycleTimeScatterPlotChartProps {
 		definitionId: number,
 	) => Promise<IPercentileValue[]>;
 	ownerKind: WorkItemsDialogOwnerKind;
+	/** Asks the backend which closed Work Items of the date range are outliers, for the given Cycle Time. */
+	onFetchCycleTimeOutliers?: (
+		definitionId: number | null,
+	) => Promise<ICycleTimeOutliers>;
+	ownerId?: number;
+	startDate?: Date;
+	endDate?: Date;
+}
+
+type OutlierFetcher = NonNullable<
+	CycleTimeScatterPlotChartProps["onFetchCycleTimeOutliers"]
+>;
+
+// Each fetcher a view hands over stands for one owner and date range, so a new fetcher is a new question.
+const fetcherIds = new WeakMap<OutlierFetcher, number>();
+let lastFetcherId = 0;
+const fetcherIdOf = (fetcher: OutlierFetcher | undefined): number | null => {
+	if (!fetcher) return null;
+	let id = fetcherIds.get(fetcher);
+	if (id === undefined) {
+		lastFetcherId += 1;
+		id = lastFetcherId;
+		fetcherIds.set(fetcher, id);
+	}
+	return id;
+};
+
+// A chart without a fetcher asks nothing, and may be drawn outside a query provider.
+const withoutAProvider = new QueryClient();
+
+interface OutlierVerdictState {
+	/** The outlier ids and limit of the current question, or null while there is no answer for it. */
+	readonly verdict: ICycleTimeOutliers | null;
+	readonly status: "loading" | "error" | "ready";
+}
+
+interface OutlierQuestion {
+	readonly ownerKind: WorkItemsDialogOwnerKind;
+	readonly ownerId?: number;
+	readonly startDate?: Date;
+	readonly endDate?: Date;
+	readonly definitionId: number | null;
+	readonly fetcher?: OutlierFetcher;
+}
+
+function useOutlierVerdict({
+	ownerKind,
+	ownerId,
+	startDate,
+	endDate,
+	definitionId,
+	fetcher,
+}: OutlierQuestion): OutlierVerdictState {
+	const client = useContext(QueryClientContext) ?? withoutAProvider;
+	const query = useQuery(
+		{
+			queryKey: [
+				"cycleTimeOutliers",
+				ownerKind,
+				ownerId ?? null,
+				startDate?.toISOString() ?? null,
+				endDate?.toISOString() ?? null,
+				fetcherIdOf(fetcher),
+				definitionId ?? "default",
+			],
+			queryFn: () => (fetcher as OutlierFetcher)(definitionId),
+			enabled: fetcher !== undefined,
+		},
+		client,
+	);
+
+	if (!fetcher) return { verdict: null, status: "ready" };
+	if (query.isError) return { verdict: null, status: "error" };
+	if (query.data === undefined) return { verdict: null, status: "loading" };
+	return { verdict: query.data, status: "ready" };
 }
 
 const DEFAULT_SELECTION = "default";
@@ -183,6 +265,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	namedCycleTimeDefinitions = [],
 	onFetchNamedCycleTimePercentiles,
 	ownerKind,
+	onFetchCycleTimeOutliers,
+	ownerId,
+	startDate,
+	endDate,
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
@@ -295,19 +381,34 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	// Never stored: every time the chart opens, outliers are hidden again.
 	const [hideOutliers, setHideOutliers] = useState<boolean>(true);
 
-	// The cut and the axis come from every item, so hiding a type never moves them.
-	const analysis = useMemo(
-		() =>
-			hideOutliers
-				? findOutliers(effectiveDataPoints, (item) => item.cycleTime)
-				: {
-						median: null,
-						cut: null,
-						outliers: [],
-						typical: [...effectiveDataPoints],
-					},
-		[effectiveDataPoints, hideOutliers],
-	);
+	const outlierVerdict = useOutlierVerdict({
+		ownerKind,
+		ownerId,
+		startDate,
+		endDate,
+		definitionId: selectedDefinitionId,
+		fetcher: onFetchCycleTimeOutliers,
+	});
+	useReportWidgetStatus(outlierVerdict.status, true);
+	const verdictPending = hideOutliers && outlierVerdict.status === "loading";
+
+	// While the verdict is on its way or has failed, no item is set apart. The limit and the axis come
+	// from every item, so hiding a type never moves them.
+	const analysis = useMemo(() => {
+		const verdict = outlierVerdict.verdict;
+		if (!hideOutliers || verdict === null) {
+			return { cut: null, outliers: [], typical: [...effectiveDataPoints] };
+		}
+		return {
+			cut: verdict.upperNaturalProcessLimit,
+			...findOutliers(
+				effectiveDataPoints,
+				(item) => item.cycleTime,
+				(item) => item.id,
+				verdict.outlierWorkItemIds,
+			),
+		};
+	}, [effectiveDataPoints, hideOutliers, outlierVerdict.verdict]);
 
 	const fixedXAxisDomain = useMemo((): [number, number] | null => {
 		if (effectiveDataPoints.length === 0) return null;
@@ -395,10 +496,11 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 			outliers: visibleOutliers,
 			offScaleLines,
 			disabled: !frameIsReady,
+			verdictPending,
 			onOpen: () => {
 				reportUsage({ name: UsageDataEventName.OutlierListOpened });
 				setDialogContent({
-					title: wording.listTitle,
+					title: wording.listTitle(analysis.cut ?? 0),
 					items: [...visibleOutliers],
 				});
 				setDialogOpen(true);

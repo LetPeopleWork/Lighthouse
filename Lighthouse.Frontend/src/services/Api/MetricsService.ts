@@ -8,6 +8,7 @@ import {
 import type { ICumulativeStateTimeResponse } from "../../models/Metrics/CumulativeStateTime";
 import type { ICumulativeStateTimeCandidatesResponse } from "../../models/Metrics/CumulativeStateTimeCandidates";
 import type { ICumulativeStateTimeItemsResponse } from "../../models/Metrics/CumulativeStateTimeItems";
+import type { ICycleTimeOutliers } from "../../models/Metrics/CycleTimeOutliers";
 import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
 import type { IFlowEfficiencyInfo } from "../../models/Metrics/FlowEfficiencyInfo";
@@ -152,6 +153,14 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<ProcessBehaviourChartData>;
+
+	/** Absent on a service that cannot judge outliers; the scatterplot then sets nothing apart. */
+	getCycleTimeOutliers?(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+		definitionId: number | null,
+	): Promise<ICycleTimeOutliers>;
 
 	getEstimationVsCycleTimeData(
 		id: number,
@@ -652,6 +661,23 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ProcessBehaviourChartData>(
 				`/${this.api}/${id}/metrics/cycleTime/pbc?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return response.data;
+		});
+	}
+
+	getCycleTimeOutliers(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+		definitionId: number | null,
+	): Promise<ICycleTimeOutliers> {
+		return this.withErrorHandling(async () => {
+			const definitionSuffix =
+				definitionId === null ? "" : `&definitionId=${definitionId}`;
+			const response = await this.apiService.get<ICycleTimeOutliers>(
+				`/${this.api}/${id}/metrics/cycleTime/outliers?${this.getDateFormatString(startDate, endDate)}${definitionSuffix}`,
 			);
 
 			return response.data;

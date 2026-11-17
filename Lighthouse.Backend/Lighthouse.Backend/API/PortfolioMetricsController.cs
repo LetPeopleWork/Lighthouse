@@ -484,6 +484,18 @@ namespace Lighthouse.Backend.API
                 AnnotateBlackoutDays(portfolioMetricsService.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate), startDate, endDate));
         }
 
+        [HttpGet("cycleTime/outliers")]
+        public ActionResult<CycleTimeOutliersDto> GetCycleTimeOutliers(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? definitionId = null)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                CycleTimeOutliersDto.From(portfolioMetricsService.GetCycleTimeOutliers(portfolio, startDate, endDate, definitionId)));
+        }
+
         [HttpGet("featureSize/pbc")]
         public ActionResult<ProcessBehaviourChart> GetFeatureSizeProcessBehaviourChart(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
