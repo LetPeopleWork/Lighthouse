@@ -21,9 +21,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// wording and read from the compiled production assembly: every Work Items type lives in its layer and none is left
     /// under Services; its Domain reaches only the shared kernel and the base library; outside code reaches its Domain only
     /// from the listed types and its Application only from the API, the composition root, Flow metrics, Forecasting,
-    /// Refinement and the listed types; its Application reaches no EF Core, data-layer, API or module adapter type, and Flow
-    /// metrics, Access, Licensing, Organisation set-up and the update queue only through the listed edges; its policies hold
-    /// nothing but domain-event handlers; and no connector reaches a Work Items type. Every list is compared both ways.
+    /// Refinement, Promises' Application and the listed types; its Application reaches no EF Core, data-layer, API or
+    /// module adapter type, and Flow metrics, Access, Licensing, Organisation set-up and the update queue only through the
+    /// listed edges; its policies hold nothing but domain-event handlers; and no connector reaches a Work Items type. Every list is compared both ways.
     /// Flow metrics' own inbound list no longer names TeamDataService, which now only publishes that a Team was refreshed.
     /// The same rules run on made-up types: each offender is named, and its compliant twin is not.
     /// </summary>
@@ -42,6 +42,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string WorkItemsPolicies = @"^Lighthouse\.Backend\.Modules\.WorkItems\.Application\.Policies(\.|$)";
 
         private const string FlowMetricsApplication = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Application(\.|$)";
+
+        // Promises' Application calls this module by right; its policies and its Domain do not, so they stay outside.
+        private const string PromisesApplicationOutsideItsPolicies = @"^Lighthouse\.Backend\.Modules\.Promises\.Application(?!\.Policies(\.|$))(\.|$)";
 
         private const string TheCompositionRootAndItsNestedTypes = @"^Lighthouse\.Backend\.Program(\+|$)";
 
@@ -82,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string MadeUpOutboundCases = "Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound";
 
-        private static readonly ModuleWording WorkItemsWording = new("Work Items", "the API and the Flow metrics, Forecasting and Refinement modules");
+        private static readonly ModuleWording WorkItemsWording = new("Work Items", "the API, the Flow metrics, Forecasting and Refinement modules and Promises' Application");
 
         // Generic types carry their arity in the compiled name.
         private static readonly Dictionary<string, string[]> TypesByLayer = new(StringComparer.Ordinal)
@@ -119,14 +122,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Services.Implementation.Connections.ConnectionSaveService",
         ];
 
-        // The outside types, besides the API, the composition root, Flow metrics, Forecasting and Refinement, that reach
-        // Work Items' Application. The list only shrinks.
+        // The outside types, besides the API, the composition root, Flow metrics, Forecasting, Refinement and Promises'
+        // Application, that reach Work Items' Application. The list only shrinks.
         private static readonly string[] OtherOutsideTypesReachingTheApplication =
         [
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateNotificationHub",
-            "Lighthouse.Backend.Modules.Promises.Application.DeliveryRuleService",
             "Lighthouse.Backend.Services.Implementation.FeatureListService",
             "Lighthouse.Backend.Services.Implementation.Seeding.RefreshLogSeeder",
             "Lighthouse.Backend.Services.Interfaces.FeatureListRead",
@@ -158,7 +160,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             $"(?:{AccessAndLicensing})|(?:{OrganisationSetUp})|(?:{KernelRules.TheUpdateQueue})";
 
         private static readonly string WorkItemsLegalCallers =
-            $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleRules.FlowMetricsModule})|(?:{ModuleRules.ForecastingModule})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})";
+            $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleRules.FlowMetricsModule})|(?:{ModuleRules.ForecastingModule})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})|(?:{PromisesApplicationOutsideItsPolicies})";
 
         private static readonly string FlowMetricsLegalCallers =
             $"(?:{ApplicationCoreRules.TheApi})|(?:{ModuleBoundariesArchUnitTest.ReportsPattern})|(?:{ModuleBoundariesArchUnitTest.RefinementPattern})|(?:{ModuleRules.ForecastingModule})";

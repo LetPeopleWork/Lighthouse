@@ -14,9 +14,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// Tracker integration is a module with rules of its own, checked by the shared module rules with Tracker integration's
     /// namespaces and wording and read from the compiled production assembly: its Domain reaches only the shared kernel and
     /// the base library; outside code reaches its Domain only from the listed types, its Application only from the API, the
-    /// composition root, Work Items and the listed types, and its Adapters only from the composition root and the listed
-    /// types; its Application reaches EF Core, the data layer, the API, any module's adapters and the platform (stored
-    /// records, the key ring, demo data) only through the listed edges; the module reaches no other context except through
+    /// composition root, Work Items, Promises' Application and the listed types, and its Adapters only from the
+    /// composition root and the listed types; its Application reaches EF Core, the data layer, the API, any module's
+    /// adapters and the platform (stored records, the key ring, demo data) only through the listed edges; the module reaches no other context except through
     /// the listed edge; and no module type reaches a repository except the listed Application services. Every list is
     /// compared both ways. The same rules run on made-up types: each offender is named, and its compliant twin is not.
     /// That each type lives in its layer is pinned by the module's four layout tests, not here. The old leaf rule over the
@@ -37,6 +37,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string TrackerIntegrationAdapters = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.Adapters(\.|$)";
 
         private const string WorkItemsModule = @"^Lighthouse\.Backend\.Modules\.WorkItems(\.|$)";
+
+        // Promises' Application calls this module by right; its policies and its Domain do not, so they stay outside.
+        private const string PromisesApplicationOutsideItsPolicies = @"^Lighthouse\.Backend\.Modules\.Promises\.Application(?!\.Policies(\.|$))(\.|$)";
 
         private const string TheCompositionRootAndItsNestedTypes = @"^Lighthouse\.Backend\.Program(\+|$)";
 
@@ -84,7 +87,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 
-        private static readonly ModuleWording TrackerIntegrationWording = new("Tracker integration", "the API and the Work Items module");
+        private static readonly ModuleWording TrackerIntegrationWording = new("Tracker integration", "the API, the Work Items module and Promises' Application");
 
         // The outside types that reach Tracker integration's Domain. The list only shrinks.
         private static readonly string[] OutsideTypesReachingTheDomain =
@@ -92,16 +95,14 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService",
         ];
 
-        // The outside types, besides the API, the composition root and Work Items, that reach Tracker integration's
-        // Application. The list only shrinks.
+        // The outside types, besides the API, the composition root, Work Items and Promises' Application, that reach Tracker
+        // integration's Application. The list only shrinks.
         private static readonly string[] OtherOutsideTypesReachingTheApplication =
         [
             "Lighthouse.Backend.Factories.DemoDataFactory",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase`1",
-            "Lighthouse.Backend.Modules.Promises.Application.DeliveryForecastPublishingService",
-            "Lighthouse.Backend.Modules.Promises.Application.DeliverySourceResolver",
             "Lighthouse.Backend.Services.Implementation.WriteBackService",
         ];
 
@@ -162,7 +163,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string OtherContexts =
             $"(?:{OtherModules})|(?:{PromisesAndTheUpdateCode})|(?:{RefinementReportsAccessAndLicensing})";
 
-        private static readonly string TrackerIntegrationLegalCallers = $"(?:{ApplicationCoreRules.TheApi})|(?:{WorkItemsModule})";
+        private static readonly string TrackerIntegrationLegalCallers = $"(?:{ApplicationCoreRules.TheApi})|(?:{WorkItemsModule})|(?:{PromisesApplicationOutsideItsPolicies})";
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
 
