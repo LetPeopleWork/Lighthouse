@@ -195,3 +195,18 @@ Evidence limits: one customer request, relayed second hand; the requester's sent
 No Quint exploration was run: the behavior is an arithmetic on two per-day values with a sign, and no operation here
 has order, repetition or reversal questions that change the product decision (judgment: not relevant; reason recorded).
 Jev is refused by configuration, so no semantic call was made.
+
+## Wave: DEVOPS (2026-11-17, AFK, proposed by the root)
+
+- **Platform risk:** none. No migration (the Then values are a new key in the existing JSON captures column), no
+  new route, DTO type or enum ordinal, no new external call. The platform lens has nothing to add; the wave is
+  the usage-data question below.
+- **Usage data (answers OQ4):** a name-only event `ReportCreatedWithArrivals`, emitted next to `ReportCreated`
+  whenever a report is created with Arrivals ticked (the wizard, and each report a bulk creation makes). It
+  answers the one outcome question, "does anyone ask for Arrivals?", which `ReportCreated` cannot: it does not
+  say which metrics were ticked, and adding that would need a property. Name only, no property. Its integer is
+  the next free one in `UsageDataEventName` when DELIVER starts: **29** if Story 6655 (which takes 28 for
+  `OutlierHandlingSwitchedOff`) has landed by then, as planned. Emitted by slice 01, which also lists it in
+  `docs/settings/usagedata.md`. The maintainer can revisit it at the sketch review.
+- **Continuous-improvement check:** N/A, because this is a single Story with no parent Epic, not a new feature
+  Epic (the same answer as Story 6655).
