@@ -671,3 +671,14 @@ The six open confirmations, answered by the maintainer on 2026-11-17 before S03a
   adding a probe before the expectations are recorded (lesson of S03a feature B).
 - **Write-back item filed**: #6657 "Place the write-back round (candidate: Forecasting Application/WriteBack)", User
   Story under Epic #6510, state New (2026-11-17). D-6's "proposed, not yet filed" is answered by it.
+
+### A2 as measured (2026-11-17)
+
+- Moves: 13 files hold **15 types**; the projector's file also holds `DeliveryMetricValues`, and `IDeliverySourceResolver.cs`
+  also holds `PortfolioSourcePreview`. No short name is shared.
+- D-2 admits **two** `Models` types, both in `DeliveryForecastBlock.cs`: `DeliveryForecastBlock` and
+  `DeliveryForecastBlockPercentile`. The file-level plan (one `Models` file moves to `Domain`) holds.
+  `SourceOptionBlockReason` stays because the kernel reaches it and staying code uses it (not "on the wire").
+  25 candidates judged in the oracle.
+- "E5 and the Forecasting/Flow-metrics edges confirmed" is not in A2's oracle: those edges are measured from the IL in C1,
+  where Promises' own lists are written; the handler order is pinned in B2.

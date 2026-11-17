@@ -74,12 +74,110 @@
 "stimulus": "F163",
 "user_result": "F165"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F79"
+],
+"still_passes_if": "F170",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed, NoTypeIsOnBothLists"
+},
+"expected": "F168",
+"stimulus": "F167",
+"user_result": "F169"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F80"
+],
+"still_passes_if": "F174",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted, ACopyOfAListedTypeInAnotherNamespace_IsNamedByItsFullName"
+},
+"expected": "F172",
+"stimulus": "F171",
+"user_result": "F173"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F81"
+],
+"still_passes_if": "F178",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideAndANestedTypeAreNot"
+},
+"expected": "F176",
+"stimulus": "F175",
+"user_result": "F177"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F82"
+],
+"still_passes_if": "F182",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideAndANestedTypeAreNot"
+},
+"expected": "F180",
+"stimulus": "F179",
+"user_result": "F181"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F186",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::TheModelsTypesListedToMove_AreExactlyTheDeliveryCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule, ADeliveryModelsType_IsJudgedAsTheCompiledCodeShows"
+},
+"expected": "F184",
+"stimulus": "F183",
+"user_result": "F185"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F189",
+"test": "Lighthouse.Backend (dotnet build; dotnet test with the live-connector categories excluded)"
+},
+"expected": "F188",
+"stimulus": "F187",
+"user_result": "F165"
+}
 ]
 },
 "counters": {
 "D": 12,
 "E": 5,
-"F": 166,
+"F": 189,
 "K": 4,
 "L": 4,
 "P": 5,
@@ -863,8 +961,31 @@
 "F164": "Every existing architecture test stays green, the Jira connector's listed edge to the forecast block renderer included; no production file changes.",
 "F165": "Nothing a user, a tracker or the database sees changes.",
 "F166": "A widening that loosens an unrelated rule elsewhere in the suite while every list still matches: the existing tests guard only what they already pin.",
+"F167": "The membership check reads the Promises types from the compiled code: every top-level type in the delivery-source namespaces or under Modules.Promises, plus the rule service, its interface, the metric-values projector with its values record and the two reactions to updated forecasts in the namespaces they live in today, and compares them with the Moves and Models lists.",
+"F168": "The check passes when the lists hold exactly the 15 measured types and the 2 admitted Models types, and no type is on both lists; with the lists not yet filled it fails and names each of the 15 types as not on the list.",
+"F169": "Before any Promises file moves, the maintainer has one test that names every type of the context, so a move that forgets or drops a type fails.",
 "F17": "Confirmed (D-1): the Promises membership is the 13 Services files that move (DeliveryForecastBlockRenderer, IDeliveryForecastBlockRenderer, DeliveryRuleService, IDeliveryRuleService, DeliverySourceResolver, DeliverySourceSyncService, DeliveryForecastPublishingService and their 3 interfaces, DeliveryMetricValuesProjector, DeliveryMetricSnapshotRecordingHandler, DeliveryForecastPublishingHandler) plus the admitted Models value DeliveryForecastBlock. Update code, write-back round, ordering and ranking, repositories, entities, controllers and DTOs stay with a named owner.",
+"F170": "A new Promises type added to the flat Services.Implementation or Services.Interfaces namespace under a name not among the six found by name is not collected, so it is not named.",
+"F171": "A listed type is renamed in the compiled code, and separately a listed type is held twice under one name in two namespaces, as a move that leaves a copy behind would.",
+"F172": "The rename fails and names the old name as on the list but no longer found and the new name as not on the list; the copy fails and names both types by their full names and the short name as no longer found.",
+"F173": "A rename or a half-done move during the Promises move cannot pass unseen; the failure says which name to fix.",
+"F174": "A listed type replaced by a different type with the same name in the same namespace is accepted, because the check compares names, not content.",
+"F175": "A made-up Delivery service is placed under Modules.Promises and a namesake just outside it, under Modules.PromisesFixtures, and the check runs over the real code plus these made-up types.",
+"F176": "The check fails and names the made-up service as not on the list; it names neither the namesake nor any listed real type as missing.",
+"F177": "A type added to the Promises module during the move joins the context only through the list; a namespace that only starts with the same letters is not Promises.",
+"F178": "A made-up Promises type placed in a namespace that is neither a delivery-source namespace nor under Modules.Promises, for example Services.Implementation.Promises, is not collected and not named.",
+"F179": "The made-up Delivery service under Modules.Promises holds a nested record, and the check runs over it.",
 "F18": "Confirmed (D-2): a Models type is admitted into the module only if it is not an EF entity, not on the wire, not reached by a kernel type and not used by code that stays outside. Expected admitted: DeliveryForecastBlock only (E11). A2 measures every candidate from the IL and pins the answer; if DeliveryForecastBlock fails a condition, A2 records it and the Domain folder is dropped (D-3).",
+"F180": "The nested record is not named on its own; only its outer type is named as not on the list.",
+"F181": "The lists hold top-level types only, so a nested type moves with the type that holds it and needs no entry.",
+"F182": "A list entry written for a nested type is reported only as no longer found, so the failure does not say that nested types need no entry.",
+"F183": "Every Delivery type of the shared Models, and whatever sits in the Promises Domain once moved, is judged against four conditions: stored by the database context, sent by a controller, reached by a Models type that stays, used by other code that stays. The admitted ones are compared with the Models list.",
+"F184": "Of 25 candidates, DeliveryForecastBlock and DeliveryForecastBlockPercentile are admitted and must be listed; each of the other 23 is refused for the condition its row names, and the failure lists every refused candidate with its reasons.",
+"F185": "The maintainer sees which Delivery Models types may move with Promises and why each other one stays.",
+"F186": "A Delivery Models type sent by a controller only through a variable typed object, or built by a helper the controller does not call directly, is not seen as on the wire and could be admitted.",
+"F187": "The backend builds and its whole suite runs without the live-connector categories, with only the two new test files added.",
+"F188": "The build has no warnings and every existing test stays green; no production file changes.",
+"F189": "A behaviour change that no existing test observes would pass; this slice changes no production file, so none can come from it.",
 "F19": "Confirmed (D-3, D-8, Ratchet design: Rules first): the target namespaces are Lighthouse.Backend.Modules.Promises.Domain, .Application and .Application.Policies. A1 adds a PromisesModule constant to ModuleRules and a PromisesPattern ^Lighthouse\\.Backend\\.Modules\\.Promises(\\.|$) beside the old Delivery namespaces in the module map; every rule keyed on a Promises namespace or folder also matches it. PortfolioDeliveryPattern keeps its update-code meaning and is not renamed (E1).",
 "F2": "The Promises move in feature B is guarded from its first file: a rule that would miss a moved type, a CI selection that would skip a suite, or a changed Delivery answer is caught",
 "F20": "Confirmed (D-4, D-5, D-6): Delivery repositories, Feature ordering and ranking and the write-back round (#6657) stay outside Promises. A Modules.Promises type that reaches a repository outside the listed platform ports, Forecasting adapters or the update code is an offender for the widened rules.",

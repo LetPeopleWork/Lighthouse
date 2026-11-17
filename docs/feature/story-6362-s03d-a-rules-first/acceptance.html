@@ -262,6 +262,158 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The membership check reads the Promises types from the compiled code: every top-level type in the delivery-source namespaces or under Modules.Promises, plus the rule service, its interface, the metric-values projector with its values record and the two reactions to updated forecasts in the namespaces they live in today, and compares them with the Moves and Models lists.
+</code></pre>
+
+<pre><code>The check passes when the lists hold exactly the 15 measured types and the 2 admitted Models types, and no type is on both lists; with the lists not yet filled it fails and names each of the 15 types as not on the list.
+</code></pre>
+
+<pre><code>Before any Promises file moves, the maintainer has one test that names every type of the context, so a move that forgets or drops a type fails.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::ThePromisesTypesInTheCompiledCode_AreExactlyTheTypesListed, NoTypeIsOnBothLists</p>
+
+<pre><code>A new Promises type added to the flat Services.Implementation or Services.Interfaces namespace under a name not among the six found by name is not collected, so it is not named.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A listed type is renamed in the compiled code, and separately a listed type is held twice under one name in two namespaces, as a move that leaves a copy behind would.
+</code></pre>
+
+<pre><code>The rename fails and names the old name as on the list but no longer found and the new name as not on the list; the copy fails and names both types by their full names and the short name as no longer found.
+</code></pre>
+
+<pre><code>A rename or a half-done move during the Promises move cannot pass unseen; the failure says which name to fix.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::AListedTypeRenamedInTheCode_IsNamedAsMissing_AndItsNewNameAsUnlisted, ACopyOfAListedTypeInAnotherNamespace_IsNamedByItsFullName</p>
+
+<pre><code>A listed type replaced by a different type with the same name in the same namespace is accepted, because the check compares names, not content.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A made-up Delivery service is placed under Modules.Promises and a namesake just outside it, under Modules.PromisesFixtures, and the check runs over the real code plus these made-up types.
+</code></pre>
+
+<pre><code>The check fails and names the made-up service as not on the list; it names neither the namesake nor any listed real type as missing.
+</code></pre>
+
+<pre><code>A type added to the Promises module during the move joins the context only through the list; a namespace that only starts with the same letters is not Promises.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideAndANestedTypeAreNot</p>
+
+<pre><code>A made-up Promises type placed in a namespace that is neither a delivery-source namespace nor under Modules.Promises, for example Services.Implementation.Promises, is not collected and not named.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The made-up Delivery service under Modules.Promises holds a nested record, and the check runs over it.
+</code></pre>
+
+<pre><code>The nested record is not named on its own; only its outer type is named as not on the list.
+</code></pre>
+
+<pre><code>The lists hold top-level types only, so a nested type moves with the type that holds it and needs no entry.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::AMadeUpTypeInTheModule_IsNamedAsUnlisted_AndANamesakeOutsideAndANestedTypeAreNot</p>
+
+<pre><code>A list entry written for a nested type is reported only as no longer found, so the failure does not say that nested types need no entry.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Every Delivery type of the shared Models, and whatever sits in the Promises Domain once moved, is judged against four conditions: stored by the database context, sent by a controller, reached by a Models type that stays, used by other code that stays. The admitted ones are compared with the Models list.
+</code></pre>
+
+<pre><code>Of 25 candidates, DeliveryForecastBlock and DeliveryForecastBlockPercentile are admitted and must be listed; each of the other 23 is refused for the condition its row names, and the failure lists every refused candidate with its reasons.
+</code></pre>
+
+<pre><code>The maintainer sees which Delivery Models types may move with Promises and why each other one stays.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs::TheModelsTypesListedToMove_AreExactlyTheDeliveryCandidatesNeitherStoredNorOnTheWireNorUsedOutsideTheModule, ADeliveryModelsType_IsJudgedAsTheCompiledCodeShows</p>
+
+<pre><code>A Delivery Models type sent by a controller only through a variable typed object, or built by a helper the controller does not call directly, is not seen as on the wire and could be admitted.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The backend builds and its whole suite runs without the live-connector categories, with only the two new test files added.
+</code></pre>
+
+<pre><code>The build has no warnings and every existing test stays green; no production file changes.
+</code></pre>
+
+<pre><code>Nothing a user, a tracker or the database sees changes.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend (dotnet build; dotnet test with the live-connector categories excluded)</p>
+
+<pre><code>A behaviour change that no existing test observes would pass; this slice changes no production file, so none can come from it.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
