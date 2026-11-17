@@ -225,6 +225,19 @@
 "expected": "F544",
 "stimulus": "F543",
 "user_result": "F545"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F550",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs"
+},
+"expected": "F548",
+"stimulus": "F547",
+"user_result": "F549"
 }
 ]
 },
@@ -233,7 +246,7 @@
 "C": 2,
 "D": 8,
 "E": 14,
-"F": 546,
+"F": 550,
 "K": 6,
 "L": 8,
 "N": 7,
@@ -2672,7 +2685,11 @@
 "F544": "Only the window value builds a Now window, the template reads Now through it, and the policy keeps no Now members",
 "F545": "Every report's Now comes from one place, so equal length cannot drift",
 "F546": "A second type computes a Now window or the policy keeps NowWindow",
+"F547": "Read and list a saved report whose Now was stored 45 days, next to the same report without that stored member",
+"F548": "Both read and list answers are identical, so no notice or extra member is shown, and the Now window a PDF export reads is 30 days ending today",
+"F549": "After the update nothing new is shown on the old report and its exports read the equal-length Now",
 "F55": "The API refuses a create or edit carrying a Now length different from Then's; absent or equal is accepted.",
+"F550": "A notice flag or changed list entry is added for old reports, or the export Now window stays 45 days",
 "F56": "{Throughput} Total line gains change and % change and counts in the CHANGE summary.",
 "F57": "Which metrics and aggregations a Then & Now report shows (the 'Numberwang' feedback) - ADO Story #6649.",
 "F58": "Finding Edit and Delete in the report list: split out to ADO Story #6650 'Tables: fit the width and show when columns are off screen', which fixes it for every table in the shared DataGridBase.",

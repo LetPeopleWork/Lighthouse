@@ -475,6 +475,36 @@ A second type computes a Now window or the policy keeps NowWindow
 ###### Obligations
 
 
+##### Covers
+
+P7
+
+```text
+Read and list a saved report whose Now was stored 45 days, next to the same report without that stored member
+```
+
+```text
+Both read and list answers are identical, so no notice or extra member is shown, and the Now window a PDF export reads is 30 days ending today
+```
+
+```text
+After the update nothing new is shown on the old report and its exports read the equal-length Now
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/BaselineReportCreation\/EqualLengthReportsScenarios\.cs
+
+```text
+A notice flag or changed list entry is added for old reports, or the export Now window stays 45 days
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

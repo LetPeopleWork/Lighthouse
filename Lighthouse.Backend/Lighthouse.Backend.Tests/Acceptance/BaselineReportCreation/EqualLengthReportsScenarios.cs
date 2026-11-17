@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Reports;
@@ -79,6 +80,26 @@ namespace Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
                     "WHAT: a frozen Then value changed. WHY: past values never change when Now is derived. HOW: keep the captures as stored.");
                 Assert.That(TheStoredPayload(lightspeed, reportId).ToJsonString(), Is.EqualTo(storedBeforeReading.ToJsonString()),
                     "WHAT: reading the report rewrote its stored payload. WHY: the legacy member stays as stored and unread. HOW: derive Now on read and write nothing.");
+            }
+        }
+
+        [Test]
+        public async Task A_saved_report_whose_Now_was_stored_longer_reads_and_lists_exactly_as_one_that_never_stored_it_so_no_notice_and_a_past_export_reads_the_same_30_day_Now()
+        {
+            var lightspeed = ATeam("Lightspeed");
+            var reportId = await ASavedReport(lightspeed, new DateOnly(2026, 10, 16), 30);
+            var readWithoutIt = TheWholeReadOf(lightspeed, reportId);
+            var listedWithoutIt = TheWholeListOf(lightspeed);
+            TheOlderVersionStoredANowOf(lightspeed, reportId, 45);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheWholeReadOf(lightspeed, reportId), Is.EqualTo(readWithoutIt),
+                    "WHAT: the report reads differently because an older version stored a Now length. WHY: nothing about the update is shown to the reader, and a PDF export reads the same 30-day Now window. HOW: ignore the stored Now length and add nothing to the read.");
+                Assert.That(TheWholeListOf(lightspeed), Is.EqualTo(listedWithoutIt),
+                    "WHAT: the list entry differs because an older version stored a Now length. WHY: no notice is shown. HOW: ignore the stored Now length when listing.");
+                Assert.That(Read(lightspeed, reportId).NowWindow, Is.EqualTo(new ReportWindow(new DateOnly(2026, 10, 17), Today, 30)),
+                    "WHAT: the Now window an export would read is not 30 days ending today. WHY: past exports keep their files and new ones use the derived Now. HOW: derive Now from Then.");
             }
         }
 
@@ -196,6 +217,18 @@ namespace Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
         {
             using var scope = harness.NewScope();
             return scope.ServiceProvider.GetRequiredService<IReportQueries>().Get(owner, reportId).Value!.ThenAndNow!;
+        }
+
+        private string TheWholeReadOf(ReportOwner owner, int reportId)
+        {
+            using var scope = harness.NewScope();
+            return JsonSerializer.Serialize(scope.ServiceProvider.GetRequiredService<IReportQueries>().Get(owner, reportId).Value, ThenAndNowPayload.JsonOptions);
+        }
+
+        private string TheWholeListOf(ReportOwner owner)
+        {
+            using var scope = harness.NewScope();
+            return JsonSerializer.Serialize(scope.ServiceProvider.GetRequiredService<IReportQueries>().List(owner).Value, ThenAndNowPayload.JsonOptions);
         }
 
         private string TheNameOf(ReportOwner owner, int reportId)

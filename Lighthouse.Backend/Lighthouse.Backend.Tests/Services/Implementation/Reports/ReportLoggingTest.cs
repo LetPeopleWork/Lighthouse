@@ -271,7 +271,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             var created = await CreateTakingSeconds(0);
             logger.Lines.Clear();
 
-            var outcome = await Subject(seconds: 0).Edit(Lightspeed, 17, new ReportEdit(SecretName, OnlyCycleTime, created.ConcurrencyToken, ReportWindowPolicy.MinimumLengthDays - 1));
+            var outcome = await Subject(seconds: 0).Edit(Lightspeed, 17, new ReportEdit(SecretName, OnlyCycleTime, created.ConcurrencyToken, 45));
 
             var line = logger.Lines.Single();
             using (Assert.EnterMultipleScope())

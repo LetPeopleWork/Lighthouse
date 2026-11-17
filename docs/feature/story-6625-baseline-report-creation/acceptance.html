@@ -564,6 +564,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>Read and list a saved report whose Now was stored 45 days, next to the same report without that stored member
+</code></pre>
+
+<pre><code>Both read and list answers are identical, so no notice or extra member is shown, and the Now window a PDF export reads is 30 days ending today
+</code></pre>
+
+<pre><code>After the update nothing new is shown on the old report and its exports read the equal-length Now
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs</p>
+
+<pre><code>A notice flag or changed list entry is added for old reports, or the export Now window stays 45 days
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
