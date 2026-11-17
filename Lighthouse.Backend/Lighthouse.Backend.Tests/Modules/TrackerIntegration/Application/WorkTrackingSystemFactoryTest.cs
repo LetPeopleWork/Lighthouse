@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
@@ -7,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
 {

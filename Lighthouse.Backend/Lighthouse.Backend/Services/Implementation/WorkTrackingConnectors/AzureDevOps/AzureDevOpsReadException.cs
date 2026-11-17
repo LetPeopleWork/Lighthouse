@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.Validation;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {

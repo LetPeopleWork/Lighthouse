@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.API.Integration.TaskManager;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -11,6 +10,7 @@ using Moq;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 {

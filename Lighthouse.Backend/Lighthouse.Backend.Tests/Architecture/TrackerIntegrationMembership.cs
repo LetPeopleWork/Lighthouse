@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>

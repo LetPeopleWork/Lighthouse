@@ -5,7 +5,6 @@ using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Validation;
 using System.Globalization;
 using System.Text;

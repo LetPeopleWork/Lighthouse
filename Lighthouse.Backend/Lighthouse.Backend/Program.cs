@@ -10,7 +10,6 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.OptionalFeatures;
-using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.ConnectionHealth;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
@@ -30,7 +29,6 @@ using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Services.Implementation.UsageData;
 using Lighthouse.Backend.Services.Interfaces.UsageData;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
@@ -74,7 +72,6 @@ using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Standalone;
@@ -88,6 +85,7 @@ using Lighthouse.Backend.Modules.Forecasting.Domain;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend
 {

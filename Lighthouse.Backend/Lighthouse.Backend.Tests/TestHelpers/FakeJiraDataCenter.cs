@@ -4,7 +4,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {

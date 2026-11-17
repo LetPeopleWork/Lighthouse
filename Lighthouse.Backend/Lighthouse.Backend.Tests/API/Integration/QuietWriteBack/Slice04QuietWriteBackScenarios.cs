@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 {

@@ -1,5 +1,5 @@
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using System.Net;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {

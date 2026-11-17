@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models.Validation;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {

@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth
 {

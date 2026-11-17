@@ -1,9 +1,8 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
-using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.DeliverySources;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Moq;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 {

@@ -3,10 +3,10 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
 {
@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
     [TestFixture]
     public class IncrementalSourceCapabilityTest
     {
-        private const string IncrementalSourceCapabilityName = "Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors.IIncrementalSource";
+        private const string IncrementalSourceCapabilityName = "Lighthouse.Backend.Modules.TrackerIntegration.Application.IIncrementalSource";
 
         private const string ProbeMember = "SupportsIncrementalSync";
 

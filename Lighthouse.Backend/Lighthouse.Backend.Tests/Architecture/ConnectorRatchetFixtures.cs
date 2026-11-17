@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 // Made-up connectors for the connector ratchet. Each one implements the one-member connector-port interface the
 // way a real connector would, and each sits in a namespace of its own, so the ratchet can be pointed at one case

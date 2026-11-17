@@ -11,7 +11,6 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.Forecasting.Application;
-using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
@@ -30,6 +29,7 @@ using Moq;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Acceptance.WorkItems
 {

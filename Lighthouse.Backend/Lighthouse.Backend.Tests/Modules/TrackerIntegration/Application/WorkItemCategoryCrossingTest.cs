@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application
 {

@@ -13,6 +13,13 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string NotSupported = "System.NotSupportedException";
 
+        // The two factories sit beside the connector port but build connectors; they are not connectors themselves.
+        private static readonly HashSet<string> FactoryInterfaces =
+        [
+            "Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory",
+            "Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingSystemFactory",
+        ];
+
         /// <summary>
         /// The connector methods that still create a NotSupportedException, each with the reason it is allowed for now.
         /// The list may only shrink: each entry goes once its connector stops claiming what it cannot do.
@@ -48,7 +55,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // An interface may be declared on a base class the connector inherits from, so the base classes count too.
         private static bool ImplementsAnInterfaceIn(TypeDefinition type, string portNamespacePattern)
-            => type.Interfaces.Any(implemented => IlDependencies.ResidesInNamespaceMatching(implemented.InterfaceType, portNamespacePattern))
+            => type.Interfaces.Any(implemented => IlDependencies.ResidesInNamespaceMatching(implemented.InterfaceType, portNamespacePattern)
+                && !FactoryInterfaces.Contains(implemented.InterfaceType.FullName))
                 || (BaseTypeInTheSameModule(type) is { } baseType && ImplementsAnInterfaceIn(baseType, portNamespacePattern));
 
         private static TypeDefinition? BaseTypeInTheSameModule(TypeDefinition type)

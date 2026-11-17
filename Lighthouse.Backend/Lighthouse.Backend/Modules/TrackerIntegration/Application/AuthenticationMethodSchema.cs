@@ -1,4 +1,8 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
@@ -45,8 +49,8 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
                         DisplayName = "Personal Access Token",
                         Options =
                         [
-                            new AuthenticationMethodOption { Key = AzureDevOps.AzureDevOpsWorkTrackingOptionNames.Url, DisplayName = "Organization URL", IsSecret = false },
-                            new AuthenticationMethodOption { Key = AzureDevOps.AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, DisplayName = "Personal Access Token", IsSecret = true }
+                            new AuthenticationMethodOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, DisplayName = "Organization URL", IsSecret = false },
+                            new AuthenticationMethodOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, DisplayName = "Personal Access Token", IsSecret = true }
                         ]
                     },
                     new AuthenticationMethod
@@ -56,7 +60,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
                         IsPremium = true,
                         Options =
                         [
-                            new AuthenticationMethodOption { Key = AzureDevOps.AzureDevOpsWorkTrackingOptionNames.Url, DisplayName = "Organization URL", IsSecret = false },
+                            new AuthenticationMethodOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, DisplayName = "Organization URL", IsSecret = false },
                             new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientId, DisplayName = "Client ID", IsSecret = false },
                             new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.TenantId, DisplayName = "Directory (Tenant) ID", IsSecret = false },
                             new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientSecret, DisplayName = "Client Secret", IsSecret = true }
@@ -73,9 +77,9 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
                         DisplayName = "Jira Cloud (API Token)",
                         Options =
                         [
-                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Url, DisplayName = JiraUrlDisplayName, IsSecret = false },
-                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Username, DisplayName = "Username (Email)", IsSecret = false },
-                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.ApiToken, DisplayName = "API Token", IsSecret = true }
+                            new AuthenticationMethodOption { Key = JiraWorkTrackingOptionNames.Url, DisplayName = JiraUrlDisplayName, IsSecret = false },
+                            new AuthenticationMethodOption { Key = JiraWorkTrackingOptionNames.Username, DisplayName = "Username (Email)", IsSecret = false },
+                            new AuthenticationMethodOption { Key = JiraWorkTrackingOptionNames.ApiToken, DisplayName = "API Token", IsSecret = true }
                         ]
                     },
                     new AuthenticationMethod
@@ -84,8 +88,8 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
                         DisplayName = "Jira Data Center (Personal Access Token)",
                         Options =
                         [
-                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Url, DisplayName = JiraUrlDisplayName, IsSecret = false },
-                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.ApiToken, DisplayName = "Personal Access Token", IsSecret = true }
+                            new AuthenticationMethodOption { Key = JiraWorkTrackingOptionNames.Url, DisplayName = JiraUrlDisplayName, IsSecret = false },
+                            new AuthenticationMethodOption { Key = JiraWorkTrackingOptionNames.ApiToken, DisplayName = "Personal Access Token", IsSecret = true }
                         ]
                     },
                     new AuthenticationMethod
@@ -94,9 +98,9 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
                         DisplayName = "Jira Cloud (Scoped Access Token)",
                         Options =
                         [
-                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Url, DisplayName = JiraUrlDisplayName, IsSecret = false },
-                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Username, DisplayName = "Username (Email)", IsSecret = false },
-                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.ApiToken, DisplayName = "Scoped Access Token", IsSecret = true }
+                            new AuthenticationMethodOption { Key = JiraWorkTrackingOptionNames.Url, DisplayName = JiraUrlDisplayName, IsSecret = false },
+                            new AuthenticationMethodOption { Key = JiraWorkTrackingOptionNames.Username, DisplayName = "Username (Email)", IsSecret = false },
+                            new AuthenticationMethodOption { Key = JiraWorkTrackingOptionNames.ApiToken, DisplayName = "Scoped Access Token", IsSecret = true }
                         ]
                     },
                     new AuthenticationMethod
@@ -106,7 +110,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
                         IsPremium = true,
                         Options =
                         [
-                            new AuthenticationMethodOption { Key = Jira.JiraWorkTrackingOptionNames.Url, DisplayName = JiraUrlDisplayName, IsSecret = false },
+                            new AuthenticationMethodOption { Key = JiraWorkTrackingOptionNames.Url, DisplayName = JiraUrlDisplayName, IsSecret = false },
                             new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientId, DisplayName = "Client ID", IsSecret = false },
                             new AuthenticationMethodOption { Key = OAuthWorkTrackingOptionNames.ClientSecret, DisplayName = "Client Secret", IsSecret = true }
                         ]
@@ -122,7 +126,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
                         DisplayName = "API Key",
                         Options =
                         [
-                            new AuthenticationMethodOption { Key = Linear.LinearWorkTrackingOptionNames.ApiKey, DisplayName = "API Key", IsSecret = true }
+                            new AuthenticationMethodOption { Key = LinearWorkTrackingOptionNames.ApiKey, DisplayName = "API Key", IsSecret = true }
                         ]
                     }
                 ]
@@ -147,9 +151,9 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application
                         DisplayName = "Username and Password",
                         Options =
                         [
-                            new AuthenticationMethodOption { Key = ServiceNow.ServiceNowWorkTrackingOptionNames.InstanceUrl, DisplayName = "ServiceNow Instance URL", IsSecret = false },
-                            new AuthenticationMethodOption { Key = ServiceNow.ServiceNowWorkTrackingOptionNames.Username, DisplayName = "Username", IsSecret = false },
-                            new AuthenticationMethodOption { Key = ServiceNow.ServiceNowWorkTrackingOptionNames.Password, DisplayName = "Password", IsSecret = true }
+                            new AuthenticationMethodOption { Key = ServiceNowWorkTrackingOptionNames.InstanceUrl, DisplayName = "ServiceNow Instance URL", IsSecret = false },
+                            new AuthenticationMethodOption { Key = ServiceNowWorkTrackingOptionNames.Username, DisplayName = "Username", IsSecret = false },
+                            new AuthenticationMethodOption { Key = ServiceNowWorkTrackingOptionNames.Password, DisplayName = "Password", IsSecret = true }
                         ]
                     }
                 ]

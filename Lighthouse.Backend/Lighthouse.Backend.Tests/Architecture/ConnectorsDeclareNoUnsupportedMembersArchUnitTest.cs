@@ -1,8 +1,8 @@
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.Architecture.ConnectorRatchetFixtures.DirectThrow;
 using Mono.Cecil;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

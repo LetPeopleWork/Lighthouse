@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using NUnit.Framework;
 using static Lighthouse.Backend.Tests.API.Integration.BlockedItems.BlockedItemsJson;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 {

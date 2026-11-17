@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Services.Implementation.OAuth.Providers;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
@@ -9,6 +8,7 @@ using Moq.Protected;
 using System.Net;
 using System.Text;
 using System.Web;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
 {

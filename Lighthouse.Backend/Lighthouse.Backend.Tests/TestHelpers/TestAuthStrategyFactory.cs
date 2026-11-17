@@ -1,8 +1,8 @@
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
-using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Moq;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 ﻿using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
@@ -11,6 +10,7 @@ using Moq.Protected;
 using NUnit.Framework.Constraints;
 using System.Net;
 using System.Text;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
