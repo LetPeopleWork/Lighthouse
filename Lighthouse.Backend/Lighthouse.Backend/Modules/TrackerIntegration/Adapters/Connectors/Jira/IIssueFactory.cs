@@ -1,0 +1,13 @@
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using System.Text.Json;
+
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
+{
+    public interface IIssueFactory
+    {
+        Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, JiraOriginalNames originalNames, string? rankFieldName = null, string? flaggedField = null);
+
+        IReadOnlyList<WorkItemStateTransition> GetAllStateTransitions(JsonElement json);
+    }
+}

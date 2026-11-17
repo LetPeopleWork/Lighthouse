@@ -1,0 +1,983 @@
+﻿using Lighthouse.Backend.Services.Implementation.DeliverySources;
+using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
+using Moq;
+using Moq.Protected;
+using NUnit.Framework.Constraints;
+using System.Net;
+using System.Text;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira
+{
+    [Category("JiraIntegration")]
+    public class JiraWorkTrackingConnectorTest : IntegrationFixture
+    {
+        [Test]
+        public void GetPredefinedAdditionalFields_JiraConnection_ContributesFlaggedFieldAsPredefined()
+        {
+            var subject = CreateSubject();
+            var connection = new WorkTrackingSystemConnection
+            {
+                Id = 987654,
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Name = "Fresh Jira Connection",
+            };
+
+            var predefinedFields = subject.GetPredefinedAdditionalFields(connection);
+
+            var flagged = predefinedFields.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(flagged.DisplayName, Is.EqualTo(JiraFieldNames.FlaggedName),
+                    "Jira contributes exactly one predefined field: the Flagged field.");
+                Assert.That(flagged.IsPredefined, Is.True,
+                    "the flagged field must be marked IsPredefined so it is inbound-only and slot-excluded.");
+                Assert.That(flagged.Reference, Is.EqualTo("customfield_10001"),
+                    "an unsynced connection resolves the flagged Reference to the stable Jira Cloud default.");
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_GetsAllItemsThatMatchQuery()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND labels = ExistingLabel");
+
+            team.ResetUpdateTime();
+
+            var matchingItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(matchingItems.Count(), Is.EqualTo(2));
+        }
+        
+        [Test]
+        [TestCase(0, 1)]
+        [TestCase(10, 0)]
+        [TestCase(5500, 1)]
+        public async Task GetWorkItemsForTeam_CutOffDateSet_SkipsItemsIfBeyondCutOff(int cutOffDays, int expectedItems)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
+            
+            team.DoneItemsCutoffDays =  cutOffDays;
+
+            var actualItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(actualItems.ToList(), Has.Count.EqualTo(expectedItems));
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_OrCaseInWorkItemQuery_HandlesCorrectly()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ OR project = DUMMY");
+
+            team.UseFixedDatesForThroughput = true;
+            team.ThroughputHistoryStartDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            team.ThroughputHistoryEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            
+            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
+
+            var closedItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(closedItems.Count(), Is.EqualTo(18));
+        }
+
+        [Test]
+        [TestCase("PROJ-18", "")]
+        [TestCase("PROJ-15", "PROJ-8")]
+        public async Task GetWorkItemsForTeam_SetsParentRelationCorrect(string issueKey, string expectedParentReference)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND issueKey = {issueKey}");
+
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+            var workItem = workItems.Single(wi => wi.ReferenceId == issueKey);
+
+            Assert.That(workItem.ParentReferenceId, Is.EqualTo(expectedParentReference));
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_UseParentOverride_SetsParentRelationCorrect()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey in (LGHTHSDMO-1726)");
+
+            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = 1,
+                DisplayName = "Parent Link Override",
+                Reference = "customrelationfield"
+            });
+
+            team.OwnParentOverride(1);
+
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
+
+            Assert.That(workItem.ParentReferenceId, Is.EqualTo("LGHTHSDMO-1724"));
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_UseOrderedParentSources_ReadsTheLinkAndTheOwnParentOnlyWhenListed()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey in (LGHTHSDMO-1726)");
+            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = 1,
+                DisplayName = "Parent Link Override",
+                Reference = "customrelationfield"
+            });
+
+            team.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(1), ParentSourceEntry.TrackerParent]).List!);
+            var withTheLinkListed = (await subject.GetWorkItemsForTeam(team, CancellationToken.None))
+                .Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
+
+            team.OwnParentSources(ParentSources.Of([ParentSourceEntry.TrackerParent]).List!);
+            var withOnlyTheOwnParentListed = (await subject.GetWorkItemsForTeam(team, CancellationToken.None))
+                .Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(withTheLinkListed.ParentReferenceId, Is.EqualTo("LGHTHSDMO-1724"),
+                    "The link entry comes first and names a parent.");
+                Assert.That(withOnlyTheOwnParentListed.ParentReferenceId, Is.Empty,
+                    "With the link left out of the list it is not read, and this item has no own Jira parent.");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_UseParentOverride_SetsParentRelationCorrect()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey in (LGHTHSDMO-1726)");
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+            
+            portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = 1,
+                DisplayName = "Parent Link Override",
+                Reference = "customfield_10038"
+            });
+
+            portfolio.OwnParentOverride(1);
+
+            var workItems = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
+
+            Assert.That(workItem.ParentReferenceId, Is.EqualTo("LGHTHSDMO-1724"));
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_QueryContainsAmpersand_EscapesCorrectly()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("project = LGHTHSDMO");
+
+            team.ToDoStates.Clear();
+            team.DoneStates.Clear();
+            team.DoingStates.Clear();
+            team.DoingStates.Add("QA&Testing");
+
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(workItems.ToList(), Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_GetsLabelsAndStoresAsTag()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND key = PROJ-23");
+
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
+
+            using (Assert.EnterMultipleScope())
+            {
+                // A flagged issue gets no synthetic "Flagged" label: only the real Jira labels remain.
+                Assert.That(workItem.Tags, Has.Count.EqualTo(2));
+                Assert.That(workItem.Tags, Contains.Item("TagTest"));
+                Assert.That(workItem.Tags, Contains.Item("ExistingLabel"));
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_ItemIsFlagged_CapturesFlagAsPredefinedAdditionalFieldValue()
+        {
+            // The Jira flag flows ONLY through the predefined additional field. The flagged custom-field value
+            // lands in AdditionalFieldValues keyed by the auto-registered predefined field's Id, NOT as a synthetic
+            // "Flagged" tag. Whether that blocks the item is judged in Lighthouse, by IBlockedItemService.
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND key = PROJ-23");
+
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
+            var flaggedField = PredefinedFlaggedField(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.AdditionalFieldValues[flaggedField.Id], Is.Not.Empty,
+                    "A flagged Jira item must expose its flag as the predefined additional field value.");
+                Assert.That(workItem.Tags, Has.None.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
+                    "The flag must not be captured as a synthetic tag — only as the predefined additional field.");
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_ItemIsNotFlagged_HasNoFlagValueAndNoFlaggedTag()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND key = PROJ-18");
+
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-18");
+            var flaggedField = PredefinedFlaggedField(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.AdditionalFieldValues[flaggedField.Id], Is.Empty,
+                    "An unflagged Jira item must expose an empty predefined flag field value.");
+                Assert.That(workItem.Tags, Has.None.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
+                    "An unflagged Jira item must not capture a Flagged tag.");
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_ItemIsFlagged_CapturesFlagIndependentlyOfBlockingConfiguration()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam($"project = PROJ AND key = PROJ-23");
+
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+            var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
+            var flaggedField = PredefinedFlaggedField(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.AdditionalFieldValues[flaggedField.Id], Is.Not.Empty,
+                    "Flag capture is independent of any blocked configuration — the connector always records the flag as the predefined additional field value.");
+                Assert.That(workItem.Tags, Has.None.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
+                    "No synthetic Flagged tag may be recorded regardless of blocking configuration.");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_LabelDoesNotExist_ReturnsNoItems()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"NotExistingLabel\"");
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+
+            var itemsByTag = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+
+            Assert.That(itemsByTag, Is.Empty);
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_ReturnsCorrectAmountOfItems()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = \"LGHTHSDMO\" AND labels = \"Phoenix\"");
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Epic");
+            
+            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            portfolio.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
+            
+            var itemsByTag = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+
+            Assert.That(itemsByTag, Has.Count.EqualTo(4));
+        }
+
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_TagExists_ReturnsCorrectNumberOfItems()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"ExistingLabel\"");
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+
+            var itemsByTag = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+
+            Assert.That(itemsByTag, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_TagExists_WorkItemTypeDoesNotMatch_ReturnsNoItems()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"ExistingLabel\"");
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Bug");
+
+            var itemsByTag = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+
+            Assert.That(itemsByTag, Is.Empty);
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_ItemIsClosed_ReturnsItem()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+            
+            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            portfolio.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
+
+            var actualItems = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+
+            Assert.That(actualItems, Has.Count.EqualTo(1));
+        }   
+        
+        [Test]
+        [TestCase(0, 1)]
+        [TestCase(10, 0)]
+        [TestCase(5500, 1)]
+        public async Task GetFeaturesForPortfolio_CutOffDateSet_SkipsItemsIfBeyondCutOff(int cutOffDays, int expectedItems)
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND labels = \"LabelOfItemThatIsClosed\"");
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+            
+            portfolio.DoneItemsCutoffDays =  cutOffDays;
+
+            var actualItems = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+
+            Assert.That(actualItems, Has.Count.EqualTo(expectedItems));
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_ReturnsCorrectFeatureProperties()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-18");
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-18");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.Name, Is.EqualTo("Test 32523"));
+                Assert.That(feature.Order, Is.EqualTo("0|i00037:9"));
+                Assert.That(feature.State, Is.EqualTo("In Progress"));
+                Assert.That(feature.StateCategory, Is.EqualTo(StateCategories.Doing));
+                Assert.That(feature.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
+            }
+        }
+
+        [Test]
+        public async Task WorkTrackingSystemContainsTrailingSlash_IgnoresInUrl()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-18");
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Story");
+
+            portfolio.WorkTrackingSystemConnection.Options[0].Value = "https://letpeoplework.atlassian.net/";
+
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-18");
+
+            Assert.That(feature.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/PROJ-18"));
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_ReturnsCorrectStartedDateBasedOnStateMapping()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-21");
+
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-21");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.StartedDate.HasValue, Is.True);
+                Assert.That(feature.StartedDate?.Date, Is.EqualTo(new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc)));
+
+                Assert.That(feature.ClosedDate.HasValue, Is.False);
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_ReturnsCorrectClosedDateBasedOnStateMapping()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-21");
+            portfolio.DoingStates.Remove("In Progress");
+            portfolio.DoneStates.Add("In Progress");
+
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-21");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.ClosedDate.HasValue, Is.True);
+                Assert.That(feature.ClosedDate?.Date, Is.EqualTo(new DateTime(2025, 4, 5, 0, 0, 0, DateTimeKind.Utc)));
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_ClosedDateButNoStartedDate_SetsStartedDateToClosedDate()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND issueKey = PROJ-21");
+            portfolio.DoingStates.Clear();
+            portfolio.DoneStates.Clear();
+            portfolio.DoneStates.Add("In Progress");
+            
+            var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            portfolio.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
+
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-21");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.StartedDate, Is.EqualTo(feature.ClosedDate));
+            }
+        }
+
+        [Test]
+        [TestCase("", "LGHTHSDMO-9", 0)]
+        [TestCase("MambooJamboo", "LGHTHSDMO-9", 0)]
+        [TestCase("customfield_10037", "LGHTHSDMO-9", 12)]
+        [TestCase("customfield_10037", "LGHTHSDMO-1724", 0)]
+        [TestCase("customfield_10037", "LGHTHSDMO-8", 2)]
+        public async Task GetFeaturesForPortfolio_ReadsEstimatedSizeCorrect(string fieldName, string issueKey, int expectedEstimatedSize)
+        {
+            var subject = CreateSubject();
+
+            var additionalFieldDefs = new List<AdditionalFieldDefinition>();
+            
+            var sizeField = new AdditionalFieldDefinition { Id = 1, DisplayName = "Size", Reference = fieldName };
+            additionalFieldDefs.Add(sizeField);
+
+            var portfolio = CreatePortfolioWithAdditionalFields($"project = LGHTHSDMO AND issuekey = {issueKey}", additionalFieldDefs);
+            portfolio.OwnSizeEstimateField(1);
+
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var feature = features.Single(f => f.ReferenceId == issueKey);
+
+            Assert.That(feature.EstimatedSize, Is.EqualTo(expectedEstimatedSize));
+        }
+
+        [Test]
+        [TestCase("", "LGHTHSDMO-9", "")]
+        [TestCase("MambooJamboo", "LGHTHSDMO-9", "")]
+        [TestCase("customfield_10037", "LGHTHSDMO-9", "12.0")]
+        [TestCase("fixVersions", "LGHTHSDMO-9", "Elixir Project", true)]
+        [TestCase("FixVersions", "LGHTHSDMO-9", "Elixir Project", true)]
+        [TestCase("labels", "LGHTHSDMO-5", "Phoenix", false)]
+        [TestCase("labels", "LGHTHSDMO-5", "RebelRevolt", false)]
+        [TestCase("labels", "LGHTHSDMO-5", "Phoenix,RebelRevolt", true)]
+        [TestCase("Favorite Team", "LGHTHSDMO-9", "Grasshopper Club Zurich")]
+        public async Task GetFeaturesForPortfolio_ReadsFeatureOwnerFieldCorrect(string fieldName, string issueKey, string expectedFeatureOwnerFieldValue, bool isExactValue = true)
+        {
+            var subject = CreateSubject();
+
+            var additionalFieldDefs = new List<AdditionalFieldDefinition>();
+            
+            var ownerField = new AdditionalFieldDefinition { Id = 2, DisplayName = "Owner", Reference = fieldName };
+            additionalFieldDefs.Add(ownerField);
+
+            var portfolio = CreatePortfolioWithAdditionalFields($"project = LGHTHSDMO AND issuekey = {issueKey}", additionalFieldDefs);
+            portfolio.OwnFeatureOwnerField(2);
+
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var feature = features.Single(f => f.ReferenceId == issueKey);
+
+            IResolveConstraint constraint = isExactValue
+                ? Is.EqualTo(expectedFeatureOwnerFieldValue)
+                : Contains.Substring(expectedFeatureOwnerFieldValue);
+            
+            Assert.That(feature.OwningTeam, constraint);
+        }
+
+        [Test]
+        public async Task GetFeaturesForPortfolio_GetsLabelsAndStoresAsTag()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = PROJ AND key = PROJ-7");
+
+            var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var feature = features.Single(f => f.ReferenceId == "PROJ-7");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.Tags, Contains.Item("TagTest"));
+                Assert.That(feature.Tags, Contains.Item("ExistingLabel"));
+            }
+        }
+
+        [Test]
+        public async Task GetParentFeaturesDetails_ReturnsCorrectDetails()
+        {
+            var subject = CreateSubject();
+            var portfolio = CreatePortfolio($"project = LGHTHSDMO");
+
+            var parentItems = await subject.GetParentFeaturesDetails(portfolio, ["LGHTHSDMO-2377"], CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parentItems, Has.Count.EqualTo(1));
+                var parentItem = parentItems.Single();
+
+                Assert.That(parentItem.ReferenceId, Is.EqualTo("LGHTHSDMO-2377"));
+                Assert.That(parentItem.Name, Is.EqualTo("Delivery for Agnieszka"));
+                Assert.That(parentItem.Url, Is.EqualTo("https://letpeoplework.atlassian.net/browse/LGHTHSDMO-2377"));
+            }
+        }
+
+        [Test]
+        public async Task GetJiraBoards_ReturnsCorrectBoards()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            
+            var boards = (await subject.GetBoards(workTrackingSystemConnection)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boards, Has.Count.GreaterThan(1));
+                
+                var storiesBoard =  boards.Single(b => b.Name == "Stories");
+                Assert.That(storiesBoard.Id, Is.EqualTo("8"));
+            }
+        }
+
+        [Test]
+        public async Task GetJiraBoardInformation_GetsCorrectJqlQuery()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            
+            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, "8");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boardInformation.DataRetrievalValue, Does.Contain("(project = LIGHTHOUSE AND type IN (Bug, Story))"));
+                Assert.That(boardInformation.DataRetrievalValue, Does.Contain("(fixVersion in unreleasedVersions() OR fixVersion is EMPTY)"));
+                Assert.That(boardInformation.DataRetrievalValue, Is.EqualTo("(project = LIGHTHOUSE AND type IN (Bug, Story)) AND (fixVersion in unreleasedVersions() OR fixVersion is EMPTY)"));
+            }
+        }
+
+        [Test]
+        public async Task GetJiraBoardInformation_GetsCorrectWorkItemTypes()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            
+            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, "8");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boardInformation.WorkItemTypes, Does.Contain("Bug"));
+                Assert.That(boardInformation.WorkItemTypes, Does.Contain("Story"));
+            }
+        }
+
+        [Test]
+        public async Task GetJiraBoardInformation_GetsCorrectStateMapping()
+        {
+            var subject = CreateSubject();
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            
+            var boardInformation = await subject.GetBoardInformation(workTrackingSystemConnection, "8");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boardInformation.ToDoStates, Does.Contain("Backlog"));
+                Assert.That(boardInformation.ToDoStates, Does.Contain("Planned"));
+                Assert.That(boardInformation.DoingStates, Does.Contain("Implementation"));
+                Assert.That(boardInformation.DoingStates, Does.Contain("Deployed"));
+                Assert.That(boardInformation.DoneStates, Does.Contain("Done"));
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_GivenValidSettings_ReturnsTrue()
+        {
+            var subject = CreateSubject();
+
+            var organizationUrl = "https://letpeoplework.atlassian.net";
+            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "atlassian.pushchair@huser-berta.com";
+            var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
+
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "100", IsSecret = false },
+                ]);
+
+            var result = await subject.ValidateConnection(connectionSetting);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(result.Code, Is.EqualTo("valid"));
+                Assert.That(result.Message, Is.EqualTo("Connection validated successfully."));
+            }
+        }
+
+        [Test]
+        [TestCase("https://letpeoplework.atlassian.net", "Yah-yah-yah, Coco Jamboo, yah-yah-yeh", "atlassian.pushchair@huser-berta.com")]
+        [TestCase("https://letpeoplework.atlassian.net", "", "atlassian.pushchair@huser-berta.com")]
+        [TestCase("https://letpeoplework.atlassian.net", "PATPATPAT", "")]
+        [TestCase("", "PATPATPAT", "atlassian.pushchair@huser-berta.com")]
+        [TestCase("https://not.valid", "PATPATPAT", "atlassian.pushchair@huser-berta.com")]
+        [TestCase("asdfasdfasdfasdf", "PATPATPAT", "atlassian.pushchair@huser-berta.com")]
+        public async Task ValidateConnection_GivenInvalidSettings_ReturnsFalse(string organizationUrl, string apiToken, string username)
+        {
+            var subject = CreateSubject();
+
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
+                ]);
+
+            var result = await subject.ValidateConnection(connectionSetting);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Message, Is.Not.Empty);
+            }
+        }
+
+        [Test]
+        [TestCase(new[] { "fixVersions" }, true)]
+        [TestCase(new[] { "FixVersions" }, true)]
+        [TestCase(new[] { "Fix versions" }, true)]
+        [TestCase(new[] { "Fix Versions" }, true)]
+        [TestCase(new[] { "fixVersions", "components" }, true)]
+        [TestCase(new[] { "customfield_10038" }, true)]
+        [TestCase(new[] { "customrelationfield" }, true)]
+        [TestCase(new[] { "MamboJambo" }, false)]
+        [TestCase(new[] { "fixVersions", "Custom.NOTEXISTING" }, false)]
+        [TestCase(new[] { "customfield_10034" }, true)]
+        [TestCase(new[] { "com.atlassian.atlas.jira__project-status" }, true)]
+        public async Task ValidateConnection_GivenAdditionalFields_ReturnsTrueOnlyIfFieldsExist(string[] additionalFields, bool expectedValidationResult)
+        {
+            var subject = CreateSubject();
+
+            var organizationUrl = "https://letpeoplework.atlassian.net";
+            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "atlassian.pushchair@huser-berta.com";
+            var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
+
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "100", IsSecret = false },
+            ]);
+
+            foreach (var additionalField in additionalFields) 
+            {
+                connectionSetting.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+                {
+                    DisplayName = additionalField,
+                    Reference =  additionalField,
+                });
+            }
+
+            var result = await subject.ValidateConnection(connectionSetting);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.EqualTo(expectedValidationResult));
+                Assert.That(result.Message, Is.Not.Empty);
+            }
+        }
+
+        [Test]
+        [TestCase("project = LGHTHSDMO AND issueKey = LGHTHSDMO-11", true)]
+        [TestCase("project = LGHTHSDMO AND labels = 'NotExisting'", false)]
+        [TestCase("project = SomethingThatDoesNotExist", false)]
+        public async Task ValidateTeamSettings_ValidConnectionSettings_ReturnsTrueIfTeamHasThroughput(string query, bool expectedValue)
+        {
+            var team = CreateTeam(query);
+
+            var subject = CreateSubject();
+
+            var result = await subject.ValidateTeamSettings(team);
+
+            Assert.That(result.IsValid, Is.EqualTo(expectedValue));
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_InvalidConnectionSettings_ReturnsFalse()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("project = LGHTHSDMO");
+
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = "https://letpeoplework.atlassian.net", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = "Benji", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = "JennifferAniston", IsSecret = true },
+                ]);
+
+            team.WorkTrackingSystemConnection = connectionSetting;
+
+            var result = await subject.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Message, Is.Not.Empty);
+            }
+        }
+
+        [Test]
+        [TestCase("project = LGHTHSDMO", true)]
+        [TestCase("project = LGHTHSDMO AND labels = 'NotExisting'", false)]
+        [TestCase("project = SomethingThatDoesNotExist", false)]
+        public async Task ValidateProjectSettings_ValidConnectionSettings_ReturnsTrueIfFeaturesAreFound(string query, bool expectedValue)
+        {
+            var portfolio = CreatePortfolio(query);
+
+            var subject = CreateSubject();
+
+            var result = await subject.ValidatePortfolioSettings(portfolio);
+
+            Assert.That(result.IsValid, Is.EqualTo(expectedValue));
+        }
+
+        [Test]
+        public async Task ValidateProjectSettings_InvalidConnectionSettings_ReturnsFalse()
+        {
+            var portfolio = CreatePortfolio("project = LGHTHSDMO");
+            var subject = CreateSubject();
+
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.AzureDevOpsPat
+            };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = "https://letpeoplework.atlassian.net", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = "Benji", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = "JennifferAniston", IsSecret = true },
+                ]);
+
+            portfolio.WorkTrackingSystemConnection = connectionSetting;
+
+            var result = await subject.ValidatePortfolioSettings(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Message, Is.Not.Empty);
+            }
+        }
+
+        private static AdditionalFieldDefinition PredefinedFlaggedField(Team team)
+        {
+            return team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Single(field => field.IsPredefined);
+        }
+
+        private Team CreateTeam(string query)
+        {
+            var team = new Team
+            {
+                Name = "TestTeam",
+                DataRetrievalValue = query
+            };
+
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.Add("Story");
+            team.WorkItemTypes.Add("Bug");
+            team.WorkItemTypes.Add("Task");
+
+            team.DoneStates.Clear();
+            team.DoneStates.Add("Done");
+
+            team.DoingStates.Clear();
+            team.DoingStates.Add("In Progress");
+
+            team.ToDoStates.Clear();
+            team.ToDoStates.Add("To Do");
+
+            var connectionSetting = CreateWorkTrackingSystemConnection();
+            team.WorkTrackingSystemConnection = connectionSetting;
+
+            return team;
+        }
+
+        private Portfolio CreatePortfolio(string query)
+        {
+            return CreatePortfolioWithAdditionalFields(query, []);
+        }
+
+        private Portfolio CreatePortfolioWithAdditionalFields(string query, List<AdditionalFieldDefinition> additionalFieldDefs)
+        {
+            var portfolio = new Portfolio
+            {
+                Name = "TestProject",
+                DataRetrievalValue = query,
+            };
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Epic");
+
+            portfolio.DoneStates.Clear();
+            portfolio.DoneStates.Add("Done");
+
+            portfolio.DoingStates.Clear();
+            portfolio.DoingStates.Add("In Progress");
+
+            portfolio.ToDoStates.Clear();
+            portfolio.ToDoStates.Add("To Do");
+
+            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
+            workTrackingSystemConnection.AdditionalFieldDefinitions.AddRange(additionalFieldDefs);
+            portfolio.WorkTrackingSystemConnection = workTrackingSystemConnection;
+
+            return portfolio;
+        }
+
+        private WorkTrackingSystemConnection CreateWorkTrackingSystemConnection()
+        {
+            var organizationUrl = "https://letpeoplework.atlassian.net";
+            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "atlassian.pushchair@huser-berta.com";
+            var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? throw new NotSupportedException("Can run test only if Environment Variable 'JiraLighthouseIntegrationTestToken' is set!");
+
+            var connectionSetting = new WorkTrackingSystemConnection 
+            { 
+                WorkTrackingSystem = WorkTrackingSystems.Jira, 
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "100", IsSecret = false },
+                ]);
+
+            return connectionSetting;
+        }
+
+        private static JiraWorkTrackingConnector CreateSubject()
+        {
+            var authStrategyFactory = TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService());
+            return new JiraWorkTrackingConnector(
+                new IssueFactory(Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), authStrategyFactory,
+                new Lighthouse.Backend.Cache.Cache<string, object>(), new DeliveryForecastBlockRenderer(), TimeProvider.System);
+        }
+    }
+
+    /// <summary>
+    /// How far back finished work is read is an offset from the instance's clock, in UTC. Asserted on the
+    /// JQL the connector sends to a stubbed Jira, so no real tracker is involved.
+    /// </summary>
+    public class JiraHistoryCutoffTest
+    {
+        private static readonly DateTimeOffset TheRefreshInstant = new(2026, 3, 14, 23, 30, 0, TimeSpan.Zero);
+
+        [Test]
+        [TestCase(1, "2026-03-13")]
+        [TestCase(30, "2026-02-12")]
+        [TestCase(90, "2025-12-14")]
+        public async Task HistoryCutoff_IsTheClockInstantMinusHistoryDays(int historyInDays, string expectedCutoffDay)
+        {
+            var searches = new List<string>();
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJiraCloudRecording(searches), new FakeTimeProvider(TheRefreshInstant));
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud(doneItemsCutoffDays: historyInDays);
+
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(searches, Has.Some.Contains($"resolved >= '{expectedCutoffDay}'"));
+        }
+
+        private static HttpMessageHandler AJiraCloudRecording(List<string> searches)
+        {
+            var handler = new Mock<HttpMessageHandler>();
+            handler.Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+                .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+
+                    if (path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal))
+                    {
+                        return Task.FromResult(Ok("{\"deploymentType\":\"Cloud\"}"));
+                    }
+
+                    if (path.EndsWith("rest/api/latest/field", StringComparison.Ordinal))
+                    {
+                        return Task.FromResult(Ok("[]"));
+                    }
+
+                    if (JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList)
+                    {
+                        return Task.FromResult(Ok(theNameList));
+                    }
+
+                    if (path.Contains("search", StringComparison.Ordinal))
+                    {
+                        searches.Add(JiraConnectorTestSetup.JqlOf(request));
+                        return Task.FromResult(Ok("{\"issues\":[]}"));
+                    }
+
+                    return Task.FromResult(Ok("{}"));
+                });
+
+            return handler.Object;
+        }
+
+        private static HttpResponseMessage Ok(string body)
+            => new(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+    }
+}

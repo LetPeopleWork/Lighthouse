@@ -1,0 +1,655 @@
+using Lighthouse.Backend.Services.Implementation.DeliverySources;
+using System.Globalization;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+
+namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connectors.Jira
+{
+    [Category("JiraIntegration")]
+    public class JiraWriteBackTest
+    {
+        private const string DescriptionField = "description";
+        
+        private const string DeliveryDateField = "customfield_10205";
+        private const string DeliveryDateName = "Delivery Date";
+        
+        private const string AgeField = "customfield_10206";
+        private const string AgeFieldName = "Age";
+        
+        private const string OrganizationUrl = "https://letpeoplework.atlassian.net";
+        private const string ProjectKey = "LGHTHSDMO";
+        private const string IntegrationTokenEnvironmentVariable = "JiraLighthouseIntegrationTestToken";
+        private const string IntegrationUsernameEnvironmentVariable = "JiraLighthouseIntegrationTestUsername";
+        private const string DefaultUsername = "atlassian.pushchair@huser-berta.com";
+
+        // Write-back integration tests mutate real Jira issues. Reusing the fixed demo items
+        // (LGHTHSDMO-1 / LGHTHSDMO-16) lets this fixture collide with other integration fixtures that read
+        // those same items in the full suite (passes in isolation, flaky together). Instead we create a
+        // fresh Epic and Story per fixture run and hard-delete them in teardown -- the integration user has
+        // delete permission on this team-managed project -- keeping runs isolated. Mirrors the Azure DevOps
+        // fix in commit 2964383c.
+        // Jira JQL search is eventually consistent; bound the read-back poll so a lagging index does not
+        // fail the write-then-read assertions (worst case ~15s, returns early on the first non-null read).
+        // These tests write the same field on the same issue and run in parallel, so on a loaded machine
+        // they contend with each other on top of the index lag - five seconds was not enough for that.
+        private const int ReadBackMaxAttempts = 30;
+        private static readonly TimeSpan ReadBackPollDelay = TimeSpan.FromMilliseconds(500);
+
+        private string EpicId = string.Empty;
+        private string StoryId = string.Empty;
+        private readonly List<string> createdIssueKeys = [];
+
+        [OneTimeSetUp]
+        public async Task CreateScratchIssues()
+        {
+            var apiToken = Environment.GetEnvironmentVariable(IntegrationTokenEnvironmentVariable);
+            if (string.IsNullOrEmpty(apiToken))
+            {
+                // No integration token (e.g. fork PRs): the [Category("Integration")] tests are excluded by
+                // the category filter, and the remaining non-integration test does not touch Jira, so there
+                // is nothing to create.
+                return;
+            }
+
+            using var client = CreateScratchClient(apiToken);
+
+            EpicId = await CreateScratchIssue(client, "Epic");
+            StoryId = await CreateScratchIssue(client, "Story");
+        }
+
+        [OneTimeTearDown]
+        public async Task DeleteScratchIssues()
+        {
+            if (createdIssueKeys.Count == 0)
+            {
+                return;
+            }
+
+            var apiToken = Environment.GetEnvironmentVariable(IntegrationTokenEnvironmentVariable);
+            if (string.IsNullOrEmpty(apiToken))
+            {
+                return;
+            }
+
+            using var client = CreateScratchClient(apiToken);
+
+            foreach (var issueKey in createdIssueKeys)
+            {
+                try
+                {
+                    // Best-effort cleanup: a leftover scratch item is harmless, a failed teardown is not
+                    // worth failing the run over. Surface it for diagnosis without throwing.
+                    using var response = await client.DeleteAsync($"rest/api/2/issue/{issueKey}?deleteSubtasks=true");
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        TestContext.Progress.WriteLine(
+                            $"Failed to delete scratch issue {issueKey}: HTTP {(int)response.StatusCode}");
+                    }
+                }
+                catch (HttpRequestException ex)
+                {
+                    TestContext.Progress.WriteLine($"Failed to delete scratch issue {issueKey}: {ex.Message}");
+                }
+            }
+
+            createdIssueKeys.Clear();
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteFieldsToWorkItems_SingleUpdate_SucceedsAndReturnsResult()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var updates = new List<WriteBackFieldUpdate>
+            {
+                new() { WorkItemId = EpicId, TargetFieldReference = DescriptionField, Value = "42" }
+            };
+
+            var result = await subject.WriteFieldsToWorkItems(connection, updates);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ItemResults, Has.Count.EqualTo(1));
+                Assert.That(result.AllSucceeded, Is.True);
+                Assert.That(result.ItemResults[0].WorkItemId, Is.EqualTo(EpicId));
+            }
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteFieldsToWorkItems_MultipleUpdates_SucceedsForAll()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var updates = new List<WriteBackFieldUpdate>
+            {
+                new() { WorkItemId = EpicId, TargetFieldReference = DescriptionField, Value = "10" },
+                new() { WorkItemId = StoryId, TargetFieldReference = DescriptionField, Value = "20" }
+            };
+
+            var result = await subject.WriteFieldsToWorkItems(connection, updates);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ItemResults, Has.Count.EqualTo(2));
+                Assert.That(result.AllSucceeded, Is.True);
+            }
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteFieldsToWorkItems_InvalidFieldReference_ReturnsFailure()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var updates = new List<WriteBackFieldUpdate>
+            {
+                new() { WorkItemId = EpicId, TargetFieldReference = "nonexistent_field_xyz", Value = "42" }
+            };
+
+            var result = await subject.WriteFieldsToWorkItems(connection, updates);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ItemResults, Has.Count.EqualTo(1));
+                Assert.That(result.ItemResults[0].Success, Is.False);
+                Assert.That(result.ItemResults[0].ErrorMessage, Is.Not.Null.And.Not.Empty);
+            }
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteFieldsToWorkItems_InvalidIssueKey_ReturnsFailure()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var updates = new List<WriteBackFieldUpdate>
+            {
+                new() { WorkItemId = "NONEXISTENT-99999", TargetFieldReference = "summary", Value = "should fail" }
+            };
+
+            var result = await subject.WriteFieldsToWorkItems(connection, updates);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ItemResults, Has.Count.EqualTo(1));
+                Assert.That(result.ItemResults[0].Success, Is.False);
+                Assert.That(result.ItemResults[0].ErrorMessage, Is.Not.Null.And.Not.Empty);
+            }
+        }
+
+        [Test]
+        public async Task WriteFieldsToWorkItems_EmptyUpdates_ReturnsEmptyResult()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var result = await subject.WriteFieldsToWorkItems(connection, []);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ItemResults, Is.Empty);
+                Assert.That(result.AllSucceeded, Is.True);
+            }
+        }
+
+        [Test]
+        [Category("Integration")]
+        [TestCase(DeliveryDateField)]
+        [TestCase(DeliveryDateName)]
+        public async Task WriteDate_IsoFormat_WritesDateFieldAndReadBackMatches(string fieldReference)
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var targetDate = new DateTime(2026, 7, 15, 0, 0, 0, DateTimeKind.Utc);
+            var dateValue = targetDate.ToString("yyyy-MM-dd");
+
+            var writeResult = await subject.WriteFieldsToWorkItems(connection, [
+                new WriteBackFieldUpdate { WorkItemId = EpicId, TargetFieldReference = fieldReference, Value = dateValue }
+            ]);
+
+            Assert.That(writeResult.AllSucceeded, Is.True);
+
+            var readBackValue = await ReadBackEpicAdditionalField(subject, connection, EpicId, fieldReference, 100);
+
+            Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
+            var parsedDate = DateTime.Parse(readBackValue!, CultureInfo.InvariantCulture);
+            Assert.That(parsedDate.Date, Is.EqualTo(targetDate.Date));
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteDate_ShortDateFormat_WritesDateFieldAndReadBackMatches()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var targetDate = new DateTime(2026, 3, 20, 0, 0, 0, DateTimeKind.Utc);
+            var dateValue = targetDate.ToString("yyyy-MM-dd");
+
+            var writeResult = await subject.WriteFieldsToWorkItems(connection, [
+                new WriteBackFieldUpdate { WorkItemId = EpicId, TargetFieldReference = DeliveryDateField, Value = dateValue }
+            ]);
+
+            Assert.That(writeResult.AllSucceeded, Is.True);
+
+            var readBackValue = await ReadBackEpicAdditionalField(subject, connection, EpicId, DeliveryDateField, 101);
+
+            Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
+            var parsedDate = DateTime.Parse(readBackValue!, CultureInfo.InvariantCulture);
+            Assert.That(parsedDate.Date, Is.EqualTo(targetDate.Date));
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteDate_DifferentDate_WritesDateFieldAndReadBackMatches()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var targetDate = new DateTime(2026, 12, 25, 0, 0, 0, DateTimeKind.Utc);
+            var dateValue = targetDate.ToString("yyyy-MM-dd");
+
+            var writeResult = await subject.WriteFieldsToWorkItems(connection, [
+                new WriteBackFieldUpdate { WorkItemId = EpicId, TargetFieldReference = DeliveryDateField, Value = dateValue }
+            ]);
+
+            Assert.That(writeResult.AllSucceeded, Is.True);
+
+            var readBackValue = await ReadBackEpicAdditionalField(subject, connection, EpicId, DeliveryDateField, 102);
+
+            Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
+            var parsedDate = DateTime.Parse(readBackValue!, CultureInfo.InvariantCulture);
+            Assert.That(parsedDate.Date, Is.EqualTo(targetDate.Date));
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteDateAsText_IsoFormat_WritesToTextFieldAndReadBackMatches()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var targetDate = new DateTime(2026, 8, 10, 0, 0, 0, DateTimeKind.Utc);
+            var isoValue = targetDate.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+            var writeResult = await subject.WriteFieldsToWorkItems(connection, [
+                new WriteBackFieldUpdate { WorkItemId = EpicId, TargetFieldReference = DescriptionField, Value = isoValue }
+            ]);
+
+            Assert.That(writeResult.AllSucceeded, Is.True);
+
+            var readBackValue = await ReadBackEpicAdditionalField(subject, connection, EpicId, DescriptionField, 103);
+
+            Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
+            Assert.That(readBackValue, Does.Contain("2026"));
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteDateAsText_EuropeanFormat_WritesToTextFieldAndReadBackMatches()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var formattedDate = "25.12.2026";
+
+            var writeResult = await subject.WriteFieldsToWorkItems(connection, [
+                new WriteBackFieldUpdate { WorkItemId = EpicId, TargetFieldReference = DescriptionField, Value = formattedDate }
+            ]);
+
+            Assert.That(writeResult.AllSucceeded, Is.True);
+
+            var readBackValue = await ReadBackEpicAdditionalField(subject, connection, EpicId, DescriptionField, 104);
+
+            Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
+            Assert.That(readBackValue, Does.Contain("2026"));
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteDateAsText_LongDateFormat_WritesToTextFieldAndReadBackMatches()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var targetDate = new DateTime(2026, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+            var longDateValue = targetDate.ToString("MMMM dd, yyyy", CultureInfo.InvariantCulture);
+
+            var writeResult = await subject.WriteFieldsToWorkItems(connection, [
+                new WriteBackFieldUpdate { WorkItemId = EpicId, TargetFieldReference = DescriptionField, Value = longDateValue }
+            ]);
+
+            Assert.That(writeResult.AllSucceeded, Is.True);
+
+            var readBackValue = await ReadBackEpicAdditionalField(subject, connection, EpicId, DescriptionField, 105);
+
+            Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
+            Assert.That(readBackValue, Does.Contain("2026"));
+        }
+
+        [Test]
+        [Category("Integration")]
+        [TestCase(AgeField)]
+        [TestCase(AgeFieldName)]
+        public async Task WriteNumericValue_Age_WritesToStoryAndReadBackMatches(string ageFieldReference)
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var ageValue = "42";
+
+            var writeResult = await subject.WriteFieldsToWorkItems(connection, [
+                new WriteBackFieldUpdate { WorkItemId = StoryId, TargetFieldReference = ageFieldReference, Value = ageValue }
+            ]);
+
+            Assert.That(writeResult.AllSucceeded, Is.True);
+
+            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, StoryId, ageFieldReference, 106);
+
+            Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
+            Assert.That(readBackValue, Does.Contain("42"));
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteNumericValue_CycleTime_WritesToStoryAndReadBackMatches()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var cycleTimeValue = "7";
+
+            var writeResult = await subject.WriteFieldsToWorkItems(connection, [
+                new WriteBackFieldUpdate { WorkItemId = StoryId, TargetFieldReference = AgeField, Value = cycleTimeValue }
+            ]);
+
+            Assert.That(writeResult.AllSucceeded, Is.True);
+
+            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, StoryId, AgeField, 107);
+
+            Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
+            Assert.That(readBackValue, Does.Contain("7"));
+        }
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteMultipleFieldTypes_DateAndNumeric_AllSucceedAndReadBackCorrectly()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var targetDate = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var updates = new List<WriteBackFieldUpdate>
+            {
+                new() { WorkItemId = EpicId, TargetFieldReference = DeliveryDateField, Value = targetDate.ToString("yyyy-MM-dd") },
+                new() { WorkItemId = EpicId, TargetFieldReference = DescriptionField, Value = "September 01, 2026" },
+                new() { WorkItemId = StoryId, TargetFieldReference = AgeField, Value = "15" }
+            };
+
+            var writeResult = await subject.WriteFieldsToWorkItems(connection, updates);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(writeResult.AllSucceeded, Is.True);
+                Assert.That(writeResult.SuccessCount, Is.EqualTo(3));
+
+                var dateReadBack = await ReadBackEpicAdditionalField(subject, connection, EpicId, DeliveryDateField, 108);
+                Assert.That(dateReadBack, Is.Not.Null.And.Not.Empty);
+                var parsedDate = DateTime.Parse(dateReadBack!, CultureInfo.InvariantCulture);
+                Assert.That(parsedDate.Date, Is.EqualTo(targetDate.Date));
+
+                var textReadBack = await ReadBackEpicAdditionalField(subject, connection, EpicId, DescriptionField, 109);
+                Assert.That(textReadBack, Is.Not.Null.And.Not.Empty);
+                Assert.That(textReadBack, Does.Contain("2026"));
+
+                var numericReadBack = await ReadBackStoryAdditionalField(subject, connection, StoryId, AgeField, 110);
+                Assert.That(numericReadBack, Is.Not.Null.And.Not.Empty);
+                Assert.That(numericReadBack, Does.Contain("15"));
+            }
+        }
+
+        // --- Epic 5500 slice 02 (ADR-143). Live on purpose: the claim under test is that Jira rejects a
+        // mixed-validity `fields` object *whole*, which is a fact about Jira. A stub asserting it would
+        // only repeat our own assumption back to us — and that assumption is exactly what SPIKE-03 had to
+        // measure because the intuitive answer ("the valid parts apply") is wrong.
+
+        // AC-05.8 — the regression batching would have introduced.
+        [Test]
+        [Category("Integration")]
+        public async Task WriteFieldsToWorkItems_OneFieldInvalidOnTheSameIssue_TheValidOnesStillLand()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var result = await subject.WriteFieldsToWorkItems(connection, [
+                new() { WorkItemId = EpicId, TargetFieldReference = DeliveryDateField, Value = "2026-09-15" },
+                new() { WorkItemId = EpicId, TargetFieldReference = "customfield_99999", Value = "nonsense" },
+                new() { WorkItemId = EpicId, TargetFieldReference = DescriptionField, Value = "survived the bad neighbour" },
+            ]);
+
+            var byField = result.ItemResults.ToDictionary(r => r.TargetFieldReference, r => r.Success);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(byField[DeliveryDateField], Is.True,
+                    "Jira rejects the whole fields object, so without the unbatched retry this field would be lost to its neighbour.");
+                Assert.That(byField[DescriptionField], Is.True);
+                Assert.That(byField["customfield_99999"], Is.False);
+            }
+
+            var dateReadBack = await ReadBackEpicAdditionalField(subject, connection, EpicId, DeliveryDateField, 111);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dateReadBack, Is.Not.Null.And.Not.Empty,
+                    "The valid field has to have actually landed, not just been reported as landed.");
+                Assert.That(DateTime.Parse(dateReadBack!, CultureInfo.InvariantCulture).Date,
+                    Is.EqualTo(new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc).Date));
+            }
+        }
+
+        private async Task<string> CreateScratchIssue(HttpClient client, string issueType)
+        {
+            var summary = $"Lighthouse WriteBack scratch {issueType} {DateTime.UtcNow:O}";
+            var payload = JsonSerializer.Serialize(new
+            {
+                fields = new
+                {
+                    project = new { key = ProjectKey },
+                    issuetype = new { name = issueType },
+                    summary,
+                },
+            });
+
+            using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            using var response = await client.PostAsync("rest/api/2/issue", content);
+            response.EnsureSuccessStatusCode();
+
+            var body = await response.Content.ReadAsStringAsync();
+            using var json = JsonDocument.Parse(body);
+            var key = json.RootElement.GetProperty("key").GetString()
+                ?? throw new InvalidOperationException($"Jira did not return a key for the created {issueType}.");
+
+            createdIssueKeys.Add(key);
+            return key;
+        }
+
+        private static HttpClient CreateScratchClient(string apiToken)
+        {
+            var username = Environment.GetEnvironmentVariable(IntegrationUsernameEnvironmentVariable) ?? DefaultUsername;
+            var basicAuth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{apiToken}"));
+
+            var client = new HttpClient { BaseAddress = new Uri($"{OrganizationUrl}/") };
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicAuth);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return client;
+        }
+
+        private static async Task<string?> ReadBackEpicAdditionalField(
+            JiraWorkTrackingConnector subject,
+            WorkTrackingSystemConnection connection,
+            string issueKey,
+            string fieldReference,
+            int fieldDefId)
+        {
+            var additionalFieldDef = new AdditionalFieldDefinition
+            {
+                Id = fieldDefId,
+                DisplayName = fieldReference,
+                Reference = fieldReference
+            };
+
+            var portfolio = new Portfolio
+            {
+                Name = "WriteBackReadTest",
+                DataRetrievalValue = $"project = LGHTHSDMO AND key = {issueKey}"
+            };
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Epic");
+
+            portfolio.DoneStates.Clear();
+            portfolio.DoneStates.Add("Done");
+            portfolio.DoingStates.Clear();
+            portfolio.DoingStates.Add("In Progress");
+            portfolio.ToDoStates.Clear();
+            portfolio.ToDoStates.Add("To Do");
+
+            var connectionWithField = CloneConnectionWithAdditionalField(connection, additionalFieldDef);
+            portfolio.WorkTrackingSystemConnection = connectionWithField;
+
+            // Jira Cloud's JQL search index is eventually consistent and lags a field write by up to
+            // seconds. Poll the read-back until the just-written value appears rather than asserting on a
+            // single immediate read, which can miss the write.
+            for (var attempt = 0; attempt < ReadBackMaxAttempts; attempt++)
+            {
+                var features = await subject.GetFeaturesForPortfolio(portfolio, CancellationToken.None);
+                var value = features.SingleOrDefault(f => f.ReferenceId == issueKey)
+                    ?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);
+                if (!string.IsNullOrEmpty(value))
+                {
+                    return value;
+                }
+
+                await Task.Delay(ReadBackPollDelay);
+            }
+
+            return null;
+        }
+
+        private static async Task<string?> ReadBackStoryAdditionalField(
+            JiraWorkTrackingConnector subject,
+            WorkTrackingSystemConnection connection,
+            string issueKey,
+            string fieldReference,
+            int fieldDefId)
+        {
+            var additionalFieldDef = new AdditionalFieldDefinition
+            {
+                Id = fieldDefId,
+                DisplayName = fieldReference,
+                Reference = fieldReference
+            };
+
+            var team = new Team
+            {
+                Name = "WriteBackReadTest",
+                DataRetrievalValue = $"project = LGHTHSDMO AND key = {issueKey}"
+            };
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.Add("Story");
+            team.WorkItemTypes.Add("Bug");
+            team.WorkItemTypes.Add("Task");
+
+            team.DoneStates.Clear();
+            team.DoneStates.Add("Done");
+            team.DoingStates.Clear();
+            team.DoingStates.Add("In Progress");
+            team.ToDoStates.Clear();
+            team.ToDoStates.Add("To Do");
+
+            var connectionWithField = CloneConnectionWithAdditionalField(connection, additionalFieldDef);
+            team.WorkTrackingSystemConnection = connectionWithField;
+
+            // JQL search is eventually consistent, so a single immediate read can miss the write:
+            // poll the read-back instead.
+            for (var attempt = 0; attempt < ReadBackMaxAttempts; attempt++)
+            {
+                var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+                var value = workItems.SingleOrDefault(wi => wi.ReferenceId == issueKey)
+                    ?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);
+                if (!string.IsNullOrEmpty(value))
+                {
+                    return value;
+                }
+
+                await Task.Delay(ReadBackPollDelay);
+            }
+
+            return null;
+        }
+
+        private static WorkTrackingSystemConnection CloneConnectionWithAdditionalField(
+            WorkTrackingSystemConnection original,
+            AdditionalFieldDefinition additionalFieldDef)
+        {
+            var clone = new WorkTrackingSystemConnection
+            {
+                WorkTrackingSystem = original.WorkTrackingSystem,
+                Name = original.Name,
+                AuthenticationMethodKey = original.AuthenticationMethodKey
+            };
+            clone.Options.AddRange(original.Options);
+            clone.AdditionalFieldDefinitions.Clear();
+            clone.AdditionalFieldDefinitions.Add(additionalFieldDef);
+
+            return clone;
+        }
+
+        private static WorkTrackingSystemConnection CreateWorkTrackingSystemConnection()
+        {
+            var username = Environment.GetEnvironmentVariable(IntegrationUsernameEnvironmentVariable) ?? DefaultUsername;
+            var apiToken = Environment.GetEnvironmentVariable(IntegrationTokenEnvironmentVariable) ?? "fake-token-for-non-integration-tests";
+
+            var connectionSetting = new WorkTrackingSystemConnection
+            {
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
+            };
+            connectionSetting.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = OrganizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "100", IsSecret = false },
+            ]);
+
+            return connectionSetting;
+        }
+
+        private static JiraWorkTrackingConnector CreateSubject()
+        {
+            var authStrategyFactory = TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService());
+            return new JiraWorkTrackingConnector(
+                new IssueFactory(Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), authStrategyFactory,
+                new Lighthouse.Backend.Cache.Cache<string, object>(), new DeliveryForecastBlockRenderer(), TimeProvider.System);
+        }
+    }
+}

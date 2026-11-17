@@ -1,0 +1,228 @@
+using System.Globalization;
+using System.Text.Json;
+using Lighthouse.Backend.Models.DeliverySources;
+
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira
+{
+    /// <summary>
+    /// Turns the answer of Jira's project versions endpoints into the sources a Delivery can bind to.
+    /// Kept apart from the connector and free of any I/O, so the shapes that are awkward to arrange on a
+    /// real board - a Release nobody dated, a Release somebody archived - can be specified directly.
+    /// </summary>
+    public static class JiraReleaseVersionReader
+    {
+        /// <summary>
+        /// The projects the credential can see, as key and name.
+        /// </summary>
+        public static (IReadOnlyList<DeliverySourceProject> Projects, bool IsLastPage, bool IsReadable) ReadProjectPage(string projectPagePayload)
+            => ReadPage(projectPagePayload, ToProject);
+
+        /// <summary>
+        /// The projects the credential can see, from Data Center's project list. It answers with every project at
+        /// once as a bare array rather than a page, so there is no envelope to take off and no next page to ask for.
+        /// Anything other than an array lists no projects and says it could not be read, because an empty list
+        /// taken as complete would tell a refresh that every Release on the connection is gone.
+        /// </summary>
+        public static (IReadOnlyList<DeliverySourceProject> Projects, bool IsReadable) ReadProjectList(string projectListPayload)
+        {
+            using var payload = JsonDocument.Parse(projectListPayload);
+            var root = payload.RootElement;
+
+            if (root.ValueKind != JsonValueKind.Array)
+            {
+                return ([], false);
+            }
+
+            return ([.. root.EnumerateArray().Select(ToProject)], true);
+        }
+
+        /// <summary>
+        /// One page of a project's versions. The paginated endpoint wraps the same version objects the bare
+        /// list returns, so this is the wrapper coming off rather than a second way of reading a version.
+        /// </summary>
+        public static (IReadOnlyList<DeliverySourceOption> Options, bool IsLastPage, bool IsReadable) ReadOptionPage(string versionPagePayload, DeliverySourceProject project)
+            => ReadPage(versionPagePayload, version => ToOption(version, project));
+
+        /// <summary>
+        /// The text a Release already carries, or nothing when it carries none. A Release with no
+        /// description at all is the ordinary case - every Release on the demo instance was like that - so
+        /// the key simply not being there is an answer rather than a payload that could not be read.
+        ///
+        /// A body that parses but is not an object - a bare array, a quoted string - is not a Release at
+        /// all and says it could not be read. Taken as "no description", it would have the forecast written
+        /// over whatever the team wrote on the Release.
+        /// </summary>
+        public static (string? Description, bool IsReadable) ReadVersionDescription(string versionPayload)
+        {
+            using var payload = JsonDocument.Parse(versionPayload);
+
+            if (payload.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return (null, false);
+            }
+
+            // Read as text only when it is text. A description that came back as anything else is not a
+            // description Lighthouse can merge into, and asking for the string would throw where the
+            // honest answer is that there is nothing here to keep.
+            var description = payload.RootElement.TryGetProperty("description", out var text)
+                && text.ValueKind == JsonValueKind.String
+                ? text.GetString()
+                : null;
+
+            return (description, true);
+        }
+
+        /// <summary>
+        /// What Jira said when it would not take a write, in its own words - which already name what to
+        /// fix in the vocabulary the administrator will search for. Nothing when the body is not a refusal
+        /// Jira wrote, because inventing a sentence here would put words in its mouth that nobody can look
+        /// up.
+        ///
+        /// Both halves of Jira's error envelope are read. A refusal about the request as a whole arrives
+        /// in <c>errorMessages</c>; one about a particular field arrives in <c>errors</c> with
+        /// <c>errorMessages</c> empty, and that is the shape of the refusal this write can actually
+        /// provoke - a description that would go over Jira's size ceiling. Reading only the first half
+        /// would leave the one refusal an administrator can act on reported as a bare status line.
+        /// </summary>
+        public static string? ReadRefusalMessage(string refusalPayload)
+        {
+            try
+            {
+                using var payload = JsonDocument.Parse(refusalPayload);
+
+                // A body that parses but is not an object - a bare array, a quoted string - has no
+                // properties to ask about, and asking anyway throws rather than answering. It is not a
+                // refusal Jira wrote, which is what this returns nothing for.
+                if (payload.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    return null;
+                }
+
+                return AboutTheRequest(payload.RootElement)
+                    ?? AboutAField(payload.RootElement)
+                    ?? AboutTheWholeThing(payload.RootElement);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        private static string? AboutTheRequest(JsonElement refusal)
+        {
+            if (!refusal.TryGetProperty("errorMessages", out var messages) || messages.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            return messages.EnumerateArray()
+                .Where(message => message.ValueKind == JsonValueKind.String)
+                .Select(message => message.GetString())
+                .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
+        }
+
+        /// <summary>
+        /// The envelope a gateway in front of Jira writes, and the one older endpoints use. Read last,
+        /// because Jira's own two halves say more when they are there - but read at all, because a
+        /// refusal nobody could find a sentence for is discarded into a log, and the reader is left with
+        /// the silence this whole report exists to remove.
+        /// </summary>
+        private static string? AboutTheWholeThing(JsonElement refusal)
+        {
+            return refusal.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String
+                ? NothingIfBlank(message.GetString())
+                : null;
+        }
+
+        private static string? NothingIfBlank(string? message)
+            => string.IsNullOrWhiteSpace(message) ? null : message;
+
+        private static string? AboutAField(JsonElement refusal)
+        {
+            if (!refusal.TryGetProperty("errors", out var errors) || errors.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            return errors.EnumerateObject()
+                .Where(field => field.Value.ValueKind == JsonValueKind.String)
+                .Select(field => field.Value.GetString())
+                .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
+        }
+
+        /// <summary>
+        /// Jira answers these one page at a time and says on every page whether it was the last, so a caller
+        /// following that flag is handed the whole set rather than a first page that quietly looks complete.
+        ///
+        /// A page with no list on it ends the walk, since nothing on it says where the next one starts, and is
+        /// reported as unreadable rather than as empty: ending the walk is not the same as having seen it all.
+        /// </summary>
+        private static (IReadOnlyList<T> Values, bool IsLastPage, bool IsReadable) ReadPage<T>(string pagePayload, Func<JsonElement, T> readOne)
+        {
+            using var payload = JsonDocument.Parse(pagePayload);
+            var root = payload.RootElement;
+
+            // A root that is not an object has no envelope to ask about, and asking anyway throws.
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                return ([], true, false);
+            }
+
+            var isLastPage = !root.TryGetProperty("isLast", out var isLast) || isLast.ValueKind != JsonValueKind.False;
+
+            if (!root.TryGetProperty("values", out var values) || values.ValueKind != JsonValueKind.Array)
+            {
+                return ([], true, false);
+            }
+
+            IReadOnlyList<T> parsed = [.. values.EnumerateArray().Select(readOne)];
+
+            return (parsed, isLastPage, true);
+        }
+
+        private static DeliverySourceProject ToProject(JsonElement project)
+            => new(ReadText(project, "key"), ReadText(project, "name"));
+
+        private static DeliverySourceOption ToOption(JsonElement version, DeliverySourceProject project)
+        {
+            var date = ReadReleaseDate(version);
+            var isRetiredAtSource = ReadFlag(version, "archived");
+
+            return new DeliverySourceOption(
+                ReadText(version, "id"),
+                ReadText(version, "name"),
+                date,
+                project,
+                isRetiredAtSource,
+                ReadFlag(version, "released"),
+                DeliverySourceBindability.For(date.HasValue, isRetiredAtSource));
+        }
+
+        /// <summary>
+        /// Jira leaves the releaseDate key out of a version entirely when nobody has set a date, rather
+        /// than sending null. That is the ordinary case - most Releases on a board carry no date at all -
+        /// so a missing key is the answer "no date", never a payload that could not be read.
+        /// </summary>
+        private static DateTime? ReadReleaseDate(JsonElement version)
+        {
+            if (!version.TryGetProperty("releaseDate", out var releaseDate))
+            {
+                return null;
+            }
+
+            var parsed = DateTime.TryParse(
+                releaseDate.GetString(),
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var date);
+
+            return parsed ? date : null;
+        }
+
+        private static string ReadText(JsonElement version, string name)
+            => version.TryGetProperty(name, out var value) ? value.GetString() ?? string.Empty : string.Empty;
+
+        private static bool ReadFlag(JsonElement version, string name)
+            => version.TryGetProperty(name, out var flag) && flag.ValueKind == JsonValueKind.True;
+    }
+}

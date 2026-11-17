@@ -1,0 +1,952 @@
+using GraphQL;
+using GraphQL.Client.Abstractions;
+using GraphQL.Client.Http;
+using GraphQL.Client.Serializer.Newtonsoft;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Models.Validation;
+
+using static Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear.LinearWorkTrackingConnector.LinearResponses;
+
+namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear
+{
+    public partial class LinearWorkTrackingConnector(
+        ILogger<LinearWorkTrackingConnector> logger,
+        ICryptoService cryptoService,
+        HttpMessageHandler? httpMessageHandlerForTesting = null)
+        : ILinearWorkTrackingConnector
+    {
+        private readonly HttpMessageHandler? httpMessageHandlerForTesting = httpMessageHandlerForTesting;
+
+        private const string UnknownStateIdentifier = "Unknown";
+        private const string IssueTypeIdentifier = "Issue";
+        private const string ProjectTypeIdentifier = "Project";
+        private const string InitiativeTypeIdentifier = "Initiative";
+        private const string ProjectStatusEntryType = "status";
+        private const int HistoryPageSize = 25;
+
+        private const int ProjectRelationPageSize = 50;
+
+        private bool historyUnavailable;
+
+        public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
+
+        public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
+
+        /// <summary>
+        /// Every failure here travels on to the caller. Removal is a set difference against what this fetch
+        /// returned, so answering a failed fetch with no records deletes every Work Item the team has - and
+        /// their blocked spells, which no tracker can rebuild, do not come back with them.
+        /// </summary>
+        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken)
+        {
+            logger.LogInformation("Getting Work Items for Team {TeamName}", team.Name);
+
+            var teamName = team.DataRetrievalValue;
+
+            if (string.IsNullOrEmpty(teamName))
+            {
+                logger.LogWarning("Team {TeamName} has no Linear team identity configured", team.Name);
+                return [];
+            }
+
+            var teamId = await ResolveTeamIdByName(team.WorkTrackingSystemConnection, teamName, cancellationToken);
+
+            if (string.IsNullOrEmpty(teamId))
+            {
+                logger.LogWarning("Could not resolve Linear team ID for team name '{TeamName}'", teamName);
+                return [];
+            }
+
+            var workItems = new List<WorkItem>();
+            var allTeamIssues = await GetAllIssuesForTeam(team.WorkTrackingSystemConnection, teamId, cancellationToken);
+            var issues = FilterIssuesForStates(team, allTeamIssues);
+
+            if (issues.Count == 0)
+            {
+                logger.LogInformation("No issues found for team {TeamName}", team.Name);
+                return workItems;
+            }
+
+            var issuesLinkedToProject = 0;
+            var issuesWithoutProject = 0;
+
+            foreach (var issue in issues)
+            {
+                var projectId = ResolveProjectIdForIssue(issue, allTeamIssues);
+                var workItemBase = CreateWorkItemFromIssue(issue, team, projectId);
+                workItems.Add(new WorkItem(workItemBase, team));
+
+                if (!string.IsNullOrEmpty(projectId))
+                {
+                    issuesLinkedToProject++;
+                }
+                else
+                {
+                    issuesWithoutProject++;
+                    logger.LogDebug("Issue {Identifier} has no resolvable project reference", issue.Identifier);
+                }
+            }
+
+            logger.LogInformation(
+                "Hierarchy summary for team {TeamName}: {Total} issues scanned, {Linked} linked to projects, {Unlinked} without project reference",
+                team.Name, workItems.Count, issuesLinkedToProject, issuesWithoutProject);
+
+            return workItems;
+        }
+
+        /// <summary>
+        /// Refuses on failure for the same reason the team fetch does: the portfolio's membership is rebuilt
+        /// from what this answers with, and a Feature no portfolio claims is deleted outright by the
+        /// orphaned-Feature cleanup.
+        /// </summary>
+        public async Task<List<Feature>> GetFeaturesForPortfolio(Portfolio portfolio, CancellationToken cancellationToken)
+        {
+            logger.LogInformation("Getting Features for Project {ProjectName} - retrieving all Linear projects as features", portfolio.Name);
+
+            var features = new List<Feature>();
+            var projects = await GetAllProjects(portfolio.WorkTrackingSystemConnection, cancellationToken);
+
+            if (projects.Count == 0)
+            {
+                logger.LogInformation("No projects found in workspace for portfolio {ProjectName}", portfolio.Name);
+                return features;
+            }
+
+            var states = portfolio.AllStates.ToList();
+            var featuresWithInitiative = 0;
+
+            foreach (var linearProject in projects)
+            {
+                var state = linearProject.Status?.Name ?? UnknownStateIdentifier;
+
+                if (!WantedByTheMappedStates(states, state))
+                {
+                    continue;
+                }
+
+                var feature = CreateFeatureFromProject(linearProject, portfolio);
+                features.Add(feature);
+
+                if (!string.IsNullOrEmpty(feature.ParentReferenceId))
+                {
+                    featuresWithInitiative++;
+                }
+            }
+
+            logger.LogInformation(
+                "Created {Count} features from Linear projects for portfolio {ProjectName} ({WithInitiative} linked to initiatives)",
+                features.Count, portfolio.Name, featuresWithInitiative);
+
+            return features;
+        }
+
+        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio portfolio, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
+        {
+            logger.LogInformation("Getting Parent Features (initiatives) for Linear portfolio {ProjectName}", portfolio.Name);
+
+            var parentFeatures = new List<Feature>();
+            var parentIdList = parentFeatureIds.ToList();
+            var initiativesHydrated = 0;
+            var initiativesFailed = 0;
+
+            foreach (var parentFeatureId in parentIdList)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    var initiative = await GetInitiativeById(portfolio.WorkTrackingSystemConnection, parentFeatureId, cancellationToken);
+
+                    if (initiative != null)
+                    {
+                        var parentFeature = new Feature
+                        {
+                            ReferenceId = initiative.Id,
+                            Name = initiative.Name,
+                            Type = InitiativeTypeIdentifier,
+                            State = portfolio.MapRawStateToMappedName(initiative.Status ?? UnknownStateIdentifier),
+                            StateCategory = StateCategories.Unknown,
+                            Url = initiative.Url ?? string.Empty,
+                            ParentReferenceId = string.Empty,
+                            Order = initiative.SortOrder.ToString(),
+                            CreatedDate = initiative.CreatedAt,
+                            StartedDate = initiative.StartedAt,
+                            ClosedDate = initiative.CompletedAt,
+                        };
+
+                        parentFeatures.Add(parentFeature);
+                        initiativesHydrated++;
+                    }
+                    else
+                    {
+                        logger.LogDebug("Initiative {InitiativeId} not found or inaccessible for portfolio {ProjectName}", parentFeatureId, portfolio.Name);
+                        initiativesFailed++;
+                    }
+                }
+                // A cancel is not an initiative that could not be fetched. Caught below it is counted as a
+                // failure and the walk moves on to the next one, which is how a stopped refresh keeps going.
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogDebug(ex, "Failed to fetch initiative {InitiativeId} for portfolio {ProjectName}", parentFeatureId, portfolio.Name);
+                    initiativesFailed++;
+                }
+            }
+
+            logger.LogInformation(
+                "Initiative hydration for portfolio {ProjectName}: {Total} requested, {Hydrated} resolved, {Failed} failed",
+                portfolio.Name, parentIdList.Count, initiativesHydrated, initiativesFailed);
+
+            return parentFeatures;
+        }
+
+        public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
+        {
+            try
+            {
+                logger.LogInformation("Validating Linear connection");
+
+                var viewerQuery = @"
+                    query {
+                        viewer {
+                            id
+                        }
+                    }";
+
+                _ = await SendQuery<ViewerResponse>(connection, viewerQuery, CancellationToken.None);
+                return ConnectionValidationResult.Success();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to validate Linear connection");
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Could not validate the Linear connection with the provided settings.",
+                    ex.Message);
+            }
+        }
+
+        public async Task<ConnectionValidationResult> ValidatePortfolioSettings(Portfolio portfolio)
+        {
+            try
+            {
+                logger.LogInformation("Validating Portfolio Settings for Project {ProjectName} - checking workspace projects", portfolio.Name);
+
+                var projects = await GetAllProjects(portfolio.WorkTrackingSystemConnection, CancellationToken.None);
+
+                logger.LogInformation("Found {TotalProjects} projects in workspace for portfolio {ProjectName}",
+                    projects.Count, portfolio.Name);
+
+                if (projects.Count == 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "no_features_found",
+                        "No portfolio features were found for this configuration.",
+                        "No Linear projects were returned for the current workspace settings.");
+                }
+
+                return ConnectionValidationResult.Success();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error during Validation of Project Settings for Project {ProjectName}", portfolio.Name);
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Portfolio validation failed due to an unexpected error.",
+                    ex.Message);
+            }
+        }
+
+        public async Task<ConnectionValidationResult> ValidateTeamSettings(Team team)
+        {
+            try
+            {
+                var teamName = team.DataRetrievalValue;
+
+                if (string.IsNullOrEmpty(teamName))
+                {
+                    logger.LogWarning("Team {TeamName} has no Linear team identity configured. Please select a team via the wizard.", team.Name);
+                    return ConnectionValidationResult.Failure(
+                        "missing_team_name",
+                        "No Linear team was selected for this configuration.",
+                        "Select a team in the data retrieval step or re-run the team wizard.",
+                        "DataRetrievalValue");
+                }
+
+                var teamId = await ResolveTeamIdByName(team.WorkTrackingSystemConnection, teamName, CancellationToken.None);
+
+                if (string.IsNullOrEmpty(teamId))
+                {
+                    logger.LogWarning("Could not resolve Linear team ID for team name '{TeamName}'. Please reconfigure via the team wizard.", teamName);
+                    return ConnectionValidationResult.Failure(
+                        "invalid_team_name",
+                        "The selected Linear team could not be resolved.",
+                        "Re-run the team wizard and choose a valid Linear team.",
+                        "DataRetrievalValue");
+                }
+
+                logger.LogInformation("Validating Team Settings for Team {TeamName} with resolved team identity {TeamId}", team.Name, teamId);
+
+                var issues = await GetAllIssuesForTeam(team.WorkTrackingSystemConnection, teamId, CancellationToken.None);
+                var filteredIssues = FilterIssuesForStates(team, issues);
+
+                logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items for team {TeamName}", filteredIssues.Count, team.Name);
+
+                if (filteredIssues.Count == 0)
+                {
+                    return ConnectionValidationResult.Failure(
+                        "no_work_items_found",
+                        "No work items were found for this team configuration.",
+                        "Check selected states and team data in Linear.");
+                }
+
+                return ConnectionValidationResult.Success();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error during Validation of Team Settings for Team {TeamName}. The configured team name may be invalid — please reconfigure via the team wizard.", team.Name);
+                return ConnectionValidationResult.Failure(
+                    "validation_failed",
+                    "Team validation failed due to an unexpected error.",
+                    ex.Message);
+            }
+        }
+
+        private WorkItemBase CreateWorkItemFromIssue(IssueNode issue, Team team, string resolvedProjectId)
+        {
+            var state = issue.State?.Name ?? UnknownStateIdentifier;
+
+            var stateCategory = team.MapStateToStateCategory(state);
+
+            if (issue.CompletedAt != null && issue.StartedAt == null)
+            {
+                issue.StartedAt = issue.CompletedAt;
+            }
+
+            var workItemBase = new WorkItemBase
+            {
+                ReferenceId = issue.Identifier?.ToLowerInvariant() ?? $"issue-{issue.Number}",
+                Name = issue.Title,
+                Type = IssueTypeIdentifier,
+                State = team.MapRawStateToMappedName(state),
+                StateCategory = stateCategory,
+                Url = issue.Url,
+                ParentReferenceId = resolvedProjectId,
+                Order = issue.SortOrder.ToString(),
+                CreatedDate = issue.CreatedAt,
+                StartedDate = issue.StartedAt,
+                ClosedDate = issue.CompletedAt,
+                SyncedTransitions = MapSyncedTransitions(issue, team),
+            };
+
+            return workItemBase;
+        }
+
+        private static IReadOnlyList<WorkItemStateTransition> MapSyncedTransitions(IssueNode issue, Team team)
+        {
+            var historyNodes = issue.History?.Nodes ?? [];
+
+            var rawTransitions = historyNodes
+                .Where(node => node.FromState != null && node.ToState != null)
+                .Select(node => new WorkItemStateTransition
+                {
+                    FromState = node.FromState.Name,
+                    ToState = node.ToState.Name,
+                    TransitionedAt = DateTime.SpecifyKind(node.CreatedAt, DateTimeKind.Utc),
+                })
+                .ToList();
+
+            return WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, team);
+        }
+
+        private static string ResolveProjectIdForIssue(IssueNode issue, List<IssueNode> allIssues)
+        {
+            if (issue.Project?.Id != null)
+            {
+                return issue.Project.Id;
+            }
+
+            if (issue.Parent?.Identifier == null)
+            {
+                return string.Empty;
+            }
+
+            var visited = new HashSet<string>();
+            var currentIdentifier = issue.Parent.Identifier;
+
+            while (currentIdentifier != null && visited.Add(currentIdentifier))
+            {
+                var parentIssue = allIssues.FirstOrDefault(i => i.Identifier == currentIdentifier);
+                if (parentIssue == null)
+                {
+                    break;
+                }
+
+                if (parentIssue.Project?.Id != null)
+                {
+                    return parentIssue.Project.Id;
+                }
+
+                currentIdentifier = parentIssue.Parent?.Identifier;
+            }
+
+            return string.Empty;
+        }
+
+        private static Feature CreateFeatureFromProject(ProjectNode projectNode, Portfolio portfolio)
+        {
+            var state = projectNode.Status?.Name ?? UnknownStateIdentifier;
+            var stateCategory = portfolio.MapStateToStateCategory(state);
+
+            var initiativeId = projectNode.Initiatives?.Nodes?.FirstOrDefault()?.Id ?? string.Empty;
+
+            return new Feature(TheProjectsItWaitsOn(projectNode))
+            {
+                ReferenceId = projectNode.Id,
+                Name = projectNode.Name,
+                Type = ProjectTypeIdentifier,
+                State = portfolio.MapRawStateToMappedName(state),
+                StateCategory = stateCategory,
+                Url = projectNode.Url ?? string.Empty,
+                ParentReferenceId = initiativeId,
+                Order = projectNode.SortOrder.ToString(),
+                CreatedDate = projectNode.CreatedAt,
+                StartedDate = projectNode.StartDate,
+                ClosedDate = projectNode.CompletedAt,
+                SyncedTransitions = MapProjectSyncedTransitions(projectNode, portfolio),
+            };
+        }
+
+        /// <summary>
+        /// The Projects this one is waiting on, as references.
+        ///
+        /// Linear records a dependency once and offers it from both ends. The inverse relations are the
+        /// ones where this Project is the target, so their source is what it is waiting on; a Project's
+        /// own relations are what it blocks and are neither requested nor read. Nothing here has been
+        /// saved yet, so every reference names Feature nought until the reconciler keys it to the row the
+        /// Feature lands on.
+        ///
+        /// The relation's own type is not looked at, and that is safe here in a way it would not be on
+        /// Jira: Linear accepts exactly one type between two Projects, so every relation is a dependency
+        /// and the direction is carried entirely by which end is the source.
+        /// </summary>
+        private static List<FeatureDependencyReference> TheProjectsItWaitsOn(ProjectNode projectNode)
+        {
+            var nodes = projectNode.InverseRelations?.Nodes ?? [];
+
+            var relations = nodes
+                .Select(relation => relation?.Project?.Id ?? string.Empty)
+                .Where(id => id.Length > 0)
+                .ToList();
+
+            // Linear exposes no fields of its own for a Portfolio to point at, so a Portfolio here goes on
+            // reading these links whatever it has typed into that setting.
+            return DependencySourceSelector.TheTrackersOwnLinksOnly(relations);
+        }
+
+        private static IReadOnlyList<WorkItemStateTransition> MapProjectSyncedTransitions(ProjectNode projectNode, Portfolio portfolio)
+        {
+            var historyNodes = projectNode.History?.Nodes ?? [];
+
+            var rawTransitions = historyNodes
+                .SelectMany(node => node.Entries ?? [])
+                .Where(entry => string.Equals(entry.Type, ProjectStatusEntryType, StringComparison.Ordinal))
+                .Where(entry => entry.FromStatus?.Name != null && entry.ToStatus?.Name != null)
+                .Select(entry => new WorkItemStateTransition
+                {
+                    FromState = entry.FromStatus.Name,
+                    ToState = entry.ToStatus.Name,
+                    TransitionedAt = DateTimeOffset.FromUnixTimeMilliseconds(entry.At).UtcDateTime,
+                })
+                .ToList();
+
+            return WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, portfolio);
+        }
+
+        private async Task<List<IssueNode>> GetAllIssuesForTeam(
+            WorkTrackingSystemConnection connection, string teamId, CancellationToken cancellationToken)
+        {
+            var issues = await FetchAllIssuesForTeam(connection, teamId, cancellationToken);
+
+            if (issues == null)
+            {
+                DowngradeHistorySupport();
+                issues = await FetchAllIssuesForTeam(connection, teamId, cancellationToken) ?? [];
+            }
+
+            return issues;
+        }
+
+        private async Task<List<IssueNode>?> FetchAllIssuesForTeam(
+            WorkTrackingSystemConnection connection, string teamId, CancellationToken cancellationToken)
+        {
+            var issues = new List<IssueNode>();
+            var historyFieldRejected = false;
+
+            await GetWithPagination<TeamResponse>(connection, cursorParam => GetIssuesForTeamQuery(teamId, cursorParam), teamResponse =>
+            {
+                var fetchedIssues = teamResponse?.Team?.Issues?.Nodes ?? [];
+                issues.AddRange(fetchedIssues);
+
+                return true;
+            }, errors =>
+            {
+                historyFieldRejected = !historyUnavailable && errors.Any();
+                return !historyFieldRejected;
+            }, cancellationToken);
+
+            return historyFieldRejected ? null : issues;
+        }
+
+        private void DowngradeHistorySupport()
+        {
+            historyUnavailable = true;
+            logger.LogWarning("Linear rejected the issue history connection for this query. Falling back to sync-delta transition derivation for this connection.");
+        }
+
+        private async Task<List<ProjectNode>> GetAllProjects(
+            WorkTrackingSystemConnection connection, CancellationToken cancellationToken)
+        {
+            var projects = await FetchAllProjects(connection, cancellationToken);
+
+            if (projects == null)
+            {
+                DowngradeHistorySupport();
+                projects = await FetchAllProjects(connection, cancellationToken) ?? [];
+            }
+
+            return projects;
+        }
+
+        private async Task<List<ProjectNode>?> FetchAllProjects(
+            WorkTrackingSystemConnection connection, CancellationToken cancellationToken)
+        {
+            var projects = new List<ProjectNode>();
+            var historyFieldRejected = false;
+
+            await GetWithPagination<ProjectsResponse>(connection, GetProjectsWithDetailsQuery, projectsResponse =>
+            {
+                var fetchedProjects = projectsResponse?.Projects?.Nodes ?? [];
+                projects.AddRange(fetchedProjects);
+
+                return true;
+            }, errors =>
+            {
+                historyFieldRejected = !historyUnavailable && errors.Any();
+                return !historyFieldRejected;
+            }, cancellationToken);
+
+            return historyFieldRejected ? null : projects;
+        }
+
+        private async Task<InitiativeNode?> GetInitiativeById(
+            WorkTrackingSystemConnection connection, string initiativeId, CancellationToken cancellationToken)
+        {
+            var query = GetInitiativeByIdQuery(initiativeId);
+            var response = await SendQuery<InitiativeResponse>(connection, query, cancellationToken);
+            return response?.Initiative;
+        }
+
+        private async Task<string?> ResolveTeamIdByName(
+            WorkTrackingSystemConnection connection, string teamName, CancellationToken cancellationToken)
+        {
+            var teams = new List<TeamNode>();
+
+            await GetWithPagination<TeamsResponse>(connection, GetTeamsQueryTemplate, teamsResponse =>
+            {
+                var fetchedTeams = teamsResponse?.Teams?.Nodes ?? [];
+                teams.AddRange(fetchedTeams);
+                return true;
+            }, cancellationToken);
+
+            var match = teams.FirstOrDefault(t => string.Equals(t.Name, teamName, StringComparison.OrdinalIgnoreCase));
+
+            if (match == null)
+            {
+                logger.LogWarning("No Linear team found with name '{TeamName}'. Available teams: {Teams}", teamName, string.Join(", ", teams.Select(t => t.Name)));
+            }
+
+            return match?.Id;
+        }
+
+        private async Task<TeamDetailNode?> GetTeamDetail(
+            WorkTrackingSystemConnection connection, string teamId, CancellationToken cancellationToken)
+        {
+            var query = GetTeamDetailQuery(teamId);
+            var response = await SendQuery<TeamDetailResponse>(connection, query, cancellationToken);
+            return response?.Team;
+        }
+
+        private static List<IssueNode> FilterIssuesForStates(Team team, List<IssueNode> issues)
+        {
+            var states = team.AllStates.ToList();
+
+            return issues.Where(i => WantedByTheMappedStates(states, i.State.Name)).ToList();
+        }
+
+        /// <summary>
+        /// A team or a portfolio that has mapped no states has said nothing about which records it wants,
+        /// which is not the same as wanting none of them. Matched against an empty list nothing comes back,
+        /// and removal is "stored minus fetched", so an unmapped list read as a filter deletes everything
+        /// that owner holds. Both halves share one settings screen, so both have to read it the same way.
+        /// </summary>
+        private static bool WantedByTheMappedStates(List<string> mappedStates, string state)
+        {
+            return mappedStates.Count == 0 || mappedStates.Contains(state);
+        }
+
+        private Task GetWithPagination<T>(
+            WorkTrackingSystemConnection connection, Func<string, string> getQuery, Func<T, bool> processResult, CancellationToken cancellationToken) where T : class, IPagedRespone
+        {
+            return GetWithPagination(connection, getQuery, processResult, _ => true, cancellationToken);
+        }
+
+        /// <summary>
+        /// The only place Linear pages. Linear supports no identity sweep, so every cycle takes the
+        /// whole-query path through here and there is no cheaper walk to fall back on when an operator wants
+        /// it stopped. Stopping is honoured one level down, on the request itself.
+        /// </summary>
+        private async Task GetWithPagination<T>(
+            WorkTrackingSystemConnection connection, Func<string, string> getQuery, Func<T, bool> processResult, Func<IEnumerable<GraphQLError>, bool> onErrors, CancellationToken cancellationToken) where T : class, IPagedRespone
+        {
+            string? cursor = null;
+            bool hasNextPage = true;
+
+            while (hasNextPage)
+            {
+                var cursorParam = cursor != null ? $", after: \"{cursor}\"" : string.Empty;
+
+                var query = getQuery(cursorParam);
+
+                var (response, errors) = await SendQueryWithErrors<T>(connection, query, cancellationToken);
+
+                if (!onErrors(errors))
+                {
+                    return;
+                }
+
+                var continueToNextPage = processResult(response);
+
+                if (!continueToNextPage)
+                {
+                    return;
+                }
+
+                var pageInfo = response?.GetPageInfo();
+                hasNextPage = pageInfo?.HasNextPage ?? false;
+                cursor = pageInfo?.EndCursor;
+
+                if (string.IsNullOrEmpty(cursor))
+                {
+                    hasNextPage = false;
+                }
+            }
+        }
+
+        private async Task<T> SendQuery<T>(
+            WorkTrackingSystemConnection connection, string query, CancellationToken cancellationToken) where T : class
+        {
+            var (data, _) = await SendQueryWithErrors<T>(connection, query, cancellationToken);
+            return data;
+        }
+
+        /// <summary>
+        /// Every Linear round trip goes through here, which makes the token on this request the one place
+        /// cancellation has to be honoured: the client refuses a cancelled one before the query is sent, so
+        /// a stopped walk spends nothing further. A guard in front of this would guard nothing.
+        /// </summary>
+        private async Task<(T Data, IReadOnlyList<GraphQLError> Errors)> SendQueryWithErrors<T>(
+            WorkTrackingSystemConnection connection, string query, CancellationToken cancellationToken) where T : class
+        {
+            var client = GetLinearGraphQLClient(connection);
+
+            var response = await client.SendQueryAsync<T>(query, cancellationToken: cancellationToken);
+            var errors = response.Errors ?? [];
+
+            foreach (var error in errors)
+            {
+                logger.LogDebug("GraphQL Error: {ErrorMessage}", error.Message);
+            }
+
+            return (response.Data, errors);
+        }
+
+        private GraphQLHttpClient GetLinearGraphQLClient(WorkTrackingSystemConnection connection)
+        {
+            var encryptedApiKey = connection.GetWorkTrackingSystemConnectionOptionByKey(LinearWorkTrackingOptionNames.ApiKey);
+            var apiKey = cryptoService.Decrypt(encryptedApiKey);
+
+            var client = httpMessageHandlerForTesting != null
+                ? new HttpClient(httpMessageHandlerForTesting, disposeHandler: false)
+                {
+                    BaseAddress = new Uri(LinearWorkTrackingOptionNames.ApiUrl),
+                }
+                : new HttpClient
+                {
+                    BaseAddress = new Uri(LinearWorkTrackingOptionNames.ApiUrl),
+                };
+            client.DefaultRequestHeaders.Add("Authorization", apiKey);
+
+            return new GraphQLHttpClient(new GraphQLHttpClientOptions
+            {
+                EndPoint = new Uri(LinearWorkTrackingOptionNames.ApiUrl)
+            }, new NewtonsoftJsonSerializer(), client);
+        }
+
+        private string GetIssuesForTeamQuery(string teamId, string cursorParam)
+        {
+            return GetIssuesQueryTemplate("team", teamId, cursorParam, !historyUnavailable);
+        }
+
+        private static string GetIssuesQueryTemplate(string parameter, string id, string cursorParam, bool includeHistory)
+        {
+            return $@"
+                    query {{
+                        {parameter}(id: ""{id}"") {{
+                            id
+                            name
+                            issues(first: 100{cursorParam}) {{
+                                nodes {{
+                                    id
+                                    title
+                                    identifier
+                                    url
+                                    number
+                                    sortOrder
+                                    createdAt
+                                    startedAt
+                                    completedAt
+                                    parent {{
+                                        id
+                                        identifier
+                                    }}
+                                    project {{
+                                        id
+                                    }}
+                                    lastAppliedTemplate {{
+                                        id
+                                        name
+                                        type
+                                    }}
+                                    state {{
+                                        id
+                                        name
+                                    }}{HistoryConnectionFragment(includeHistory)}
+                                }}
+                                pageInfo {{
+                                    hasNextPage
+                                    endCursor
+                                }}
+                            }}
+                        }}
+                    }}";
+        }
+
+        private static string HistoryConnectionFragment(bool includeHistory)
+        {
+            if (!includeHistory)
+            {
+                return string.Empty;
+            }
+
+            return $@"
+                                    history(first: {HistoryPageSize}) {{
+                                        nodes {{
+                                            createdAt
+                                            fromState {{ name }}
+                                            toState {{ name }}
+                                        }}
+                                    }}";
+        }
+
+        private static string GetTeamsQueryTemplate(string cursorParam)
+        {
+            return GetWorkItemQueryOwnersQueryTemplate("teams", cursorParam);
+        }
+
+        private string GetProjectsWithDetailsQuery(string cursorParam)
+        {
+            return $@"
+            query {{
+                projects(first: 50{cursorParam}) {{
+                    nodes {{
+                        id
+                        name
+                        status {{
+                            id
+                            name
+                            type
+                            color
+                        }}
+                        url
+                        sortOrder
+                        createdAt
+                        startDate
+                        completedAt
+                        initiatives(first: 10) {{
+                            nodes {{
+                                id
+                                name
+                            }}
+                        }}
+                        inverseRelations(first: {ProjectRelationPageSize}) {{
+                            nodes {{
+                                project {{
+                                    id
+                                }}
+                            }}
+                        }}{ProjectHistoryConnectionFragment(!historyUnavailable)}
+                    }}
+                    pageInfo {{
+                        hasNextPage
+                        endCursor
+                    }}
+                }}
+            }}";
+        }
+
+        private static string ProjectHistoryConnectionFragment(bool includeHistory)
+        {
+            if (!includeHistory)
+            {
+                return string.Empty;
+            }
+
+            return $@"
+                        history(first: {HistoryPageSize}) {{
+                            nodes {{
+                                entries
+                            }}
+                        }}";
+        }
+
+        private static string GetWorkItemQueryOwnersQueryTemplate(string type, string cursorParam)
+        {
+            return string.Format(@"
+                    query {{
+                        {0}(first: 50{1}) {{
+                            nodes {{
+                                id
+                                name
+                            }}
+                            pageInfo {{
+                                hasNextPage
+                                endCursor
+                            }}
+                        }}
+                    }}", type, cursorParam);
+        }
+
+        private static string GetInitiativeByIdQuery(string initiativeId)
+        {
+            return $@"
+                    query {{
+                        initiative(id: ""{initiativeId}"") {{
+                            id
+                            name
+                            status
+                            url
+                            sortOrder
+                            createdAt
+                            startedAt
+                            completedAt
+                        }}
+                    }}";
+        }
+
+        private static string GetTeamDetailQuery(string teamId)
+        {
+            return $@"
+                    query {{
+                        team(id: ""{teamId}"") {{
+                            id
+                            name
+                            states {{
+                                nodes {{
+                                    name
+                                    type
+                                    position
+                                }}
+                            }}
+                        }}
+                    }}";
+        }
+
+        public async Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
+        {
+            logger.LogInformation("Getting Linear teams as boards for connection {ConnectionName}", workTrackingSystemConnection.Name);
+
+            var boards = new List<Board>();
+
+            await GetWithPagination<TeamsResponse>(workTrackingSystemConnection, GetTeamsQueryTemplate, teamsResponse =>
+            {
+                var teams = teamsResponse?.Teams?.Nodes ?? [];
+                boards.AddRange(teams.Select(t => new Board { Id = t.Id, Name = t.Name }));
+                return true;
+            }, CancellationToken.None);
+
+            return boards;
+        }
+
+        public async Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, string boardId)
+        {
+            logger.LogInformation("Getting Linear team information for team {TeamId}", boardId);
+
+            try
+            {
+                var teamDetail = await GetTeamDetail(workTrackingSystemConnection, boardId, CancellationToken.None);
+
+                if (teamDetail == null)
+                {
+                    logger.LogWarning("Could not fetch team details for team {TeamId}", boardId);
+                    return new BoardInformation();
+                }
+
+                var states = teamDetail.States?.Nodes ?? [];
+
+                var toDoStates = states
+                    .Where(s => s.Type is "triage" or "backlog" or "unstarted")
+                    .OrderBy(s => s.Position)
+                    .Select(s => s.Name)
+                    .ToList();
+
+                var doingStates = states
+                    .Where(s => s.Type is "started")
+                    .OrderBy(s => s.Position)
+                    .Select(s => s.Name)
+                    .ToList();
+
+                var doneStates = states
+                    .Where(s => s.Type is "completed")
+                    .OrderBy(s => s.Position)
+                    .Select(s => s.Name)
+                    .ToList();
+
+                logger.LogInformation(
+                    "Resolved team {TeamName} ({TeamId}): {ToDoCount} todo states, {DoingCount} doing states, {DoneCount} done states",
+                    teamDetail.Name, boardId, toDoStates.Count, doingStates.Count, doneStates.Count);
+
+                return new BoardInformation
+                {
+                    DataRetrievalValue = teamDetail.Name,
+                    WorkItemTypes = [],
+                    ToDoStates = toDoStates,
+                    DoingStates = doingStates,
+                    DoneStates = doneStates,
+                };
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error fetching team details for team {TeamId}", boardId);
+                return new BoardInformation();
+            }
+        }
+    }
+}
