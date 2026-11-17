@@ -669,3 +669,5 @@ The six open confirmations, answered by the maintainer on 2026-11-17 before S03a
 - **EXAMINE probes**: each feature's expectations name only what an admitted probe can show (`architecture-rules`,
   `test-selection-show`, `ci-live-suites-show`, `ef-model-unchanged`, the answers-compare probes); a gap is closed by
   adding a probe before the expectations are recorded (lesson of S03a feature B).
+- **Write-back item filed**: #6657 "Place the write-back round (candidate: Forecasting Application/WriteBack)", User
+  Story under Epic #6510, state New (2026-11-17). D-6's "proposed, not yet filed" is answered by it.
