@@ -52,7 +52,7 @@ dotnet stryker --config-file ../../docs/feature/<feature>/mutation/stryker.<id>.
     "solution": "../Lighthouse.sln",
     "test-projects": ["Lighthouse.Backend.Tests.csproj"],
     "mutate": [
-      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs"
+      "**/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/ServiceNowStateSpanMapper.cs"
     ],
     "thresholds": { "high": 80, "low": 70, "break": 0 },
     "coverage-analysis": "perTestInIsolation",

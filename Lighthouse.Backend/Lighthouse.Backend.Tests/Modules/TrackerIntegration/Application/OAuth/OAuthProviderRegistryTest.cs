@@ -1,6 +1,5 @@
-using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.OAuth;
-using Lighthouse.Backend.Services.Interfaces.OAuth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;

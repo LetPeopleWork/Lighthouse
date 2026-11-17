@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces.OAuth;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth
 {

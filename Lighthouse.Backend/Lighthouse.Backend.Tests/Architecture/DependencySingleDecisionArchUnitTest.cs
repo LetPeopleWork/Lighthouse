@@ -732,6 +732,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var offenders = IlDependencies
                 .DependentsIn(module, TheConnectors, ReachesTheStoredFeatures)
                 .Where(offender => !IsTheParentSourceSelector(offender.TypeName))
+                .Where(offender => !System.Text.RegularExpressions.Regex.IsMatch(offender.TypeName, ModuleBoundariesArchUnitTest.TheServicesThatKeepTheirOwnRecordsPattern))
                 .ToList();
 
             using (Assert.EnterMultipleScope())

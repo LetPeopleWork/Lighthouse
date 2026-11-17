@@ -1,6 +1,8 @@
 using ArchUnitNET.Fluent.Syntax.Elements.Types;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Mono.Cecil;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
@@ -41,6 +43,18 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Models.ParentPlacement",
             "Lighthouse.Backend.Models.StoredFeatures",
         ];
+
+        // The two application services of the module that keep their own records (credentials, health verdicts) and
+        // so read them through a repository. Each is named whole, with its compiler-made nested types.
+        internal static readonly string[] TheServicesThatKeepTheirOwnRecords =
+        [
+            typeof(OAuthService).FullName!,
+            typeof(ConnectionHealthService).FullName!,
+        ];
+
+        internal static string TheServicesThatKeepTheirOwnRecordsPattern
+            => "^(" + string.Join("|", TheServicesThatKeepTheirOwnRecords.Select(type => System.Text.RegularExpressions.Regex.Escape(type))) + ")(\\+.*)?$";
+
 
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
@@ -121,6 +135,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void WorkTrackingConnectors_DoNotDependOnAnyRepository()
         {
             Types().That().Are(WorkTrackingIntegrationModule)
+                .And().DoNotHaveFullNameMatching(TheServicesThatKeepTheirOwnRecordsPattern)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(RepositoryRecognition.StoredRecordsPattern))
                 .Because(
                     "a connector only translates what the tracker sent, so it must not touch the database context " +

@@ -21,7 +21,7 @@ REAL_SOURCE_ROOT = REPOSITORY / "Lighthouse.Backend" / "Lighthouse.Backend.Tests
 BACKEND_WORKFLOW = REPOSITORY / ".github" / "workflows" / "ci_backend.yml"
 
 NAMESPACE = "Lighthouse.Backend.Tests.Shapes"
-CONNECTOR_DIRECTORY = "Services/Implementation/WorkTrackingConnectors"
+CONNECTOR_DIRECTORY = "Modules/TrackerIntegration/Adapters/Connectors"
 
 
 def in_namespace(body, namespace=NAMESPACE):

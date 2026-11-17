@@ -1,5 +1,4 @@
-﻿using Lighthouse.Backend.Services.Implementation.ConnectionHealth;
-using Lighthouse.Backend.Services.Interfaces.ConnectionHealth;
+﻿using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Background
 {

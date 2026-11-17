@@ -1,7 +1,6 @@
-using Lighthouse.Backend.Models.OAuth;
-using Lighthouse.Backend.Services.Implementation.OAuth.Providers;
+using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.OAuth;
 
 namespace Lighthouse.Backend.Tests.TestDoubles
 {

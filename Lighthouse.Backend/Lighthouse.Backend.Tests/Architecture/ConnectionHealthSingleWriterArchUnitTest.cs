@@ -1,7 +1,7 @@
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.ConnectionHealth;
-using Lighthouse.Backend.Services.Implementation.ConnectionHealth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;

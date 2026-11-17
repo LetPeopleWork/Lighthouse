@@ -1,10 +1,9 @@
-using Lighthouse.Backend.Models.OAuth;
-using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
 {

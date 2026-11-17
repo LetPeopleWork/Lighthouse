@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.ConnectionHealth;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
 using Lighthouse.Backend.Services.Implementation.Authorization;
-using Lighthouse.Backend.Services.Interfaces.ConnectionHealth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

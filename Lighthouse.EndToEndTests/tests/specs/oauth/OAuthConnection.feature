@@ -14,14 +14,14 @@
 #   - "Invalid state token on callback is rejected (CSRF)" (Slice 01, re-layered 2026-05-14)
 #       → Lighthouse.Backend.Tests/API/Integration/OAuthCallbackCsrfIntegrationTest.cs
 #   - "Concurrent syncs trigger at most one refresh (single-flight)" (Slice 02, re-layered 2026-05-14)
-#       → Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs
+#       → Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshSingleFlightTest.cs
 #   - "Access token is refreshed silently before its expiry" (Slice 02, re-layered 2026-05-15)
-#       → Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs (5 unit tests for cached-path / refresh-window / double-check / semaphore-timeout / log event)
-#         + Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthRefreshSingleFlightTest.cs (BI-3, 32-concurrent load proves "exactly once")
+#       → Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthServiceTest.cs (5 unit tests for cached-path / refresh-window / double-check / semaphore-timeout / log event)
+#         + Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthRefreshSingleFlightTest.cs (BI-3, 32-concurrent load proves "exactly once")
 #         + Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs (Valid + Disconnected → requiresReconnect=false; "no banner" is the absence of the trigger)
 #         + Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx (no render when requiresReconnect is falsy)
 #   - "Failed refresh marks the credential RefreshFailed and surfaces the reconnect banner" (Slice 02, re-layered 2026-05-15)
-#       → Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs (failure-branch state transition + both log events + OAuthRefreshFailedException with InnerException)
+#       → Lighthouse.Backend.Tests/Modules/TrackerIntegration/Application/OAuth/OAuthServiceTest.cs (failure-branch state transition + both log events + OAuthRefreshFailedException with InnerException)
 #         + Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs (RefreshFailed → requiresReconnect=true)
 #         + Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx (warning Alert + exact AC #3 copy)
 #         + Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx (banner rendered inline in admin connections section)
@@ -121,7 +121,7 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
     Given the AdoOAuthProvider is implemented as IOAuthProvider only
     Then the diff between slice-01 main and slice-03 PR shows changes ONLY in
       """
-      Lighthouse.Backend/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs
+      Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProvider.cs
       Lighthouse.Backend/Modules/TrackerIntegration/Application/AuthenticationMethodSchema.cs
       Lighthouse.Backend/Program.cs (DI registration only)
       docs/* (new ADO setup page)
