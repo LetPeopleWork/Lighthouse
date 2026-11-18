@@ -173,7 +173,7 @@ settings:
 
 overrides:
   '@babel/core': ^8.1.0
-  brace-expansion: ^5.0.12
+  brace-expansion: ^5.0.13
   browserslist: ^4.29.5
   fast-uri: ^4.2.3
   form-data: ^4.0.6
@@ -1990,8 +1990,8 @@ packages:
   bezier-easing@3.2.0:
     resolution: {integrity: sha512-QOKIYCgHd06gsQg0G9k1/JnzzZ+PT99qqUmgRHQ+r5PI/gsjCn0l7LXW6gtXoPhVJviIjP01xg9E7eNime9fVw==}
 
-  brace-expansion@5.0.12:
-    resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
+  brace-expansion@5.0.13:
+    resolution: {integrity: sha512-Vh3dmFbc4wZeox7M9I/0L9GfFd83Su4+yCck/OF9Gi/P/dAHn0RT7X4K9R7gMNMhDck3DvhR6QXsnQdjjgwNvQ==}
     engines: {node: 20 || >=22}
 
   browserslist@4.29.5:
@@ -5078,7 +5078,7 @@ snapshots:
 
   bezier-easing@3.2.0: {}
 
-  brace-expansion@5.0.12:
+  brace-expansion@5.0.13:
     dependencies:
       balanced-match: 4.0.4
 
@@ -6015,7 +6015,7 @@ snapshots:
   minimatch@11.0.8:
     dependencies:
       '@isaacs/nonrecursive-glob-match': 1.1.0
-      brace-expansion: 5.0.12
+      brace-expansion: 5.0.13
 
   mitt@3.0.1: {}
 
