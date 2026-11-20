@@ -39,7 +39,7 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 
 				if (sortedEntries.length === 0) return [];
 
-				const lastKey = sortedEntries[sortedEntries.length - 1][0];
+				const lastKey = sortedEntries.at(-1)?.[0] ?? 0;
 				const paddedData: { x: number; y: number }[] = [];
 
 				// Create a map for quick lookup

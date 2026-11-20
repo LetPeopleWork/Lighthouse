@@ -240,7 +240,7 @@ function groupedElsewhereError(
 function listedCategories(labels: CategoryLabel[]): string {
 	return labels.length === 2
 		? `both ${labels[0]} and ${labels[1]}`
-		: `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
+		: `${labels.slice(0, -1).join(", ")} and ${labels.at(-1)}`;
 }
 
 function categoryErrors(

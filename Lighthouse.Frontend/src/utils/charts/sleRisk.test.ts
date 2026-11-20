@@ -278,9 +278,7 @@ describe("counting what is at risk", () => {
 			answer("ZEN-5", 100),
 		]);
 
-		expect(summary.color).toBe(
-			PACE_BAND_COLORS_LOW_TO_HIGH[PACE_BAND_COLORS_LOW_TO_HIGH.length - 1],
-		);
+		expect(summary.color).toBe(PACE_BAND_COLORS_LOW_TO_HIGH.at(-1));
 	});
 
 	test("has no colour to give when it counted nothing", () => {

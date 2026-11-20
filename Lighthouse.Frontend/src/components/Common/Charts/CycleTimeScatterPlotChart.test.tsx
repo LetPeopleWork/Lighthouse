@@ -320,10 +320,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 			mock: { calls: Array<[Record<string, unknown>]> };
 		};
 
-		const containerProps =
-			chartsContainerMock.mock.calls[
-				chartsContainerMock.mock.calls.length - 1
-			]?.[0];
+		const containerProps = chartsContainerMock.mock.calls.at(-1)?.[0];
 		expect(containerProps).toBeTruthy();
 
 		const xAxisConfig = (

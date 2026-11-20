@@ -348,8 +348,8 @@ describe("Blackout Day visualization", () => {
 			/>,
 		);
 
-		const lastCall = BarChart.mock.calls[BarChart.mock.calls.length - 1];
-		const dataset = lastCall[0].dataset as Array<{
+		const lastCall = BarChart.mock.calls.at(-1);
+		const dataset = lastCall?.[0].dataset as Array<{
 			value: number;
 		}>;
 

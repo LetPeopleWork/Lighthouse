@@ -701,7 +701,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			const blockedCalls = mockOnSettingsChange.mock.calls.filter(
 				(c) => c[0] === "blockedRuleSetJson",
 			);
-			const call = blockedCalls[blockedCalls.length - 1];
+			const call = blockedCalls.at(-1);
 			expect(call).toBeTruthy();
 			const persisted = parseRuleSet(call?.[1] as string);
 			expect(persisted?.conditions).toHaveLength(2);
@@ -734,7 +734,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			const blockedCalls = mockOnSettingsChange.mock.calls.filter(
 				(c) => c[0] === "blockedRuleSetJson",
 			);
-			const lastCall = blockedCalls[blockedCalls.length - 1];
+			const lastCall = blockedCalls.at(-1);
 			expect(parseRuleSet(lastCall?.[1] as string)?.mode).toBe("or");
 		});
 
@@ -774,7 +774,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			const blockedCalls = mockOnSettingsChange.mock.calls.filter(
 				(c) => c[0] === "blockedRuleSetJson",
 			);
-			expect(blockedCalls[blockedCalls.length - 1]?.[1]).toBeNull();
+			expect(blockedCalls.at(-1)?.[1]).toBeNull();
 		});
 
 		it("forgets the rows being edited once blocked items are switched off", async () => {

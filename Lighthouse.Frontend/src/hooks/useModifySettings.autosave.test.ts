@@ -211,7 +211,7 @@ describe("auto-save general team settings", () => {
 
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 		const calls = saveSettings.mock.calls;
-		const lastSaved = calls[calls.length - 1][0] as SimpleSettings;
+		const lastSaved = calls.at(-1)?.[0] as SimpleSettings;
 		expect(lastSaved.dataRetrievalValue).toBe("60");
 	});
 
@@ -926,10 +926,9 @@ describe("saving while a state mapping is still being filled in", () => {
 		await act(() => result.current.handleSave());
 
 		expect(validateSettings.mock.calls[0][0].stateMappings).toEqual([complete]);
-		expect(
-			saveSettings.mock.calls[saveSettings.mock.calls.length - 1][0]
-				.stateMappings,
-		).toEqual([complete]);
+		expect(saveSettings.mock.calls.at(-1)?.[0].stateMappings).toEqual([
+			complete,
+		]);
 	});
 });
 

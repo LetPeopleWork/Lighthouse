@@ -77,7 +77,7 @@ export function TerminologyProvider({
 			.catch((error_) => {
 				console.error("Error refreshing the terminology:", error_);
 			});
-		refetch();
+		refetch().catch(() => undefined);
 	}, [queryClient, refetch]);
 
 	// Bug #5732: the `= []` default above only fires for undefined. A resolved-but-wrong

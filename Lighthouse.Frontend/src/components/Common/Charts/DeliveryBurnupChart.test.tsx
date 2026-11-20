@@ -60,8 +60,7 @@ interface LegendSlotProps {
 }
 
 const getLatestChartProps = () => {
-	const lastCall =
-		lineChartMock.mock.calls[lineChartMock.mock.calls.length - 1];
+	const lastCall = lineChartMock.mock.calls.at(-1);
 	return lastCall?.[0] as
 		| {
 				series?: SeriesEntry[];

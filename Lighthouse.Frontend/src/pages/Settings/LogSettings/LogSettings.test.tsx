@@ -23,7 +23,7 @@ const mockSetLogLevel = vi.fn();
 /** How big a tail the page last asked for. */
 const tailAskedFor = () => {
 	const { calls } = mockGetLogs.mock;
-	return Number(calls[calls.length - 1]?.[0]);
+	return Number(calls.at(-1)?.[0]);
 };
 
 const mockLogService: ILogService = createMockLogService();

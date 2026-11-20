@@ -12,7 +12,8 @@
 		"./biome-plugins/merge-consecutive-push.grit",
 		"./biome-plugins/use-concise-digit-class.grit",
 		"./biome-plugins/no-day-count-from-milliseconds.grit",
-		"./biome-plugins/no-then-shorthand-property.grit"
+		"./biome-plugins/no-then-shorthand-property.grit",
+		"./biome-plugins/no-floating-refetch.grit"
 	],
 	"linter": {
 		"rules": {
@@ -132,6 +133,7 @@
 				"noNegationElse": "error",
 				"noNestedTernary": "error",
 				"useAsConstAssertion": "error",
+				"useAtIndex": "error",
 				"useCollapsedElseIf": "error",
 				"useConsistentEnumValueType": "error",
 				"useDefaultParameterLast": "error",

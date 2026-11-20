@@ -105,6 +105,7 @@ const useTermsAskedForAgain = (
 
 	useEffect(() => {
 		const { error, refetch } = termsAtMount.current;
+		// biome-ignore lint/plugin/no-floating-refetch: this refetch is typed to return nothing, so there is no promise to handle
 		if (error !== null) refetch();
 	}, []);
 

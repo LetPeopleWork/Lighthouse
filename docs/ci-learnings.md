@@ -94,7 +94,7 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
   `navigate(...)` as a promise, and it misses a promise-returning function assigned to a `void`-typed
   slot. Fix: send every `navigate(...)` through `reportFailedNavigation` (or await it), and declare
   side-effect functions to return `void`. Not automated because: Biome's type inference is shallower
-  than Sonar's.
+  than Sonar's. (A bare TanStack `refetch()` is caught by the `no-floating-refetch` plugin.)
 
 ### Tests (Vitest, React Testing Library)
 

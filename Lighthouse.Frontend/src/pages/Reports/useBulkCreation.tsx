@@ -48,7 +48,7 @@ export const useBulkCreation = (rbac: RbacState) => {
 	};
 	const retry = () => {
 		setRetrying(true);
-		options.refetch();
+		options.refetch().catch(() => undefined);
 	};
 	// The first answer opens the wizard, and from then on it is the reader's until they close it: a later read, or one
 	// that fails, never takes their draft away. Once it has said it could not load, it stays open while Retry asks again.

@@ -228,7 +228,7 @@ describe("BlockedItemsOverTimeChart", () => {
 		);
 
 		const calls = vi.mocked(BarChart).mock.calls;
-		const lastCall = calls[calls.length - 1];
+		const lastCall = calls.at(-1);
 		expect(lastCall?.[0]?.series?.[0]?.color).toBe(errorColor);
 	});
 
@@ -427,7 +427,7 @@ describe("BlockedItemsOverTimeChart", () => {
 		// Fire the real onItemClick contract with an out-of-range index — the guard must swallow it
 		// (no fetch, no dialog, no throw) rather than dereference an undefined bar.
 		const calls = vi.mocked(BarChart).mock.calls;
-		const onItemClick = calls[calls.length - 1]?.[0]?.onItemClick;
+		const onItemClick = calls.at(-1)?.[0]?.onItemClick;
 		expect(() =>
 			onItemClick?.(new MouseEvent("click"), {
 				type: "bar",

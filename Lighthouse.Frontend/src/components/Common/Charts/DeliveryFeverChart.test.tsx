@@ -65,8 +65,7 @@ interface AxisEntry {
 }
 
 const getLatestChartProps = () => {
-	const lastCall =
-		scatterChartMock.mock.calls[scatterChartMock.mock.calls.length - 1];
+	const lastCall = scatterChartMock.mock.calls.at(-1);
 	return lastCall?.[0] as
 		| { series?: SeriesEntry[]; xAxis?: AxisEntry[]; yAxis?: AxisEntry[] }
 		| undefined;

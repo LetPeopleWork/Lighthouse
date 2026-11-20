@@ -162,9 +162,9 @@ describe("StackedAreaChart component", () => {
 
 		render(<StackedAreaChart areas={areas} startDate={startDate} />);
 
-		const callProps = lineChartMock.mock.calls[
-			lineChartMock.mock.calls.length - 1
-		]?.[0] as { xAxis?: Array<Record<string, unknown>> } | undefined;
+		const callProps = lineChartMock.mock.calls.at(-1)?.[0] as
+			| { xAxis?: Array<Record<string, unknown>> }
+			| undefined;
 		expect(callProps).toBeTruthy();
 
 		const xAxis = callProps?.xAxis?.[0];

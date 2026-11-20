@@ -84,8 +84,7 @@ interface BarOwnerState {
 }
 
 const getLatestChartProps = () => {
-	const lastCall =
-		chartsContainerMock.mock.calls[chartsContainerMock.mock.calls.length - 1];
+	const lastCall = chartsContainerMock.mock.calls.at(-1);
 	return lastCall?.[0] as
 		| {
 				dataset?: DatasetRow[];
@@ -510,7 +509,7 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 
 	const getBarSlot = () => {
 		const calls = barPlotMock.mock.calls;
-		const props = calls[calls.length - 1]?.[0];
+		const props = calls.at(-1)?.[0];
 		return props?.slots?.bar as
 			| ((ownerState: BarOwnerState) => ReactElement | null)
 			| undefined;

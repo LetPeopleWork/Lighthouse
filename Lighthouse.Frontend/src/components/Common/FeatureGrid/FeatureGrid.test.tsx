@@ -306,7 +306,7 @@ describe("FeatureGrid", () => {
 				.map((row) => row.textContent);
 
 			// Feature Three (Done) should be last
-			expect(featureNames[featureNames.length - 1]).toContain("Feature Three");
+			expect(featureNames.at(-1)).toContain("Feature Three");
 		});
 	});
 });

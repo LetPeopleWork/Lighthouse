@@ -53,7 +53,7 @@ export function deriveFeatureFeverChart(
 		...new Set(dated.map((entry) => entry.metric.referenceId)),
 	];
 
-	const features = referenceIds.map((referenceId) => {
+	const features = referenceIds.flatMap((referenceId) => {
 		const entries = dated.filter(
 			(entry) => entry.metric.referenceId === referenceId,
 		);
@@ -62,12 +62,12 @@ export function deriveFeatureFeverChart(
 			completion: clamp(metric.completion, 0, 100),
 			chanceOfLate: clamp(100 - metric.likelihood, 0, 100),
 		}));
-		return {
-			referenceId,
-			name: entries[entries.length - 1].metric.name,
-			points,
-			latest: points[points.length - 1],
-		};
+		const lastEntry = entries.at(-1);
+		const latest = points.at(-1);
+		if (!lastEntry || !latest) {
+			return [];
+		}
+		return [{ referenceId, name: lastEntry.metric.name, points, latest }];
 	});
 
 	return { features, empty: features.length === 0 };

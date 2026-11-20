@@ -435,9 +435,9 @@ describe("useDateRange — a second move reads the first one's result", () => {
 		act(() => result.current.setParams(new URLSearchParams("category=team")));
 		act(() => result.current.range.applyPreset(7));
 
-		const lastWrite = searchParamWrites[searchParamWrites.length - 1];
-		expect(lastWrite.params.get("category")).toBe("team");
-		expect(lastWrite.params.get("endDate")).toBe("2026-09-08");
+		const lastWrite = searchParamWrites.at(-1);
+		expect(lastWrite?.params.get("category")).toBe("team");
+		expect(lastWrite?.params.get("endDate")).toBe("2026-09-08");
 	});
 
 	it("walks on from where the last committed step left the window", () => {

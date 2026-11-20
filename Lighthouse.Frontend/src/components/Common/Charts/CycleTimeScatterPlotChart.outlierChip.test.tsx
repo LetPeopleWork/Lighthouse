@@ -341,9 +341,7 @@ describe("The outlier chip is a plain amber button that lists the outliers", () 
 		expect(listedIds()).toEqual(["TZ-301"]);
 		// Nothing beyond the list and its title goes to the dialog.
 		expect(
-			Object.keys(dialogProps[dialogProps.length - 1] ?? {}).sort((a, b) =>
-				a.localeCompare(b),
-			),
+			Object.keys(dialogProps.at(-1) ?? {}).sort((a, b) => a.localeCompare(b)),
 		).toEqual(["context", "items", "onClose", "open", "ownerKind", "title"]);
 		expect(screen.getAllByRole("dialog")).toHaveLength(1);
 		expect(

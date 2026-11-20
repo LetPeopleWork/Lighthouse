@@ -1,0 +1,6 @@
+language js
+
+JsExpressionStatement(expression=$call) where {
+    $call <: or { `refetch()`, `$_.refetch()` },
+    register_diagnostic(span=$call, message="A TanStack `refetch()` returns a promise that Biome cannot see but Sonar flags (S9383). Await it, or end it with `.catch(() => undefined)`: a failed fetch already shows through the query's error state.", severity="error")
+}

@@ -182,7 +182,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 
 	// The finest row of the axis, which is the one worth marking. It changes with the Delivery's
 	// length, so it is read off the scales rather than assumed to be days.
-	const finestUnit = scales[scales.length - 1].unit;
+	const finestUnit = scales.at(-1)?.unit ?? "day";
 
 	// The library hands this callback the start of each column and expects a class name back. A
 	// tinted column is the free edition's substitute for the vertical marker, which is a paid

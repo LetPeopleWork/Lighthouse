@@ -520,7 +520,7 @@ describe("What the print page prints", () => {
 
 		const branding = screen.getByText(BRANDING);
 		const panels = screen.getAllByRole("region");
-		const lastPanel = panels[panels.length - 1];
+		const lastPanel = panels.at(-1) ?? branding;
 		expect(
 			lastPanel.compareDocumentPosition(branding) &
 				Node.DOCUMENT_POSITION_FOLLOWING,

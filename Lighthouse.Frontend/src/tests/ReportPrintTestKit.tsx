@@ -769,7 +769,7 @@ export const aPrintFrameBrowser = (options: PrintFrameBrowserOptions = {}) => {
 		/** Closes the dialog of the frame that printed last, the way the browser tells that frame's window. */
 		closeTheDialog: () =>
 			act(() => {
-				const last = framePrints[framePrints.length - 1]?.frame;
+				const last = framePrints.at(-1)?.frame;
 				const frameWindow = last?.contentWindow as FramesWindow | undefined;
 				frameWindow?.dispatchEvent(new frameWindow.Event("afterprint"));
 			}),
@@ -904,7 +904,7 @@ const askedInPrint = (
 		.filter((rule) => element.matches(rule.selectorText))
 		.map((rule) => rule.style.getPropertyValue(property).trim())
 		.filter((value) => value !== "");
-	return asked.length === 0 ? undefined : asked[asked.length - 1];
+	return asked.length === 0 ? undefined : asked.at(-1);
 };
 
 /**

@@ -47,7 +47,7 @@ const latestEstimatedPoint = (
 	points: DeliveryMetricsHistoryPoint[],
 ): DeliveryMetricsHistoryPoint | undefined => {
 	const estimated = points.filter((point) => estimatedValue(point) !== null);
-	return estimated[estimated.length - 1];
+	return estimated.at(-1);
 };
 
 interface BurnupColors {

@@ -161,8 +161,9 @@ export const paceBandLabelForRank = (
 	}
 
 	const { percentiles } = ladder;
+	const highest = percentiles.at(-1);
 	if (rank >= percentiles.length) {
-		return `Above ${percentileName(percentiles[percentiles.length - 1])}`;
+		return highest ? `Above ${percentileName(highest)}` : NO_HISTORY_BAND_LABEL;
 	}
 
 	if (rank === 0) {

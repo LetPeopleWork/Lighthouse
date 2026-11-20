@@ -710,7 +710,7 @@ describe("a team's chart when windows are picked in quick succession", () => {
 		LAST_7_DAYS,
 	]);
 	const lastPickedAnswersLast = (order: readonly string[]) =>
-		order[order.length - 1] === LAST_7_DAYS;
+		order.at(-1) === LAST_7_DAYS;
 
 	it.each(everyArrivalOrder.filter((o) => !lastPickedAnswersLast(o)))(
 		"answers arriving as %s, then %s, then %s still settle on the last window picked",

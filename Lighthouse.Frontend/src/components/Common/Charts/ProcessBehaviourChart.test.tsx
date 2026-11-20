@@ -873,14 +873,13 @@ describe("ProcessBehaviourChart", () => {
 			);
 
 			// Extract the valueFormatter from the xAxis config passed to ChartContainer
-			const lastCall =
-				ChartsContainer.mock.calls[ChartsContainer.mock.calls.length - 1];
+			const lastCall = ChartsContainer.mock.calls.at(-1);
 			const xAxisConfig = (
-				lastCall[0] as {
-					xAxis: { valueFormatter?: (value: number) => string }[];
-				}
-			).xAxis[0];
-			const formatter = xAxisConfig.valueFormatter;
+				lastCall?.[0] as
+					| { xAxis: { valueFormatter?: (value: number) => string }[] }
+					| undefined
+			)?.xAxis[0];
+			const formatter = xAxisConfig?.valueFormatter;
 			expect(formatter).toBeDefined();
 
 			if (!formatter) {

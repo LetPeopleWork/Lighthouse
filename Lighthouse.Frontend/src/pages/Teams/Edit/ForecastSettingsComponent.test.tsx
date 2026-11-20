@@ -439,7 +439,7 @@ describe("ForecastSettingsComponent — forecastFilterRuleSetJson round-trip", (
 		});
 
 		const calls = onTeamSettingsChange.mock.calls;
-		const lastCall = calls[calls.length - 1];
+		const lastCall = calls.at(-1);
 		expect(lastCall).toBeDefined();
 		const payload = JSON.parse(lastCall?.[1] as string) as {
 			version: number;

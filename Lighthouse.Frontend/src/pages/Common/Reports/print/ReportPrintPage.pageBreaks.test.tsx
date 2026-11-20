@@ -69,9 +69,9 @@ const whatAWideScreenAsksOf = (element: Element, property: string): string => {
 		.filter((rule) => element.matches(rule.selectorText))
 		.map((rule) => rule.style.getPropertyValue(property).trim())
 		.filter((value) => value !== "");
-	return asked.length === 0
-		? getComputedStyle(element).getPropertyValue(property).trim()
-		: asked[asked.length - 1];
+	return (
+		asked.at(-1) ?? getComputedStyle(element).getPropertyValue(property).trim()
+	);
 };
 
 const thePageRule = (): string => {

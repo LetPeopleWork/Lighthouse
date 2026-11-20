@@ -47,7 +47,7 @@ const bySortOrder = (a: string, b: string): number => a.localeCompare(b);
 
 const isProductionSource = (path: string): boolean => {
 	const parts = path.split("/");
-	const name = parts[parts.length - 1];
+	const name = parts.at(-1) ?? "";
 
 	return (
 		/\.tsx?$/.test(name) &&

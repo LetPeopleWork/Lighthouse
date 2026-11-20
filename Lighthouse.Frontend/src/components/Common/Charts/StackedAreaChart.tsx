@@ -93,7 +93,7 @@ const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
 
 			const lineData = new Array(areaData.length).fill(null);
 			lineData[0] = areaData[0];
-			lineData[areaData.length - 1] = areaData[areaData.length - 1];
+			lineData[areaData.length - 1] = areaData.at(-1);
 
 			// Enhanced visibility for trend lines
 			const lineColor = areaItem.color ?? theme.palette.primary.main;

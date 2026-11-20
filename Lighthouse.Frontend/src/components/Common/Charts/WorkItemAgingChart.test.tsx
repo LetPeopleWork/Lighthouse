@@ -777,7 +777,7 @@ describe("WorkItemAgingChart component", () => {
 				mock: { calls: Array<[{ timeInStateColumn?: unknown }]> };
 			}
 		).mock.calls;
-		const dialogProps = calls[calls.length - 1]?.[0];
+		const dialogProps = calls.at(-1)?.[0];
 
 		expect(dialogProps?.timeInStateColumn).toEqual({ now });
 	});
@@ -922,10 +922,7 @@ describe("WorkItemAgingChart component", () => {
 			mock: { calls: Array<[Record<string, unknown>]> };
 		};
 
-		const containerProps =
-			chartsContainerMock.mock.calls[
-				chartsContainerMock.mock.calls.length - 1
-			]?.[0];
+		const containerProps = chartsContainerMock.mock.calls.at(-1)?.[0];
 		expect(containerProps).toBeTruthy();
 
 		const xAxisConfig = (
@@ -1149,7 +1146,7 @@ describe("WorkItemAgingChart component", () => {
 
 			const sortedBottomToTop = [...rects].sort((a, b) => a.y - b.y);
 			const floorBand = sortedBottomToTop[0];
-			const topBand = sortedBottomToTop[sortedBottomToTop.length - 1];
+			const topBand = sortedBottomToTop.at(-1) ?? floorBand;
 
 			expect(floorBand.y).toBe(1);
 			expect(floorBand.fill).toBe(PACE_BAND_COLORS_LOW_TO_HIGH[0]);
@@ -1180,11 +1177,9 @@ describe("WorkItemAgingChart component", () => {
 			});
 
 			const sortedBottomToTop = [...rects].sort((a, b) => a.y - b.y);
-			const lastColouredBand = sortedBottomToTop[sortedBottomToTop.length - 2];
+			const lastColouredBand = sortedBottomToTop.at(-2);
 
-			expect(lastColouredBand.fill).toBe(
-				PACE_BAND_COLORS_LOW_TO_HIGH[PACE_BAND_COLORS_LOW_TO_HIGH.length - 1],
-			);
+			expect(lastColouredBand?.fill).toBe(PACE_BAND_COLORS_LOW_TO_HIGH.at(-1));
 		});
 
 		it("paints the top band red even when fewer than four percentiles are returned", () => {
@@ -1207,8 +1202,8 @@ describe("WorkItemAgingChart component", () => {
 
 			const topBand = [...rects].sort((a, b) => a.y - b.y)[rects.length - 1];
 
-			expect(topBand.y + topBand.height).toBe(30);
-			expect(topBand.fill).toBe(errorColor);
+			expect(topBand?.y + topBand?.height).toBe(30);
+			expect(topBand?.fill).toBe(errorColor);
 		});
 
 		it("leaves states before the first populated one bare while carrying it forward to the right", () => {
@@ -1452,11 +1447,7 @@ describe("WorkItemAgingChart component", () => {
 			expect(bandsFor(1)).toEqual([
 				[1, 3, PACE_BAND_COLORS_LOW_TO_HIGH[0]],
 				[3, 5, PACE_BAND_COLORS_LOW_TO_HIGH[1]],
-				[
-					5,
-					30,
-					PACE_BAND_COLORS_LOW_TO_HIGH[PACE_BAND_COLORS_LOW_TO_HIGH.length - 1],
-				],
+				[5, 30, PACE_BAND_COLORS_LOW_TO_HIGH.at(-1)],
 			]);
 		});
 
@@ -1681,10 +1672,7 @@ describe("WorkItemAgingChart component", () => {
 			const chartsContainerMock = MuiCharts.ChartsContainer as unknown as {
 				mock: { calls: Array<[Record<string, unknown>]> };
 			};
-			const containerProps =
-				chartsContainerMock.mock.calls[
-					chartsContainerMock.mock.calls.length - 1
-				]?.[0];
+			const containerProps = chartsContainerMock.mock.calls.at(-1)?.[0];
 			const yAxisConfig = (
 				containerProps?.yAxis as Array<Record<string, unknown>>
 			)?.[0];
@@ -1868,7 +1856,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 
 	const lastDialogProps = () => {
 		const calls = (WorkItemsDialog as unknown as Mock).mock.calls;
-		return calls[calls.length - 1]?.[0] as {
+		return calls.at(-1)?.[0] as {
 			items?: IWorkItem[];
 			ageBandColumn?: AgeBandColumnDescriptor;
 		};
@@ -2244,7 +2232,7 @@ describe("the risk beside the dot the coach clicked", () => {
 
 	const lastDialogProps = () => {
 		const calls = (WorkItemsDialog as unknown as Mock).mock.calls;
-		return calls[calls.length - 1]?.[0] as {
+		return calls.at(-1)?.[0] as {
 			sleRiskColumn?: SleRiskColumnDescriptor;
 		};
 	};

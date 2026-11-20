@@ -71,8 +71,7 @@ describe("fitting the axis to the delivery's length and the space it has", () =>
 	const spanOf = (days: number, width = WIDE) =>
 		scalesForSpan(new Date(2026, 0, 1), new Date(2026, 0, 1 + days), width);
 
-	const finestUnit = (scales: { unit: string }[]) =>
-		scales[scales.length - 1].unit;
+	const finestUnit = (scales: { unit: string }[]) => scales.at(-1)?.unit ?? "";
 
 	it("rules a short delivery by the day", () => {
 		expect(finestUnit(spanOf(10))).toBe("day");

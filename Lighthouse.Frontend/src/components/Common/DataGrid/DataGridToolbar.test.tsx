@@ -568,7 +568,7 @@ describe("DataGridToolbar", () => {
 			const createObjectURL = globalThis.URL
 				.createObjectURL as unknown as ReturnType<typeof vi.fn>;
 			const calls = createObjectURL.mock.calls;
-			const blob = calls[calls.length - 1]?.[0] as Blob;
+			const blob = calls.at(-1)?.[0] as Blob;
 			return (await blob.text()).replace("﻿", "");
 		};
 
@@ -576,7 +576,7 @@ describe("DataGridToolbar", () => {
 			flavour: "text/plain" | "text/html",
 		): Promise<string> => {
 			const calls = mockClipboardWrite.mock.calls;
-			const item = calls[calls.length - 1]?.[0]?.[0] as {
+			const item = calls.at(-1)?.[0]?.[0] as {
 				items: Record<string, Blob>;
 			};
 			return await item.items[flavour].text();

@@ -202,7 +202,7 @@ const renderTheTeamPage = ({
 	if (rereadFails) {
 		getTeam.mockRejectedValue(new Error("the network dropped"));
 	} else {
-		getTeam.mockResolvedValue(teamReads[teamReads.length - 1]);
+		getTeam.mockResolvedValue(teamReads.at(-1));
 	}
 	teamService.getTeam = getTeam;
 	// The stored settings agree with the first Team read: a Team that says it has refinement states

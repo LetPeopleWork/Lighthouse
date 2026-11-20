@@ -23,7 +23,7 @@ const series = (points: FeverPoint[]): FeatureFeverSeries => ({
 	referenceId: "F-1",
 	name: "Checkout",
 	points,
-	latest: points[points.length - 1],
+	latest: points.at(-1) ?? point(0, 0),
 });
 
 describe("likelihoodTooltip", () => {

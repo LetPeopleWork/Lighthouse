@@ -112,7 +112,7 @@ const capturedCsv = async (): Promise<string> => {
 	const createObjectURL = globalThis.URL
 		.createObjectURL as unknown as ReturnType<typeof vi.fn>;
 	const calls = createObjectURL.mock.calls;
-	const blob = calls[calls.length - 1]?.[0] as Blob;
+	const blob = calls.at(-1)?.[0] as Blob;
 	return (await blob.text()).replace("﻿", "");
 };
 

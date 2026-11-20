@@ -122,7 +122,7 @@ describe("the Metrics & name step", () => {
 		);
 
 		const boxes = screen.getAllByRole("checkbox");
-		expect(boxes[boxes.length - 1]).toHaveAccessibleName("Arrivals");
+		expect(boxes.at(-1)).toHaveAccessibleName("Arrivals");
 
 		await userEvent.click(screen.getByRole("checkbox", { name: "Arrivals" }));
 

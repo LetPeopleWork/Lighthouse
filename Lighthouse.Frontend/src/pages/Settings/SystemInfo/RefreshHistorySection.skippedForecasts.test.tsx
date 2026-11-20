@@ -114,11 +114,10 @@ const theFigure = (caption: RegExp) => {
 };
 
 const theLatestDurationLine = (): Record<string, unknown>[] =>
-	chartsWereHanded.durationLine[chartsWereHanded.durationLine.length - 1] ?? [];
+	chartsWereHanded.durationLine.at(-1) ?? [];
 
 const theLatestBars = (): Record<string, unknown>[] =>
-	chartsWereHanded.perEntityBars[chartsWereHanded.perEntityBars.length - 1] ??
-	[];
+	chartsWereHanded.perEntityBars.at(-1) ?? [];
 
 beforeEach(() => {
 	nextId = 1;

@@ -31,8 +31,7 @@ describe("SleRiskWidget", () => {
 	});
 
 	it("takes the colour of the worst item it counted", () => {
-		const worstBand =
-			PACE_BAND_COLORS_LOW_TO_HIGH[PACE_BAND_COLORS_LOW_TO_HIGH.length - 1];
+		const worstBand = PACE_BAND_COLORS_LOW_TO_HIGH.at(-1);
 
 		render(<SleRiskWidget atRisk={{ count: 2, color: worstBand }} />);
 

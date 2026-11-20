@@ -73,8 +73,7 @@ const aHistoryWithABeyondDay = () =>
 	});
 
 const theSeries = (id: string): SeriesEntry | undefined => {
-	const lastCall =
-		lineChartMock.mock.calls[lineChartMock.mock.calls.length - 1];
+	const lastCall = lineChartMock.mock.calls.at(-1);
 	const props = lastCall?.[0] as { series?: SeriesEntry[] } | undefined;
 	return props?.series?.find((entry) => entry.id === id);
 };

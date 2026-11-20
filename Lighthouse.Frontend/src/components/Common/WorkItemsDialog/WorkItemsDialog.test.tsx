@@ -1260,7 +1260,7 @@ describe("Work Item Age Band column", () => {
 
 			await user.click(bandColumnHeader());
 			const worstFirst = bandCellTexts();
-			expect(worstFirst[worstFirst.length - 1]).toBe("No history");
+			expect(worstFirst.at(-1)).toBe("No history");
 		});
 
 		test("offers exactly the six band names to cut the list down by", async () => {
@@ -1364,13 +1364,13 @@ describe("Work Item Age Band column", () => {
 
 			const calmestFirst = bandCellTexts();
 			expect(calmestFirst[0]).toBe("No history");
-			expect(calmestFirst[calmestFirst.length - 1]).toBe("Below 60th");
+			expect(calmestFirst.at(-1)).toBe("Below 60th");
 
 			await user.click(bandColumnHeader());
 
 			const worstFirst = bandCellTexts();
 			expect(worstFirst[0]).toBe("Above 95th");
-			expect(worstFirst[worstFirst.length - 1]).toBe("Below 60th");
+			expect(worstFirst.at(-1)).toBe("Below 60th");
 		});
 
 		test("leaves a band name the offered list never carried unpainted", () => {
@@ -1676,7 +1676,7 @@ describe("SLE Risk column", () => {
 			await user.click(riskColumnHeader());
 
 			const worstFirst = riskCellTexts();
-			expect(worstFirst[worstFirst.length - 1]).toBe("");
+			expect(worstFirst.at(-1)).toBe("");
 		});
 
 		test("carries the percentage into the export, not the number behind it", () => {

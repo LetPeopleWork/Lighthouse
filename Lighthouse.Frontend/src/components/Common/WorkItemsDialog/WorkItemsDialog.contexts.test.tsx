@@ -231,7 +231,7 @@ async function theReadersLayoutComesBackOnReopen({
 	offered,
 }: ReopenCase) {
 	const user = userEvent.setup();
-	const hidden = columns[columns.length - 1];
+	const hidden = columns.at(-1) ?? "";
 	const turnedOn = offered[columns.length];
 	const first = openTheDialog({ context, items });
 	await turnColumns(user, [

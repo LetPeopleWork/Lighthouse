@@ -6058,7 +6058,7 @@ describe("BaseMetricsView component", () => {
 
 		const lastRequestedStartDay = () => {
 			const calls = (mockMetricsService.getThroughput as Mock).mock.calls;
-			return localDayOf(calls[calls.length - 1][1] as Date);
+			return localDayOf(calls.at(-1)?.[1] as Date);
 		};
 
 		it("writes the picked calendar day to the URL, not the UTC one", async () => {
@@ -6086,7 +6086,7 @@ describe("BaseMetricsView component", () => {
 
 			expect(lastRequestedStartDay()).toBe("2026-06-15");
 			const calls = (mockMetricsService.getThroughput as Mock).mock.calls;
-			expect(localDayOf(calls[calls.length - 1][2] as Date)).toBe("2026-07-15");
+			expect(localDayOf(calls.at(-1)?.[2] as Date)).toBe("2026-07-15");
 		});
 
 		it("survives a full round-trip through the URL", async () => {

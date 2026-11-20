@@ -124,7 +124,7 @@ describe("what the adapter configures the library with", () => {
 		// changes, so without that the axis silently keeps the resolution it opened with.
 		// Whether the remount actually redraws is a browser's answer, not this environment's.
 		const scales = ganttConfig.current?.scales as { unit: string }[];
-		const finest = scales[scales.length - 1].unit;
+		const finest = scales.at(-1)?.unit;
 
 		// Tied to the scales actually handed over rather than to a literal, so the two cannot
 		// drift: the attribute is what keys the remount, and a value that disagreed with the

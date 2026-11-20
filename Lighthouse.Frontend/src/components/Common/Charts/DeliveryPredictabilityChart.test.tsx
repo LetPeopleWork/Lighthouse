@@ -73,8 +73,7 @@ const LIKELIHOOD_SERIES_ID = "likelihood";
 const WHEN_70_SERIES_ID = "when-70";
 
 const getLatestReferenceLineProps = () => {
-	const lastCall =
-		referenceLineMock.mock.calls[referenceLineMock.mock.calls.length - 1];
+	const lastCall = referenceLineMock.mock.calls.at(-1);
 	return lastCall?.[0] as
 		| { y?: Date; lineStyle?: { strokeDasharray?: string } }
 		| undefined;
@@ -85,8 +84,7 @@ const switchToWhenView = () => {
 };
 
 const getLatestChartProps = () => {
-	const lastCall =
-		lineChartMock.mock.calls[lineChartMock.mock.calls.length - 1];
+	const lastCall = lineChartMock.mock.calls.at(-1);
 	return lastCall?.[0] as
 		| {
 				series?: SeriesEntry[];

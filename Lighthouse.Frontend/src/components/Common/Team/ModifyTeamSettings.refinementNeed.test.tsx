@@ -158,7 +158,7 @@ const renderGravitysSettingsForm = async (settings: ITeamSettings) => {
 
 const theRefinementLastSaved = () => {
 	const calls = saveTeamSettings.mock.calls;
-	const saved = calls[calls.length - 1]?.[0] as ITeamSettings | undefined;
+	const saved = calls.at(-1)?.[0] as ITeamSettings | undefined;
 	return saved?.refinement;
 };
 

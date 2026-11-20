@@ -249,6 +249,7 @@ const ReportPrintContent: React.FC<ReportPrintContentProps> = ({
 		forTheReport: () => askAgainFor(report),
 		forTheFailedPart: () => {
 			if (ownerName.isError) askAgainFor(ownerName);
+			// biome-ignore lint/plugin/no-floating-refetch: this refetch is typed to return nothing, so there is no promise to handle
 			if (terms.error !== null) terms.refetch();
 			fonts.askAgainIfFailed();
 			mark.askAgainIfFailed();
