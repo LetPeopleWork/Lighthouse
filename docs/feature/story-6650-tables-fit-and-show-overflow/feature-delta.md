@@ -24,3 +24,8 @@ already show whether people act on a table.
 
 Open for the S2 acceptance designer, within the sketch: the exact screen-reader wording of the overflow text (for example
 "More columns to the right"). Loading and failure looks are unchanged: no new data is fetched.
+
+S2 outcome of that question: the grid's description reads "This table scrolls sideways. More columns to the right."
+(or "to the left", "on both sides") and is absent when nothing is hidden. The cue itself is a DOM overlay element per
+edge (`aria-hidden`, no pointer events), as the design's "edge overlays" says, not a CSS shadow on the grid, so tests
+may count it.
