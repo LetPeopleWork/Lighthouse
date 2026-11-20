@@ -39,7 +39,7 @@
 "L1/F132"
 ],
 "still_passes_if": "F260",
-"test": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.test.ts::A number, date or action column is never cut (L1) | Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
+"test": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.test.ts::A number, date or action column is never cut | Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
 },
 "expected": "F258",
 "stimulus": "F257",
@@ -59,7 +59,7 @@
 "L5/F154"
 ],
 "still_passes_if": "F264",
-"test": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.test.ts::A text column shrinks to its minimum unless the person set its width (L2) | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx::Columns fit the width and keep the row actions in reach (L5 cases) | Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
+"test": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.test.ts::A text column shrinks to its minimum unless the person set its width | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx::Columns fit the width and keep the row actions in reach (resize and Reset cases) | Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
 },
 "expected": "F262",
 "stimulus": "F261",
@@ -77,7 +77,7 @@
 "L4/F149"
 ],
 "still_passes_if": "F268",
-"test": "Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx::Columns fit the width and keep the row actions in reach (L4 cases)"
+"test": "Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx::Columns fit the width and keep the row actions in reach (actions-last order cases)"
 },
 "expected": "F266",
 "stimulus": "F265",

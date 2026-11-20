@@ -86,7 +86,7 @@ Dates and the row action buttons are never cut.
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/columnFit\.test\.ts\:\:A number\, date or action column is never cut \(L1\) \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/columnFit\.test\.ts\:\:A number\, date or action column is never cut \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
 
 ```text
 A content column whose declared width is already smaller than its real content (a long localised date) is cut; the design leaves that per table.
@@ -116,7 +116,7 @@ A width the person set stays theirs, and Reset gives back the fitted table.
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/columnFit\.test\.ts\:\:A text column shrinks to its minimum unless the person set its width \(L2\) \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.test\.tsx\:\:Columns fit the width and keep the row actions in reach \(L5 cases\) \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/columnFit\.test\.ts\:\:A text column shrinks to its minimum unless the person set its width \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.test\.tsx\:\:Columns fit the width and keep the row actions in reach \(resize and Reset cases\) \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
 
 ```text
 The stored width is kept but differs by up to one pixel from the one set.
@@ -149,7 +149,7 @@ Delete never scrolls out of view at any width.
 
 Tested
 
-Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.test\.tsx\:\:Columns fit the width and keep the row actions in reach \(L4 cases\)
+Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.test\.tsx\:\:Columns fit the width and keep the row actions in reach \(actions\-last order cases\)
 
 ```text
 The pinned actions column covers part of the last scrolling column's content.

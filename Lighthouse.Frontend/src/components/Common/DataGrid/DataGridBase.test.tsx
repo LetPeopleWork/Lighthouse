@@ -1061,24 +1061,24 @@ describe("Columns fit the width and keep the row actions in reach", () => {
 		vi.useRealTimers();
 	});
 
-	it("orders the actions column last when no order is saved (L4)", () => {
+	it("orders the actions column last when no order is saved", () => {
 		const { container } = whenTheGridIsShown();
 		thenTheActionsColumnIsLast(container);
 	});
 
-	it("orders the actions column last when the saved order puts it first (L4)", () => {
+	it("orders the actions column last when the saved order puts it first", () => {
 		givenTheSavedColumnOrder(["actions", "name", "owner", "age"]);
 		const { container } = whenTheGridIsShown();
 		thenTheActionsColumnIsLast(container);
 	});
 
-	it("orders the actions column last when the saved order does not name it (L4)", () => {
+	it("orders the actions column last when the saved order does not name it", () => {
 		givenTheSavedColumnOrder(["age", "name", "owner"]);
 		const { container } = whenTheGridIsShown();
 		thenTheActionsColumnIsLast(container);
 	});
 
-	it("stores only the width of the column the person resized (L5)", () => {
+	it("stores only the width of the column the person resized", () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		whenTheGridIsShown();
 
@@ -1090,7 +1090,7 @@ describe("Columns fit the width and keep the row actions in reach", () => {
 		).toEqual(["name"]);
 	});
 
-	it("keeps the Name width when Owner is resized next, and Reset clears both (L5)", () => {
+	it("keeps the Name width when Owner is resized next, and Reset clears both", () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		whenTheGridIsShown();
 		resizeColumn("name", 300);

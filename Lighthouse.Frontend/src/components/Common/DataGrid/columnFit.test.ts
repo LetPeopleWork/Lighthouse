@@ -13,7 +13,7 @@ const aColumn = (shape: Partial<DataGridColumn<Row>>): DataGridColumn<Row> => ({
 
 const notFlex = (flex: number | undefined) => flex ?? 0;
 
-describe("A number, date or action column is never cut (L1)", () => {
+describe("A number, date or action column is never cut", () => {
 	type StoredCase =
 		| { tag: "absent" }
 		| { tag: "below"; below: number }
@@ -93,7 +93,7 @@ describe("A number, date or action column is never cut (L1)", () => {
 	});
 });
 
-describe("A text column shrinks to its minimum unless the person set its width (L2)", () => {
+describe("A text column shrinks to its minimum unless the person set its width", () => {
 	const textColumn = fc.record({
 		minWidth: fc.option(fc.integer({ min: 40, max: 300 }), { nil: undefined }),
 		flex: fc.option(fc.integer({ min: 1, max: 3 }), { nil: undefined }),
