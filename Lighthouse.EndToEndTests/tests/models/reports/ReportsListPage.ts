@@ -186,6 +186,51 @@ export class ReportsListPage {
 		return this.scroller.evaluate((element) => element.scrollLeft);
 	}
 
+	/** Which way the table says more columns are hidden: none, left, right or both. */
+	async overflowState(): Promise<string | null> {
+		return this.page
+			.locator("[data-overflow]")
+			.filter({ has: this.table })
+			.getAttribute("data-overflow");
+	}
+
+	/** The sides of the table that carry a shadow: decorative elements that let every click through. */
+	async sidesWithACue(): Promise<string[]> {
+		const tableBox = await this.table.boundingBox();
+		const middle = tableBox ? tableBox.x + tableBox.width / 2 : 0;
+		const cues = this.page
+			.locator("[data-overflow]")
+			.filter({ has: this.table })
+			.locator('[aria-hidden="true"]:not(svg)');
+		const sides: string[] = [];
+		for (const cue of await cues.all()) {
+			const letsClicksThrough =
+				(await cue.evaluate(
+					(element) => getComputedStyle(element).pointerEvents,
+				)) === "none";
+			const box = await cue.boundingBox();
+			if (!letsClicksThrough || box === null || box.width === 0) continue;
+			sides.push(box.x + box.width / 2 < middle ? "left" : "right");
+		}
+		return sides.sort((a, b) => a.localeCompare(b));
+	}
+
+	/** True when the table is wider than its box, so the table scrolls rather than the page. */
+	async tableScrollsSideways(): Promise<boolean> {
+		return this.scroller.evaluate(
+			(element) => element.scrollWidth > element.clientWidth,
+		);
+	}
+
+	/** True when the whole page can be scrolled sideways, which a table that stays in its box never causes. */
+	async pageScrollsSideways(): Promise<boolean> {
+		return this.page.evaluate(
+			() =>
+				(document.scrollingElement?.scrollWidth ?? 0) >
+				(document.scrollingElement?.clientWidth ?? 0),
+		);
+	}
+
 	async scrollTableToTheEnd(): Promise<void> {
 		await this.scroller.evaluate((element) => {
 			element.scrollLeft = element.scrollWidth;
