@@ -219,6 +219,7 @@ describe("A table that has more columns than shown says so", () => {
 describe("A person using the keyboard reaches columns that are off screen", () => {
 	const PINNED_LEFT = 300;
 	const CELL_LEFT_IN_VIEW = 0;
+	const VIEW_RIGHT = 400;
 
 	/** Column places as the person sees them while the table is scrolled: the actions column stays where it is. */
 	const placeColumnsLikeTheBrowser = (container: HTMLElement) => {
@@ -301,5 +302,16 @@ describe("A person using the keyboard reaches columns that are off screen", () =
 			place.left,
 			"scrolling the focused cell clear of the pinned column must not push its start out of view",
 		).toBeGreaterThanOrEqual(CELL_LEFT_IN_VIEW);
+
+		const actions = await whenTheyArrowToTheCell(user, "actions");
+		const actionsPlace = actions.getBoundingClientRect();
+		expect(
+			actionsPlace.left,
+			"the actions cell must be reachable by the keyboard and start inside the visible table",
+		).toBeGreaterThanOrEqual(CELL_LEFT_IN_VIEW);
+		expect(
+			actionsPlace.right,
+			"the actions cell must end inside the visible table, so the keyboard user can use Delete",
+		).toBeLessThanOrEqual(VIEW_RIGHT);
 	});
 });

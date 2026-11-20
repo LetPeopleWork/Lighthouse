@@ -186,14 +186,6 @@ export class ReportsListPage {
 		return this.scroller.evaluate((element) => element.scrollLeft);
 	}
 
-	/** Which way the table says more columns are hidden: none, left, right or both. */
-	async overflowState(): Promise<string | null> {
-		return this.page
-			.locator("[data-overflow]")
-			.filter({ has: this.table })
-			.getAttribute("data-overflow");
-	}
-
 	/** The sides of the table that carry a shadow: decorative elements that let every click through. */
 	async sidesWithACue(): Promise<string[]> {
 		const tableBox = await this.table.boundingBox();

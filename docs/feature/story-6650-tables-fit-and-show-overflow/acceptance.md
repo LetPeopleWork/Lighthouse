@@ -212,7 +212,7 @@ The shadow follows the scroll position and disappears when nothing is hidden.
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls\, and none once the table fits \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns L3\: names exactly the sides with hidden columns\, and none when the content fits within a pixel of the viewport \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns shows nothing for a table that fits\, even when the scroll position is left over from a wider table \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls\, and none once the table fits \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns names exactly the sides with hidden columns\, and none when the content fits within a pixel of the viewport \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns shows nothing for a table that fits\, even when the scroll position is left over from a wider table \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
 
 ```text
 A rule that tests one pixel of tolerance one pixel off at the exact boundary is caught by the boundary examples; a cue that ignores a stale scroll position on a fitting table is caught by the stale-scroll example.
@@ -227,11 +227,11 @@ A rule that tests one pixel of tolerance one pixel off at the exact boundary is 
 P8
 
 ```text
-A screen reader user reads the grid while columns are hidden on one side, on both sides and on none; a keyboard user lands on a Name cell in view and then arrows to an Owner cell that ends under the pinned actions column.
+A screen reader user reads the grid while columns are hidden on one side, on both sides and on none; a keyboard user lands on a Name cell in view, arrows to an Owner cell that ends under the pinned actions column, then arrows to the actions cell.
 ```
 
 ```text
-The grid description reads: This table scrolls sideways. More columns to the right. (or to the left, or on both sides) and is absent when nothing is hidden; a cell in view makes the table stay put; the Owner cell is scrolled clear of the pinned actions column without its start leaving the view.
+The grid description reads: This table scrolls sideways. More columns to the right. (or to the left, or on both sides) and is absent when nothing is hidden; a cell in view makes the table stay put; the Owner cell is scrolled clear of the pinned actions column without its start leaving the view; the actions cell takes the focus and lies inside the visible range.
 ```
 
 ```text
@@ -261,7 +261,7 @@ The Reports tab with a stored 900 px Name is opened at 375 px; the person looks 
 ```
 
 ```text
-The page does not scroll sideways and the table does; Delete stays in the table; the right shadow shows at the left edge and the left shadow at the end.
+The page does not scroll sideways and the table does; Delete stays in the table; the right shadow shows at the left edge and the left shadow at the end of the range, read from where each shadow sits.
 ```
 
 ```text

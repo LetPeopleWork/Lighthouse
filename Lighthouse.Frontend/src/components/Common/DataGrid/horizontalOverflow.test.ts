@@ -10,11 +10,20 @@ type OverflowEdges = (
 
 const MODULE = "./horizontalOverflow";
 
+const isModuleNotFound = (error: unknown): boolean =>
+	error instanceof Error &&
+	/Failed to (load|resolve)|Cannot find module|does not exist/i.test(
+		error.message,
+	);
+
 // A missing module must show as a failed assertion about the behaviour, not as a load error.
 const loadOverflowEdges = async (): Promise<OverflowEdges> => {
 	const loaded: { overflowEdges?: OverflowEdges } = await import(
 		/* @vite-ignore */ MODULE
-	).catch(() => ({}));
+	).catch((error: unknown) => {
+		if (isModuleNotFound(error)) return {};
+		throw error;
+	});
 	expect(
 		typeof loaded.overflowEdges,
 		"the grid must decide which sides have hidden columns with an overflowEdges(scrollLeft, viewportWidth, contentWidth) function exported from horizontalOverflow, so the cue follows the scroll position; none exists yet",
@@ -52,7 +61,7 @@ const measures: fc.Arbitrary<Measures> = fc
 	);
 
 describe("Which side of a table has hidden columns", () => {
-	it("L3: names exactly the sides with hidden columns, and none when the content fits within a pixel of the viewport", async () => {
+	it("names exactly the sides with hidden columns, and none when the content fits within a pixel of the viewport", async () => {
 		const overflowEdges = await loadOverflowEdges();
 
 		fc.assert(

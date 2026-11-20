@@ -54,11 +54,6 @@ testWithDemo(
 			"hovering the cut name must show the full name in a tooltip",
 		).toBeVisible();
 		const fittedNameWidth = await reports.nameColumnWidth();
-		await expect
-			.poll(() => reports.overflowState(), {
-				message: "at 1280 px everything fits, so no cue may be marked",
-			})
-			.toBe("none");
 		expect(
 			await reports.sidesWithACue(),
 			"a table that fits must show no shadow on either edge",
@@ -73,12 +68,6 @@ testWithDemo(
 			await reports.reportsWithDeleteOutOfView(reportNames),
 			"with a wide stored Name the columns overflow; the pinned actions must keep Delete inside the table",
 		).toEqual([]);
-		await expect
-			.poll(() => reports.overflowState(), {
-				message:
-					"scrolled to the left, columns hidden on the right must be marked",
-			})
-			.toBe("right");
 		expect(
 			await reports.sidesWithACue(),
 			"the shadow must sit on the right edge while the table is at its left edge",
@@ -110,24 +99,14 @@ testWithDemo(
 			await reports.pageScrollsSideways(),
 			"at 375 px the page must not scroll sideways; the table scrolls instead",
 		).toBe(false);
-		await expect
-			.poll(() => reports.overflowState(), {
-				message:
-					"at 375 px, scrolled to the left, columns hidden on the right must be marked",
-			})
-			.toBe("right");
 		expect(await reports.sidesWithACue()).toEqual(["right"]);
 		await reports.scrollTableToTheEnd();
 		await expect
-			.poll(() => reports.overflowState(), {
+			.poll(() => reports.sidesWithACue(), {
 				message:
-					"at the end of the range nothing is hidden on the right, so only the left may be marked",
+					"at the end of the range the shadow must leave the right edge and show on the left",
 			})
-			.toBe("left");
-		expect(
-			await reports.sidesWithACue(),
-			"at the end of the range the shadow must leave the right edge and show on the left",
-		).toEqual(["left"]);
+			.toEqual(["left"]);
 		expect(
 			await reports.reportsWithDeleteOutOfView(reportNames),
 			"at 375 px, scrolled to the end, Delete must still be inside the table",

@@ -113,7 +113,7 @@
 "L3/F143"
 ],
 "still_passes_if": "F276",
-"test": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.overflow.test.tsx::A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls, and none once the table fits | Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.test.ts::Which side of a table has hidden columns L3: names exactly the sides with hidden columns, and none when the content fits within a pixel of the viewport | Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.test.ts::Which side of a table has hidden columns shows nothing for a table that fits, even when the scroll position is left over from a wider table | Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
+"test": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.overflow.test.tsx::A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls, and none once the table fits | Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.test.ts::Which side of a table has hidden columns names exactly the sides with hidden columns, and none when the content fits within a pixel of the viewport | Lighthouse.Frontend/src/components/Common/DataGrid/horizontalOverflow.test.ts::Which side of a table has hidden columns shows nothing for a table that fits, even when the scroll position is left over from a wider table | Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
 },
 "expected": "F274",
 "stimulus": "F273",
@@ -128,8 +128,8 @@
 "still_passes_if": "F280",
 "test": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.overflow.test.tsx::A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls, and none once the table fits | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.overflow.test.tsx::A person using the keyboard reaches columns that are off screen scrolls a focused cell clear of the pinned actions column, and leaves a cell that is in view where it is"
 },
-"expected": "F278",
-"stimulus": "F277",
+"expected": "F290",
+"stimulus": "F289",
 "user_result": "F279"
 },
 {
@@ -141,7 +141,7 @@
 "still_passes_if": "F284",
 "test": "Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
 },
-"expected": "F282",
+"expected": "F291",
 "stimulus": "F281",
 "user_result": "F283"
 },
@@ -176,7 +176,7 @@
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 288,
+"F": 291,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1331,20 +1331,20 @@
 "F274": "The mark and the shadows go right, then both, then left, then none; at the end of the range only the left shadow shows; the pure edge rule names exactly the sides with hidden columns for any scroll position, width and content, within one pixel.",
 "F275": "The shadow follows the scroll position and disappears when nothing is hidden.",
 "F276": "A rule that tests one pixel of tolerance one pixel off at the exact boundary is caught by the boundary examples; a cue that ignores a stale scroll position on a fitting table is caught by the stale-scroll example.",
-"F277": "A screen reader user reads the grid while columns are hidden on one side, on both sides and on none; a keyboard user lands on a Name cell in view and then arrows to an Owner cell that ends under the pinned actions column.",
-"F278": "The grid description reads: This table scrolls sideways. More columns to the right. (or to the left, or on both sides) and is absent when nothing is hidden; a cell in view makes the table stay put; the Owner cell is scrolled clear of the pinned actions column without its start leaving the view.",
 "F279": "A keyboard or screen reader user learns of the hidden columns as text and can reach every cell, the actions included.",
 "F28": "The cue is not the only way to know",
 "F280": "A focus scroll that always runs to the end of the table is caught by the in-view check of the Owner cell start; the pixel geometry of the browser is not checked here, only the jsdom stand-in layout.",
 "F281": "The Reports tab with a stored 900 px Name is opened at 375 px; the person looks at the table and scrolls it to its end.",
-"F282": "The page does not scroll sideways and the table does; Delete stays in the table; the right shadow shows at the left edge and the left shadow at the end.",
 "F283": "At phone width the table scrolls inside its box with the cue and the page stays put.",
 "F284": "A page that scrolls sideways by less than the browser reports as scrollable; the check compares the scrolling element widths only.",
 "F285": "Unchanged from the earlier slice: columns are fitted with any stored width, saved column orders put the actions column anywhere, and the person resizes and resets.",
 "F286": "Number, date and action columns never go below their declared width, a text column keeps its flex or its stored width, the actions column is ordered last, and a resize stores only the resized width.",
 "F287": "Dates and the row action buttons are never cut and the actions stay at the right edge while the new cue is added.",
 "F288": "A cue that changes a column width is caught by these unchanged tests.",
+"F289": "A screen reader user reads the grid while columns are hidden on one side, on both sides and on none; a keyboard user lands on a Name cell in view, arrows to an Owner cell that ends under the pinned actions column, then arrows to the actions cell.",
 "F29": "a table with columns off screen and a keyboard or screen-reader user",
+"F290": "The grid description reads: This table scrolls sideways. More columns to the right. (or to the left, or on both sides) and is absent when nothing is hidden; a cell in view makes the table stay put; the Owner cell is scrolled clear of the pinned actions column without its start leaving the view; the actions cell takes the focus and lies inside the visible range.",
+"F291": "The page does not scroll sideways and the table does; Delete stays in the table; the right shadow shows at the left edge and the left shadow at the end of the range, read from where each shadow sits.",
 "F3": "A person looking at any table that uses the shared grid can find every column it offers, including its row actions such as Delete on the report list: the columns fit the available width where they can, and when they cannot, the table visibly shows that more columns wait off screen.",
 "F30": "they move through the grid with the keyboard",
 "F31": "focus moves to off-screen cells and scrolls them into view, and the table exposes to assistive technology that it scrolls horizontally with more columns than shown (the cue is also a text-readable state, not colour or shadow alone). Falsifier: a keyboard user cannot reach the actions column, or only a visual effect marks the overflow.",
