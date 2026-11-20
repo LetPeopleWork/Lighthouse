@@ -1,9 +1,16 @@
 import type { GridRowId } from "@mui/x-data-grid";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { useState } from "react";
 import type { Mock } from "vitest";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import DataGridBase from "./DataGridBase";
 import type { DataGridColumn } from "./types";
@@ -948,5 +955,207 @@ describe("Picking rows with checkboxes", () => {
 
 		await waitFor(() => expect(onPicked).toHaveBeenLastCalledWith([2]));
 		expect(rowCheckboxOf("Bob")).toBeChecked();
+	});
+});
+
+describe("Columns fit the width and keep the row actions in reach", () => {
+	interface ReportRow {
+		id: number;
+		name: string;
+		owner: string;
+		age: number;
+	}
+
+	const LONG_NAME =
+		"Lightspeed quarter against the quarter before, with every metric the team watches";
+
+	const fittedColumns: DataGridColumn<ReportRow>[] = [
+		{
+			field: "actions",
+			headerName: "Actions",
+			width: 150,
+			sortable: false,
+			fit: { kind: "actions" },
+			renderCell: ({ row }) => (
+				<button type="button">{`Delete ${row.name}`}</button>
+			),
+		},
+		{
+			field: "name",
+			headerName: "Name",
+			flex: 1,
+			fit: { kind: "text", minWidth: 160 },
+			renderCell: ({ row }) => <a href={`/reports/${row.id}`}>{row.name}</a>,
+		},
+		{ field: "owner", headerName: "Owner", flex: 1, fit: { kind: "text" } },
+		{ field: "age", headerName: "Age", width: 90, fit: { kind: "content" } },
+	];
+
+	const rows: ReportRow[] = [
+		{ id: 1, name: LONG_NAME, owner: "Team Lightspeed", age: 3 },
+	];
+
+	const STORAGE_KEY = "fit-grid";
+	const storedState = () =>
+		JSON.parse(
+			localStorage.getItem(`lighthouse:datagrid:${STORAGE_KEY}:state`) ??
+				"null",
+		);
+
+	const givenTheSavedColumnOrder = (order: string[]) =>
+		localStorage.setItem(
+			`lighthouse:datagrid:${STORAGE_KEY}:state`,
+			JSON.stringify({ columnOrder: order }),
+		);
+
+	const whenTheGridIsShown = () =>
+		render(
+			<DataGridBase
+				rows={rows}
+				columns={fittedColumns}
+				storageKey={STORAGE_KEY}
+			/>,
+		);
+
+	const thenTheActionsColumnIsLast = (container: HTMLElement) => {
+		const headers = Array.from(
+			container.querySelectorAll('[role="columnheader"]'),
+		).map((header) => header.textContent?.trim());
+		expect(
+			headers.at(-1),
+			`the headers are ${JSON.stringify(headers)}; the actions column is pinned to the right edge, so the grid must order it last whatever order is declared or saved`,
+		).toBe("Actions");
+	};
+
+	const theTextIsCut = () => {
+		vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(600);
+		vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(160);
+	};
+
+	const resizeColumn = (field: string, byPixels: number) => {
+		const header = document.querySelector(
+			`[role="columnheader"][data-field="${field}"]`,
+		);
+		const separator = header?.querySelector(
+			".MuiDataGrid-columnSeparator--resizable",
+		);
+		expect(
+			separator,
+			`the ${field} column offers no resize handle; a person must be able to resize a text column`,
+		).not.toBeNull();
+		fireEvent.mouseDown(separator as Element, { button: 0, clientX: 0 });
+		fireEvent.mouseMove(document, { buttons: 1, clientX: byPixels });
+		fireEvent.mouseUp(document, { clientX: byPixels });
+		act(() => {
+			vi.advanceTimersByTime(1000);
+		});
+	};
+
+	const storedWidthFields = () =>
+		Object.keys(storedState()?.columnWidths ?? {}).sort((a, b) =>
+			a.localeCompare(b),
+		);
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.useRealTimers();
+	});
+
+	it("orders the actions column last when no order is saved (L4)", () => {
+		const { container } = whenTheGridIsShown();
+		thenTheActionsColumnIsLast(container);
+	});
+
+	it("orders the actions column last when the saved order puts it first (L4)", () => {
+		givenTheSavedColumnOrder(["actions", "name", "owner", "age"]);
+		const { container } = whenTheGridIsShown();
+		thenTheActionsColumnIsLast(container);
+	});
+
+	it("orders the actions column last when the saved order does not name it (L4)", () => {
+		givenTheSavedColumnOrder(["age", "name", "owner"]);
+		const { container } = whenTheGridIsShown();
+		thenTheActionsColumnIsLast(container);
+	});
+
+	it("stores only the width of the column the person resized (L5)", () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		whenTheGridIsShown();
+
+		resizeColumn("name", 300);
+
+		expect(
+			storedWidthFields(),
+			"storing every column width after one resize turns the fit off for all of them and pushes Delete off screen; only the resized Name width may be stored",
+		).toEqual(["name"]);
+	});
+
+	it("keeps the Name width when Owner is resized next, and Reset clears both (L5)", () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		whenTheGridIsShown();
+		resizeColumn("name", 300);
+		const nameWidth = storedState()?.columnWidths?.name;
+
+		resizeColumn("owner", 250);
+
+		expect(
+			storedWidthFields(),
+			"a second resize must add the Owner width to the stored Name width and store nothing else",
+		).toEqual(["name", "owner"]);
+		expect(
+			storedState()?.columnWidths?.name,
+			"resizing Owner must leave the Name width the person set as it was",
+		).toBe(nameWidth);
+
+		act(() => {
+			fireEvent.click(screen.getByTestId("reset-layout-button"));
+		});
+		expect(
+			storedState(),
+			"Reset must clear the stored widths so the grid returns to the fitted layout",
+		).toBeNull();
+	});
+
+	it("gives the full text of a cut text cell in a tooltip on hover, and keeps it in the cell", async () => {
+		theTextIsCut();
+		whenTheGridIsShown();
+
+		await userEvent.hover(screen.getByText("Team Lightspeed"));
+
+		expect(
+			await screen.findByRole("tooltip"),
+			"a cut Owner name must show its full text in a tooltip when the person hovers it",
+		).toHaveTextContent("Team Lightspeed");
+		expect(
+			screen.getAllByText("Team Lightspeed").length,
+			"the full text must stay in the cell too, for assistive technology",
+		).toBeGreaterThan(0);
+	});
+
+	it("gives the full text of a cut cell drawn by its own renderer in a tooltip when it gets keyboard focus", async () => {
+		theTextIsCut();
+		whenTheGridIsShown();
+
+		fireEvent.focusIn(screen.getByRole("link", { name: LONG_NAME }));
+
+		expect(
+			await screen.findByRole("tooltip"),
+			"a keyboard user who focuses a cut name must get the full name in a tooltip, taken from the column value",
+		).toHaveTextContent(LONG_NAME);
+	});
+
+	it("shows no tooltip for a text cell that is not cut", () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		whenTheGridIsShown();
+
+		fireEvent.mouseOver(screen.getByText("Team Lightspeed"));
+		act(() => {
+			vi.advanceTimersByTime(1500);
+		});
+
+		expect(
+			screen.queryByRole("tooltip"),
+			"a tooltip on text that is shown whole only repeats it; it must open only when the text is cut",
+		).toBeNull();
 	});
 });

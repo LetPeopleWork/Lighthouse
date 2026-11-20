@@ -93,4 +93,123 @@ export class ReportsListPage {
 	private async nextStep(): Promise<void> {
 		await this.wizard.getByRole("button", { name: "Next" }).click();
 	}
+
+	/** The table of reports as the person sees it: its box is what is in view, whatever scrolls inside it. */
+	get table(): Locator {
+		return this.page.getByRole("grid");
+	}
+
+	private get scroller(): Locator {
+		return this.table.locator(".MuiDataGrid-virtualScroller");
+	}
+
+	private rowOf(reportName: string): Locator {
+		return this.table
+			.getByRole("row")
+			.filter({ has: this.page.getByRole("link", { name: reportName }) });
+	}
+
+	nameCellOf(reportName: string): Locator {
+		return this.rowOf(reportName).locator(
+			'[role="gridcell"][data-field="name"]',
+		);
+	}
+
+	createdCellOf(reportName: string): Locator {
+		return this.rowOf(reportName).locator(
+			'[role="gridcell"][data-field="createdOn"]',
+		);
+	}
+
+	get nameHeader(): Locator {
+		return this.table.locator('[role="columnheader"][data-field="name"]');
+	}
+
+	tooltipShowing(text: string): Locator {
+		return this.page.getByRole("tooltip", { name: text });
+	}
+
+	async nameColumnWidth(): Promise<number> {
+		return (await this.nameHeader.boundingBox())?.width ?? 0;
+	}
+
+	/** The names of the given reports whose Delete is not wholly inside the table's box, rendered or not. */
+	async reportsWithDeleteOutOfView(reportNames: string[]): Promise<string[]> {
+		const tableBox = await this.table.boundingBox();
+		const outOfView: string[] = [];
+		for (const name of reportNames) {
+			const deleteButton = this.page.getByRole("button", {
+				name: `Delete ${name}`,
+				exact: true,
+			});
+			const box =
+				(await deleteButton.count()) === 1
+					? await deleteButton.boundingBox()
+					: null;
+			const inside =
+				tableBox !== null &&
+				box !== null &&
+				box.x >= tableBox.x - 1 &&
+				box.x + box.width <= tableBox.x + tableBox.width + 1;
+			if (!inside) outOfView.push(name);
+		}
+		return outOfView;
+	}
+
+	async hoverNameOf(reportName: string): Promise<void> {
+		await this.page.getByRole("link", { name: reportName }).hover();
+	}
+
+	/** True when the cell shows its text cut off with an ellipsis. */
+	async isCutWithEllipsis(cell: Locator): Promise<boolean> {
+		return cell.evaluate((root) =>
+			[root, ...Array.from(root.querySelectorAll("*"))].some(
+				(element) =>
+					getComputedStyle(element).textOverflow === "ellipsis" &&
+					element.scrollWidth > element.clientWidth,
+			),
+		);
+	}
+
+	/** True when nothing in the cell is wider than the room it has, so the whole content shows. */
+	async isShownWhole(cell: Locator): Promise<boolean> {
+		return cell.evaluate((root) =>
+			[root, ...Array.from(root.querySelectorAll("*"))].every(
+				(element) =>
+					element.clientWidth === 0 ||
+					element.scrollWidth <= element.clientWidth + 1,
+			),
+		);
+	}
+
+	async horizontalScrollPosition(): Promise<number> {
+		return this.scroller.evaluate((element) => element.scrollLeft);
+	}
+
+	async scrollTableToTheEnd(): Promise<void> {
+		await this.scroller.evaluate((element) => {
+			element.scrollLeft = element.scrollWidth;
+			element.dispatchEvent(new Event("scroll"));
+		});
+	}
+
+	/** As if the person had resized the Name column on an earlier visit: the width is stored for the Team's Reports tab. */
+	async reopenWithStoredNameWidth(width: number): Promise<ReportsListPage> {
+		await this.page.evaluate((nameWidth) => {
+			localStorage.setItem(
+				"lighthouse:datagrid:reports-team:state",
+				JSON.stringify({ columnWidths: { name: nameWidth } }),
+			);
+		}, width);
+		await this.page.reload();
+		return this.waitUntilReady();
+	}
+
+	async resetLayout(): Promise<void> {
+		await this.page.getByTestId("reset-layout-button").click();
+	}
+
+	async viewAt(width: number, height: number): Promise<void> {
+		await this.page.setViewportSize({ width, height });
+	}
 }

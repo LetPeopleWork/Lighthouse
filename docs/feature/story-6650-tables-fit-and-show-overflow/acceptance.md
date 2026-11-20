@@ -2,7 +2,163 @@
 
 ## Slices
 
+### S1
+
+##### Covers
+
+P1
+
+P2
+
+```text
+A Team has two reports; the person opens its Reports tab in a window 1280 px wide.
+```
+
+```text
+The table is at its left edge and the Delete button of every report lies inside the table box.
+```
+
+```text
+The person sees Delete on every row without scrolling.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
+
+```text
+Delete is inside the table box but hidden under another element or not clickable.
+```
+
+###### Obligations
+
 None.
+
+##### Covers
+
+P3
+
+```text
+One report has a name longer than its column; the person looks at it and hovers it, and a keyboard user focuses a cut name drawn by its own renderer.
+```
+
+```text
+The name ends with an ellipsis, a tooltip shows the full name on hover and on keyboard focus, the full text stays in the cell, and text shown whole gets no tooltip.
+```
+
+```text
+The person reads the full report name without widening the column.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.test\.tsx\:\:Columns fit the width and keep the row actions in reach \(tooltip cases\)
+
+```text
+The tooltip opens on focus of the link but not when the grid moves cell focus onto the cell itself.
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P4
+
+```text
+The table shrinks its columns; a number, date or actions column has any stored width, including one below its declared width.
+```
+
+```text
+The Created date shows whole; a content or actions column never gets a width or minimum below its declared width; the actions column ignores a stored width and cannot be resized.
+```
+
+```text
+Dates and the row action buttons are never cut.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/columnFit\.test\.ts\:\:A number\, date or action column is never cut \(L1\) \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
+
+```text
+A content column whose declared width is already smaller than its real content (a long localised date) is cut; the design leaves that per table.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P5
+
+```text
+The person resizes Name, then Owner; or a Name width of 900 px is stored and the page reloads; then the person presses Reset.
+```
+
+```text
+Only the resized widths are stored, the Name width stays when Owner is resized, a stored Name width is used as set after reload, a text column keeps flex and its minimum when nothing is stored, and Reset clears the stored widths and returns Name to its fitted width.
+```
+
+```text
+A width the person set stays theirs, and Reset gives back the fitted table.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/columnFit\.test\.ts\:\:A text column shrinks to its minimum unless the person set its width \(L2\) \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.test\.tsx\:\:Columns fit the width and keep the row actions in reach \(L5 cases\) \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
+
+```text
+The stored width is kept but differs by up to one pixel from the one set.
+```
+
+###### Obligations
+
+
+
+
+
+
+##### Covers
+
+P12
+
+```text
+The columns overflow, with a stored 900 px Name at 1280 px and at 375 px; the person scrolls the table to its end; in the grid the saved column order puts the actions first, leaves them out, or there is none.
+```
+
+```text
+Delete stays inside the table box with the table at its left edge and at its end, Name stays at least 160 px at 375 px, and the actions column is always ordered last.
+```
+
+```text
+Delete never scrolls out of view at any width.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.test\.tsx\:\:Columns fit the width and keep the row actions in reach \(L4 cases\)
+
+```text
+The pinned actions column covers part of the last scrolling column's content.
+```
+
+###### Obligations
+
+
+
 
 ## Expectations
 

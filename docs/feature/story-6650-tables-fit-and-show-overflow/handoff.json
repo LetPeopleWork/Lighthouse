@@ -1,9 +1,95 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F252",
+"test": "Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
+},
+"expected": "F250",
+"stimulus": "F249",
+"user_result": "F251"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F256",
+"test": "Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx::Columns fit the width and keep the row actions in reach (tooltip cases)"
+},
+"expected": "F254",
+"stimulus": "F253",
+"user_result": "F255"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L1/F132"
+],
+"still_passes_if": "F260",
+"test": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.test.ts::A number, date or action column is never cut (L1) | Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
+},
+"expected": "F258",
+"stimulus": "F257",
+"user_result": "F259"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"L2/F138",
+"L5/F152",
+"L5/F153",
+"L5/F154"
+],
+"still_passes_if": "F264",
+"test": "Lighthouse.Frontend/src/components/Common/DataGrid/columnFit.test.ts::A text column shrinks to its minimum unless the person set its width (L2) | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx::Columns fit the width and keep the row actions in reach (L5 cases) | Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full"
+},
+"expected": "F262",
+"stimulus": "F261",
+"user_result": "F263"
+},
+{
+"covers": [
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F147",
+"L4/F148",
+"L4/F149"
+],
+"still_passes_if": "F268",
+"test": "Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::a coach finds Delete on every report of a Team, at desktop and at phone width, and reads a long name in full | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.test.tsx::Columns fit the width and keep the row actions in reach (L4 cases)"
+},
+"expected": "F266",
+"stimulus": "F265",
+"user_result": "F267"
+}
+]
+},
 "counters": {
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 248,
+"F": 268,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1127,8 +1213,28 @@
 "F246": "At a narrow width, the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables each fit where they can and show the cue where they cannot, consistent with the report list, and none scrolls its last column out of view without a cue.",
 "F247": "At about 375 px width, a table that cannot fit shows text columns at minimum width, scrolls horizontally inside the table (not the page), shows the cue, and keeps the actions reachable by scrolling.",
 "F248": "With overflowing columns, scrolling the table sideways keeps the actions column (Delete, Edit and so on) pinned at the right edge and always visible, while fit and edge cue still apply to other columns; the pinned column neither hides the cue nor covers another column's content.",
+"F249": "A Team has two reports; the person opens its Reports tab in a window 1280 px wide.",
 "F25": "a table with a cue on the right edge",
+"F250": "The table is at its left edge and the Delete button of every report lies inside the table box.",
+"F251": "The person sees Delete on every row without scrolling.",
+"F252": "Delete is inside the table box but hidden under another element or not clickable.",
+"F253": "One report has a name longer than its column; the person looks at it and hovers it, and a keyboard user focuses a cut name drawn by its own renderer.",
+"F254": "The name ends with an ellipsis, a tooltip shows the full name on hover and on keyboard focus, the full text stays in the cell, and text shown whole gets no tooltip.",
+"F255": "The person reads the full report name without widening the column.",
+"F256": "The tooltip opens on focus of the link but not when the grid moves cell focus onto the cell itself.",
+"F257": "The table shrinks its columns; a number, date or actions column has any stored width, including one below its declared width.",
+"F258": "The Created date shows whole; a content or actions column never gets a width or minimum below its declared width; the actions column ignores a stored width and cannot be resized.",
+"F259": "Dates and the row action buttons are never cut.",
 "F26": "the person scrolls to the end, or the window is widened until everything fits",
+"F260": "A content column whose declared width is already smaller than its real content (a long localised date) is cut; the design leaves that per table.",
+"F261": "The person resizes Name, then Owner; or a Name width of 900 px is stored and the page reloads; then the person presses Reset.",
+"F262": "Only the resized widths are stored, the Name width stays when Owner is resized, a stored Name width is used as set after reload, a text column keeps flex and its minimum when nothing is stored, and Reset clears the stored widths and returns Name to its fitted width.",
+"F263": "A width the person set stays theirs, and Reset gives back the fitted table.",
+"F264": "The stored width is kept but differs by up to one pixel from the one set.",
+"F265": "The columns overflow, with a stored 900 px Name at 1280 px and at 375 px; the person scrolls the table to its end; in the grid the saved column order puts the actions first, leaves them out, or there is none.",
+"F266": "Delete stays inside the table box with the table at its left edge and at its end, Name stays at least 160 px at 375 px, and the actions column is always ordered last.",
+"F267": "Delete never scrolls out of view at any width.",
+"F268": "The pinned actions column covers part of the last scrolling column's content.",
 "F27": "the right cue goes, a left cue shows while columns are hidden on the left, and no cue shows once all columns are visible. Falsifier: a cue stays at the end of the scroll range or on a table that fits.",
 "F28": "The cue is not the only way to know",
 "F29": "a table with columns off screen and a keyboard or screen-reader user",
