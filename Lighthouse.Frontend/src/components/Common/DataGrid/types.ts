@@ -8,6 +8,7 @@ import type {
 	DataGridProps as MuiDataGridProps,
 } from "@mui/x-data-grid";
 import type React from "react";
+import type { ColumnFit } from "./columnFit";
 
 /** A row's place in the whole list as sorted and filtered, whichever page it is on. */
 export interface RowInWholeList {
@@ -43,6 +44,11 @@ export interface DataGridColumn<T extends GridValidRowModel = GridValidRowModel>
 	 * value differ, and every consumer here reads one string for the cell, the filter and the export.
 	 */
 	valueOptions?: string[];
+	/**
+	 * How the column behaves when the table is narrower than its columns want. Left out, a flex
+	 * column is text and any other column is content.
+	 */
+	fit?: ColumnFit;
 }
 
 /**

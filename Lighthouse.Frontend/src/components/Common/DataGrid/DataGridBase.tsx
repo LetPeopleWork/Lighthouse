@@ -21,6 +21,7 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import ColumnOrderDialog from "./ColumnOrderDialog";
+import { fitColumn, fitOf, PINNED_ACTIONS_CLASS } from "./columnFit";
 import DataGridToolbar from "./DataGridToolbar";
 import {
 	useColumnOrder,
@@ -28,6 +29,7 @@ import {
 	usePersistedGridState,
 } from "./hooks";
 import { PAGE_SIZE, RowRangeFooter } from "./RowRangeFooter";
+import TruncatedCell from "./TruncatedCell";
 import type {
 	ColumnVisibilityModel,
 	DataGridBaseProps,
@@ -107,6 +109,70 @@ function withNewColumnsWhereDeclared(
 		}
 	}
 	return merged;
+}
+
+/** The pinned actions column stays at the right edge, so it is ordered last whatever order is saved. */
+function withActionsLast<T extends GridValidRowModel>(
+	order: string[],
+	columns: DataGridColumn<T>[],
+): string[] {
+	const actions = new Set(
+		columns
+			.filter((column) => fitOf(column).kind === "actions")
+			.map((column) => column.field),
+	);
+	return [
+		...order.filter((field) => !actions.has(field)),
+		...order.filter((field) => actions.has(field)),
+	];
+}
+
+/** The text a cell holds, for its tooltip; a value that is not plain text gives none. */
+function textOf(value: unknown): string {
+	if (typeof value === "string") return value;
+	if (typeof value === "number" || typeof value === "boolean")
+		return String(value);
+	return "";
+}
+
+const COLUMN_BUFFER_PX = 10_000;
+
+/** Column types the grid draws itself with more than text, so their cells are left to it. */
+const TYPES_DRAWN_BY_THE_GRID = new Set(["boolean", "actions", "custom"]);
+
+function toGridColumn<T extends GridValidRowModel>(
+	column: DataGridColumn<T>,
+	storedWidth: number | undefined,
+): GridColDef<T> {
+	const { renderCell, fit: _fit, ...rest } = column;
+	const fitted = fitColumn(column, storedWidth);
+	const isText = fitOf(column).kind === "text";
+	const drawnByTheGrid =
+		renderCell === undefined && TYPES_DRAWN_BY_THE_GRID.has(column.type ?? "");
+
+	let render: GridColDef<T>["renderCell"];
+	if (isText && !drawnByTheGrid) {
+		render = (params: GridRenderCellParams<T>) => {
+			const shown = textOf(params.formattedValue) || textOf(params.value);
+			return (
+				<TruncatedCell fullText={shown} hasFocus={params.hasFocus}>
+					{renderCell
+						? renderCell({ row: params.row, value: params.value })
+						: shown}
+				</TruncatedCell>
+			);
+		};
+	} else if (renderCell) {
+		render = (params: GridRenderCellParams<T>) =>
+			renderCell({ row: params.row, value: params.value });
+	}
+
+	return {
+		...rest,
+		...fitted,
+		resizable: fitted.resizable ?? rest.resizable,
+		...(render === undefined ? {} : { renderCell: render }),
+	} as GridColDef<T>;
 }
 
 type GridApiRef = ReturnType<typeof useGridApiRef>;
@@ -272,24 +338,14 @@ function DataGridBase<T extends GridValidRowModel>({
 		setColumnOrder,
 	} = useColumnOrder(initialColumnOrder);
 
-	const defaultInitialWidths = columns.reduce<Record<string, number>>(
-		(acc, c) => {
-			// Only include numeric widths for columns that don't use flex, so flex columns remain responsive
-			if (typeof c.width === "number" && c.flex === undefined)
-				acc[c.field] = c.width;
-			return acc;
-		},
-		{},
+	// Only the widths the person set by resizing are held; every other column fits the table.
+	const { columnWidths, setColumnWidth, setAllWidths } = useColumnWidths(
+		persistedState?.columnWidths ?? {},
 	);
-	const {
-		columnWidths,
-		setColumnWidth,
-		setAllWidths,
-		reset: resetColumnWidths,
-	} = useColumnWidths(defaultInitialWidths);
 
 	const [isColumnOrderDialogOpen, setIsColumnOrderDialogOpen] = useState(false);
 	const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const resizedWidthsRef = useRef<Record<string, number>>({});
 
 	// Apply persisted column widths on mount (only override columns that user resized before)
 	useEffect(() => {
@@ -310,46 +366,20 @@ function DataGridBase<T extends GridValidRowModel>({
 	useTableOrderReader(apiRef, checkboxSelection?.tableOrder);
 
 	// Convert DataGridColumn to GridColDef
-	const gridColumns = useMemo(() => {
-		return columns.map((col) => {
-			const { renderCell, ...rest } = col;
-
-			// If custom renderCell is provided, adapt it to MUI's format
-			const persistedWidth = (columnWidths as Record<string, number>)[
-				rest.field
-			];
-			const width = persistedWidth ?? rest.width;
-			if (renderCell) {
-				const colDef: GridColDef<T> = {
-					...rest,
-					width,
-					renderCell: (params: GridRenderCellParams<T>) => {
-						return renderCell({ row: params.row, value: params.value });
-					},
-				};
-				if (persistedWidth !== undefined) {
-					// Remove flex to avoid MUI rebalancing the width for this column after persist
-					(colDef as Partial<GridColDef<T>>).flex = undefined;
-				}
-				return colDef as GridColDef<T>;
-			}
-
-			const colDef: GridColDef<T> = { ...rest, width } as GridColDef<T>;
-			if (persistedWidth !== undefined) {
-				(colDef as Partial<GridColDef<T>>).flex = undefined;
-			}
-			return colDef;
-		});
-	}, [columns, columnWidths]);
+	const gridColumns = useMemo(
+		() =>
+			columns.map((column) => toGridColumn(column, columnWidths[column.field])),
+		[columns, columnWidths],
+	);
 
 	const orderedColumns = useMemo(() => {
 		const byField = new Map(gridColumns.map((c) => [c.field, c]));
 		const declaredOrder = [...byField.keys()];
-		return withNewColumnsWhereDeclared(
-			columnOrder ?? declaredOrder,
-			declaredOrder,
+		return withActionsLast(
+			withNewColumnsWhereDeclared(columnOrder ?? declaredOrder, declaredOrder),
+			columns,
 		).flatMap((field) => byField.get(field) ?? []);
-	}, [gridColumns, columnOrder]);
+	}, [gridColumns, columnOrder, columns]);
 
 	const shownColumnOrder = useMemo(
 		() => orderedColumns.map((c) => c.field),
@@ -366,6 +396,8 @@ function DataGridBase<T extends GridValidRowModel>({
 			sx={{
 				height: "auto",
 				width: "100%",
+				// Lets the table scroll sideways inside its own box instead of widening the page.
+				minWidth: 0,
 			}}
 		>
 			<GridApiContext.Provider value={apiRef}>
@@ -377,9 +409,9 @@ function DataGridBase<T extends GridValidRowModel>({
 					onResetLayout={() => {
 						// Clear persisted state and reset local state
 						clearState();
-						// Reset to our default initial widths (don't re-apply persisted widths)
-						if (setAllWidths) setAllWidths(defaultInitialWidths);
-						resetColumnWidths();
+						// Back to the fitted layout: no column keeps a width the person set
+						setAllWidths({});
+						resizedWidthsRef.current = {};
 						resetColumnOrder();
 						setVisibilityOverrides(undefined);
 					}}
@@ -416,6 +448,9 @@ function DataGridBase<T extends GridValidRowModel>({
 					slots={gridSlots}
 					getRowSpacing={spacingInWholeList}
 					disableColumnResize={false}
+					// Every column is drawn, never virtualised away: a cell that is not drawn cannot stay
+					// pinned at the right edge. The shared tables have few columns and page their rows.
+					columnBufferPx={COLUMN_BUFFER_PX}
 					columnVisibilityModel={columnVisibilityModel}
 					onColumnVisibilityModelChange={(newModel) =>
 						applyVisibility(withUnhideableColumnsShown(newModel, columns))
@@ -464,6 +499,10 @@ function DataGridBase<T extends GridValidRowModel>({
 							if (typeof field === "string" && typeof width === "number") {
 								// update temporary width for UI responsiveness; persist on commit
 								setColumnWidth(field, width);
+								resizedWidthsRef.current = {
+									...resizedWidthsRef.current,
+									[field]: width,
+								};
 							}
 							// Debounce the persisted save so we only write final widths once user stops resizing
 							const delay = 250; // ms
@@ -472,31 +511,13 @@ function DataGridBase<T extends GridValidRowModel>({
 							}
 							resizeTimeoutRef.current = globalThis.setTimeout(() => {
 								try {
-									const api = apiRef.current;
-									let cols: Array<{ field: string; width?: number }> = [];
-									if (api) {
-										try {
-											cols = api.getAllColumns();
-										} catch {
-											try {
-												cols = api.getVisibleColumns();
-											} catch {
-												cols = [];
-											}
-										}
-									}
-									const nextWidths: { [field: string]: number } = {};
-									for (const c of cols) {
-										const f = c.field;
-										const w = c.width;
-										if (typeof w === "number") {
-											nextWidths[f] = w;
-											setColumnWidth(f, w);
-										}
-									}
+									// Storing every column's width would take all of them out of the fit, so
+									// only the columns the person resized are stored.
+									const resized = resizedWidthsRef.current;
+									resizedWidthsRef.current = {};
 									updateState((prev) => ({
 										...prev,
-										columnWidths: nextWidths,
+										columnWidths: { ...prev.columnWidths, ...resized },
 									}));
 								} catch (error) {
 									console.warn(
@@ -530,6 +551,15 @@ function DataGridBase<T extends GridValidRowModel>({
 						},
 						"& .MuiDataGrid-row:hover": {
 							cursor: "pointer",
+						},
+						[`& .${PINNED_ACTIONS_CLASS}`]: {
+							position: "sticky",
+							right: 0,
+							zIndex: 3,
+							backgroundColor: (theme) =>
+								`var(--DataGrid-t-cell-background-pinned, ${theme.palette.background.paper})`,
+							borderLeft: 1,
+							borderLeftColor: "divider",
 						},
 					}}
 					localeText={{

@@ -4,7 +4,7 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "es2021",
     "useDefineForClassFields": true,
-    "lib": ["es2021", "DOM", "DOM.Iterable"],
+    "lib": ["es2021", "ES2022.Array", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,    
     "experimentalDecorators": true,

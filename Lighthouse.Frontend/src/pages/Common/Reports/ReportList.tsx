@@ -170,6 +170,7 @@ const actionsColumn = (
 	width: actions.editor === undefined ? 100 : 150,
 	sortable: false,
 	hideable: false,
+	fit: { kind: "actions" },
 	renderCell: ({ row }) => <RowActions report={row} actions={actions} />,
 });
 
@@ -210,10 +211,14 @@ const NameCell: React.FC<{ readonly report: IReportListItem }> = ({
 	</Box>
 );
 
+const NAME_MIN_WIDTH = 160;
+const OWNER_MIN_WIDTH = 120;
+
 const ownerColumn: DataGridColumn<IReportListItem> = {
 	field: "ownerName",
 	headerName: "Owner",
 	width: 200,
+	fit: { kind: "text", minWidth: OWNER_MIN_WIDTH },
 	renderCell: ({ row }) => <OwnerLink report={row as IReportAcrossOwners} />,
 };
 
@@ -260,12 +265,14 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				headerName: "Name",
 				flex: 1,
 				hideable: false,
+				fit: { kind: "text", minWidth: NAME_MIN_WIDTH },
 				renderCell: ({ row }) => <NameCell report={row} />,
 			},
 			{
 				field: "templateKey",
 				headerName: "Type",
 				width: 200,
+				fit: { kind: "content" },
 				valueGetter: (_value, row) =>
 					reportTypeTitleOf(row.templateKey) ?? "Not supported in this version",
 			},
@@ -274,6 +281,7 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				field: "createdOn",
 				headerName: "Created",
 				width: 160,
+				fit: { kind: "content" },
 				renderCell: ({ row }) =>
 					parseLocalDate(row.createdOn)?.toLocaleDateString(),
 			},
