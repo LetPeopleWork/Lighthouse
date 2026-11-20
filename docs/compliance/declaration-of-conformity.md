@@ -66,7 +66,7 @@ The following standards and specifications have been applied (where applicable):
 |----------|-------|-------|
 | ISO/IEC 27001 | Information security management | Principles applied (not certified) |
 | ISO/IEC 29147 | Vulnerability disclosure | Coordinated disclosure process |
-| SPDX | Software Package Data Exchange | SBOM format |
+| CycloneDX | OWASP CycloneDX | SBOM format used for Lighthouse releases |
 | OWASP | Secure coding practices | Applied in development |
 
 ---

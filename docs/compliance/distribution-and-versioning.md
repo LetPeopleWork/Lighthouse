@@ -63,7 +63,7 @@ vYY.MM.DD.<build>
 
 | Artifact | Version Source |
 |----------|----------------|
-| Git tag | Created automatically on `main` branch merge via `daily-version-action` |
+| Git tag | Generated in CI by `ci_version.yml` (`.github/scripts/generate-version.mjs`) on each `main` build |
 | Desktop artifacts | Embedded from Git tag via MSBuild `/p:Version` |
 | Docker image tag | Same as Git tag (without `v` prefix for file version) |
 | API endpoint | Reports version via `/api/Version` |
@@ -72,7 +72,7 @@ vYY.MM.DD.<build>
 ### Version Workflow
 
 1. Merge to `main` triggers the CI workflow
-2. `ci_tag.yml` creates a new version tag using `fregante/daily-version-action`
+2. `ci_version.yml` generates the version from the date and the build number of the day
 3. Build workflows use the tag as `fileversion` input
 4. Release workflow publishes artifacts with the version tag
 5. Docker images are tagged with both version and `latest`/`dev-latest`
@@ -83,11 +83,15 @@ Each release includes the following artifacts:
 
 | Artifact | Filename Pattern | Platforms |
 |----------|------------------|-----------|
-| Windows (zip) | `Lighthouse-win-x64.zip` | Windows x64 |
-| Linux (zip) | `Lighthouse-linux-x64.zip` | Linux x64 |
-| macOS (dmg) | `Lighthouse-osx.dmg` | macOS (Apple Silicon / arm64) |
-| macOS (app zip) | `Lighthouse-osx.app.zip` | macOS (Apple Silicon / arm64) |
+| Server (Windows) | `Lighthouse-server-win-x64.zip` | Windows x64 |
+| Server (Linux) | `Lighthouse-server-linux-x64.zip` | Linux x64 |
 | Docker | `ghcr.io/letpeoplework/lighthouse:<version>` | linux/amd64, linux/arm64 |
+| Standalone (Windows) | `Lighthouse-standalone-installer.exe`, `Lighthouse-standalone-installer.msi` | Windows x64 |
+| Standalone (macOS) | `Lighthouse-standalone-osx.dmg`, `Lighthouse-standalone-osx.app.zip` | macOS (Apple Silicon / arm64) |
+| Standalone (Linux) | `Lighthouse-standalone.AppImage` | Linux x64 |
+| SBOM | `Lighthouse-SBOM.zip` | All |
+
+The standalone apps also ship `.sig` files and `tauri-update.json` for their built-in updater.
 
 ### Code Signing
 
@@ -98,14 +102,13 @@ Each release includes the following artifacts:
 | Docker | Signed with Cosign (keyless, GitHub OIDC) |
 | Linux | Not signed (no standard mechanism) |
 
-### CRA-Required Attachments (Planned)
+### CRA Attachments
 
-Future releases will include:
-- **SBOM**: Consolidated SPDX SBOM attached to GitHub Release
-- **Compliance reference**: Link to CRA Technical File and Declaration of Conformity
+- **SBOM** (implemented): `Lighthouse-SBOM.zip` with CycloneDX SBOMs for backend and frontend, attached to every GitHub Release (`ci_sbom.yml`)
+- **Compliance reference** (planned): Link to CRA Technical File and Declaration of Conformity
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-12-30  
+**Document Version**: 1.1  
+**Last Updated**: 2026-11-20  
 **Next Review**: 2026-12-30

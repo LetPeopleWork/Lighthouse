@@ -15,9 +15,9 @@ This is the Technical Documentation File for Lighthouse as required by the EU Cy
 |-------|-------|
 | **Product** | Lighthouse |
 | **Manufacturer** | LetPeopleWork GmbH |
-| **Document Version** | 1.0 |
+| **Document Version** | 1.1 |
 | **Created** | 2025-12-30 |
-| **Last Updated** | 2025-12-30 |
+| **Last Updated** | 2026-11-20 |
 | **Retention Period** | 10 years after last distribution |
 
 ---
@@ -63,10 +63,10 @@ Lighthouse is a self-hosted application that provides:
 
 | Platform | Distribution Format |
 |----------|---------------------|
-| Windows x64 | ZIP archive (signed executable) |
-| Linux x64 | ZIP archive |
-| macOS (Apple Silicon / arm64, macOS 11+) | DMG / APP.ZIP (signed and notarized) |
-| Docker | Container image (linux/amd64, linux/arm64) |
+| Windows x64 | Server ZIP archive; standalone installer EXE / MSI (signed) |
+| Linux x64 | Server ZIP archive; standalone AppImage |
+| macOS (Apple Silicon / arm64, macOS 11+) | Standalone DMG / APP.ZIP (signed and notarized) |
+| Docker | Container image (linux/amd64, linux/arm64), signed with Cosign |
 
 ### 1.4 Editions
 
@@ -255,7 +255,7 @@ Lighthouse is self-hosted software. Users accept responsibility for:
 | Token encryption | API tokens encrypted at rest with unique per-installation keys | ✅ Implemented |
 | HTTPS | TLS encryption for all connections | ✅ Implemented |
 | Input validation | API input validation and sanitization | ✅ Implemented |
-| Dependency scanning | Automated vulnerability scanning (Dependabot alerts, OSV Scanner) | ✅ Implemented |
+| Dependency scanning | Dependabot vulnerability alerts; automated dependency updates via Renovate (7-day minimum release age) | ✅ Implemented |
 | Code signing | Signed executables (Windows, macOS) | ✅ Implemented |
 | Container signing | Cosign signatures on Docker images | ✅ Implemented |
 | Code analysis | SonarCloud static analysis | ✅ Implemented |
@@ -423,6 +423,6 @@ See [Declaration of Conformity](./declaration-of-conformity.html) for the EU DoC
 
 **Document Retention**: This technical file and supporting evidence shall be retained for 10 years after the last version of Lighthouse is placed on the market or put into service.
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-12-30  
+**Document Version**: 1.1  
+**Last Updated**: 2026-11-20  
 **Next Review**: 2026-12-30
