@@ -18,7 +18,14 @@ import {
 	useGridApiRef,
 } from "@mui/x-data-grid";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import ColumnOrderDialog from "./ColumnOrderDialog";
 import { fitColumn, fitOf, PINNED_ACTIONS_CLASS } from "./columnFit";
@@ -28,6 +35,7 @@ import {
 	useColumnWidths,
 	usePersistedGridState,
 } from "./hooks";
+import { useHorizontalOverflow } from "./horizontalOverflow";
 import { PAGE_SIZE, RowRangeFooter } from "./RowRangeFooter";
 import TruncatedCell from "./TruncatedCell";
 import type {
@@ -261,6 +269,54 @@ function useRowPicking(picking: RowPicking | undefined) {
 	}, [selectedIds, onSelectionChange]);
 }
 
+const OVERFLOW_DESCRIPTION = {
+	right: "This table scrolls sideways. More columns to the right.",
+	left: "This table scrolls sideways. More columns to the left.",
+	both: "This table scrolls sideways. More columns on both sides.",
+} as const;
+
+const CUE_WIDTH_PX = 14;
+
+const cueSx = (side: "left" | "right") => ({
+	position: "absolute",
+	top: 0,
+	bottom: 0,
+	[side]: 0,
+	width: CUE_WIDTH_PX,
+	pointerEvents: "none",
+	zIndex: 4,
+	background: `linear-gradient(to ${side === "left" ? "right" : "left"}, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0))`,
+});
+
+/**
+ * A focused cell that sits under the pinned actions column, or before the start of the table, is
+ * scrolled into the visible part, so a keyboard user never loses sight of where they are.
+ */
+function scrollFocusedCellIntoView(event: React.FocusEvent<HTMLElement>) {
+	const grid = event.currentTarget;
+	const target = event.target as HTMLElement;
+	// The grid scrolls to a focused cell itself, so this runs after it and has the last word.
+	globalThis.setTimeout(() => scrollCellClearOfPinned(grid, target), 0);
+}
+
+function scrollCellClearOfPinned(grid: HTMLElement, target: HTMLElement) {
+	const cell = target.closest<HTMLElement>('[role="gridcell"]');
+	const scroller = grid.querySelector<HTMLElement>(
+		".MuiDataGrid-virtualScroller",
+	);
+	if (!cell || !scroller) return;
+	const pinned = cell.parentElement?.querySelector<HTMLElement>(
+		'[role="gridcell"][data-field="actions"]',
+	);
+	const place = cell.getBoundingClientRect();
+	if (pinned && pinned !== cell) {
+		const under = place.right - pinned.getBoundingClientRect().left;
+		if (under > 0) scroller.scrollLeft += under;
+	}
+	const before = scroller.getBoundingClientRect().left - place.left;
+	if (before > 0) scroller.scrollLeft -= before;
+}
+
 /**
  * DataGridBase - A reusable data grid component with consistent functionality
  * Built on top of @mui/x-data-grid with additional features:
@@ -300,6 +356,8 @@ function DataGridBase<T extends GridValidRowModel>({
 	const apiRef = useGridApiRef();
 	const spacingInWholeList = useSpacingInWholeList(apiRef, getRowSpacing);
 	const rowPicking = useRowPicking(checkboxSelection);
+	const overflow = useHorizontalOverflow(apiRef);
+	const overflowDescriptionId = useId();
 
 	// Generate localStorage key for this grid's persisted state (visibility, order, widths, sort)
 	const storageKeyForState = `lighthouse:datagrid:${storageKey}:state`;
@@ -401,6 +459,7 @@ function DataGridBase<T extends GridValidRowModel>({
 
 	return (
 		<Box
+			data-overflow={overflow}
 			sx={{
 				height: "auto",
 				width: "100%",
@@ -437,143 +496,172 @@ function DataGridBase<T extends GridValidRowModel>({
 						updateState((prev) => ({ ...prev, columnOrder: order }));
 					}}
 				/>
-				<DataGrid
-					apiRef={apiRef}
-					rows={rows}
-					columns={orderedColumns}
-					getRowId={(row) => row[idField]}
-					loading={loading}
-					initialState={{
-						sorting: {
-							sortModel: initialSortModel,
-						},
-					}}
-					pageSizeOptions={[PAGE_SIZE]}
-					disableRowSelectionOnClick
-					hideFooterSelectedRowCount
-					{...rowPicking}
-					getRowHeight={() => "auto"}
-					slots={gridSlots}
-					getRowSpacing={spacingInWholeList}
-					disableColumnResize={false}
-					// Every column is drawn, never virtualised away: a cell that is not drawn cannot stay
-					// pinned at the right edge. The shared tables have few columns and page their rows.
-					columnBufferPx={COLUMN_BUFFER_PX}
-					columnVisibilityModel={columnVisibilityModel}
-					onColumnVisibilityModelChange={(newModel) =>
-						applyVisibility(withUnhideableColumnsShown(newModel, columns))
-					}
-					onColumnOrderChange={
-						allowColumnReorder
-							? () => {
-									const api = apiRef.current;
-									let orderedFields: string[] = [];
-									if (api) {
-										try {
-											const all = api.getAllColumns();
-											orderedFields = all.map((c) => c.field);
-										} catch (error) {
-											console.warn(
-												"Failed to getAllColumns for column order, falling back to visible columns",
-												error,
-											);
+				<Box sx={{ position: "relative" }} onFocus={scrollFocusedCellIntoView}>
+					{overflow !== "none" && (
+						<Box
+							id={overflowDescriptionId}
+							sx={{
+								position: "absolute",
+								width: 1,
+								height: 1,
+								overflow: "hidden",
+								clip: "rect(0 0 0 0)",
+								whiteSpace: "nowrap",
+							}}
+						>
+							{OVERFLOW_DESCRIPTION[overflow]}
+						</Box>
+					)}
+					{(overflow === "left" || overflow === "both") && (
+						<Box aria-hidden="true" sx={cueSx("left")} />
+					)}
+					{(overflow === "right" || overflow === "both") && (
+						<Box aria-hidden="true" sx={cueSx("right")} />
+					)}
+					<DataGrid
+						slotProps={{
+							main: {
+								"aria-describedby":
+									overflow === "none" ? undefined : overflowDescriptionId,
+							},
+						}}
+						apiRef={apiRef}
+						rows={rows}
+						columns={orderedColumns}
+						getRowId={(row) => row[idField]}
+						loading={loading}
+						initialState={{
+							sorting: {
+								sortModel: initialSortModel,
+							},
+						}}
+						pageSizeOptions={[PAGE_SIZE]}
+						disableRowSelectionOnClick
+						hideFooterSelectedRowCount
+						{...rowPicking}
+						getRowHeight={() => "auto"}
+						slots={gridSlots}
+						getRowSpacing={spacingInWholeList}
+						disableColumnResize={false}
+						// Every column is drawn, never virtualised away: a cell that is not drawn cannot stay
+						// pinned at the right edge. The shared tables have few columns and page their rows.
+						columnBufferPx={COLUMN_BUFFER_PX}
+						columnVisibilityModel={columnVisibilityModel}
+						onColumnVisibilityModelChange={(newModel) =>
+							applyVisibility(withUnhideableColumnsShown(newModel, columns))
+						}
+						onColumnOrderChange={
+							allowColumnReorder
+								? () => {
+										const api = apiRef.current;
+										let orderedFields: string[] = [];
+										if (api) {
 											try {
-												orderedFields = api
-													.getVisibleColumns()
-													.map((c) => c.field);
+												const all = api.getAllColumns();
+												orderedFields = all.map((c) => c.field);
 											} catch (error) {
 												console.warn(
-													"Failed to getVisibleColumns as fallback",
+													"Failed to getAllColumns for column order, falling back to visible columns",
 													error,
 												);
-												orderedFields = columns.map((c) => c.field);
+												try {
+													orderedFields = api
+														.getVisibleColumns()
+														.map((c) => c.field);
+												} catch (error) {
+													console.warn(
+														"Failed to getVisibleColumns as fallback",
+														error,
+													);
+													orderedFields = columns.map((c) => c.field);
+												}
 											}
+										} else {
+											orderedFields = columns.map((c) => c.field);
 										}
-									} else {
-										orderedFields = columns.map((c) => c.field);
+										setColumnOrder(orderedFields);
+										updateState((prev) => ({
+											...prev,
+											columnOrder: orderedFields,
+										}));
 									}
-									setColumnOrder(orderedFields);
-									updateState((prev) => ({
-										...prev,
-										columnOrder: orderedFields,
-									}));
-								}
-							: undefined
-					}
-					onColumnResize={(params: GridColumnResizeParams) => {
-						try {
-							const field = params.colDef?.field;
-							const width = params.width;
-							if (typeof field === "string" && typeof width === "number") {
-								// update temporary width for UI responsiveness; persist on commit
-								setColumnWidth(field, width);
-								resizedWidthsRef.current = {
-									...resizedWidthsRef.current,
-									[field]: width,
-								};
-							}
-							// Debounce the persisted save so we only write final widths once user stops resizing
-							const delay = 250; // ms
-							if (resizeTimeoutRef.current) {
-								globalThis.clearTimeout(resizeTimeoutRef.current);
-							}
-							resizeTimeoutRef.current = globalThis.setTimeout(() => {
-								try {
-									// Storing every column's width would take all of them out of the fit, so
-									// only the columns the person resized are stored.
-									const resized = resizedWidthsRef.current;
-									resizedWidthsRef.current = {};
-									updateState((prev) => ({
-										...prev,
-										columnWidths: { ...prev.columnWidths, ...resized },
-									}));
-								} catch (error) {
-									console.warn(
-										"Failed to persist column widths after resize commit",
-										error,
-									);
-								}
-							}, delay);
-						} catch (error) {
-							console.warn("Failed to handle column resize", error);
+								: undefined
 						}
-					}}
-					onSortModelChange={(model) => {
-						updateState((prev) => ({ ...prev, sortModel: model }));
-						onSortModelChange?.(model);
-					}}
-					sx={{
-						"& .MuiDataGrid-cell": {
-							display: "flex",
-							alignItems: "center",
-							paddingTop: 1,
-							paddingBottom: 1,
-							whiteSpace: "normal",
-							wordWrap: "break-word",
-						},
-						"& .MuiDataGrid-cell:focus": {
-							outline: "none",
-						},
-						"& .MuiDataGrid-row": {
-							maxHeight: "none !important",
-						},
-						"& .MuiDataGrid-row:hover": {
-							cursor: "pointer",
-						},
-						[`& .${PINNED_ACTIONS_CLASS}`]: {
-							position: "sticky",
-							right: 0,
-							zIndex: 3,
-							backgroundColor: (theme) =>
-								`var(--DataGrid-t-cell-background-pinned, ${theme.palette.background.paper})`,
-							borderLeft: 1,
-							borderLeftColor: "divider",
-						},
-					}}
-					localeText={{
-						noRowsLabel: emptyStateMessage,
-					}}
-				/>
+						onColumnResize={(params: GridColumnResizeParams) => {
+							try {
+								const field = params.colDef?.field;
+								const width = params.width;
+								if (typeof field === "string" && typeof width === "number") {
+									// update temporary width for UI responsiveness; persist on commit
+									setColumnWidth(field, width);
+									resizedWidthsRef.current = {
+										...resizedWidthsRef.current,
+										[field]: width,
+									};
+								}
+								// Debounce the persisted save so we only write final widths once user stops resizing
+								const delay = 250; // ms
+								if (resizeTimeoutRef.current) {
+									globalThis.clearTimeout(resizeTimeoutRef.current);
+								}
+								resizeTimeoutRef.current = globalThis.setTimeout(() => {
+									try {
+										// Storing every column's width would take all of them out of the fit, so
+										// only the columns the person resized are stored.
+										const resized = resizedWidthsRef.current;
+										resizedWidthsRef.current = {};
+										updateState((prev) => ({
+											...prev,
+											columnWidths: { ...prev.columnWidths, ...resized },
+										}));
+									} catch (error) {
+										console.warn(
+											"Failed to persist column widths after resize commit",
+											error,
+										);
+									}
+								}, delay);
+							} catch (error) {
+								console.warn("Failed to handle column resize", error);
+							}
+						}}
+						onSortModelChange={(model) => {
+							updateState((prev) => ({ ...prev, sortModel: model }));
+							onSortModelChange?.(model);
+						}}
+						sx={{
+							"& .MuiDataGrid-cell": {
+								display: "flex",
+								alignItems: "center",
+								paddingTop: 1,
+								paddingBottom: 1,
+								whiteSpace: "normal",
+								wordWrap: "break-word",
+							},
+							"& .MuiDataGrid-cell:focus": {
+								outline: "none",
+							},
+							"& .MuiDataGrid-row": {
+								maxHeight: "none !important",
+							},
+							"& .MuiDataGrid-row:hover": {
+								cursor: "pointer",
+							},
+							[`& .${PINNED_ACTIONS_CLASS}`]: {
+								position: "sticky",
+								right: 0,
+								zIndex: 3,
+								backgroundColor: (theme) =>
+									`var(--DataGrid-t-cell-background-pinned, ${theme.palette.background.paper})`,
+								borderLeft: 1,
+								borderLeftColor: "divider",
+							},
+						}}
+						localeText={{
+							noRowsLabel: emptyStateMessage,
+						}}
+					/>
+				</Box>
 			</GridApiContext.Provider>
 		</Box>
 	);
