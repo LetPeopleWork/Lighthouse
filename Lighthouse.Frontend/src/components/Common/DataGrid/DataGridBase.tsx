@@ -140,19 +140,19 @@ const COLUMN_BUFFER_PX = 10_000;
 /** Column types the grid draws itself with more than text, so their cells are left to it. */
 const TYPES_DRAWN_BY_THE_GRID = new Set(["boolean", "actions", "custom"]);
 
-function toGridColumn<T extends GridValidRowModel>(
+/**
+ * How the grid draws a column's cells: a text column cuts long text with a tooltip, whether the
+ * column draws its cells or shows the plain value; any other column draws its own cells or leaves
+ * them to the grid.
+ */
+function cellRendererOf<T extends GridValidRowModel>(
 	column: DataGridColumn<T>,
-	storedWidth: number | undefined,
-): GridColDef<T> {
-	const { renderCell, fit: _fit, ...rest } = column;
-	const fitted = fitColumn(column, storedWidth);
-	const isText = fitOf(column).kind === "text";
+): GridColDef<T>["renderCell"] {
+	const { renderCell } = column;
 	const drawnByTheGrid =
 		renderCell === undefined && TYPES_DRAWN_BY_THE_GRID.has(column.type ?? "");
-
-	let render: GridColDef<T>["renderCell"];
-	if (isText && !drawnByTheGrid) {
-		render = (params: GridRenderCellParams<T>) => {
+	if (fitOf(column).kind === "text" && !drawnByTheGrid) {
+		return (params: GridRenderCellParams<T>) => {
 			const shown = textOf(params.formattedValue) || textOf(params.value);
 			return (
 				<TruncatedCell fullText={shown} hasFocus={params.hasFocus}>
@@ -162,10 +162,19 @@ function toGridColumn<T extends GridValidRowModel>(
 				</TruncatedCell>
 			);
 		};
-	} else if (renderCell) {
-		render = (params: GridRenderCellParams<T>) =>
-			renderCell({ row: params.row, value: params.value });
 	}
+	if (renderCell === undefined) return undefined;
+	return (params: GridRenderCellParams<T>) =>
+		renderCell({ row: params.row, value: params.value });
+}
+
+function toGridColumn<T extends GridValidRowModel>(
+	column: DataGridColumn<T>,
+	storedWidth: number | undefined,
+): GridColDef<T> {
+	const { renderCell: _renderCell, fit: _fit, ...rest } = column;
+	const fitted = fitColumn(column, storedWidth);
+	const render = cellRendererOf(column);
 
 	return {
 		...rest,
@@ -365,7 +374,6 @@ function DataGridBase<T extends GridValidRowModel>({
 	useMovingOffAPageThatIsGone(apiRef);
 	useTableOrderReader(apiRef, checkboxSelection?.tableOrder);
 
-	// Convert DataGridColumn to GridColDef
 	const gridColumns = useMemo(
 		() =>
 			columns.map((column) => toGridColumn(column, columnWidths[column.field])),

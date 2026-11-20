@@ -10,6 +10,14 @@ interface TruncatedCellProps {
 	readonly children: React.ReactNode;
 }
 
+/** Keeps text on one line and ends it with an ellipsis where it runs out of room. */
+const ONE_LINE_WITH_ELLIPSIS = {
+	minWidth: 0,
+	overflow: "hidden",
+	textOverflow: "ellipsis",
+	whiteSpace: "nowrap",
+} as const;
+
 /** True when the cell or anything drawn inside it is wider than the room it has. */
 const isCut = (cell: HTMLElement | null): boolean =>
 	cell !== null &&
@@ -48,16 +56,8 @@ const TruncatedCell: React.FC<TruncatedCellProps> = ({
 			onBlur={() => setFocusedWithin(false)}
 			sx={{
 				flex: "1 1 auto",
-				minWidth: 0,
-				overflow: "hidden",
-				textOverflow: "ellipsis",
-				whiteSpace: "nowrap",
-				"& *": {
-					minWidth: 0,
-					overflow: "hidden",
-					textOverflow: "ellipsis",
-					whiteSpace: "nowrap",
-				},
+				...ONE_LINE_WITH_ELLIPSIS,
+				"& *": ONE_LINE_WITH_ELLIPSIS,
 			}}
 		>
 			{children}

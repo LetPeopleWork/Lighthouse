@@ -12,7 +12,7 @@ export type ColumnFit =
 	| { kind: "content" }
 	| { kind: "actions" };
 
-export type ColumnFitKind = ColumnFit["kind"];
+type ColumnFitKind = ColumnFit["kind"];
 
 /** The narrowest a text column gets when it declares no minimum of its own. */
 export const DEFAULT_TEXT_MIN_WIDTH = 120;
