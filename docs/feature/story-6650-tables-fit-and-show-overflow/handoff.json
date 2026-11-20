@@ -2,7 +2,8 @@
 "counters": {
 "C": 1,
 "D": 13,
-"F": 236,
+"E": 12,
+"F": 248,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -871,6 +872,94 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F237"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F238"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F239"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F240"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F241"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F242"
+},
+{
+"id": "E7",
+"promises": [
+"P7"
+],
+"text": "F243"
+},
+{
+"id": "E8",
+"promises": [
+"P8"
+],
+"text": "F244"
+},
+{
+"id": "E9",
+"promises": [
+"P9"
+],
+"text": "F245"
+},
+{
+"id": "E10",
+"promises": [
+"P10"
+],
+"text": "F246"
+},
+{
+"id": "E11",
+"promises": [
+"P11"
+],
+"text": "F247"
+},
+{
+"id": "E12",
+"promises": [
+"P12"
+],
+"text": "F248"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6650, split out of Story #6625. Feedback from a community user: he could not find Delete on the report list; it sits in the last column and scrolls out of view. The cause is in the shared DataGridBase, used by the report list, the Overview tables (DataOverviewTable) and other tables (FeatureGrid, FeatureListDataGrid, WorkItemsDialog, ArchivedFeatureGrid, ConnectionsSettings, ThirdPartyPackagesSection, RefinementGrid). The maintainer sees the same problem on the Overview. Maintainer decision (2026-11-15): both. 1) Columns fit the available width better: they shrink, and long names truncate with a tooltip. 2) When columns still do not fit, a visible cue (shadow or fade on the edge) shows there is more to scroll to.",
 "F10": "the person looks at the row and hovers or focuses the name",
@@ -1025,7 +1114,19 @@
 "F234": "The table keeps its DataGridBase use and its columns; only the fit marks of its columns are added where the derived fit is wrong.",
 "F235": "column fit marks only",
 "F236": "Only column definitions change per table; nothing to move first.",
+"F237": "Any table on the shared grid lets me find every column it offers, including row actions like Delete: columns shrink to fit, and when they cannot fit, the table visibly shows more columns wait off screen.",
+"F238": "Opening a Team's Reports tab at desktop width with several reports shows the Name column shrinking and the actions column with Delete inside the visible table, with no horizontal scrolling needed.",
+"F239": "A report name longer than its column ends with an ellipsis, and hovering or focusing it shows a tooltip with the full name; the row's other cells stay visible and the row does not wrap.",
 "F24": "The cue follows the scroll position and disappears when nothing is hidden",
+"F240": "When columns do not all fit, number, date and row-action columns keep full width (no ellipsis on numbers or dates, no clipped action buttons); only text columns shrink below their preferred width.",
+"F241": "A column width I set by resizing is reused as set when I reopen the grid, with other columns fitting around it; Reset in the toolbar clears my stored widths and returns to the fitted layout.",
+"F242": "On a table whose columns do not fit (for example a narrow window), scrolled to the left, a shadow or fade on the right edge shows more columns can be scrolled to; columns are never cut off silently.",
+"F243": "The edge cue follows scroll position: at the scroll end the right cue goes and a left cue shows while columns are hidden on the left; once everything fits (window widened) no cue shows, and no cue sticks at the end of the range or on a fitting table.",
+"F244": "A keyboard user moving through a grid with off-screen columns has focus scroll those cells into view and can reach the actions column; assistive technology is told the table scrolls horizontally with more columns than shown, so overflow is not marked by a visual effect alone.",
+"F245": "The Overview table with columns that do not fit fits and truncates like the report list and shows an edge cue when columns still overflow; its last column is not hidden without a cue.",
+"F246": "At a narrow width, the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables each fit where they can and show the cue where they cannot, consistent with the report list, and none scrolls its last column out of view without a cue.",
+"F247": "At about 375 px width, a table that cannot fit shows text columns at minimum width, scrolls horizontally inside the table (not the page), shows the cue, and keeps the actions reachable by scrolling.",
+"F248": "With overflowing columns, scrolling the table sideways keeps the actions column (Delete, Edit and so on) pinned at the right edge and always visible, while fit and edge cue still apply to other columns; the pinned column neither hides the cue nor covers another column's content.",
 "F25": "a table with a cue on the right edge",
 "F26": "the person scrolls to the end, or the window is widened until everything fits",
 "F27": "the right cue goes, a left cue shows while columns are hidden on the left, and no cue shows once all columns are visible. Falsifier: a cue stays at the end of the scroll range or on a table that fits.",

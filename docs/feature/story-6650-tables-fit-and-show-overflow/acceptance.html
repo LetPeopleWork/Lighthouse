@@ -155,7 +155,115 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Any table on the shared grid lets me find every column it offers, including row actions like Delete: columns shrink to fit, and when they cannot fit, the table visibly shows more columns wait off screen.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>Opening a Team&#x27;s Reports tab at desktop width with several reports shows the Name column shrinking and the actions column with Delete inside the visible table, with no horizontal scrolling needed.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>A report name longer than its column ends with an ellipsis, and hovering or focusing it shows a tooltip with the full name; the row&#x27;s other cells stay visible and the row does not wrap.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>When columns do not all fit, number, date and row-action columns keep full width (no ellipsis on numbers or dates, no clipped action buttons); only text columns shrink below their preferred width.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>A column width I set by resizing is reused as set when I reopen the grid, with other columns fitting around it; Reset in the toolbar clears my stored widths and returns to the fitted layout.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>On a table whose columns do not fit (for example a narrow window), scrolled to the left, a shadow or fade on the right edge shows more columns can be scrolled to; columns are never cut off silently.
+</code></pre>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P7</p>
+
+<pre><code>The edge cue follows scroll position: at the scroll end the right cue goes and a left cue shows while columns are hidden on the left; once everything fits (window widened) no cue shows, and no cue sticks at the end of the range or on a fitting table.
+</code></pre>
+
+<h4>E8</h4>
+
+<h5>Promises</h5>
+
+<p>P8</p>
+
+<pre><code>A keyboard user moving through a grid with off-screen columns has focus scroll those cells into view and can reach the actions column; assistive technology is told the table scrolls horizontally with more columns than shown, so overflow is not marked by a visual effect alone.
+</code></pre>
+
+<h4>E9</h4>
+
+<h5>Promises</h5>
+
+<p>P9</p>
+
+<pre><code>The Overview table with columns that do not fit fits and truncates like the report list and shows an edge cue when columns still overflow; its last column is not hidden without a cue.
+</code></pre>
+
+<h4>E10</h4>
+
+<h5>Promises</h5>
+
+<p>P10</p>
+
+<pre><code>At a narrow width, the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables each fit where they can and show the cue where they cannot, consistent with the report list, and none scrolls its last column out of view without a cue.
+</code></pre>
+
+<h4>E11</h4>
+
+<h5>Promises</h5>
+
+<p>P11</p>
+
+<pre><code>At about 375 px width, a table that cannot fit shows text columns at minimum width, scrolls horizontally inside the table (not the page), shows the cue, and keeps the actions reachable by scrolling.
+</code></pre>
+
+<h4>E12</h4>
+
+<h5>Promises</h5>
+
+<p>P12</p>
+
+<pre><code>With overflowing columns, scrolling the table sideways keeps the actions column (Delete, Edit and so on) pinned at the right edge and always visible, while fit and edge cue still apply to other columns; the pinned column neither hides the cue nor covers another column&#x27;s content.
+</code></pre>
 
 <h2>Charter</h2>
 
