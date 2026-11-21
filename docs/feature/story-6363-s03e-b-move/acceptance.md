@@ -2,7 +2,99 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Look up the licence service, verifier and their interfaces in the compiled backend
+```
+
+```text
+All four live in the Licensing Application namespace and none is left in the old Services Licensing namespaces; a listed name with no type fails
+```
+
+```text
+Licensing application code sits in its own module folder, so its boundary can be ruled by namespace
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingLayoutArchUnitTest\.cs\:\:TheLicenseServicesAndTheirInterfaces\_LiveInTheLicensingApplication\_AndNoneIsLeftUnderServices
+
+```text
+A copy left in the old namespace is rejected; a vacuous list is rejected by the missing-name check
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P5
+
+```text
+Look up the licence guard attribute in the compiled backend
+```
+
+```text
+It lives in the Licensing Http adapters namespace and not under the old Services Licensing namespace
+```
+
+```text
+The licence gate sits in the module's adapter layer
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingLayoutArchUnitTest\.cs\:\:TheLicenseGuard\_LivesInTheLicensingHttpAdapters\_AndIsNotLeftUnderServices
+
+```text
+The guard placed in the Application namespace instead of the Http adapters is rejected
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P6
+
+```text
+Read the embedded resource names of the compiled backend
+```
+
+```text
+Exactly one resource ends with public_key.pem and it is named Lighthouse.Backend.Modules.Licensing.Application.public_key.pem
+```
+
+```text
+Licence signatures keep verifying because the key travels with its verifier
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingLayoutArchUnitTest\.cs\:\:TheLicencePublicKey\_IsEmbeddedOnce\_BesideItsVerifier
+
+```text
+Key left in the old folder or embedded twice is rejected; a moved but unreadable key is caught by the existing verifier tests
+```
+
+###### Obligations
+
+
 
 ## Expectations
 

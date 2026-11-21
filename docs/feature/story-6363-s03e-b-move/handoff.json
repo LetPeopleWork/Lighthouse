@@ -1,9 +1,66 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F108",
+"L1/F109",
+"T1"
+],
+"still_passes_if": "F271",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingLayoutArchUnitTest.cs::TheLicenseServicesAndTheirInterfaces_LiveInTheLicensingApplication_AndNoneIsLeftUnderServices"
+},
+"expected": "F269",
+"stimulus": "F268",
+"user_result": "F270"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F108",
+"L1/F109",
+"T1"
+],
+"still_passes_if": "F275",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingLayoutArchUnitTest.cs::TheLicenseGuard_LivesInTheLicensingHttpAdapters_AndIsNotLeftUnderServices"
+},
+"expected": "F273",
+"stimulus": "F272",
+"user_result": "F274"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F110",
+"T1"
+],
+"still_passes_if": "F279",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingLayoutArchUnitTest.cs::TheLicencePublicKey_IsEmbeddedOnce_BesideItsVerifier"
+},
+"expected": "F277",
+"stimulus": "F276",
+"user_result": "F278"
+}
+]
+},
 "counters": {
 "C": 1,
 "D": 8,
 "E": 6,
-"F": 267,
+"F": 279,
 "K": 3,
 "L": 4,
 "P": 6,
@@ -5910,7 +5967,19 @@
 "F265": "The licensing test data and licensing integration test sit under the Licensing tests folder, and every build, CI and configuration reference to them points there, so licensing tests and the live authentication runs still find the licence files.",
 "F266": "The unit tests of moved types sit in the matching tests module folder, and the architecture rules and lists name moved types at their new place and still detect a mismatch in either direction.",
 "F267": "A user or API client sees no change: auth mode, session, my-summary, RBAC status, system-wide rules, everyone-signed-in, API keys and licence status (before and after an import) answer as before, the database model is unchanged, the live authentication, RBAC and proxy-auth journeys pass and all existing tests stay green.",
+"F268": "Look up the licence service, verifier and their interfaces in the compiled backend",
+"F269": "All four live in the Licensing Application namespace and none is left in the old Services Licensing namespaces; a listed name with no type fails",
 "F27": "Tests move with production (D-9 as amended by the maintainer on 2026-11-17): each slice moves the unit tests of its moved types with git mv to Lighthouse.Backend.Tests/Modules/<Access or Licensing>/<same layer>, namespace equals folder. S1: LicenseServiceTest and LicenseVerifierTest to Licensing/Application, LicenseGuardAttributeTest to Licensing/Adapters/Http. S2: ApiKeyPrincipalFactoryTest and Models/Authorization/EffectiveAccessTest to Access/Domain; ApiKeyServiceTest, AuthConfigurationValidatorTest, AuthModeResolverTest, CurrentUserProfileServiceTest, EmbedSessionTokenServiceTest, OidcGroupSnapshotWriterTest, RbacAdministrationServiceTest and CreateRightsAcceptanceTest to Access/Application. S3: ApiKeyAuthenticationHandlerTest, BlockedModeFilterTest, SmartAuthSchemeSelectorTest and RbacGuardAttributeTest to Access/Adapters/Http. PermissionRuleTest stays. S4 moves TestLicenseData, invalid_license.json, valid_expired_license.json and LicensingIntegrationTest to Tests/Modules/Licensing. None of the moved unit tests starts a host; the improve-the-tests rule is waived for move-only and using-only edits; the HostUsersStillToMove line of LicensingIntegrationTest follows its new full name.",
+"F270": "Licensing application code sits in its own module folder, so its boundary can be ruled by namespace",
+"F271": "A copy left in the old namespace is rejected; a vacuous list is rejected by the missing-name check",
+"F272": "Look up the licence guard attribute in the compiled backend",
+"F273": "It lives in the Licensing Http adapters namespace and not under the old Services Licensing namespace",
+"F274": "The licence gate sits in the module's adapter layer",
+"F275": "The guard placed in the Application namespace instead of the Http adapters is rejected",
+"F276": "Read the embedded resource names of the compiled backend",
+"F277": "Exactly one resource ends with public_key.pem and it is named Lighthouse.Backend.Modules.Licensing.Application.public_key.pem",
+"F278": "Licence signatures keep verifying because the key travels with its verifier",
+"F279": "Key left in the old folder or embedded twice is rejected; a moved but unreadable key is caught by the existing verifier tests",
 "F28": "Rule lists follow the move and are never loosened (P5): full-name strings, typeof and global:: references to a moved type in ForecastingModuleBoundariesArchUnitTest, WorkItemsModuleBoundariesArchUnitTest, TrackerIntegrationModuleBoundariesArchUnitTest, PromisesModuleBoundariesArchUnitTest, AccessTablesSingleReaderArchUnitTest, EveryActionDeclaresItsAccessArchitectureTest, ReportsModuleArchUnitTest, RefinementModuleArchUnitTest and TestHostUseGuardTest.HostUsersStillToMove are rewritten in the slice that moves the type and stay compared both ways. The old-namespace alternatives feature A widened (RbacIdentityPattern and the neighbour patterns) keep both alternatives until feature C. AccessAndLicensingMembership and AccessAndLicensingRulesSeeTheModulesArchUnitTest are namespace-agnostic or declare their own fixture namespaces and stay unedited. One compile-forced exception: AccessAndLicensingMembershipArchUnitTest names IRbacAdministrationService by its old full name in a made-up Domain fixture (line 695) and in an expected failure text (line 270); S2 rewrites those two full names to Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService and nothing else in that file.",
 "F29": "Oracles (one new file per slice, D-12): S1-S3 are IL architecture tests over the compiled Lighthouse.Backend assembly through ModuleRules.TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary, reading the type names from AccessAndLicensingMembership so a list name with no type fails (never vacuous), modelled on PromisesLayoutArchUnitTest and ForecastingDomainLayoutArchUnitTest; nested types are compared at top level. The preservation pins (IRbacAdministrationService public members in S2; RbacGuardAttribute constructors and public members, the AttributeUsage of RbacGuardAttribute, AccessMarkerAttribute, SignedInOnlyAttribute and CheckedInHandlerAttribute, the guarded-action count and the development log key in S3) are GREEN before the move and stay GREEN; the layout part is the RED. S4 is a placement test over the test assembly, its output folder and the repository files that name the licence fixture paths. Repository files are read from the folder holding Lighthouse.sln, found by walking up from the test assembly directory. No oracle starts a host.",
 "F3": "Every Licensing type measured in feature A lives under Modules/Licensing in its designed layer (Application, Adapters/Http), namespace equal to folder; the licence public key is embedded from the new folder beside its verifier, and none of these types is left in its old namespace.",
