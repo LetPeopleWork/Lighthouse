@@ -96,6 +96,281 @@ Key left in the old folder or embedded twice is rejected; a moved but unreadable
 
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Look up each Access Domain name and each shared Models type Access takes with it in the compiled backend, and read its namespace
+```
+
+```text
+All eight live in the Access module's Domain namespace; none is left in the old Services Auth or Authorization folders or in Models Auth or Authorization; a list name that matches no type fails and names itself
+```
+
+```text
+A maintainer finds the Access rules and the values they work on in the Access module's Domain, so the module boundary can be ruled by namespace
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessApplicationLayoutArchUnitTest\.cs\:\:TheAccessRulesAndTheValuesTheyWorkOn\_LiveInTheAccessDomain\_AndNoneIsLeftUnderServicesOrModels
+
+```text
+A type moved into the right namespace while its file stays in the old folder; the folder is checked by review of the git mv, not by this namespace read
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Look up each of the sixteen Access services and interfaces in the compiled backend, and read its namespace
+```
+
+```text
+All sixteen live in the Access module's Application namespace, each interface beside its service; none is left in the old Services Auth or Authorization folders
+```
+
+```text
+A maintainer finds every Access service and its interface in the Access module's Application
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessApplicationLayoutArchUnitTest\.cs\:\:TheAccessServicesAndTheirInterfaces\_LiveInTheAccessApplication\_AndNoneIsLeftUnderServices
+
+```text
+A service whose namespace line moved while its file stayed in the old folder; the folder is checked by review of the git mv, not by this namespace read
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Read every type reference made by the types in the Access module's Domain in the compiled backend
+```
+
+```text
+They reach only their own Domain, the shared Models and the base library; a Domain holding no type fails instead of passing
+```
+
+```text
+The Access rules can be checked by handing them values, because nothing they call can read a database, a setting or the web request
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessApplicationLayoutArchUnitTest\.cs\:\:TheAccessDomain\_ReachesOnlyTheSharedKernelAndTheBaseLibrary
+
+```text
+A Domain type reaching a Models type that itself reads the database; the kernel is trusted as a whole by this rule
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the same Access Domain rule over a made-up Access Domain type that takes the API-key repository, beside a twin that uses only a Models role, a sibling and the base library
+```
+
+```text
+Exactly the type that takes the repository is reported, the failure names it and the repository, and the twin is examined but not reported
+```
+
+```text
+A maintainer who makes an Access rule read a repository is stopped with the type and the repository named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessApplicationLayoutArchUnitTest\.cs\:\:AnAccessDomainTypeThatReadsARepository\_IsReported\_AndItsTwinReachingOnlyTheKernelIsNot
+
+```text
+A rule that reports any non-kernel reference but names the wrong target in its message, as long as the message still contains the repository's full name
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+P6
+
+```text
+Read the public members of the one RBAC administration service interface in the compiled backend, each as name, return type and parameter types
+```
+
+```text
+Exactly the 44 members fixed from the compiled interface before the move, compared both ways; a second or missing interface of that name fails
+```
+
+```text
+Every controller and test double calls the same RBAC administration members after the move as before it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessApplicationLayoutArchUnitTest\.cs\:\:TheRbacAdministrationService\_KeepsEveryPublicMember\_ExactlyAsBeforeTheMove
+
+```text
+A changed default value of an optional parameter, or a renamed parameter, with names, return and parameter types unchanged
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Compare a made-up interface that kept one member, gained one, lost one and changed one member's return type with its list from before
+```
+
+```text
+The member comparison fails naming the added member, the lost member, and the re-typed member with both its old and its new type, and does not name the kept member
+```
+
+```text
+A maintainer who changes the RBAC administration surface during a move is stopped with the changed member named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessApplicationLayoutArchUnitTest\.cs\:\:AnInterfaceWithAMemberAddedRemovedAndRetyped\_FailsTheMemberPin\_NamingEachChange
+
+```text
+A comparison that also flagged a reordered member list; the comparison is by set, so order is free
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P5
+
+```text
+Run the existing architecture rules whose lists name a moved Access type by its full name, after the move
+```
+
+```text
+Each list names the moved type in its new namespace and is still compared both ways, so a stale old name fails as no longer offending and a new edge fails as unlisted
+```
+
+```text
+The module boundary rules keep guarding the Access types after they move, none quietly loosened
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture \(existing both\-ways module boundary\, access\-table\, every\-action\-declares\-access and test\-host lists\)\, run by the declared full filtered gate
+
+```text
+A list entry deleted together with the edge it allowed, if the edge itself also disappeared; both-ways comparison accepts that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Look at where the unit tests of the moved Access types sit after the move
+```
+
+```text
+Each moved unit test sits under the test project's Modules Access folder of its type's layer, namespace equal to folder
+```
+
+```text
+A maintainer finds the tests of an Access type beside its layer in the test project
+```
+
+##### Disposition
+
+NotTested
+
+```text
+No placement rule for unit tests exists yet; the design puts that rule in the later feature that adds the Access and Licensing module rules, and in this slice the git mv of each test file is checked in review
+```
+
+feature C of story 6363 \(module rules and unit\-test placement rule\)\; slice reviewer for this slice
+
+##### Covers
+
+P6
+
+```text
+Run the whole existing backend suite, live connectors left out, after the move
+```
+
+```text
+Every existing test stays green, edited only in usings, full-name strings and moves; the composition root registers the same services with the same lifetimes in the same order
+```
+
+```text
+Nothing a user, an API client, a tracker or the database sees changes: sign-in, RBAC answers, API keys and licence status behave as before
+```
+
+##### Disposition
+
+Tested
+
+dotnet test Lighthouse\.Backend with the declared live\-connector exclusion filter \(existing suite\)
+
+```text
+A behaviour change in a path no existing test covers; the move is checked to be namespace-only by review of the diff
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

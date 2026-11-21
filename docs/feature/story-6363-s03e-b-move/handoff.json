@@ -54,13 +54,170 @@
 "stimulus": "F276",
 "user_result": "F278"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F191",
+"L2/F109",
+"L2",
+"T2"
+],
+"still_passes_if": "F283",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs::TheAccessRulesAndTheValuesTheyWorkOn_LiveInTheAccessDomain_AndNoneIsLeftUnderServicesOrModels"
+},
+"expected": "F281",
+"stimulus": "F280",
+"user_result": "F282"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F191",
+"L2/F109",
+"L2",
+"T2"
+],
+"still_passes_if": "F287",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs::TheAccessServicesAndTheirInterfaces_LiveInTheAccessApplication_AndNoneIsLeftUnderServices"
+},
+"expected": "F285",
+"stimulus": "F284",
+"user_result": "F286"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"T2"
+],
+"still_passes_if": "F291",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs::TheAccessDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary"
+},
+"expected": "F289",
+"stimulus": "F288",
+"user_result": "F290"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F192",
+"L2",
+"T2"
+],
+"still_passes_if": "F295",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs::AnAccessDomainTypeThatReadsARepository_IsReported_AndItsTwinReachingOnlyTheKernelIsNot"
+},
+"expected": "F293",
+"stimulus": "F292",
+"user_result": "F294"
+},
+{
+"covers": [
+"P2",
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F193",
+"L2",
+"T2"
+],
+"still_passes_if": "F299",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs::TheRbacAdministrationService_KeepsEveryPublicMember_ExactlyAsBeforeTheMove"
+},
+"expected": "F297",
+"stimulus": "F296",
+"user_result": "F298"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F193",
+"L2",
+"T2"
+],
+"still_passes_if": "F303",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessApplicationLayoutArchUnitTest.cs::AnInterfaceWithAMemberAddedRemovedAndRetyped_FailsTheMemberPin_NamingEachChange"
+},
+"expected": "F301",
+"stimulus": "F300",
+"user_result": "F302"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F307",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture (existing both-ways module boundary, access-table, every-action-declares-access and test-host lists), run by the declared full filtered gate"
+},
+"expected": "F305",
+"stimulus": "F304",
+"user_result": "F306"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "feature C of story 6363 (module rules and unit-test placement rule); slice reviewer for this slice",
+"reason": "F311"
+},
+"expected": "F309",
+"stimulus": "F308",
+"user_result": "F310"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F315",
+"test": "dotnet test Lighthouse.Backend with the declared live-connector exclusion filter (existing suite)"
+},
+"expected": "F313",
+"stimulus": "F312",
+"user_result": "F314"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 8,
 "E": 6,
-"F": 279,
+"F": 315,
 "K": 3,
 "L": 4,
 "P": 6,
@@ -5981,10 +6138,46 @@
 "F278": "Licence signatures keep verifying because the key travels with its verifier",
 "F279": "Key left in the old folder or embedded twice is rejected; a moved but unreadable key is caught by the existing verifier tests",
 "F28": "Rule lists follow the move and are never loosened (P5): full-name strings, typeof and global:: references to a moved type in ForecastingModuleBoundariesArchUnitTest, WorkItemsModuleBoundariesArchUnitTest, TrackerIntegrationModuleBoundariesArchUnitTest, PromisesModuleBoundariesArchUnitTest, AccessTablesSingleReaderArchUnitTest, EveryActionDeclaresItsAccessArchitectureTest, ReportsModuleArchUnitTest, RefinementModuleArchUnitTest and TestHostUseGuardTest.HostUsersStillToMove are rewritten in the slice that moves the type and stay compared both ways. The old-namespace alternatives feature A widened (RbacIdentityPattern and the neighbour patterns) keep both alternatives until feature C. AccessAndLicensingMembership and AccessAndLicensingRulesSeeTheModulesArchUnitTest are namespace-agnostic or declare their own fixture namespaces and stay unedited. One compile-forced exception: AccessAndLicensingMembershipArchUnitTest names IRbacAdministrationService by its old full name in a made-up Domain fixture (line 695) and in an expected failure text (line 270); S2 rewrites those two full names to Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService and nothing else in that file.",
+"F280": "Look up each Access Domain name and each shared Models type Access takes with it in the compiled backend, and read its namespace",
+"F281": "All eight live in the Access module's Domain namespace; none is left in the old Services Auth or Authorization folders or in Models Auth or Authorization; a list name that matches no type fails and names itself",
+"F282": "A maintainer finds the Access rules and the values they work on in the Access module's Domain, so the module boundary can be ruled by namespace",
+"F283": "A type moved into the right namespace while its file stays in the old folder; the folder is checked by review of the git mv, not by this namespace read",
+"F284": "Look up each of the sixteen Access services and interfaces in the compiled backend, and read its namespace",
+"F285": "All sixteen live in the Access module's Application namespace, each interface beside its service; none is left in the old Services Auth or Authorization folders",
+"F286": "A maintainer finds every Access service and its interface in the Access module's Application",
+"F287": "A service whose namespace line moved while its file stayed in the old folder; the folder is checked by review of the git mv, not by this namespace read",
+"F288": "Read every type reference made by the types in the Access module's Domain in the compiled backend",
+"F289": "They reach only their own Domain, the shared Models and the base library; a Domain holding no type fails instead of passing",
 "F29": "Oracles (one new file per slice, D-12): S1-S3 are IL architecture tests over the compiled Lighthouse.Backend assembly through ModuleRules.TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary, reading the type names from AccessAndLicensingMembership so a list name with no type fails (never vacuous), modelled on PromisesLayoutArchUnitTest and ForecastingDomainLayoutArchUnitTest; nested types are compared at top level. The preservation pins (IRbacAdministrationService public members in S2; RbacGuardAttribute constructors and public members, the AttributeUsage of RbacGuardAttribute, AccessMarkerAttribute, SignedInOnlyAttribute and CheckedInHandlerAttribute, the guarded-action count and the development log key in S3) are GREEN before the move and stay GREEN; the layout part is the RED. S4 is a placement test over the test assembly, its output folder and the repository files that name the licence fixture paths. Repository files are read from the folder holding Lighthouse.sln, found by walking up from the test assembly directory. No oracle starts a host.",
+"F290": "The Access rules can be checked by handing them values, because nothing they call can read a database, a setting or the web request",
+"F291": "A Domain type reaching a Models type that itself reads the database; the kernel is trusted as a whole by this rule",
+"F292": "Run the same Access Domain rule over a made-up Access Domain type that takes the API-key repository, beside a twin that uses only a Models role, a sibling and the base library",
+"F293": "Exactly the type that takes the repository is reported, the failure names it and the repository, and the twin is examined but not reported",
+"F294": "A maintainer who makes an Access rule read a repository is stopped with the type and the repository named",
+"F295": "A rule that reports any non-kernel reference but names the wrong target in its message, as long as the message still contains the repository's full name",
+"F296": "Read the public members of the one RBAC administration service interface in the compiled backend, each as name, return type and parameter types",
+"F297": "Exactly the 44 members fixed from the compiled interface before the move, compared both ways; a second or missing interface of that name fails",
+"F298": "Every controller and test double calls the same RBAC administration members after the move as before it",
+"F299": "A changed default value of an optional parameter, or a renamed parameter, with names, return and parameter types unchanged",
 "F3": "Every Licensing type measured in feature A lives under Modules/Licensing in its designed layer (Application, Adapters/Http), namespace equal to folder; the licence public key is embedded from the new folder beside its verifier, and none of these types is left in its old namespace.",
 "F30": "Claim-to-checker: namespace placement, Domain reach, member lists, attribute usage, the guarded-action count and fixture paths are finite facts read from the compiled IL, the test assembly and repository files, checked by the four oracles (Finite laws) and by the EXAMINE probes architecture-rules Access, Licensing and Rbac, ef-model-unchanged, access-answers-compare, ci-auth-suites-show, test-selection-show, ci-live-suites-show and backend-tests. No Quint, TLA+ or Agda model is selected: no state machine, ordering, concurrency, recovery or proof obligation changes (no handler, queue, schedule or registration order moves), and a model would restate the namespace map. Liveness is not applicable: there is no progress property. Type strength: native C# namespaces, no new types; a misplaced type is representable and is excluded by the IL rules, not by construction.",
+"F300": "Compare a made-up interface that kept one member, gained one, lost one and changed one member's return type with its list from before",
+"F301": "The member comparison fails naming the added member, the lost member, and the re-typed member with both its old and its new type, and does not name the kept member",
+"F302": "A maintainer who changes the RBAC administration surface during a move is stopped with the changed member named",
+"F303": "A comparison that also flagged a reordered member list; the comparison is by set, so order is free",
+"F304": "Run the existing architecture rules whose lists name a moved Access type by its full name, after the move",
+"F305": "Each list names the moved type in its new namespace and is still compared both ways, so a stale old name fails as no longer offending and a new edge fails as unlisted",
+"F306": "The module boundary rules keep guarding the Access types after they move, none quietly loosened",
+"F307": "A list entry deleted together with the edge it allowed, if the edge itself also disappeared; both-ways comparison accepts that",
+"F308": "Look at where the unit tests of the moved Access types sit after the move",
+"F309": "Each moved unit test sits under the test project's Modules Access folder of its type's layer, namespace equal to folder",
 "F31": "Push, cost and rigor (D-11, maintainer 2026-11-17): one commit per slice, made by the root; B1-B4 are pushed together once all four are green locally (fast loop and full filtered gate), so one full live run covers the move (Program.cs and the backend csproj are shared paths that select every live suite; verifyauth runs on every push and shows the S4 CI path edits). Rigor: S2 thorough (opus crafter and acceptance designer, sonnet reviewers); S1, S3 and S4 standard (sonnet, haiku reviewers); EXAMINE on the reviewer model. EXAMINE expectations name only what an admitted probe shows. Mutation and the finalize checklist run after feature C.",
+"F310": "A maintainer finds the tests of an Access type beside its layer in the test project",
+"F311": "No placement rule for unit tests exists yet; the design puts that rule in the later feature that adds the Access and Licensing module rules, and in this slice the git mv of each test file is checked in review",
+"F312": "Run the whole existing backend suite, live connectors left out, after the move",
+"F313": "Every existing test stays green, edited only in usings, full-name strings and moves; the composition root registers the same services with the same lifetimes in the same order",
+"F314": "Nothing a user, an API client, a tracker or the database sees changes: sign-in, RBAC answers, API keys and licence status behave as before",
+"F315": "A behaviour change in a path no existing test covers; the move is checked to be namespace-only by review of the diff",
 "F32": "No schema, route, DTO, DI lifetime, registration order, scheme, cookie or configuration-key change apart from the development log key; the EF model stays the same (ef-model-unchanged); IRbacAdministrationService and RbacGuardAttribute keep every public member; every existing test stays green, unmodified apart from moves, usings, full-name strings and fixture paths.",
 "F33": "Namespace equals folder for every moved file. Approved oracle files of this feature are never edited, not even a using line; a crafter target is never an oracle support. One commit per slice; GREEN and every review run on a clean committed tree.",
 "F34": "Input bounds: no stored or validated input changes and none is introduced; the licence JSON fixtures keep their bytes. Out of scope: module rules and the unit-test placement rule (feature C), repositories, seeders, entities, wire types, Access persistence ports, licence events.",
