@@ -1,12 +1,12 @@
 {
 "counters": {
 "D": 9,
-"F": 129,
+"F": 147,
 "K": 3,
-"L": 3,
+"L": 4,
 "P": 4,
 "S": 3,
-"T": 3,
+"T": 4,
 "Y": 5
 },
 "design": {
@@ -61,7 +61,7 @@
 "S1",
 "S3"
 ],
-"text": "F30"
+"text": "F134"
 },
 {
 "id": "K3",
@@ -82,11 +82,17 @@
 },
 {
 "id": "D2",
-"text": "F21"
+"slices": [
+"S1"
+],
+"text": "F130"
 },
 {
 "id": "D3",
-"text": "F22"
+"slices": [
+"S1"
+],
+"text": "F131"
 },
 {
 "id": "D4",
@@ -108,7 +114,7 @@
 "S1",
 "S3"
 ],
-"text": "F25"
+"text": "F132"
 },
 {
 "id": "D7",
@@ -124,7 +130,7 @@
 "S1",
 "S3"
 ],
-"text": "F27"
+"text": "F133"
 },
 {
 "id": "D9",
@@ -197,13 +203,14 @@
 "S1": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
 "public_oracle": {
-"expected": "F67",
-"falsifier": "F68",
+"expected": "F136",
+"falsifier": "F137",
 "promises": [
 "P1",
+"P2",
 "P4"
 ],
-"stimulus": "F66"
+"stimulus": "F135"
 },
 "records": {
 "architectural_tests": [
@@ -212,6 +219,12 @@
 "id": "T1",
 "obligation": "F87",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~LicensingModuleBoundariesArchUnitTest\"",
+"id": "T4",
+"obligation": "F147",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs"
 }
 ],
 "impact": [
@@ -254,6 +267,27 @@
 ],
 "kind": "Finite",
 "reason": "F86"
+}
+},
+{
+"evidence": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs"
+],
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "LicensingModuleBoundariesArchUnitTest",
+"statement": "F140",
+"treatment": {
+"cases": [
+"F141",
+"F142",
+"F143",
+"F144",
+"F145"
+],
+"kind": "Finite",
+"reason": "F146"
 }
 }
 ],
@@ -303,9 +337,24 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs:171",
 "reason": "F74",
 "symbol": "ModuleRulesCatchANewOffenderArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:73",
+"reason": "F138",
+"symbol": "ApplicationIsReachedFromOutsideOnlyBy"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:146",
+"reason": "F139",
+"symbol": "EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue"
 }
 ]
 },
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs"
+],
 "targets": [
 {
 "change": "Extend",
@@ -314,7 +363,7 @@
 }
 ],
 "verification": [
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~AccessModuleBoundariesArchUnitTest\"",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~AccessModuleBoundariesArchUnitTest|FullyQualifiedName~LicensingModuleBoundariesArchUnitTest\"",
 "pwsh Lighthouse.Backend/Test-Fast.ps1",
 "dotnet build Lighthouse.Backend",
 "dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
@@ -494,21 +543,34 @@
 "F128": "C1+C2: Access and Licensing each have their own module rules (Architecture/AccessModuleBoundariesArchUnitTest.cs and Architecture/LicensingModuleBoundariesArchUnitTest.cs) with inline lists measured from the IL, every Licensing reader listed, ForecastUpdater included, and the neighbour lists keeping their re-keyed entries; a made-up offender per list position, including one reaching only through an attribute, fails a named rule.",
 "F129": "Access and Licensing each fail a named rule on a new offender across their border",
 "F13": "Does C3 have a RED? Measured 2026-11-21: the old Services/{Implementation,Interfaces}/{Auth,Authorization,Licensing} folders hold 0 files in production and tests, so the placement and no-file-left check will likely pass on arrival, as S03d's C3 did (dropped there as an nwdes slice and kept as a regression guard). The retirement of RbacIdentityPattern is a real edit. The acceptance designer decides whether C3's oracle has an observable RED (for example a made-up file in an old folder, or the retired pattern still being read) or whether C3 folds into C2 as a regression guard.\n",
+"F130": "Confirmed (Ratchet design R-L1..R-L5): Licensing gets its own module rules in Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs with ModuleRules (LicensingModule constant at ModuleRules.cs:31) and a Licensing ModuleWording built in the oracle; lists measured from the current IL and compared both ways. R-L1: LicensingApplication (4) and LicensingAdaptersHttp (1) of AccessAndLicensingMembership live in their layer, none left under ^Lighthouse\\.Backend\\.Services\\.(Implementation|Interfaces)\\.Licensing(\\.|$) (measured 0). R-L2: Licensing reaches no Access type and no other context, empty. R-L3: outside Application readers besides the API namespace, the composition root and Modules.Access.Application (legal callers), exactly 11: Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater, Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService, Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision, Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater, Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater, Lighthouse.Backend.Services.Implementation.BackgroundServices.UsageDataConsentPruningService, Lighthouse.Backend.Services.Implementation.Reports.ReportCommands, Lighthouse.Backend.Services.Implementation.Reports.ReportQueries, Lighthouse.Backend.Services.Implementation.UsageData.UsageDataConsentService, Lighthouse.Backend.Services.Implementation.UsageData.UsageDataInstanceProperties, Lighthouse.Backend.Services.Implementation.WriteBackTriggerService (candidate 2 readers, owners Epic 6474 and #6657, stay listed). R-L4: Adapters.Http reached only from the API namespace, through HttpAdaptersAreReachedFromOutsideOnlyBy with an empty list (the composition root does not reach it, measured). R-L5: Application edges into Data, Services, API, module Adapters and EF Core, exactly: Lighthouse.Backend.Modules.Licensing.Application.LicenseService -> Lighthouse.Backend.Services.Interfaces.ILighthouseClock and -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1. A made-up offender per rule lives in a fixture namespace such as Lighthouse.Backend.Modules.LicensingFixtures.\n",
+"F131": "Confirmed (DESIGN record, neighbour lists): the Forecasting and Work Items lists that name Access or Licensing types already hold them under the new names since feature B, measured: WorkItemsModuleBoundariesArchUnitTest.EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue (lines 148-149: DependencyDecision -> Modules.Licensing.Application.ILicenseService, FeatureDependencyRendering -> Modules.Access.Application.IRbacAdministrationService) and the Forecasting edge list entry at ForecastingModuleBoundariesArchUnitTest.cs:112 (ForecastFilterRuleService -> Modules.Licensing.Application.ILicenseService). No list entry moves or shrinks in C2; S1's Licensing oracle file reads those lists by field name and requires every Access or Licensing entry to name a type under Modules.Access or Modules.Licensing that the IL holds. No other test file names an old Access or Licensing full name except the deliberate old-place alternatives of the A1 and A2 oracles.\n",
+"F132": "Resolved open item (does C3 have a RED): C3 stays its own slice with an observable RED. Its oracle asks whether any namespace key of ModuleBoundariesArchUnitTest (each constant or static string field read as a pattern) still takes in a made-up type name under the old Services Auth, Authorization or Licensing namespaces; today RbacIdentityPattern does, so the oracle is RED naming it, and it turns GREEN only when the key is retired. The placement and no-file-left checks are GREEN on arrival over the real tree (the old folders are empty) and are discriminated by their made-up trees, which must be reported: they are the regression guard. Folding C3 elsewhere was rejected: the retirement is a real edit with its own RED. S1 carries C1 and C2 (product amendment: the Licensing rules had no RED and no crafter target of their own). S1's RED is the missing shared HTTP-adapter rule, asked for by name by both oracle files: the Access file's R-A5 and the Licensing file's R-L4 both call HttpAdaptersAreReachedFromOutsideOnlyBy, so both files are RED until ModuleRules gains it. The Licensing lists and rules are GREEN over the real code once that rule exists, because feature B already re-keyed the neighbour lists; their discriminating evidence is the made-up offender per rule.\n",
+"F133": "Confirmed (maintainer 2026-11-17): rigor thorough for all of feature C (architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet). Order S1 (C1 and C2), then S3 (C3), which depends on S1. Behaviour-free: no production file changes; EveryActionDeclaresItsAccess, AccessTablesSingleReader, LicenseGateSingleSource and the Reports and Refinement guard rules keep every assertion; every existing test except the two A1 module-map tests retired in S3 stays and stays green. Finalize work (mutation, ADR-270, ARCHITECTURE.md section 4, brief ACs, catalogue, Lighthouse finalize checklist) is not an nwdes slice.\n",
+"F134": "One oracle file per slice, except S1, which carries C1 and C2: its oracle is AccessModuleBoundariesArchUnitTest.cs and its support LicensingModuleBoundariesArchUnitTest.cs, both authored by the acceptance designer and both run by S1's verification. An approved oracle or support file is never edited within this feature; a crafter target is never an oracle support; oracles name production types as strings. Made-up offenders live in fixture namespaces that do not match the module constant (Modules.AccessFixtures, Modules.LicensingFixtures, PlacementFixtures). Rule tests assert by the failure naming the offender, not by counts. No nWave scenario tags. The oracles are IL and file-tree architecture tests and start no host. A new shared rule is invoked by the oracle by name and parameter names, as ModuleRulesCatchANewOffenderArchUnitTest does, so the oracle compiles before the rule exists and its RED is an assertion, not a build error.\n",
+"F135": "Run AccessModuleBoundariesArchUnitTest and LicensingModuleBoundariesArchUnitTest over the compiled Lighthouse assembly and the test assembly's made-up offenders: R-A1..R-A7 through ModuleRules with an Access ModuleWording and R-L1..R-L5 with a Licensing ModuleWording, the Http rule asked of ModuleRules by name and parameter names in both files (R-A5 and R-L4), and the Work Items and Forecasting edge lists read by field name\n",
+"F136": "Access: every Access type lives in its layer and none is left under Services Auth or Authorization; each rule's measured inline list equals the IL both ways (R-A3 FeatureListService; R-A4 the five readers; R-A5 the composition root only; R-A6 the 21 Data, platform and EF Core edges; R-A2 and R-A7 empty). Licensing: every Licensing type lives in Application or Adapters.Http and none is left under Services Licensing; R-L3 lists exactly the 11 readers, ForecastUpdater included; R-L5 the two LicenseService edges; R-L2 and R-L4 empty; the Work Items and Forecasting lists name Access and Licensing types only under Modules.Access and Modules.Licensing. Each rule names its made-up offender in its module's fixture namespace, the attribute-only Access offender outside the API included, and passes its compliant twin (and, for Licensing, Access Application and the API); no other test changes outcome\n",
+"F137": "Today ModuleRules has no inbound rule for an HTTP adapter layer, so both files are RED naming the missing rule: R-A5 leaves the attribute-only Access offender unnamed and R-L4 leaves the made-up outsider reaching Licensing Adapters.Http unnamed. A list entry the IL does not hold, or an edge a list misses (a Licensing reader dropped from R-L3, ForecastUpdater first), fails naming it; a made-up Licensing type reaching Access, or a neighbour list entry under an old Services name, is named; a rule that does not name its made-up offender fails\n",
+"F138": "Takes legal caller namespaces, so for Licensing Access Application and the API are set aside and the 11 readers are listed",
+"F139": "Already holds the Access and Licensing edges under the new names; the Licensing oracle file reads it by field name and does not change it",
+"F140": "For each rule R-L1..R-L5 the set of offending edges the IL shows equals the rule's inline list, the Http rule names every outside dependent of Licensing Adapters.Http that is not in the API, and every Access or Licensing entry of the Work Items and Forecasting lists names a type under Modules.Access or Modules.Licensing",
+"F141": "a listed reader the IL does not hold is named",
+"F142": "a reader the list misses, ForecastUpdater, is named",
+"F143": "a made-up Licensing type reaching Access or another context is named",
+"F144": "a made-up outsider reaching Licensing Adapters.Http outside the API is named",
+"F145": "a neighbour list entry under an old Services name is named",
+"F146": "Finite set of types and edges; exact comparison decides each rule",
+"F147": "Licensing keeps its shape: types in Application and Adapters.Http and none in the old Services namespace, no Access type or other context reached, outsiders reach Application only from the API, the composition root, Access Application or as listed and Adapters.Http only from the API, Application reaches platform only as listed; neighbour lists use the new names",
 "F18": "C3: every Access and Licensing unit test sits under Tests/Modules, no file of either context is left in Services/{Interfaces,Implementation}, and RbacIdentityPattern is retired; a made-up file in an old folder is caught.",
 "F19": "Access and Licensing tests sit with their modules, and the old shared pattern is gone",
 "F2": "Access and Licensing each have module rules that fail on a new offender, and their tests sit with their modules",
 "F20": "Confirmed (Ratchet design R-A1..R-A7): Access gets its own module rules in Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs, written with the shared ModuleRules (AccessModule constant already at ModuleRules.cs:29) and an Access ModuleWording built in the oracle from two strings, as ForecastingModuleBoundariesArchUnitTest does. Lists inline by full type name, measured from the IL of the current compiled tree (main at ca13aa58b, after feature B) and compared both ways. R-A1: each type of AccessAndLicensingMembership lives in its layer (Domain = AccessDomain plus ModelsTypesThatMoveIntoAccess, 8 types; Application 16; Adapters.Http 8), none left under ^Lighthouse\\.Backend\\.Services\\.(Implementation|Interfaces)\\.(Auth|Authorization)(\\.|$) (measured 0 left). R-A2: Domain reaches only Models and the base library, empty. R-A3: outside Domain readers besides the API namespace and the composition root: Lighthouse.Backend.Services.Implementation.FeatureListService. R-A4: outside Application readers besides the API namespace and the composition root: Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering, Lighthouse.Backend.Services.Implementation.FeatureListActiveWork, Lighthouse.Backend.Services.Implementation.FeatureListService, Lighthouse.Backend.Services.Implementation.Refinement.VoterIdentityResolver, Lighthouse.Backend.Services.Implementation.UsageData.UsageDataInstanceProperties; the DESIGN record's text-search entries IFeatureListService, ReportCommands, ReportQueries and UsageDataConsentService hold no Access edge in the IL and are not listed (the IL decides). R-A5: Adapters.Http reached only from the API namespace and the composition root, with the list [Lighthouse.Backend.Program] (it registers ApiKeyAuthenticationHandler, BlockedModeFilter, DisabledAuthenticationHandler, SmartAuthSchemeSelector); nothing else. R-A6: Application edges into Lighthouse.Backend.Data, Lighthouse.Backend.Services, Lighthouse.Backend.API, any Lighthouse.Backend.Modules.*.Adapters and Microsoft.EntityFrameworkCore, as Dependent -> Target, exactly the 21 measured edges: ApiKeyService -> Services.Interfaces.Repositories.IApiKeyRepository and IRepository`1; AuthModeResolver -> Services.Interfaces.IPlatformService; EmbedSessionTokenService -> Services.Interfaces.Repositories.IEmbedSessionTokenRepository; CurrentUserProfileService and OidcGroupSnapshotWriter each -> Data.LighthouseAppContext and EF Core ChangeTracking.EntityEntry`1, DbContext, DbSet`1, EntityFrameworkQueryableExtensions, Query.UpdateSettersBuilder`1; RbacAdministrationService -> Data.LighthouseAppContext, EntityEntry`1, DbContext, DbSet`1, EntityFrameworkQueryableExtensions. Licensing Application is legal by namespace. R-A7: Access (every layer) reaches no other context (Modules.WorkItems, Forecasting, FlowMetrics, TrackerIntegration, Promises, the update code under Services BackgroundServices and Interfaces.Update, Refinement, Reports, the write-back round), empty; its two Licensing edges (AuthModeResolver and RbacAdministrationService -> Modules.Licensing.Application.ILicenseService) are legal. A made-up offender per list position lives in a fixture namespace beside the module (for example Lighthouse.Backend.Modules.AccessFixtures), including one outside the API whose only reference is an applied attribute ([RbacGuard] or [SignedInOnly]), which R-A5 must name.",
-"F21": "Confirmed (Ratchet design R-L1..R-L5): Licensing gets its own module rules in Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs with ModuleRules (LicensingModule constant at ModuleRules.cs:31) and a Licensing ModuleWording built in the oracle; lists measured from the current IL and compared both ways. R-L1: LicensingApplication (4) and LicensingAdaptersHttp (1) of AccessAndLicensingMembership live in their layer, none left under ^Lighthouse\\.Backend\\.Services\\.(Implementation|Interfaces)\\.Licensing(\\.|$) (measured 0). R-L2: Licensing reaches no Access type and no other context, empty. R-L3: outside Application readers besides the API namespace, the composition root and Modules.Access.Application (legal callers), exactly 11: Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater, Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService, Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision, Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater, Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater, Lighthouse.Backend.Services.Implementation.BackgroundServices.UsageDataConsentPruningService, Lighthouse.Backend.Services.Implementation.Reports.ReportCommands, Lighthouse.Backend.Services.Implementation.Reports.ReportQueries, Lighthouse.Backend.Services.Implementation.UsageData.UsageDataConsentService, Lighthouse.Backend.Services.Implementation.UsageData.UsageDataInstanceProperties, Lighthouse.Backend.Services.Implementation.WriteBackTriggerService (candidate 2 readers, owners Epic 6474 and #6657, stay listed). R-L4: Adapters.Http reached only from the API namespace, through HttpAdaptersAreReachedFromOutsideOnlyBy with an empty list (the composition root does not reach it, measured). R-L5: Application edges into Data, Services, API, module Adapters and EF Core, exactly: Lighthouse.Backend.Modules.Licensing.Application.LicenseService -> Lighthouse.Backend.Services.Interfaces.ILighthouseClock and -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1. A made-up offender per rule lives in a fixture namespace such as Lighthouse.Backend.Modules.LicensingFixtures.",
-"F22": "Confirmed (DESIGN record, neighbour lists): the Forecasting and Work Items lists that name Access or Licensing types already hold them under the new names since feature B, measured: WorkItemsModuleBoundariesArchUnitTest.EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue (lines 148-149: DependencyDecision -> Modules.Licensing.Application.ILicenseService, FeatureDependencyRendering -> Modules.Access.Application.IRbacAdministrationService) and the Forecasting edge list entry at ForecastingModuleBoundariesArchUnitTest.cs:112 (ForecastFilterRuleService -> Modules.Licensing.Application.ILicenseService). No list entry moves or shrinks in C2; the S2 oracle reads those lists by field name and requires every Access or Licensing entry to name a type under Modules.Access or Modules.Licensing that the IL holds. No other test file names an old Access or Licensing full name except the deliberate old-place alternatives of the A1 and A2 oracles.",
 "F23": "Confirmed (DESIGN record, RbacIdentityPattern retired in C3): ModuleBoundariesArchUnitTest.cs loses RbacIdentityPattern (lines 22-23), RbacIdentityModule (lines 64-65) and its one assertion, the not-empty check at line 124; no other member of that file changes. The not-empty claim is carried by the new module rules: TypesLiveInTheirLayer fails on a listed Access or Licensing type that is absent (MissingSubjects) and DomainReachesOnlyTheKernelAndTheBaseLibrary fails on an empty Access Domain. The key is also read by name in feature A's oracle AccessAndLicensingRulesSeeTheModulesArchUnitTest: the two tests that read it (AServiceUnderTheModuleReachingARepository_IsNamedByTheModuleMapsAccessAndLicensingNamespaces_AsItsTwinInTheOldPlaceIs, lines 63-81, and AnAccessServiceAskingTheLicenceUnderTheModules_StaysInsideOneModuleOnTheModuleMap_AsItsTwinInTheOldPlaceDoes, lines 155-175) and the private helpers and fixtures only they use are removed in the same slice, because the module map they guard no longer exists; its Access-asks-Licensing legality is carried by R-A7 (Licensing not forbidden) and R-L3 (Access Application a legal caller). Every other test of that file, and the old-place alternatives in the Work Items, Tracker integration, Promises and Forecasting keys, stay unchanged.",
 "F24": "Confirmed (D-9, maintainer answer 2026-11-17): Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingUnitTestPlacementTest.cs, modelled on PromisesUnitTestPlacementTest, checks that every unit test of an Access or Licensing type (the AccessAndLicensingMembership types) lives under Tests/Modules/Access or Tests/Modules/Licensing in the folder of its subject's layer (Domain, Application, Adapters/Http), and that no file is left in Services/Implementation or Services/Interfaces under Auth, Authorization or Licensing, in production or tests, with no per-file exception (B4 moved the licence data; LicensingTestDataPlacementTest stays as it is). Integration, acceptance, controller, contract and architecture test roots are not judged; tests of other contexts that mock an Access or Licensing port are not Access unit tests. Each rule also runs on a made-up tree (PlacementFixtures/Modules/Access, PlacementFixtures/Modules/Licensing and a made-up file in an old folder), which must be reported. Measured: those old folders hold 0 files today.",
-"F25": "Resolved open item (does C3 have a RED): C3 stays its own slice with an observable RED. Its oracle asks whether any namespace key of ModuleBoundariesArchUnitTest (each constant or static string field read as a pattern) still takes in a made-up type name under the old Services Auth, Authorization or Licensing namespaces; today RbacIdentityPattern does, so the oracle is RED naming it, and it turns GREEN only when the key is retired. The placement and no-file-left checks are GREEN on arrival over the real tree (the old folders are empty) and are discriminated by their made-up trees, which must be reported: they are the regression guard. Folding C3 into C2 was rejected: the retirement is a real edit with its own RED, and product slices are not merged in DESIGN. S1's RED is the missing shared HTTP-adapter rule, asked for by name. S2's lists and rules are GREEN on arrival once S1's rule exists, because feature B already re-keyed the neighbour lists; S2's discriminating evidence is its made-up offender per rule, and it has no crafter target.",
 "F26": "Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of the file tree: namespace placement, the exact set of edges per rule, the location of each test file, and the absence of a key that sees the old namespaces. Each is decided exactly by its NUnit architecture oracle (Finite laws) with a made-up offender per rule as falsifier. No Quint, TLA+ or Agda model is selected: no state machine, ordering, concurrency, recovery or progress claim exists (no production code changes), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: the rule lists are string sets compared both ways by InlineBaseline; the C# compiler checks the new rule's signature; property tests add nothing over a finite edge set. Paradigm object_oriented (repository authority); the work is test-side rule code; nw-code-design-oo smells applied: duplicated knowledge (one shared rule, not a copy per module) and a false reason in a rule text; namespace patterns stay strings, as in every existing rule file.",
-"F27": "Confirmed (maintainer 2026-11-17): rigor thorough for all of feature C (architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet). Order S1, S2, S3. Behaviour-free: no production file changes; EveryActionDeclaresItsAccess, AccessTablesSingleReader, LicenseGateSingleSource and the Reports and Refinement guard rules keep every assertion; every existing test except the two A1 module-map tests retired in S3 stays and stays green. Finalize work (mutation, ADR-270, ARCHITECTURE.md section 4, brief ACs, catalogue, Lighthouse finalize checklist) is not an nwdes slice.",
 "F28": "Confirmed (GDP-3, counterexample): the shared rules have no inbound rule for an HTTP adapter layer. AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot (ModuleRules.cs:59) lists exactly [compositionRoot] compared both ways and explains adapters as storage and background code: for Licensing Adapters.Http, which the composition root does not reach (measured), it would name Lighthouse.Backend.Program for deletion, and for Access it would give a false reason. S1 extends ModuleRules with one rule, HttpAdaptersAreReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces, string httpAdapters, string legalCallerNamespaces, string outside = AnyNamespace, ModuleWording? wording = null) returning InboundVerdict: the module's own types and the types in the legal callers' namespaces (the API) are set aside, every other dependent of the Http adapters is compared both ways with the list, and the rule text says the Http adapters are the attributes, filters and authentication handlers the API applies and the composition root registers, so any other caller ties its code to how requests are authenticated and guarded, and says how to fix it. Access calls it with list [Lighthouse.Backend.Program]; Licensing with an empty list. Carrier: InboundVerdict (existing record, ModuleRules.cs:204); owner the test-side ModuleRules class; no per-process state. ModuleWording and every existing ModuleRules member stay unchanged.",
 "F29": "Rule lists only shrink and are never loosened: inline full-name lists compared both ways against the IL (IlDependencies, which sees base types, interfaces, members, signatures, method bodies, applied attributes and their constructor arguments, and misses catch-clause, event and attribute-named-argument references); exemptions are exact per type and its nested types, never a namespace or layer; holdings compare top-level types. A legal caller namespace is the API (Lighthouse.Backend.API) or a named module layer; the composition root is Lighthouse.Backend.Program.",
 "F3": "Access has its own module rules: each listed Access type lives in its layer (Domain, Application, Adapters/Http) and none is left under the old Services Auth or Authorization namespaces; its Domain reaches only the shared kernel (Models) and the BCL; outsiders reach its Domain and Application only from API, the composition root or as listed, and its Adapters/Http only from API and the composition root; its Application reaches no API and no module Adapters, reaches Data and platform types only as listed, and Access reaches no other context. Every list is inline, by full type name, measured from the compiled code and compared both ways, and a made-up offender against each list position, including one that reaches only through an attribute, fails a named rule.\n",
-"F30": "One oracle file per slice; an approved oracle file is never edited within this feature; a crafter target is never an oracle support; oracles name production types as strings. Made-up offenders live in fixture namespaces that do not match the module constant (Modules.AccessFixtures, Modules.LicensingFixtures, PlacementFixtures). Rule tests assert by the failure naming the offender, not by counts. No nWave scenario tags. The oracles are IL and file-tree architecture tests and start no host. A new shared rule is invoked by the oracle by name and parameter names, as ModuleRulesCatchANewOffenderArchUnitTest does, so the oracle compiles before the rule exists and its RED is an assertion, not a build error.",
 "F31": "Input bounds: none stored or validated; the rules read a finite compiled assembly and a finite file tree, and the authority states no bound. Scope out: any production change, Access persistence (entities, repositories, seeders), candidate 2 readers stay listed, the old-place alternatives of other rule keys stay.",
 "F32": "Every producer and consumer of the rule code and the rule keys is in one test project and changes in the same commit; no persisted or wire data changes.",
 "F33": "The compiled Lighthouse assembly (Lighthouse.dll) and the test assembly read through IlDependencies, and the repository file tree, by the NUnit architecture oracles run with dotnet test on Lighthouse.Backend.Tests",
@@ -547,9 +609,6 @@
 "F63": "A namespace-wide exemption",
 "F64": "None found beyond the lists",
 "F65": "Gains HttpAdaptersAreReachedFromOutsideOnlyBy, the inbound rule for an HTTP adapter layer with legal caller namespaces and a list compared both ways; every existing member unchanged",
-"F66": "Run AccessModuleBoundariesArchUnitTest over the compiled Lighthouse assembly and the test assembly's made-up offenders: R-A1..R-A7 through ModuleRules with an Access ModuleWording, the Http rule asked of ModuleRules by name and parameter names",
-"F67": "Every Access type lives in its layer and none is left under Services Auth or Authorization; each rule's measured inline list equals the IL both ways (R-A3 FeatureListService; R-A4 the five readers; R-A5 the composition root only; R-A6 the 21 Data, platform and EF Core edges; R-A2 and R-A7 empty); each rule names its made-up offender in the Access fixture namespace, the attribute-only offender outside the API included, and passes its compliant twin; no other test changes outcome",
-"F68": "Today ModuleRules has no inbound rule for an HTTP adapter layer, so the oracle is RED naming the missing rule and the attribute-only offender goes unnamed; a list entry the IL does not hold, or an edge the list misses, fails naming it; a rule that does not name its made-up offender fails",
 "F69": "The shared rule set already holds AccessModule (line 29) and the Domain, Application and outbound rules; only an HTTP adapter inbound rule is missing, and a second rules class would duplicate the shared rule knowledge",
 "F7": "Architecture rule files and their inline lists in Lighthouse.Backend.Tests/Architecture: two new module-boundary rule files for Access and Licensing, the re-keyed neighbour lists, the unit-test placement and no-file-left check, and the retirement of RbacIdentityPattern.\n",
 "F70": "Consulted and kept as it is for storage and background adapters; it cannot take the API as a legal caller nor an empty list, and its reason speaks of storage, so it is not bent to Http adapters",
