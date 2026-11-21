@@ -280,11 +280,11 @@ const OVERFLOW_DESCRIPTION = {
 
 const CUE_WIDTH_PX = 14;
 
-const cueSx = (side: "left" | "right") => ({
+const cueSx = (side: "left" | "right", offsetPx: number) => ({
 	position: "absolute",
 	top: 0,
 	bottom: 0,
-	[side]: 0,
+	[side]: offsetPx,
 	width: CUE_WIDTH_PX,
 	pointerEvents: "none",
 	zIndex: 4,
@@ -300,11 +300,16 @@ const VISUALLY_HIDDEN_SX = {
 	whiteSpace: "nowrap",
 } as const;
 
-/** The edge shadows for the sides with hidden columns, and the sentence that says so to screen readers. */
+/** The edge shadows for the sides with hidden columns (the right one ends where the pinned column starts), and the sentence that says so to screen readers. */
 function OverflowCue({
 	overflow,
 	descriptionId,
-}: Readonly<{ overflow: OverflowEdges; descriptionId: string }>) {
+	pinnedWidthPx,
+}: Readonly<{
+	overflow: OverflowEdges;
+	descriptionId: string;
+	pinnedWidthPx: number;
+}>) {
 	if (overflow === "none") return null;
 	return (
 		<>
@@ -312,10 +317,14 @@ function OverflowCue({
 				{OVERFLOW_DESCRIPTION[overflow]}
 			</Box>
 			{(overflow === "left" || overflow === "both") && (
-				<Box aria-hidden="true" sx={cueSx("left")} />
+				<Box aria-hidden="true" data-side="left" sx={cueSx("left", 0)} />
 			)}
 			{(overflow === "right" || overflow === "both") && (
-				<Box aria-hidden="true" sx={cueSx("right")} />
+				<Box
+					aria-hidden="true"
+					data-side="right"
+					sx={cueSx("right", pinnedWidthPx)}
+				/>
 			)}
 		</>
 	);
@@ -485,6 +494,17 @@ function DataGridBase<T extends GridValidRowModel>({
 		[orderedColumns],
 	);
 
+	// The right shadow must lie over the columns that scroll, not over the pinned actions column.
+	const pinnedWidthPx = useMemo(
+		() =>
+			orderedColumns.find(
+				(column) =>
+					column.cellClassName === PINNED_ACTIONS_CLASS &&
+					columnVisibilityModel[column.field] !== false,
+			)?.width ?? 0,
+		[orderedColumns, columnVisibilityModel],
+	);
+
 	const gridSlots = useMemo(
 		() => ({ ...slots, footer: RowRangeFooter }),
 		[slots],
@@ -533,6 +553,7 @@ function DataGridBase<T extends GridValidRowModel>({
 					<OverflowCue
 						overflow={overflow}
 						descriptionId={overflowDescriptionId}
+						pinnedWidthPx={pinnedWidthPx}
 					/>
 					<DataGrid
 						slotProps={{
