@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 12,
-"F": 163,
+"E": 5,
+"F": 168,
 "K": 5,
 "L": 4,
 "P": 5,
@@ -702,6 +703,45 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F164"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F165"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F166"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F167"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F168"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6363 S03e Package Access and Licensing, feature A (rules first): before any file moves, every architecture rule that names Access or Licensing by namespace also sees Modules/Access and Modules/Licensing; the membership of both modules and each type's layer are measured from the IL and fixed; an answers probe for Access and Licensing and a CI probe for the live authentication, RBAC and proxy-auth runs exist. DESIGN and DEVOPS: docs/feature/story-6363-s03e-package-access-licensing/feature-delta.md (AFK propose mode, maintainer answers 2026-11-17).",
 "F10": "Rigor thorough for feature A: architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet (maintainer, 2026-11-17).",
@@ -775,6 +815,11 @@
 "F161": "step absent from the run: missing",
 "F162": "no finished run found: exit 1",
 "F163": "Closed finite set of recorded fixtures; each case is enumerated, no generator adds coverage.",
+"F164": "A made-up Access or Licensing type placed under Modules/Access or Modules/Licensing that reaches Work Items, Tracker integration, Promises or a repository is reported by the architecture rules, exactly as one in the old namespaces is; and a made-up Forecasting Application type reaching a made-up Modules.Licensing type is reported by Forecasting's licence rule.",
+"F165": "A maintainer can see, in a test, the fixed list of Access and Licensing types with the layer (Domain or Application) of each and the Models types admitted; the test finds each listed type in its old or new namespace and fails when a listed type is missing or a listed name does not exist.",
+"F166": "Running the access-answers examine command on two revisions that give the same auth mode, session, my-summary, RBAC status, system-wide rules, everyone-signed-in, API keys and licence status (before and after a licence import) prints IDENTICAL and exits 0; if any one of these answers differs it prints DIFFERENT and exits 1.",
+"F167": "Running the CI examine command for a revision shows the Verify Authentication job conclusion and the conclusions of its authentication, RBAC and proxy-auth steps from the newest finished CI run at or before that revision, and a step that failed is shown as failed, not as passed or missing.",
+"F168": "A user, a tracker or the database sees no change in behaviour or data after this feature, and the existing test suites still pass.",
 "F17": "The move in feature B has a fixed, measured list of what moves and where",
 "F18": "A3: the access-answers-compare examine command says DIFFERENT (exit 1) for two captures differing in one answer and IDENTICAL (exit 0) for identical ones.",
 "F19": "A changed Access or Licensing answer after the move is caught at EXAMINE",
