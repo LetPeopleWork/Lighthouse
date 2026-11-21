@@ -1,0 +1,250 @@
+# Product brief: story\-6363\-s03e\-b\-move
+
+## Request
+
+```text
+ADO Story #6363 S03e Package Access and Licensing, feature B (the move): Licensing lives in Modules/Licensing/{Application, Adapters/Http} with its licence key (B1); Access Domain and Application types live in Modules/Access/{Domain, Application} with the admitted Models types, IRbacAdministrationService surface unchanged (B2); the guards, markers, filters and authentication handlers live in Modules/Access/Adapters/Http and the development log key follows (B3); the Licensing test data moves to Tests/Modules/Licensing (B4, maintainer answer 2026-11-17). Pure moves: behaviour unchanged. DESIGN and DEVOPS: docs/feature/story-6363-s03e-package-access-licensing/feature-delta.md; feature A (rules first, membership, probes) is delivered.
+```
+
+## Work
+
+M
+
+```text
+Access and Licensing live in their own module folders, so their boundaries can be ruled by namespace
+```
+
+### Rework
+
+None.
+
+## Promises
+
+### P1
+
+Outcome
+
+```text
+Every Licensing type measured in feature A lives under Modules/Licensing in its designed layer (Application, Adapters/Http), namespace equal to folder; the licence public key is embedded from the new folder beside its verifier, and none of these types is left in its old namespace.
+```
+
+### P2
+
+Outcome
+
+```text
+Every Access Domain and Application type measured in feature A, with the admitted Models types, lives under Modules/Access/Domain or Modules/Access/Application; the Access Domain reaches only the shared kernel and the BCL; the public members of IRbacAdministrationService equal the list fixed from the IL before the move.
+```
+
+### P3
+
+Outcome
+
+```text
+The guards, markers, filters and authentication handlers live under Modules/Access/Adapters/Http; the constructors and public members of RbacGuardAttribute and the AttributeUsage of the four attributes are unchanged, the number of guarded actions equals the number measured at the start of B3, and the development Logging:LogLevel key still names the disabled authentication handler by its full type name.
+```
+
+### P4
+
+Outcome
+
+```text
+The Licensing test data (TestLicenseData, the two committed licence files, LicensingIntegrationTest and the generated valid_not_expired_license.json) lives under Tests/Modules/Licensing, and every path that names it (.gitignore, ci_backend.yml, ci_verifyauth.yml, the test csproj, LicenseControllerTest, the examine builder, and the HostUsersStillToMove entry if it names a path) follows, so the licensing tests and the live authentication runs still find it.
+```
+
+### P5
+
+Outcome
+
+```text
+The unit tests of the moved types live under the matching Tests/Modules folder, and the architecture rules and lists that name a moved type name it in its new place, still compared both ways.
+```
+
+### P6
+
+Outcome
+
+```text
+Nothing a user, an API client, a tracker or the database sees changes: auth mode, session, my-summary, RBAC status, system-wide rules, everyone-signed-in, API keys and licence status (before and after a licence import) give the same answers, the EF model is unchanged, the live authentication, RBAC and proxy-auth journeys pass, and every existing test stays green.
+```
+
+## Scope
+
+```text
+Pure moves of the Access and Licensing production files measured in feature A (namespace equal to folder), the licence public key with its verifier (two csproj lines), the unit tests of the moved types, the Licensing test data, and the usings, list strings, global:: fixtures and paths that follow; behaviour unchanged.
+```
+
+```text
+Access and Licensing module rules and the unit-test placement rule (feature C); the rules-first patterns, membership lists and the two probes (feature A, delivered); entities and wire types in Models/Auth, Models/Authorization and Models/LicenseInformation, the six repositories and the two seeders (they stay); any schema change, rename, signature change or behaviour change; mutation and the finalize checklist (run after feature C, not nwdes slices). Nothing a user sees changes, so there is no UI sketch.
+```
+
+## Decisions
+
+```text
+The licence public key moves with its verifier; the two csproj lines are edited in the B1 move commit (D-6, maintainer 2026-11-17).
+```
+
+#### Status
+
+Confirmed
+
+
+```text
+The Licensing test data moves too, as its own slice B4 after B1, so the test tree matches the module one to one. The host moves the maintainer local gitignored licence file with a plain file move (not git) when B4 lands and updates the project memory note that names the path (maintainer 2026-11-17).
+```
+
+#### Status
+
+Confirmed
+
+
+```text
+One commit per slice; B1-B4 are pushed together once all of them are green locally (fast loop and full filtered gate), so one full live run covers the whole move (D-11, maintainer 2026-11-17).
+```
+
+#### Status
+
+Confirmed
+
+
+```text
+Rigor: B2 thorough (opus crafter and acceptance designer, sonnet reviewers); B1, B3 and B4 standard (sonnet crafter and acceptance designer, haiku reviewers); EXAMINE uses the reviewer model (maintainer 2026-11-17).
+```
+
+#### Status
+
+Confirmed
+
+
+```text
+Each slice RED is structural (types in the old place); behaviour is proved by the unchanged tests, the Keycloak runs and EXAMINE through admitted probes only: architecture-rules Access, Licensing and Rbac; ef-model-unchanged; access-answers-compare; ci-auth-suites-show; test-selection-show; ci-live-suites-show; backend-tests (D-12).
+```
+
+#### Status
+
+Confirmed
+
+
+## Journey
+
+None.
+
+## Slices
+
+### S1
+
+```text
+B1: Licensing lives in Modules/Licensing/{Application, Adapters/Http} with its licence key; neighbour list strings follow.
+```
+
+#### Promises
+
+P1
+
+P5
+
+P6
+
+#### Depends on
+
+None.
+
+#### Slice work
+
+S
+
+```text
+Licensing has its own module folder, so its boundary can be ruled by namespace
+```
+
+##### Rework
+
+None.
+
+### S2
+
+```text
+B2: Access Domain and Application types, with the admitted Models types, live in Modules/Access/{Domain, Application}; the IRbacAdministrationService surface is unchanged.
+```
+
+#### Promises
+
+P2
+
+P5
+
+P6
+
+#### Depends on
+
+None.
+
+#### Slice work
+
+M
+
+```text
+The Access core has its own module folder, so its boundary can be ruled by namespace
+```
+
+##### Rework
+
+None.
+
+### S3
+
+```text
+B3: the guards, markers, filters and authentication handlers live in Modules/Access/Adapters/Http; the development log key follows.
+```
+
+#### Promises
+
+P3
+
+P5
+
+P6
+
+#### Depends on
+
+None.
+
+#### Slice work
+
+S
+
+```text
+The Access HTTP adapters sit in the Access module, so the whole context is ruled by namespace
+```
+
+##### Rework
+
+None.
+
+### S4
+
+```text
+B4: the Licensing test data lives in Tests/Modules/Licensing; the CI, gitignore and test project paths follow.
+```
+
+#### Promises
+
+P4
+
+P6
+
+#### Depends on
+
+S1
+
+#### Slice work
+
+S
+
+```text
+The Licensing test tree matches the module one to one
+```
+
+##### Rework
+
+None.
