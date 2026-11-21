@@ -207,7 +207,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>D9</h4>
 
-<pre><code>Confirmed (GDP-3, counterexample): the shared rules have no inbound rule for an HTTP adapter layer. AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot (ModuleRules.cs:59) lists exactly [compositionRoot] compared both ways and explains adapters as storage and background code: for Licensing Adapters.Http, which the composition root does not reach (measured), it would name Lighthouse.Backend.Program for deletion, and for Access it would give a false reason. S1 extends ModuleRules with one rule, HttpAdaptersAreReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection&lt;string&gt; listed, string moduleNamespaces, string httpAdapters, string legalCallerNamespaces, string outside = AnyNamespace, ModuleWording? wording = null) returning InboundVerdict: the module&#x27;s own types and the types in the legal callers&#x27; namespaces (the API) are set aside, every other dependent of the Http adapters is compared both ways with the list, and the rule text says the Http adapters are the attributes, filters and authentication handlers the API applies and the composition root registers, so any other caller ties its code to how requests are authenticated and guarded, and says how to fix it. Access calls it with list [Lighthouse.Backend.Program]; Licensing with an empty list. Carrier: InboundVerdict (existing record, ModuleRules.cs:204); owner the test-side ModuleRules class; no per-process state. ModuleWording and every existing ModuleRules member stay unchanged.
+<pre><code>Confirmed (GDP-3, counterexample): the shared rules have no inbound rule for an HTTP adapter layer. AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot (ModuleRules.cs:59) lists exactly [compositionRoot] compared both ways and explains adapters as storage and background code: for Licensing Adapters.Http, which the composition root does not reach (measured), it would name Lighthouse.Backend.Program for deletion, and for Access it would give a false reason. S1 extends ModuleRules with one rule, HttpAdaptersAreReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection&lt;string&gt; listed, string moduleNamespaces, string httpAdapters, string legalCallerNamespaces, string outside = AnyNamespace, ModuleWording? wording = null) returning InboundVerdict: the module&#x27;s own types and the types in the legal callers&#x27; namespaces (the API) are set aside, every other dependent of the Http adapters is compared both ways with the list, and the rule text says the Http adapters are the attributes, filters and authentication handlers the API applies and the composition root registers, so any other caller ties its code to how requests are authenticated and guarded, and says how to fix it. Access calls it with list [Lighthouse.Backend.Program]; Licensing with an empty list. Carrier: InboundVerdict (existing record, ModuleRules.cs:204); owner the test-side ModuleRules class; no per-process state. Every existing ModuleRules member stays unchanged; ModuleWording changes only in Of, for names ending in ss (S1 decision).
 </code></pre>
 <p>Governed slices: S1</p>
 
@@ -492,6 +492,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Gains HttpAdaptersAreReachedFromOutsideOnlyBy, the inbound rule for an HTTP adapter layer with legal caller namespaces and a list compared both ways; every existing member unchanged
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Of() writes &#x27;s after a name ending in ss and a bare apostrophe only after other names ending in s, so Access&#x27;s is right and Flow metrics&#x27; and Promises&#x27; keep their text; no other member changes
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
 
 <h4>Verification</h4>
@@ -533,7 +540,8 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 
 <h5>Decisions</h5>
 
-<p>None.</p>
+<pre><code>Confirmed (root decision 2026-11-22, S1 craft blocked by design): ModuleWording.Of (ModuleWording.cs:13) writes a bare apostrophe after any name ending in s, which gives &quot;Access&#x27; Http adapters&quot;, wrong English for a singular noun ending in -ss, while the approved oracle expects &quot;Access&#x27;s Http adapters&quot;. The wording is fixed, not the oracle: S1 extends Of so a name ending in &quot;ss&quot; takes &quot;&#x27;s&quot; and only other names ending in s take a bare apostrophe, so &quot;Flow metrics&#x27;&quot; and &quot;Promises&#x27;&quot; keep their text and &quot;Access&#x27;s&quot; is right. Carrier: the string Of returns; owner the test-side ModuleWording class; no per-process state. No other ModuleWording member changes and every existing test that reads wording stays green.
+</code></pre>
 
 <h5>Constraints</h5>
 
@@ -561,11 +569,11 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 
 <p>ModuleWording</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:7</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:13</p>
 
-<p>Reuse</p>
+<p>Extend</p>
 
-<pre><code>Built in the oracle from the module name and its legal callers, as the Forecasting and Promises oracles do
+<pre><code>The one owner of how a rule text names a module, built in the oracle from the module name and its legal callers; Of() is extended for names ending in ss rather than adding a second possessive helper or a per-module override
 </code></pre>
 
 <p>AccessAndLicensingMembership</p>
@@ -640,6 +648,15 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <p>UnchangedCompatible</p>
 
 <pre><code>No production file changes; the rules only read the IL
+</code></pre>
+
+<p>test-rule-support</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:13</p>
+
+<p>Changed</p>
+
+<pre><code>Of() gains the ss case; its output changes only for a module name ending in ss (Access); the Flow metrics, Promises, Work Items, Forecasting, Tracker integration and Licensing texts are unchanged
 </code></pre>
 
 <h5>Agreement</h5>

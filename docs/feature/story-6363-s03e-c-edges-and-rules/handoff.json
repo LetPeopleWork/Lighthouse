@@ -236,7 +236,7 @@
 "counters": {
 "D": 9,
 "E": 7,
-"F": 206,
+"F": 211,
 "K": 3,
 "L": 4,
 "P": 4,
@@ -372,7 +372,7 @@
 "slices": [
 "S1"
 ],
-"text": "F28"
+"text": "F207"
 }
 ],
 "not_applicable": [
@@ -462,6 +462,9 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs"
 }
 ],
+"decisions": [
+"F209"
+],
 "impact": [
 {
 "decision": "Changed",
@@ -480,6 +483,12 @@
 "kind": "production",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Access/Application/RbacAdministrationService.cs:1",
 "reason": "F77"
+},
+{
+"decision": "Changed",
+"kind": "test-rule-support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:13",
+"reason": "F211"
 }
 ],
 "laws": [
@@ -550,9 +559,9 @@
 "symbol": "AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot"
 },
 {
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:7",
-"reason": "F71",
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:13",
+"reason": "F210",
 "symbol": "ModuleWording"
 },
 {
@@ -595,6 +604,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs",
 "reason": "F65"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs",
+"reason": "F208"
 }
 ],
 "verification": [
@@ -912,10 +926,14 @@
 "F204": "No production file changes; every existing test keeps its outcome; only the six tests asking for the missing shared Http adapter rule fail until it exists.",
 "F205": "Nothing a user, a tracker, the database or the licence check sees changes.",
 "F206": "Preservation is observed by the existing suites in the slice's full verification command, not by a new oracle; the two files are test-only and no design locator names a preservation oracle.",
+"F207": "Confirmed (GDP-3, counterexample): the shared rules have no inbound rule for an HTTP adapter layer. AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot (ModuleRules.cs:59) lists exactly [compositionRoot] compared both ways and explains adapters as storage and background code: for Licensing Adapters.Http, which the composition root does not reach (measured), it would name Lighthouse.Backend.Program for deletion, and for Access it would give a false reason. S1 extends ModuleRules with one rule, HttpAdaptersAreReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces, string httpAdapters, string legalCallerNamespaces, string outside = AnyNamespace, ModuleWording? wording = null) returning InboundVerdict: the module's own types and the types in the legal callers' namespaces (the API) are set aside, every other dependent of the Http adapters is compared both ways with the list, and the rule text says the Http adapters are the attributes, filters and authentication handlers the API applies and the composition root registers, so any other caller ties its code to how requests are authenticated and guarded, and says how to fix it. Access calls it with list [Lighthouse.Backend.Program]; Licensing with an empty list. Carrier: InboundVerdict (existing record, ModuleRules.cs:204); owner the test-side ModuleRules class; no per-process state. Every existing ModuleRules member stays unchanged; ModuleWording changes only in Of, for names ending in ss (S1 decision).",
+"F208": "Of() writes 's after a name ending in ss and a bare apostrophe only after other names ending in s, so Access's is right and Flow metrics' and Promises' keep their text; no other member changes",
+"F209": "Confirmed (root decision 2026-11-22, S1 craft blocked by design): ModuleWording.Of (ModuleWording.cs:13) writes a bare apostrophe after any name ending in s, which gives \"Access' Http adapters\", wrong English for a singular noun ending in -ss, while the approved oracle expects \"Access's Http adapters\". The wording is fixed, not the oracle: S1 extends Of so a name ending in \"ss\" takes \"'s\" and only other names ending in s take a bare apostrophe, so \"Flow metrics'\" and \"Promises'\" keep their text and \"Access's\" is right. Carrier: the string Of returns; owner the test-side ModuleWording class; no per-process state. No other ModuleWording member changes and every existing test that reads wording stays green.",
+"F210": "The one owner of how a rule text names a module, built in the oracle from the module name and its legal callers; Of() is extended for names ending in ss rather than adding a second possessive helper or a per-module override",
+"F211": "Of() gains the ss case; its output changes only for a module name ending in ss (Access); the Flow metrics, Promises, Work Items, Forecasting, Tracker integration and Licensing texts are unchanged",
 "F23": "Confirmed (DESIGN record, RbacIdentityPattern retired in C3): ModuleBoundariesArchUnitTest.cs loses RbacIdentityPattern (lines 22-23), RbacIdentityModule (lines 64-65) and its one assertion, the not-empty check at line 124; no other member of that file changes. The not-empty claim is carried by the new module rules: TypesLiveInTheirLayer fails on a listed Access or Licensing type that is absent (MissingSubjects) and DomainReachesOnlyTheKernelAndTheBaseLibrary fails on an empty Access Domain. The key is also read by name in feature A's oracle AccessAndLicensingRulesSeeTheModulesArchUnitTest: the two tests that read it (AServiceUnderTheModuleReachingARepository_IsNamedByTheModuleMapsAccessAndLicensingNamespaces_AsItsTwinInTheOldPlaceIs, lines 63-81, and AnAccessServiceAskingTheLicenceUnderTheModules_StaysInsideOneModuleOnTheModuleMap_AsItsTwinInTheOldPlaceDoes, lines 155-175) and the private helpers and fixtures only they use are removed in the same slice, because the module map they guard no longer exists; its Access-asks-Licensing legality is carried by R-A7 (Licensing not forbidden) and R-L3 (Access Application a legal caller). Every other test of that file, and the old-place alternatives in the Work Items, Tracker integration, Promises and Forecasting keys, stay unchanged.",
 "F24": "Confirmed (D-9, maintainer answer 2026-11-17): Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingUnitTestPlacementTest.cs, modelled on PromisesUnitTestPlacementTest, checks that every unit test of an Access or Licensing type (the AccessAndLicensingMembership types) lives under Tests/Modules/Access or Tests/Modules/Licensing in the folder of its subject's layer (Domain, Application, Adapters/Http), and that no file is left in Services/Implementation or Services/Interfaces under Auth, Authorization or Licensing, in production or tests, with no per-file exception (B4 moved the licence data; LicensingTestDataPlacementTest stays as it is). Integration, acceptance, controller, contract and architecture test roots are not judged; tests of other contexts that mock an Access or Licensing port are not Access unit tests. Each rule also runs on a made-up tree (PlacementFixtures/Modules/Access, PlacementFixtures/Modules/Licensing and a made-up file in an old folder), which must be reported. Measured: those old folders hold 0 files today.",
 "F26": "Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of the file tree: namespace placement, the exact set of edges per rule, the location of each test file, and the absence of a key that sees the old namespaces. Each is decided exactly by its NUnit architecture oracle (Finite laws) with a made-up offender per rule as falsifier. No Quint, TLA+ or Agda model is selected: no state machine, ordering, concurrency, recovery or progress claim exists (no production code changes), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: the rule lists are string sets compared both ways by InlineBaseline; the C# compiler checks the new rule's signature; property tests add nothing over a finite edge set. Paradigm object_oriented (repository authority); the work is test-side rule code; nw-code-design-oo smells applied: duplicated knowledge (one shared rule, not a copy per module) and a false reason in a rule text; namespace patterns stay strings, as in every existing rule file.",
-"F28": "Confirmed (GDP-3, counterexample): the shared rules have no inbound rule for an HTTP adapter layer. AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot (ModuleRules.cs:59) lists exactly [compositionRoot] compared both ways and explains adapters as storage and background code: for Licensing Adapters.Http, which the composition root does not reach (measured), it would name Lighthouse.Backend.Program for deletion, and for Access it would give a false reason. S1 extends ModuleRules with one rule, HttpAdaptersAreReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces, string httpAdapters, string legalCallerNamespaces, string outside = AnyNamespace, ModuleWording? wording = null) returning InboundVerdict: the module's own types and the types in the legal callers' namespaces (the API) are set aside, every other dependent of the Http adapters is compared both ways with the list, and the rule text says the Http adapters are the attributes, filters and authentication handlers the API applies and the composition root registers, so any other caller ties its code to how requests are authenticated and guarded, and says how to fix it. Access calls it with list [Lighthouse.Backend.Program]; Licensing with an empty list. Carrier: InboundVerdict (existing record, ModuleRules.cs:204); owner the test-side ModuleRules class; no per-process state. ModuleWording and every existing ModuleRules member stay unchanged.",
 "F29": "Rule lists only shrink and are never loosened: inline full-name lists compared both ways against the IL (IlDependencies, which sees base types, interfaces, members, signatures, method bodies, applied attributes and their constructor arguments, and misses catch-clause, event and attribute-named-argument references); exemptions are exact per type and its nested types, never a namespace or layer; holdings compare top-level types. A legal caller namespace is the API (Lighthouse.Backend.API) or a named module layer; the composition root is Lighthouse.Backend.Program.",
 "F3": "Access has its own module rules: each listed Access type lives in its layer (Domain, Application, Adapters/Http) and none is left under the old Services Auth or Authorization namespaces; its Domain reaches only the shared kernel (Models) and the BCL; outsiders reach its Domain and Application only from API, the composition root or as listed, and its Adapters/Http only from API and the composition root; its Application reaches no API and no module Adapters, reaches Data and platform types only as listed, and Access reaches no other context. Every list is inline, by full type name, measured from the compiled code and compared both ways, and a made-up offender against each list position, including one that reaches only through an attribute, fails a named rule.\n",
 "F31": "Input bounds: none stored or validated; the rules read a finite compiled assembly and a finite file tree, and the authority states no bound. Scope out: any production change, Access persistence (entities, repositories, seeders), candidate 2 readers stay listed, the old-place alternatives of other rule keys stay.",
@@ -959,7 +977,6 @@
 "F69": "The shared rule set already holds AccessModule (line 29) and the Domain, Application and outbound rules; only an HTTP adapter inbound rule is missing, and a second rules class would duplicate the shared rule knowledge",
 "F7": "Architecture rule files and their inline lists in Lighthouse.Backend.Tests/Architecture: two new module-boundary rule files for Access and Licensing, the re-keyed neighbour lists, the unit-test placement and no-file-left check, and the retirement of RbacIdentityPattern.\n",
 "F70": "Consulted and kept as it is for storage and background adapters; it cannot take the API as a legal caller nor an empty list, and its reason speaks of storage, so it is not bent to Http adapters",
-"F71": "Built in the oracle from the module name and its legal callers, as the Forecasting and Promises oracles do",
 "F72": "Measured layer lists from feature A; R-A1 reads them rather than a second copy",
 "F73": "The one IL reader behind every module rule, which also sees applied attributes",
 "F74": "Its by-name invocation of a shared rule with a parameter dictionary is the model for asking ModuleRules for the new rule before it exists",

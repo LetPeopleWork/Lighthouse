@@ -67,7 +67,7 @@ Governed slices: S1, S3
 #### D9
 
 ```text
-Confirmed (GDP-3, counterexample): the shared rules have no inbound rule for an HTTP adapter layer. AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot (ModuleRules.cs:59) lists exactly [compositionRoot] compared both ways and explains adapters as storage and background code: for Licensing Adapters.Http, which the composition root does not reach (measured), it would name Lighthouse.Backend.Program for deletion, and for Access it would give a false reason. S1 extends ModuleRules with one rule, HttpAdaptersAreReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces, string httpAdapters, string legalCallerNamespaces, string outside = AnyNamespace, ModuleWording? wording = null) returning InboundVerdict: the module's own types and the types in the legal callers' namespaces (the API) are set aside, every other dependent of the Http adapters is compared both ways with the list, and the rule text says the Http adapters are the attributes, filters and authentication handlers the API applies and the composition root registers, so any other caller ties its code to how requests are authenticated and guarded, and says how to fix it. Access calls it with list [Lighthouse.Backend.Program]; Licensing with an empty list. Carrier: InboundVerdict (existing record, ModuleRules.cs:204); owner the test-side ModuleRules class; no per-process state. ModuleWording and every existing ModuleRules member stay unchanged.
+Confirmed (GDP-3, counterexample): the shared rules have no inbound rule for an HTTP adapter layer. AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot (ModuleRules.cs:59) lists exactly [compositionRoot] compared both ways and explains adapters as storage and background code: for Licensing Adapters.Http, which the composition root does not reach (measured), it would name Lighthouse.Backend.Program for deletion, and for Access it would give a false reason. S1 extends ModuleRules with one rule, HttpAdaptersAreReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces, string httpAdapters, string legalCallerNamespaces, string outside = AnyNamespace, ModuleWording? wording = null) returning InboundVerdict: the module's own types and the types in the legal callers' namespaces (the API) are set aside, every other dependent of the Http adapters is compared both ways with the list, and the rule text says the Http adapters are the attributes, filters and authentication handlers the API applies and the composition root registers, so any other caller ties its code to how requests are authenticated and guarded, and says how to fix it. Access calls it with list [Lighthouse.Backend.Program]; Licensing with an empty list. Carrier: InboundVerdict (existing record, ModuleRules.cs:204); owner the test-side ModuleRules class; no per-process state. Every existing ModuleRules member stays unchanged; ModuleWording changes only in Of, for names ending in ss (S1 decision).
 ```
 Governed slices: S1
 
@@ -392,6 +392,14 @@ Extend
 Gains HttpAdaptersAreReachedFromOutsideOnlyBy, the inbound rule for an HTTP adapter layer with legal caller namespaces and a list compared both ways; every existing member unchanged
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleWording\.cs
+
+Extend
+
+```text
+Of() writes 's after a name ending in ss and a bare apostrophe only after other names ending in s, so Access's is right and Flow metrics' and Promises' keep their text; no other member changes
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs
 
 #### Verification
@@ -437,7 +445,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+Confirmed (root decision 2026-11-22, S1 craft blocked by design): ModuleWording.Of (ModuleWording.cs:13) writes a bare apostrophe after any name ending in s, which gives "Access' Http adapters", wrong English for a singular noun ending in -ss, while the approved oracle expects "Access's Http adapters". The wording is fixed, not the oracle: S1 extends Of so a name ending in "ss" takes "'s" and only other names ending in s take a bare apostrophe, so "Flow metrics'" and "Promises'" keep their text and "Access's" is right. Carrier: the string Of returns; owner the test-side ModuleWording class; no per-process state. No other ModuleWording member changes and every existing test that reads wording stays green.
+```
 
 ##### Constraints
 
@@ -467,12 +477,12 @@ Consulted and kept as it is for storage and background adapters; it cannot take 
 
 ModuleWording
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleWording\.cs\:7
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleWording\.cs\:13
 
-Reuse
+Extend
 
 ```text
-Built in the oracle from the module name and its legal callers, as the Forecasting and Promises oracles do
+The one owner of how a rule text names a module, built in the oracle from the module name and its legal callers; Of() is extended for names ending in ss rather than adding a second possessive helper or a per-module override
 ```
 
 AccessAndLicensingMembership
@@ -555,6 +565,16 @@ UnchangedCompatible
 
 ```text
 No production file changes; the rules only read the IL
+```
+
+test\-rule\-support
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleWording\.cs\:13
+
+Changed
+
+```text
+Of() gains the ss case; its output changes only for a module name ending in ss (Access); the Flow metrics, Promises, Work Items, Forecasting, Tracker integration and Licensing texts are unchanged
 ```
 
 ##### Agreement
