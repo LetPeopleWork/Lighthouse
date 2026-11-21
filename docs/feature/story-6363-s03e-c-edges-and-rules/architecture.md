@@ -20,14 +20,12 @@ Governed slices: S1
 ```text
 Confirmed (Ratchet design R-L1..R-L5): Licensing gets its own module rules in Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs with ModuleRules (LicensingModule constant at ModuleRules.cs:31) and a Licensing ModuleWording built in the oracle; lists measured from the current IL and compared both ways. R-L1: LicensingApplication (4) and LicensingAdaptersHttp (1) of AccessAndLicensingMembership live in their layer, none left under ^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Licensing(\.|$) (measured 0). R-L2: Licensing reaches no Access type and no other context, empty. R-L3: outside Application readers besides the API namespace, the composition root and Modules.Access.Application (legal callers), exactly 11: Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater, Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService, Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision, Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater, Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater, Lighthouse.Backend.Services.Implementation.BackgroundServices.UsageDataConsentPruningService, Lighthouse.Backend.Services.Implementation.Reports.ReportCommands, Lighthouse.Backend.Services.Implementation.Reports.ReportQueries, Lighthouse.Backend.Services.Implementation.UsageData.UsageDataConsentService, Lighthouse.Backend.Services.Implementation.UsageData.UsageDataInstanceProperties, Lighthouse.Backend.Services.Implementation.WriteBackTriggerService (candidate 2 readers, owners Epic 6474 and #6657, stay listed). R-L4: Adapters.Http reached only from the API namespace, through HttpAdaptersAreReachedFromOutsideOnlyBy with an empty list (the composition root does not reach it, measured). R-L5: Application edges into Data, Services, API, module Adapters and EF Core, exactly: Lighthouse.Backend.Modules.Licensing.Application.LicenseService -> Lighthouse.Backend.Services.Interfaces.ILighthouseClock and -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1. A made-up offender per rule lives in a fixture namespace such as Lighthouse.Backend.Modules.LicensingFixtures.
 ```
-Governed slices: S2
 
 #### D3
 
 ```text
 Confirmed (DESIGN record, neighbour lists): the Forecasting and Work Items lists that name Access or Licensing types already hold them under the new names since feature B, measured: WorkItemsModuleBoundariesArchUnitTest.EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue (lines 148-149: DependencyDecision -> Modules.Licensing.Application.ILicenseService, FeatureDependencyRendering -> Modules.Access.Application.IRbacAdministrationService) and the Forecasting edge list entry at ForecastingModuleBoundariesArchUnitTest.cs:112 (ForecastFilterRuleService -> Modules.Licensing.Application.ILicenseService). No list entry moves or shrinks in C2; the S2 oracle reads those lists by field name and requires every Access or Licensing entry to name a type under Modules.Access or Modules.Licensing that the IL holds. No other test file names an old Access or Licensing full name except the deliberate old-place alternatives of the A1 and A2 oracles.
 ```
-Governed slices: S2
 
 #### D4
 
@@ -48,28 +46,28 @@ Governed slices: S3
 ```text
 Resolved open item (does C3 have a RED): C3 stays its own slice with an observable RED. Its oracle asks whether any namespace key of ModuleBoundariesArchUnitTest (each constant or static string field read as a pattern) still takes in a made-up type name under the old Services Auth, Authorization or Licensing namespaces; today RbacIdentityPattern does, so the oracle is RED naming it, and it turns GREEN only when the key is retired. The placement and no-file-left checks are GREEN on arrival over the real tree (the old folders are empty) and are discriminated by their made-up trees, which must be reported: they are the regression guard. Folding C3 into C2 was rejected: the retirement is a real edit with its own RED, and product slices are not merged in DESIGN. S1's RED is the missing shared HTTP-adapter rule, asked for by name. S2's lists and rules are GREEN on arrival once S1's rule exists, because feature B already re-keyed the neighbour lists; S2's discriminating evidence is its made-up offender per rule, and it has no crafter target.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S3
 
 #### D7
 
 ```text
 Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of the file tree: namespace placement, the exact set of edges per rule, the location of each test file, and the absence of a key that sees the old namespaces. Each is decided exactly by its NUnit architecture oracle (Finite laws) with a made-up offender per rule as falsifier. No Quint, TLA+ or Agda model is selected: no state machine, ordering, concurrency, recovery or progress claim exists (no production code changes), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: the rule lists are string sets compared both ways by InlineBaseline; the C# compiler checks the new rule's signature; property tests add nothing over a finite edge set. Paradigm object_oriented (repository authority); the work is test-side rule code; nw-code-design-oo smells applied: duplicated knowledge (one shared rule, not a copy per module) and a false reason in a rule text; namespace patterns stay strings, as in every existing rule file.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S3
 
 #### D8
 
 ```text
 Confirmed (maintainer 2026-11-17): rigor thorough for all of feature C (architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet). Order S1, S2, S3. Behaviour-free: no production file changes; EveryActionDeclaresItsAccess, AccessTablesSingleReader, LicenseGateSingleSource and the Reports and Refinement guard rules keep every assertion; every existing test except the two A1 module-map tests retired in S3 stays and stays green. Finalize work (mutation, ADR-270, ARCHITECTURE.md section 4, brief ACs, catalogue, Lighthouse finalize checklist) is not an nwdes slice.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S3
 
 #### D9
 
 ```text
 Confirmed (GDP-3, counterexample): the shared rules have no inbound rule for an HTTP adapter layer. AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot (ModuleRules.cs:59) lists exactly [compositionRoot] compared both ways and explains adapters as storage and background code: for Licensing Adapters.Http, which the composition root does not reach (measured), it would name Lighthouse.Backend.Program for deletion, and for Access it would give a false reason. S1 extends ModuleRules with one rule, HttpAdaptersAreReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces, string httpAdapters, string legalCallerNamespaces, string outside = AnyNamespace, ModuleWording? wording = null) returning InboundVerdict: the module's own types and the types in the legal callers' namespaces (the API) are set aside, every other dependent of the Http adapters is compared both ways with the list, and the rule text says the Http adapters are the attributes, filters and authentication handlers the API applies and the composition root registers, so any other caller ties its code to how requests are authenticated and guarded, and says how to fix it. Access calls it with list [Lighthouse.Backend.Program]; Licensing with an empty list. Carrier: InboundVerdict (existing record, ModuleRules.cs:204); owner the test-side ModuleRules class; no per-process state. ModuleWording and every existing ModuleRules member stay unchanged.
 ```
-Governed slices: S1, S2
+Governed slices: S1
 
 ### Constraints
 
@@ -78,21 +76,21 @@ Governed slices: S1, S2
 ```text
 Rule lists only shrink and are never loosened: inline full-name lists compared both ways against the IL (IlDependencies, which sees base types, interfaces, members, signatures, method bodies, applied attributes and their constructor arguments, and misses catch-clause, event and attribute-named-argument references); exemptions are exact per type and its nested types, never a namespace or layer; holdings compare top-level types. A legal caller namespace is the API (Lighthouse.Backend.API) or a named module layer; the composition root is Lighthouse.Backend.Program.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S3
 
 #### K2
 
 ```text
 One oracle file per slice; an approved oracle file is never edited within this feature; a crafter target is never an oracle support; oracles name production types as strings. Made-up offenders live in fixture namespaces that do not match the module constant (Modules.AccessFixtures, Modules.LicensingFixtures, PlacementFixtures). Rule tests assert by the failure naming the offender, not by counts. No nWave scenario tags. The oracles are IL and file-tree architecture tests and start no host. A new shared rule is invoked by the oracle by name and parameter names, as ModuleRulesCatchANewOffenderArchUnitTest does, so the oracle compiles before the rule exists and its RED is an assertion, not a build error.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S3
 
 #### K3
 
 ```text
 Input bounds: none stored or validated; the rules read a finite compiled assembly and a finite file tree, and the authority states no bound. Scope out: any production change, Access persistence (entities, repositories, seeders), candidate 2 readers stay listed, the old-place alternatives of other rule keys stay.
 ```
-Governed slices: S1, S2, S3
+Governed slices: S1, S3
 
 ### Reuse
 
@@ -653,227 +651,6 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBound
 
 ```text
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~AccessModuleBoundariesArchUnitTest"
-```
-
-##### Contract tests
-
-None.
-
-### S2
-
-#### Targets
-
-None.
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs
-
-#### Verification
-
-```text
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~LicensingModuleBoundariesArchUnitTest"
-pwsh Lighthouse.Backend/Test-Fast.ps1
-dotnet build Lighthouse.Backend
-dotnet test Lighthouse.Backend --filter "TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration"
-```
-
-#### Supports
-
-None.
-
-#### Public oracle
-
-```text
-Run LicensingModuleBoundariesArchUnitTest over the compiled Lighthouse assembly and the test assembly's made-up offenders: R-L1..R-L5 through ModuleRules with a Licensing ModuleWording, and the Work Items and Forecasting edge lists read by field name
-```
-
-```text
-Every Licensing type lives in Application or Adapters.Http and none is left under Services Licensing; R-L3 lists exactly the 11 readers, ForecastUpdater included; R-L5 the two LicenseService edges; R-L2 and R-L4 empty; the Work Items and Forecasting lists name Access and Licensing types only under Modules.Access and Modules.Licensing; each rule names its made-up offender in the Licensing fixture namespace and passes its compliant twin, Access Application and the API
-```
-
-```text
-A reader dropped from the R-L3 list, ForecastUpdater first, fails naming it; an entry the IL does not hold fails naming it; a made-up Licensing type reaching Access, a made-up outsider reaching Adapters.Http, or a list entry under an old Services name is named. Green on arrival over the real code once S1's rule exists: the neighbour lists were re-keyed in feature B
-```
-
-##### Promises
-
-P2
-
-P4
-
-#### Prefactoring
-
-None.
-
-#### Records
-
-##### Decisions
-
-None.
-
-##### Constraints
-
-None.
-
-##### Reuse
-
-ModuleRules
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs\:15
-
-Reuse
-
-```text
-S2 calls the shared rules, including the HTTP-adapter inbound rule that S1 adds, with the API as the legal caller and an empty list
-```
-
-ApplicationIsReachedFromOutsideOnlyBy
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleRules\.cs\:73
-
-Reuse
-
-```text
-Takes legal caller namespaces, so Access Application and the API are set aside and the 11 readers are listed
-```
-
-EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsModuleBoundariesArchUnitTest\.cs\:146
-
-Reuse
-
-```text
-Already holds the Access and Licensing edges under the new names; read by field name, not changed
-```
-
-##### Impact
-
-None.
-
-##### Agreement
-
-None.
-
-##### Not applicable
-
-impact
-
-```text
-S2 has no crafter target: its oracle is the only new file and every rule it calls exists after S1
-```
-
-agreement
-
-```text
-No shared contract changes; the neighbour lists are read, not changed
-```
-
-prefactoring
-
-```text
-No code target
-```
-
-##### Boundaries
-
-None.
-
-##### Observations
-
-None.
-
-##### Equality
-
-None.
-
-##### Constructors
-
-None.
-
-##### Laws
-
-###### L2
-
-```text
-For each rule R-L1..R-L5 the set of offending edges the IL shows equals the rule's inline list, and every Access or Licensing entry of the Work Items and Forecasting lists names a type under Modules.Access or Modules.Licensing
-```
-
-Invariant
-
-Application
-
-LicensingModuleBoundariesArchUnitTest
-
-###### Treatment
-
-Finite
-
-###### Cases
-
-```text
-a listed reader the IL does not hold is named
-```
-
-```text
-a reader the list misses, ForecastUpdater, is named
-```
-
-```text
-a made-up Licensing type reaching Access or another context is named
-```
-
-```text
-a made-up outsider reaching Licensing Adapters.Http outside the API is named
-```
-
-```text
-a neighbour list entry under an old Services name is named
-```
-
-```text
-Finite set of types and edges; exact comparison decides each rule
-```
-
-###### Evidence
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs
-
-##### Refuted
-
-None.
-
-##### Claims
-
-None.
-
-##### States
-
-None.
-
-##### Models
-
-None.
-
-##### Closure
-
-None.
-
-##### Risks
-
-None.
-
-##### Architectural tests
-
-###### T2
-
-```text
-Licensing keeps its shape: types in Application and Adapters.Http and none in the old Services namespace, no Access type or other context reached, outsiders reach Application only from the API, the composition root, Access Application or as listed and Adapters.Http only from the API, Application reaches platform only as listed; neighbour lists use the new names
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs
-
-```text
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~LicensingModuleBoundariesArchUnitTest"
 ```
 
 ##### Contract tests

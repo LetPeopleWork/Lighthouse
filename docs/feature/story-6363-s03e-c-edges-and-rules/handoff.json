@@ -1,7 +1,7 @@
 {
 "counters": {
 "D": 9,
-"F": 126,
+"F": 129,
 "K": 3,
 "L": 3,
 "P": 4,
@@ -51,7 +51,6 @@
 "id": "K1",
 "slices": [
 "S1",
-"S2",
 "S3"
 ],
 "text": "F29"
@@ -60,7 +59,6 @@
 "id": "K2",
 "slices": [
 "S1",
-"S2",
 "S3"
 ],
 "text": "F30"
@@ -69,7 +67,6 @@
 "id": "K3",
 "slices": [
 "S1",
-"S2",
 "S3"
 ],
 "text": "F31"
@@ -85,16 +82,10 @@
 },
 {
 "id": "D2",
-"slices": [
-"S2"
-],
 "text": "F21"
 },
 {
 "id": "D3",
-"slices": [
-"S2"
-],
 "text": "F22"
 },
 {
@@ -115,7 +106,6 @@
 "id": "D6",
 "slices": [
 "S1",
-"S2",
 "S3"
 ],
 "text": "F25"
@@ -124,7 +114,6 @@
 "id": "D7",
 "slices": [
 "S1",
-"S2",
 "S3"
 ],
 "text": "F26"
@@ -133,7 +122,6 @@
 "id": "D8",
 "slices": [
 "S1",
-"S2",
 "S3"
 ],
 "text": "F27"
@@ -141,8 +129,7 @@
 {
 "id": "D9",
 "slices": [
-"S1",
-"S2"
+"S1"
 ],
 "text": "F28"
 }
@@ -333,91 +320,6 @@
 "dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
 ]
 },
-"S2": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
-"public_oracle": {
-"expected": "F89",
-"falsifier": "F90",
-"promises": [
-"P2",
-"P4"
-],
-"stimulus": "F88"
-},
-"records": {
-"architectural_tests": [
-{
-"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~LicensingModuleBoundariesArchUnitTest\"",
-"id": "T2",
-"obligation": "F104",
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs"
-}
-],
-"laws": [
-{
-"evidence": [
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs"
-],
-"id": "L2",
-"kind": "Invariant",
-"layer": "Application",
-"owner": "LicensingModuleBoundariesArchUnitTest",
-"statement": "F97",
-"treatment": {
-"cases": [
-"F98",
-"F99",
-"F100",
-"F101",
-"F102"
-],
-"kind": "Finite",
-"reason": "F103"
-}
-}
-],
-"not_applicable": [
-{
-"analysis": "impact",
-"reason": "F94"
-},
-{
-"analysis": "agreement",
-"reason": "F95"
-},
-{
-"analysis": "prefactoring",
-"reason": "F96"
-}
-],
-"reuse": [
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15",
-"reason": "F91",
-"symbol": "ModuleRules"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:73",
-"reason": "F92",
-"symbol": "ApplicationIsReachedFromOutsideOnlyBy"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:146",
-"reason": "F93",
-"symbol": "EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue"
-}
-]
-},
-"verification": [
-"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~LicensingModuleBoundariesArchUnitTest\"",
-"pwsh Lighthouse.Backend/Test-Fast.ps1",
-"dotnet build Lighthouse.Backend",
-"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
-]
-},
 "S3": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingUnitTestPlacementTest.cs",
 "public_oracle": {
@@ -564,11 +466,6 @@
 "facts": {
 "F1": "ADO Story #6363 S03e Package Access and Licensing, feature C (edges and rules): Access has its own module rules with inline lists measured from the IL (C1); Licensing has its own module rules with every reader listed, ForecastUpdater included, and the neighbour lists re-keyed (C2); every Access and Licensing unit test sits under Tests/Modules, no file of either context is left in Services/{Interfaces,Implementation}, and RbacIdentityPattern is retired (C3). Rules only: production behaviour unchanged. DESIGN and DEVOPS: docs/feature/story-6363-s03e-package-access-licensing/feature-delta.md; features A (rules first) and B (the move, pushed 19d131189) are delivered.",
 "F10": "C3's placement check has no per-file exception for the old Licensing test folder: B4 moved the Licensing test data (TestLicenseData, the licence files, LicensingIntegrationTest) to Tests/Modules/Licensing (maintainer, 2026-11-17, answer 2).\n",
-"F100": "a made-up Licensing type reaching Access or another context is named",
-"F101": "a made-up outsider reaching Licensing Adapters.Http outside the API is named",
-"F102": "a neighbour list entry under an old Services name is named",
-"F103": "Finite set of types and edges; exact comparison decides each rule",
-"F104": "Licensing keeps its shape: types in Application and Adapters.Http and none in the old Services namespace, no Access type or other context reached, outsiders reach Application only from the API, the composition root, Access Application or as listed and Adapters.Http only from the API, Application reaches platform only as listed; neighbour lists use the new names",
 "F105": "RbacIdentityPattern, RbacIdentityModule and the not-empty assertion at line 124 are removed; nothing else changes",
 "F106": "The two tests that read RbacIdentityPattern by name and the helpers and fixtures only they use are removed; every other test stays",
 "F107": "Run AccessAndLicensingUnitTestPlacementTest over the repository tree, the compiled test assembly and its symbols, the made-up placement trees, and the namespace keys of ModuleBoundariesArchUnitTest read as patterns against made-up names in the old Services Auth, Authorization and Licensing namespaces",
@@ -593,11 +490,10 @@
 "F124": "a key matching an old-namespace name is named",
 "F125": "The tree and the key set are finite; exact enumeration decides the law",
 "F126": "Access and Licensing unit tests sit with their modules, no file of either context is left in the old Services folders, and no module-map key still sees the old namespaces",
+"F127": "S2 (Licensing module rules) is merged into S1 and removed as a slice: the accepted design found it has no RED and no crafter target of its own, because its rule R-L4 needs the shared ModuleRules.HttpAdaptersAreReachedFromOutsideOnlyBy that S1 adds, and feature B already renamed the neighbour lists. Following the S03d C precedent (a slice with no RED is not a slice; its test becomes a regression guard inside another slice), S1 now delivers both module rule sets and serves P1, P2 and P4; C3 depends on S1 only (root decision, 2026-11-22).",
+"F128": "C1+C2: Access and Licensing each have their own module rules (Architecture/AccessModuleBoundariesArchUnitTest.cs and Architecture/LicensingModuleBoundariesArchUnitTest.cs) with inline lists measured from the IL, every Licensing reader listed, ForecastUpdater included, and the neighbour lists keeping their re-keyed entries; a made-up offender per list position, including one reaching only through an attribute, fails a named rule.",
+"F129": "Access and Licensing each fail a named rule on a new offender across their border",
 "F13": "Does C3 have a RED? Measured 2026-11-21: the old Services/{Implementation,Interfaces}/{Auth,Authorization,Licensing} folders hold 0 files in production and tests, so the placement and no-file-left check will likely pass on arrival, as S03d's C3 did (dropped there as an nwdes slice and kept as a regression guard). The retirement of RbacIdentityPattern is a real edit. The acceptance designer decides whether C3's oracle has an observable RED (for example a made-up file in an old folder, or the retired pattern still being read) or whether C3 folds into C2 as a regression guard.\n",
-"F14": "C1: Access has its own module rules (Architecture/AccessModuleBoundariesArchUnitTest.cs) with inline lists measured from the IL; a made-up offender per list position, including one reaching only through an attribute, fails a named rule.",
-"F15": "Access fails a named rule on a new offender across its border",
-"F16": "C2: Licensing has its own module rules (Architecture/LicensingModuleBoundariesArchUnitTest.cs) with every reader listed, ForecastUpdater included, and the neighbour lists re-keyed; a made-up offender against each rule fails it.",
-"F17": "Licensing fails a named rule on a new offender across its border",
 "F18": "C3: every Access and Licensing unit test sits under Tests/Modules, no file of either context is left in Services/{Interfaces,Implementation}, and RbacIdentityPattern is retired; a made-up file in an old folder is caught.",
 "F19": "Access and Licensing tests sit with their modules, and the old shared pattern is gone",
 "F2": "Access and Licensing each have module rules that fail on a new offender, and their tests sit with their modules",
@@ -675,19 +571,7 @@
 "F85": "a compliant twin and the API are not named",
 "F86": "The compiled assembly holds a finite set of types and edges; exact comparison decides each rule and generation adds no coverage",
 "F87": "Access keeps its shape: each type in its layer and none in the old Services namespaces, Domain reaches only the kernel and the base library, outsiders reach Domain, Application and Http adapters only from the API, the composition root or as listed, Application reaches Data, platform and EF Core only as listed, Access reaches no other context",
-"F88": "Run LicensingModuleBoundariesArchUnitTest over the compiled Lighthouse assembly and the test assembly's made-up offenders: R-L1..R-L5 through ModuleRules with a Licensing ModuleWording, and the Work Items and Forecasting edge lists read by field name",
-"F89": "Every Licensing type lives in Application or Adapters.Http and none is left under Services Licensing; R-L3 lists exactly the 11 readers, ForecastUpdater included; R-L5 the two LicenseService edges; R-L2 and R-L4 empty; the Work Items and Forecasting lists name Access and Licensing types only under Modules.Access and Modules.Licensing; each rule names its made-up offender in the Licensing fixture namespace and passes its compliant twin, Access Application and the API",
-"F9": "Rigor thorough for all of feature C: architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet (maintainer, 2026-11-17).\n",
-"F90": "A reader dropped from the R-L3 list, ForecastUpdater first, fails naming it; an entry the IL does not hold fails naming it; a made-up Licensing type reaching Access, a made-up outsider reaching Adapters.Http, or a list entry under an old Services name is named. Green on arrival over the real code once S1's rule exists: the neighbour lists were re-keyed in feature B",
-"F91": "S2 calls the shared rules, including the HTTP-adapter inbound rule that S1 adds, with the API as the legal caller and an empty list",
-"F92": "Takes legal caller namespaces, so Access Application and the API are set aside and the 11 readers are listed",
-"F93": "Already holds the Access and Licensing edges under the new names; read by field name, not changed",
-"F94": "S2 has no crafter target: its oracle is the only new file and every rule it calls exists after S1",
-"F95": "No shared contract changes; the neighbour lists are read, not changed",
-"F96": "No code target",
-"F97": "For each rule R-L1..R-L5 the set of offending edges the IL shows equals the rule's inline list, and every Access or Licensing entry of the Work Items and Forecasting lists names a type under Modules.Access or Modules.Licensing",
-"F98": "a listed reader the IL does not hold is named",
-"F99": "a reader the list misses, ForecastUpdater, is named"
+"F9": "Rigor thorough for all of feature C: architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet (maintainer, 2026-11-17).\n"
 },
 "product": {
 "decisions": [
@@ -721,6 +605,12 @@
 "owner": "Acceptance"
 },
 "text": "F13"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F127"
 }
 ],
 "promises": [
@@ -754,32 +644,20 @@
 "slices": [
 {
 "id": "S1",
-"observation": "F14",
+"observation": "F128",
 "promises": [
 "P1",
-"P4"
-],
-"work": {
-"size": "M",
-"value": "F15"
-}
-},
-{
-"id": "S2",
-"observation": "F16",
-"promises": [
 "P2",
 "P4"
 ],
 "work": {
-"size": "S",
-"value": "F17"
+"size": "M",
+"value": "F129"
 }
 },
 {
 "depends_on": [
-"S1",
-"S2"
+"S1"
 ],
 "id": "S3",
 "observation": "F18",

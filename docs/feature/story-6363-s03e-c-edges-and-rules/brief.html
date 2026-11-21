@@ -246,6 +246,14 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Acceptance</p>
 
+<pre><code>S2 (Licensing module rules) is merged into S1 and removed as a slice: the accepted design found it has no RED and no crafter target of its own, because its rule R-L4 needs the shared ModuleRules.HttpAdaptersAreReachedFromOutsideOnlyBy that S1 adds, and feature B already renamed the neighbour lists. Following the S03d C precedent (a slice with no RED is not a slice; its test becomes a regression guard inside another slice), S1 now delivers both module rule sets and serves P1, P2 and P4; C3 depends on S1 only (root decision, 2026-11-22).
+</code></pre>
+
+<h4>Status</h4>
+
+<p>Confirmed</p>
+
+
 <h2>Journey</h2>
 
 <p>None.</p>
@@ -254,36 +262,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>S1</h3>
 
-<pre><code>C1: Access has its own module rules (Architecture/AccessModuleBoundariesArchUnitTest.cs) with inline lists measured from the IL; a made-up offender per list position, including one reaching only through an attribute, fails a named rule.
+<pre><code>C1+C2: Access and Licensing each have their own module rules (Architecture/AccessModuleBoundariesArchUnitTest.cs and Architecture/LicensingModuleBoundariesArchUnitTest.cs) with inline lists measured from the IL, every Licensing reader listed, ForecastUpdater included, and the neighbour lists keeping their re-keyed entries; a made-up offender per list position, including one reaching only through an attribute, fails a named rule.
 </code></pre>
 
 <h4>Promises</h4>
 
 <p>P1</p>
-
-<p>P4</p>
-
-<h4>Depends on</h4>
-
-<p>None.</p>
-
-<h4>Slice work</h4>
-
-<p>M</p>
-
-<pre><code>Access fails a named rule on a new offender across its border
-</code></pre>
-
-<h5>Rework</h5>
-
-<p>None.</p>
-
-<h3>S2</h3>
-
-<pre><code>C2: Licensing has its own module rules (Architecture/LicensingModuleBoundariesArchUnitTest.cs) with every reader listed, ForecastUpdater included, and the neighbour lists re-keyed; a made-up offender against each rule fails it.
-</code></pre>
-
-<h4>Promises</h4>
 
 <p>P2</p>
 
@@ -295,9 +279,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>Slice work</h4>
 
-<p>S</p>
+<p>M</p>
 
-<pre><code>Licensing fails a named rule on a new offender across its border
+<pre><code>Access and Licensing each fail a named rule on a new offender across their border
 </code></pre>
 
 <h5>Rework</h5>
@@ -318,8 +302,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h4>Depends on</h4>
 
 <p>S1</p>
-
-<p>S2</p>
 
 <h4>Slice work</h4>
 

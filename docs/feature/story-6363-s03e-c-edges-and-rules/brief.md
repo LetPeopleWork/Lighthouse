@@ -110,6 +110,15 @@ Open
 
 Acceptance
 
+```text
+S2 (Licensing module rules) is merged into S1 and removed as a slice: the accepted design found it has no RED and no crafter target of its own, because its rule R-L4 needs the shared ModuleRules.HttpAdaptersAreReachedFromOutsideOnlyBy that S1 adds, and feature B already renamed the neighbour lists. Following the S03d C precedent (a slice with no RED is not a slice; its test becomes a regression guard inside another slice), S1 now delivers both module rule sets and serves P1, P2 and P4; C3 depends on S1 only (root decision, 2026-11-22).
+```
+
+#### Status
+
+Confirmed
+
+
 ## Journey
 
 None.
@@ -119,12 +128,14 @@ None.
 ### S1
 
 ```text
-C1: Access has its own module rules (Architecture/AccessModuleBoundariesArchUnitTest.cs) with inline lists measured from the IL; a made-up offender per list position, including one reaching only through an attribute, fails a named rule.
+C1+C2: Access and Licensing each have their own module rules (Architecture/AccessModuleBoundariesArchUnitTest.cs and Architecture/LicensingModuleBoundariesArchUnitTest.cs) with inline lists measured from the IL, every Licensing reader listed, ForecastUpdater included, and the neighbour lists keeping their re-keyed entries; a made-up offender per list position, including one reaching only through an attribute, fails a named rule.
 ```
 
 #### Promises
 
 P1
+
+P2
 
 P4
 
@@ -137,35 +148,7 @@ None.
 M
 
 ```text
-Access fails a named rule on a new offender across its border
-```
-
-##### Rework
-
-None.
-
-### S2
-
-```text
-C2: Licensing has its own module rules (Architecture/LicensingModuleBoundariesArchUnitTest.cs) with every reader listed, ForecastUpdater included, and the neighbour lists re-keyed; a made-up offender against each rule fails it.
-```
-
-#### Promises
-
-P2
-
-P4
-
-#### Depends on
-
-None.
-
-#### Slice work
-
-S
-
-```text
-Licensing fails a named rule on a new offender across its border
+Access and Licensing each fail a named rule on a new offender across their border
 ```
 
 ##### Rework
@@ -187,8 +170,6 @@ P4
 #### Depends on
 
 S1
-
-S2
 
 #### Slice work
 
