@@ -146,12 +146,101 @@
 "stimulus": "F197",
 "user_result": "F191"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F146"
+],
+"still_passes_if": "F207",
+"test": "Scripts/examine/test-access-answers-compare.sh :: one Access or Licensing answer changed"
+},
+"expected": "F205",
+"stimulus": "F204",
+"user_result": "F206"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F145"
+],
+"still_passes_if": "F211",
+"test": "Scripts/examine/test-access-answers-compare.sh :: identical Access and Licensing answers"
+},
+"expected": "F209",
+"stimulus": "F208",
+"user_result": "F210"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F147"
+],
+"still_passes_if": "F215",
+"test": "Scripts/examine/test-access-answers-compare.sh :: nothing captured"
+},
+"expected": "F213",
+"stimulus": "F212",
+"user_result": "F214"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F219",
+"test": "Scripts/examine/test-access-answers-compare.sh :: usage names the captured answers"
+},
+"expected": "F217",
+"stimulus": "F216",
+"user_result": "F218"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F223",
+"test": "Scripts/examine/test-access-answers-compare.sh :: admitted examine probes; selftest"
+},
+"expected": "F221",
+"stimulus": "F220",
+"user_result": "F222"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F226",
+"test": "dotnet test Lighthouse.Backend with the live-connector exclusion filter (declared verification)"
+},
+"expected": "F225",
+"stimulus": "F224",
+"user_result": "F191"
+}
 ]
 },
 "counters": {
 "D": 12,
 "E": 5,
-"F": 203,
+"F": 226,
 "K": 5,
 "L": 4,
 "P": 5,
@@ -1005,8 +1094,31 @@
 "F201": "On today's code every listed type is found once in its old or new namespace and no unlisted type appears; Domain types reach only the shared Models, the base library and the types listed as Domain as the code holds them by full name, and Application classes reach more; four candidates are admitted and the other three are left out naming the condition they fail. A missing listed type, a made-up listed name, an unlisted type, a Domain type reaching the Application or the platform, a Domain type reaching an Application type that shares its short name with a Domain-listed type, or a shared short name in two namespaces fails and is named.",
 "F202": "The move of Access and Licensing has one fixed, measured list of what moves and to which layer; any drift from it fails a test that names the type.\n",
 "F203": "A type that moves to the wrong layer of the right module after the move, since before the move the lists and not the namespaces carry the layer; the module layout rules of the later feature own that.\n",
+"F204": "Two recorded captures of the Access and Licensing answers that differ only in the licence status after the premium licence import are compared.",
+"F205": "The comparison ends on DIFFERENT and exits 1; its per-answer lines show the licence status after the import as 1 compared, 1 different and the unchanged auth mode as 1 compared, 0 different; the differences name the changed answer.",
+"F206": "The examiner sees a changed Access or Licensing answer flagged, and which answer it is.",
+"F207": "A comparison that flags only the first differing answer when several differ would still pass, because only one answer differs here.",
+"F208": "Two separate recorded captures holding the same ten Access and Licensing answers are compared.",
+"F209": "The comparison ends on IDENTICAL over all 10 answers and exits 0.",
 "F21": "The live authentication, RBAC and proxy-auth runs of the move push are visible at EXAMINE",
+"F210": "The examiner sees that a move left every Access and Licensing answer as it was.",
+"F211": "A comparison that ignores whitespace-only differences in a body would still pass, because the identical pair is a byte copy.",
+"F212": "Two empty capture folders are compared.",
+"F213": "The comparison does not exit 0, is not called IDENTICAL, and says that nothing was compared.",
+"F214": "The examiner cannot mistake a capture that recorded nothing for proof that nothing changed.",
+"F215": "A comparison that accepts a capture holding only some of the ten answers would still pass, because only the fully empty case is checked here.",
+"F216": "The examiner reads the usage of the Access and Licensing answers command.",
+"F217": "The usage names every captured answer: auth mode, session, my summary, RBAC status, system-wide rules, everyone signed in, API keys, and the licence status before and after a licence import.",
+"F218": "The examiner knows from the usage which answers a green run proves unchanged.",
+"F219": "A usage that names an answer the capture does not actually read would still pass; whether the capture reads it is judged by review and by the examiner's full run.",
 "F22": "Confirmed (D-0, D-12, P5): feature A changes no production code, schema, DI registration, configuration or Program.cs. Only test-side architecture rule files, ModuleRules, the EXAMINE command builder, its two test scripts and .nwave/examine.json change. Nothing moves in feature A; the moves and the licence test data are feature B (story-6363-s03e-b-move); the modules own rules, outbound lists and test placement are feature C.",
+"F220": "The examiner looks up the admitted examine probes and runs the Access and Licensing answers selftest.",
+"F221": "Both the answers command and its selftest are admitted examine probes, and the selftest runs these Access and Licensing compare checks, passes, and prints their total.",
+"F222": "The examiner can run the command and see for themselves that it tells answers apart.",
+"F223": "A selftest that runs these checks but drops their output past the total would still pass.",
+"F224": "The full backend test suite, without the live tracker connectors, runs on the candidate.",
+"F225": "Every existing test stays green; the slice adds only an examine command, its selftest and their probe entries, no production code.",
+"F226": "A production change that no existing test observes would still pass; review of the diff, which touches only Scripts and .nwave, closes that.",
 "F23": "Confirmed (D-1): the Access membership is the 27 files of the ADR-270 Access set (RBAC administration, Feature move authorization, FeatureReadability, GroupClaimParser, OIDC group snapshot writer, current user profile, API keys, API-key principal factory, embed sessions, auth mode resolver, auth configuration validator, their interfaces, and the ASP.NET pieces ApiKeyAuthenticationHandler, DisabledAuthenticationHandler, SmartAuthSchemeSelector, BlockedModeFilter, RbacGuardAttribute, AccessMarkerAttribute, SignedInOnlyAttribute, CheckedInHandlerAttribute); the Licensing membership is LicenseService, LicenseVerifier, LicenseGuardAttribute, ILicenseService, ILicenseVerifier plus the public_key.pem resource. Entities, wire types, repositories, seeders, controllers, DTOs, API helpers, configuration, AuthPostureBanner and VoterIdentityResolver stay with their named owner. A2 measures the list from the IL and pins it.",
 "F24": "Confirmed (D-2): a Models type is admitted into Access or Licensing only if it is not an EF entity, not on the wire, not reached by a kernel type and not used by code that stays outside. Candidates (E11): ApiKeyOwnerResolutionState, ApiKeyValidationResult, AuthConfigurationValidationResult, EmbedSessionTokenRedemption, EffectiveAccess, PermissionRule, RbacOperationResult. A2 evaluates each candidate against the IL and pins the admitted list by name; a candidate that fails a condition stays in Models.",
 "F25": "Confirmed (D-3): target namespaces are Lighthouse.Backend.Modules.Access.Domain, .Application, .Adapters.Http and Lighthouse.Backend.Modules.Licensing.Application, .Adapters.Http. A type is Domain if its IL reaches only the kernel and the BCL; ApiKeyPrincipalFactory, FeatureReadability and GroupClaimParser are measured by A2 and their layer pinned. The eight ASP.NET pieces and LicenseGuardAttribute are Adapters.Http; Licensing has no Domain.",

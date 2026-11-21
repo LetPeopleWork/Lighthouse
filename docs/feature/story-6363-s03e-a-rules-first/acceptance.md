@@ -253,6 +253,185 @@ A production change no existing test observes; the diff of the slice, which touc
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Two recorded captures of the Access and Licensing answers that differ only in the licence status after the premium licence import are compared.
+```
+
+```text
+The comparison ends on DIFFERENT and exits 1; its per-answer lines show the licence status after the import as 1 compared, 1 different and the unchanged auth mode as 1 compared, 0 different; the differences name the changed answer.
+```
+
+```text
+The examiner sees a changed Access or Licensing answer flagged, and which answer it is.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-access\-answers\-compare\.sh \:\: one Access or Licensing answer changed
+
+```text
+A comparison that flags only the first differing answer when several differ would still pass, because only one answer differs here.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Two separate recorded captures holding the same ten Access and Licensing answers are compared.
+```
+
+```text
+The comparison ends on IDENTICAL over all 10 answers and exits 0.
+```
+
+```text
+The examiner sees that a move left every Access and Licensing answer as it was.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-access\-answers\-compare\.sh \:\: identical Access and Licensing answers
+
+```text
+A comparison that ignores whitespace-only differences in a body would still pass, because the identical pair is a byte copy.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Two empty capture folders are compared.
+```
+
+```text
+The comparison does not exit 0, is not called IDENTICAL, and says that nothing was compared.
+```
+
+```text
+The examiner cannot mistake a capture that recorded nothing for proof that nothing changed.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-access\-answers\-compare\.sh \:\: nothing captured
+
+```text
+A comparison that accepts a capture holding only some of the ten answers would still pass, because only the fully empty case is checked here.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The examiner reads the usage of the Access and Licensing answers command.
+```
+
+```text
+The usage names every captured answer: auth mode, session, my summary, RBAC status, system-wide rules, everyone signed in, API keys, and the licence status before and after a licence import.
+```
+
+```text
+The examiner knows from the usage which answers a green run proves unchanged.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-access\-answers\-compare\.sh \:\: usage names the captured answers
+
+```text
+A usage that names an answer the capture does not actually read would still pass; whether the capture reads it is judged by review and by the examiner's full run.
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+The examiner looks up the admitted examine probes and runs the Access and Licensing answers selftest.
+```
+
+```text
+Both the answers command and its selftest are admitted examine probes, and the selftest runs these Access and Licensing compare checks, passes, and prints their total.
+```
+
+```text
+The examiner can run the command and see for themselves that it tells answers apart.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-access\-answers\-compare\.sh \:\: admitted examine probes\; selftest
+
+```text
+A selftest that runs these checks but drops their output past the total would still pass.
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The full backend test suite, without the live tracker connectors, runs on the candidate.
+```
+
+```text
+Every existing test stays green; the slice adds only an examine command, its selftest and their probe entries, no production code.
+```
+
+```text
+Nothing a user, a tracker or the database sees changes.
+```
+
+##### Disposition
+
+Tested
+
+dotnet test Lighthouse\.Backend with the live\-connector exclusion filter \(declared verification\)
+
+```text
+A production change that no existing test observes would still pass; review of the diff, which touches only Scripts and .nwave, closes that.
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

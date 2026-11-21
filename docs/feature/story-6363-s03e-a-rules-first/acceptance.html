@@ -370,6 +370,161 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Two recorded captures of the Access and Licensing answers that differ only in the licence status after the premium licence import are compared.
+</code></pre>
+
+<pre><code>The comparison ends on DIFFERENT and exits 1; its per-answer lines show the licence status after the import as 1 compared, 1 different and the unchanged auth mode as 1 compared, 0 different; the differences name the changed answer.
+</code></pre>
+
+<pre><code>The examiner sees a changed Access or Licensing answer flagged, and which answer it is.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/test-access-answers-compare.sh :: one Access or Licensing answer changed</p>
+
+<pre><code>A comparison that flags only the first differing answer when several differ would still pass, because only one answer differs here.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Two separate recorded captures holding the same ten Access and Licensing answers are compared.
+</code></pre>
+
+<pre><code>The comparison ends on IDENTICAL over all 10 answers and exits 0.
+</code></pre>
+
+<pre><code>The examiner sees that a move left every Access and Licensing answer as it was.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/test-access-answers-compare.sh :: identical Access and Licensing answers</p>
+
+<pre><code>A comparison that ignores whitespace-only differences in a body would still pass, because the identical pair is a byte copy.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Two empty capture folders are compared.
+</code></pre>
+
+<pre><code>The comparison does not exit 0, is not called IDENTICAL, and says that nothing was compared.
+</code></pre>
+
+<pre><code>The examiner cannot mistake a capture that recorded nothing for proof that nothing changed.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/test-access-answers-compare.sh :: nothing captured</p>
+
+<pre><code>A comparison that accepts a capture holding only some of the ten answers would still pass, because only the fully empty case is checked here.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The examiner reads the usage of the Access and Licensing answers command.
+</code></pre>
+
+<pre><code>The usage names every captured answer: auth mode, session, my summary, RBAC status, system-wide rules, everyone signed in, API keys, and the licence status before and after a licence import.
+</code></pre>
+
+<pre><code>The examiner knows from the usage which answers a green run proves unchanged.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/test-access-answers-compare.sh :: usage names the captured answers</p>
+
+<pre><code>A usage that names an answer the capture does not actually read would still pass; whether the capture reads it is judged by review and by the examiner&#x27;s full run.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The examiner looks up the admitted examine probes and runs the Access and Licensing answers selftest.
+</code></pre>
+
+<pre><code>Both the answers command and its selftest are admitted examine probes, and the selftest runs these Access and Licensing compare checks, passes, and prints their total.
+</code></pre>
+
+<pre><code>The examiner can run the command and see for themselves that it tells answers apart.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/test-access-answers-compare.sh :: admitted examine probes; selftest</p>
+
+<pre><code>A selftest that runs these checks but drops their output past the total would still pass.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The full backend test suite, without the live tracker connectors, runs on the candidate.
+</code></pre>
+
+<pre><code>Every existing test stays green; the slice adds only an examine command, its selftest and their probe entries, no production code.
+</code></pre>
+
+<pre><code>Nothing a user, a tracker or the database sees changes.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>dotnet test Lighthouse.Backend with the live-connector exclusion filter (declared verification)</p>
+
+<pre><code>A production change that no existing test observes would still pass; review of the diff, which touches only Scripts and .nwave, closes that.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
