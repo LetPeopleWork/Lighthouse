@@ -15,6 +15,8 @@ Portfolios are an essential building block for using Lighthouse. You can use Por
 # Gain an Overview
 The overview, as the name suggests, shows you a rough overview over all the portfolios. You can see which portfolios are defined, and how many Features are defined as part of this portfolio.
 
+Long names are cut with an ellipsis and show in full on hover or keyboard focus. The *Delete* action is pinned as the last column, and a soft shadow on an edge shows that more columns are out of sight. On a phone, *Details*, *Edit*, *Clone* and *Delete* are folded into one **⋮** menu at the end of the row.
+
 The *Deliveries* and *Reports* columns show at most two entries each: a chip per Delivery, and each [report](../reports/reports.html#reports-on-the-overview) by name. When a portfolio has more, a *+N more* link under them opens its Deliveries or Reports tab. While a cell is loading it shows a small spinner, and if its data cannot be loaded it says *Couldn't load Deliveries* or *Couldn't load Reports* rather than claiming there are none.
 
 # Create a new Portfolio

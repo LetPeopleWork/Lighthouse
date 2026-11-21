@@ -15,6 +15,8 @@ The *Overview* page shows you all teams that are defined. As the name suggests, 
 # Gain an Overview
 The overview, as the name suggests, shows you a rough overview over all the teams. You can see which teams are defined, and how many Features they are contributing to (based on the the features in all defined portfolios).
 
+Long names are cut with an ellipsis and show in full on hover or keyboard focus. The *Delete* action is pinned as the last column, and a soft shadow on an edge shows that more columns are out of sight. On a phone, *Details*, *Edit*, *Clone* and *Delete* are folded into one **⋮** menu at the end of the row.
+
 The *Reports* column shows each team's [reports](../reports/reports.html#reports-on-the-overview): at most two by name, then a *+N more* link to the team's Reports tab.
 
 # Create a new Team

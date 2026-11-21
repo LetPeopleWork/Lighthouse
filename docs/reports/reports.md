@@ -102,6 +102,8 @@ If printing does not work for you, please let us know in our [Slack community](h
 
 The table has the columns **Name**, **Type**, **Owner**, **Created** and *Actions*. The **Owner** column shows the name of the Team or Portfolio the report belongs to, with an icon for which of the two it is. Click the name to open that Team or Portfolio. Portfolios are listed first, then Teams, each sorted by name. Click a column header to sort the table differently.
 
+Long names are cut with an ellipsis and show in full on hover or keyboard focus. The *Actions* column is pinned as the last column, and a soft shadow on an edge shows that more columns are out of sight; on a narrow window the table scrolls inside itself.
+
 The row icons are the same as on a Reports tab: export as PDF, edit and delete. Edit and delete show only on rows of Teams and Portfolios you may change.
 
 ## Finding Reports
