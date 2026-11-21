@@ -114,11 +114,11 @@ const DESCRIPTION_OF: Record<Exclude<Edges, "none">, string> = {
 	both: "This table scrolls sideways. More columns on both sides.",
 };
 
-const CUES_SHOWN: Record<Edges, number> = {
-	none: 0,
-	right: 1,
-	left: 1,
-	both: 2,
+const CUE_SIDES: Record<Edges, string[]> = {
+	none: [],
+	left: ["left"],
+	right: ["right"],
+	both: ["left", "right"],
 };
 
 beforeEach(() => {
@@ -158,13 +158,16 @@ const whenTheViewportBecomes = (width: number) => {
 const theCueState = (container: HTMLElement) =>
 	container.querySelector<HTMLElement>("[data-overflow]")?.dataset.overflow;
 
-/** The decorative edge shadows: hidden from assistive technology and never catching a click. */
-const theShownCues = (container: HTMLElement) =>
-	Array.from(container.querySelectorAll('[aria-hidden="true"]')).filter(
-		(element) =>
-			!(element instanceof SVGElement) &&
-			getComputedStyle(element).pointerEvents === "none",
-	);
+/** The sides of the decorative edge shadows: hidden from assistive technology and never catching a click. */
+const theCueSides = (container: HTMLElement) =>
+	Array.from(container.querySelectorAll<HTMLElement>('[aria-hidden="true"]'))
+		.filter(
+			(element) =>
+				!(element instanceof SVGElement) &&
+				getComputedStyle(element).pointerEvents === "none",
+		)
+		.map((element) => element.dataset.side ?? "unmarked")
+		.sort((a, b) => a.localeCompare(b));
 
 const theGridDescription = () => {
 	const ids = screen.getByRole("grid").getAttribute("aria-describedby");
@@ -182,9 +185,9 @@ const thenTheCueShows = (container: HTMLElement, edges: Edges) => {
 		`with the table state "${edges}", the grid must mark that state, so the cue follows the scroll position and goes when nothing is hidden`,
 	).toBe(edges);
 	expect(
-		theShownCues(container),
-		`the table state "${edges}" must draw exactly ${CUES_SHOWN[edges]} decorative edge shadow(s): a shadow on the end of the range or on a table that fits tells the person of columns that are not there`,
-	).toHaveLength(CUES_SHOWN[edges]);
+		theCueSides(container),
+		`the table state "${edges}" must draw a decorative edge shadow on exactly the sides ${JSON.stringify(CUE_SIDES[edges])}, each marked with data-side naming its edge: a shadow on the end of the range, on a table that fits or on the wrong edge tells the person of columns that are not there`,
+	).toEqual(CUE_SIDES[edges]);
 	if (edges === "none") {
 		expect(
 			theGridDescription(),
@@ -219,7 +222,6 @@ describe("A table that has more columns than shown says so", () => {
 describe("A person using the keyboard reaches columns that are off screen", () => {
 	const PINNED_LEFT = 300;
 	const CELL_LEFT_IN_VIEW = 0;
-	const VIEW_RIGHT = 400;
 
 	/** Column places as the person sees them while the table is scrolled: the actions column stays where it is. */
 	const placeColumnsLikeTheBrowser = (container: HTMLElement) => {
@@ -280,7 +282,7 @@ describe("A person using the keyboard reaches columns that are off screen", () =
 		return cellOf(field) as HTMLElement;
 	};
 
-	it("scrolls a focused cell clear of the pinned actions column, and leaves a cell that is in view where it is", async () => {
+	it("scrolls a focused cell clear of the pinned actions column, leaves a cell that is in view where it is, and lets the keyboard reach the actions column", async () => {
 		const user = userEvent.setup();
 		const { container } = whenTheReportListIsShown();
 		const scroller = placeColumnsLikeTheBrowser(container);
@@ -303,15 +305,6 @@ describe("A person using the keyboard reaches columns that are off screen", () =
 			"scrolling the focused cell clear of the pinned column must not push its start out of view",
 		).toBeGreaterThanOrEqual(CELL_LEFT_IN_VIEW);
 
-		const actions = await whenTheyArrowToTheCell(user, "actions");
-		const actionsPlace = actions.getBoundingClientRect();
-		expect(
-			actionsPlace.left,
-			"the actions cell must be reachable by the keyboard and start inside the visible table",
-		).toBeGreaterThanOrEqual(CELL_LEFT_IN_VIEW);
-		expect(
-			actionsPlace.right,
-			"the actions cell must end inside the visible table, so the keyboard user can use Delete",
-		).toBeLessThanOrEqual(VIEW_RIGHT);
+		await whenTheyArrowToTheCell(user, "actions");
 	});
 });

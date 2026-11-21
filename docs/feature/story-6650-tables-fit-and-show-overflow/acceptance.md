@@ -167,15 +167,15 @@ The pinned actions column covers part of the last scrolling column's content.
 P6
 
 ```text
-A report list whose columns do not fit its box is shown scrolled to its left edge.
+A report list whose columns do not fit its box is shown scrolled to its left edge, once with the grid box stated in a test and once in the browser at 1280 px with a wide stored Name.
 ```
 
 ```text
-The table is marked as hiding columns on the right and one decorative shadow shows on the right edge only; in the browser the shadow sits on the right edge at the left scroll position.
+The table is marked as hiding columns on the right and one decorative shadow shows, on the right side only, each shadow naming its side; in the browser the shadow sits on the right edge and ends where the pinned actions column starts.
 ```
 
 ```text
-The person sees a shadow on the right edge and knows there are more columns to scroll to.
+The person sees a shadow on the right edge, over the columns that scroll and not over Delete, and knows there are more columns to scroll to.
 ```
 
 ##### Disposition
@@ -185,12 +185,12 @@ Tested
 Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls\, and none once the table fits \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
 
 ```text
-A shadow drawn on the left edge instead of the right passes the jsdom check, which counts shadows; the browser check reads the side from where the shadow sits.
+A shadow of another width or colour passes, as does other screen reader wording that names the side. A shadow over the Delete button or at the wrapper edge fails the browser check; a left and right swap fails both checks.
 ```
 
 ###### Obligations
 
-
+None.
 
 ##### Covers
 
@@ -201,7 +201,7 @@ The person scrolls the table to the middle, then to its end, then the window is 
 ```
 
 ```text
-The mark and the shadows go right, then both, then left, then none; at the end of the range only the left shadow shows; the pure edge rule names exactly the sides with hidden columns for any scroll position, width and content, within one pixel.
+The mark and the shadows go right, then both, then left, then none; at the end of the range only the left shadow shows; the edge rule gives the listed sides for worked scroll positions including each one-pixel boundary, never names a side for a table that fits, never a left side at the start or a right side at the end, names both when clear of both ends, swaps sides for mirrored positions, and never brings the left cue back once scrolled past it.
 ```
 
 ```text
@@ -212,26 +212,26 @@ The shadow follows the scroll position and disappears when nothing is hidden.
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls\, and none once the table fits \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns names exactly the sides with hidden columns\, and none when the content fits within a pixel of the viewport \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns shows nothing for a table that fits\, even when the scroll position is left over from a wider table \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls\, and none once the table fits \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns scrolled \%i px in a \%i px viewport over \%i px of content\, hidden columns are\: \%s \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns never names a side for a table that fits\, wherever the scroll position was left \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns shows no left cue at the start and no right cue at the end of the range \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns names both sides when the table is scrolled clear of both ends \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns treats the two edges alike\: scrolling to the mirror position swaps the sides \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/horizontalOverflow\.test\.ts\:\:Which side of a table has hidden columns shows a left cue once it has started and keeps it\, and a right cue until it ends and never brings it back \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
 
 ```text
-A rule that tests one pixel of tolerance one pixel off at the exact boundary is caught by the boundary examples; a cue that ignores a stale scroll position on a fitting table is caught by the stale-scroll example.
+A rule that is wrong only at a position no worked row or generated property picks. A tolerance of 2 px instead of 1 fails the one-pixel boundary rows.
 ```
 
 ###### Obligations
 
-
+None.
 
 ##### Covers
 
 P8
 
 ```text
-A screen reader user reads the grid while columns are hidden on one side, on both sides and on none; a keyboard user lands on a Name cell in view, arrows to an Owner cell that ends under the pinned actions column, then arrows to the actions cell.
+A screen reader user reads the grid while columns are hidden on one side, on both sides and on none; a keyboard user lands on a Name cell in view, arrows to an Owner cell that ends under the pinned actions column, then arrows to the actions cell; in the browser at 375 px a keyboard user arrows from the Created date to the actions cell.
 ```
 
 ```text
-The grid description reads: This table scrolls sideways. More columns to the right. (or to the left, or on both sides) and is absent when nothing is hidden; a cell in view makes the table stay put; the Owner cell is scrolled clear of the pinned actions column without its start leaving the view; the actions cell takes the focus and lies inside the visible range.
+The grid description reads: This table scrolls sideways. More columns to the right. (or to the left, or on both sides) and is absent when nothing is hidden; a cell in view makes the table stay put; the Owner cell is scrolled clear of the pinned actions column without its start leaving the view; the actions cell takes the focus; in the browser every focused cell comes to rest clear of the pinned actions column and the walk ends on the actions cell.
 ```
 
 ```text
@@ -242,10 +242,10 @@ A keyboard or screen reader user learns of the hidden columns as text and can re
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls\, and none once the table fits \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:A person using the keyboard reaches columns that are off screen scrolls a focused cell clear of the pinned actions column\, and leaves a cell that is in view where it is
+Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:A table that has more columns than shown says so shows a cue on the side with hidden columns while the person scrolls\, and none once the table fits \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:A person using the keyboard reaches columns that are off screen scrolls a focused cell clear of the pinned actions column\, leaves a cell that is in view where it is\, and lets the keyboard reach the actions column \| Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:a coach finds Delete on every report of a Team\, at desktop and at phone width\, and reads a long name in full
 
 ```text
-A focus scroll that always runs to the end of the table is caught by the in-view check of the Owner cell start; the pixel geometry of the browser is not checked here, only the jsdom stand-in layout.
+A focus scroll that always runs to the end of the table fails the Owner start check. The actions cell geometry is not checked in jsdom, where the layout is stated by the test; the browser walk measures it.
 ```
 
 ###### Obligations
@@ -257,11 +257,11 @@ None.
 P11
 
 ```text
-The Reports tab with a stored 900 px Name is opened at 375 px; the person looks at the table and scrolls it to its end.
+The Reports tab is opened at 375 px with the fitted layout and again with a stored 900 px Name; the person looks at the table and scrolls it to its end.
 ```
 
 ```text
-The page does not scroll sideways and the table does; Delete stays in the table; the right shadow shows at the left edge and the left shadow at the end of the range, read from where each shadow sits.
+The page does not scroll sideways and the table does; Delete stays in the table; the right shadow shows at the left edge, ends where the pinned actions column starts, and the left shadow shows at the end of the range, read from where each shadow sits.
 ```
 
 ```text

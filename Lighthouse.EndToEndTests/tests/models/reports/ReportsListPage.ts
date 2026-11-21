@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { formatLocalDate } from "../../helpers/dates";
 import { ReportPage } from "./ReportPage";
 
@@ -8,6 +8,8 @@ export interface ThenAndNowChoices {
 	thenDays?: number;
 	name?: string;
 }
+
+type Box = { x: number; y: number; width: number; height: number };
 
 /**
  * The Reports tab of a Team or a Portfolio, and the wizard that creates a report from it. Left as it
@@ -186,15 +188,19 @@ export class ReportsListPage {
 		return this.scroller.evaluate((element) => element.scrollLeft);
 	}
 
-	/** The sides of the table that carry a shadow: decorative elements that let every click through. */
-	async sidesWithACue(): Promise<string[]> {
+	/** The shadows on the table's edges: decorative elements that let every click through, with the side each sits on. */
+	private async cuesOnTheEdges(): Promise<{ side: string; box: Box }[]> {
+		const root = this.page
+			.locator("[data-overflow]")
+			.filter({ has: this.table });
+		await expect(
+			root,
+			"the table must mark whether columns are hidden, or a missing marker would read as no shadow",
+		).toHaveCount(1);
 		const tableBox = await this.table.boundingBox();
 		const middle = tableBox ? tableBox.x + tableBox.width / 2 : 0;
-		const cues = this.page
-			.locator("[data-overflow]")
-			.filter({ has: this.table })
-			.locator('[aria-hidden="true"]:not(svg)');
-		const sides: string[] = [];
+		const cues = root.locator('[aria-hidden="true"]:not(svg)');
+		const found: { side: string; box: Box }[] = [];
 		for (const cue of await cues.all()) {
 			const letsClicksThrough =
 				(await cue.evaluate(
@@ -202,9 +208,96 @@ export class ReportsListPage {
 				)) === "none";
 			const box = await cue.boundingBox();
 			if (!letsClicksThrough || box === null || box.width === 0) continue;
-			sides.push(box.x + box.width / 2 < middle ? "left" : "right");
+			found.push({
+				side: box.x + box.width / 2 < middle ? "left" : "right",
+				box,
+			});
 		}
-		return sides.sort((a, b) => a.localeCompare(b));
+		return found;
+	}
+
+	/** The sides of the table that carry a shadow. */
+	async sidesWithACue(): Promise<string[]> {
+		const cues = await this.cuesOnTheEdges();
+		return cues.map((cue) => cue.side).sort((a, b) => a.localeCompare(b));
+	}
+
+	/** How far the right shadow reaches from the table's left edge, or null while there is none. */
+	async rightCueEnd(): Promise<number | null> {
+		const right = (await this.cuesOnTheEdges()).find(
+			(cue) => cue.side === "right",
+		);
+		return right ? right.box.x + right.box.width : null;
+	}
+
+	/** Pixels between the right shadow's end and the actions column's start; infinite while there is no right shadow. */
+	async rightCueDistanceFromActions(): Promise<number> {
+		const end = await this.rightCueEnd();
+		if (end === null) return Number.POSITIVE_INFINITY;
+		return Math.abs(end - (await this.actionsColumnStart()));
+	}
+
+	/** Where the pinned actions column starts, measured from the same edge as the shadow. */
+	async actionsColumnStart(): Promise<number> {
+		const header = this.table.locator(
+			'[role="columnheader"][data-field="actions"]',
+		);
+		await expect(
+			header,
+			"the report list must have an actions column",
+		).toHaveCount(1);
+		return (await header.boundingBox())?.x ?? Number.NaN;
+	}
+
+	/**
+	 * Moves through the cells of a report with the arrow keys, starting on its Created date, until the
+	 * actions cell has the focus. Every cell on the way must come to rest clear of the pinned actions column.
+	 */
+	async walkToActionsWithTheKeyboard(reportName: string): Promise<string[]> {
+		await this.createdCellOf(reportName).click();
+		const visited: string[] = [];
+		const MOST_CELLS = 12;
+		for (let step = 0; step < MOST_CELLS; step++) {
+			await expect
+				.poll(() => this.focusedField(), {
+					message: "a cell of the table must hold the focus",
+				})
+				.not.toBe("unknown");
+			const field = await this.focusedField();
+			visited.push(field);
+			await expect
+				.poll(() => this.focusedCellIsClearOfActions(), {
+					message: `the focused "${field}" cell must come to rest clear of the pinned actions column, not under it`,
+				})
+				.toBe(true);
+			if (field === "actions") break;
+			await this.page.keyboard.press("ArrowRight");
+		}
+		return visited;
+	}
+
+	private async focusedField(): Promise<string> {
+		return this.page.evaluate(
+			() =>
+				document.activeElement
+					?.closest('[role="gridcell"]')
+					?.getAttribute("data-field") ?? "unknown",
+		);
+	}
+
+	private async focusedCellIsClearOfActions(): Promise<boolean> {
+		const cell = this.table.locator('[role="gridcell"]:focus-within');
+		const box = (await cell.count()) === 1 ? await cell.boundingBox() : null;
+		const tableBox = await this.table.boundingBox();
+		if (box === null || tableBox === null) return false;
+		const isActions = (await this.focusedField()) === "actions";
+		const end = isActions
+			? tableBox.x + tableBox.width
+			: await this.actionsColumnStart();
+		const endsClear = box.x + box.width <= end + 1;
+		// A cell wider than the room before the pinned column cannot also start in view; it must end clear of it.
+		const fitsInTheRoom = box.width <= end - tableBox.x;
+		return endsClear && (!fitsInTheRoom || box.x >= tableBox.x - 1);
 	}
 
 	/** True when the table is wider than its box, so the table scrolls rather than the page. */

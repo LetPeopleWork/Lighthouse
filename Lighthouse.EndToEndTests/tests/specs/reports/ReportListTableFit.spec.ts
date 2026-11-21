@@ -68,10 +68,18 @@ testWithDemo(
 			await reports.reportsWithDeleteOutOfView(reportNames),
 			"with a wide stored Name the columns overflow; the pinned actions must keep Delete inside the table",
 		).toEqual([]);
-		expect(
-			await reports.sidesWithACue(),
-			"the shadow must sit on the right edge while the table is at its left edge",
-		).toEqual(["right"]);
+		await expect
+			.poll(() => reports.sidesWithACue(), {
+				message:
+					"the shadow must sit on the right edge while the table is at its left edge",
+			})
+			.toEqual(["right"]);
+		await expect
+			.poll(() => reports.rightCueDistanceFromActions(), {
+				message:
+					"the right shadow must end where the pinned actions column starts, so it lies over the columns that scroll and not over Delete",
+			})
+			.toBeLessThanOrEqual(1);
 
 		await reports.resetLayout();
 		await expect
@@ -99,7 +107,20 @@ testWithDemo(
 			await reports.pageScrollsSideways(),
 			"at 375 px the page must not scroll sideways; the table scrolls instead",
 		).toBe(false);
-		expect(await reports.sidesWithACue()).toEqual(["right"]);
+		await expect
+			.poll(() => reports.sidesWithACue(), {
+				message: "at 375 px the shadow must show on the right edge",
+			})
+			.toEqual(["right"]);
+		const visited = await reports.walkToActionsWithTheKeyboard(SHORT_NAME);
+		expect(
+			visited[visited.length - 1],
+			"the arrow keys must reach the actions cell of the report, whatever is scrolled out of view",
+		).toBe("actions");
+		expect(
+			await reports.reportsWithDeleteOutOfView([SHORT_NAME]),
+			"after the keyboard walk Delete must be inside the table",
+		).toEqual([]);
 		await reports.scrollTableToTheEnd();
 		await expect
 			.poll(() => reports.sidesWithACue(), {
@@ -111,5 +132,22 @@ testWithDemo(
 			await reports.reportsWithDeleteOutOfView(reportNames),
 			"at 375 px, scrolled to the end, Delete must still be inside the table",
 		).toEqual([]);
+
+		reports = await reports.reopenWithStoredNameWidth(STORED_NAME_WIDTH);
+		await expect
+			.poll(() => reports.nameColumnWidth(), {
+				message: "at phone width a Name width the person set is used as set",
+			})
+			.toBeCloseTo(STORED_NAME_WIDTH, 0);
+		expect(
+			await reports.pageScrollsSideways(),
+			"at 375 px with a wide stored Name the page must not scroll sideways; the table does",
+		).toBe(false);
+		await expect
+			.poll(() => reports.rightCueDistanceFromActions(), {
+				message:
+					"at 375 px the right shadow must end where the pinned actions column starts",
+			})
+			.toBeLessThanOrEqual(1);
 	},
 );
