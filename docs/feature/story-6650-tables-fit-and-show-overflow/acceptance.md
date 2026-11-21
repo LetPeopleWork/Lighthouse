@@ -671,6 +671,36 @@ A long Dependencies column (content, declared width 260 by design) that wraps or
 
 
 
+##### Covers
+
+P12
+
+```text
+A person focuses a cell on the Feature list that sits under the pinned move menu column
+```
+
+```text
+The table scrolls so the focused cell ends clear of the move menu column
+```
+
+```text
+The keyboard user sees the cell they are on, not hidden under the move menu
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:681
+
+```text
+The scroll fix only looks for a column named actions, so the move menu column is not treated as pinned
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IEntityReference } from "../../../models/EntityReference";
@@ -6,6 +6,7 @@ import { Feature } from "../../../models/Feature";
 import type { IFeatureDependency } from "../../../models/FeatureDependency";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import {
+	cellOf,
 	givenANarrowWindow,
 	givenTextIsWiderThanItsColumn,
 	resetTheCut,
@@ -675,6 +676,51 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 
 		thenTheActionsColumnIsPinnedAndLast(container, "featureOrderingActions");
 		thenTheTableSaysColumnsAreOutOfSightOnItsRight(container);
+	});
+
+	it("scrolls a focused cell clear of the pinned move menu", async () => {
+		const PINNED_LEFT = 300;
+		const { container } = whenTheFeatureListShows();
+		const scroller = container.querySelector<HTMLElement>(
+			".MuiDataGrid-virtualScroller",
+		) as HTMLElement;
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+			function (this: HTMLElement) {
+				const field = this.dataset.field;
+				const scrolled = scroller.scrollLeft;
+				let left = 0;
+				let right = 0;
+				if (this === scroller) right = 400;
+				else if (field === "featureOrderingActions") {
+					left = PINNED_LEFT;
+					right = 400;
+				} else if (field === "state") {
+					left = 200 - scrolled;
+					right = 320 - scrolled;
+				}
+				return {
+					left,
+					right,
+					x: left,
+					width: right - left,
+					top: 0,
+					bottom: 40,
+					y: 0,
+					height: 40,
+					toJSON: () => ({}),
+				};
+			},
+		);
+		const { default: userEvent } = await import("@testing-library/user-event");
+
+		await userEvent.setup().click(cellOf(container, "state"));
+
+		await waitFor(() =>
+			expect(
+				cellOf(container, "state").getBoundingClientRect().right,
+				"the focused State cell must end before the pinned move menu; it was left under it, out of the keyboard user's sight",
+			).toBeLessThanOrEqual(PINNED_LEFT),
+		);
 	});
 
 	it("shows the full Feature name in a tooltip when the person hovers over a cut name", async () => {

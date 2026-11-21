@@ -346,6 +346,19 @@
 "expected": "F336",
 "stimulus": "F335",
 "user_result": "F337"
+},
+{
+"covers": [
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F375",
+"test": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx:681"
+},
+"expected": "F373",
+"stimulus": "F372",
+"user_result": "F374"
 }
 ]
 },
@@ -353,7 +366,7 @@
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 371,
+"F": 375,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1575,6 +1588,10 @@
 "F37": "the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables",
 "F370": "At mid width the person still finds Delete and sees there is more to scroll to",
 "F371": "the actions column is not pinned, so Delete is out of view at the start of the scroll; the shadow is missing or on the wrong side",
+"F372": "A person focuses a cell on the Feature list that sits under the pinned move menu column",
+"F373": "The table scrolls so the focused cell ends clear of the move menu column",
+"F374": "The keyboard user sees the cell they are on, not hidden under the move menu",
+"F375": "The scroll fix only looks for a column named actions, so the move menu column is not treated as pinned",
 "F38": "each is opened at a narrow width",
 "F39": "each fits where it can and shows the cue where it cannot, with no per-table behaviour that contradicts the report list. Falsifier: one of these tables still scrolls its last column out of view with no cue.",
 "F4": "Report list shows Delete without scrolling",

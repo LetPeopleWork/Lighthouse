@@ -736,6 +736,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h5>Covers</h5>
+
+<p>P12</p>
+
+<pre><code>A person focuses a cell on the Feature list that sits under the pinned move menu column
+</code></pre>
+
+<pre><code>The table scrolls so the focused cell ends clear of the move menu column
+</code></pre>
+
+<pre><code>The keyboard user sees the cell they are on, not hidden under the move menu
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx:681</p>
+
+<pre><code>The scroll fix only looks for a column named actions, so the move menu column is not treated as pinned
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
