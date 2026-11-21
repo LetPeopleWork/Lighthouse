@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import type { LighthousePage } from "../app/LighthousePage";
+import { DataGridView, pageScrollsSideways } from "../common/DataGridView";
 import { AddPortfolioWizard } from "../portfolios/AddPortfolioWizard";
 import { PortfolioDeletionDialog } from "../portfolios/PortfolioDeletionDialog";
 import { PortfolioDetailPage } from "../portfolios/PortfolioDetailPage";
@@ -10,18 +11,25 @@ import { TeamDeletionDialog } from "../teams/TeamDeletionDialog";
 import { TeamDetailPage } from "../teams/TeamDetailPage";
 import { TeamEditPage } from "../teams/TeamEditPage";
 
-type Box = { x: number; y: number; width: number; height: number };
-
 /**
  * One table of the Overview as the person sees it: its box is what is in view, whatever scrolls
  * inside it. Scoped to the table that lists the given owner, because the Overview shows a table of
  * Portfolios and one of Teams.
  */
 export class OverviewTable {
+	private readonly view: DataGridView;
+
 	constructor(
 		private readonly page: Page,
 		private readonly ownerName: string,
-	) {}
+	) {
+		this.view = new DataGridView(
+			page,
+			this.table,
+			this.container.locator("[data-overflow]"),
+			"Overview table",
+		);
+	}
 
 	private get container(): Locator {
 		return this.page.getByTestId("datagrid-container").filter({
@@ -31,10 +39,6 @@ export class OverviewTable {
 
 	get table(): Locator {
 		return this.container.getByRole("grid");
-	}
-
-	private get scroller(): Locator {
-		return this.table.locator(".MuiDataGrid-virtualScroller");
 	}
 
 	/** The owner's Reports cell once it has read the reports, so the table has settled. */
@@ -81,115 +85,45 @@ export class OverviewTable {
 
 	/** True when this owner's Delete is not wholly inside the table's box, rendered or not. */
 	async deleteIsOutOfView(): Promise<boolean> {
-		const tableBox = await this.table.boundingBox();
-		const deleteButton = this.row.getByRole("button", {
-			name: "Delete",
-			exact: true,
-		});
-		const box =
-			(await deleteButton.count()) === 1
-				? await deleteButton.boundingBox()
-				: null;
-		return !(
-			tableBox !== null &&
-			box !== null &&
-			box.x >= tableBox.x - 1 &&
-			box.x + box.width <= tableBox.x + tableBox.width + 1
-		);
+		return !(await this.view.isWhollyInView(
+			this.row.getByRole("button", { name: "Delete", exact: true }),
+		));
 	}
 
 	/** True when the cell shows its text cut off with an ellipsis. */
 	async isCutWithEllipsis(field: string): Promise<boolean> {
-		return this.cell(field).evaluate((root) =>
-			[root, ...Array.from(root.querySelectorAll("*"))].some(
-				(element) =>
-					getComputedStyle(element).textOverflow === "ellipsis" &&
-					element.scrollWidth > element.clientWidth,
-			),
-		);
+		return this.view.isCutWithEllipsis(this.cell(field));
 	}
 
 	/** True when nothing in the cell is wider than the room it has, so the whole content shows. */
 	async isShownWhole(field: string): Promise<boolean> {
-		return this.cell(field).evaluate((root) =>
-			[root, ...Array.from(root.querySelectorAll("*"))].every(
-				(element) =>
-					element.clientWidth === 0 ||
-					element.scrollWidth <= element.clientWidth + 1,
-			),
-		);
+		return this.view.isShownWhole(this.cell(field));
 	}
 
 	async horizontalScrollPosition(): Promise<number> {
-		return this.scroller.evaluate((element) => element.scrollLeft);
-	}
-
-	/** The shadows on the table's edges: decorative elements that let every click through, with the side each sits on. */
-	private async cuesOnTheEdges(): Promise<{ side: string; box: Box }[]> {
-		const root = this.container.locator("[data-overflow]");
-		await expect(
-			root,
-			"the table must mark whether columns are hidden, or a missing marker would read as no shadow",
-		).toHaveCount(1);
-		const found: { side: string; box: Box }[] = [];
-		const cues = root.locator("[data-side]");
-		expect(
-			await cues.count(),
-			"a table draws at most one shadow per edge",
-		).toBeLessThanOrEqual(2);
-		for (const cue of await cues.all()) {
-			await expect(
-				cue,
-				"an edge shadow is decorative and hidden from assistive technology",
-			).toHaveAttribute("aria-hidden", "true");
-			const letsClicksThrough =
-				(await cue.evaluate(
-					(element) => getComputedStyle(element).pointerEvents,
-				)) === "none";
-			const box = await cue.boundingBox();
-			if (!letsClicksThrough || box === null || box.width === 0) continue;
-			found.push({
-				side: (await cue.getAttribute("data-side")) as string,
-				box,
-			});
-		}
-		return found;
+		return this.view.horizontalScrollPosition();
 	}
 
 	/** The sides of the table that carry a shadow. */
 	async sidesWithACue(): Promise<string[]> {
-		return (await this.cuesOnTheEdges())
-			.map((cue) => cue.side)
-			.sort((a, b) => a.localeCompare(b));
+		return this.view.sidesWithACue();
 	}
 
 	/** Pixels between the right shadow's end and the actions column's start; infinite while there is no right shadow. */
 	async rightCueDistanceFromActions(): Promise<number> {
-		const right = (await this.cuesOnTheEdges()).find(
-			(cue) => cue.side === "right",
-		);
-		if (right === undefined) return Number.POSITIVE_INFINITY;
-		const header = this.table.locator(
-			'[role="columnheader"][data-field="actions"]',
-		);
-		await expect(
-			header,
-			"the Overview table must have an actions column",
-		).toHaveCount(1);
-		const start = (await header.boundingBox())?.x ?? Number.NaN;
-		return Math.abs(right.box.x + right.box.width - start);
+		return this.view.rightCueDistanceFromActions();
 	}
 
 	/** True when the table is wider than its box, so the table scrolls rather than the page. */
 	async tableScrollsSideways(): Promise<boolean> {
-		return this.scroller.evaluate(
-			(element) => element.scrollWidth > element.clientWidth,
-		);
+		return this.view.tableScrollsSideways();
 	}
 
 	/** True when the last column ends inside the table's box, so a fitting table hides nothing on its right. */
 	async lastColumnEndsInsideTheBox(): Promise<boolean> {
-		const scroller = await this.scroller.boundingBox();
+		const scroller = await this.table
+			.locator(".MuiDataGrid-virtualScroller")
+			.boundingBox();
 		const last = await this.table
 			.locator('[role="columnheader"]')
 			.last()
@@ -209,36 +143,6 @@ export class OverviewTable {
 			.focus();
 	}
 
-	private async focusedField(): Promise<string> {
-		return this.page.evaluate(
-			() =>
-				document.activeElement
-					?.closest('[role="gridcell"]')
-					?.getAttribute("data-field") ?? "unknown",
-		);
-	}
-
-	private async focusedCellIsClearOfActions(): Promise<boolean> {
-		const cell = this.table.locator('[role="gridcell"]:focus-within');
-		const box = (await cell.count()) === 1 ? await cell.boundingBox() : null;
-		const tableBox = await this.table.boundingBox();
-		const actionsHeader = this.table.locator(
-			'[role="columnheader"][data-field="actions"]',
-		);
-		await expect(
-			actionsHeader,
-			"the Overview table must have an actions column",
-		).toHaveCount(1);
-		const actions = await actionsHeader.boundingBox();
-		if (box === null || tableBox === null || actions === null) return false;
-		const isActions = (await this.focusedField()) === "actions";
-		const end = isActions ? tableBox.x + tableBox.width : actions.x;
-		const endsClear = box.x + box.width <= end + 1;
-		// A cell wider than the room before the pinned column cannot also start in view; it must end clear of it.
-		const fitsInTheRoom = box.width <= end - tableBox.x;
-		return endsClear && (!fitsInTheRoom || box.x >= tableBox.x - 1);
-	}
-
 	/**
 	 * Moves through the cells of the owner's row with the arrow keys, starting on its name,
 	 * until the actions cell has the focus. Every cell on the way must come to rest clear of the pinned actions column.
@@ -248,32 +152,12 @@ export class OverviewTable {
 			(document.activeElement as HTMLElement | null)?.blur(),
 		);
 		await this.focusName();
-		const visited: string[] = [];
 		const MOST_CELLS = 8;
-		for (let step = 0; step < MOST_CELLS; step++) {
-			await expect
-				.poll(() => this.focusedField(), {
-					message: "a cell of the table must hold the focus",
-				})
-				.not.toBe("unknown");
-			const field = await this.focusedField();
-			visited.push(field);
-			await expect
-				.poll(() => this.focusedCellIsClearOfActions(), {
-					message: `the focused "${field}" cell must come to rest clear of the pinned actions column, not under it`,
-				})
-				.toBe(true);
-			if (field === "actions") break;
-			await this.page.keyboard.press("ArrowRight");
-		}
-		return visited;
+		return this.view.walkToActionsWithTheKeyboard(MOST_CELLS);
 	}
 
 	async scrollToTheEnd(): Promise<void> {
-		await this.scroller.evaluate((element) => {
-			element.scrollLeft = element.scrollWidth;
-			element.dispatchEvent(new Event("scroll"));
-		});
+		await this.view.scrollToTheEnd();
 	}
 }
 
@@ -439,11 +323,7 @@ export class OverviewPage {
 
 	/** True when the whole page can be scrolled sideways, which a table that stays in its box never causes. */
 	async pageScrollsSideways(): Promise<boolean> {
-		return this.page.evaluate(
-			() =>
-				(document.scrollingElement?.scrollWidth ?? 0) >
-				(document.scrollingElement?.clientWidth ?? 0),
-		);
+		return pageScrollsSideways(this.page);
 	}
 
 	/** Renames a Team through its settings, so the Overview lists it under a name of the given length. */

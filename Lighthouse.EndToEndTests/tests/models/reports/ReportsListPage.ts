@@ -1,5 +1,6 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { formatLocalDate } from "../../helpers/dates";
+import { DataGridView, pageScrollsSideways } from "../common/DataGridView";
 import { ReportPage } from "./ReportPage";
 
 /** What a Then & Now report is created with; anything left out stays as the wizard opens it. */
@@ -9,15 +10,22 @@ export interface ThenAndNowChoices {
 	name?: string;
 }
 
-type Box = { x: number; y: number; width: number; height: number };
-
 /**
  * The Reports tab of a Team or a Portfolio, and the wizard that creates a report from it. Left as it
  * opens, the wizard creates a Then & Now report whose Then is the 90 days ending today, with Now as long
  * and all four metrics.
  */
 export class ReportsListPage {
-	constructor(private readonly page: Page) {}
+	private readonly view: DataGridView;
+
+	constructor(private readonly page: Page) {
+		this.view = new DataGridView(
+			page,
+			this.table,
+			page.locator("[data-overflow]").filter({ has: this.table }),
+			"report list",
+		);
+	}
 
 	/** The list marks itself ready once it has read the reports; until then Create Report waits too. */
 	get ready(): Locator {
@@ -101,10 +109,6 @@ export class ReportsListPage {
 		return this.page.getByRole("grid");
 	}
 
-	private get scroller(): Locator {
-		return this.table.locator(".MuiDataGrid-virtualScroller");
-	}
-
 	private rowOf(reportName: string): Locator {
 		return this.table
 			.getByRole("row")
@@ -137,23 +141,13 @@ export class ReportsListPage {
 
 	/** The names of the given reports whose Delete is not wholly inside the table's box, rendered or not. */
 	async reportsWithDeleteOutOfView(reportNames: string[]): Promise<string[]> {
-		const tableBox = await this.table.boundingBox();
 		const outOfView: string[] = [];
 		for (const name of reportNames) {
 			const deleteButton = this.page.getByRole("button", {
 				name: `Delete ${name}`,
 				exact: true,
 			});
-			const box =
-				(await deleteButton.count()) === 1
-					? await deleteButton.boundingBox()
-					: null;
-			const inside =
-				tableBox !== null &&
-				box !== null &&
-				box.x >= tableBox.x - 1 &&
-				box.x + box.width <= tableBox.x + tableBox.width + 1;
-			if (!inside) outOfView.push(name);
+			if (!(await this.view.isWhollyInView(deleteButton))) outOfView.push(name);
 		}
 		return outOfView;
 	}
@@ -164,87 +158,26 @@ export class ReportsListPage {
 
 	/** True when the cell shows its text cut off with an ellipsis. */
 	async isCutWithEllipsis(cell: Locator): Promise<boolean> {
-		return cell.evaluate((root) =>
-			[root, ...Array.from(root.querySelectorAll("*"))].some(
-				(element) =>
-					getComputedStyle(element).textOverflow === "ellipsis" &&
-					element.scrollWidth > element.clientWidth,
-			),
-		);
+		return this.view.isCutWithEllipsis(cell);
 	}
 
 	/** True when nothing in the cell is wider than the room it has, so the whole content shows. */
 	async isShownWhole(cell: Locator): Promise<boolean> {
-		return cell.evaluate((root) =>
-			[root, ...Array.from(root.querySelectorAll("*"))].every(
-				(element) =>
-					element.clientWidth === 0 ||
-					element.scrollWidth <= element.clientWidth + 1,
-			),
-		);
+		return this.view.isShownWhole(cell);
 	}
 
 	async horizontalScrollPosition(): Promise<number> {
-		return this.scroller.evaluate((element) => element.scrollLeft);
-	}
-
-	/** The shadows on the table's edges: decorative elements that let every click through, with the side each sits on. */
-	private async cuesOnTheEdges(): Promise<{ side: string; box: Box }[]> {
-		const root = this.page
-			.locator("[data-overflow]")
-			.filter({ has: this.table });
-		await expect(
-			root,
-			"the table must mark whether columns are hidden, or a missing marker would read as no shadow",
-		).toHaveCount(1);
-		const cues = root.locator('[aria-hidden="true"]:not(svg)');
-		const found: { side: string; box: Box }[] = [];
-		for (const cue of await cues.all()) {
-			const letsClicksThrough =
-				(await cue.evaluate(
-					(element) => getComputedStyle(element).pointerEvents,
-				)) === "none";
-			const box = await cue.boundingBox();
-			if (!letsClicksThrough || box === null || box.width === 0) continue;
-			found.push({
-				side: (await cue.getAttribute("data-side")) ?? "unknown",
-				box,
-			});
-		}
-		return found;
+		return this.view.horizontalScrollPosition();
 	}
 
 	/** The sides of the table that carry a shadow. */
 	async sidesWithACue(): Promise<string[]> {
-		const cues = await this.cuesOnTheEdges();
-		return cues.map((cue) => cue.side).sort((a, b) => a.localeCompare(b));
-	}
-
-	/** How far the right shadow reaches from the table's left edge, or null while there is none. */
-	async rightCueEnd(): Promise<number | null> {
-		const right = (await this.cuesOnTheEdges()).find(
-			(cue) => cue.side === "right",
-		);
-		return right ? right.box.x + right.box.width : null;
+		return this.view.sidesWithACue();
 	}
 
 	/** Pixels between the right shadow's end and the actions column's start; infinite while there is no right shadow. */
 	async rightCueDistanceFromActions(): Promise<number> {
-		const end = await this.rightCueEnd();
-		if (end === null) return Number.POSITIVE_INFINITY;
-		return Math.abs(end - (await this.actionsColumnStart()));
-	}
-
-	/** Where the pinned actions column starts, measured from the same edge as the shadow. */
-	async actionsColumnStart(): Promise<number> {
-		const header = this.table.locator(
-			'[role="columnheader"][data-field="actions"]',
-		);
-		await expect(
-			header,
-			"the report list must have an actions column",
-		).toHaveCount(1);
-		return (await header.boundingBox())?.x ?? Number.NaN;
+		return this.view.rightCueDistanceFromActions();
 	}
 
 	/**
@@ -253,72 +186,21 @@ export class ReportsListPage {
 	 */
 	async walkToActionsWithTheKeyboard(reportName: string): Promise<string[]> {
 		await this.createdCellOf(reportName).click();
-		const visited: string[] = [];
 		const MOST_CELLS = 12;
-		for (let step = 0; step < MOST_CELLS; step++) {
-			await expect
-				.poll(() => this.focusedField(), {
-					message: "a cell of the table must hold the focus",
-				})
-				.not.toBe("unknown");
-			const field = await this.focusedField();
-			visited.push(field);
-			await expect
-				.poll(() => this.focusedCellIsClearOfActions(), {
-					message: `the focused "${field}" cell must come to rest clear of the pinned actions column, not under it`,
-				})
-				.toBe(true);
-			if (field === "actions") break;
-			await this.page.keyboard.press("ArrowRight");
-		}
-		return visited;
-	}
-
-	private async focusedField(): Promise<string> {
-		return this.page.evaluate(
-			() =>
-				document.activeElement
-					?.closest('[role="gridcell"]')
-					?.getAttribute("data-field") ?? "unknown",
-		);
-	}
-
-	private async focusedCellIsClearOfActions(): Promise<boolean> {
-		const cell = this.table.locator('[role="gridcell"]:focus-within');
-		const box = (await cell.count()) === 1 ? await cell.boundingBox() : null;
-		const tableBox = await this.table.boundingBox();
-		if (box === null || tableBox === null) return false;
-		const isActions = (await this.focusedField()) === "actions";
-		const end = isActions
-			? tableBox.x + tableBox.width
-			: await this.actionsColumnStart();
-		const endsClear = box.x + box.width <= end + 1;
-		// A cell wider than the room before the pinned column cannot also start in view; it must end clear of it.
-		const fitsInTheRoom = box.width <= end - tableBox.x;
-		return endsClear && (!fitsInTheRoom || box.x >= tableBox.x - 1);
+		return this.view.walkToActionsWithTheKeyboard(MOST_CELLS);
 	}
 
 	/** True when the table is wider than its box, so the table scrolls rather than the page. */
 	async tableScrollsSideways(): Promise<boolean> {
-		return this.scroller.evaluate(
-			(element) => element.scrollWidth > element.clientWidth,
-		);
+		return this.view.tableScrollsSideways();
 	}
 
-	/** True when the whole page can be scrolled sideways, which a table that stays in its box never causes. */
 	async pageScrollsSideways(): Promise<boolean> {
-		return this.page.evaluate(
-			() =>
-				(document.scrollingElement?.scrollWidth ?? 0) >
-				(document.scrollingElement?.clientWidth ?? 0),
-		);
+		return pageScrollsSideways(this.page);
 	}
 
 	async scrollTableToTheEnd(): Promise<void> {
-		await this.scroller.evaluate((element) => {
-			element.scrollLeft = element.scrollWidth;
-			element.dispatchEvent(new Event("scroll"));
-		});
+		await this.view.scrollToTheEnd();
 	}
 
 	/** As if the person had resized the Name column on an earlier visit: the width is stored for the Team's Reports tab. */
