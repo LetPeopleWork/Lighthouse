@@ -239,16 +239,28 @@ const renderDependency = (dependency: IFeatureDependency) => {
 	);
 };
 
+// The text a cut Dependencies cell offers in its tooltip: every dependency, named as the cell names it.
+const dependenciesText = (dependencies: IFeatureDependency[]): string =>
+	dependencies
+		.map((dependency) =>
+			dependency.isWithheld
+				? "No access"
+				: `${dependency.referenceId}: ${dependency.name}`,
+		)
+		.join(", ");
+
 export const createDependsOnColumn = (
 	terms: DependencyTerms,
 ): DataGridColumn<IFeature & GridValidRowModel> => ({
 	field: "dependsOn",
 	headerName: "Dependencies",
 	width: 260,
+	fit: { kind: "text" },
 	sortable: true,
 	// Sorted by how many a Feature waits on: the list itself has no order a reader would sort by, and
 	// the question the column answers first is which rows are entangled at all.
 	valueGetter: (_, row) => (row.dependsOn ?? []).length,
+	valueFormatter: (_, row) => dependenciesText(row.dependsOn ?? []),
 	renderCell: ({ row }) => renderDependsOn(row, terms),
 });
 
