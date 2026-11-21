@@ -151,7 +151,354 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Access module rules over the compiled code: each Access type is looked for in its layer (Domain, Application, Http adapters) and in the old Services Auth and Authorization namespaces.
+</code></pre>
+
+<pre><code>Every Access type is found in its layer and none in the old namespaces; a made-up type left in its former home is named and its well-placed twin passes.
+</code></pre>
+
+<pre><code>A developer who leaves or puts an Access type outside its layer gets a failing rule that names the type and says where it belongs.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::EveryAccessType_LivesInItsLayer_AndNoneIsLeftInTheOldServicesNamespaces</p>
+
+<pre><code>an Access type sat in a sub-namespace of its layer, or an extra unlisted type landed in a layer; the rule checks the listed types only, which the membership test of the earlier feature already pins
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Access Domain rule over the compiled code, and over a made-up Domain where one type asks the platform clock.
+</code></pre>
+
+<pre><code>The real Access Domain reaches only the shared Models and the base library; the made-up type asking the clock is named and its plain twin is not.
+</code></pre>
+
+<pre><code>A developer who makes an Access calculation read the platform gets a failing rule naming that type.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::TheAccessDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary</p>
+
+<pre><code>an Access Domain type reached the platform only inside a catch clause or an event, which the IL reader does not see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Compare each Access list with what the compiled code reaches: outside readers of the Domain and of the Application besides the API and the composition root, outside users of the Http adapters besides the API, the Application&#x27;s edges into the data layer, the platform and EF Core, and Access&#x27;s edges into other contexts.
+</code></pre>
+
+<pre><code>Each list equals what the code reaches in both directions: one Domain reader, five Application readers, the composition root alone for the Http adapters, the 21 data, platform and EF Core edges, and no edge into another context.
+</code></pre>
+
+<pre><code>A developer who adds a new dependency across the Access border, or removes one without shortening the list, gets a failing rule naming the type or edge.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::AnAccessListedRule_MatchesWhatTheCompiledCodeReaches_InBothDirections</p>
+
+<pre><code>a new reader reached Access only through a catch clause, an event or a named attribute argument
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>For each Access list, delete each entry in turn and run the rule; then add an entry the code does not hold and run it again.
+</code></pre>
+
+<pre><code>Each deleted entry is named as offending, and the added entry is named as no longer offending, to be deleted.
+</code></pre>
+
+<pre><code>Every position of every Access list is guarded: an edge the list misses and a list entry with no edge both fail by name.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::EveryEntryDeletedFromAnAccessList_IsNamedAsOffending_AndAnEntryWithNoEdgeIsNamedForDeletion</p>
+
+<pre><code>a rule reported offenders by type but lost which target each reached; the entry name alone is asserted
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Http adapter rule over a made-up type outside the API whose only tie to Access is the access-guard attribute it applies, beside a made-up API type applying the same attribute and a made-up composition root on the list.
+</code></pre>
+
+<pre><code>The attribute-only type is named; the API type and the listed composition root are not; the failure speaks of Access, not of Flow metrics.
+</code></pre>
+
+<pre><code>A developer who guards a non-API class with an Access attribute gets a failing rule naming that class and sending them to the Access module.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::AnOutsideTypeReachingAccessOnlyThroughAnAttributeItApplies_IsNamedByTheHttpAdapterRule_AndTheApiAndTheListedCompositionRootAreNot</p>
+
+<pre><code>the rule text speaks of Access&#x27;s adapters with a wrong reason, since only the module wording and the absence of Flow metrics are asserted, not the reason prose
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Access Domain and Application inbound rules over a made-up module with a newcomer outside it, a made-up API, a made-up composition root and a listed caller.
+</code></pre>
+
+<pre><code>The newcomer is named; the API, the composition root and the listed caller are not.
+</code></pre>
+
+<pre><code>A developer whose new code reaches Access&#x27;s Domain or Application from outside the API gets a failing rule naming that code.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::AnOutsideTypeOffTheList_ReachingTheAccessApplication_IsNamed_AndTheApiTheCompositionRootAndTheListedCallerAreNot</p>
+
+<pre><code>the newcomer reached the Application only inside an async method body compiled away in Release; the made-up newcomer reaches it inside an async method so that case is exercised
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run Access&#x27;s outbound rules over made-up Application types that hold a DbSet, ask an unlisted platform service, use another module&#x27;s adapter, ask Work Items, touch the update code or join the write-back round, and over a twin asking only a listed platform port and Licensing.
+</code></pre>
+
+<pre><code>Each made-up type is named with the exact edge it adds; the twin passes both rules, so asking Licensing is allowed.
+</code></pre>
+
+<pre><code>A developer who ties Access to storage, a new platform service or another context gets a failing rule naming the edge.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs::AnAccessTypeReachingForbiddenCode_IsNamedWithTheEdge</p>
+
+<pre><code>Access reached Refinement or Reports types, which no made-up case exercises; the real list comparison still covers them
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the Licensing module rules over the compiled code: types in their layers and none in the old Services Licensing namespaces, Licensing&#x27;s edges into Access or another context, outside readers of the Application besides the API, the composition root and Access&#x27;s Application, outside users of the Http adapters besides the API, and the Application&#x27;s platform edges.
+</code></pre>
+
+<pre><code>Every Licensing type is in Application or Http adapters; no edge into Access or another context; exactly the 11 readers, the forecast updater among them; no outside user of the Http adapters; exactly the two licence service edges to the clock and the generic repository.
+</code></pre>
+
+<pre><code>A developer who adds a new reader of the licence or a new Licensing dependency gets a failing rule naming it.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs::ALicensingListedRule_MatchesWhatTheCompiledCodeReaches_InBothDirections</p>
+
+<pre><code>a reader reached the licence only through a catch clause or an event, which the IL reader does not see
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the Licensing reader rule with the forecast updater taken off its list, and every Licensing list with each entry deleted in turn and with an entry the code does not hold.
+</code></pre>
+
+<pre><code>The forecast updater is named as offending; each deleted entry is named; the added entry is named for deletion.
+</code></pre>
+
+<pre><code>No reader of the licence, the background forecast run included, can drop off the list unseen.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs::AReaderOfTheLicenceDroppedFromItsList_TheForecastUpdaterFirst_IsNamedAsOffending</p>
+
+<pre><code>the rule named the forecast updater but not what it reached; only the name is asserted
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run Licensing&#x27;s outbound rules over made-up Licensing types that ask Access&#x27;s role service, ask Work Items, hold a DbSet or ask an unlisted platform service, and over a twin asking only the listed clock.
+</code></pre>
+
+<pre><code>Each made-up type is named with the exact edge it adds; the twin passes both rules.
+</code></pre>
+
+<pre><code>A developer who makes Licensing depend on Access or another context, or on storage, gets a failing rule naming the edge.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs::ALicensingTypeReachingForbiddenCode_IsNamedWithTheEdge</p>
+
+<pre><code>Licensing reached Access only through the old Services Auth namespaces, which no made-up case exercises; the pattern includes them
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the Licensing Http adapter rule and the Application rule over a made-up module: a newcomer outside the API applying the made-up licence guard, a newcomer asking the Application, a made-up API, a made-up Access Application, a made-up composition root and a listed caller.
+</code></pre>
+
+<pre><code>Both newcomers are named; the API, Access&#x27;s Application, the composition root and the listed caller are not; the Http failure speaks of Licensing.
+</code></pre>
+
+<pre><code>A developer who guards non-API code with a licence attribute, or asks the licence from a new place, gets a failing rule naming it.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs::AnOutsideTypeReachingTheLicensingHttpAdapters_IsNamed_AndTheApiIsNot</p>
+
+<pre><code>the Http rule set aside the composition root by name although Licensing lists none; no made-up composition root reaches the made-up Http adapters, and the real list comparison with an empty list would name the root if it ever reached them
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the Work Items and Forecasting edge lists by name and check every Access or Licensing entry; then check a made-up list with an entry under an old Services Licensing name and one naming a module type the code does not hold.
+</code></pre>
+
+<pre><code>Work Items keeps exactly its two entries and Forecasting its one, all under Modules.Access or Modules.Licensing and held by the code; the made-up old-name and gone entries are named, and the entry under the module is not.
+</code></pre>
+
+<pre><code>The neighbours&#x27; lists keep guarding their real Access and Licensing edges; an entry under an old name cannot hide one.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs::TheEdgeListOfANeighbourModule_KeepsItsAccessAndLicensingEntriesUnderTheModules</p>
+
+<pre><code>another module&#x27;s list, outside Work Items and Forecasting, held an old name; only those two lists are read, which the design names
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the existing suites with the two new rule files present.
+</code></pre>
+
+<pre><code>No production file changes; every existing test keeps its outcome; only the six tests asking for the missing shared Http adapter rule fail until it exists.
+</code></pre>
+
+<pre><code>Nothing a user, a tracker, the database or the licence check sees changes.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Preservation is observed by the existing suites in the slice&#x27;s full verification command, not by a new oracle; the two files are test-only and no design locator names a preservation oracle.
+</code></pre>
+
+<p>nw-software-crafter-reviewer</p>
 
 <h2>Expectations</h2>
 

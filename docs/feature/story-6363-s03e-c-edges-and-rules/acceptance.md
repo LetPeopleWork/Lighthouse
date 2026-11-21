@@ -2,7 +2,406 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Run the Access module rules over the compiled code: each Access type is looked for in its layer (Domain, Application, Http adapters) and in the old Services Auth and Authorization namespaces.
+```
+
+```text
+Every Access type is found in its layer and none in the old namespaces; a made-up type left in its former home is named and its well-placed twin passes.
+```
+
+```text
+A developer who leaves or puts an Access type outside its layer gets a failing rule that names the type and says where it belongs.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs\:\:EveryAccessType\_LivesInItsLayer\_AndNoneIsLeftInTheOldServicesNamespaces
+
+```text
+an Access type sat in a sub-namespace of its layer, or an extra unlisted type landed in a layer; the rule checks the listed types only, which the membership test of the earlier feature already pins
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the Access Domain rule over the compiled code, and over a made-up Domain where one type asks the platform clock.
+```
+
+```text
+The real Access Domain reaches only the shared Models and the base library; the made-up type asking the clock is named and its plain twin is not.
+```
+
+```text
+A developer who makes an Access calculation read the platform gets a failing rule naming that type.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs\:\:TheAccessDomain\_ReachesOnlyTheSharedKernelAndTheBaseLibrary
+
+```text
+an Access Domain type reached the platform only inside a catch clause or an event, which the IL reader does not see
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Compare each Access list with what the compiled code reaches: outside readers of the Domain and of the Application besides the API and the composition root, outside users of the Http adapters besides the API, the Application's edges into the data layer, the platform and EF Core, and Access's edges into other contexts.
+```
+
+```text
+Each list equals what the code reaches in both directions: one Domain reader, five Application readers, the composition root alone for the Http adapters, the 21 data, platform and EF Core edges, and no edge into another context.
+```
+
+```text
+A developer who adds a new dependency across the Access border, or removes one without shortening the list, gets a failing rule naming the type or edge.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs\:\:AnAccessListedRule\_MatchesWhatTheCompiledCodeReaches\_InBothDirections
+
+```text
+a new reader reached Access only through a catch clause, an event or a named attribute argument
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+For each Access list, delete each entry in turn and run the rule; then add an entry the code does not hold and run it again.
+```
+
+```text
+Each deleted entry is named as offending, and the added entry is named as no longer offending, to be deleted.
+```
+
+```text
+Every position of every Access list is guarded: an edge the list misses and a list entry with no edge both fail by name.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs\:\:EveryEntryDeletedFromAnAccessList\_IsNamedAsOffending\_AndAnEntryWithNoEdgeIsNamedForDeletion
+
+```text
+a rule reported offenders by type but lost which target each reached; the entry name alone is asserted
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the Http adapter rule over a made-up type outside the API whose only tie to Access is the access-guard attribute it applies, beside a made-up API type applying the same attribute and a made-up composition root on the list.
+```
+
+```text
+The attribute-only type is named; the API type and the listed composition root are not; the failure speaks of Access, not of Flow metrics.
+```
+
+```text
+A developer who guards a non-API class with an Access attribute gets a failing rule naming that class and sending them to the Access module.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs\:\:AnOutsideTypeReachingAccessOnlyThroughAnAttributeItApplies\_IsNamedByTheHttpAdapterRule\_AndTheApiAndTheListedCompositionRootAreNot
+
+```text
+the rule text speaks of Access's adapters with a wrong reason, since only the module wording and the absence of Flow metrics are asserted, not the reason prose
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the Access Domain and Application inbound rules over a made-up module with a newcomer outside it, a made-up API, a made-up composition root and a listed caller.
+```
+
+```text
+The newcomer is named; the API, the composition root and the listed caller are not.
+```
+
+```text
+A developer whose new code reaches Access's Domain or Application from outside the API gets a failing rule naming that code.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs\:\:AnOutsideTypeOffTheList\_ReachingTheAccessApplication\_IsNamed\_AndTheApiTheCompositionRootAndTheListedCallerAreNot
+
+```text
+the newcomer reached the Application only inside an async method body compiled away in Release; the made-up newcomer reaches it inside an async method so that case is exercised
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Run Access's outbound rules over made-up Application types that hold a DbSet, ask an unlisted platform service, use another module's adapter, ask Work Items, touch the update code or join the write-back round, and over a twin asking only a listed platform port and Licensing.
+```
+
+```text
+Each made-up type is named with the exact edge it adds; the twin passes both rules, so asking Licensing is allowed.
+```
+
+```text
+A developer who ties Access to storage, a new platform service or another context gets a failing rule naming the edge.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs\:\:AnAccessTypeReachingForbiddenCode\_IsNamedWithTheEdge
+
+```text
+Access reached Refinement or Reports types, which no made-up case exercises; the real list comparison still covers them
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the Licensing module rules over the compiled code: types in their layers and none in the old Services Licensing namespaces, Licensing's edges into Access or another context, outside readers of the Application besides the API, the composition root and Access's Application, outside users of the Http adapters besides the API, and the Application's platform edges.
+```
+
+```text
+Every Licensing type is in Application or Http adapters; no edge into Access or another context; exactly the 11 readers, the forecast updater among them; no outside user of the Http adapters; exactly the two licence service edges to the clock and the generic repository.
+```
+
+```text
+A developer who adds a new reader of the licence or a new Licensing dependency gets a failing rule naming it.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs\:\:ALicensingListedRule\_MatchesWhatTheCompiledCodeReaches\_InBothDirections
+
+```text
+a reader reached the licence only through a catch clause or an event, which the IL reader does not see
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the Licensing reader rule with the forecast updater taken off its list, and every Licensing list with each entry deleted in turn and with an entry the code does not hold.
+```
+
+```text
+The forecast updater is named as offending; each deleted entry is named; the added entry is named for deletion.
+```
+
+```text
+No reader of the licence, the background forecast run included, can drop off the list unseen.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs\:\:AReaderOfTheLicenceDroppedFromItsList\_TheForecastUpdaterFirst\_IsNamedAsOffending
+
+```text
+the rule named the forecast updater but not what it reached; only the name is asserted
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Run Licensing's outbound rules over made-up Licensing types that ask Access's role service, ask Work Items, hold a DbSet or ask an unlisted platform service, and over a twin asking only the listed clock.
+```
+
+```text
+Each made-up type is named with the exact edge it adds; the twin passes both rules.
+```
+
+```text
+A developer who makes Licensing depend on Access or another context, or on storage, gets a failing rule naming the edge.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs\:\:ALicensingTypeReachingForbiddenCode\_IsNamedWithTheEdge
+
+```text
+Licensing reached Access only through the old Services Auth namespaces, which no made-up case exercises; the pattern includes them
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the Licensing Http adapter rule and the Application rule over a made-up module: a newcomer outside the API applying the made-up licence guard, a newcomer asking the Application, a made-up API, a made-up Access Application, a made-up composition root and a listed caller.
+```
+
+```text
+Both newcomers are named; the API, Access's Application, the composition root and the listed caller are not; the Http failure speaks of Licensing.
+```
+
+```text
+A developer who guards non-API code with a licence attribute, or asks the licence from a new place, gets a failing rule naming it.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs\:\:AnOutsideTypeReachingTheLicensingHttpAdapters\_IsNamed\_AndTheApiIsNot
+
+```text
+the Http rule set aside the composition root by name although Licensing lists none; no made-up composition root reaches the made-up Http adapters, and the real list comparison with an empty list would name the root if it ever reached them
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Read the Work Items and Forecasting edge lists by name and check every Access or Licensing entry; then check a made-up list with an entry under an old Services Licensing name and one naming a module type the code does not hold.
+```
+
+```text
+Work Items keeps exactly its two entries and Forecasting its one, all under Modules.Access or Modules.Licensing and held by the code; the made-up old-name and gone entries are named, and the entry under the module is not.
+```
+
+```text
+The neighbours' lists keep guarding their real Access and Licensing edges; an entry under an old name cannot hide one.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs\:\:TheEdgeListOfANeighbourModule\_KeepsItsAccessAndLicensingEntriesUnderTheModules
+
+```text
+another module's list, outside Work Items and Forecasting, held an old name; only those two lists are read, which the design names
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P4
+
+```text
+Run the existing suites with the two new rule files present.
+```
+
+```text
+No production file changes; every existing test keeps its outcome; only the six tests asking for the missing shared Http adapter rule fail until it exists.
+```
+
+```text
+Nothing a user, a tracker, the database or the licence check sees changes.
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Preservation is observed by the existing suites in the slice's full verification command, not by a new oracle; the two files are test-only and no design locator names a preservation oracle.
+```
+
+nw\-software\-crafter\-reviewer
 
 ## Expectations
 
