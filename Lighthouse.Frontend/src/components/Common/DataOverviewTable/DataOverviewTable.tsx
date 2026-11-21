@@ -42,6 +42,8 @@ interface DataOverviewTableProps<IFeatureOwner> {
 	canDeleteRow?: (row: IFeatureOwner) => boolean;
 }
 
+const NAME_MIN_WIDTH = 160;
+
 const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	data,
 	api,
@@ -105,9 +107,9 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				{
 					field: "name",
 					headerName: "Name",
-					width: isMobile ? 200 : 250,
 					flex: 1,
 					hideable: false,
+					fit: { kind: "text", minWidth: NAME_MIN_WIDTH },
 					renderCell: ({ row }) => (
 						<Link
 							to={`/${api}/${row.id}`}
@@ -126,6 +128,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					headerName: featuresTerm,
 					width: 120,
 					hideable: !isMobile,
+					fit: { kind: "content" },
 					renderCell: ({ value }) => {
 						const count = value as number;
 						return (
@@ -142,6 +145,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					flex: 1,
 					hideable: !isMobile,
 					sortable: false,
+					fit: { kind: "text" },
 					renderCell: ({ value }) => {
 						const tags = value as string[];
 						return (
@@ -170,6 +174,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					headerName: getTerm(TERMINOLOGY_KEYS.DELIVERIES),
 					width: 300,
 					hideable: !isMobile,
+					fit: { kind: "content" },
 					sortable: false,
 					filterable: false,
 					renderCell: ({ row }) => {
@@ -185,6 +190,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					headerName: "Reports",
 					width: 250,
 					hideable: !isMobile,
+					fit: { kind: "content" },
 					sortable: false,
 					filterable: false,
 					renderCell: ({ row }) => (
@@ -200,6 +206,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					field: "lastUpdated",
 					headerName: "Last Updated",
 					width: 180,
+					fit: { kind: "content" },
 					renderCell: ({ value }) => (
 						<LocalDateTimeDisplay utcDate={value as Date} showTime={true} />
 					),
@@ -207,9 +214,10 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				{
 					field: "actions",
 					headerName: "Actions",
-					width: isMobile ? 160 : 200,
+					width: 200,
 					sortable: false,
 					hideable: false,
+					fit: { kind: "actions" },
 					renderCell: ({ row }) => (
 						<Box
 							sx={{
