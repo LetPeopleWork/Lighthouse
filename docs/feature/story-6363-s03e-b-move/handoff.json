@@ -211,13 +211,87 @@
 "stimulus": "F312",
 "user_result": "F314"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L3/F229",
+"L3/F109"
+],
+"still_passes_if": "F319",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessHttpAdaptersLayoutArchUnitTest.cs"
+},
+"expected": "F317",
+"stimulus": "F316",
+"user_result": "F318"
+},
+{
+"covers": [
+"P3",
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L3/F230"
+],
+"still_passes_if": "F323",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessHttpAdaptersLayoutArchUnitTest.cs"
+},
+"expected": "F321",
+"stimulus": "F320",
+"user_result": "F322"
+},
+{
+"covers": [
+"P3",
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L3/F231"
+],
+"still_passes_if": "F327",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessHttpAdaptersLayoutArchUnitTest.cs"
+},
+"expected": "F325",
+"stimulus": "F324",
+"user_result": "F326"
+},
+{
+"covers": [
+"P3",
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3",
+"L3/F232"
+],
+"still_passes_if": "F331",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessHttpAdaptersLayoutArchUnitTest.cs"
+},
+"expected": "F329",
+"stimulus": "F328",
+"user_result": "F330"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 8,
 "E": 6,
-"F": 315,
+"F": 331,
 "K": 3,
 "L": 4,
 "P": 6,
@@ -6178,8 +6252,24 @@
 "F313": "Every existing test stays green, edited only in usings, full-name strings and moves; the composition root registers the same services with the same lifetimes in the same order",
 "F314": "Nothing a user, an API client, a tracker or the database sees changes: sign-in, RBAC answers, API keys and licence status behave as before",
 "F315": "A behaviour change in a path no existing test covers; the move is checked to be namespace-only by review of the diff",
+"F316": "Look each of the eight Access HTTP adapter names up in the compiled backend and read its namespace",
+"F317": "All eight live in the Access module HTTP adapters namespace and none is left under the old Auth or Authorization folders; a listed name with no type, and a type left behind, are each reported by name",
+"F318": "The Access HTTP guards, markers, filters and handlers sit in the Access module and nothing is left behind",
+"F319": "Types copied to the new namespace while the old copies stay, which the left-behind rule still names",
 "F32": "No schema, route, DTO, DI lifetime, registration order, scheme, cookie or configuration-key change apart from the development log key; the EF model stays the same (ef-model-unchanged); IRbacAdministrationService and RbacGuardAttribute keep every public member; every existing test stays green, unmodified apart from moves, usings, full-name strings and fixture paths.",
+"F320": "Read the RBAC guard constructors and public members and the AttributeUsage of the four attributes from the compiled backend",
+"F321": "Guard members and the four usages equal the lists fixed before the move",
+"F322": "Controllers declare their access the same way after the move",
+"F323": "A changed private member or a changed attribute body, which no public pin sees",
+"F324": "Count the controller actions that carry an RBAC guard or an access marker",
+"F325": "The count equals 243, measured before the move",
+"F326": "No endpoint lost or gained its guard",
+"F327": "One guard swapped for a marker on the same action, which keeps the count",
+"F328": "Read the development settings and the full name of the disabled authentication handler",
+"F329": "The log level overrides hold a key equal to that full name with value Warning",
 "F33": "Namespace equals folder for every moved file. Approved oracle files of this feature are never edited, not even a using line; a crafter target is never an oracle support. One commit per slice; GREEN and every review run on a clean committed tree.",
+"F330": "The handler keeps its Warning level in development",
+"F331": "A second stale key left next to the new one",
 "F34": "Input bounds: no stored or validated input changes and none is introduced; the licence JSON fixtures keep their bytes. Out of scope: module rules and the unit-test placement rule (feature C), repositories, seeders, entities, wire types, Access persistence ports, licence events.",
 "F35": "Producer and consumer ship in one deployable and change in the same commit; the move changes no wire or persisted shape, so the unchanged existing tests, access-answers-compare and the layout oracles cover it",
 "F36": "ArchUnit layout oracles reading the compiled Lighthouse.Backend assembly (IlDependencies and ModuleRules), the test assembly and its output folder; existing HTTP ports, ASP.NET authentication schemes and the application-service ports IRbacAdministrationService and ILicenseService unchanged",

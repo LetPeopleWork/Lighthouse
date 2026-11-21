@@ -371,6 +371,135 @@ A behaviour change in a path no existing test covers; the move is checked to be 
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Look each of the eight Access HTTP adapter names up in the compiled backend and read its namespace
+```
+
+```text
+All eight live in the Access module HTTP adapters namespace and none is left under the old Auth or Authorization folders; a listed name with no type, and a type left behind, are each reported by name
+```
+
+```text
+The Access HTTP guards, markers, filters and handlers sit in the Access module and nothing is left behind
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessHttpAdaptersLayoutArchUnitTest\.cs
+
+```text
+Types copied to the new namespace while the old copies stay, which the left-behind rule still names
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P3
+
+P6
+
+```text
+Read the RBAC guard constructors and public members and the AttributeUsage of the four attributes from the compiled backend
+```
+
+```text
+Guard members and the four usages equal the lists fixed before the move
+```
+
+```text
+Controllers declare their access the same way after the move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessHttpAdaptersLayoutArchUnitTest\.cs
+
+```text
+A changed private member or a changed attribute body, which no public pin sees
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+P6
+
+```text
+Count the controller actions that carry an RBAC guard or an access marker
+```
+
+```text
+The count equals 243, measured before the move
+```
+
+```text
+No endpoint lost or gained its guard
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessHttpAdaptersLayoutArchUnitTest\.cs
+
+```text
+One guard swapped for a marker on the same action, which keeps the count
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+P6
+
+```text
+Read the development settings and the full name of the disabled authentication handler
+```
+
+```text
+The log level overrides hold a key equal to that full name with value Warning
+```
+
+```text
+The handler keeps its Warning level in development
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessHttpAdaptersLayoutArchUnitTest\.cs
+
+```text
+A second stale key left next to the new one
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows
