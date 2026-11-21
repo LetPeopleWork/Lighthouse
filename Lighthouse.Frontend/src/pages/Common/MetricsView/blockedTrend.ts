@@ -1,12 +1,16 @@
 import type { BlockedCountSnapshot } from "../../../models/BlockedCountSnapshot";
-import { formatLocalDate } from "../../../utils/date/localDate";
+import { formatLocalDate, parseLocalDate } from "../../../utils/date/localDate";
 import type { TrendDirection, TrendPayload } from "./trendTypes";
 
 const METRIC_LABEL = "Blocked Items";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
+// A snapshot day names a calendar day, so it is read as that day in the viewer's zone. `new Date`
+// reads it as UTC midnight, which is still ahead of "now" in the first hours of a local day east of UTC.
 const timeOf = (snapshot: BlockedCountSnapshot): number =>
-	new Date(snapshot.recordedAt).getTime();
+	(
+		parseLocalDate(snapshot.recordedAt) ?? new Date(snapshot.recordedAt)
+	).getTime();
 
 const latestAtOrBefore = (
 	history: BlockedCountSnapshot[],

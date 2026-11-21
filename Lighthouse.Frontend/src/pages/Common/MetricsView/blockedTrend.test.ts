@@ -329,3 +329,21 @@ describe("computeBlockedTrend — range edges are local calendar days", () => {
 		expect(trend?.currentLabel).toBe("2026-07-20");
 	});
 });
+
+/**
+ * A snapshot is named by the calendar day it was taken, so today's snapshot counts as taken today,
+ * not at the UTC midnight that opens the same-numbered day. Just after local midnight east of
+ * Greenwich the two differ by hours, and today's reading would drop out of the current period.
+ */
+describe("computeBlockedTrend — a snapshot day is a local day", () => {
+	it("counts today's snapshot as current just after local midnight", () => {
+		const start = new Date(2026, 9, 23, 0, 5);
+		const end = new Date(2026, 10, 22, 0, 5);
+		const history = [snap("2026-09-10", 2), snap("2026-11-22", 5)];
+
+		const trend = computeBlockedTrend(history, start, end);
+
+		expect(trend?.direction).toBe("up");
+		expect(trend?.currentValue).toBe("5");
+	});
+});
