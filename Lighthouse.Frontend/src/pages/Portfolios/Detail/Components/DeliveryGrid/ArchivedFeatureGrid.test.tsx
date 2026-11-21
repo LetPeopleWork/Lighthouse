@@ -1,7 +1,23 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeatureMetric } from "../../../../../models/Delivery/DeliveryMetricsHistory";
 import ArchivedFeatureGrid from "./ArchivedFeatureGrid";
+import {
+	givenANarrowWindow,
+	givenTextIsWiderThanItsColumn,
+	resetTheCut,
+	resetTheWindow,
+	thenALongTextIsCutToItsColumn,
+	thenTheColumnIsShownWhole,
+	thenTheFullTextIsInATooltip,
+	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
+	whenThePersonHoversOver,
+	whenThePersonReachesWithTheKeyboard,
+} from "../../../../../tests/SharedGridFitKit";
+
+vi.mock("@mui/x-data-grid", async () =>
+	(await import("../../../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
+);
 
 const { mockUseLicenseRestrictions } = vi.hoisted(() => ({
 	mockUseLicenseRestrictions: vi.fn(),
@@ -124,5 +140,51 @@ describe("ArchivedFeatureGrid", () => {
 		]);
 
 		expect(screen.getByText("FTR-9: Older row")).toBeInTheDocument();
+	});
+});
+
+describe("the archived Feature table fits its columns and says when some are out of sight", () => {
+	const LONG_NAME =
+		"Replatform the order management stack onto the shared event backbone for every region";
+	const SHOWN_NAME = `FTR-3: ${LONG_NAME}`;
+
+	beforeEach(() => {
+		givenANarrowWindow();
+	});
+
+	afterEach(() => {
+		resetTheCut();
+		resetTheWindow();
+		localStorage.clear();
+	});
+
+	const aRecordWithALongNamedFeature = (): FeatureMetric[] => [
+		{ ...pinnedRows[0], referenceId: "FTR-3", name: LONG_NAME },
+	];
+
+	it("cuts a long Feature name to its column and says columns are out of sight", () => {
+		givenTextIsWiderThanItsColumn();
+		const { container } = renderGrid(aRecordWithALongNamedFeature());
+
+		thenALongTextIsCutToItsColumn(container, "name");
+		thenTheTableSaysColumnsAreOutOfSightOnItsRight(container);
+	});
+
+	it("shows the full Feature name in a tooltip when the person hovers over a cut name", async () => {
+		givenTextIsWiderThanItsColumn();
+		renderGrid(aRecordWithALongNamedFeature());
+
+		whenThePersonHoversOver(screen.getByText(SHOWN_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("shows the full Feature name in a tooltip when the person reaches a cut name with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		renderGrid(aRecordWithALongNamedFeature());
+
+		whenThePersonReachesWithTheKeyboard(screen.getByText(SHOWN_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
 	});
 });

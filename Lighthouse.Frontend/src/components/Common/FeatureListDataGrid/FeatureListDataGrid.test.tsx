@@ -1,11 +1,32 @@
 import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IEntityReference } from "../../../models/EntityReference";
 import { Feature } from "../../../models/Feature";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
-import { createForecastsColumn, createStateColumn } from "./columns";
+import {
+	createForecastsColumn,
+	createNameColumn,
+	createStateColumn,
+} from "./columns";
 import FeatureListDataGrid from "./FeatureListDataGrid";
+import {
+	givenANarrowWindow,
+	givenTextIsWiderThanItsColumn,
+	resetTheCut,
+	resetTheWindow,
+	thenALongTextIsCutToItsColumn,
+	thenTheColumnIsShownWhole,
+	thenTheFullTextIsInATooltip,
+	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
+	whenThePersonHoversOver,
+	whenThePersonReachesWithTheKeyboard,
+	thenTheActionsColumnIsPinnedAndLast,
+} from "../../../tests/SharedGridFitKit";
+
+vi.mock("@mui/x-data-grid", async () =>
+	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
+);
 
 let mockedPolicy: "SourceOrder" | "ManualOrder" = "SourceOrder";
 
@@ -547,4 +568,75 @@ describe("FeatureListDataGrid", () => {
 			).toBeInTheDocument();
 		},
 	);
+});
+
+describe("the Feature list table fits its columns, pins its move menu and says when some are out of sight", () => {
+	const LONG_NAME =
+		"Replatform the order management stack onto the shared event backbone for every region";
+	const SHOWN_NAME = `FTR-1: ${LONG_NAME}`;
+
+	beforeEach(() => {
+		givenANarrowWindow();
+	});
+
+	afterEach(() => {
+		resetTheCut();
+		resetTheWindow();
+		localStorage.clear();
+	});
+
+	const whenTheFeatureListShows = () =>
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={[
+						createFeature({
+							id: 1,
+							name: LONG_NAME,
+							referenceId: "FTR-1",
+							stateCategory: "Doing",
+							position: 3,
+						}),
+					]}
+					columns={[createNameColumn("Feature"), createStateColumn()]}
+					storageKey="fit-feature-list"
+					hideCompletedStorageKey="fit-feature-list-hide-completed"
+					showPosition
+				/>
+			</MemoryRouter>,
+		);
+
+	it("cuts a long Feature name to its column and shows the position and the state whole", () => {
+		givenTextIsWiderThanItsColumn();
+		const { container } = whenTheFeatureListShows();
+
+		thenALongTextIsCutToItsColumn(container, "name");
+		thenTheColumnIsShownWhole(container, "position");
+		thenTheColumnIsShownWhole(container, "state");
+	});
+
+	it("pins the move menu as the last column and says columns are out of sight", () => {
+		const { container } = whenTheFeatureListShows();
+
+		thenTheActionsColumnIsPinnedAndLast(container, "featureOrderingActions");
+		thenTheTableSaysColumnsAreOutOfSightOnItsRight(container);
+	});
+
+	it("shows the full Feature name in a tooltip when the person hovers over a cut name", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheFeatureListShows();
+
+		whenThePersonHoversOver(screen.getByText(SHOWN_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("shows the full Feature name in a tooltip when the person reaches a cut name with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheFeatureListShows();
+
+		whenThePersonReachesWithTheKeyboard(screen.getByText(SHOWN_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
 });

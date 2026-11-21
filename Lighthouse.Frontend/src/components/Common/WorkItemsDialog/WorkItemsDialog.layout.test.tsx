@@ -1,14 +1,33 @@
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	aFeature,
 	aWorkItem,
 	contextColumnsShown,
 	day,
 	estimateOf,
 	openTheDialog,
 	resetTheLayout,
+	theDialog,
 	turnColumn,
 } from "../../../tests/WorkItemsDialogTestKit";
+import { within } from "@testing-library/react";
+import {
+	givenANarrowWindow,
+	givenTextIsWiderThanItsColumn,
+	resetTheCut,
+	resetTheWindow,
+	thenALongTextIsCutToItsColumn,
+	thenTheColumnIsShownWhole,
+	thenTheFullTextIsInATooltip,
+	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
+	whenThePersonHoversOver,
+	whenThePersonReachesWithTheKeyboard,
+} from "../../../tests/SharedGridFitKit";
+
+vi.mock("@mui/x-data-grid", async () =>
+	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
+);
 
 vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 	useLicenseRestrictions: () => ({
@@ -202,4 +221,70 @@ describe("each context remembers its own layout", () => {
 		},
 		RENDER_HEAVY,
 	);
+});
+
+describe("the Work Item dialog fits its columns and says when some are out of sight", () => {
+	const LONG_NAME =
+		"Replatform the order management stack onto the shared event backbone for every region";
+	const LONG_TEAM = "Platform Engineering Delivery Squad for the Northern Region";
+
+	beforeEach(() => {
+		givenANarrowWindow();
+	});
+
+	afterEach(() => {
+		resetTheCut();
+		resetTheWindow();
+		localStorage.clear();
+	});
+
+	const whenTheDialogOpensOnALongNamedFeature = () =>
+		openTheDialog({
+			context: "closedItems",
+			ownerKind: "team",
+			items: [
+				aFeature({
+					referenceId: "FTR-1",
+					name: LONG_NAME,
+					owningTeam: LONG_TEAM,
+					state: "Done",
+				}),
+			],
+		});
+
+	it("cuts a long Work Item name and a long owning Team to their columns and shows the type, state and closed date whole", () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheDialogOpensOnALongNamedFeature();
+		const dialog = theDialog();
+
+		thenALongTextIsCutToItsColumn(dialog, "name");
+		thenTheColumnIsShownWhole(dialog, "type");
+		thenTheColumnIsShownWhole(dialog, "state");
+		thenTheColumnIsShownWhole(dialog, "closedDate");
+		thenALongTextIsCutToItsColumn(dialog, "owningTeam");
+	});
+
+	it("says columns are out of sight when the dialog is narrow", () => {
+		whenTheDialogOpensOnALongNamedFeature();
+
+		thenTheTableSaysColumnsAreOutOfSightOnItsRight(theDialog());
+	});
+
+	it("shows the full name in a tooltip when the person hovers over a cut name", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheDialogOpensOnALongNamedFeature();
+
+		whenThePersonHoversOver(within(theDialog()).getByText(LONG_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("shows the full name in a tooltip when the person reaches a cut name with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheDialogOpensOnALongNamedFeature();
+
+		whenThePersonReachesWithTheKeyboard(within(theDialog()).getByText(LONG_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
 });

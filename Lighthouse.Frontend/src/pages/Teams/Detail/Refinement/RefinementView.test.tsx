@@ -1,5 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SnackbarErrorHandler from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { IFeature } from "../../../../models/Feature";
 import type {
@@ -16,6 +16,22 @@ import {
 	createMockFeatureService,
 } from "../../../../tests/MockApiServiceProvider";
 import RefinementView from "./RefinementView";
+import {
+	givenANarrowWindow,
+	givenTextIsWiderThanItsColumn,
+	resetTheCut,
+	resetTheWindow,
+	thenALongTextIsCutToItsColumn,
+	thenTheColumnIsShownWhole,
+	thenTheFullTextIsInATooltip,
+	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
+	whenThePersonHoversOver,
+	whenThePersonReachesWithTheKeyboard,
+} from "../../../../tests/SharedGridFitKit";
+
+vi.mock("@mui/x-data-grid", async () =>
+	(await import("../../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
+);
 
 /**
  * What the coach reads on the Refinement tab: a heading counting the Work Items in refinement, and a
@@ -461,5 +477,78 @@ describe("The Refinement tab follows the Team it is showing", () => {
 		expect(
 			screen.queryByText("Team Gravity's refinement could not be read"),
 		).toBeNull();
+	});
+});
+
+describe("the Refinement table fits its columns and says when some are out of sight", () => {
+	const LONG_NAME =
+		"Replatform the order management stack onto the shared event backbone for every region";
+	const LONG_PARENT =
+		"Order management modernisation programme for the northern and southern regions";
+
+	beforeEach(() => {
+		givenANarrowWindow();
+	});
+
+	afterEach(() => {
+		resetTheCut();
+		resetTheWindow();
+		localStorage.clear();
+	});
+
+	const whenTheRefinementTabShowsALongNamedWorkItem = async () => {
+		const refinementService: IRefinementService = {
+			getRefinement: vi.fn().mockResolvedValue({
+				...gravitysRefinement,
+				workItems: [aRow("GR-058", LONG_NAME, "Next", "GR-010")],
+			}),
+		};
+		const featureService = createMockFeatureService();
+		featureService.getFeaturesByReferences = vi
+			.fn()
+			.mockResolvedValue([{ ...payments, name: LONG_PARENT }]);
+		const view = render(
+			<SnackbarErrorHandler>
+				<ApiServiceContext.Provider
+					value={createMockApiServiceContext({
+						refinementService,
+						featureService,
+					})}
+				>
+					<RefinementView team={teamGravity()} />
+				</ApiServiceContext.Provider>
+			</SnackbarErrorHandler>,
+		);
+		await screen.findByText(`GR-058: ${LONG_NAME}`);
+		return view;
+	};
+
+	it("cuts a long Work Item name and a long parent name to their columns and shows the state and the votes whole", async () => {
+		givenTextIsWiderThanItsColumn();
+		const { container } = await whenTheRefinementTabShowsALongNamedWorkItem();
+
+		thenALongTextIsCutToItsColumn(container, "name");
+		thenTheColumnIsShownWhole(container, "state");
+		thenTheColumnIsShownWhole(container, "voteCount");
+		thenTheTableSaysColumnsAreOutOfSightOnItsRight(container);
+		thenALongTextIsCutToItsColumn(container, "parentReferenceId");
+	});
+
+	it("shows the full Work Item name in a tooltip when the person hovers over a cut name", async () => {
+		givenTextIsWiderThanItsColumn();
+		await whenTheRefinementTabShowsALongNamedWorkItem();
+
+		whenThePersonHoversOver(screen.getByText(`GR-058: ${LONG_NAME}`));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("shows the full Work Item name in a tooltip when the person reaches a cut name with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		await whenTheRefinementTabShowsALongNamedWorkItem();
+
+		whenThePersonReachesWithTheKeyboard(screen.getByText(`GR-058: ${LONG_NAME}`));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
 	});
 });

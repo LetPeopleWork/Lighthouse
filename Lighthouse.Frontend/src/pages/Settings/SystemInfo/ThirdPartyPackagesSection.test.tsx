@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type {
 	CycloneDxDocument,
@@ -12,11 +12,22 @@ import {
 } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import ThirdPartyPackagesSection from "./ThirdPartyPackagesSection";
+import {
+	givenANarrowWindow,
+	givenTextIsWiderThanItsColumn,
+	resetTheCut,
+	resetTheWindow,
+	thenALongTextIsCutToItsColumn,
+	thenTheColumnIsShownWhole,
+	thenTheFullTextIsInATooltip,
+	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
+	whenThePersonHoversOver,
+	whenThePersonReachesWithTheKeyboard,
+} from "../../../tests/SharedGridFitKit";
 
-vi.mock("@mui/x-data-grid", async () => {
-	const actual = await vi.importActual("@mui/x-data-grid");
-	return { ...actual };
-});
+vi.mock("@mui/x-data-grid", async () =>
+	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
+);
 
 const getMockCdxDocument = (
 	overrides?: Partial<CycloneDxDocument>,
@@ -318,5 +329,73 @@ describe("ThirdPartyPackagesSection", () => {
 			expect(screen.queryByText("Newtonsoft.Json")).not.toBeInTheDocument();
 		});
 		expect(screen.getByText("react")).toBeInTheDocument();
+	});
+});
+
+describe("the third-party packages table fits its columns and says when some are out of sight", () => {
+	const LONG_NAME =
+		"@lighthouse-internal/a-package-with-an-unusually-long-name-for-the-shared-event-backbone";
+
+	beforeEach(() => {
+		givenANarrowWindow();
+	});
+
+	afterEach(() => {
+		resetTheCut();
+		resetTheWindow();
+		localStorage.clear();
+	});
+
+	const whenThePackagesShow = async () => {
+		mockSystemInfoService.getBackendSbom = vi
+			.fn()
+			.mockResolvedValue(getMockCdxDocument({ components: [] }));
+		mockSystemInfoService.getFrontendSbom = vi.fn().mockResolvedValue(
+			getMockCdxDocument({
+				components: [
+					{
+						name: LONG_NAME,
+						version: "19.2.4",
+						purl: `pkg:npm/${LONG_NAME}@19.2.4`,
+						scope: "required",
+						licenses: [{ license: { id: "MIT" } }],
+					},
+				],
+			}),
+		);
+		const view = render(
+			<MockProvider>
+				<ThirdPartyPackagesSection />
+			</MockProvider>,
+		);
+		await screen.findByText(LONG_NAME);
+		return view;
+	};
+
+	it("cuts a long package name to its column, shows the version whole and says columns are out of sight", async () => {
+		givenTextIsWiderThanItsColumn();
+		const { container } = await whenThePackagesShow();
+
+		thenALongTextIsCutToItsColumn(container, "name");
+		thenTheColumnIsShownWhole(container, "version");
+		thenTheTableSaysColumnsAreOutOfSightOnItsRight(container);
+	});
+
+	it("shows the full package name in a tooltip when the person hovers over a cut name", async () => {
+		givenTextIsWiderThanItsColumn();
+		await whenThePackagesShow();
+
+		whenThePersonHoversOver(screen.getByText(LONG_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("shows the full package name in a tooltip when the person reaches a cut name with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		await whenThePackagesShow();
+
+		whenThePersonReachesWithTheKeyboard(screen.getByText(LONG_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
 	});
 });

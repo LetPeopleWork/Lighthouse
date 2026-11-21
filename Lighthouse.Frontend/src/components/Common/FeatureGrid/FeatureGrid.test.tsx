@@ -1,9 +1,25 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { FeatureGrid } from "./FeatureGrid";
+import {
+	givenANarrowWindow,
+	givenTextIsWiderThanItsColumn,
+	resetTheCut,
+	resetTheWindow,
+	thenALongTextIsCutToItsColumn,
+	thenTheColumnIsShownWhole,
+	thenTheFullTextIsInATooltip,
+	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
+	whenThePersonHoversOver,
+	whenThePersonReachesWithTheKeyboard,
+} from "../../../tests/SharedGridFitKit";
+
+vi.mock("@mui/x-data-grid", async () =>
+	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
+);
 
 const createMockFeature = (
 	id: number,
@@ -308,5 +324,57 @@ describe("FeatureGrid", () => {
 			// Feature Three (Done) should be last
 			expect(featureNames.at(-1)).toContain("Feature Three");
 		});
+	});
+});
+
+describe("the Feature picker table fits its columns and says when some are out of sight", () => {
+	const LONG_NAME =
+		"Replatform the order management stack onto the shared event backbone for every region";
+
+	beforeEach(() => {
+		givenANarrowWindow();
+	});
+
+	afterEach(() => {
+		resetTheCut();
+		resetTheWindow();
+		localStorage.clear();
+	});
+
+	const whenThePickerShows = () =>
+		render(
+			<FeatureGrid
+				features={[createMockFeature(1, LONG_NAME, "Doing")]}
+				selectedFeatureIds={[]}
+				onChange={vi.fn()}
+				storageKey="fit-picker"
+			/>,
+		);
+
+	it("cuts a long Feature name to its column, shows the state whole and says columns are out of sight", () => {
+		givenTextIsWiderThanItsColumn();
+		const { container } = whenThePickerShows();
+
+		thenALongTextIsCutToItsColumn(container, "name");
+		thenTheColumnIsShownWhole(container, "state");
+		thenTheTableSaysColumnsAreOutOfSightOnItsRight(container);
+	});
+
+	it("shows the full Feature name in a tooltip when the person hovers over a cut name", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenThePickerShows();
+
+		whenThePersonHoversOver(screen.getByText(LONG_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("shows the full Feature name in a tooltip when the person reaches a cut name with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenThePickerShows();
+
+		whenThePersonReachesWithTheKeyboard(screen.getByText(LONG_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
 	});
 });

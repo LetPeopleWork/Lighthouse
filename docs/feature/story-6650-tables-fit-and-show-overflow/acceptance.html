@@ -519,6 +519,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Each of the Feature picker, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables is shown at a narrow width with a long text value
+</code></pre>
+
+<pre><code>Long text is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole; the table says columns are out of sight on its right
+</code></pre>
+
+<pre><code>The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name in full
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::cuts a long Feature name to its column and shows the position and the state whole</p>
+
+<pre><code>A long text column the tests do not name (for example Dependencies) that wraps or overflows would still pass
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P12</p>
+
+<pre><code>The Feature list and the Connections table, which have an actions column, are shown at a narrow width
+</code></pre>
+
+<pre><code>The actions column is the last column and is pinned to the right edge while the other columns keep their fit and the cue
+</code></pre>
+
+<pre><code>Delete, Edit and the move menu never scroll out of view
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.list.test.tsx::pins the actions column as the last column and says columns are out of sight</p>
+
+<pre><code>The Refinement vote columns are not asserted as actions, so leaving them unpinned would still pass
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

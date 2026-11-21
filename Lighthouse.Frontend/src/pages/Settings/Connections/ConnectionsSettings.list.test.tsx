@@ -7,7 +7,7 @@ import {
 	within,
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -18,6 +18,23 @@ import {
 	createMockWorkTrackingSystemService,
 } from "../../../tests/MockApiServiceProvider";
 import ConnectionsSettings from "./ConnectionsSettings";
+import {
+	givenANarrowWindow,
+	givenTextIsWiderThanItsColumn,
+	resetTheCut,
+	resetTheWindow,
+	thenALongTextIsCutToItsColumn,
+	thenTheColumnIsShownWhole,
+	thenTheFullTextIsInATooltip,
+	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
+	whenThePersonHoversOver,
+	whenThePersonReachesWithTheKeyboard,
+	thenTheActionsColumnIsPinnedAndLast,
+} from "../../../tests/SharedGridFitKit";
+
+vi.mock("@mui/x-data-grid", async () =>
+	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
+);
 
 const northwind = () =>
 	new WorkTrackingSystemConnection({
@@ -135,5 +152,66 @@ describe("ConnectionsSettings", () => {
 		expect(
 			within(dialog).queryByText("Internal details nobody should read"),
 		).not.toBeInTheDocument();
+	});
+});
+
+describe("the Connections table fits its columns, pins its actions and says when some are out of sight", () => {
+	const LONG_NAME =
+		"Northwind Azure DevOps organisation for the platform engineering department in the northern region";
+
+	beforeEach(() => {
+		givenANarrowWindow();
+	});
+
+	afterEach(() => {
+		resetTheCut();
+		resetTheWindow();
+		localStorage.clear();
+	});
+
+	const whenTheConnectionsShow = async () => {
+		const longNamed = new WorkTrackingSystemConnection({
+			id: 3,
+			name: LONG_NAME,
+			workTrackingSystem: "AzureDevOps",
+			options: [],
+			authenticationMethodKey: "ado.pat",
+		});
+		const view = renderSettings(serviceListing([longNamed]));
+		await screen.findByText(LONG_NAME);
+		return view;
+	};
+
+	it("cuts a long connection name to its column and shows the type whole", async () => {
+		givenTextIsWiderThanItsColumn();
+		const { container } = await whenTheConnectionsShow();
+
+		thenALongTextIsCutToItsColumn(container, "name");
+		thenTheColumnIsShownWhole(container, "workTrackingSystem");
+	});
+
+	it("pins the actions column as the last column and says columns are out of sight", async () => {
+		const { container } = await whenTheConnectionsShow();
+
+		thenTheActionsColumnIsPinnedAndLast(container, "actions");
+		thenTheTableSaysColumnsAreOutOfSightOnItsRight(container);
+	});
+
+	it("shows the full connection name in a tooltip when the person hovers over a cut name", async () => {
+		givenTextIsWiderThanItsColumn();
+		await whenTheConnectionsShow();
+
+		whenThePersonHoversOver(screen.getByText(LONG_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("shows the full connection name in a tooltip when the person reaches a cut name with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		await whenTheConnectionsShow();
+
+		whenThePersonReachesWithTheKeyboard(screen.getByText(LONG_NAME));
+
+		await thenTheFullTextIsInATooltip(LONG_NAME);
 	});
 });

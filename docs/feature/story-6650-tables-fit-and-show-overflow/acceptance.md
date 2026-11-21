@@ -422,6 +422,69 @@ Only the first or renamed Team keeps Delete in view, the shadow covers Delete, o
 
 
 
+### S4
+
+##### Covers
+
+P10
+
+```text
+Each of the Feature picker, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables is shown at a narrow width with a long text value
+```
+
+```text
+Long text is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole; the table says columns are out of sight on its right
+```
+
+```text
+The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name in full
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:cuts a long Feature name to its column and shows the position and the state whole
+
+```text
+A long text column the tests do not name (for example Dependencies) that wraps or overflows would still pass
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P12
+
+```text
+The Feature list and the Connections table, which have an actions column, are shown at a narrow width
+```
+
+```text
+The actions column is the last column and is pinned to the right edge while the other columns keep their fit and the cue
+```
+
+```text
+Delete, Edit and the move menu never scroll out of view
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Connections\/ConnectionsSettings\.list\.test\.tsx\:\:pins the actions column as the last column and says columns are out of sight
+
+```text
+The Refinement vote columns are not asserted as actions, so leaving them unpinned would still pass
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows

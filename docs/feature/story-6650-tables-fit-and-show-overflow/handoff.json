@@ -224,13 +224,50 @@
 "stimulus": "F323",
 "user_result": "F325"
 }
+],
+"S4": [
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L2",
+"L3"
+],
+"still_passes_if": "F330",
+"test": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::cuts a long Feature name to its column and shows the position and the state whole"
+},
+"expected": "F328",
+"stimulus": "F327",
+"user_result": "F329"
+},
+{
+"covers": [
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"L5"
+],
+"still_passes_if": "F334",
+"test": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.list.test.tsx::pins the actions column as the last column and says columns are out of sight"
+},
+"expected": "F332",
+"stimulus": "F331",
+"user_result": "F333"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 326,
+"F": 334,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1415,7 +1452,15 @@
 "F324": "Delete of every Team and of the Portfolio is inside the table at both widths and at the end of the range; the name is really cut with a tooltip on hover and on focus; the Name column keeps 160 px; the page never scrolls sideways at 375 px; the keyboard reaches Actions clear of the pinned column; a right shadow ends at the pinned column and moves to the left at the end; a 1280 px table shows no shadow and its last column ends inside the box.",
 "F325": "The coach finds Delete on every Overview table at any width and sees when more columns wait.",
 "F326": "Only the first or renamed Team keeps Delete in view, the shadow covers Delete, or the page scrolls instead of the table (every Team and the Portfolios table are checked and every read is polled).",
+"F327": "Each of the Feature picker, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables is shown at a narrow width with a long text value",
+"F328": "Long text is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole; the table says columns are out of sight on its right",
+"F329": "The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name in full",
 "F33": "the Overview with a table whose columns do not fit",
+"F330": "A long text column the tests do not name (for example Dependencies) that wraps or overflows would still pass",
+"F331": "The Feature list and the Connections table, which have an actions column, are shown at a narrow width",
+"F332": "The actions column is the last column and is pinned to the right edge while the other columns keep their fit and the cue",
+"F333": "Delete, Edit and the move menu never scroll out of view",
+"F334": "The Refinement vote columns are not asserted as actions, so leaving them unpinned would still pass",
 "F34": "the person opens it",
 "F35": "its columns fit and truncate as on the report list, and a cue shows when columns still overflow. Falsifier: the Overview table still hides its last column with no cue.",
 "F36": "Remaining tables behave the same",
