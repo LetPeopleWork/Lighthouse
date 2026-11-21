@@ -49,3 +49,12 @@ Each break was one edit, one run of `pnpm exec vitest run src/components/Common/
 
 Break: in `RowActionsMenu.tsx` the menu button's `onKeyDown` stops every key again (`keepFromTheGrid` instead of `keepFromTheGridUnlessArrow`).
 Result: `DataOverviewTable.test.tsx` "lets the arrow keys keep moving through the row's cells, and Enter and Space open the menu" fails (ArrowLeft leaves focus on the actions cell). Restored; 100 tests green.
+
+## Browser run at 40aac6e68 (root, after the phone menu)
+
+The note "A Name focused at desktop width and the window narrowed to 375 px: RED, a real defect" above
+describes the 200 px actions column before the phone menu (4ed4c003d). At 40aac6e68 the column is 48 px.
+
+- `pnpm build` in Lighthouse.Frontend: built in 1.74 s.
+- `pnpm exec playwright test tests/specs/teams/OverviewTableFit.spec.ts tests/specs/reports/ReportListTableFit.spec.ts --reporter=line --timeout 60000`
+  from Lighthouse.EndToEndTests against http://localhost:5169: exit 0, 3 passed (31.1 s), including the focused-Name check.
