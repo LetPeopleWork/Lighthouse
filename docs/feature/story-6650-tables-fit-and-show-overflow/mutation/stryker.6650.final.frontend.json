@@ -1,0 +1,63 @@
+{
+	"$schema": "../../../../Lighthouse.Frontend/node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+	"packageManager": "pnpm",
+	"testRunner": "vitest",
+	"plugins": [
+		"@stryker-mutator/vitest-runner"
+	],
+	"vitest": {
+		"configFile": "vitest.stryker.6650.ts",
+		"related": false
+	},
+	"reporters": [
+		"clear-text",
+		"progress",
+		"json"
+	],
+	"coverageAnalysis": "perTest",
+	"incremental": true,
+	"incrementalFile": "reports/mutation/stryker-incremental-6650-final.json",
+	"concurrency": 4,
+	"timeoutMS": 60000,
+	"inPlace": false,
+	"tsconfigFile": "no-tsconfig-rewrite.json",
+	"ignorePatterns": [
+		"/dist",
+		"/coverage",
+		"/playwright-report",
+		"/reports"
+	],
+	"mutate": [
+		"src/components/Common/DataGrid/DataGridBase.tsx:275-356",
+		"src/components/Common/DataGrid/DataGridBase.tsx:419-437",
+		"src/components/Common/DataGrid/DataGridBase.tsx:447-447",
+		"src/components/Common/DataGrid/DataGridBase.tsx:499-499",
+		"src/components/Common/DataGrid/DataGridBase.tsx:561-564",
+		"src/components/Common/DataGrid/DataGridBase.tsx:626-626",
+		"src/components/Common/DataGrid/DataGridBase.tsx:685-685",
+		"src/components/Common/DataGrid/DataGridBase.tsx:694-694",
+		"src/components/Common/DataGrid/columnFit.ts:20-22",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:22-22",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:28-28",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:41-42",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:101-106",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:220-220",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:225-235",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:254-254",
+		"src/components/Common/DataOverviewTable/RowActionsMenu.tsx:1-131",
+		"src/components/Common/DataOverviewTable/RowActionsCell.tsx:1-136",
+		"src/components/Common/FeatureListDataGrid/columns.tsx:242-251",
+		"src/components/Common/FeatureListDataGrid/columns.tsx:258-258",
+		"src/components/Common/FeatureListDataGrid/columns.tsx:263-263",
+		"src/pages/Common/Reports/ReportList.tsx:14-14"
+	],
+	"thresholds": {
+		"high": 90,
+		"low": 80,
+		"break": 80
+	},
+	"jsonReporter": {
+		"fileName": "reports/mutation/stryker-6650-final-frontend.json"
+	},
+	"tempDirName": ".stryker-tmp-6650"
+}
