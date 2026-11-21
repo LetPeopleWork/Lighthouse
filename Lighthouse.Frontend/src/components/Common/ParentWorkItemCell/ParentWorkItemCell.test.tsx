@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
-import ParentWorkItemCell from "./ParentWorkItemCell";
+import ParentWorkItemCell, { parentWorkItemText } from "./ParentWorkItemCell";
 
 describe("ParentWorkItemCell", () => {
 	it("should display 'No Parent' when parentReference is null", () => {
@@ -75,5 +75,28 @@ describe("ParentWorkItemCell", () => {
 		const link = screen.getByRole("link");
 		expect(link).toBeInTheDocument();
 		expect(screen.getByText(/PARENT-1/)).toBeInTheDocument();
+	});
+
+	it("should show the absent-parent text in the muted secondary colour", () => {
+		render(
+			<ParentWorkItemCell
+				parentReference={null}
+				parentMap={new Map<string, ParentWorkItem>()}
+			/>,
+		);
+
+		expect(screen.getByText("No Parent")).toHaveStyle({
+			color: "rgba(0, 0, 0, 0.6)",
+		});
+	});
+
+	it("should give the text 'No Parent' for an absent reference, whatever the map holds", () => {
+		const parentMap = new Map<string, ParentWorkItem>([
+			["", { referenceId: "", name: "Blank", url: "http://example.com/x" }],
+		]);
+
+		expect(parentWorkItemText(null, parentMap)).toBe("No Parent");
+		expect(parentWorkItemText(undefined, parentMap)).toBe("No Parent");
+		expect(parentWorkItemText("", parentMap)).toBe("No Parent");
 	});
 });
