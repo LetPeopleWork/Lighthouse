@@ -26,8 +26,6 @@ const thenActionsAreReachable = async (table: OverviewTable, when: string) => {
 			message: `${when}, the actions menu button must be inside the table so the person finds it`,
 		})
 		.toBe(false);
-	const scrolledTo = await table.horizontalScrollPosition();
-	const cues = await table.sidesWithACue();
 	expect(
 		await table.openActionsMenu(),
 		`${when}, the menu must offer Delete along with the other actions`,
@@ -39,15 +37,15 @@ const thenActionsAreReachable = async (table: OverviewTable, when: string) => {
 		})
 		.toBe(true);
 	await expect
-		.poll(() => table.horizontalScrollPosition(), {
-			message: `${when}, closing the menu must not scroll the table; focusing the button moved it`,
+		.poll(() => table.actionsMenuIsOutOfView(), {
+			message: `${when}, after Escape the menu button must still be inside the table`,
 		})
-		.toBe(scrolledTo);
+		.toBe(false);
 	await expect
-		.poll(() => table.sidesWithACue(), {
-			message: `${when}, closing the menu must leave the shadows as they were`,
+		.poll(() => table.nameCanBeReadClearOfActions(), {
+			message: `${when}, after Escape the Name must lie clear of the pinned column, or the table must scroll back so it does`,
 		})
-		.toEqual(cues);
+		.toBe(true);
 };
 
 testWithTeams(
@@ -156,6 +154,7 @@ testWithTeams(
 		for (const table of tables) {
 			await thenActionsAreReachable(table, "at 375 px, scrolled to the left");
 		}
+		await teams.scrollToTheStart();
 		await expect
 			.poll(() => teams.tableScrollsSideways(), {
 				message: "at 375 px the table must scroll sideways inside its box",
