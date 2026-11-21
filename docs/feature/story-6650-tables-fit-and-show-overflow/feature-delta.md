@@ -21,6 +21,7 @@ already show whether people act on a table.
 | 4 | 2026-11-17 | **Sketch approved as sketched** (`Name ≥ 160 px`, other text columns `≥ 120 px`; numbers, dates and states never cut; full text in a tooltip on hover and keyboard focus; a width the person set is kept, Reset returns to the fitted layout). |
 | 5 | 2026-11-17 | **Cue style: a soft inner shadow only**, on the side where columns are hidden, no text hint; screen readers still get the overflow text. |
 | 6 | 2026-11-17 | **Rigor:** S1 `thorough` (the shared fit and the sticky pinning: Opus crafter and acceptance designer, Sonnet reviewers); S2–S4 `standard` (Sonnet; Haiku reviewers). |
+| 7 | 2026-11-21 | **Overview at phone width:** when the table is too narrow for the four action icons (Details, Edit, Clone, Delete) beside a readable Name, they collapse into one pinned "⋮" menu button (about 48 px) that opens Details, Edit, Clone and Delete (only the actions the person may use). Sketch approved as shown: `Name ▸ … Features │ ⋮` per row, menu listing the four actions. Found by the completion pass: at 375 px the pinned 200 px actions column covered the Name (grid 269 px). |
 
 Open for the S2 acceptance designer, within the sketch: the exact screen-reader wording of the overflow text (for example
 "More columns to the right"). Loading and failure looks are unchanged: no new data is fetched.
