@@ -426,37 +426,6 @@ Only the first or renamed Team keeps Delete in view, the shadow covers Delete, o
 
 ##### Covers
 
-P10
-
-```text
-Each of the Feature picker, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables is shown at a narrow width with a long text value, the Feature list and the Refinement table also with a long parent name
-```
-
-```text
-Long text, including a parent name once its title has loaded, is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole and open no tooltip; text that fits opens no tooltip; the table says columns are out of sight on its right
-```
-
-```text
-The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name or parent in full
-```
-
-##### Disposition
-
-Tested
-
-Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:cuts a long Feature name and a long parent name to their columns and shows the position and the state whole
-
-```text
-A long Dependencies column (content, declared width 260 by design) that wraps or overflows would still pass; a tooltip showing the parent reference instead of its title is refused by the Refinement and Feature list parent tooltip checks
-```
-
-###### Obligations
-
-
-
-
-##### Covers
-
 P12
 
 ```text
@@ -494,21 +463,21 @@ The Feature list shows a Feature that waits on two others, and the Dependencies 
 ```
 
 ```text
-The dependency list is cut to its column with an ellipsis instead of wrapping; hovering or tabbing to it opens a tooltip that names every dependency (for example DEP-1: Card payments gateway cutover, DEP-2: Ledger export to the data warehouse, joined by commas); a list that fits opens no tooltip
+Each dependency stays on its own line and is cut to the column with an ellipsis instead of wrapping; hovering or tabbing to the list opens a tooltip that names every dependency (for example DEP-1: Card payments gateway cutover, DEP-2: Ledger export to the data warehouse, joined by commas); a list that fits opens no tooltip
 ```
 
 ```text
-A person with a long dependency list sees a one-line row and can still read every dependency by hovering or keyboard focus
+A person with a long dependency list sees each dependency on its own line, cut to the column, and can read every dependency in full by hovering or keyboard focus
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:cuts a long dependency list to its column
 
 ```text
-the cell is cut but the tooltip shows only the count, or the tooltip names only the first dependency, or it opens even when the list fits
+the first dependency line is cut but another line wraps or overflows, or the tooltip shows only the count or only the first dependency, or it opens even when the list fits
 ```
 
 ###### Obligations
@@ -544,6 +513,37 @@ a table opens a tooltip over every name whether or not it is cut
 ###### Obligations
 
 None.
+
+##### Covers
+
+P10
+
+```text
+Each of the Feature picker, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables is shown at a narrow width with a long text value, the Feature list and the Refinement table also with a long parent name
+```
+
+```text
+Long text, including a parent name once its title has loaded, is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole and open no tooltip; text that fits opens no tooltip; the table says columns are out of sight on its right
+```
+
+```text
+The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name or parent in full
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:cuts a long Feature name and a long parent name to their columns and shows the position and the state whole
+
+```text
+A long Dependencies column (content, declared width 260 by design) that wraps or overflows would still pass; a tooltip showing the parent reference instead of its title is refused by the Refinement and Feature list parent tooltip checks
+```
+
+###### Obligations
+
+
+
 
 ## Expectations
 

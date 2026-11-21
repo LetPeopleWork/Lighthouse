@@ -628,6 +628,26 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 		return feature;
 	};
 
+	const thenEachDependencyLineIsCut = (line: string) => {
+		const cell = screen
+			.getByText(line)
+			.closest<HTMLElement>('[role="gridcell"]');
+		const lineAndItsWrappers: HTMLElement[] = [];
+		for (
+			let element: HTMLElement | null = screen.getByText(line);
+			element !== null && element !== cell;
+			element = element.parentElement
+		) {
+			lineAndItsWrappers.push(element);
+		}
+		expect(
+			lineAndItsWrappers.some(
+				(element) => getComputedStyle(element).textOverflow === "ellipsis",
+			),
+			`the dependency "${line}" must end with an ellipsis on its own line when it is wider than the column, as every other dependency does`,
+		).toBe(true);
+	};
+
 	const whenTheFeatureListShows = () =>
 		render(
 			<MemoryRouter>
@@ -716,6 +736,8 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 		const { container } = whenTheFeatureListShows();
 
 		thenALongTextIsCutToItsColumn(container, "dependsOn");
+		thenEachDependencyLineIsCut(FIRST_DEPENDENCY);
+		thenEachDependencyLineIsCut(SECOND_DEPENDENCY);
 	});
 
 	it("names every dependency in a tooltip when the person hovers over a cut dependency list", async () => {

@@ -523,33 +523,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h5>Covers</h5>
 
-<p>P10</p>
-
-<pre><code>Each of the Feature picker, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables is shown at a narrow width with a long text value, the Feature list and the Refinement table also with a long parent name
-</code></pre>
-
-<pre><code>Long text, including a parent name once its title has loaded, is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole and open no tooltip; text that fits opens no tooltip; the table says columns are out of sight on its right
-</code></pre>
-
-<pre><code>The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name or parent in full
-</code></pre>
-
-<h5>Disposition</h5>
-
-<p>Tested</p>
-
-<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::cuts a long Feature name and a long parent name to their columns and shows the position and the state whole</p>
-
-<pre><code>A long Dependencies column (content, declared width 260 by design) that wraps or overflows would still pass; a tooltip showing the parent reference instead of its title is refused by the Refinement and Feature list parent tooltip checks
-</code></pre>
-
-<h6>Obligations</h6>
-
-
-
-
-<h5>Covers</h5>
-
 <p>P12</p>
 
 <pre><code>The Feature list and the Connections table, which have an actions column, are shown at a narrow width
@@ -581,19 +554,19 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The Feature list shows a Feature that waits on two others, and the Dependencies column is narrower than the list
 </code></pre>
 
-<pre><code>The dependency list is cut to its column with an ellipsis instead of wrapping; hovering or tabbing to it opens a tooltip that names every dependency (for example DEP-1: Card payments gateway cutover, DEP-2: Ledger export to the data warehouse, joined by commas); a list that fits opens no tooltip
+<pre><code>Each dependency stays on its own line and is cut to the column with an ellipsis instead of wrapping; hovering or tabbing to the list opens a tooltip that names every dependency (for example DEP-1: Card payments gateway cutover, DEP-2: Ledger export to the data warehouse, joined by commas); a list that fits opens no tooltip
 </code></pre>
 
-<pre><code>A person with a long dependency list sees a one-line row and can still read every dependency by hovering or keyboard focus
+<pre><code>A person with a long dependency list sees each dependency on its own line, cut to the column, and can read every dependency in full by hovering or keyboard focus
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx</p>
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::cuts a long dependency list to its column</p>
 
-<pre><code>the cell is cut but the tooltip shows only the count, or the tooltip names only the first dependency, or it opens even when the list fits
+<pre><code>the first dependency line is cut but another line wraps or overflows, or the tooltip shows only the count or only the first dependency, or it opens even when the list fits
 </code></pre>
 
 <h6>Obligations</h6>
@@ -625,6 +598,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>Each of the Feature picker, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables is shown at a narrow width with a long text value, the Feature list and the Refinement table also with a long parent name
+</code></pre>
+
+<pre><code>Long text, including a parent name once its title has loaded, is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole and open no tooltip; text that fits opens no tooltip; the table says columns are out of sight on its right
+</code></pre>
+
+<pre><code>The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name or parent in full
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::cuts a long Feature name and a long parent name to their columns and shows the position and the state whole</p>
+
+<pre><code>A long Dependencies column (content, declared width 260 by design) that wraps or overflows would still pass; a tooltip showing the parent reference instead of its title is refused by the Refinement and Feature list parent tooltip checks
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 
 <h2>Expectations</h2>
 

@@ -4,16 +4,26 @@ Each break was applied alone, only the named tests were run, and the file was re
 
 ## (a) TruncatedCell: remove `cut &&` from the tooltip `open` condition
 
-| Break | Tests run | Result |
-|---|---|---|
-| `open={cut && (hovered \|\| focusedWithin \|\| hasFocus)}` becomes `open={(hovered \|\| focusedWithin \|\| hasFocus)}` | every "opens no tooltip" check, all 7 files (`vitest -t "opens no tooltip"`) | **NOT caught: 9 passed.** Every check stayed green. |
-| Control: `open={true}` | Connections "opens no tooltip over a connection name that fits its column" | fails, so the check can see a tooltip that is open at mount |
+Break: `open={cut && (hovered || focusedWithin || hasFocus)}` becomes `open={hovered || focusedWithin || hasFocus}`.
 
-Diagnosis: with `cut &&` removed the hover still reaches `onOpen` (a probe logged it), but the `setHovered(true)` re-render
-is not flushed before the check reads `queryByRole("tooltip")` in `thenHoveringOverItOpensNoTooltip`
-(`src/tests/SharedGridFitKit.tsx`; fake timers advance 300 ms but React's scheduler flush runs on a real macrotask). The negative
-checks therefore cannot see a tooltip that opens on hover for text that fits. Owner of the defect: oracle (the kit helper must wait
-for the re-render, for example by awaiting a real macrotask or using `act`, before asserting absence).
+Command: `pnpm exec vitest run <the 7 S4 folders> -t "opens no tooltip"` (from Lighthouse.Frontend).
+
+Result with the break: **8 failed, 1 passed** (7 test files failed). Message of every failure: "a tooltip must open only for text the column actually cuts, never for text that fits or for a number, date or state: expected <div role="tooltip" ...> to be null".
+
+| Failing test (file) |
+|---|
+| opens no tooltip over a Feature name that fits its column (FeatureGrid) |
+| opens no tooltip over a Feature name that fits its column (FeatureListDataGrid) |
+| opens no tooltip over a dependency list that fits its column (FeatureListDataGrid) |
+| opens no tooltip over a Work Item name that fits its column (WorkItemsDialog.layout) |
+| opens no tooltip over a Feature name that fits its column (ArchivedFeatureGrid) |
+| opens no tooltip over a connection name that fits its column (ConnectionsSettings.list) |
+| opens no tooltip over a package name that fits its column (ThirdPartyPackagesSection) |
+| opens no tooltip over a Work Item name that fits its column (RefinementView) |
+
+The one that stays green is "opens no tooltip over a state, which is never cut" (FeatureListDataGrid): the state negative is governed by the column's fit kind (a state is not a text column, so it never gets a tooltip), not by `cut`, so this break cannot reach it.
+
+Restored with `git checkout`; `git diff --stat` shows no change under src/components/Common/DataGrid. Rerun after the restore: 9 passed, 0 failed.
 
 ## (b) Feature list Dependencies
 
