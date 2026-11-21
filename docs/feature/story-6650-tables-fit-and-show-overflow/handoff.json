@@ -243,6 +243,19 @@
 "expected": "F351",
 "stimulus": "F350",
 "user_result": "F352"
+},
+{
+"covers": [
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F357",
+"test": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx:1124"
+},
+"expected": "F355",
+"stimulus": "F354",
+"user_result": "F356"
 }
 ],
 "S4": [
@@ -313,7 +326,7 @@
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 353,
+"F": 357,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1521,6 +1534,10 @@
 "F351": "On a phone each row has one pinned menu button named Actions for the row name, with the tooltip Actions, and no separate icons; the actions column is no wider than the button; the menu lists exactly the actions the person may use, in the order Details, Edit, Clone, Delete; each item does what its icon did and Delete asks the same confirmation; the Name lies clear of the pinned column; at desktop width the four icons are back and there is no menu button.",
 "F352": "The person always finds the actions of a row in one pinned button that never scrolls away, can read the Name, and can use every action with mouse or keyboard.",
 "F353": "The icons stay at phone width and only the column narrows; the menu button is not pinned or scrolls away; the menu offers actions the person may not use; Delete from the menu skips the confirmation or targets another row; the menu opens by mouse only; the menu button also shows at desktop width; the actions column stays 200 px wide on a phone.",
+"F354": "On a phone-width Overview, the person opens a row's actions menu with the keyboard and closes it with Escape",
+"F355": "the menu closes, keyboard focus is back on that row's actions button, and the table has neither scrolled nor changed its edge shadows",
+"F356": "A keyboard user keeps their place in the table and the pinned actions column stays reachable",
+"F357": "focus lands on the body or on a grid cell after Escape, or the grid jumps to its end when the button gets focus",
 "F36": "Remaining tables behave the same",
 "F37": "the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables",
 "F38": "each is opened at a narrow width",

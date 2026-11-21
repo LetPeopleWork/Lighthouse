@@ -26,11 +26,28 @@ const thenActionsAreReachable = async (table: OverviewTable, when: string) => {
 			message: `${when}, the actions menu button must be inside the table so the person finds it`,
 		})
 		.toBe(false);
+	const scrolledTo = await table.horizontalScrollPosition();
+	const cues = await table.sidesWithACue();
 	expect(
 		await table.openActionsMenu(),
 		`${when}, the menu must offer Delete along with the other actions`,
 	).toEqual(["Details", "Edit", "Clone", "Delete"]);
 	await table.closeActionsMenu();
+	await expect
+		.poll(() => table.actionsMenuButtonHasFocus(), {
+			message: `${when}, after Escape the keyboard focus must be on the menu button`,
+		})
+		.toBe(true);
+	await expect
+		.poll(() => table.horizontalScrollPosition(), {
+			message: `${when}, closing the menu must not scroll the table; focusing the button moved it`,
+		})
+		.toBe(scrolledTo);
+	await expect
+		.poll(() => table.sidesWithACue(), {
+			message: `${when}, closing the menu must leave the shadows as they were`,
+		})
+		.toEqual(cues);
 };
 
 testWithTeams(

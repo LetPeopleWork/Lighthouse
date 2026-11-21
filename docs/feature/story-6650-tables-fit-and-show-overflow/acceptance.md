@@ -456,6 +456,36 @@ The icons stay at phone width and only the column narrows; the menu button is no
 
 
 
+##### Covers
+
+P12
+
+```text
+On a phone-width Overview, the person opens a row's actions menu with the keyboard and closes it with Escape
+```
+
+```text
+the menu closes, keyboard focus is back on that row's actions button, and the table has neither scrolled nor changed its edge shadows
+```
+
+```text
+A keyboard user keeps their place in the table and the pinned actions column stays reachable
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:1124
+
+```text
+focus lands on the body or on a grid cell after Escape, or the grid jumps to its end when the button gets focus
+```
+
+###### Obligations
+
+None.
+
 ### S4
 
 ##### Covers

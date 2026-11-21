@@ -154,6 +154,13 @@ export class OverviewTable {
 		);
 	}
 
+	/** True when this owner's menu button holds the keyboard focus. */
+	async actionsMenuButtonHasFocus(): Promise<boolean> {
+		return this.actionsMenuButton.evaluate(
+			(button) => button === document.activeElement,
+		);
+	}
+
 	async closeActionsMenu(): Promise<void> {
 		await this.page.keyboard.press("Escape");
 		await expect(

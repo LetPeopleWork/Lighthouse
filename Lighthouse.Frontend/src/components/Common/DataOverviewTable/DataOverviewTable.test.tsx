@@ -1,5 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -946,11 +953,11 @@ describe("The Overview table fits its columns and says when some are out of sigh
 	const iconActionsShown = () => [
 		...screen.queryAllByLabelText("Clone"),
 		...screen.queryAllByTestId("delete-item-button"),
-		...screen
-			.queryAllByRole("link")
-			.filter((link) =>
-				/^\/teams\/(edit\/)?\d+$/.test(link.getAttribute("href") ?? ""),
-			),
+		...Array.from(
+			document.querySelectorAll<HTMLElement>('[data-field="actions"] a'),
+		).filter((link) =>
+			/^\/teams\/(edit\/)?\d+$/.test(link.getAttribute("href") ?? ""),
+		),
 	];
 
 	const openTheActionsMenuOf = async (name: string) => {
@@ -1119,6 +1126,27 @@ describe("The Overview table fits its columns and says when some are out of sigh
 				onDelete,
 				"choosing Delete must ask for the confirmation of this very row, exactly once; the icon did the same",
 			).toHaveBeenCalledExactlyOnceWith(sampleTeamData[1]);
+		});
+
+		it("returns the keyboard focus to the row's menu button when Escape closes the menu", async () => {
+			const user = userEvent.setup();
+			whenTheOverviewShows(sampleTeamData.slice(0, 2));
+
+			menuButtonOf("Team 2").focus();
+			await user.keyboard("{Enter}");
+			await screen.findByRole("menu");
+			await user.keyboard("{Escape}");
+
+			await waitFor(() =>
+				expect(
+					screen.queryByRole("menu"),
+					"Escape must close the actions menu",
+				).toBeNull(),
+			);
+			expect(
+				menuButtonOf("Team 2"),
+				"after Escape the focus must go back to the button that opened the menu, so a keyboard user does not lose their place in the table",
+			).toHaveFocus();
 		});
 
 		it("opens the menu with Enter and chooses an item with the arrow keys and Enter", async () => {

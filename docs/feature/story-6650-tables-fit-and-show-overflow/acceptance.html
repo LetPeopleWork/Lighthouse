@@ -549,6 +549,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h5>Covers</h5>
+
+<p>P12</p>
+
+<pre><code>On a phone-width Overview, the person opens a row&#x27;s actions menu with the keyboard and closes it with Escape
+</code></pre>
+
+<pre><code>the menu closes, keyboard focus is back on that row&#x27;s actions button, and the table has neither scrolled nor changed its edge shadows
+</code></pre>
+
+<pre><code>A keyboard user keeps their place in the table and the pinned actions column stays reachable
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx:1124</p>
+
+<pre><code>focus lands on the body or on a grid cell after Escape, or the grid jumps to its end when the button gets focus
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h3>S4</h3>
 
 <h5>Covers</h5>
