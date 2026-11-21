@@ -491,6 +491,12 @@ describe("the Refinement table fits its columns and says when some are out of si
 	const SHOWN_PARENT = `GR-010: ${LONG_PARENT}`;
 
 	beforeEach(() => {
+		localStorage.clear();
+		terms.current = { ...defaultTerms };
+		mockUseLicenseRestrictions.mockReturnValue({
+			licenseStatus: { canUsePremiumFeatures: true },
+			isLoading: false,
+		});
 		givenANarrowWindow();
 	});
 

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { expect, vi } from "vitest";
 import { PINNED_ACTIONS_CLASS } from "../components/Common/DataGrid/columnFit";
 
@@ -200,9 +200,15 @@ export const whenThePersonReachesWithTheKeyboard = (element: HTMLElement) => {
 };
 
 export const thenTheFullTextIsInATooltip = async (fullText: string) => {
+	await waitFor(() => {
+		expect(
+			screen.queryByRole("tooltip"),
+			"a cut text must show its full text in a tooltip, for a mouse user and for a keyboard user; mark the column as text so its cells carry the tooltip",
+		).not.toBeNull();
+	});
 	expect(
-		await screen.findByRole("tooltip"),
-		"a cut text must show its full text in a tooltip, for a mouse user and for a keyboard user",
+		screen.getByRole("tooltip"),
+		"the tooltip of a cut text must carry its full text, not a shortened or different text",
 	).toHaveTextContent(fullText);
 };
 

@@ -151,6 +151,11 @@ describe("the archived Feature table fits its columns and says when some are out
 	const SHOWN_NAME = `FTR-3: ${LONG_NAME}`;
 
 	beforeEach(() => {
+		localStorage.clear();
+		mockUseLicenseRestrictions.mockReturnValue({
+			licenseStatus: { canUsePremiumFeatures: true },
+			isLoading: false,
+		});
 		givenANarrowWindow();
 	});
 

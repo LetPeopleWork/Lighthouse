@@ -338,6 +338,7 @@ describe("the third-party packages table fits its columns and says when some are
 		"@lighthouse-internal/a-package-with-an-unusually-long-name-for-the-shared-event-backbone";
 
 	beforeEach(() => {
+		mockSystemInfoService = createMockSystemInfoService();
 		givenANarrowWindow();
 	});
 

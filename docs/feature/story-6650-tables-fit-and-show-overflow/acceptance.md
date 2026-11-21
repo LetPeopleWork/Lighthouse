@@ -535,7 +535,7 @@ A person is not shown a tooltip that repeats text already shown in full
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/FeatureGrid\/FeatureGrid\.test\.tsx
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureGrid\/FeatureGrid\.test\.tsx\:\:opens no tooltip over a Feature name that fits its column\; Lighthouse\.Frontend\/src\/components\/Common\/WorkItemsDialog\/WorkItemsDialog\.layout\.test\.tsx\:\:opens no tooltip over a Work Item name that fits its column\; Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/ArchivedFeatureGrid\.test\.tsx\:\:opens no tooltip over a Feature name that fits its column\; Lighthouse\.Frontend\/src\/pages\/Settings\/Connections\/ConnectionsSettings\.list\.test\.tsx\:\:opens no tooltip over a connection name that fits its column\; Lighthouse\.Frontend\/src\/pages\/Settings\/SystemInfo\/ThirdPartyPackagesSection\.test\.tsx\:\:opens no tooltip over a package name that fits its column\; Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/Refinement\/RefinementView\.test\.tsx\:\:opens no tooltip over a Work Item name that fits its column
 
 ```text
 a table opens a tooltip over every name whether or not it is cut
