@@ -18,7 +18,7 @@ export const box = { content: 0, viewport: 0, scrollLeft: 0 };
  * `vi.mock("@mui/x-data-grid", () => dataGridWithItsBoxStated())`.
  */
 export const dataGridWithItsBoxStated = async (): Promise<
-	Record<string, unknown>
+	typeof import("@mui/x-data-grid")
 > => {
 	const actual =
 		await vi.importActual<typeof import("@mui/x-data-grid")>(
