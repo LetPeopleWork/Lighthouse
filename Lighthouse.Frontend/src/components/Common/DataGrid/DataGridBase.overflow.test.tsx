@@ -307,4 +307,245 @@ describe("A person using the keyboard reaches columns that are off screen", () =
 
 		await whenTheyArrowToTheCell(user, "actions");
 	});
+
+	it("leaves the table where it is when the actions cell itself takes the focus", async () => {
+		const user = userEvent.setup();
+		const { container } = whenTheReportListIsShown();
+		const scroller = placeColumnsLikeTheBrowser(container);
+		whenThePersonScrollsTo(0);
+
+		await whenTheyLandOnTheCell(user, "actions");
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 5));
+		});
+		expect(
+			scroller.scrollLeft,
+			"the pinned cell never sits under itself, so focusing it must not scroll",
+		).toBe(0);
+	});
+
+	it("scrolls a focused cell back into view when it starts before the table's left edge", async () => {
+		const user = userEvent.setup();
+		const { container } = whenTheReportListIsShown();
+		const scroller = placeColumnsLikeTheBrowser(container);
+		whenThePersonScrollsTo(0);
+		scroller.scrollLeft = 70;
+
+		await user.click(cellOf("name") as Element);
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 5));
+		});
+		expect(
+			scroller.scrollLeft,
+			"the Name cell started 50 px before the left edge, so the table scrolls back by 50 px",
+		).toBe(20);
+	});
+});
+
+const styleOf = (element: Element | null) =>
+	getComputedStyle(element as Element);
+
+const theShadow = (container: HTMLElement, side: "left" | "right") =>
+	container.querySelector<HTMLElement>(`[data-side="${side}"]`) as HTMLElement;
+
+describe("The edge shadows sit on the edge they name", () => {
+	it("draws the left shadow at the left edge fading to the right, and the right shadow ending where the pinned actions column starts, fading to the left", () => {
+		box.scrollLeft = 250;
+		const { container } = whenTheReportListIsShown();
+		whenThePersonScrollsTo(250);
+
+		const left = styleOf(theShadow(container, "left"));
+		const right = styleOf(theShadow(container, "right"));
+		expect(left.position, "a shadow is laid over the table").toBe("absolute");
+		expect(left.left, "the left shadow starts at the left edge").toBe("0px");
+		expect(
+			left.background,
+			"the left shadow is darkest at its own edge",
+		).toContain("to right");
+		expect(
+			right.right,
+			"the right shadow must end where the 100 px pinned actions column starts, not under it",
+		).toBe("100px");
+		expect(
+			right.background,
+			"the right shadow is darkest at its own edge",
+		).toContain("to left");
+	});
+
+	it("lets the right shadow reach the edge when the pinned actions column is hidden", () => {
+		localStorage.setItem(
+			"lighthouse:datagrid:overflow-reports:state",
+			JSON.stringify({ columnVisibilityModel: { actions: false } }),
+		);
+		const { container } = whenTheReportListIsShown();
+		whenThePersonScrollsTo(0);
+
+		expect(
+			styleOf(theShadow(container, "right")).right,
+			"with no pinned column there is nothing for the shadow to stop before",
+		).toBe("0px");
+	});
+
+	it("puts nothing over a table that fits", () => {
+		box.viewport = 1000;
+		const { container } = whenTheReportListIsShown();
+		whenThePersonScrollsTo(0);
+
+		const grid = container.querySelector(".MuiDataGrid-root") as HTMLElement;
+		expect(
+			(grid.parentElement as HTMLElement).firstElementChild,
+			"a table that fits adds no hidden sentence and no shadow beside the grid",
+		).toBe(grid);
+	});
+});
+
+describe("The table keeps its own box and its row look", () => {
+	it("holds the shadows in a box of its own, lets rows grow with their text, and styles cells and the pinned column", () => {
+		const { container } = whenTheReportListIsShown();
+		const grid = container.querySelector(".MuiDataGrid-root") as HTMLElement;
+
+		expect(
+			styleOf(grid.parentElement).position,
+			"the shadows are placed against this box, so it must be the positioned one",
+		).toBe("relative");
+		expect(
+			container.querySelector(".MuiDataGrid-row--dynamicHeight"),
+			"a row grows with its content instead of cutting it off",
+		).not.toBeNull();
+
+		const cell = document.querySelector(
+			'[role="gridcell"][data-field="name"]',
+		) as HTMLElement;
+		const cellStyle = styleOf(cell);
+		expect(cellStyle.display).toBe("flex");
+		expect(cellStyle.alignItems).toBe("center");
+		expect(cellStyle.whiteSpace).toBe("normal");
+		expect(cellStyle.wordWrap).toBe("break-word");
+		expect(
+			styleOf(cell.closest(".MuiDataGrid-row")).maxHeight,
+			"the row height is left to its content",
+		).toBe("none");
+
+		const pinned = styleOf(
+			document.querySelector('[role="gridcell"][data-field="actions"]'),
+		);
+		expect(pinned.position).toBe("sticky");
+		expect(pinned.right).toBe("0px");
+		expect(pinned.zIndex).toBe("3");
+	});
+
+	it("sorts by the sort model it starts with, and remembers a sort the person picks", async () => {
+		const user = userEvent.setup();
+		const onSort = vi.fn();
+		render(
+			<DataGridBase
+				rows={[
+					{ id: 1, name: "Alpha", owner: "x" },
+					{ id: 2, name: "Beta", owner: "y" },
+				]}
+				columns={reportColumns}
+				storageKey="overflow-sorting"
+				initialSortModel={[{ field: "name", sort: "desc" }]}
+				onSortModelChange={onSort}
+			/>,
+		);
+
+		const firstRow = () =>
+			document.querySelector('[role="row"][data-id]')?.getAttribute("data-id");
+		expect(firstRow(), "descending by name starts with Beta").toBe("2");
+
+		await user.click(screen.getByRole("columnheader", { name: /Owner/ }));
+		const stored = JSON.parse(
+			localStorage.getItem("lighthouse:datagrid:overflow-sorting:state") ??
+				"{}",
+		);
+		expect(
+			stored.sortModel,
+			"the sort the person picked is remembered",
+		).toEqual([{ field: "owner", sort: "asc" }]);
+		expect(onSort).toHaveBeenCalledWith([{ field: "owner", sort: "asc" }]);
+	});
+});
+
+describe("Resizing a column is remembered once the person stops", () => {
+	const storedWidths = () =>
+		JSON.parse(
+			localStorage.getItem("lighthouse:datagrid:overflow-reports:state") ??
+				"{}",
+		).columnWidths;
+	const whenTheyResize = (field: string | undefined, width: number) =>
+		act(() => {
+			box.api?.current?.publishEvent("columnResize", {
+				width,
+				colDef: field === undefined ? undefined : { field },
+			});
+		});
+
+	it("writes only the resized columns, 250 ms after the last drag", () => {
+		vi.useFakeTimers();
+		try {
+			whenTheReportListIsShown();
+			whenTheyResize("name", 150);
+			vi.advanceTimersByTime(200);
+			whenTheyResize("owner", 180);
+			vi.advanceTimersByTime(100);
+			expect(
+				storedWidths(),
+				"a drag that goes on must not be written half way",
+			).toBeUndefined();
+
+			vi.advanceTimersByTime(150);
+			expect(storedWidths()).toEqual({ name: 150, owner: 180 });
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("applies the dragged width to the column at once", () => {
+		const { container } = whenTheReportListIsShown();
+		whenTheyResize("owner", 333);
+
+		const header = container.querySelector(
+			'[role="columnheader"][data-field="owner"]',
+		) as HTMLElement;
+		expect(header.style.width).toBe("333px");
+	});
+
+	it("ignores a drag that names no column, and still writes nothing wrong", () => {
+		vi.useFakeTimers();
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			whenTheReportListIsShown();
+			whenTheyResize(undefined, 150);
+			vi.advanceTimersByTime(300);
+			expect(
+				warn,
+				"a drag without a column is skipped quietly",
+			).not.toHaveBeenCalled();
+			expect(storedWidths()).toEqual({});
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("says so, and keeps going, when a drag cannot be read", () => {
+		vi.useFakeTimers();
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			whenTheReportListIsShown();
+			act(() => {
+				box.api?.current?.publishEvent("columnResize", {
+					get colDef(): never {
+						throw new Error("unreadable");
+					},
+				});
+			});
+			expect(warn).toHaveBeenCalledWith(
+				"Failed to handle column resize",
+				expect.any(Error),
+			);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
 });

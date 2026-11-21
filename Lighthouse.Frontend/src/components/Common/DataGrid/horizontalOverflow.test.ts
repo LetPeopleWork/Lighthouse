@@ -1,6 +1,11 @@
+import { act, renderHook } from "@testing-library/react";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { type OverflowEdges, overflowEdges } from "./horizontalOverflow";
+import {
+	type OverflowEdges,
+	overflowEdges,
+	useHorizontalOverflow,
+} from "./horizontalOverflow";
 
 type Row = [
 	scrollLeft: number,
@@ -135,5 +140,93 @@ describe("Which side of a table has hidden columns", () => {
 				).toBe(true);
 			}),
 		);
+	});
+});
+
+type Listener = (params: { left: number }) => void;
+
+/** A grid that holds one box of the stated size and keeps its subscribers, so a test can fire what the grid would. */
+const gridWithABox = (content: number, viewport: number, scrollLeft = 0) => {
+	const listeners = new Map<string, Listener>();
+	const unsubscribed: string[] = [];
+	const box = { content, viewport, scrollLeft };
+	const current = {
+		getRootDimensions: () => ({
+			contentSize: { width: box.content, height: 0 },
+			viewportInnerSize: { width: box.viewport, height: 0 },
+		}),
+		getScrollPosition: () => ({ left: box.scrollLeft, top: 0 }),
+		subscribeEvent: (event: string, listener: Listener) => {
+			listeners.set(event, listener);
+			return () => {
+				unsubscribed.push(event);
+			};
+		},
+	};
+	return {
+		box,
+		listeners,
+		unsubscribed,
+		ref: { current } as unknown as Parameters<typeof useHorizontalOverflow>[0],
+	};
+};
+
+describe("The hidden-side state of a mounted table", () => {
+	it("is known as soon as the table is shown, before anyone scrolls", () => {
+		const grid = gridWithABox(900, 400, 0);
+		const { result } = renderHook(() => useHorizontalOverflow(grid.ref));
+		expect(result.current).toBe("right");
+	});
+
+	it("reads none while the grid has not arrived yet", () => {
+		const { result } = renderHook(() =>
+			useHorizontalOverflow({ current: undefined } as never),
+		);
+		expect(result.current).toBe("none");
+	});
+
+	it("stops listening to the grid when the table goes away, and listens again to a new grid", () => {
+		const first = gridWithABox(900, 400);
+		const second = gridWithABox(900, 400, 500);
+		const { result, rerender, unmount } = renderHook(
+			({ ref }) => useHorizontalOverflow(ref),
+			{ initialProps: { ref: first.ref } },
+		);
+		expect(
+			first.listeners.size,
+			"it listens to scrolling and to every change of fit",
+		).toBe(4);
+
+		rerender({ ref: second.ref });
+		expect(first.unsubscribed).toHaveLength(4);
+		expect(result.current, "a different grid is measured on its own box").toBe(
+			"left",
+		);
+
+		unmount();
+		expect(second.unsubscribed).toHaveLength(4);
+	});
+
+	it("follows scrolling, and each change of the fit measured at the scroll position the grid reports", () => {
+		const grid = gridWithABox(900, 400, 500);
+		const { result } = renderHook(() => useHorizontalOverflow(grid.ref));
+		expect(result.current).toBe("left");
+
+		act(() => grid.listeners.get("scrollPositionChange")?.({ left: 250 }));
+		expect(result.current).toBe("both");
+
+		for (const event of [
+			"resize",
+			"columnWidthChange",
+			"columnVisibilityModelChange",
+		]) {
+			grid.box.viewport = 1000;
+			act(() => grid.listeners.get(event)?.({ left: 0 }));
+			expect(result.current, `${event} on a wide window`).toBe("none");
+
+			grid.box.viewport = 400;
+			act(() => grid.listeners.get(event)?.({ left: 0 }));
+			expect(result.current, `${event} on a narrow window`).toBe("left");
+		}
 	});
 });
