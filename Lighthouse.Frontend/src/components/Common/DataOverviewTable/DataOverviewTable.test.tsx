@@ -1138,11 +1138,18 @@ describe("The Overview table fits its columns and says when some are out of sigh
 
 		it("returns the keyboard focus to the row's menu button when Escape closes the menu", async () => {
 			const user = userEvent.setup();
+			givenNamesAreWiderThanTheirColumn();
+			box.content = 900;
+			box.viewport = 400;
 			const { container } = whenTheOverviewShows(sampleTeamData.slice(0, 2));
 			const edgeCue = () =>
 				container.querySelector<HTMLElement>("[data-overflow]")?.dataset
 					.overflow;
 			const cueBefore = edgeCue();
+			expect(
+				cueBefore,
+				"the table must start with columns hidden on its right, or the check that the menu leaves the shadows alone has nothing to compare",
+			).toBe("right");
 
 			menuButtonOf("Team 2").focus();
 			await user.keyboard("{Enter}");
