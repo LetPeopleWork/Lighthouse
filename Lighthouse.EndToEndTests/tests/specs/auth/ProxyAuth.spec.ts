@@ -11,8 +11,7 @@ const LICENSE_FILE_PATH = path.join(
 	"..",
 	"Lighthouse.Backend",
 	"Lighthouse.Backend.Tests",
-	"Services",
-	"Implementation",
+	"Modules",
 	"Licensing",
 	"valid_not_expired_license.json",
 );
