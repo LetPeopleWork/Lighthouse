@@ -25,6 +25,16 @@ interface RowActionsMenuProps {
 const keepFromTheGrid = (event: React.SyntheticEvent) =>
 	event.stopPropagation();
 
+const ARROW_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
+
+// Enter and Space open the menu through the button; the arrow keys stay the grid's, so the
+// keyboard can keep moving between cells.
+const keepFromTheGridUnlessArrow = (event: React.KeyboardEvent) => {
+	if (!ARROW_KEYS.has(event.key)) {
+		keepFromTheGrid(event);
+	}
+};
+
 const RowActionsMenu: React.FC<RowActionsMenuProps> = ({
 	rowName,
 	onDetails,
@@ -64,7 +74,7 @@ const RowActionsMenu: React.FC<RowActionsMenuProps> = ({
 						event.currentTarget.focus({ preventScroll: true });
 					}}
 					onFocus={keepFromTheGrid}
-					onKeyDown={keepFromTheGrid}
+					onKeyDown={keepFromTheGridUnlessArrow}
 				>
 					<MoreVertIcon fontSize="small" />
 				</IconButton>

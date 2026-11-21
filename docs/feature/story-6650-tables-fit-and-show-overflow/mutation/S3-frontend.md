@@ -44,3 +44,8 @@ Each break was one edit, one run of `pnpm exec vitest run src/components/Common/
 | keeps the four action icons and no menu button on a desktop | the actions cell renders the menu whatever the width (`isMobile ?` became `true ?`) | `at desktop width the icons have room, so there is no menu button` | yes, green |
 | the menu leaves out Clone when the person may edit and delete but not clone | dropped the `canCloneRow` filter in the menu | `the menu must list exactly the actions the person may use ... expected [ Array(4) ] to deeply equal [ 'Details', 'Edit', 'Delete' ]` | yes, green |
 | opens the Delete confirmation for the row when Delete is chosen from the menu | Delete in the menu does nothing | `choosing Delete must ask for the confirmation of this very row, exactly once` | yes, green |
+
+## Deliberate break: arrow keys on the phone menu button
+
+Break: in `RowActionsMenu.tsx` the menu button's `onKeyDown` stops every key again (`keepFromTheGrid` instead of `keepFromTheGridUnlessArrow`).
+Result: `DataOverviewTable.test.tsx` "lets the arrow keys keep moving through the row's cells, and Enter and Space open the menu" fails (ArrowLeft leaves focus on the actions cell). Restored; 100 tests green.
