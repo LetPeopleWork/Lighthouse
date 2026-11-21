@@ -54,10 +54,11 @@ testWithDemo(
 			"hovering the cut name must show the full name in a tooltip",
 		).toBeVisible();
 		const fittedNameWidth = await reports.nameColumnWidth();
-		expect(
-			await reports.sidesWithACue(),
-			"a table that fits must show no shadow on either edge",
-		).toEqual([]);
+		await expect
+			.poll(() => reports.sidesWithACue(), {
+				message: "a table that fits must show no shadow on either edge",
+			})
+			.toEqual([]);
 
 		reports = await reports.reopenWithStoredNameWidth(STORED_NAME_WIDTH);
 		expect(
@@ -103,10 +104,12 @@ testWithDemo(
 			await reports.tableScrollsSideways(),
 			"at 375 px the table must scroll sideways inside its box",
 		).toBe(true);
-		expect(
-			await reports.pageScrollsSideways(),
-			"at 375 px the page must not scroll sideways; the table scrolls instead",
-		).toBe(false);
+		await expect
+			.poll(() => reports.pageScrollsSideways(), {
+				message:
+					"at 375 px the page must not scroll sideways; the table scrolls instead",
+			})
+			.toBe(false);
 		await expect
 			.poll(() => reports.sidesWithACue(), {
 				message: "at 375 px the shadow must show on the right edge",
@@ -139,10 +142,12 @@ testWithDemo(
 				message: "at phone width a Name width the person set is used as set",
 			})
 			.toBeCloseTo(STORED_NAME_WIDTH, 0);
-		expect(
-			await reports.pageScrollsSideways(),
-			"at 375 px with a wide stored Name the page must not scroll sideways; the table does",
-		).toBe(false);
+		await expect
+			.poll(() => reports.pageScrollsSideways(), {
+				message:
+					"at 375 px with a wide stored Name the page must not scroll sideways; the table does",
+			})
+			.toBe(false);
 		await expect
 			.poll(() => reports.rightCueDistanceFromActions(), {
 				message:

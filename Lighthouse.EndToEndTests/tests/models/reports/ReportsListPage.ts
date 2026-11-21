@@ -197,8 +197,6 @@ export class ReportsListPage {
 			root,
 			"the table must mark whether columns are hidden, or a missing marker would read as no shadow",
 		).toHaveCount(1);
-		const tableBox = await this.table.boundingBox();
-		const middle = tableBox ? tableBox.x + tableBox.width / 2 : 0;
 		const cues = root.locator('[aria-hidden="true"]:not(svg)');
 		const found: { side: string; box: Box }[] = [];
 		for (const cue of await cues.all()) {
@@ -209,7 +207,7 @@ export class ReportsListPage {
 			const box = await cue.boundingBox();
 			if (!letsClicksThrough || box === null || box.width === 0) continue;
 			found.push({
-				side: box.x + box.width / 2 < middle ? "left" : "right",
+				side: (await cue.getAttribute("data-side")) ?? "unknown",
 				box,
 			});
 		}
