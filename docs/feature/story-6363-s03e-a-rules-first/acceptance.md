@@ -196,7 +196,7 @@ The architecture rule tests read the compiled code and compare the Access and Li
 ```
 
 ```text
-On today's code every listed type is found once in its old or new namespace and no unlisted type appears; Domain types reach only the shared Models and the base library and Application classes reach more; four candidates are admitted and the other three are left out naming the condition they fail. A missing listed type, a made-up listed name, an unlisted type, a Domain type reaching the Application or the platform, or a shared short name in two namespaces fails and is named.
+On today's code every listed type is found once in its old or new namespace and no unlisted type appears; Domain types reach only the shared Models, the base library and the types listed as Domain as the code holds them by full name, and Application classes reach more; four candidates are admitted and the other three are left out naming the condition they fail. A missing listed type, a made-up listed name, an unlisted type, a Domain type reaching the Application or the platform, a Domain type reaching an Application type that shares its short name with a Domain-listed type, or a shared short name in two namespaces fails and is named.
 ```
 
 ```text
@@ -214,7 +214,6 @@ A type that moves to the wrong layer of the right module after the move, since b
 ```
 
 ###### Obligations
-
 
 
 

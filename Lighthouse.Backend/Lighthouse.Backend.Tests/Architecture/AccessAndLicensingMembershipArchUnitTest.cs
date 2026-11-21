@@ -256,7 +256,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AMadeUpDomainTypeReachingTheApplicationOrThePlatform_IsNamed_AndOneReachingOnlyTheKernelIsNot()
         {
-            string[] listedAsDomain = [nameof(AMadeUpRuleReachingTheApplication), nameof(AMadeUpRuleReachingThePlatform), nameof(AMadeUpRuleReachingOnlyTheKernel)];
+            string[] listedAsDomain =
+            [
+                nameof(AMadeUpRuleReachingTheApplication), nameof(AMadeUpRuleReachingThePlatform), nameof(AMadeUpRuleReachingOnlyTheKernel),
+                nameof(AMadeUpRuleReachingANamesakeOfADomainType),
+            ];
 
             var reaching = WhenTheDomainTypesReachingBeyondTheKernelAreCollected(TestModule.Value, MadeUpDomainTypes, listedAsDomain);
 
@@ -268,7 +272,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                     "A made-up Domain type that calls an Application interface was not named with what it reaches. The Domain must not depend on the Application.");
                 Assert.That(failure, Does.Contain($"{nameof(AMadeUpRuleReachingThePlatform)} reaches Microsoft.AspNetCore.Http.HttpContext"),
                     "A made-up Domain type that reads the HTTP context was not named with what it reaches. The Domain must not depend on the platform.");
-                Assert.That(failure, Does.Not.Contain(nameof(AMadeUpRuleReachingOnlyTheKernel)),
+                Assert.That(failure, Does.Contain($"{nameof(AMadeUpRuleReachingANamesakeOfADomainType)} reaches Lighthouse.Backend.Modules.AccessFixtures.Application.{nameof(AMadeUpRuleReachingOnlyTheKernel)}"),
+                    "A made-up Domain type that calls an Application type sharing its short name with a Domain-listed type was not named. The types a Domain type may reach must be matched by their full names, or any Application type can hide behind a Domain namesake.");
+                Assert.That(failure, Does.Not.Contain($"{nameof(AMadeUpRuleReachingOnlyTheKernel)} reaches"),
                     "A made-up Domain type that reaches only a Models type and the base library was named. The rule must let the Domain use the shared kernel.");
             }
         }
@@ -340,17 +346,23 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .GroupBy(ShortNameOf, StringComparer.Ordinal)
                 .SelectMany(group => group.Count() == 1 ? [group.Key] : group.AsEnumerable());
 
-        // What a Domain type may reach: the shared Models, the base library, the module's Domain, and the other types listed as Domain.
+        // What a Domain type may reach: the shared Models, the base library, the module's Domain, and the other types listed as
+        // Domain, by their full names as the code holds them, so a namesake elsewhere does not pass for one.
         private static List<string> WhenTheDomainTypesReachingBeyondTheKernelAreCollected(ModuleDefinition module, string namespaces, IReadOnlyCollection<string> listedAsDomain)
-            => [.. IlDependencies.DependentsIn(module, namespaces, target => ReachesBeyondTheKernel(target, listedAsDomain))
+        {
+            var domainTypes = DomainTypesFoundIn(module, namespaces, listedAsDomain);
+
+            return [.. IlDependencies.DependentsIn(module, namespaces, target => ReachesBeyondTheKernel(target, domainTypes))
                 .Where(dependent => listedAsDomain.Contains(ShortNameOf(dependent.TypeName)))
                 .Select(dependent => $"{ShortNameOf(dependent.TypeName)} reaches {string.Join(", ", dependent.Targets.Where(target => OuterTypeOf(target) != OuterTypeOf(dependent.TypeName)))}")];
+        }
 
         // Interfaces are left out: they are the ports the Application offers, whatever they reach.
         private static List<string> WhenTheClassesReachingOnlyTheKernelAreCollected(
             ModuleDefinition module, string namespaces, IReadOnlyCollection<string> listedAsDomain, IReadOnlyCollection<string> listedAsApplication)
         {
-            var reachingBeyond = IlDependencies.DependentsIn(module, namespaces, target => ReachesBeyondTheKernel(target, listedAsDomain))
+            var domainTypes = DomainTypesFoundIn(module, namespaces, listedAsDomain);
+            var reachingBeyond = IlDependencies.DependentsIn(module, namespaces, target => ReachesBeyondTheKernel(target, domainTypes))
                 .Where(dependent => dependent.Targets.Any(target => OuterTypeOf(target) != OuterTypeOf(dependent.TypeName)))
                 .Select(dependent => ShortNameOf(dependent.TypeName))
                 .ToHashSet(StringComparer.Ordinal);
@@ -362,11 +374,17 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Order(StringComparer.Ordinal)];
         }
 
-        private static bool ReachesBeyondTheKernel(TypeReference target, IReadOnlyCollection<string> listedAsDomain)
+        private static HashSet<string> DomainTypesFoundIn(ModuleDefinition module, string namespaces, IReadOnlyCollection<string> listedAsDomain)
+            => module.Types
+                .Where(type => IsIn(type.Namespace, namespaces) && listedAsDomain.Contains(ShortNameOf(type.FullName)))
+                .Select(type => type.FullName)
+                .ToHashSet(StringComparer.Ordinal);
+
+        private static bool ReachesBeyondTheKernel(TypeReference target, HashSet<string> domainTypes)
             => target is not GenericParameter
                 && !target.Name.StartsWith('<')
                 && !IsIn(IlDependencies.NamespaceOf(target), KernelOrBaseLibrary)
-                && !listedAsDomain.Contains(ShortNameOf(target.FullName.Replace('/', '+')));
+                && !domainTypes.Contains(OutermostOf(target.GetElementType()).FullName);
 
         private static void ThenNoneReachesBeyond(List<string> reaching)
             => Assert.That(reaching, Is.Empty,
@@ -687,6 +705,19 @@ namespace Lighthouse.Backend.Modules.AccessFixtures.DomainReach
     internal static class AMadeUpRuleReachingOnlyTheKernel
     {
         public static string Describe(Lighthouse.Backend.Models.Authorization.RbacOperationResult result) => result.ToString() ?? string.Empty;
+    }
+
+    internal static class AMadeUpRuleReachingANamesakeOfADomainType
+    {
+        public static string Describe(int value) => Lighthouse.Backend.Modules.AccessFixtures.Application.AMadeUpRuleReachingOnlyTheKernel.Describe(value);
+    }
+}
+
+namespace Lighthouse.Backend.Modules.AccessFixtures.Application
+{
+    internal static class AMadeUpRuleReachingOnlyTheKernel
+    {
+        public static string Describe(int value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 }
 
