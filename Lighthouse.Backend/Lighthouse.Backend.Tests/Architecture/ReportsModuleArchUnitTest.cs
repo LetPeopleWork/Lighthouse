@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
@@ -11,7 +12,6 @@ using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;

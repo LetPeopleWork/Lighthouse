@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using System.Reflection;
 using System.Text.Json;
 using Lighthouse.Backend.API;
@@ -5,7 +6,6 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.DeliverySources;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

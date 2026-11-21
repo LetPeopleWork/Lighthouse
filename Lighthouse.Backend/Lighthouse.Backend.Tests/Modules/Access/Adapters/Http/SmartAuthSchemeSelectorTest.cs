@@ -1,7 +1,7 @@
-using Lighthouse.Backend.Services.Implementation.Auth;
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Microsoft.AspNetCore.Http;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
+namespace Lighthouse.Backend.Tests.Modules.Access.Adapters.Http
 {
     [Category("epic-5305-k8s-readiness")]
     public class SmartAuthSchemeSelectorTest

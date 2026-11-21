@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.Authorization
+namespace Lighthouse.Backend.Modules.Access.Adapters.Http
 {
     // Checks nothing at run time. It records, right beside an action, why that action needs no RbacGuard, so
     // a reviewer can weigh the reason where the access decision is read. An architecture test makes every

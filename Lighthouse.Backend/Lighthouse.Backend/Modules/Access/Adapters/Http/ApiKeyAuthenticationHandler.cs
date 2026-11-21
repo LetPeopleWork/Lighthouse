@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
 
-namespace Lighthouse.Backend.Services.Implementation.Auth
+namespace Lighthouse.Backend.Modules.Access.Adapters.Http
 {
     public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {

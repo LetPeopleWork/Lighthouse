@@ -1,6 +1,6 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

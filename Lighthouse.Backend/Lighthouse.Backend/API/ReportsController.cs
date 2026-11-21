@@ -1,6 +1,6 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.API.DTO.Reports;
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Services.Interfaces.Reports;

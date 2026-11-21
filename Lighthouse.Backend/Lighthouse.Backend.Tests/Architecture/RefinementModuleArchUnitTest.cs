@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using System.Reflection;
 using ArchUnitNET.Domain;
 using ArchUnitNET.Domain.Dependencies;
@@ -6,7 +7,6 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Modules.Access.Application;

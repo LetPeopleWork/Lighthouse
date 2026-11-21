@@ -1,8 +1,8 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application;

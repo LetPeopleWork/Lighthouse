@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Models.AppSettings;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;

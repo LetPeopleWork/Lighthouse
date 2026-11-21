@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Modules.Access.Application;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System.Security.Claims;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization;
+namespace Lighthouse.Backend.Tests.Modules.Access.Adapters.Http;
 
 public class RbacGuardAttributeTest
 {

@@ -1,10 +1,10 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Authentication;

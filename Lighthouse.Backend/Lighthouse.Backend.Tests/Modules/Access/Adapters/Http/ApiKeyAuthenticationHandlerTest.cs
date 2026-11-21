@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.Auth;
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Access.Domain;
 using Microsoft.AspNetCore.Authentication;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using System.Text.Encodings.Web;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
+namespace Lighthouse.Backend.Tests.Modules.Access.Adapters.Http
 {
     public class ApiKeyAuthenticationHandlerTest
     {

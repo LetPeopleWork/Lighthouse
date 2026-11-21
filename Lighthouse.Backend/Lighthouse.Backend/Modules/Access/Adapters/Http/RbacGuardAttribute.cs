@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lighthouse.Backend.Services.Implementation.Authorization
+namespace Lighthouse.Backend.Modules.Access.Adapters.Http
 {
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
     public sealed class RbacGuardAttribute : Attribute, IAsyncAuthorizationFilter

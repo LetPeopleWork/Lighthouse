@@ -1,10 +1,10 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Services.Interfaces.Refinement;

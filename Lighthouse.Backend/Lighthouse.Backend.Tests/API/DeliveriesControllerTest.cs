@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.DTO.Archived;
@@ -6,7 +7,6 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Modules.Access.Application;

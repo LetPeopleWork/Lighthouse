@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.Auth;
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;

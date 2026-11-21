@@ -1,6 +1,6 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 
 namespace Lighthouse.Backend.Tests.API
 {

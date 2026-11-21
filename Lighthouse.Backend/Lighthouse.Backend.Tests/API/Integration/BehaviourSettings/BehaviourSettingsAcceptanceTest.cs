@@ -6,7 +6,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Modules.Forecasting.Application;
-using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;

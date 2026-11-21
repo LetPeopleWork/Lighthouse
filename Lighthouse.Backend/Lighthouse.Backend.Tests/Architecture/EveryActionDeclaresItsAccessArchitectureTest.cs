@@ -1,7 +1,7 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;

@@ -1,8 +1,8 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using System.Net;
 using System.Reflection;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Authorization;

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 
-namespace Lighthouse.Backend.Services.Implementation.Auth
+namespace Lighthouse.Backend.Modules.Access.Adapters.Http
 {
     public sealed class DisabledAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,

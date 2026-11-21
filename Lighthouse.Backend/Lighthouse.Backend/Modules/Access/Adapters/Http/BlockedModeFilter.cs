@@ -3,7 +3,7 @@ using Lighthouse.Backend.Modules.Access.Application;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace Lighthouse.Backend.Services.Implementation.Auth
+namespace Lighthouse.Backend.Modules.Access.Adapters.Http
 {
     public class BlockedModeFilter : IAsyncActionFilter
     {

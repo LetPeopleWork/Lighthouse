@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.Auth;
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;

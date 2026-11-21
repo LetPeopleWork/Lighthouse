@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using System.Globalization;
 using System.Security.Claims;
 using System.Text.Json;
@@ -5,7 +6,6 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Microsoft.AspNetCore.Authentication;

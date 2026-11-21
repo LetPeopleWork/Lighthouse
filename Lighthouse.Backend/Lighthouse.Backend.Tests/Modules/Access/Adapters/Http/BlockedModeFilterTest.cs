@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models.Auth;
-using Lighthouse.Backend.Services.Implementation.Auth;
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Modules.Access.Application;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
+namespace Lighthouse.Backend.Tests.Modules.Access.Adapters.Http
 {
     [TestFixture]
     public class BlockedModeFilterTest

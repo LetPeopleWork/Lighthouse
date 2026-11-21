@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
@@ -6,7 +7,6 @@ using System.Text.Json.Nodes;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
-using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Authentication;

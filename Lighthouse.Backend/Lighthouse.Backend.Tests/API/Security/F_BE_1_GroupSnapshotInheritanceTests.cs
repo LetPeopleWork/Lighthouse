@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -7,7 +8,6 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
-using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Tests.TestHelpers;

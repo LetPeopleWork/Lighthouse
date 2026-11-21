@@ -1,7 +1,7 @@
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Encryption;
-using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Microsoft.AspNetCore.Authorization;

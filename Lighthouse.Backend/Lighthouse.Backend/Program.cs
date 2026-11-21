@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Configuration;
+using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Background;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
@@ -65,7 +66,6 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Lighthouse.Backend.Services.Implementation.Seeding;
-using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Access.Domain;
 using Lighthouse.Backend.Services.Interfaces.Seeding;

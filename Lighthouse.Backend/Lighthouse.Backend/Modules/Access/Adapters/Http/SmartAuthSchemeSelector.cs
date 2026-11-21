@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 
-namespace Lighthouse.Backend.Services.Implementation.Auth
+namespace Lighthouse.Backend.Modules.Access.Adapters.Http
 {
     public static class SmartAuthSchemeSelector
     {
