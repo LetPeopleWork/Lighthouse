@@ -432,6 +432,184 @@ A production change that no existing test observes would still pass; review of t
 
 None.
 
+### S4
+
+##### Covers
+
+P4
+
+```text
+The examiner asks for the authentication CI results of a revision whose newest finished run failed in the RBAC step and passed the authentication and proxy-auth steps.
+```
+
+```text
+The run is named, the Verify Authentication job line says failure, the RBAC step line says failure, and the authentication and proxy-auth step lines say success.
+```
+
+```text
+The examiner sees which live auth suite broke in CI for the move push and that the other two passed.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-ci\-auth\-suites\-show\.sh
+
+```text
+A command that prints the right conclusions but also prints extra lines naming other jobs; only lines naming the Verify Authentication job and its three steps are read.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+The examiner asks for a revision whose own run is still in progress and whose previous first-parent commit has a finished run where all three auth steps passed.
+```
+
+```text
+The finished earlier run is named, not the run in progress; the job line and all three step lines say success.
+```
+
+```text
+The examiner sees the last finished auth results, never results that may still change.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-ci\-auth\-suites\-show\.sh
+
+```text
+A command that skips the in-progress run for a reason other than its status; the recording offers one run per commit, so the reason cannot be told apart.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+The examiner asks for a revision whose finished run has no proxy-auth step in its Verify Authentication job.
+```
+
+```text
+The proxy-auth step line says missing; the authentication and RBAC step lines say success.
+```
+
+```text
+The examiner can tell a suite that never ran from one that passed.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-ci\-auth\-suites\-show\.sh
+
+```text
+A command that also prints a step that ran with the result skipped as missing; the recordings carry no skipped auth step.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+The examiner asks for a revision with no finished CI run within 40 first-parent commits.
+```
+
+```text
+The command exits 1 and prints no step results.
+```
+
+```text
+The examiner is told there is nothing to read rather than shown a green answer.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-ci\-auth\-suites\-show\.sh
+
+```text
+A command that exits 1 with no explanation; the message wording is not checked.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+The examiner reads the list of admitted examine commands.
+```
+
+```text
+ci-auth-suites-show is listed with the path of the built command.
+```
+
+```text
+The examiner is allowed to run the command at EXAMINE.
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-ci\-auth\-suites\-show\.sh
+
+```text
+A listed command whose usage text is unclear; the usage is judged by review, not by this script.
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The backend is built and its full test suite, without the live tracker categories, runs after the command is added.
+```
+
+```text
+The build has no warnings and every existing test stays green.
+```
+
+```text
+Nothing a user, a tracker or the database sees changes.
+```
+
+##### Disposition
+
+Tested
+
+dotnet test Lighthouse\.Backend \-\-filter TestCategory\!\=JiraIntegration\&TestCategory\!\=LinearIntegration\&TestCategory\!\=AdoIntegration\&TestCategory\!\=ServiceNowIntegration\&TestCategory\!\=GithubIntegration
+
+```text
+A change to an examine script the backend suite never reads; the slice touches only examine scripts and their config.
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

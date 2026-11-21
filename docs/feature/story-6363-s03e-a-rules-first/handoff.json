@@ -235,12 +235,104 @@
 "stimulus": "F224",
 "user_result": "F191"
 }
+],
+"S4": [
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F160"
+],
+"still_passes_if": "F230",
+"test": "Scripts/examine/test-ci-auth-suites-show.sh"
+},
+"expected": "F228",
+"stimulus": "F227",
+"user_result": "F229"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F159"
+],
+"still_passes_if": "F234",
+"test": "Scripts/examine/test-ci-auth-suites-show.sh"
+},
+"expected": "F232",
+"stimulus": "F231",
+"user_result": "F233"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F161"
+],
+"still_passes_if": "F238",
+"test": "Scripts/examine/test-ci-auth-suites-show.sh"
+},
+"expected": "F236",
+"stimulus": "F235",
+"user_result": "F237"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F162"
+],
+"still_passes_if": "F242",
+"test": "Scripts/examine/test-ci-auth-suites-show.sh"
+},
+"expected": "F240",
+"stimulus": "F239",
+"user_result": "F241"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F246",
+"test": "Scripts/examine/test-ci-auth-suites-show.sh"
+},
+"expected": "F244",
+"stimulus": "F243",
+"user_result": "F245"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F249",
+"test": "dotnet test Lighthouse.Backend --filter TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration"
+},
+"expected": "F248",
+"stimulus": "F247",
+"user_result": "F191"
+}
 ]
 },
 "counters": {
 "D": 12,
 "E": 5,
-"F": 226,
+"F": 249,
 "K": 5,
 "L": 4,
 "P": 5,
@@ -1119,8 +1211,31 @@
 "F224": "The full backend test suite, without the live tracker connectors, runs on the candidate.",
 "F225": "Every existing test stays green; the slice adds only an examine command, its selftest and their probe entries, no production code.",
 "F226": "A production change that no existing test observes would still pass; review of the diff, which touches only Scripts and .nwave, closes that.",
+"F227": "The examiner asks for the authentication CI results of a revision whose newest finished run failed in the RBAC step and passed the authentication and proxy-auth steps.",
+"F228": "The run is named, the Verify Authentication job line says failure, the RBAC step line says failure, and the authentication and proxy-auth step lines say success.",
+"F229": "The examiner sees which live auth suite broke in CI for the move push and that the other two passed.",
 "F23": "Confirmed (D-1): the Access membership is the 27 files of the ADR-270 Access set (RBAC administration, Feature move authorization, FeatureReadability, GroupClaimParser, OIDC group snapshot writer, current user profile, API keys, API-key principal factory, embed sessions, auth mode resolver, auth configuration validator, their interfaces, and the ASP.NET pieces ApiKeyAuthenticationHandler, DisabledAuthenticationHandler, SmartAuthSchemeSelector, BlockedModeFilter, RbacGuardAttribute, AccessMarkerAttribute, SignedInOnlyAttribute, CheckedInHandlerAttribute); the Licensing membership is LicenseService, LicenseVerifier, LicenseGuardAttribute, ILicenseService, ILicenseVerifier plus the public_key.pem resource. Entities, wire types, repositories, seeders, controllers, DTOs, API helpers, configuration, AuthPostureBanner and VoterIdentityResolver stay with their named owner. A2 measures the list from the IL and pins it.",
+"F230": "A command that prints the right conclusions but also prints extra lines naming other jobs; only lines naming the Verify Authentication job and its three steps are read.",
+"F231": "The examiner asks for a revision whose own run is still in progress and whose previous first-parent commit has a finished run where all three auth steps passed.",
+"F232": "The finished earlier run is named, not the run in progress; the job line and all three step lines say success.",
+"F233": "The examiner sees the last finished auth results, never results that may still change.",
+"F234": "A command that skips the in-progress run for a reason other than its status; the recording offers one run per commit, so the reason cannot be told apart.",
+"F235": "The examiner asks for a revision whose finished run has no proxy-auth step in its Verify Authentication job.",
+"F236": "The proxy-auth step line says missing; the authentication and RBAC step lines say success.",
+"F237": "The examiner can tell a suite that never ran from one that passed.",
+"F238": "A command that also prints a step that ran with the result skipped as missing; the recordings carry no skipped auth step.",
+"F239": "The examiner asks for a revision with no finished CI run within 40 first-parent commits.",
 "F24": "Confirmed (D-2): a Models type is admitted into Access or Licensing only if it is not an EF entity, not on the wire, not reached by a kernel type and not used by code that stays outside. Candidates (E11): ApiKeyOwnerResolutionState, ApiKeyValidationResult, AuthConfigurationValidationResult, EmbedSessionTokenRedemption, EffectiveAccess, PermissionRule, RbacOperationResult. A2 evaluates each candidate against the IL and pins the admitted list by name; a candidate that fails a condition stays in Models.",
+"F240": "The command exits 1 and prints no step results.",
+"F241": "The examiner is told there is nothing to read rather than shown a green answer.",
+"F242": "A command that exits 1 with no explanation; the message wording is not checked.",
+"F243": "The examiner reads the list of admitted examine commands.",
+"F244": "ci-auth-suites-show is listed with the path of the built command.",
+"F245": "The examiner is allowed to run the command at EXAMINE.",
+"F246": "A listed command whose usage text is unclear; the usage is judged by review, not by this script.",
+"F247": "The backend is built and its full test suite, without the live tracker categories, runs after the command is added.",
+"F248": "The build has no warnings and every existing test stays green.",
+"F249": "A change to an examine script the backend suite never reads; the slice touches only examine scripts and their config.",
 "F25": "Confirmed (D-3): target namespaces are Lighthouse.Backend.Modules.Access.Domain, .Application, .Adapters.Http and Lighthouse.Backend.Modules.Licensing.Application, .Adapters.Http. A type is Domain if its IL reaches only the kernel and the BCL; ApiKeyPrincipalFactory, FeatureReadability and GroupClaimParser are measured by A2 and their layer pinned. The eight ASP.NET pieces and LicenseGuardAttribute are Adapters.Http; Licensing has no Domain.",
 "F26": "Confirmed (D-7): Access Application reaching Licensing Application is legal by namespace (Licensing is upstream of every context). The A1 widening must not turn the existing AuthModeResolver and RbacAdministrationService reads of ILicenseService into offenders; Licensing reaches no Access type.",
 "F27": "Confirmed (D-8, Ratchet design: Rules first): A1 adds AccessModule ^Lighthouse\\.Backend\\.Modules\\.Access(\\.|$) and LicensingModule ^Lighthouse\\.Backend\\.Modules\\.Licensing(\\.|$) to ModuleRules and adds them as alternatives to every rule key that names the old Auth, Authorization or Licensing namespaces: ModuleBoundariesArchUnitTest.RbacIdentityPattern, TrackerIntegrationModuleBoundariesArchUnitTest.RefinementReportsAccessAndLicensing, WorkItemsModuleBoundariesArchUnitTest.AccessAndLicensing, PromisesModuleBoundariesArchUnitTest.AccessAndLicensing, and ForecastingModuleBoundariesArchUnitTest.TheLicence (Licensing alternative only). A1 re-greps every Architecture rule file for these namespaces at its start and widens what it finds; the list is not trusted as complete. Old alternatives stay until C3 retires them.",
