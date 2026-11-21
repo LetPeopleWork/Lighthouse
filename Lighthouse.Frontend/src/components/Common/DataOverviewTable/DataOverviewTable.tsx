@@ -104,6 +104,12 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 		[navigate, api],
 	);
 
+	const canCloneHere = useCallback(
+		(row: IFeatureOwner) =>
+			(api === "teams" || api === "portfolios") && canCloneRow(row),
+		[api, canCloneRow],
+	);
+
 	const columns: DataGridColumn<IFeatureOwner & GridValidRowModel>[] =
 		useMemo(() => {
 			const baseColumns: DataGridColumn<IFeatureOwner & GridValidRowModel>[] = [
@@ -236,7 +242,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 												)
 										: undefined
 								}
-								onClone={canCloneRow(row) ? () => handleClone(row) : undefined}
+								onClone={canCloneHere(row) ? () => handleClone(row) : undefined}
 								onDelete={canDeleteRow(row) ? () => onDelete(row) : undefined}
 							/>
 						) : (
@@ -280,25 +286,24 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 										</IconButton>
 									</Tooltip>
 								)}
-								{(api === "teams" || api === "portfolios") &&
-									canCloneRow(row) && (
-										<Tooltip title="Clone">
-											<IconButton
-												onClick={() => handleClone(row)}
-												size={isTablet ? "small" : "medium"}
-												sx={{
-													color: theme.palette.primary.main,
-													transition: "transform 0.2s",
-													"&:hover": { transform: "scale(1.1)" },
-												}}
-												aria-label="Clone"
-											>
-												<ContentCopyIcon
-													fontSize={isTablet ? "small" : "medium"}
-												/>
-											</IconButton>
-										</Tooltip>
-									)}
+								{canCloneHere(row) && (
+									<Tooltip title="Clone">
+										<IconButton
+											onClick={() => handleClone(row)}
+											size={isTablet ? "small" : "medium"}
+											sx={{
+												color: theme.palette.primary.main,
+												transition: "transform 0.2s",
+												"&:hover": { transform: "scale(1.1)" },
+											}}
+											aria-label="Clone"
+										>
+											<ContentCopyIcon
+												fontSize={isTablet ? "small" : "medium"}
+											/>
+										</IconButton>
+									</Tooltip>
+								)}
 								{canDeleteRow(row) && (
 									<Tooltip title="Delete">
 										<IconButton
@@ -338,7 +343,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 			onDelete,
 			handleClone,
 			canEditRow,
-			canCloneRow,
+			canCloneHere,
 			canDeleteRow,
 		]);
 

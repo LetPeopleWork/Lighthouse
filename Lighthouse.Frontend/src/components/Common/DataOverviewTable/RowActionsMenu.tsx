@@ -25,6 +25,13 @@ interface RowActionsMenuProps {
 const keepFromTheGrid = (event: React.SyntheticEvent) =>
 	event.stopPropagation();
 
+// The browser would scroll the sticky button to where it sits before it sticks, so focus it by hand.
+const focusWithoutScrolling = (event: React.MouseEvent<HTMLElement>) => {
+	keepFromTheGrid(event);
+	event.preventDefault();
+	event.currentTarget.focus({ preventScroll: true });
+};
+
 const ARROW_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
 
 // Enter and Space open the menu through the button; the arrow keys stay the grid's, so the
@@ -67,12 +74,7 @@ const RowActionsMenu: React.FC<RowActionsMenuProps> = ({
 						keepFromTheGrid(event);
 						setAnchor(event.currentTarget);
 					}}
-					onMouseDown={(event) => {
-						keepFromTheGrid(event);
-						// The browser would scroll the sticky button to where it sits before it sticks.
-						event.preventDefault();
-						event.currentTarget.focus({ preventScroll: true });
-					}}
+					onMouseDown={focusWithoutScrolling}
 					onFocus={keepFromTheGrid}
 					onKeyDown={keepFromTheGridUnlessArrow}
 				>
@@ -89,12 +91,7 @@ const RowActionsMenu: React.FC<RowActionsMenuProps> = ({
 					elevation={8}
 					onFocus={keepFromTheGrid}
 					onClick={keepFromTheGrid}
-					onMouseDown={(event) => {
-						keepFromTheGrid(event);
-						// The browser would scroll the sticky button to where it sits before it sticks.
-						event.preventDefault();
-						event.currentTarget.focus({ preventScroll: true });
-					}}
+					onMouseDown={focusWithoutScrolling}
 					onKeyDown={keepFromTheGrid}
 				>
 					<ClickAwayListener onClickAway={close}>
