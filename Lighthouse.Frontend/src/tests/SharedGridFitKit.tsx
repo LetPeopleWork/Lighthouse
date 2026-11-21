@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { expect, vi } from "vitest";
 import { PINNED_ACTIONS_CLASS } from "../components/Common/DataGrid/columnFit";
 
@@ -222,7 +222,9 @@ export const thenHoveringOverItOpensNoTooltip = async (
 	vi.useFakeTimers({ shouldAdvanceTime: true });
 	try {
 		fireEvent.mouseOver(element);
-		await vi.advanceTimersByTimeAsync(300);
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(300);
+		});
 		expect(
 			screen.queryByRole("tooltip"),
 			"a tooltip must open only for text the column actually cuts, never for text that fits or for a number, date or state",
