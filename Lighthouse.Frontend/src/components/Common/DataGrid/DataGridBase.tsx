@@ -35,7 +35,10 @@ import {
 	useColumnWidths,
 	usePersistedGridState,
 } from "./hooks";
-import { useHorizontalOverflow } from "./horizontalOverflow";
+import {
+	type OverflowEdges,
+	useHorizontalOverflow,
+} from "./horizontalOverflow";
 import { PAGE_SIZE, RowRangeFooter } from "./RowRangeFooter";
 import TruncatedCell from "./TruncatedCell";
 import type {
@@ -288,6 +291,36 @@ const cueSx = (side: "left" | "right") => ({
 	background: `linear-gradient(to ${side === "left" ? "right" : "left"}, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0))`,
 });
 
+const VISUALLY_HIDDEN_SX = {
+	position: "absolute",
+	width: 1,
+	height: 1,
+	overflow: "hidden",
+	clip: "rect(0 0 0 0)",
+	whiteSpace: "nowrap",
+} as const;
+
+/** The edge shadows for the sides with hidden columns, and the sentence that says so to screen readers. */
+function OverflowCue({
+	overflow,
+	descriptionId,
+}: Readonly<{ overflow: OverflowEdges; descriptionId: string }>) {
+	if (overflow === "none") return null;
+	return (
+		<>
+			<Box id={descriptionId} sx={VISUALLY_HIDDEN_SX}>
+				{OVERFLOW_DESCRIPTION[overflow]}
+			</Box>
+			{(overflow === "left" || overflow === "both") && (
+				<Box aria-hidden="true" sx={cueSx("left")} />
+			)}
+			{(overflow === "right" || overflow === "both") && (
+				<Box aria-hidden="true" sx={cueSx("right")} />
+			)}
+		</>
+	);
+}
+
 /**
  * A focused cell that sits under the pinned actions column, or before the start of the table, is
  * scrolled into the visible part, so a keyboard user never loses sight of where they are.
@@ -497,27 +530,10 @@ function DataGridBase<T extends GridValidRowModel>({
 					}}
 				/>
 				<Box sx={{ position: "relative" }} onFocus={scrollFocusedCellIntoView}>
-					{overflow !== "none" && (
-						<Box
-							id={overflowDescriptionId}
-							sx={{
-								position: "absolute",
-								width: 1,
-								height: 1,
-								overflow: "hidden",
-								clip: "rect(0 0 0 0)",
-								whiteSpace: "nowrap",
-							}}
-						>
-							{OVERFLOW_DESCRIPTION[overflow]}
-						</Box>
-					)}
-					{(overflow === "left" || overflow === "both") && (
-						<Box aria-hidden="true" sx={cueSx("left")} />
-					)}
-					{(overflow === "right" || overflow === "both") && (
-						<Box aria-hidden="true" sx={cueSx("right")} />
-					)}
+					<OverflowCue
+						overflow={overflow}
+						descriptionId={overflowDescriptionId}
+					/>
 					<DataGrid
 						slotProps={{
 							main: {
