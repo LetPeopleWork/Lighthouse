@@ -272,6 +272,88 @@ function useRowPicking(picking: RowPicking | undefined) {
 	}, [selectedIds, onSelectionChange]);
 }
 
+/** The columns in the order the grid shows them now, falling back to what can still be read when the grid cannot say. */
+function currentColumnOrder<T extends GridValidRowModel>(
+	apiRef: GridApiRef,
+	columns: DataGridColumn<T>[],
+): string[] {
+	const api = apiRef.current;
+	if (!api) return columns.map((c) => c.field);
+	try {
+		return api.getAllColumns().map((c) => c.field);
+	} catch (error) {
+		console.warn(
+			"Failed to getAllColumns for column order, falling back to visible columns",
+			error,
+		);
+	}
+	try {
+		return api.getVisibleColumns().map((c) => c.field);
+	} catch (error) {
+		console.warn("Failed to getVisibleColumns as fallback", error);
+		return columns.map((c) => c.field);
+	}
+}
+
+const RESIZE_SAVE_DELAY_MS = 250;
+
+/**
+ * Follows a resize on screen at once and saves the final widths once the person stops resizing.
+ * Storing every column's width would take all of them out of the fit, so only the columns the
+ * person resized are stored.
+ */
+function useResizedWidthsSaving(
+	setColumnWidth: (field: string, width: number) => void,
+	updateState: ReturnType<typeof usePersistedGridState>["updateState"],
+) {
+	const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const resizedWidths = useRef<Record<string, number>>({});
+
+	useEffect(() => {
+		return () => {
+			if (timeout.current) globalThis.clearTimeout(timeout.current);
+		};
+	}, []);
+
+	const onColumnResize = useCallback(
+		(params: GridColumnResizeParams) => {
+			try {
+				const field = params.colDef?.field;
+				const width = params.width;
+				if (typeof field === "string" && typeof width === "number") {
+					setColumnWidth(field, width);
+					resizedWidths.current = { ...resizedWidths.current, [field]: width };
+				}
+				if (timeout.current) globalThis.clearTimeout(timeout.current);
+				timeout.current = globalThis.setTimeout(() => {
+					try {
+						const resized = resizedWidths.current;
+						resizedWidths.current = {};
+						updateState((prev) => ({
+							...prev,
+							columnWidths: { ...prev.columnWidths, ...resized },
+						}));
+					} catch (error) {
+						console.warn(
+							"Failed to persist column widths after resize commit",
+							error,
+						);
+					}
+				}, RESIZE_SAVE_DELAY_MS);
+			} catch (error) {
+				console.warn("Failed to handle column resize", error);
+			}
+		},
+		[setColumnWidth, updateState],
+	);
+
+	const forgetResizedWidths = useCallback(() => {
+		resizedWidths.current = {};
+	}, []);
+
+	return { onColumnResize, forgetResizedWidths };
+}
+
 const OVERFLOW_DESCRIPTION = {
 	right: "This table scrolls sideways. More columns to the right.",
 	left: "This table scrolls sideways. More columns to the left.",
@@ -453,8 +535,6 @@ function DataGridBase<T extends GridValidRowModel>({
 	);
 
 	const [isColumnOrderDialogOpen, setIsColumnOrderDialogOpen] = useState(false);
-	const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const resizedWidthsRef = useRef<Record<string, number>>({});
 
 	// Apply persisted column widths on mount (only override columns that user resized before)
 	useEffect(() => {
@@ -463,13 +543,10 @@ function DataGridBase<T extends GridValidRowModel>({
 		}
 	}, [persistedState?.columnWidths, setAllWidths]);
 
-	// Clear any pending debounce timers when the component unmounts
-	useEffect(() => {
-		return () => {
-			if (resizeTimeoutRef.current)
-				globalThis.clearTimeout(resizeTimeoutRef.current);
-		};
-	}, []);
+	const { onColumnResize, forgetResizedWidths } = useResizedWidthsSaving(
+		setColumnWidth,
+		updateState,
+	);
 
 	useMovingOffAPageThatIsGone(apiRef);
 	useTableOrderReader(apiRef, checkboxSelection?.tableOrder);
@@ -531,7 +608,7 @@ function DataGridBase<T extends GridValidRowModel>({
 						clearState();
 						// Back to the fitted layout: no column keeps a width the person set
 						setAllWidths({});
-						resizedWidthsRef.current = {};
+						forgetResizedWidths();
 						resetColumnOrder();
 						setVisibilityOverrides(undefined);
 					}}
@@ -590,32 +667,7 @@ function DataGridBase<T extends GridValidRowModel>({
 						onColumnOrderChange={
 							allowColumnReorder
 								? () => {
-										const api = apiRef.current;
-										let orderedFields: string[] = [];
-										if (api) {
-											try {
-												const all = api.getAllColumns();
-												orderedFields = all.map((c) => c.field);
-											} catch (error) {
-												console.warn(
-													"Failed to getAllColumns for column order, falling back to visible columns",
-													error,
-												);
-												try {
-													orderedFields = api
-														.getVisibleColumns()
-														.map((c) => c.field);
-												} catch (error) {
-													console.warn(
-														"Failed to getVisibleColumns as fallback",
-														error,
-													);
-													orderedFields = columns.map((c) => c.field);
-												}
-											}
-										} else {
-											orderedFields = columns.map((c) => c.field);
-										}
+										const orderedFields = currentColumnOrder(apiRef, columns);
 										setColumnOrder(orderedFields);
 										updateState((prev) => ({
 											...prev,
@@ -624,44 +676,7 @@ function DataGridBase<T extends GridValidRowModel>({
 									}
 								: undefined
 						}
-						onColumnResize={(params: GridColumnResizeParams) => {
-							try {
-								const field = params.colDef?.field;
-								const width = params.width;
-								if (typeof field === "string" && typeof width === "number") {
-									// update temporary width for UI responsiveness; persist on commit
-									setColumnWidth(field, width);
-									resizedWidthsRef.current = {
-										...resizedWidthsRef.current,
-										[field]: width,
-									};
-								}
-								// Debounce the persisted save so we only write final widths once user stops resizing
-								const delay = 250; // ms
-								if (resizeTimeoutRef.current) {
-									globalThis.clearTimeout(resizeTimeoutRef.current);
-								}
-								resizeTimeoutRef.current = globalThis.setTimeout(() => {
-									try {
-										// Storing every column's width would take all of them out of the fit, so
-										// only the columns the person resized are stored.
-										const resized = resizedWidthsRef.current;
-										resizedWidthsRef.current = {};
-										updateState((prev) => ({
-											...prev,
-											columnWidths: { ...prev.columnWidths, ...resized },
-										}));
-									} catch (error) {
-										console.warn(
-											"Failed to persist column widths after resize commit",
-											error,
-										);
-									}
-								}, delay);
-							} catch (error) {
-								console.warn("Failed to handle column resize", error);
-							}
-						}}
+						onColumnResize={onColumnResize}
 						onSortModelChange={(model) => {
 							updateState((prev) => ({ ...prev, sortModel: model }));
 							onSortModelChange?.(model);
