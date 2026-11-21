@@ -435,22 +435,22 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P9</p>
 
-<pre><code>The Overview table shows Teams whose names are longer than their column and the person hovers a long name
+<pre><code>The Overview shows Teams and Portfolios whose names are longer than their column, in a box too narrow for every column; the person hovers a long name, reaches it with the keyboard, and looks at a table that fits.
 </code></pre>
 
-<pre><code>The name and tags cut to one line with an ellipsis, the full name shows in a tooltip, numbers and dates stay whole, and the grid marks hidden columns on the right with a shadow and a screen-reader sentence
+<pre><code>The name and tags give way and end with an ellipsis while numbers and dates stay whole; the full name appears in a tooltip on hover and on keyboard focus; a table that overflows on its right says so with a right-edge shadow and a screen-reader description &#x27;This table scrolls sideways. More columns to the right.&#x27;; a table that fits shows neither.
 </code></pre>
 
-<pre><code>The person reads a long Team name in full and sees there is more to scroll to
+<pre><code>The person reads long Team and Portfolio names in full, never meets a cut number or date, and is told when columns are out of sight.
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx</p>
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::The Overview table fits its columns and says when some are out of sight | Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on every Team of the Overview, at desktop and at phone width, and reads a long name in full</p>
 
-<pre><code>Number and date columns are also cut, or the table is drawn without the overflow marker (fails); the name already truncates today so this row is green against current production
+<pre><code>The name wraps instead of being cut, the tooltip opens on hover only, the grid never marks the overflow state, or a shadow shows on a table that fits (the box is stated 900 wide in 400, the fitting case 1000, so no check passes through a zero-width jsdom).
 </code></pre>
 
 <h6>Obligations</h6>
@@ -465,22 +465,22 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P12</p>
 
-<pre><code>The Overview table of Teams and of Portfolios is shown, also with a saved column order that puts actions first or omits it
+<pre><code>A Teams table and a Portfolios table of the Overview whose columns overflow the width, with a saved column order that puts Actions first or leaves it out.
 </code></pre>
 
-<pre><code>The actions header and cells carry the pinned class and the actions column is the last column; its width is the same on a phone as on a desktop
+<pre><code>Actions is the last column, its header and cells carry the pinned class and it has one width at phone and desktop size, whatever order the person saved.
 </code></pre>
 
-<pre><code>Delete, Edit and Clone stay at the right edge and never scroll out of view
+<pre><code>Delete, Edit and Clone stay at the right edge and never scroll out of view.
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx</p>
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::The Overview table fits its columns and says when some are out of sight</p>
 
-<pre><code>A pinned class on the header only, or a pinned column that is last only for the default order
+<pre><code>The actions column is last but not pinned, or is moved by a saved order (both orders are tried), or keeps a phone-specific width. The ordering rule is proven through two renders because its function is not exported.
 </code></pre>
 
 <h6>Obligations</h6>
@@ -495,22 +495,22 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P12</p>
 
-<pre><code>At 1280 px and 375 px a Team with a very long name is shown on the Overview
+<pre><code>A coach opens the Overview at 1280 px and at 375 px with a renamed Team whose name is very long, every Team of the Overview, and a Portfolio; scrolls, walks the row with the arrow keys and focuses the cut name.
 </code></pre>
 
-<pre><code>Real ellipsis and tooltip, dates whole, Name no narrower than 160 px, Delete inside the table at both widths and at the end of the scroll range, the page does not scroll sideways, right shadow ending at the actions column then left shadow at the end
+<pre><code>Delete of every Team and of the Portfolio is inside the table at both widths and at the end of the range; the name is really cut with a tooltip on hover and on focus; the Name column keeps 160 px; the page never scrolls sideways at 375 px; the keyboard reaches Actions clear of the pinned column; a right shadow ends at the pinned column and moves to the left at the end; a 1280 px table shows no shadow and its last column ends inside the box.
 </code></pre>
 
-<pre><code>The coach finds Delete on the Overview at any width and sees the cue
+<pre><code>The coach finds Delete on every Overview table at any width and sees when more columns wait.
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts</p>
+<p>Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on every Team of the Overview, at desktop and at phone width, and reads a long name in full | Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on the Portfolios table of the Overview at phone width, and the table says it scrolls</p>
 
-<pre><code>A table that scrolls the page instead of itself at 375 px, or a shadow that lies over Delete
+<pre><code>Only the first or renamed Team keeps Delete in view, the shadow covers Delete, or the page scrolls instead of the table (every Team and the Portfolios table are checked and every read is polled).
 </code></pre>
 
 <h6>Obligations</h6>

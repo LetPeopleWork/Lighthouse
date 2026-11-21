@@ -31,6 +31,61 @@ vi.mock("../../../services/TerminologyContext", () => ({
 	}),
 }));
 
+// The grid measures its own box with layout, which jsdom has none of. The tests state the box the
+// person would see, and the grid is left to react to it as it does in a browser.
+const box = vi.hoisted(() => ({ content: 0, viewport: 0, scrollLeft: 0 }));
+
+vi.mock("@mui/x-data-grid", async () => {
+	const actual =
+		await vi.importActual<typeof import("@mui/x-data-grid")>(
+			"@mui/x-data-grid",
+		);
+	const stated = new WeakSet<object>();
+	const statedApis = new WeakMap<object, object>();
+
+	const stateTheBox = (api: object) => {
+		const known = statedApis.get(api);
+		if (known) return known;
+		const real = api as { getRootDimensions?: () => object };
+		const proxy = new Proxy(api, {
+			get(target, property) {
+				if (property === "getRootDimensions") {
+					return () => ({
+						...real.getRootDimensions?.(),
+						contentSize: { width: box.content, height: 0 },
+						viewportInnerSize: { width: box.viewport, height: 0 },
+					});
+				}
+				if (property === "getScrollPosition") {
+					return () => ({ left: box.scrollLeft, top: 0 });
+				}
+				return Reflect.get(target, property);
+			},
+		});
+		statedApis.set(api, proxy);
+		return proxy;
+	};
+
+	return {
+		...actual,
+		useGridApiRef: () => {
+			const ref = actual.useGridApiRef();
+			if (!stated.has(ref)) {
+				stated.add(ref);
+				let current = ref.current as object | undefined;
+				Object.defineProperty(ref, "current", {
+					configurable: true,
+					get: () => (current ? stateTheBox(current) : current),
+					set: (next: object | undefined) => {
+						current = next;
+					},
+				});
+			}
+			return ref;
+		},
+	};
+});
+
 // Mock matchMedia before each test
 beforeEach(() => {
 	Object.defineProperty(globalThis, "matchMedia", {
@@ -658,9 +713,18 @@ describe("The Overview table fits its columns and says when some are out of sigh
 		tags: ["critical"],
 	};
 
+	beforeEach(() => {
+		box.content = 900;
+		box.viewport = 400;
+		box.scrollLeft = 0;
+	});
+
 	afterEach(() => {
 		vi.restoreAllMocks();
 		vi.useRealTimers();
+		localStorage.clear();
+		box.content = 0;
+		box.viewport = 0;
 	});
 
 	const whenTheOverviewShows = (
@@ -721,8 +785,21 @@ describe("The Overview table fits its columns and says when some are out of sigh
 			(element) => getComputedStyle(element).textOverflow === "ellipsis",
 		);
 
-	const widthOf = (header: HTMLElement) =>
-		Number.parseFloat(header.style.width);
+	const widthOf = (header: HTMLElement) => {
+		const width = Number.parseFloat(header.style.width);
+		expect(
+			Number.isFinite(width),
+			`the ${header.dataset.field} header must carry a pixel width, or two missing widths would compare as equal`,
+		).toBe(true);
+		return width;
+	};
+
+	const theGridDescription = (grid: HTMLElement) =>
+		(grid.getAttribute("aria-describedby") ?? "")
+			.split(" ")
+			.map((id) => document.getElementById(id)?.textContent ?? "")
+			.join(" ")
+			.trim();
 
 	it("cuts a long Team name to its column with the full name in a tooltip, and keeps numbers and dates whole", async () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -809,14 +886,12 @@ describe("The Overview table fits its columns and says when some are out of sigh
 				headers.at(-1),
 				`the columns are ${JSON.stringify(headers)}; whatever order the person saved, the pinned actions column must stay last`,
 			).toBe("actions");
-			localStorage.clear();
 		},
 	);
 
 	it("exposes that columns are out of sight, as the report list does", () => {
 		const { container } = whenTheOverviewShows([aLongNamedTeam]);
 
-		const grid = screen.getByRole("grid");
 		expect(
 			container.querySelector("[data-overflow]")?.getAttribute("data-overflow"),
 			"the table must mark that columns are hidden on its right while it is scrolled to its left edge",
@@ -826,9 +901,39 @@ describe("The Overview table fits its columns and says when some are out of sigh
 			"a shadow must sit on the right edge so the person sees there is more to scroll to",
 		).not.toBeNull();
 		expect(
-			grid.getAttribute("aria-describedby"),
-			"a screen reader user must be told the table scrolls sideways",
-		).not.toBeNull();
+			theGridDescription(screen.getByRole("grid")),
+			"a screen reader user must hear which side has hidden columns",
+		).toBe("This table scrolls sideways. More columns to the right.");
+	});
+
+	it("shows no cue and no description when the Overview table fits its box", () => {
+		box.viewport = 1000;
+		const { container } = whenTheOverviewShows([aLongNamedTeam]);
+
+		expect(
+			container.querySelector("[data-overflow]")?.getAttribute("data-overflow"),
+			"a table that fits must not claim hidden columns",
+		).toBe("none");
+		expect(
+			container.querySelector('[aria-hidden="true"][data-side]'),
+			"a table that fits must draw no edge shadow",
+		).toBeNull();
+		expect(
+			theGridDescription(screen.getByRole("grid")),
+			"a table that fits must not tell a screen reader that it scrolls sideways",
+		).toBe("");
+	});
+
+	it("gives the full name of a cut Team in a tooltip when the person reaches it with the keyboard", async () => {
+		givenNamesAreWiderThanTheirColumn();
+		whenTheOverviewShows([aLongNamedTeam]);
+
+		fireEvent.focusIn(screen.getByRole("link", { name: LONG_TEAM_NAME }));
+
+		expect(
+			await screen.findByRole("tooltip"),
+			"a keyboard user who focuses a cut Team name must get the full name in a tooltip, not only a mouse user",
+		).toHaveTextContent(LONG_TEAM_NAME);
 	});
 
 	it("gives the actions column the same width on a phone as on a desktop", () => {

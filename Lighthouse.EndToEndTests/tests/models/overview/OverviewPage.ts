@@ -132,9 +132,16 @@ export class OverviewTable {
 			"the table must mark whether columns are hidden, or a missing marker would read as no shadow",
 		).toHaveCount(1);
 		const found: { side: string; box: Box }[] = [];
-		for (const cue of await root
-			.locator('[aria-hidden="true"]:not(svg)')
-			.all()) {
+		const cues = root.locator("[data-side]");
+		expect(
+			await cues.count(),
+			"a table draws at most one shadow per edge",
+		).toBeLessThanOrEqual(2);
+		for (const cue of await cues.all()) {
+			await expect(
+				cue,
+				"an edge shadow is decorative and hidden from assistive technology",
+			).toHaveAttribute("aria-hidden", "true");
 			const letsClicksThrough =
 				(await cue.evaluate(
 					(element) => getComputedStyle(element).pointerEvents,
@@ -142,7 +149,7 @@ export class OverviewTable {
 			const box = await cue.boundingBox();
 			if (!letsClicksThrough || box === null || box.width === 0) continue;
 			found.push({
-				side: (await cue.getAttribute("data-side")) ?? "unknown",
+				side: (await cue.getAttribute("data-side")) as string,
 				box,
 			});
 		}
@@ -178,6 +185,77 @@ export class OverviewTable {
 		return this.scroller.evaluate(
 			(element) => element.scrollWidth > element.clientWidth,
 		);
+	}
+
+	/** True when the last column ends inside the table's box, so a fitting table hides nothing on its right. */
+	async lastColumnEndsInsideTheBox(): Promise<boolean> {
+		const scroller = await this.scroller.boundingBox();
+		const last = await this.table
+			.locator('[role="columnheader"]')
+			.last()
+			.boundingBox();
+		return (
+			scroller !== null &&
+			last !== null &&
+			last.x + last.width <= scroller.x + scroller.width + 1
+		);
+	}
+
+	/** Puts the keyboard focus on the owner's name, the way a person tabbing through the table does. */
+	async focusName(): Promise<void> {
+		await this.row
+			.getByRole("link", { name: this.ownerName, exact: true })
+			.first()
+			.focus();
+	}
+
+	private async focusedField(): Promise<string> {
+		return this.page.evaluate(
+			() =>
+				document.activeElement
+					?.closest('[role="gridcell"]')
+					?.getAttribute("data-field") ?? "unknown",
+		);
+	}
+
+	private async focusedCellIsClearOfActions(): Promise<boolean> {
+		const cell = this.table.locator('[role="gridcell"]:focus-within');
+		const box = (await cell.count()) === 1 ? await cell.boundingBox() : null;
+		const tableBox = await this.table.boundingBox();
+		const actions = await this.table
+			.locator('[role="columnheader"][data-field="actions"]')
+			.boundingBox();
+		if (box === null || tableBox === null || actions === null) return false;
+		const isActions = (await this.focusedField()) === "actions";
+		const end = isActions ? tableBox.x + tableBox.width : actions.x;
+		return box.x + box.width <= end + 1 && box.x >= tableBox.x - 1;
+	}
+
+	/**
+	 * Moves through the cells of the owner's row with the arrow keys, starting on its last updated date,
+	 * until the actions cell has the focus. Every cell on the way must come to rest clear of the pinned actions column.
+	 */
+	async walkToActionsWithTheKeyboard(): Promise<string[]> {
+		await this.cell("lastUpdated").click();
+		const visited: string[] = [];
+		const MOST_CELLS = 6;
+		for (let step = 0; step < MOST_CELLS; step++) {
+			await expect
+				.poll(() => this.focusedField(), {
+					message: "a cell of the table must hold the focus",
+				})
+				.not.toBe("unknown");
+			const field = await this.focusedField();
+			visited.push(field);
+			await expect
+				.poll(() => this.focusedCellIsClearOfActions(), {
+					message: `the focused "${field}" cell must come to rest clear of the pinned actions column, not under it`,
+				})
+				.toBe(true);
+			if (field === "actions") break;
+			await this.page.keyboard.press("ArrowRight");
+		}
+		return visited;
 	}
 
 	async scrollToTheEnd(): Promise<void> {
