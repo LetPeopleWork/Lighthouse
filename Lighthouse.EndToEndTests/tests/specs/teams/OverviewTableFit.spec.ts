@@ -9,6 +9,7 @@ const LONG_NAME =
 const DESKTOP = { width: 1280, height: 900 };
 const PHONE = { width: 375, height: 800 };
 const NAME_MINIMUM = 160;
+const TEXT_MINIMUM = 120;
 
 const thenDeleteIsInView = async (table: OverviewTable, when: string) => {
 	await expect
@@ -68,6 +69,11 @@ testWithTeams(
 			})
 			.toBeGreaterThanOrEqual(NAME_MINIMUM - 1);
 		await expect
+			.poll(() => teams.tagsColumnWidth(), {
+				message: `the fitted Tags column is no narrower than its ${TEXT_MINIMUM} px minimum`,
+			})
+			.toBeGreaterThanOrEqual(TEXT_MINIMUM - 1);
+		await expect
 			.poll(() => teams.lastColumnEndsInsideTheBox(), {
 				message:
 					"at 1280 px the last column must end inside the table's box, so a missing shadow means nothing is hidden",
@@ -85,6 +91,23 @@ testWithTeams(
 				message: `at phone width Name shrinks to no less than its ${NAME_MINIMUM} px minimum`,
 			})
 			.toBeGreaterThanOrEqual(NAME_MINIMUM - 1);
+		await expect
+			.poll(() => teams.tagsColumnWidth(), {
+				message: `at phone width Tags shrinks to no less than its ${TEXT_MINIMUM} px minimum`,
+			})
+			.toBeGreaterThanOrEqual(TEXT_MINIMUM - 1);
+		await expect
+			.poll(() => teams.focusedField(), {
+				message:
+					"the Name cell focused at desktop width must keep the focus when the window narrows",
+			})
+			.toBe("name");
+		await expect
+			.poll(() => teams.focusedCellIsClearOfActions(), {
+				message:
+					"a Name focused before the window narrowed must still lie clear of the pinned actions column at 375 px, not under it",
+			})
+			.toBe(true);
 		await expect.poll(() => teams.horizontalScrollPosition()).toBe(0);
 		for (const table of tables) {
 			await thenDeleteIsInView(table, "at 375 px, scrolled to the left");

@@ -75,3 +75,17 @@ Break: in `TruncatedCell.tsx` the `"& *": ONE_LINE_WITH_ELLIPSIS,` rule is delet
 A first version of the browser check, without the ellipsis field, stayed green under this break (the cell's outer box already clips); the ellipsis field is what makes it fail.
 
 Restored with `git checkout`; `git diff --stat` showed no change under src/components/Common/DataGrid. After the restore: the jsdom folder run was 13 files, 161 tests green; after a rebuild the browser spec was 2 passed.
+
+## (e) Feature list Dependencies in the browser (FeatureDependencies.spec.ts, narrow-window test)
+
+Each break was applied alone to production, the frontend rebuilt with `pnpm build`, the test run with `playwright test tests/specs/features/FeatureDependencies.spec.ts -g "narrow window"`, and the file restored with `git checkout` (then rebuilt, 3 specs green).
+
+| Break | Failing check | Message and difference |
+|---|---|---|
+| line cell `white-space: normal` (lines wrap) in TruncatedCell | `isOneLine` (and `isCut`, which a wrapped line cannot be) | "dependency 1 must be cut to its column with an ellipsis, on one line, inside the cell": isCut true -> false, isOneLine true -> false |
+| line cell `width: max-content` (never cut) | `isCut` and `endsInsideCell` | same message: isCut true -> false, endsInsideCell true -> false (the text edge now runs past the cell) |
+| line cell `text-overflow: clip` | `endsWithEllipsis` | same message: endsWithEllipsis true -> false |
+| render only the first dependency (`slice(0, 1)`) | the count of two | "one line per dependency": expected 2, received 1 |
+| tooltip text joins only the first dependency | the hover tooltip naming both | getByRole('tooltip', { name: 'Asteroid Mining Program' }) not visible |
+
+`endsInsideCell` now compares the right edge of the text the person sees (a Range over the line's text, clipped by the line's own box) with the cell's right edge, instead of the right edge of a block element; the `max-content` break is what turns it false.

@@ -81,6 +81,17 @@ testWithDemo(
 					"the right shadow must end where the pinned actions column starts, so it lies over the columns that scroll and not over Delete",
 			})
 			.toBeLessThanOrEqual(1);
+		await reports.scrollTableToTheEnd();
+		await expect
+			.poll(() => reports.sidesWithACue(), {
+				message:
+					"scrolled to the end of the wide stored Name the shadow must leave the right edge and show on the left",
+			})
+			.toEqual(["left"]);
+		expect(
+			await reports.reportsWithDeleteOutOfView(reportNames),
+			"with the wide stored Name scrolled to its end, Delete must still be inside the table",
+		).toEqual([]);
 
 		await reports.resetLayout();
 		await expect
@@ -95,15 +106,22 @@ testWithDemo(
 				message: `at phone width Name shrinks to no less than its ${NAME_MINIMUM} px minimum`,
 			})
 			.toBeGreaterThanOrEqual(NAME_MINIMUM - 1);
-		expect(await reports.horizontalScrollPosition()).toBe(0);
-		expect(
-			await reports.reportsWithDeleteOutOfView(reportNames),
-			"at 375 px, scrolled to the left, the pinned actions must keep Delete inside the table",
-		).toEqual([]);
-		expect(
-			await reports.tableScrollsSideways(),
-			"at 375 px the table must scroll sideways inside its box",
-		).toBe(true);
+		await expect
+			.poll(() => reports.horizontalScrollPosition(), {
+				message: "at 375 px the table is still scrolled to its left edge",
+			})
+			.toBe(0);
+		await expect
+			.poll(() => reports.reportsWithDeleteOutOfView(reportNames), {
+				message:
+					"at 375 px, scrolled to the left, the pinned actions must keep Delete inside the table",
+			})
+			.toEqual([]);
+		await expect
+			.poll(() => reports.tableScrollsSideways(), {
+				message: "at 375 px the table must scroll sideways inside its box",
+			})
+			.toBe(true);
 		await expect
 			.poll(() => reports.pageScrollsSideways(), {
 				message:

@@ -28,3 +28,9 @@ Each break was one edit to `DataOverviewTable.tsx`, one run of `npx vitest run s
 Notes:
 - The two overflow checks cannot be broken through a column definition. A first attempt for "fits" (name `minWidth` 5000) left that test green: jsdom has no layout, so the test's measured box, not the column widths, decides the cue. Column widths are therefore unproven for the cue at Overview level; the cue logic itself is owned and mutation-tested by the S2 record (`DataGridBase.overflow.test.tsx`, `horizontalOverflow.test.ts`, which assert `data-overflow` and the shadows).
 - The Overview tests prove the wiring (the Overview renders through the shared grid with its pinned actions); the S2 tests prove the behaviour.
+
+## Browser checks added after the slice review (OverviewTableFit.spec.ts, DataGridView.ts)
+
+- Tags column minimum of 120 px, polled at 1280 px and at 375 px: green against current production. Break to run: set the Tags column to `fit: { kind: "text", minWidth: 40 }` in DataOverviewTable.tsx; the Tags poll must then fail. Not run in this pass.
+- The cue reading also fails when an aria-hidden, positioned, text-free overlay of ours inside the overflow root lacks data-side (the grid's own scrollbar track is excluded). Green today; break to run: drop `data-side` from the left cue in DataGridBase.tsx. Not run in this pass.
+- A Name focused at desktop width and the window narrowed to 375 px: RED, a real defect (see the report to the root); the Name cell (x 53..213) stays under the pinned actions column (starts at x 122) because no focus event follows the resize.

@@ -36,3 +36,7 @@ Target 80% met on the total; DataGridBase.tsx alone is 79.11, with the survivors
 | 16 no-coverage mutants (column-order handler 594-620, resize commit catch 654-662 inner, 359 `-=` swap now covered) | `onColumnOrderChange` is never fired by the community `DataGrid` (column reordering is a Pro feature; MUI wires no event to that prop), so the handler is unreachable code. The persist-failure catch is unreachable: `updateState` only schedules a state update and handles storage errors itself. Candidates for removal in a separate improvement item. |
 
 Production code was not changed.
+
+## Report list browser spec (ReportListTableFit.spec.ts)
+
+With the wide stored Name at desktop width the spec now scrolls the table to its end and polls for the left cue (and Delete in view); the 375 px reads after the viewport change are polls. Green today. Break to run: render the left cue never (return null for the left side in DataGridBase.tsx); the new end-of-range poll must fail. Not run in this pass.

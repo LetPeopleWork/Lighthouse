@@ -250,7 +250,7 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F349",
-"test": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::cuts a long dependency list to its column"
+"test": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::cuts a long dependency list to its column; Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::names every dependency in a tooltip when the person hovers over a cut dependency list; Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::names every dependency in a tooltip when the person reaches a cut dependency list with the keyboard; Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx::opens no tooltip over a dependency list that fits its column; Lighthouse.EndToEndTests/tests/specs/features/FeatureDependencies.spec.ts::a product owner on a narrow window sees each dependency cut on its own line and reads them all in full on hover"
 },
 "expected": "F347",
 "stimulus": "F339",

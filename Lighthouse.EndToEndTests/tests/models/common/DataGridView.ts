@@ -96,6 +96,25 @@ export class DataGridView {
 			this.edgeMarker,
 			"the table must mark whether columns are hidden, or a missing marker would read as no shadow",
 		).toHaveCount(1);
+		const unlabelled = await this.edgeMarker
+			// The grid's own scrollbar track is aria-hidden and positioned too; only an overlay of ours counts.
+			.locator(
+				'[aria-hidden="true"]:not([data-side]):not([class*="MuiDataGrid"])',
+			)
+			.evaluateAll(
+				(elements) =>
+					elements.filter((element) => {
+						const style = getComputedStyle(element);
+						return (
+							(style.position === "absolute" || style.position === "fixed") &&
+							(element.textContent ?? "").trim() === ""
+						);
+					}).length,
+			);
+		expect(
+			unlabelled,
+			"a decorative overlay inside the table must name its side with data-side, or an unlabelled shadow could hide behind the cue reading",
+		).toBe(0);
 		const found: { side: string; box: Box }[] = [];
 		const cues = this.edgeMarker.locator("[data-side]");
 		expect(
@@ -154,7 +173,7 @@ export class DataGridView {
 		);
 	}
 
-	private async focusedField(): Promise<string> {
+	async focusedField(): Promise<string> {
 		return this.page.evaluate(
 			() =>
 				document.activeElement
@@ -163,7 +182,7 @@ export class DataGridView {
 		);
 	}
 
-	private async focusedCellIsClearOfActions(): Promise<boolean> {
+	async focusedCellIsClearOfActions(): Promise<boolean> {
 		const cell = this.table.locator('[role="gridcell"]:focus-within');
 		const box = (await cell.count()) === 1 ? await cell.boundingBox() : null;
 		const tableBox = await this.table.boundingBox();

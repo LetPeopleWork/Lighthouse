@@ -69,7 +69,7 @@ export class FeaturesPage {
 
 	/**
 	 * What the person sees of one dependency line: whether it is cut and ends with an ellipsis, whether it stays on a single
-	 * line, and whether its right edge stays inside the Dependencies cell that holds it.
+	 * line, and whether the text it shows ends inside the Dependencies cell that holds it.
 	 */
 	async describeDependencyLine(
 		featureName: string,
@@ -87,6 +87,13 @@ export class FeaturesPage {
 			.evaluate(
 				(line, cellRight) => {
 					const box = line.getBoundingClientRect();
+					const text = document.createRange();
+					text.selectNodeContents(line);
+					// The text can run on past the line when it is cut; what the person sees ends where the line clips it.
+					const visibleTextRight = Math.min(
+						text.getBoundingClientRect().right,
+						box.right,
+					);
 					const lineHeight = Number.parseFloat(
 						getComputedStyle(line).lineHeight,
 					);
@@ -96,7 +103,8 @@ export class FeaturesPage {
 							getComputedStyle(line).textOverflow === "ellipsis" &&
 							getComputedStyle(line).overflow === "hidden",
 						isOneLine: box.height <= lineHeight + 1,
-						endsInsideCell: cellRight !== null && box.right <= cellRight + 1,
+						endsInsideCell:
+							cellRight !== null && visibleTextRight <= cellRight + 1,
 					};
 				},
 				cellBox === null ? null : cellBox.x + cellBox.width,

@@ -474,7 +474,7 @@ A person with a long dependency list sees each dependency on its own line, cut t
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:cuts a long dependency list to its column
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:cuts a long dependency list to its column\; Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:names every dependency in a tooltip when the person hovers over a cut dependency list\; Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:names every dependency in a tooltip when the person reaches a cut dependency list with the keyboard\; Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:opens no tooltip over a dependency list that fits its column\; Lighthouse\.EndToEndTests\/tests\/specs\/features\/FeatureDependencies\.spec\.ts\:\:a product owner on a narrow window sees each dependency cut on its own line and reads them all in full on hover
 
 ```text
 the first dependency line is cut but another line wraps or overflows, or the tooltip shows only the count or only the first dependency, or it opens even when the list fits

@@ -83,6 +83,17 @@ export class OverviewTable {
 		return (await this.nameHeader.boundingBox())?.width ?? 0;
 	}
 
+	async tagsColumnWidth(): Promise<number> {
+		const header = this.table.locator(
+			'[role="columnheader"][data-field="tags"]',
+		);
+		await expect(
+			header,
+			"the Overview table must have exactly one Tags column",
+		).toHaveCount(1);
+		return (await header.boundingBox())?.width ?? 0;
+	}
+
 	/** True when this owner's Delete is not wholly inside the table's box, rendered or not. */
 	async deleteIsOutOfView(): Promise<boolean> {
 		return !(await this.view.isWhollyInView(
@@ -158,6 +169,16 @@ export class OverviewTable {
 
 	async scrollToTheEnd(): Promise<void> {
 		await this.view.scrollToTheEnd();
+	}
+
+	/** The data field of the cell that holds the keyboard focus, or "unknown" when none does. */
+	async focusedField(): Promise<string> {
+		return this.view.focusedField();
+	}
+
+	/** True when the focused cell lies inside the table and ends before the pinned actions column starts. */
+	async focusedCellIsClearOfActions(): Promise<boolean> {
+		return this.view.focusedCellIsClearOfActions();
 	}
 }
 
