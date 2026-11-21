@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -643,5 +643,205 @@ describe("DataOverviewTable", () => {
 				"https://docs.lighthouse.letpeople.work",
 			);
 		});
+	});
+});
+
+describe("The Overview table fits its columns and says when some are out of sight", () => {
+	const LONG_TEAM_NAME =
+		"Platform Engineering Delivery Squad for the Northern Region with cross-functional ownership of billing";
+	const PINNED_CLASS = "lighthouse-pinned-actions";
+
+	const aLongNamedTeam: IFeatureOwner = {
+		...sampleTeamData[0],
+		name: LONG_TEAM_NAME,
+		remainingFeatures: 5,
+		tags: ["critical"],
+	};
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.useRealTimers();
+	});
+
+	const whenTheOverviewShows = (
+		data: IFeatureOwner[],
+		api: "teams" | "portfolios" = "teams",
+	) =>
+		renderWithRouter(
+			<DataOverviewTable
+				data={data}
+				title={api}
+				api={api}
+				onDelete={vi.fn()}
+				filterText=""
+			/>,
+		);
+
+	const whenTheScreenIsAPhone = () => {
+		Object.defineProperty(globalThis, "matchMedia", {
+			writable: true,
+			value: vi.fn().mockImplementation((query: string) => ({
+				matches: true,
+				media: query,
+				onchange: null,
+				addListener: vi.fn(),
+				removeListener: vi.fn(),
+				addEventListener: vi.fn(),
+				removeEventListener: vi.fn(),
+				dispatchEvent: vi.fn(),
+			})),
+		});
+	};
+
+	/** The browser cuts a name wider than its column; jsdom has no layout, so the test states the cut. */
+	const givenNamesAreWiderThanTheirColumn = () => {
+		vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(600);
+		vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(160);
+	};
+
+	const cellOf = (container: HTMLElement, field: string) => {
+		const cell = container.querySelector<HTMLElement>(
+			`[role="gridcell"][data-field="${field}"]`,
+		);
+		expect(cell, `the table must show a ${field} cell`).not.toBeNull();
+		return cell as HTMLElement;
+	};
+
+	const headerOf = (container: HTMLElement, field: string) => {
+		const header = container.querySelector<HTMLElement>(
+			`[role="columnheader"][data-field="${field}"]`,
+		);
+		expect(header, `the table must show a ${field} column`).not.toBeNull();
+		return header as HTMLElement;
+	};
+
+	/** What the cell draws inside itself; the grid's own cell box ends every cell with an ellipsis. */
+	const isCutWithEllipsis = (cell: HTMLElement) =>
+		Array.from(cell.querySelectorAll<HTMLElement>("*")).some(
+			(element) => getComputedStyle(element).textOverflow === "ellipsis",
+		);
+
+	const widthOf = (header: HTMLElement) =>
+		Number.parseFloat(header.style.width);
+
+	it("cuts a long Team name to its column with the full name in a tooltip, and keeps numbers and dates whole", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		givenNamesAreWiderThanTheirColumn();
+		const { container } = whenTheOverviewShows([aLongNamedTeam]);
+
+		expect(
+			isCutWithEllipsis(cellOf(container, "name")),
+			"a Team name longer than its column must end with an ellipsis instead of wrapping the row",
+		).toBe(true);
+		expect(
+			isCutWithEllipsis(cellOf(container, "tags")),
+			"the tags are text and must give way to the other columns like the name does",
+		).toBe(true);
+		for (const field of ["remainingFeatures", "lastUpdated"]) {
+			expect(
+				isCutWithEllipsis(cellOf(container, field)),
+				`the ${field} cell must show its whole content; numbers and dates are never cut`,
+			).toBe(false);
+		}
+
+		fireEvent.mouseOver(screen.getByText("5 Epics"));
+		act(() => {
+			vi.advanceTimersByTime(1500);
+		});
+		expect(
+			screen.queryByRole("tooltip"),
+			"a number is shown whole, so hovering it must open no tooltip",
+		).toBeNull();
+
+		fireEvent.mouseOver(screen.getByText(LONG_TEAM_NAME));
+		expect(
+			await screen.findByRole("tooltip"),
+			"hovering the cut Team name must show the full name in a tooltip",
+		).toHaveTextContent(LONG_TEAM_NAME);
+	});
+
+	it("pins the actions column as the last column of a Teams table and of a Portfolios table", () => {
+		const teams = whenTheOverviewShows([aLongNamedTeam]);
+		const portfolios = whenTheOverviewShows(samplePortfolioData, "portfolios");
+
+		for (const [shown, label] of [
+			[teams.container, "Teams"],
+			[portfolios.container, "Portfolios"],
+		] as const) {
+			const headers = Array.from(
+				shown.querySelectorAll('[role="columnheader"]'),
+			).map((header) => (header as HTMLElement).dataset.field);
+			expect(
+				headers.at(-1),
+				`the ${label} columns are ${JSON.stringify(headers)}; the actions column is pinned to the right edge, so it must be the last one`,
+			).toBe("actions");
+			expect(
+				headerOf(shown, "actions").classList.contains(PINNED_CLASS),
+				`the ${label} Actions header must carry the pinned class, or Delete scrolls out of view`,
+			).toBe(true);
+			expect(
+				cellOf(shown, "actions").classList.contains(PINNED_CLASS),
+				`the ${label} actions cells must carry the pinned class, or Delete scrolls out of view`,
+			).toBe(true);
+		}
+		expect(
+			isCutWithEllipsis(cellOf(portfolios.container, "deliveries")),
+			"the Deliveries cell must show its whole content; it is never cut",
+		).toBe(false);
+	});
+
+	it.each([
+		["puts it first", ["actions", "name", "tags"]],
+		["does not name it", ["tags", "name", "lastUpdated"]],
+	])(
+		"keeps the actions column last when the person's saved column order %s",
+		(_case, columnOrder) => {
+			localStorage.setItem(
+				"lighthouse:datagrid:data-overview-teams:state",
+				JSON.stringify({ columnOrder }),
+			);
+			const { container } = whenTheOverviewShows([aLongNamedTeam]);
+
+			const headers = Array.from(
+				container.querySelectorAll('[role="columnheader"]'),
+			).map((header) => (header as HTMLElement).dataset.field);
+			expect(
+				headers.at(-1),
+				`the columns are ${JSON.stringify(headers)}; whatever order the person saved, the pinned actions column must stay last`,
+			).toBe("actions");
+			localStorage.clear();
+		},
+	);
+
+	it("exposes that columns are out of sight, as the report list does", () => {
+		const { container } = whenTheOverviewShows([aLongNamedTeam]);
+
+		const grid = screen.getByRole("grid");
+		expect(
+			container.querySelector("[data-overflow]")?.getAttribute("data-overflow"),
+			"the table must mark that columns are hidden on its right while it is scrolled to its left edge",
+		).toBe("right");
+		expect(
+			container.querySelector('[aria-hidden="true"][data-side="right"]'),
+			"a shadow must sit on the right edge so the person sees there is more to scroll to",
+		).not.toBeNull();
+		expect(
+			grid.getAttribute("aria-describedby"),
+			"a screen reader user must be told the table scrolls sideways",
+		).not.toBeNull();
+	});
+
+	it("gives the actions column the same width on a phone as on a desktop", () => {
+		const desktop = whenTheOverviewShows([aLongNamedTeam]);
+		const desktopWidth = widthOf(headerOf(desktop.container, "actions"));
+		desktop.unmount();
+
+		whenTheScreenIsAPhone();
+		const phone = whenTheOverviewShows([aLongNamedTeam]);
+
+		expect(
+			widthOf(headerOf(phone.container, "actions")),
+			"the fit replaces the phone-specific widths; the actions column keeps one width at every screen size",
+		).toBe(desktopWidth);
 	});
 });

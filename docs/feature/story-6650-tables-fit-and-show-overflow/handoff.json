@@ -162,13 +162,75 @@
 "stimulus": "F285",
 "user_result": "F287"
 }
+],
+"S3": [
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L1/F132",
+"L2",
+"L2/F138",
+"L3",
+"L3/F143"
+],
+"still_passes_if": "F306",
+"test": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx"
+},
+"expected": "F304",
+"stimulus": "F303",
+"user_result": "F305"
+},
+{
+"covers": [
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"L4/F147",
+"L4/F148",
+"L4/F149"
+],
+"still_passes_if": "F310",
+"test": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx"
+},
+"expected": "F308",
+"stimulus": "F307",
+"user_result": "F309"
+},
+{
+"covers": [
+"P9",
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5",
+"L5/F152",
+"L5/F153",
+"L5/F154"
+],
+"still_passes_if": "F314",
+"test": "Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts"
+},
+"expected": "F312",
+"stimulus": "F311",
+"user_result": "F313"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 302,
+"F": 314,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1339,7 +1401,19 @@
 "F300": "A focus scroll that always runs to the end of the table fails the Owner start check. The actions cell geometry is not checked in jsdom, where the layout is stated by the test; the browser walk measures it.",
 "F301": "The Reports tab is opened at 375 px with the fitted layout and again with a stored 900 px Name; the person looks at the table and scrolls it to its end.",
 "F302": "The page does not scroll sideways and the table does; Delete stays in the table; the right shadow shows at the left edge, ends where the pinned actions column starts, and the left shadow shows at the end of the range, read from where each shadow sits.",
+"F303": "The Overview table shows Teams whose names are longer than their column and the person hovers a long name",
+"F304": "The name and tags cut to one line with an ellipsis, the full name shows in a tooltip, numbers and dates stay whole, and the grid marks hidden columns on the right with a shadow and a screen-reader sentence",
+"F305": "The person reads a long Team name in full and sees there is more to scroll to",
+"F306": "Number and date columns are also cut, or the table is drawn without the overflow marker (fails); the name already truncates today so this row is green against current production",
+"F307": "The Overview table of Teams and of Portfolios is shown, also with a saved column order that puts actions first or omits it",
+"F308": "The actions header and cells carry the pinned class and the actions column is the last column; its width is the same on a phone as on a desktop",
+"F309": "Delete, Edit and Clone stay at the right edge and never scroll out of view",
 "F31": "focus moves to off-screen cells and scrolls them into view, and the table exposes to assistive technology that it scrolls horizontally with more columns than shown (the cue is also a text-readable state, not colour or shadow alone). Falsifier: a keyboard user cannot reach the actions column, or only a visual effect marks the overflow.",
+"F310": "A pinned class on the header only, or a pinned column that is last only for the default order",
+"F311": "At 1280 px and 375 px a Team with a very long name is shown on the Overview",
+"F312": "Real ellipsis and tooltip, dates whole, Name no narrower than 160 px, Delete inside the table at both widths and at the end of the scroll range, the page does not scroll sideways, right shadow ending at the actions column then left shadow at the end",
+"F313": "The coach finds Delete on the Overview at any width and sees the cue",
+"F314": "A table that scrolls the page instead of itself at 375 px, or a shadow that lies over Delete",
 "F32": "Overview tables fit and cue like the report list",
 "F33": "the Overview with a table whose columns do not fit",
 "F34": "the person opens it",

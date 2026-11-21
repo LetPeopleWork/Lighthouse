@@ -429,6 +429,96 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<pre><code>The Overview table shows Teams whose names are longer than their column and the person hovers a long name
+</code></pre>
+
+<pre><code>The name and tags cut to one line with an ellipsis, the full name shows in a tooltip, numbers and dates stay whole, and the grid marks hidden columns on the right with a shadow and a screen-reader sentence
+</code></pre>
+
+<pre><code>The person reads a long Team name in full and sees there is more to scroll to
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx</p>
+
+<pre><code>Number and date columns are also cut, or the table is drawn without the overflow marker (fails); the name already truncates today so this row is green against current production
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P12</p>
+
+<pre><code>The Overview table of Teams and of Portfolios is shown, also with a saved column order that puts actions first or omits it
+</code></pre>
+
+<pre><code>The actions header and cells carry the pinned class and the actions column is the last column; its width is the same on a phone as on a desktop
+</code></pre>
+
+<pre><code>Delete, Edit and Clone stay at the right edge and never scroll out of view
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx</p>
+
+<pre><code>A pinned class on the header only, or a pinned column that is last only for the default order
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P9</p>
+
+<p>P12</p>
+
+<pre><code>At 1280 px and 375 px a Team with a very long name is shown on the Overview
+</code></pre>
+
+<pre><code>Real ellipsis and tooltip, dates whole, Name no narrower than 160 px, Delete inside the table at both widths and at the end of the scroll range, the page does not scroll sideways, right shadow ending at the actions column then left shadow at the end
+</code></pre>
+
+<pre><code>The coach finds Delete on the Overview at any width and sees the cue
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts</p>
+
+<pre><code>A table that scrolls the page instead of itself at 375 px, or a shadow that lies over Delete
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

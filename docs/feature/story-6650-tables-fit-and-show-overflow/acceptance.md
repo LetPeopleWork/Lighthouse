@@ -320,6 +320,108 @@ A cue that changes a column width is caught by these unchanged tests.
 
 
 
+### S3
+
+##### Covers
+
+P9
+
+```text
+The Overview table shows Teams whose names are longer than their column and the person hovers a long name
+```
+
+```text
+The name and tags cut to one line with an ellipsis, the full name shows in a tooltip, numbers and dates stay whole, and the grid marks hidden columns on the right with a shadow and a screen-reader sentence
+```
+
+```text
+The person reads a long Team name in full and sees there is more to scroll to
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx
+
+```text
+Number and date columns are also cut, or the table is drawn without the overflow marker (fails); the name already truncates today so this row is green against current production
+```
+
+###### Obligations
+
+
+
+
+
+
+
+##### Covers
+
+P12
+
+```text
+The Overview table of Teams and of Portfolios is shown, also with a saved column order that puts actions first or omits it
+```
+
+```text
+The actions header and cells carry the pinned class and the actions column is the last column; its width is the same on a phone as on a desktop
+```
+
+```text
+Delete, Edit and Clone stay at the right edge and never scroll out of view
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx
+
+```text
+A pinned class on the header only, or a pinned column that is last only for the default order
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P9
+
+P12
+
+```text
+At 1280 px and 375 px a Team with a very long name is shown on the Overview
+```
+
+```text
+Real ellipsis and tooltip, dates whole, Name no narrower than 160 px, Delete inside the table at both widths and at the end of the scroll range, the page does not scroll sideways, right shadow ending at the actions column then left shadow at the end
+```
+
+```text
+The coach finds Delete on the Overview at any width and sees the cue
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.EndToEndTests\/tests\/specs\/teams\/OverviewTableFit\.spec\.ts
+
+```text
+A table that scrolls the page instead of itself at 375 px, or a shadow that lies over Delete
+```
+
+###### Obligations
+
+
+
+
+
 ## Expectations
 
 ### Rows
