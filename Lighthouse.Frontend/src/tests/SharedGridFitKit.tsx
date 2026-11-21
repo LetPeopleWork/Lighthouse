@@ -176,7 +176,7 @@ export const thenTheTableSaysColumnsAreOutOfSightOnItsRight = (
 	root: ParentNode,
 ) => {
 	expect(
-		root.querySelector("[data-overflow]")?.getAttribute("data-overflow"),
+		root.querySelector<HTMLElement>("[data-overflow]")?.dataset.overflow,
 		"the table must mark that columns are hidden on its right while it is scrolled to its left edge",
 	).toBe("right");
 	expect(

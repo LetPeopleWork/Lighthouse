@@ -893,7 +893,7 @@ describe("The Overview table fits its columns and says when some are out of sigh
 		const { container } = whenTheOverviewShows([aLongNamedTeam]);
 
 		expect(
-			container.querySelector("[data-overflow]")?.getAttribute("data-overflow"),
+			container.querySelector<HTMLElement>("[data-overflow]")?.dataset.overflow,
 			"the table must mark that columns are hidden on its right while it is scrolled to its left edge",
 		).toBe("right");
 		expect(
@@ -911,7 +911,7 @@ describe("The Overview table fits its columns and says when some are out of sigh
 		const { container } = whenTheOverviewShows([aLongNamedTeam]);
 
 		expect(
-			container.querySelector("[data-overflow]")?.getAttribute("data-overflow"),
+			container.querySelector<HTMLElement>("[data-overflow]")?.dataset.overflow,
 			"a table that fits must not claim hidden columns",
 		).toBe("none");
 		expect(

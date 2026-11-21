@@ -451,7 +451,7 @@ describe("The table keeps its own box and its row look", () => {
 		);
 
 		const firstRow = () =>
-			document.querySelector('[role="row"][data-id]')?.getAttribute("data-id");
+			document.querySelector<HTMLElement>('[role="row"][data-id]')?.dataset.id;
 		expect(firstRow(), "descending by name starts with Beta").toBe("2");
 
 		await user.click(screen.getByRole("columnheader", { name: /Owner/ }));
