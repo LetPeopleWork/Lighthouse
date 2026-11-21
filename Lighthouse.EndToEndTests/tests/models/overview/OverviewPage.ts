@@ -228,17 +228,20 @@ export class OverviewTable {
 		if (box === null || tableBox === null || actions === null) return false;
 		const isActions = (await this.focusedField()) === "actions";
 		const end = isActions ? tableBox.x + tableBox.width : actions.x;
-		return box.x + box.width <= end + 1 && box.x >= tableBox.x - 1;
+		const endsClear = box.x + box.width <= end + 1;
+		// A cell wider than the room before the pinned column cannot also start in view; it must end clear of it.
+		const fitsInTheRoom = box.width <= end - tableBox.x;
+		return endsClear && (!fitsInTheRoom || box.x >= tableBox.x - 1);
 	}
 
 	/**
-	 * Moves through the cells of the owner's row with the arrow keys, starting on its last updated date,
+	 * Moves through the cells of the owner's row with the arrow keys, starting on its name,
 	 * until the actions cell has the focus. Every cell on the way must come to rest clear of the pinned actions column.
 	 */
 	async walkToActionsWithTheKeyboard(): Promise<string[]> {
-		await this.cell("lastUpdated").click();
+		await this.focusName();
 		const visited: string[] = [];
-		const MOST_CELLS = 6;
+		const MOST_CELLS = 8;
 		for (let step = 0; step < MOST_CELLS; step++) {
 			await expect
 				.poll(() => this.focusedField(), {
