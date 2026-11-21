@@ -9,6 +9,7 @@ const LONG_NAME =
 const DESKTOP = { width: 1280, height: 900 };
 const PHONE = { width: 375, height: 800 };
 const NAME_MINIMUM = 160;
+const MENU_COLUMN_MAXIMUM = 56;
 const TEXT_MINIMUM = 120;
 
 const thenDeleteIsInView = async (table: OverviewTable, when: string) => {
@@ -17,6 +18,19 @@ const thenDeleteIsInView = async (table: OverviewTable, when: string) => {
 			message: `${when}, Delete must be inside the table so the person finds it`,
 		})
 		.toBe(false);
+};
+
+const thenActionsAreReachable = async (table: OverviewTable, when: string) => {
+	await expect
+		.poll(() => table.actionsMenuIsOutOfView(), {
+			message: `${when}, the actions menu button must be inside the table so the person finds it`,
+		})
+		.toBe(false);
+	expect(
+		await table.openActionsMenu(),
+		`${when}, the menu must offer Delete along with the other actions`,
+	).toEqual(["Details", "Edit", "Clone", "Delete"]);
+	await table.closeActionsMenu();
 };
 
 testWithTeams(
@@ -97,6 +111,19 @@ testWithTeams(
 			})
 			.toBeGreaterThanOrEqual(TEXT_MINIMUM - 1);
 		await expect
+			.poll(() => teams.actionsColumnWidth(), {
+				message: `at phone width the pinned actions column is only the menu button, no wider than ${MENU_COLUMN_MAXIMUM} px, so the Name has room`,
+			})
+			.toBeLessThanOrEqual(MENU_COLUMN_MAXIMUM);
+		for (const table of tables) {
+			await expect
+				.poll(() => table.iconActionsShown(), {
+					message:
+						"at phone width the four action icons are gone from the row; they sit in the menu",
+				})
+				.toBe(0);
+		}
+		await expect
 			.poll(() => teams.focusedField(), {
 				message:
 					"the Name cell focused at desktop width must keep the focus when the window narrows",
@@ -110,7 +137,7 @@ testWithTeams(
 			.toBe(true);
 		await expect.poll(() => teams.horizontalScrollPosition()).toBe(0);
 		for (const table of tables) {
-			await thenDeleteIsInView(table, "at 375 px, scrolled to the left");
+			await thenActionsAreReachable(table, "at 375 px, scrolled to the left");
 		}
 		await expect
 			.poll(() => teams.tableScrollsSideways(), {
@@ -140,7 +167,7 @@ testWithTeams(
 			visited[visited.length - 1],
 			"the arrow keys must reach the actions cell of the Team, whatever is scrolled out of view",
 		).toBe("actions");
-		await thenDeleteIsInView(teams, "after the keyboard walk");
+		await thenActionsAreReachable(teams, "after the keyboard walk");
 
 		await teams.scrollToTheEnd();
 		await expect
@@ -150,7 +177,23 @@ testWithTeams(
 			})
 			.toEqual(["left"]);
 		for (const table of tables) {
-			await thenDeleteIsInView(table, "at 375 px, scrolled to the end");
+			await thenActionsAreReachable(table, "at 375 px, scrolled to the end");
+		}
+
+		await overview.viewAt(DESKTOP.width, DESKTOP.height);
+		for (const table of tables) {
+			await expect
+				.poll(() => table.actionsMenuButtonsShown(), {
+					message: "back at 1280 px the menu button gives way to the icons",
+				})
+				.toBe(0);
+			await expect
+				.poll(() => table.iconActionsShown(), {
+					message:
+						"back at 1280 px the Details, Edit, Clone and Delete icons are back",
+				})
+				.toBe(4);
+			await thenDeleteIsInView(table, "back at 1280 px");
 		}
 	},
 );
@@ -163,7 +206,7 @@ testWithTeams(
 		const overview = overviewPage;
 		const portfolios = await overview.tableOf(portfolio).waitUntilReady();
 
-		await thenDeleteIsInView(portfolios, "at 375 px");
+		await thenActionsAreReachable(portfolios, "at 375 px");
 		await expect
 			.poll(() => portfolios.tableScrollsSideways(), {
 				message:

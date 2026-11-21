@@ -223,6 +223,26 @@
 "expected": "F324",
 "stimulus": "F323",
 "user_result": "F325"
+},
+{
+"covers": [
+"P9",
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"L4/F147",
+"L4/F148",
+"L4/F149"
+],
+"still_passes_if": "F353",
+"test": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::on a phone, where four icons do not fit beside a readable Name | Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::keeps the four action icons and no menu button on a desktop | Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on every Team of the Overview, at desktop and at phone width, and reads a long name in full | Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on the Portfolios table of the Overview at phone width, and the table says it scrolls"
+},
+"expected": "F351",
+"stimulus": "F350",
+"user_result": "F352"
 }
 ],
 "S4": [
@@ -293,7 +313,7 @@
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 349,
+"F": 353,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1497,6 +1517,10 @@
 "F348": "A person with a long dependency list sees each dependency on its own line, cut to the column, and can read every dependency in full by hovering or keyboard focus",
 "F349": "the first dependency line is cut but another line wraps or overflows, or the tooltip shows only the count or only the first dependency, or it opens even when the list fits",
 "F35": "its columns fit and truncate as on the report list, and a cue shows when columns still overflow. Falsifier: the Overview table still hides its last column with no cue.",
+"F350": "A person opens the Overview of Teams or Portfolios on a phone, where four action icons would crowd out the Name, then opens a row's menu with a click or with Enter and the arrow keys and chooses Details, Edit, Clone or Delete; at desktop width the same table is opened.",
+"F351": "On a phone each row has one pinned menu button named Actions for the row name, with the tooltip Actions, and no separate icons; the actions column is no wider than the button; the menu lists exactly the actions the person may use, in the order Details, Edit, Clone, Delete; each item does what its icon did and Delete asks the same confirmation; the Name lies clear of the pinned column; at desktop width the four icons are back and there is no menu button.",
+"F352": "The person always finds the actions of a row in one pinned button that never scrolls away, can read the Name, and can use every action with mouse or keyboard.",
+"F353": "The icons stay at phone width and only the column narrows; the menu button is not pinned or scrolls away; the menu offers actions the person may not use; Delete from the menu skips the confirmation or targets another row; the menu opens by mouse only; the menu button also shows at desktop width; the actions column stays 200 px wide on a phone.",
 "F36": "Remaining tables behave the same",
 "F37": "the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables",
 "F38": "each is opened at a narrow width",

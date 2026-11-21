@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
@@ -936,17 +937,219 @@ describe("The Overview table fits its columns and says when some are out of sigh
 		).toHaveTextContent(LONG_TEAM_NAME);
 	});
 
-	it("gives the actions column the same width on a phone as on a desktop", () => {
-		const desktop = whenTheOverviewShows([aLongNamedTeam]);
-		const desktopWidth = widthOf(headerOf(desktop.container, "actions"));
-		desktop.unmount();
+	const MENU_MAXIMUM_WIDTH = 56;
+	const MENU_MINIMUM_WIDTH = 40;
 
-		whenTheScreenIsAPhone();
-		const phone = whenTheOverviewShows([aLongNamedTeam]);
+	const menuButtonOf = (name: string) =>
+		screen.getByRole("button", { name: `Actions for ${name}` });
+
+	const iconActionsShown = () => [
+		...screen.queryAllByLabelText("Clone"),
+		...screen.queryAllByTestId("delete-item-button"),
+		...screen
+			.queryAllByRole("link")
+			.filter((link) =>
+				/^\/teams\/(edit\/)?\d+$/.test(link.getAttribute("href") ?? ""),
+			),
+	];
+
+	const openTheActionsMenuOf = async (name: string) => {
+		fireEvent.click(menuButtonOf(name));
+		return await screen.findByRole("menu");
+	};
+
+	const itemsOf = (menu: HTMLElement) =>
+		within(menu)
+			.getAllByRole("menuitem")
+			.map((item) => (item.textContent ?? "").trim());
+
+	const thenThePersonIsTakenTo = (path: string) => {
+		const where = `${globalThis.location.pathname}${globalThis.location.search}`;
+		const navigatedInCode = mockNavigate.mock.calls.some(
+			([target]) => target === path,
+		);
+		expect(
+			navigatedInCode || where === path,
+			`choosing the item must take the person to ${path}; the page is at ${where} and the code navigated to ${JSON.stringify(mockNavigate.mock.calls)}. The menu item must do what the icon did.`,
+		).toBe(true);
+	};
+
+	describe("on a phone, where four icons do not fit beside a readable Name", () => {
+		beforeEach(() => {
+			mockNavigate.mockClear();
+			globalThis.history.pushState({}, "", "/");
+			whenTheScreenIsAPhone();
+		});
+
+		it("collapses the four action icons into one pinned menu button per row", async () => {
+			const { container } = whenTheOverviewShows(sampleTeamData.slice(0, 2));
+
+			expect(
+				screen.queryAllByRole("button", { name: /^Actions for / }),
+				"every row must carry exactly one menu button named after its Team, so a screen reader announces whose actions open",
+			).toHaveLength(2);
+			expect(
+				iconActionsShown(),
+				"on a phone the Details, Edit, Clone and Delete icons must be gone from the rows; they live in the menu, or the Name column has no room",
+			).toEqual([]);
+			expect(menuButtonOf("Team 1")).toHaveAttribute("aria-expanded", "false");
+			expect(
+				menuButtonOf("Team 1").closest('[data-field="actions"]')?.classList,
+				"the menu button must sit in the pinned actions cell, or it scrolls out of view with the other columns",
+			).toContain(PINNED_CLASS);
+			expect(
+				headerOf(container, "actions").classList.contains(PINNED_CLASS),
+				"the actions header must stay pinned on a phone",
+			).toBe(true);
+			const headers = Array.from(
+				container.querySelectorAll('[role="columnheader"]'),
+			).map((header) => (header as HTMLElement).dataset.field);
+			expect(headers.at(-1), `the columns are ${JSON.stringify(headers)}`).toBe(
+				"actions",
+			);
+			const width = widthOf(headerOf(container, "actions"));
+			expect(
+				width,
+				`the actions column is only as wide as the menu button on a phone (${MENU_MINIMUM_WIDTH} to ${MENU_MAXIMUM_WIDTH} px); it is ${width} px, which leaves the Name less room than it needs`,
+			).toBeLessThanOrEqual(MENU_MAXIMUM_WIDTH);
+			expect(
+				width,
+				"the column must still be wide enough to hold the menu button",
+			).toBeGreaterThanOrEqual(MENU_MINIMUM_WIDTH);
+
+			fireEvent.mouseOver(menuButtonOf("Team 1"));
+			expect(
+				await screen.findByRole("tooltip"),
+				"hovering the menu button must say what it is",
+			).toHaveTextContent("Actions");
+		});
+
+		it.each([
+			[
+				"lists all four when the person may use each",
+				() => true,
+				() => true,
+				() => true,
+				["Details", "Edit", "Clone", "Delete"],
+			],
+			[
+				"lists Details alone when the person may do nothing else",
+				() => false,
+				() => false,
+				() => false,
+				["Details"],
+			],
+			[
+				"leaves out Clone when the person may edit and delete but not clone",
+				() => true,
+				() => false,
+				() => true,
+				["Details", "Edit", "Delete"],
+			],
+		])("the menu %s", async (_case, canEdit, canClone, canDelete, expected) => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData.slice(0, 1)}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+					canEditRow={canEdit}
+					canCloneRow={canClone}
+					canDeleteRow={canDelete}
+				/>,
+			);
+
+			const menu = await openTheActionsMenuOf("Team 1");
+
+			expect(
+				itemsOf(menu),
+				"the menu must list exactly the actions the person may use, in the order the icons had, so no action is offered that the server would refuse",
+			).toEqual(expected);
+			expect(menuButtonOf("Team 1")).toHaveAttribute("aria-expanded", "true");
+		});
+
+		it.each([
+			["Details", "teams", "/teams/1"],
+			["Edit", "teams", "/teams/edit/1"],
+			["Clone", "teams", "/teams/new?cloneFrom=1"],
+			["Clone", "portfolios", "/portfolios/new?cloneFrom=1"],
+		] as const)(
+			"choosing %s from the menu of a %s row does what its icon did",
+			async (item, api, path) => {
+				renderWithRouter(
+					<DataOverviewTable
+						data={
+							api === "teams"
+								? sampleTeamData.slice(0, 1)
+								: samplePortfolioData.slice(0, 1)
+						}
+						title={api}
+						api={api}
+						onDelete={vi.fn()}
+						filterText=""
+					/>,
+				);
+				const menu = await openTheActionsMenuOf(
+					api === "teams" ? "Team 1" : "Project 1",
+				);
+
+				fireEvent.click(within(menu).getByRole("menuitem", { name: item }));
+
+				thenThePersonIsTakenTo(path);
+			},
+		);
+
+		it("opens the Delete confirmation for the row when Delete is chosen from the menu", async () => {
+			const onDelete = vi.fn();
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData.slice(0, 2)}
+					title="teams"
+					api="teams"
+					onDelete={onDelete}
+					filterText=""
+				/>,
+			);
+			const menu = await openTheActionsMenuOf("Team 2");
+
+			fireEvent.click(within(menu).getByRole("menuitem", { name: "Delete" }));
+
+			expect(
+				onDelete,
+				"choosing Delete must ask for the confirmation of this very row, exactly once; the icon did the same",
+			).toHaveBeenCalledExactlyOnceWith(sampleTeamData[1]);
+		});
+
+		it("opens the menu with Enter and chooses an item with the arrow keys and Enter", async () => {
+			const user = userEvent.setup();
+			whenTheOverviewShows(sampleTeamData.slice(0, 1));
+
+			menuButtonOf("Team 1").focus();
+			await user.keyboard("{Enter}");
+			const menu = await screen.findByRole("menu");
+			expect(
+				itemsOf(menu),
+				"the keyboard must open the same menu a click does",
+			).toEqual(["Details", "Edit", "Clone", "Delete"]);
+			await user.keyboard("{ArrowDown}{Enter}");
+
+			thenThePersonIsTakenTo("/teams/edit/1");
+		});
+	});
+
+	it("keeps the four action icons and no menu button on a desktop", () => {
+		const { container } = whenTheOverviewShows(sampleTeamData.slice(0, 2));
 
 		expect(
-			widthOf(headerOf(phone.container, "actions")),
-			"the fit replaces the phone-specific widths; the actions column keeps one width at every screen size",
-		).toBe(desktopWidth);
+			screen.queryAllByRole("button", { name: /^Actions for / }),
+			"at desktop width the icons have room, so there is no menu button",
+		).toEqual([]);
+		expect(screen.getAllByLabelText("Clone")).toHaveLength(2);
+		expect(screen.getAllByTestId("delete-item-button")).toHaveLength(2);
+		expect(
+			widthOf(headerOf(container, "actions")),
+			"the desktop actions column holds four icons, so it is wider than the phone's menu column",
+		).toBeGreaterThan(MENU_MAXIMUM_WIDTH);
 	});
 });

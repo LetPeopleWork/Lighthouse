@@ -422,6 +422,40 @@ Only the first or renamed Team keeps Delete in view, the shadow covers Delete, o
 
 
 
+##### Covers
+
+P9
+
+P12
+
+```text
+A person opens the Overview of Teams or Portfolios on a phone, where four action icons would crowd out the Name, then opens a row's menu with a click or with Enter and the arrow keys and chooses Details, Edit, Clone or Delete; at desktop width the same table is opened.
+```
+
+```text
+On a phone each row has one pinned menu button named Actions for the row name, with the tooltip Actions, and no separate icons; the actions column is no wider than the button; the menu lists exactly the actions the person may use, in the order Details, Edit, Clone, Delete; each item does what its icon did and Delete asks the same confirmation; the Name lies clear of the pinned column; at desktop width the four icons are back and there is no menu button.
+```
+
+```text
+The person always finds the actions of a row in one pinned button that never scrolls away, can read the Name, and can use every action with mouse or keyboard.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:\:on a phone\, where four icons do not fit beside a readable Name \| Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:\:keeps the four action icons and no menu button on a desktop \| Lighthouse\.EndToEndTests\/tests\/specs\/teams\/OverviewTableFit\.spec\.ts\:\:a coach finds Delete on every Team of the Overview\, at desktop and at phone width\, and reads a long name in full \| Lighthouse\.EndToEndTests\/tests\/specs\/teams\/OverviewTableFit\.spec\.ts\:\:a coach finds Delete on the Portfolios table of the Overview at phone width\, and the table says it scrolls
+
+```text
+The icons stay at phone width and only the column narrows; the menu button is not pinned or scrolls away; the menu offers actions the person may not use; Delete from the menu skips the confirmation or targets another row; the menu opens by mouse only; the menu button also shows at desktop width; the actions column stays 200 px wide on a phone.
+```
+
+###### Obligations
+
+
+
+
+
 ### S4
 
 ##### Covers

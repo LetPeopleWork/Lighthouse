@@ -101,6 +101,67 @@ export class OverviewTable {
 		));
 	}
 
+	private get actionsMenuButton(): Locator {
+		return this.row.getByRole("button", {
+			name: `Actions for ${this.ownerName}`,
+			exact: true,
+		});
+	}
+
+	/** True when this owner's one-button actions menu is not wholly inside the table's box, rendered or not. */
+	async actionsMenuIsOutOfView(): Promise<boolean> {
+		return !(await this.view.isWhollyInView(this.actionsMenuButton));
+	}
+
+	/** The width of the actions column, the pinned one at the right edge. */
+	async actionsColumnWidth(): Promise<number> {
+		const header = this.table.locator(
+			'[role="columnheader"][data-field="actions"]',
+		);
+		await expect(
+			header,
+			"the Overview table must have exactly one actions column",
+		).toHaveCount(1);
+		return (await header.boundingBox())?.width ?? 0;
+	}
+
+	/** How many of the Details, Edit, Clone and Delete icons this owner's row shows. */
+	async iconActionsShown(): Promise<number> {
+		let shown = 0;
+		for (const name of ["Details", "Edit", "Clone", "Delete"]) {
+			shown += await this.row
+				.getByRole(name === "Clone" || name === "Delete" ? "button" : "link", {
+					name,
+					exact: true,
+				})
+				.count();
+		}
+		return shown;
+	}
+
+	/** How many menu buttons this owner's row shows. */
+	async actionsMenuButtonsShown(): Promise<number> {
+		return this.actionsMenuButton.count();
+	}
+
+	/** Opens this owner's actions menu and returns what it offers, in order. */
+	async openActionsMenu(): Promise<string[]> {
+		await this.actionsMenuButton.click();
+		const menu = this.page.getByRole("menu");
+		await expect(menu, "exactly one actions menu must be open").toHaveCount(1);
+		return (await menu.getByRole("menuitem").allTextContents()).map((item) =>
+			item.trim(),
+		);
+	}
+
+	async closeActionsMenu(): Promise<void> {
+		await this.page.keyboard.press("Escape");
+		await expect(
+			this.page.getByRole("menu"),
+			"Escape must close the actions menu",
+		).toHaveCount(0);
+	}
+
 	/** True when the cell shows its text cut off with an ellipsis. */
 	async isCutWithEllipsis(field: string): Promise<boolean> {
 		return this.view.isCutWithEllipsis(this.cell(field));
