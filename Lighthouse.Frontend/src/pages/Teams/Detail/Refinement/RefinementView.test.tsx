@@ -485,6 +485,7 @@ describe("the Refinement table fits its columns and says when some are out of si
 		"Replatform the order management stack onto the shared event backbone for every region";
 	const LONG_PARENT =
 		"Order management modernisation programme for the northern and southern regions";
+	const SHOWN_PARENT = `GR-010: ${LONG_PARENT}`;
 
 	beforeEach(() => {
 		givenANarrowWindow();
@@ -520,6 +521,7 @@ describe("the Refinement table fits its columns and says when some are out of si
 			</SnackbarErrorHandler>,
 		);
 		await screen.findByText(`GR-058: ${LONG_NAME}`);
+		await screen.findByText(SHOWN_PARENT);
 		return view;
 	};
 
@@ -532,6 +534,24 @@ describe("the Refinement table fits its columns and says when some are out of si
 		thenTheColumnIsShownWhole(container, "voteCount");
 		thenTheTableSaysColumnsAreOutOfSightOnItsRight(container);
 		thenALongTextIsCutToItsColumn(container, "parentReferenceId");
+	});
+
+	it("shows the full parent name, not its reference, in a tooltip when the person hovers over a cut parent", async () => {
+		givenTextIsWiderThanItsColumn();
+		await whenTheRefinementTabShowsALongNamedWorkItem();
+
+		whenThePersonHoversOver(screen.getByText(SHOWN_PARENT));
+
+		await thenTheFullTextIsInATooltip(SHOWN_PARENT);
+	});
+
+	it("shows the full parent name, not its reference, in a tooltip when the person reaches a cut parent with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		await whenTheRefinementTabShowsALongNamedWorkItem();
+
+		whenThePersonReachesWithTheKeyboard(screen.getByText(SHOWN_PARENT));
+
+		await thenTheFullTextIsInATooltip(SHOWN_PARENT);
 	});
 
 	it("shows the full Work Item name in a tooltip when the person hovers over a cut name", async () => {

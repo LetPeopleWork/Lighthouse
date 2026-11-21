@@ -7,6 +7,7 @@ import { renderWithQueryClient as render } from "../../../tests/renderWithQueryC
 import {
 	createForecastsColumn,
 	createNameColumn,
+	createParentColumn,
 	createStateColumn,
 } from "./columns";
 import FeatureListDataGrid from "./FeatureListDataGrid";
@@ -22,6 +23,7 @@ import {
 	whenThePersonHoversOver,
 	whenThePersonReachesWithTheKeyboard,
 	thenTheActionsColumnIsPinnedAndLast,
+	thenHoveringOverItOpensNoTooltip,
 } from "../../../tests/SharedGridFitKit";
 
 vi.mock("@mui/x-data-grid", async () =>
@@ -65,6 +67,7 @@ const createFeature = (
 		remainingWork: { [key: number]: number };
 		isUsingDefaultFeatureSize: boolean;
 		position: number;
+		parentWorkItemReference: string;
 	}>,
 ): Feature => {
 	const feature = new Feature();
@@ -83,6 +86,7 @@ const createFeature = (
 	feature.url = "";
 	feature.state = overrides.stateCategory === "Done" ? "Closed" : "Active";
 	feature.position = overrides.position;
+	feature.parentWorkItemReference = overrides.parentWorkItemReference ?? "";
 	return feature;
 };
 
@@ -574,6 +578,12 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 	const LONG_NAME =
 		"Replatform the order management stack onto the shared event backbone for every region";
 	const SHOWN_NAME = `FTR-1: ${LONG_NAME}`;
+	const LONG_PARENT =
+		"Order management modernisation programme for the northern and southern regions";
+	const SHOWN_PARENT = `PRG-7: ${LONG_PARENT}`;
+	const parents = new Map([
+		["PRG-7", { referenceId: "PRG-7", name: LONG_PARENT, url: "" }],
+	]);
 
 	beforeEach(() => {
 		givenANarrowWindow();
@@ -596,9 +606,14 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 							referenceId: "FTR-1",
 							stateCategory: "Doing",
 							position: 3,
+							parentWorkItemReference: "PRG-7",
 						}),
 					]}
-					columns={[createNameColumn("Feature"), createStateColumn()]}
+					columns={[
+						createNameColumn("Feature"),
+						createParentColumn(parents),
+						createStateColumn(),
+					]}
 					storageKey="fit-feature-list"
 					hideCompletedStorageKey="fit-feature-list-hide-completed"
 					showPosition
@@ -606,11 +621,12 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 			</MemoryRouter>,
 		);
 
-	it("cuts a long Feature name to its column and shows the position and the state whole", () => {
+	it("cuts a long Feature name and a long parent name to their columns and shows the position and the state whole", () => {
 		givenTextIsWiderThanItsColumn();
 		const { container } = whenTheFeatureListShows();
 
 		thenALongTextIsCutToItsColumn(container, "name");
+		thenALongTextIsCutToItsColumn(container, "parent");
 		thenTheColumnIsShownWhole(container, "position");
 		thenTheColumnIsShownWhole(container, "state");
 	});
@@ -629,6 +645,37 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 		whenThePersonHoversOver(screen.getByText(SHOWN_NAME));
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("shows the full parent name in a tooltip when the person hovers over a cut parent", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheFeatureListShows();
+
+		whenThePersonHoversOver(screen.getByText(SHOWN_PARENT));
+
+		await thenTheFullTextIsInATooltip(SHOWN_PARENT);
+	});
+
+	it("shows the full parent name in a tooltip when the person reaches a cut parent with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheFeatureListShows();
+
+		whenThePersonReachesWithTheKeyboard(screen.getByText(SHOWN_PARENT));
+
+		await thenTheFullTextIsInATooltip(SHOWN_PARENT);
+	});
+
+	it("opens no tooltip over a Feature name that fits its column", async () => {
+		whenTheFeatureListShows();
+
+		await thenHoveringOverItOpensNoTooltip(screen.getByText(SHOWN_NAME));
+	});
+
+	it("opens no tooltip over a state, which is never cut", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheFeatureListShows();
+
+		await thenHoveringOverItOpensNoTooltip(screen.getByText("Active"));
 	});
 
 	it("shows the full Feature name in a tooltip when the person reaches a cut name with the keyboard", async () => {

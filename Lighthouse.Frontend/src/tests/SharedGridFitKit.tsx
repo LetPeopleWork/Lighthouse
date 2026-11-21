@@ -1,14 +1,14 @@
 import { fireEvent, screen } from "@testing-library/react";
 import { expect, vi } from "vitest";
+import { PINNED_ACTIONS_CLASS } from "../components/Common/DataGrid/columnFit";
 
 /**
  * Steps shared by every table that sits on the shared grid, so each table states the same promises
  * about its fit once: long text is cut and keeps its full text in a tooltip, numbers, dates and
  * states are shown whole, the actions column is pinned as the last column, and the table says when
- * columns are out of sight.
+ * columns are out of sight. That the pinned column really stays at the right edge while the rest
+ * scrolls is geometry jsdom cannot see; the report list and Overview browser specs prove it.
  */
-
-const PINNED_CLASS = "lighthouse-pinned-actions";
 
 /** The box the grid sits in. jsdom has no layout, so a test states the box the person would see. */
 export const box = { content: 0, viewport: 0, scrollLeft: 0 };
@@ -96,7 +96,7 @@ export const resetTheCut = () => {
 	for (const spy of statedCut.splice(0)) spy.mockRestore();
 };
 
-const cellOf = (root: ParentNode, field: string): HTMLElement => {
+export const cellOf = (root: ParentNode, field: string): HTMLElement => {
 	const cell = root.querySelector<HTMLElement>(
 		`[role="gridcell"][data-field="${field}"]`,
 	);
@@ -154,11 +154,11 @@ export const thenTheActionsColumnIsPinnedAndLast = (
 		`the columns are ${JSON.stringify(headers)}; the actions column is pinned to the right edge, so it must be the last one`,
 	).toBe(field);
 	expect(
-		headerOf(root, field).classList.contains(PINNED_CLASS),
+		headerOf(root, field).classList.contains(PINNED_ACTIONS_CLASS),
 		`the ${field} header must be pinned, or Delete and Edit scroll out of view`,
 	).toBe(true);
 	expect(
-		cellOf(root, field).classList.contains(PINNED_CLASS),
+		cellOf(root, field).classList.contains(PINNED_ACTIONS_CLASS),
 		`the ${field} cells must be pinned, or Delete and Edit scroll out of view`,
 	).toBe(true);
 };
@@ -200,4 +200,22 @@ export const thenTheFullTextIsInATooltip = async (fullText: string) => {
 		await screen.findByRole("tooltip"),
 		"a cut text must show its full text in a tooltip, for a mouse user and for a keyboard user",
 	).toHaveTextContent(fullText);
+};
+
+/**
+ * Hovering over text that fits its column, or over a cell that is never cut, opens no tooltip.
+ * The clock is fake so the tooltip's own delay has passed when the absence is read.
+ */
+export const thenHoveringOverItOpensNoTooltip = async (element: HTMLElement) => {
+	vi.useFakeTimers({ shouldAdvanceTime: true });
+	try {
+		fireEvent.mouseOver(element);
+		await vi.advanceTimersByTimeAsync(300);
+		expect(
+			screen.queryByRole("tooltip"),
+			"a tooltip must open only for text the column actually cuts, never for text that fits or for a number, date or state",
+		).toBeNull();
+	} finally {
+		vi.useRealTimers();
+	}
 };

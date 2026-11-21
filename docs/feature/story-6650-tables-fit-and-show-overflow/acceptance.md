@@ -429,25 +429,25 @@ Only the first or renamed Team keeps Delete in view, the shadow covers Delete, o
 P10
 
 ```text
-Each of the Feature picker, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables is shown at a narrow width with a long text value
+Each of the Feature picker, Feature list, Work Item dialog, archived Feature, Connections, third-party packages and Refinement tables is shown at a narrow width with a long text value, the Feature list and the Refinement table also with a long parent name
 ```
 
 ```text
-Long text is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole; the table says columns are out of sight on its right
+Long text, including a parent name once its title has loaded, is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole and open no tooltip; text that fits opens no tooltip; the table says columns are out of sight on its right
 ```
 
 ```text
-The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name in full
+The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name or parent in full
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:cuts a long Feature name to its column and shows the position and the state whole
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx\:\:cuts a long Feature name and a long parent name to their columns and shows the position and the state whole
 
 ```text
-A long text column the tests do not name (for example Dependencies) that wraps or overflows would still pass
+A long Dependencies column (content, declared width 260 by design) that wraps or overflows would still pass; a tooltip showing the parent reference instead of its title is refused by the Refinement and Feature list parent tooltip checks
 ```
 
 ###### Obligations
