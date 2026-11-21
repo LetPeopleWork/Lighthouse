@@ -1134,7 +1134,13 @@ describe("The Overview table fits its columns and says when some are out of sigh
 
 			menuButtonOf("Team 2").focus();
 			await user.keyboard("{Enter}");
-			await screen.findByRole("menu");
+			const menu = await screen.findByRole("menu");
+			await waitFor(() =>
+				expect(
+					within(menu).getAllByRole("menuitem")[0],
+					"opening the menu must move the keyboard focus into it, so the arrow keys choose an item and Escape has a place to leave from",
+				).toHaveFocus(),
+			);
 			await user.keyboard("{Escape}");
 
 			await waitFor(() =>
@@ -1163,6 +1169,37 @@ describe("The Overview table fits its columns and says when some are out of sigh
 			await user.keyboard("{ArrowDown}{Enter}");
 
 			thenThePersonIsTakenTo("/teams/edit/1");
+		});
+	});
+
+	describe("with the menu closed and the keyboard on a row's menu button", () => {
+		beforeEach(() => {
+			globalThis.history.pushState({}, "", "/");
+			whenTheScreenIsAPhone();
+		});
+
+		it("lets the arrow keys keep moving through the row's cells, and Enter and Space open the menu", async () => {
+			const user = userEvent.setup();
+			const { container } = whenTheOverviewShows(sampleTeamData.slice(0, 1));
+			const actionsCell = container.querySelector<HTMLElement>(
+				'[role="gridcell"][data-field="actions"]',
+			);
+			const cellBefore = actionsCell?.previousElementSibling as HTMLElement;
+
+			menuButtonOf("Team 1").focus();
+			await user.keyboard("{ArrowLeft}");
+
+			expect(
+				document.activeElement?.closest('[role="gridcell"]'),
+				"ArrowLeft on the menu button must move the grid's focus to the cell before the actions cell, as it does from any other cell, so a keyboard user is not stuck in the last column",
+			).toBe(cellBefore);
+
+			menuButtonOf("Team 1").focus();
+			await user.keyboard(" ");
+			expect(
+				await screen.findByRole("menu"),
+				"Space on the menu button must open the menu, as Enter does",
+			).toBeInTheDocument();
 		});
 	});
 

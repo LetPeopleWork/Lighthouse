@@ -237,12 +237,12 @@
 "L4/F148",
 "L4/F149"
 ],
-"still_passes_if": "F358",
-"test": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::on a phone, where four icons do not fit beside a readable Name | Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::keeps the four action icons and no menu button on a desktop | Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on every Team of the Overview, at desktop and at phone width, and reads a long name in full | Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on the Portfolios table of the Overview at phone width, and the table says it scrolls"
+"still_passes_if": "F362",
+"test": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::on a phone, where four icons do not fit beside a readable Name | Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::with the menu closed and the keyboard on a row's menu button | Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::keeps the four action icons and no menu button on a desktop | Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on every Team of the Overview, at desktop and at phone width, and reads a long name in full | Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on the Portfolios table of the Overview at phone width, and the table says it scrolls"
 },
-"expected": "F351",
-"stimulus": "F350",
-"user_result": "F352"
+"expected": "F360",
+"stimulus": "F359",
+"user_result": "F361"
 },
 {
 "covers": [
@@ -326,7 +326,7 @@
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 358,
+"F": 362,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1530,15 +1530,15 @@
 "F348": "A person with a long dependency list sees each dependency on its own line, cut to the column, and can read every dependency in full by hovering or keyboard focus",
 "F349": "the first dependency line is cut but another line wraps or overflows, or the tooltip shows only the count or only the first dependency, or it opens even when the list fits",
 "F35": "its columns fit and truncate as on the report list, and a cue shows when columns still overflow. Falsifier: the Overview table still hides its last column with no cue.",
-"F350": "A person opens the Overview of Teams or Portfolios on a phone, where four action icons would crowd out the Name, then opens a row's menu with a click or with Enter and the arrow keys and chooses Details, Edit, Clone or Delete; at desktop width the same table is opened.",
-"F351": "On a phone each row has one pinned menu button named Actions for the row name, with the tooltip Actions, and no separate icons; the actions column is no wider than the button; the menu lists exactly the actions the person may use, in the order Details, Edit, Clone, Delete; each item does what its icon did and Delete asks the same confirmation; the Name lies clear of the pinned column; at desktop width the four icons are back and there is no menu button.",
-"F352": "The person always finds the actions of a row in one pinned button that never scrolls away, can read the Name, and can use every action with mouse or keyboard.",
 "F354": "On a phone-width Overview, the person opens a row's actions menu with the keyboard and closes it with Escape",
 "F355": "the menu closes, keyboard focus is back on that row's actions button, and the table has neither scrolled nor changed its edge shadows",
 "F356": "A keyboard user keeps their place in the table and the pinned actions column stays reachable",
 "F357": "focus lands on the body or on a grid cell after Escape, or the grid jumps to its end when the button gets focus",
-"F358": "The icons stay at phone width and only the column narrows; the menu button is not pinned or scrolls away; the menu offers actions the person may not use; Delete from the menu skips the confirmation or targets another row; the menu opens by mouse only; the menu button also shows at desktop width; the actions column stays 200 px wide on a phone. Known limitation: at 375 px, opening the menu of the second Overview table can make the browser scroll that table to its end, so a check that fails to notice this jump still passes; it requires only that after Escape the focus is on the menu button, the button is in view, and the Name lies clear of the pinned column or the table can be scrolled back to the start so it does. The jump is to be raised with the maintainer as a follow-up Bug.",
+"F359": "A person opens the Overview of Teams or Portfolios on a phone, where four action icons would crowd out the Name, then opens a row's menu with a click, with Enter or Space, and with Enter and the arrow keys, and chooses Details, Edit, Clone or Delete; with the menu closed and the keyboard on the menu button the person presses the left arrow; at desktop width the same table is opened.",
 "F36": "Remaining tables behave the same",
+"F360": "On a phone each row has one pinned menu button named Actions for the row name, with the tooltip Actions, and no separate icons; the actions column is no wider than the button; opening the menu puts the keyboard focus inside it; the menu lists exactly the actions the person may use, in the order Details, Edit, Clone, Delete; each item does what its icon did and Delete asks the same confirmation; after Escape the focus is on the menu button and the button is in view; with the menu closed the left arrow moves the focus to the cell before the actions cell; at desktop width the four icons are back and there is no menu button.",
+"F361": "The person always finds the actions of a row in one pinned button that never scrolls away, and can use every action and move along the row with mouse or keyboard.",
+"F362": "The icons stay at phone width and only the column narrows; the menu button is not pinned or scrolls away; the menu offers actions the person may not use; Delete from the menu skips the confirmation or targets another row; the menu opens by mouse only; opening the menu leaves the focus outside it; the menu button swallows the arrow keys so the person cannot leave the actions cell; the menu button also shows at desktop width; the actions column stays 200 px wide on a phone. Known limitation (maintainer decision 8): at 375 px, opening the menu of the second Overview table can make the browser scroll that table to its end, and the browser check does not hide or undo that jump; it requires only that after Escape the focus is on the menu button and the button is in view. A follow-up Bug is to be raised.",
 "F37": "the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables",
 "F38": "each is opened at a narrow width",
 "F39": "each fits where it can and shows the cue where it cannot, with no per-table behaviour that contradicts the report list. Falsifier: one of these tables still scrolls its last column out of view with no cue.",

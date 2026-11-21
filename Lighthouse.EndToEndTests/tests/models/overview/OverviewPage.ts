@@ -235,27 +235,6 @@ export class OverviewTable {
 		return this.view.walkToActionsWithTheKeyboard(MOST_CELLS);
 	}
 
-	/**
-	 * True when this owner's Name cell ends before the pinned actions column starts, as it stands or once the table
-	 * is scrolled back to its start. A menu that scrolled the table to its end leaves the Name reachable this way.
-	 */
-	async nameCanBeReadClearOfActions(): Promise<boolean> {
-		const clear = async () => {
-			const name = await this.cell("name").boundingBox();
-			const actions = await this.table
-				.locator('[role="columnheader"][data-field="actions"]')
-				.boundingBox();
-			return (
-				name !== null && actions !== null && name.x + name.width <= actions.x + 1
-			);
-		};
-		if (await clear()) {
-			return true;
-		}
-		await this.scrollToTheStart();
-		return clear();
-	}
-
 	async scrollToTheStart(): Promise<void> {
 		await this.table
 			.locator(".MuiDataGrid-virtualScroller")

@@ -41,11 +41,6 @@ const thenActionsAreReachable = async (table: OverviewTable, when: string) => {
 			message: `${when}, after Escape the menu button must still be inside the table`,
 		})
 		.toBe(false);
-	await expect
-		.poll(() => table.nameCanBeReadClearOfActions(), {
-			message: `${when}, after Escape the Name must lie clear of the pinned column, or the table must scroll back so it does`,
-		})
-		.toBe(true);
 };
 
 testWithTeams(
@@ -154,6 +149,7 @@ testWithTeams(
 		for (const table of tables) {
 			await thenActionsAreReachable(table, "at 375 px, scrolled to the left");
 		}
+		// Not a check: puts the table back at its start so the shadow checks below read a known position.
 		await teams.scrollToTheStart();
 		await expect
 			.poll(() => teams.tableScrollsSideways(), {

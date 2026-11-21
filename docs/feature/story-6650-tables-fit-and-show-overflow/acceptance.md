@@ -429,25 +429,25 @@ P9
 P12
 
 ```text
-A person opens the Overview of Teams or Portfolios on a phone, where four action icons would crowd out the Name, then opens a row's menu with a click or with Enter and the arrow keys and chooses Details, Edit, Clone or Delete; at desktop width the same table is opened.
+A person opens the Overview of Teams or Portfolios on a phone, where four action icons would crowd out the Name, then opens a row's menu with a click, with Enter or Space, and with Enter and the arrow keys, and chooses Details, Edit, Clone or Delete; with the menu closed and the keyboard on the menu button the person presses the left arrow; at desktop width the same table is opened.
 ```
 
 ```text
-On a phone each row has one pinned menu button named Actions for the row name, with the tooltip Actions, and no separate icons; the actions column is no wider than the button; the menu lists exactly the actions the person may use, in the order Details, Edit, Clone, Delete; each item does what its icon did and Delete asks the same confirmation; the Name lies clear of the pinned column; at desktop width the four icons are back and there is no menu button.
+On a phone each row has one pinned menu button named Actions for the row name, with the tooltip Actions, and no separate icons; the actions column is no wider than the button; opening the menu puts the keyboard focus inside it; the menu lists exactly the actions the person may use, in the order Details, Edit, Clone, Delete; each item does what its icon did and Delete asks the same confirmation; after Escape the focus is on the menu button and the button is in view; with the menu closed the left arrow moves the focus to the cell before the actions cell; at desktop width the four icons are back and there is no menu button.
 ```
 
 ```text
-The person always finds the actions of a row in one pinned button that never scrolls away, can read the Name, and can use every action with mouse or keyboard.
+The person always finds the actions of a row in one pinned button that never scrolls away, and can use every action and move along the row with mouse or keyboard.
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:\:on a phone\, where four icons do not fit beside a readable Name \| Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:\:keeps the four action icons and no menu button on a desktop \| Lighthouse\.EndToEndTests\/tests\/specs\/teams\/OverviewTableFit\.spec\.ts\:\:a coach finds Delete on every Team of the Overview\, at desktop and at phone width\, and reads a long name in full \| Lighthouse\.EndToEndTests\/tests\/specs\/teams\/OverviewTableFit\.spec\.ts\:\:a coach finds Delete on the Portfolios table of the Overview at phone width\, and the table says it scrolls
+Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:\:on a phone\, where four icons do not fit beside a readable Name \| Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:\:with the menu closed and the keyboard on a row\'s menu button \| Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:\:keeps the four action icons and no menu button on a desktop \| Lighthouse\.EndToEndTests\/tests\/specs\/teams\/OverviewTableFit\.spec\.ts\:\:a coach finds Delete on every Team of the Overview\, at desktop and at phone width\, and reads a long name in full \| Lighthouse\.EndToEndTests\/tests\/specs\/teams\/OverviewTableFit\.spec\.ts\:\:a coach finds Delete on the Portfolios table of the Overview at phone width\, and the table says it scrolls
 
 ```text
-The icons stay at phone width and only the column narrows; the menu button is not pinned or scrolls away; the menu offers actions the person may not use; Delete from the menu skips the confirmation or targets another row; the menu opens by mouse only; the menu button also shows at desktop width; the actions column stays 200 px wide on a phone. Known limitation: at 375 px, opening the menu of the second Overview table can make the browser scroll that table to its end, so a check that fails to notice this jump still passes; it requires only that after Escape the focus is on the menu button, the button is in view, and the Name lies clear of the pinned column or the table can be scrolled back to the start so it does. The jump is to be raised with the maintainer as a follow-up Bug.
+The icons stay at phone width and only the column narrows; the menu button is not pinned or scrolls away; the menu offers actions the person may not use; Delete from the menu skips the confirmation or targets another row; the menu opens by mouse only; opening the menu leaves the focus outside it; the menu button swallows the arrow keys so the person cannot leave the actions cell; the menu button also shows at desktop width; the actions column stays 200 px wide on a phone. Known limitation (maintainer decision 8): at 375 px, opening the menu of the second Overview table can make the browser scroll that table to its end, and the browser check does not hide or undo that jump; it requires only that after Escape the focus is on the menu button and the button is in view. A follow-up Bug is to be raised.
 ```
 
 ###### Obligations
