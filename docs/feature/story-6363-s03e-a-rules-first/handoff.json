@@ -1,8 +1,115 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F107",
+"L1/F110"
+],
+"still_passes_if": "F172",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingRulesSeeTheModulesArchUnitTest.cs::AServiceUnderTheModuleReachingARepository_IsNamedByTheModuleMapsAccessAndLicensingNamespaces_AsItsTwinInTheOldPlaceIs"
+},
+"expected": "F170",
+"stimulus": "F169",
+"user_result": "F171"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F107",
+"L1/F110"
+],
+"still_passes_if": "F176",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingRulesSeeTheModulesArchUnitTest.cs::AServiceUnderTheModuleReachingARepository_IsNamedByTheSharedModuleRulesNamespaceOfItsModule_WhileANamesakeAndTheOtherModuleAreNot"
+},
+"expected": "F174",
+"stimulus": "F173",
+"user_result": "F175"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F104",
+"L1/F105",
+"L1/F106",
+"L1/F110",
+"T1"
+],
+"still_passes_if": "F180",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingRulesSeeTheModulesArchUnitTest.cs::AServiceOfAnotherContextReachingAnAccessOrLicensingServiceUnderTheModule_IsNamedByThatContextsRule_AsOneReachingTheOldPlaceIs"
+},
+"expected": "F178",
+"stimulus": "F177",
+"user_result": "F179"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F108",
+"L1/F110"
+],
+"still_passes_if": "F184",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingRulesSeeTheModulesArchUnitTest.cs::AForecastingApplicationTypeReachingALicensingServiceUnderTheModule_IsNamedByForecastingsLicenceSelector_AsOneReachingTheOldPlaceIs"
+},
+"expected": "F182",
+"stimulus": "F181",
+"user_result": "F183"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F109"
+],
+"still_passes_if": "F188",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingRulesSeeTheModulesArchUnitTest.cs::AnAccessServiceAskingTheLicenceUnderTheModules_StaysInsideOneModuleOnTheModuleMap_AsItsTwinInTheOldPlaceDoes"
+},
+"expected": "F186",
+"stimulus": "F185",
+"user_result": "F187"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F111"
+],
+"still_passes_if": "F192",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture (every existing architecture test, run by the declared full backend test command)"
+},
+"expected": "F190",
+"stimulus": "F189",
+"user_result": "F191"
+}
+]
+},
 "counters": {
 "D": 12,
 "E": 5,
-"F": 168,
+"F": 192,
 "K": 5,
 "L": 4,
 "P": 5,
@@ -820,9 +927,33 @@
 "F166": "Running the access-answers examine command on two revisions that give the same auth mode, session, my-summary, RBAC status, system-wide rules, everyone-signed-in, API keys and licence status (before and after a licence import) prints IDENTICAL and exits 0; if any one of these answers differs it prints DIFFERENT and exits 1.",
 "F167": "Running the CI examine command for a revision shows the Verify Authentication job conclusion and the conclusions of its authentication, RBAC and proxy-auth steps from the newest finished CI run at or before that revision, and a step that failed is shown as failed, not as passed or missing.",
 "F168": "A user, a tracker or the database sees no change in behaviour or data after this feature, and the existing test suites still pass.",
+"F169": "A made-up Access service and a made-up Licensing service under their new modules reach a repository, each beside its twin in the old place, a namesake just outside the module and a service that reads values only; the module map's Access and Licensing key is run over them.",
 "F17": "The move in feature B has a fixed, measured list of what moves and where",
+"F170": "The module map names the service under the module exactly as it names its twin in the old place; the namesake and the values-only service are not named.",
+"F171": "A rule built on the module map keeps seeing Access and Licensing code after it moves to its module.",
+"F172": "It still passes a key that also takes in an unrelated module; the other-context and shared-constant checks catch that. A key without the end anchor takes in Modules.AccessFixtures and fails; a key that sees only one of the two modules fails the other case.",
+"F173": "The shared module rules' Access and Licensing namespace constants are run over a made-up service under each module that reaches a repository, a namesake just outside the module, the same kind of service under the other module and a service that reads values only.",
+"F174": "Each constant names the service under its own module only; the namesake, the other module's service and the values-only service are not named.",
+"F175": "The modules' own rules have a namespace to point at that sees exactly one module.",
+"F176": "It still passes a constant written without the start anchor, which no real namespace outside Lighthouse.Backend would exercise. A constant without the end anchor, one combining both modules, or a missing constant fails.",
+"F177": "A made-up Work Items service, a made-up connector and a made-up Delivery service each reach a made-up Access service and a made-up Licensing service under the new modules, a twin in the old place and a namesake just outside; each context's own Access and Licensing key is run over them.",
+"F178": "Each context's rule names the type reaching the module exactly as it names the one reaching the old place; the one reaching the namesake is not named.",
+"F179": "Work Items, Tracker integration and Promises keep being stopped from reaching Access and Licensing except through their listed edges, before and after the move.",
 "F18": "A3: the access-answers-compare examine command says DIFFERENT (exit 1) for two captures differing in one answer and IDENTICAL (exit 0) for identical ones.",
+"F180": "It still passes a key widened with an extra unrelated namespace; the existing tests of each rule on today's code then show a new offender. A key that misses one context, one module or the end anchor fails a case.",
+"F181": "Made-up Forecasting Application types reach a made-up Licensing service under the new module, its twin in the old place, a Licensing namesake, a made-up Access service under the new module and one in the old place; Forecasting's licence selector is run over them.",
+"F182": "The selector names the types reaching Licensing under the module and in the old place; the namesake and both Access types are not named.",
+"F183": "Forecasting keeps asking the licence only through its listed edge after Licensing moves.",
+"F184": "It still passes if the listed forecast filter rule service edge were dropped from the list; the existing Forecasting rule on today's code catches that. A selector that misses Modules.Licensing, takes in Access, or loses its end anchor fails.",
+"F185": "A made-up Access service under the new module asks a made-up Licensing service under the new module, beside the same pair in the old places; the module map's Access and Licensing key is applied to both ends of each edge.",
+"F186": "Both ends of both edges fall inside the module map's Access and Licensing module, so the edge is never a crossing between modules.",
+"F187": "Access asking the licence stays legal after both move, as it is today.",
+"F188": "It still passes if a later rule written with the separate shared constants treated Access to Licensing as a crossing; such a rule belongs to the modules' own rules, outside this feature. A map that sees only one of the two modules fails.",
+"F189": "Every existing architecture test and the whole backend suite run on today's code after the widening.",
 "F19": "A changed Access or Licensing answer after the move is caught at EXAMINE",
+"F190": "No existing rule names a new offender and every existing test stays green; the module map's Access and Licensing group is still not empty.",
+"F191": "Nothing a user, a tracker or the database sees changes.",
+"F192": "It still passes a widening that matches nothing at all today; the module-place checks in this oracle catch that. A widening that loosens a rule or drops an old alternative turns an existing test red.",
 "F2": "The Access and Licensing move can happen without any architecture rule silently losing sight of the code it guards",
 "F20": "A4: the ci-auth-suites-show examine command shows the Verify Authentication job and its authentication, RBAC and proxy-auth steps for a revision, a failed step as failed.",
 "F21": "The live authentication, RBAC and proxy-auth runs of the move push are visible at EXAMINE",

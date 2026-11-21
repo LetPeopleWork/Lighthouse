@@ -2,7 +2,188 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+A made-up Access service and a made-up Licensing service under their new modules reach a repository, each beside its twin in the old place, a namesake just outside the module and a service that reads values only; the module map's Access and Licensing key is run over them.
+```
+
+```text
+The module map names the service under the module exactly as it names its twin in the old place; the namesake and the values-only service are not named.
+```
+
+```text
+A rule built on the module map keeps seeing Access and Licensing code after it moves to its module.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessAndLicensingRulesSeeTheModulesArchUnitTest\.cs\:\:AServiceUnderTheModuleReachingARepository\_IsNamedByTheModuleMapsAccessAndLicensingNamespaces\_AsItsTwinInTheOldPlaceIs
+
+```text
+It still passes a key that also takes in an unrelated module; the other-context and shared-constant checks catch that. A key without the end anchor takes in Modules.AccessFixtures and fails; a key that sees only one of the two modules fails the other case.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+The shared module rules' Access and Licensing namespace constants are run over a made-up service under each module that reaches a repository, a namesake just outside the module, the same kind of service under the other module and a service that reads values only.
+```
+
+```text
+Each constant names the service under its own module only; the namesake, the other module's service and the values-only service are not named.
+```
+
+```text
+The modules' own rules have a namespace to point at that sees exactly one module.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessAndLicensingRulesSeeTheModulesArchUnitTest\.cs\:\:AServiceUnderTheModuleReachingARepository\_IsNamedByTheSharedModuleRulesNamespaceOfItsModule\_WhileANamesakeAndTheOtherModuleAreNot
+
+```text
+It still passes a constant written without the start anchor, which no real namespace outside Lighthouse.Backend would exercise. A constant without the end anchor, one combining both modules, or a missing constant fails.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+A made-up Work Items service, a made-up connector and a made-up Delivery service each reach a made-up Access service and a made-up Licensing service under the new modules, a twin in the old place and a namesake just outside; each context's own Access and Licensing key is run over them.
+```
+
+```text
+Each context's rule names the type reaching the module exactly as it names the one reaching the old place; the one reaching the namesake is not named.
+```
+
+```text
+Work Items, Tracker integration and Promises keep being stopped from reaching Access and Licensing except through their listed edges, before and after the move.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessAndLicensingRulesSeeTheModulesArchUnitTest\.cs\:\:AServiceOfAnotherContextReachingAnAccessOrLicensingServiceUnderTheModule\_IsNamedByThatContextsRule\_AsOneReachingTheOldPlaceIs
+
+```text
+It still passes a key widened with an extra unrelated namespace; the existing tests of each rule on today's code then show a new offender. A key that misses one context, one module or the end anchor fails a case.
+```
+
+###### Obligations
+
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Made-up Forecasting Application types reach a made-up Licensing service under the new module, its twin in the old place, a Licensing namesake, a made-up Access service under the new module and one in the old place; Forecasting's licence selector is run over them.
+```
+
+```text
+The selector names the types reaching Licensing under the module and in the old place; the namesake and both Access types are not named.
+```
+
+```text
+Forecasting keeps asking the licence only through its listed edge after Licensing moves.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessAndLicensingRulesSeeTheModulesArchUnitTest\.cs\:\:AForecastingApplicationTypeReachingALicensingServiceUnderTheModule\_IsNamedByForecastingsLicenceSelector\_AsOneReachingTheOldPlaceIs
+
+```text
+It still passes if the listed forecast filter rule service edge were dropped from the list; the existing Forecasting rule on today's code catches that. A selector that misses Modules.Licensing, takes in Access, or loses its end anchor fails.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+A made-up Access service under the new module asks a made-up Licensing service under the new module, beside the same pair in the old places; the module map's Access and Licensing key is applied to both ends of each edge.
+```
+
+```text
+Both ends of both edges fall inside the module map's Access and Licensing module, so the edge is never a crossing between modules.
+```
+
+```text
+Access asking the licence stays legal after both move, as it is today.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessAndLicensingRulesSeeTheModulesArchUnitTest\.cs\:\:AnAccessServiceAskingTheLicenceUnderTheModules\_StaysInsideOneModuleOnTheModuleMap\_AsItsTwinInTheOldPlaceDoes
+
+```text
+It still passes if a later rule written with the separate shared constants treated Access to Licensing as a crossing; such a rule belongs to the modules' own rules, outside this feature. A map that sees only one of the two modules fails.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Every existing architecture test and the whole backend suite run on today's code after the widening.
+```
+
+```text
+No existing rule names a new offender and every existing test stays green; the module map's Access and Licensing group is still not empty.
+```
+
+```text
+Nothing a user, a tracker or the database sees changes.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture \(every existing architecture test\, run by the declared full backend test command\)
+
+```text
+It still passes a widening that matches nothing at all today; the module-place checks in this oracle catch that. A widening that loosens a rule or drops an old alternative turns an existing test red.
+```
+
+###### Obligations
+
 
 ## Expectations
 
