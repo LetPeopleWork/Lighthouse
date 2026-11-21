@@ -529,9 +529,7 @@ describe("The wizard waits for what a report needs", () => {
 			reportService: aReportServiceCreating(vi.fn()),
 		});
 
-		await user.click(
-			await screen.findByRole("button", { name: CREATE_REPORTS }),
-		);
+		await pressCreateReports(user);
 
 		const wizard = await screen.findByRole("dialog");
 		expect(within(wizard).getByText(THE_TYPE_STEP)).toBeInTheDocument();
@@ -550,9 +548,7 @@ describe("The wizard waits for what a report needs", () => {
 			}),
 		});
 
-		await user.click(
-			await screen.findByRole("button", { name: CREATE_REPORTS }),
-		);
+		await pressCreateReports(user);
 
 		const wizard = await screen.findByRole("dialog");
 		expect(
@@ -578,9 +574,7 @@ describe("The wizard waits for what a report needs", () => {
 			}),
 		});
 
-		await user.click(
-			await screen.findByRole("button", { name: CREATE_REPORTS }),
-		);
+		await pressCreateReports(user);
 		await user.click(
 			within(await screen.findByRole("dialog")).getByRole("button", {
 				name: RETRY,
@@ -605,9 +599,7 @@ describe("The wizard waits for what a report needs", () => {
 			}),
 		});
 
-		await user.click(
-			await screen.findByRole("button", { name: CREATE_REPORTS }),
-		);
+		await pressCreateReports(user);
 		await user.click(
 			within(await screen.findByRole("dialog")).getByRole("button", {
 				name: CANCEL,
