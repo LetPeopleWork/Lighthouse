@@ -1622,6 +1622,22 @@ esac
 EOF
 chmod +x "$out/linux-appimage"
 
+# Finds the newest finished "Build And Deploy Lighthouse" run at or before the revision in \$1 and names it, for every
+# command that reads one CI run. Commits that change only documents start no run, so earlier first-parent commits
+# are tried in turn; a run parked at the release approval counts as finished.
+finished_ci_run_lookup=$(cat <<EOF
+rev="\${1:-HEAD}"
+run=""; at=""
+for sha in \$(git -C "\$repo" rev-list --first-parent -n 40 "\$rev"); do
+  run=\$(gh run list -R LetPeopleWork/Lighthouse -w "Build And Deploy Lighthouse" --commit "\$sha" --json databaseId,status \\
+    -q '[.[] | select(.status=="completed" or .status=="waiting")][0].databaseId // empty' 2>/dev/null || true)
+  if [ -n "\$run" ]; then at="\$sha"; break; fi
+done
+[ -n "\$run" ] || { echo "no finished CI run found within 40 first-parent commits of \$rev"; exit 1; }
+echo "revision \$(git -C "\$repo" rev-parse --short "\$rev"); CI run \$run on commit \${at:0:9}"
+EOF
+)
+
 cat > "$out/ci-live-suites-show" <<EOF
 #!/usr/bin/env bash
 # Shows, for the newest finished "Build And Deploy Lighthouse" run (one parked at the release approval counts as
@@ -1635,15 +1651,7 @@ cat > "$out/ci-live-suites-show" <<EOF
 set -euo pipefail
 export HOME="$home"
 repo="$repo"
-rev="\${1:-HEAD}"
-run=""; at=""
-for sha in \$(git -C "\$repo" rev-list --first-parent -n 40 "\$rev"); do
-  run=\$(gh run list -R LetPeopleWork/Lighthouse -w "Build And Deploy Lighthouse" --commit "\$sha" --json databaseId,status \\
-    -q '[.[] | select(.status=="completed" or .status=="waiting")][0].databaseId // empty' 2>/dev/null || true)
-  if [ -n "\$run" ]; then at="\$sha"; break; fi
-done
-[ -n "\$run" ] || { echo "no finished CI run found within 40 first-parent commits of \$rev"; exit 1; }
-echo "revision \$(git -C "\$repo" rev-parse --short "\$rev"); CI run \$run on commit \${at:0:9}"
+$finished_ci_run_lookup
 gh run view "\$run" -R LetPeopleWork/Lighthouse --json jobs \\
   -q '.jobs[] | select(.name=="Verify Backend / backend") | "backend job: \(.conclusion)"'
 work=\$(mktemp -d); trap 'rm -rf "\$work"' EXIT
@@ -1664,6 +1672,26 @@ awk 'NR == FNR { cls[\$2] = \$1; next }
   }' "\$classes" "\$work/test-timings-backend.csv"
 EOF
 chmod +x "$out/ci-live-suites-show"
+
+cat > "$out/ci-auth-suites-show" <<EOF
+#!/usr/bin/env bash
+# Shows, for the newest finished "Build And Deploy Lighthouse" run (one parked at the release approval counts as
+# finished) at or before a revision, how the live authentication, RBAC and proxy-auth runs did in CI: the result of
+# the Verify Authentication job, then one line per Playwright step with the result the run records for that step.
+# A step the run does not have is shown as missing, never as passed. Commits that change only documents start no
+# run, so earlier first-parent commits are tried in turn.
+# Usage: ci-auth-suites-show [revision]   (default HEAD; takes about 10 seconds)
+set -euo pipefail
+export HOME="$home"
+repo="$repo"
+$finished_ci_run_lookup
+gh run view "\$run" -R LetPeopleWork/Lighthouse --json jobs -q '
+  ([.jobs[] | select(.name=="Verify Authentication / verifyauth")][0] // {conclusion: "missing", steps: []}) as \$job
+  | "Verify Authentication job: \(\$job.conclusion // "missing")",
+    ("Run Auth Playwright tests", "Run RBAC Playwright tests", "Run proxied-auth Playwright tests"
+     | . as \$name | "\(\$name): \(([\$job.steps[]? | select(.name==\$name)][0].conclusion) // "missing")")'
+EOF
+chmod +x "$out/ci-auth-suites-show"
 
 cat > "$out/test-selection-show" <<EOF
 #!/usr/bin/env bash

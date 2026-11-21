@@ -69,6 +69,10 @@
       "path": "Scripts/examine/bin/ci-live-suites-show"
     },
     {
+      "name": "ci-auth-suites-show",
+      "path": "Scripts/examine/bin/ci-auth-suites-show"
+    },
+    {
       "name": "test-selection-show",
       "path": "Scripts/examine/bin/test-selection-show"
     },
