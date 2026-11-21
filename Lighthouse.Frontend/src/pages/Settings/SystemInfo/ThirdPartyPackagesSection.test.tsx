@@ -17,6 +17,7 @@ import {
 	resetTheCut,
 	resetTheWindow,
 	thenALongTextIsCutToItsColumn,
+	thenHoveringOverItOpensNoTooltip,
 	thenTheColumnIsShownWhole,
 	thenTheFullTextIsInATooltip,
 	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
@@ -397,5 +398,11 @@ describe("the third-party packages table fits its columns and says when some are
 		whenThePersonReachesWithTheKeyboard(screen.getByText(LONG_NAME));
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("opens no tooltip over a package name that fits its column", async () => {
+		await whenThePackagesShow();
+
+		await thenHoveringOverItOpensNoTooltip(screen.getByText(LONG_NAME));
 	});
 });

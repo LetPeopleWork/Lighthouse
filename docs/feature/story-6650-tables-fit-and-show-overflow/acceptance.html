@@ -574,6 +574,58 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>The Feature list shows a Feature that waits on two others, and the Dependencies column is narrower than the list
+</code></pre>
+
+<pre><code>The dependency list is cut to its column with an ellipsis instead of wrapping; hovering or tabbing to it opens a tooltip that names every dependency (for example DEP-1: Card payments gateway cutover, DEP-2: Ledger export to the data warehouse, joined by commas); a list that fits opens no tooltip
+</code></pre>
+
+<pre><code>A person with a long dependency list sees a one-line row and can still read every dependency by hovering or keyboard focus
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx</p>
+
+<pre><code>the cell is cut but the tooltip shows only the count, or the tooltip names only the first dependency, or it opens even when the list fits
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P10</p>
+
+<pre><code>The Feature picker, Work Item dialog, archived Feature table, Connections, third-party packages and Refinement tables each show a name that fits its column, and the person hovers over it
+</code></pre>
+
+<pre><code>No tooltip opens over text that is not cut
+</code></pre>
+
+<pre><code>A person is not shown a tooltip that repeats text already shown in full
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.test.tsx</p>
+
+<pre><code>a table opens a tooltip over every name whether or not it is cut
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

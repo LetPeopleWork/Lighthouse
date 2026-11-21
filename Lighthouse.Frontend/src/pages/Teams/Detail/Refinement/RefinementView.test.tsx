@@ -21,6 +21,7 @@ import {
 	resetTheCut,
 	resetTheWindow,
 	thenALongTextIsCutToItsColumn,
+	thenHoveringOverItOpensNoTooltip,
 	thenTheColumnIsShownWhole,
 	thenTheFullTextIsInATooltip,
 	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
@@ -574,5 +575,13 @@ describe("the Refinement table fits its columns and says when some are out of si
 		);
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("opens no tooltip over a Work Item name that fits its column", async () => {
+		await whenTheRefinementTabShowsALongNamedWorkItem();
+
+		await thenHoveringOverItOpensNoTooltip(
+			screen.getByText(`GR-058: ${LONG_NAME}`),
+		);
 	});
 });

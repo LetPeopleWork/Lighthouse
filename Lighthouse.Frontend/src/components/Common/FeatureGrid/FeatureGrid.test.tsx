@@ -9,6 +9,7 @@ import {
 	resetTheCut,
 	resetTheWindow,
 	thenALongTextIsCutToItsColumn,
+	thenHoveringOverItOpensNoTooltip,
 	thenTheColumnIsShownWhole,
 	thenTheFullTextIsInATooltip,
 	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
@@ -376,5 +377,11 @@ describe("the Feature picker table fits its columns and says when some are out o
 		whenThePersonReachesWithTheKeyboard(screen.getByText(LONG_NAME));
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("opens no tooltip over a Feature name that fits its column", async () => {
+		whenThePickerShows();
+
+		await thenHoveringOverItOpensNoTooltip(screen.getByText(LONG_NAME));
 	});
 });

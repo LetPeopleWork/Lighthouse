@@ -485,6 +485,66 @@ The Refinement vote columns are not asserted as actions, so leaving them unpinne
 
 
 
+##### Covers
+
+P10
+
+```text
+The Feature list shows a Feature that waits on two others, and the Dependencies column is narrower than the list
+```
+
+```text
+The dependency list is cut to its column with an ellipsis instead of wrapping; hovering or tabbing to it opens a tooltip that names every dependency (for example DEP-1: Card payments gateway cutover, DEP-2: Ledger export to the data warehouse, joined by commas); a list that fits opens no tooltip
+```
+
+```text
+A person with a long dependency list sees a one-line row and can still read every dependency by hovering or keyboard focus
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureListDataGrid\/FeatureListDataGrid\.test\.tsx
+
+```text
+the cell is cut but the tooltip shows only the count, or the tooltip names only the first dependency, or it opens even when the list fits
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P10
+
+```text
+The Feature picker, Work Item dialog, archived Feature table, Connections, third-party packages and Refinement tables each show a name that fits its column, and the person hovers over it
+```
+
+```text
+No tooltip opens over text that is not cut
+```
+
+```text
+A person is not shown a tooltip that repeats text already shown in full
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/FeatureGrid\/FeatureGrid\.test\.tsx
+
+```text
+a table opens a tooltip over every name whether or not it is cut
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

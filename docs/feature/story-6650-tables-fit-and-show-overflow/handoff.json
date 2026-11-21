@@ -260,6 +260,32 @@
 "expected": "F332",
 "stimulus": "F331",
 "user_result": "F333"
+},
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F342",
+"test": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx"
+},
+"expected": "F340",
+"stimulus": "F339",
+"user_result": "F341"
+},
+{
+"covers": [
+"P10"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F346",
+"test": "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.test.tsx"
+},
+"expected": "F344",
+"stimulus": "F343",
+"user_result": "F345"
 }
 ]
 },
@@ -267,7 +293,7 @@
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 338,
+"F": 346,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1461,7 +1487,15 @@
 "F336": "Long text, including a parent name once its title has loaded, is cut to its column and its full text shows in a tooltip on hover and on keyboard focus; numbers, dates and states show whole and open no tooltip; text that fits opens no tooltip; the table says columns are out of sight on its right",
 "F337": "The person sees every table fit its columns, sees the cue where columns are hidden and can read a cut name or parent in full",
 "F338": "A long Dependencies column (content, declared width 260 by design) that wraps or overflows would still pass; a tooltip showing the parent reference instead of its title is refused by the Refinement and Feature list parent tooltip checks",
+"F339": "The Feature list shows a Feature that waits on two others, and the Dependencies column is narrower than the list",
 "F34": "the person opens it",
+"F340": "The dependency list is cut to its column with an ellipsis instead of wrapping; hovering or tabbing to it opens a tooltip that names every dependency (for example DEP-1: Card payments gateway cutover, DEP-2: Ledger export to the data warehouse, joined by commas); a list that fits opens no tooltip",
+"F341": "A person with a long dependency list sees a one-line row and can still read every dependency by hovering or keyboard focus",
+"F342": "the cell is cut but the tooltip shows only the count, or the tooltip names only the first dependency, or it opens even when the list fits",
+"F343": "The Feature picker, Work Item dialog, archived Feature table, Connections, third-party packages and Refinement tables each show a name that fits its column, and the person hovers over it",
+"F344": "No tooltip opens over text that is not cut",
+"F345": "A person is not shown a tooltip that repeats text already shown in full",
+"F346": "a table opens a tooltip over every name whether or not it is cut",
 "F35": "its columns fit and truncate as on the report list, and a cue shows when columns still overflow. Falsifier: the Overview table still hides its last column with no cue.",
 "F36": "Remaining tables behave the same",
 "F37": "the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables",

@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IEntityReference } from "../../../models/EntityReference";
 import { Feature } from "../../../models/Feature";
+import type { IFeatureDependency } from "../../../models/FeatureDependency";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import {
 	givenANarrowWindow,
@@ -595,20 +596,43 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 		localStorage.clear();
 	});
 
+	const FIRST_DEPENDENCY = "DEP-1: Card payments gateway cutover";
+	const SECOND_DEPENDENCY = "DEP-2: Ledger export to the data warehouse";
+
+	const aDependency = (
+		referenceId: string,
+		name: string,
+	): IFeatureDependency => ({
+		referenceId,
+		name,
+		url: null,
+		source: "TrackerLink",
+		notHonouredReason: null,
+		blockerPositionedBelow: false,
+		isWithheld: false,
+	});
+
+	const aFeatureWaitingOnTwoOthers = (): Feature => {
+		const feature = createFeature({
+			id: 1,
+			name: LONG_NAME,
+			referenceId: "FTR-1",
+			stateCategory: "Doing",
+			position: 3,
+			parentWorkItemReference: "PRG-7",
+		});
+		feature.dependsOn = [
+			aDependency("DEP-1", "Card payments gateway cutover"),
+			aDependency("DEP-2", "Ledger export to the data warehouse"),
+		];
+		return feature;
+	};
+
 	const whenTheFeatureListShows = () =>
 		render(
 			<MemoryRouter>
 				<FeatureListDataGrid
-					features={[
-						createFeature({
-							id: 1,
-							name: LONG_NAME,
-							referenceId: "FTR-1",
-							stateCategory: "Doing",
-							position: 3,
-							parentWorkItemReference: "PRG-7",
-						}),
-					]}
+					features={[aFeatureWaitingOnTwoOthers()]}
 					columns={[
 						createNameColumn("Feature"),
 						createParentColumn(parents),
@@ -685,5 +709,38 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 		whenThePersonReachesWithTheKeyboard(screen.getByText(SHOWN_NAME));
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("cuts a long dependency list to its column", () => {
+		givenTextIsWiderThanItsColumn();
+		const { container } = whenTheFeatureListShows();
+
+		thenALongTextIsCutToItsColumn(container, "dependsOn");
+	});
+
+	it("names every dependency in a tooltip when the person hovers over a cut dependency list", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheFeatureListShows();
+
+		whenThePersonHoversOver(screen.getByText(FIRST_DEPENDENCY));
+
+		await thenTheFullTextIsInATooltip(FIRST_DEPENDENCY);
+		await thenTheFullTextIsInATooltip(SECOND_DEPENDENCY);
+	});
+
+	it("names every dependency in a tooltip when the person reaches a cut dependency list with the keyboard", async () => {
+		givenTextIsWiderThanItsColumn();
+		whenTheFeatureListShows();
+
+		whenThePersonReachesWithTheKeyboard(screen.getByText(FIRST_DEPENDENCY));
+
+		await thenTheFullTextIsInATooltip(FIRST_DEPENDENCY);
+		await thenTheFullTextIsInATooltip(SECOND_DEPENDENCY);
+	});
+
+	it("opens no tooltip over a dependency list that fits its column", async () => {
+		whenTheFeatureListShows();
+
+		await thenHoveringOverItOpensNoTooltip(screen.getByText(FIRST_DEPENDENCY));
 	});
 });

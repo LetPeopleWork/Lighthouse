@@ -7,6 +7,7 @@ import {
 	resetTheCut,
 	resetTheWindow,
 	thenALongTextIsCutToItsColumn,
+	thenHoveringOverItOpensNoTooltip,
 	thenTheFullTextIsInATooltip,
 	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
 	whenThePersonHoversOver,
@@ -187,5 +188,11 @@ describe("the archived Feature table fits its columns and says when some are out
 		whenThePersonReachesWithTheKeyboard(screen.getByText(SHOWN_NAME));
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("opens no tooltip over a Feature name that fits its column", async () => {
+		renderGrid(aRecordWithALongNamedFeature());
+
+		await thenHoveringOverItOpensNoTooltip(screen.getByText(SHOWN_NAME));
 	});
 });

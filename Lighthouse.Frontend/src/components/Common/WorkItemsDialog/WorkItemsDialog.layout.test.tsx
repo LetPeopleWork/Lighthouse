@@ -7,6 +7,7 @@ import {
 	resetTheCut,
 	resetTheWindow,
 	thenALongTextIsCutToItsColumn,
+	thenHoveringOverItOpensNoTooltip,
 	thenTheColumnIsShownWhole,
 	thenTheFullTextIsInATooltip,
 	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
@@ -289,5 +290,13 @@ describe("the Work Item dialog fits its columns and says when some are out of si
 		);
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("opens no tooltip over a Work Item name that fits its column", async () => {
+		whenTheDialogOpensOnALongNamedFeature();
+
+		await thenHoveringOverItOpensNoTooltip(
+			within(theDialog()).getByText(LONG_NAME),
+		);
 	});
 });

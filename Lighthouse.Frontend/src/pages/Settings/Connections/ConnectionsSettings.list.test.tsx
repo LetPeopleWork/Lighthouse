@@ -23,6 +23,7 @@ import {
 	resetTheCut,
 	resetTheWindow,
 	thenALongTextIsCutToItsColumn,
+	thenHoveringOverItOpensNoTooltip,
 	thenTheActionsColumnIsPinnedAndLast,
 	thenTheColumnIsShownWhole,
 	thenTheFullTextIsInATooltip,
@@ -213,5 +214,11 @@ describe("the Connections table fits its columns, pins its actions and says when
 		whenThePersonReachesWithTheKeyboard(screen.getByText(LONG_NAME));
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
+	});
+
+	it("opens no tooltip over a connection name that fits its column", async () => {
+		await whenTheConnectionsShow();
+
+		await thenHoveringOverItOpensNoTooltip(screen.getByText(LONG_NAME));
 	});
 });
