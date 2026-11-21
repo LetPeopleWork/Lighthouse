@@ -37,7 +37,7 @@ testWithFeatures(
 		// next. Seeded Features have no address in a tracker to link to, so what is read here is the
 		// naming.
 		const dependencies = featuresPage.getDependenciesCell(THE_DEPENDENT);
-		await expect(dependencies).toBeVisible();
+		await expect(dependencies).toContainText(ONE_OF_ITS_BLOCKERS);
 		await expect(dependencies).toContainText(THE_OTHER_BLOCKER);
 
 		await expect(

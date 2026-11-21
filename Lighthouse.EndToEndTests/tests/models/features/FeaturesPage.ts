@@ -107,6 +107,7 @@ export class FeaturesPage {
 		await this.getDependenciesCell(featureName).hover();
 	}
 
+	/** A tooltip is drawn outside the grid, at the end of the page, so it cannot be found inside the cell. */
 	tooltipNaming(text: string): Locator {
 		return this.page.getByRole("tooltip", { name: text });
 	}
