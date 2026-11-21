@@ -37,6 +37,10 @@
       "path": "Scripts/examine/bin/deliveries-answers-compare"
     },
     {
+      "name": "access-answers-compare",
+      "path": "Scripts/examine/bin/access-answers-compare"
+    },
+    {
       "name": "workitems-edge-show",
       "path": "Scripts/examine/bin/workitems-edge-show"
     },
@@ -71,6 +75,10 @@
     {
       "name": "deliveries-answers-selftest",
       "path": "Scripts/examine/bin/deliveries-answers-selftest"
+    },
+    {
+      "name": "access-answers-selftest",
+      "path": "Scripts/examine/bin/access-answers-selftest"
     }
   ],
   "build": "Scripts/examine/build-examine-commands"
