@@ -8,12 +8,26 @@ interface ParentWorkItemCellProps {
 	parentMap: Map<string, ParentWorkItem>;
 }
 
+export const NO_PARENT_TEXT = "No Parent";
+
+/** The text a person reads for a parent: its title when known, else its reference, else "No Parent". */
+export const parentWorkItemText = (
+	parentReference: string | null | undefined,
+	parentMap: Map<string, ParentWorkItem>,
+): string => {
+	if (!parentReference) return NO_PARENT_TEXT;
+	const parentInfo = parentMap.get(parentReference);
+	return parentInfo
+		? getWorkItemName(parentInfo.name, parentInfo.referenceId)
+		: parentReference;
+};
+
 const ParentWorkItemCell: React.FC<ParentWorkItemCellProps> = ({
 	parentReference,
 	parentMap,
 }) => {
 	if (!parentReference) {
-		return <Box sx={{ color: "text.secondary" }}>No Parent</Box>;
+		return <Box sx={{ color: "text.secondary" }}>{NO_PARENT_TEXT}</Box>;
 	}
 
 	const parentInfo = parentMap.get(parentReference);
@@ -27,7 +41,7 @@ const ParentWorkItemCell: React.FC<ParentWorkItemCellProps> = ({
 					rel="noopener noreferrer"
 					sx={{ textDecoration: "none" }}
 				>
-					{getWorkItemName(parentInfo.name, parentInfo.referenceId)}
+					{parentWorkItemText(parentReference, parentMap)}
 				</Link>
 			</Box>
 		);

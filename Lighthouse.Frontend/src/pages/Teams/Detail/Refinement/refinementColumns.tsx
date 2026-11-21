@@ -5,7 +5,9 @@ import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import type { DataGridColumn } from "../../../../components/Common/DataGrid/types";
 import { createNameColumn } from "../../../../components/Common/FeatureListDataGrid/columns";
-import ParentWorkItemCell from "../../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
+import ParentWorkItemCell, {
+	parentWorkItemText,
+} from "../../../../components/Common/ParentWorkItemCell/ParentWorkItemCell";
 import WarningsIcon from "../../../../components/Common/WarningsIcon/WarningsIcon";
 import type { ParentWorkItem } from "../../../../hooks/useParentWorkItems";
 import type {
@@ -115,7 +117,10 @@ export const createRefinementColumns = ({
 		field: "parentReferenceId",
 		headerName: "Parent",
 		width: 300,
+		fit: { kind: "text" },
 		sortable: false,
+		valueGetter: (_, row) =>
+			parentWorkItemText(row.parentReferenceId, parentMap),
 		renderCell: ({ row }) => (
 			<ParentWorkItemCell
 				parentReference={row.parentReferenceId}

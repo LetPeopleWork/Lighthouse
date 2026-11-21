@@ -133,6 +133,7 @@ const ConnectionsList: React.FC<{
 				field: "actions",
 				headerName: "Actions",
 				width: 150,
+				fit: { kind: "actions" },
 				sortable: false,
 				hideable: false,
 				renderCell: ({ row }) => (

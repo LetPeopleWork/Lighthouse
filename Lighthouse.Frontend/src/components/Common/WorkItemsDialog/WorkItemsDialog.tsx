@@ -250,6 +250,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				field: "owningTeam",
 				headerName: "Owned by",
 				width: 150,
+				fit: { kind: "text" },
 				renderCell: ({ row }) => {
 					return isFeatureRow(row) ? row.owningTeam : "";
 				},

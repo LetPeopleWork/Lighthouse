@@ -22,7 +22,9 @@ import {
 import type { DataGridColumn } from "../DataGrid/types";
 import FeatureName from "../FeatureName/FeatureName";
 import ForecastInfoList from "../Forecasts/ForecastInfoList";
-import ParentWorkItemCell from "../ParentWorkItemCell/ParentWorkItemCell";
+import ParentWorkItemCell, {
+	parentWorkItemText,
+} from "../ParentWorkItemCell/ParentWorkItemCell";
 import ActiveWorkIndicator from "./ActiveWorkIndicator";
 import FeatureMoveMenu from "./FeatureMoveMenu";
 import ForecastedStartCell from "./ForecastedStartCell";
@@ -112,6 +114,7 @@ export const createFeatureOrderingActionsColumn = (
 	field: "featureOrderingActions",
 	headerName: "",
 	width: 60,
+	fit: { kind: "actions" },
 	sortable: false,
 	filterable: false,
 	renderCell: ({ row }) => (
@@ -255,7 +258,10 @@ export const createParentColumn = (
 	field: "parent",
 	headerName: "Parent",
 	width: 300,
+	fit: { kind: "text" },
 	sortable: false,
+	valueGetter: (_, row) =>
+		parentWorkItemText(row.parentWorkItemReference, parentMap),
 	renderCell: ({ row }) => (
 		<Box>
 			<ParentWorkItemCell
