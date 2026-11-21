@@ -629,23 +629,18 @@ describe("the Feature list table fits its columns, pins its move menu and says w
 	};
 
 	const thenEachDependencyLineIsCut = (line: string) => {
-		const cell = screen
+		const dependencyLine = screen
 			.getByText(line)
-			.closest<HTMLElement>('[role="gridcell"]');
-		const lineAndItsWrappers: HTMLElement[] = [];
-		for (
-			let element: HTMLElement | null = screen.getByText(line);
-			element !== null && element !== cell;
-			element = element.parentElement
-		) {
-			lineAndItsWrappers.push(element);
-		}
+			.closest<HTMLElement>('[data-testid="depends-on-FTR-1"]');
 		expect(
-			lineAndItsWrappers.some(
-				(element) => getComputedStyle(element).textOverflow === "ellipsis",
-			),
-			`the dependency "${line}" must end with an ellipsis on its own line when it is wider than the column, as every other dependency does`,
-		).toBe(true);
+			dependencyLine,
+			`the dependency "${line}" must be drawn as a line of its own`,
+		).not.toBeNull();
+		const style = getComputedStyle(dependencyLine as HTMLElement);
+		expect(
+			[style.textOverflow, style.whiteSpace, style.overflow],
+			`the dependency line "${line}" itself must stay on one line and end with an ellipsis when it is wider than the column, as every other dependency does; a cut wrapper around it would let it run on and be seen cut, or not at all`,
+		).toEqual(["ellipsis", "nowrap", "hidden"]);
 	};
 
 	const whenTheFeatureListShows = () =>

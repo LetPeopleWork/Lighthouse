@@ -37,11 +37,53 @@ testWithFeatures(
 		// next. Seeded Features have no address in a tracker to link to, so what is read here is the
 		// naming.
 		const dependencies = featuresPage.getDependenciesCell(THE_DEPENDENT);
-		await expect(dependencies).toContainText(ONE_OF_ITS_BLOCKERS);
+		await expect(dependencies).toBeVisible();
 		await expect(dependencies).toContainText(THE_OTHER_BLOCKER);
 
 		await expect(
 			featuresPage.getDependenciesCell(THE_OTHER_BLOCKER),
 		).toHaveText("");
+	},
+);
+
+// A narrow window leaves the Dependencies column narrower than the names it lists. Each dependency
+// keeps a line of its own, cut with an ellipsis inside the cell, and the hover names all of them.
+testWithFeatures(
+	"a product owner on a narrow window sees each dependency cut on its own line and reads them all in full on hover",
+	async ({ testData, overviewPage }) => {
+		expect(testData.portfolios.length).toBeGreaterThan(0);
+		const featuresPage =
+			await overviewPage.lighthousePage.goToFeatures("Features");
+		await expect(featuresPage.featureRows.first()).toBeVisible();
+		await overviewPage.lighthousePage.page.setViewportSize({
+			width: 800,
+			height: 900,
+		});
+		await expect(
+			featuresPage.getDependenciesCell(THE_DEPENDENT),
+			"the Features list must have drawn the dependent's Dependencies cell",
+		).toBeVisible();
+
+		const lines = featuresPage.dependencyLinesOf(THE_DEPENDENT);
+		await expect(lines, "one line per dependency").toHaveCount(2);
+		for (const index of [0, 1]) {
+			await expect
+				.poll(() => featuresPage.describeDependencyLine(THE_DEPENDENT, index), {
+					message: `dependency ${index + 1} must be cut to its column with an ellipsis, on one line, inside the cell`,
+				})
+				.toEqual({
+					isCut: true,
+					endsWithEllipsis: true,
+					isOneLine: true,
+					endsInsideCell: true,
+				});
+		}
+
+		await featuresPage.hoverDependenciesOf(THE_DEPENDENT);
+		await expect(
+			featuresPage.tooltipNaming(ONE_OF_ITS_BLOCKERS),
+			"hovering the cut list must name every dependency",
+		).toBeVisible();
+		await expect(featuresPage.tooltipNaming(THE_OTHER_BLOCKER)).toBeVisible();
 	},
 );

@@ -60,6 +60,57 @@ export class FeaturesPage {
 		return this.getFeatureRow(featureName).locator('[data-field="dependsOn"]');
 	}
 
+	/** One line per dependency the row waits on, as the Dependencies cell draws them. */
+	dependencyLinesOf(featureName: string): Locator {
+		return this.getDependenciesCell(featureName).locator(
+			'[data-testid^="depends-on-"]',
+		);
+	}
+
+	/**
+	 * What the person sees of one dependency line: whether it is cut and ends with an ellipsis, whether it stays on a single
+	 * line, and whether its right edge stays inside the Dependencies cell that holds it.
+	 */
+	async describeDependencyLine(
+		featureName: string,
+		index: number,
+	): Promise<{
+		isCut: boolean;
+		endsWithEllipsis: boolean;
+		isOneLine: boolean;
+		endsInsideCell: boolean;
+	}> {
+		const cell = this.getDependenciesCell(featureName);
+		const cellBox = await cell.boundingBox();
+		return this.dependencyLinesOf(featureName)
+			.nth(index)
+			.evaluate(
+				(line, cellRight) => {
+					const box = line.getBoundingClientRect();
+					const lineHeight = Number.parseFloat(
+						getComputedStyle(line).lineHeight,
+					);
+					return {
+						isCut: line.scrollWidth > line.clientWidth,
+						endsWithEllipsis:
+							getComputedStyle(line).textOverflow === "ellipsis" &&
+							getComputedStyle(line).overflow === "hidden",
+						isOneLine: box.height <= lineHeight + 1,
+						endsInsideCell: cellRight !== null && box.right <= cellRight + 1,
+					};
+				},
+				cellBox === null ? null : cellBox.x + cellBox.width,
+			);
+	}
+
+	async hoverDependenciesOf(featureName: string): Promise<void> {
+		await this.getDependenciesCell(featureName).hover();
+	}
+
+	tooltipNaming(text: string): Locator {
+		return this.page.getByRole("tooltip", { name: text });
+	}
+
 	/**
 	 * When work on a Feature is expected to begin, as the Forecasted Start column renders it. Addressed
 	 * by the column rather than by what it prints, for the same reason the dependencies cell is: the

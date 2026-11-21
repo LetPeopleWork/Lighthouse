@@ -62,3 +62,16 @@ Run with `-t "cuts a long"`; each failed the same test that also holds the cut c
 | Work Item dialog (state) | same test |
 | Work Item dialog (closed date, `dayColumn` width 130) | same test |
 | Feature picker (state) | FeatureGrid "cuts a long Feature name to its column, shows the state whole ..." |
+
+## (e) Each dependency line cut
+
+Break: in `TruncatedCell.tsx` the `"& *": ONE_LINE_WITH_ELLIPSIS,` rule is deleted, so only the cell's outer box cuts and the dependency lines inside it carry no ellipsis of their own.
+
+| Layer | Command | Failing test | Message |
+|---|---|---|---|
+| jsdom | `pnpm exec vitest run src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx` (Lighthouse.Frontend) | "cuts a long dependency list to its column" (1 failed, 32 passed) | the dependency line "DEP-1: Card payments gateway cutover" itself must stay on one line and end with an ellipsis ...: expected [ 'clip', 'nowrap', 'visible' ] to deeply equal [ 'ellipsis', 'nowrap', 'hidden' ] |
+| browser | `pnpm build` in Lighthouse.Frontend, then `pnpm exec playwright test tests/specs/features/FeatureDependencies.spec.ts --project=chromium -g "narrow window"` (Lighthouse.EndToEndTests, dev backend on 5169) | "a product owner on a narrow window sees each dependency cut on its own line and reads them all in full on hover" | dependency 1 must be cut to its column with an ellipsis, on one line, inside the cell: endsWithEllipsis expected true, received false (isCut, isOneLine, endsInsideCell stayed true) |
+
+A first version of the browser check, without the ellipsis field, stayed green under this break (the cell's outer box already clips); the ellipsis field is what makes it fail.
+
+Restored with `git checkout`; `git diff --stat` showed no change under src/components/Common/DataGrid. After the restore: the jsdom folder run was 13 files, 161 tests green; after a rebuild the browser spec was 2 passed.
