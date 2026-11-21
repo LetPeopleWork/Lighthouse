@@ -185,6 +185,75 @@ It still passes a widening that matches nothing at all today; the module-place c
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+The architecture rule tests read the compiled code and compare the Access and Licensing types they find, in the old Services Auth, Authorization and Licensing namespaces and under Modules.Access and Modules.Licensing, with the measured lists of each module and layer, and judge the seven named shared Models candidates against the four admission conditions.
+```
+
+```text
+On today's code every listed type is found once in its old or new namespace and no unlisted type appears; Domain types reach only the shared Models and the base library and Application classes reach more; four candidates are admitted and the other three are left out naming the condition they fail. A missing listed type, a made-up listed name, an unlisted type, a Domain type reaching the Application or the platform, or a shared short name in two namespaces fails and is named.
+```
+
+```text
+The move of Access and Licensing has one fixed, measured list of what moves and to which layer; any drift from it fails a test that names the type.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessAndLicensingMembershipArchUnitTest\.cs
+
+```text
+A type that moves to the wrong layer of the right module after the move, since before the move the lists and not the namespaces carry the layer; the module layout rules of the later feature own that.
+```
+
+###### Obligations
+
+
+
+
+
+
+
+
+
+
+
+##### Covers
+
+P5
+
+```text
+The slice adds only a test and its list; the whole backend is built and its test suite run without the live tracker categories.
+```
+
+```text
+The backend builds with no warnings, no production file changes, and every existing backend test stays green next to the new membership test.
+```
+
+```text
+Nothing a user, a tracker or the database sees changes.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend \(full backend suite\, live tracker categories excluded\)
+
+```text
+A production change no existing test observes; the diff of the slice, which touches only the two test files, rules that out.
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

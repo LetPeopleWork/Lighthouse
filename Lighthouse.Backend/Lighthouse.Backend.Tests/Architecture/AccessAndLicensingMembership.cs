@@ -1,0 +1,73 @@
+namespace Lighthouse.Backend.Tests.Architecture
+{
+    /// <summary>
+    /// The types that make up Access and Licensing, measured from the compiled code, by name without their namespace so the
+    /// same lists hold before and after the move into Modules/Access and Modules/Licensing. Each list is the layer the type
+    /// goes to: Domain reaches only the shared Models and the base library, Adapters.Http holds the ASP.NET pieces, and
+    /// Application holds the rest, the interfaces included. ModelsTypesThatMoveIntoAccess holds the shared Models types Access
+    /// may take with it. A name the code holds twice is written with its namespace.
+    /// </summary>
+    internal static class AccessAndLicensingMembership
+    {
+        public static IReadOnlyList<string> AccessDomain { get; } =
+        [
+            "ApiKeyPrincipalFactory",
+            "EmbedHandshakeOutcome",
+            "FeatureReadability",
+            "GroupClaimParser",
+        ];
+
+        public static IReadOnlyList<string> AccessApplication { get; } =
+        [
+            "ApiKeyService",
+            "AuthConfigurationValidator",
+            "AuthModeResolver",
+            "CurrentUserProfileService",
+            "EmbedSessionTokenService",
+            "FeatureMoveAuthorization",
+            "IApiKeyService",
+            "IAuthConfigurationValidator",
+            "IAuthModeResolver",
+            "ICurrentUserProfileService",
+            "IEmbedSessionTokenService",
+            "IFeatureMoveAuthorization",
+            "IOidcGroupSnapshotWriter",
+            "IRbacAdministrationService",
+            "OidcGroupSnapshotWriter",
+            "RbacAdministrationService",
+        ];
+
+        public static IReadOnlyList<string> AccessAdaptersHttp { get; } =
+        [
+            "AccessMarkerAttribute",
+            "ApiKeyAuthenticationHandler",
+            "BlockedModeFilter",
+            "CheckedInHandlerAttribute",
+            "DisabledAuthenticationHandler",
+            "RbacGuardAttribute",
+            "SignedInOnlyAttribute",
+            "SmartAuthSchemeSelector",
+        ];
+
+        public static IReadOnlyList<string> LicensingApplication { get; } =
+        [
+            "ILicenseService",
+            "ILicenseVerifier",
+            "LicenseService",
+            "LicenseVerifier",
+        ];
+
+        public static IReadOnlyList<string> LicensingAdaptersHttp { get; } =
+        [
+            "LicenseGuardAttribute",
+        ];
+
+        public static IReadOnlyList<string> ModelsTypesThatMoveIntoAccess { get; } =
+        [
+            "ApiKeyOwnerResolutionState",
+            "ApiKeyValidationResult",
+            "AuthConfigurationValidationResult",
+            "EffectiveAccess",
+        ];
+    }
+}

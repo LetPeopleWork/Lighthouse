@@ -104,12 +104,55 @@
 "stimulus": "F189",
 "user_result": "F191"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"L2/F121",
+"L2/F122",
+"L2/F123",
+"L2/F124",
+"L2/F125",
+"L2/F126",
+"L2/F127",
+"L2/F128",
+"T2"
+],
+"still_passes_if": "F196",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs"
+},
+"expected": "F194",
+"stimulus": "F193",
+"user_result": "F195"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F199",
+"test": "Lighthouse.Backend (full backend suite, live tracker categories excluded)"
+},
+"expected": "F198",
+"stimulus": "F197",
+"user_result": "F191"
+}
 ]
 },
 "counters": {
 "D": 12,
 "E": 5,
-"F": 192,
+"F": 199,
 "K": 5,
 "L": 4,
 "P": 5,
@@ -954,6 +997,13 @@
 "F190": "No existing rule names a new offender and every existing test stays green; the module map's Access and Licensing group is still not empty.",
 "F191": "Nothing a user, a tracker or the database sees changes.",
 "F192": "It still passes a widening that matches nothing at all today; the module-place checks in this oracle catch that. A widening that loosens a rule or drops an old alternative turns an existing test red.",
+"F193": "The architecture rule tests read the compiled code and compare the Access and Licensing types they find, in the old Services Auth, Authorization and Licensing namespaces and under Modules.Access and Modules.Licensing, with the measured lists of each module and layer, and judge the seven named shared Models candidates against the four admission conditions.",
+"F194": "On today's code every listed type is found once in its old or new namespace and no unlisted type appears; Domain types reach only the shared Models and the base library and Application classes reach more; four candidates are admitted and the other three are left out naming the condition they fail. A missing listed type, a made-up listed name, an unlisted type, a Domain type reaching the Application or the platform, or a shared short name in two namespaces fails and is named.",
+"F195": "The move of Access and Licensing has one fixed, measured list of what moves and to which layer; any drift from it fails a test that names the type.",
+"F196": "A type that moves to the wrong layer of the right module after the move, since before the move the lists and not the namespaces carry the layer; the module layout rules of the later feature own that.",
+"F197": "The slice adds only a test and its list; the whole backend is built and its test suite run without the live tracker categories.",
+"F198": "The backend builds with no warnings, no production file changes, and every existing backend test stays green next to the new membership test.",
+"F199": "A production change no existing test observes; the diff of the slice, which touches only the two test files, rules that out.",
 "F2": "The Access and Licensing move can happen without any architecture rule silently losing sight of the code it guards",
 "F20": "A4: the ci-auth-suites-show examine command shows the Verify Authentication job and its authentication, RBAC and proxy-auth steps for a revision, a failed step as failed.",
 "F21": "The live authentication, RBAC and proxy-auth runs of the move push are visible at EXAMINE",
