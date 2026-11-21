@@ -285,13 +285,79 @@
 "stimulus": "F328",
 "user_result": "F330"
 }
+],
+"S4": [
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4",
+"L4/F258"
+],
+"still_passes_if": "F334",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingTestDataPlacementTest.cs"
+},
+"expected": "F333",
+"stimulus": "F332",
+"user_result": "F23"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4",
+"L4/F259"
+],
+"still_passes_if": "F338",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingTestDataPlacementTest.cs"
+},
+"expected": "F336",
+"stimulus": "F335",
+"user_result": "F337"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4",
+"L4/F260"
+],
+"still_passes_if": "F342",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingTestDataPlacementTest.cs"
+},
+"expected": "F340",
+"stimulus": "F339",
+"user_result": "F341"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "crafter and EXAMINE",
+"reason": "F346"
+},
+"expected": "F344",
+"stimulus": "F343",
+"user_result": "F345"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 8,
 "E": 6,
-"F": 331,
+"F": 346,
 "K": 3,
 "L": 4,
 "P": 6,
@@ -6270,7 +6336,22 @@
 "F33": "Namespace equals folder for every moved file. Approved oracle files of this feature are never edited, not even a using line; a crafter target is never an oracle support. One commit per slice; GREEN and every review run on a clean committed tree.",
 "F330": "The handler keeps its Warning level in development",
 "F331": "A second stale key left next to the new one",
+"F332": "The test assembly is read for the classes that hold the licence test data and the licence integration test",
+"F333": "Each exists once and lives in the Licensing module test namespace",
+"F334": "A second copy of the class is left in the old namespace and the name check counts only one of them",
+"F335": "The test output folder is searched for the two committed licence files",
+"F336": "Both are in the module folder and neither is in the old folder",
+"F337": "The licensing tests find their licence files where the module tree says they are",
+"F338": "The project file copies each file to both folders",
+"F339": "The ignore list, both workflows, the test project file and the examine builder are read from the repository root",
 "F34": "Input bounds: no stored or validated input changes and none is introduced; the licence JSON fixtures keep their bytes. Out of scope: module rules and the unit-test placement rule (feature C), repositories, seeders, entities, wire types, Access persistence ports, licence events.",
+"F340": "Each names at least one licence file, every named path is under the module test folder and none names the old folder, and the rule reports made-up content that names the old folder",
+"F341": "CI, local ignore rules and the live examine runs generate and read the licence file where the tests expect it",
+"F342": "A file whose licence line is split over two lines or built from a variable holding only the folder",
+"F343": "Existing licence, authentication and RBAC behaviour is exercised after the move",
+"F344": "Same answers as before",
+"F345": "Nothing a user sees changes",
+"F346": "This oracle observes placement only; behaviour is preserved by the existing licence unit and controller tests and the live authentication probes",
 "F35": "Producer and consumer ship in one deployable and change in the same commit; the move changes no wire or persisted shape, so the unchanged existing tests, access-answers-compare and the layout oracles cover it",
 "F36": "ArchUnit layout oracles reading the compiled Lighthouse.Backend assembly (IlDependencies and ModuleRules), the test assembly and its output folder; existing HTTP ports, ASP.NET authentication schemes and the application-service ports IRbacAdministrationService and ILicenseService unchanged",
 "F37": "none changed (repositories, LighthouseAppContext and the embedded licence key stay behind their existing access paths)",

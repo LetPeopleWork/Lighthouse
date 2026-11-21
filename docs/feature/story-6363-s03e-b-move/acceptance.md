@@ -500,6 +500,124 @@ A second stale key left next to the new one
 
 
 
+### S4
+
+##### Covers
+
+P4
+
+```text
+The test assembly is read for the classes that hold the licence test data and the licence integration test
+```
+
+```text
+Each exists once and lives in the Licensing module test namespace
+```
+
+```text
+The Licensing test tree matches the module one to one
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingTestDataPlacementTest\.cs
+
+```text
+A second copy of the class is left in the old namespace and the name check counts only one of them
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P4
+
+```text
+The test output folder is searched for the two committed licence files
+```
+
+```text
+Both are in the module folder and neither is in the old folder
+```
+
+```text
+The licensing tests find their licence files where the module tree says they are
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingTestDataPlacementTest\.cs
+
+```text
+The project file copies each file to both folders
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P4
+
+```text
+The ignore list, both workflows, the test project file and the examine builder are read from the repository root
+```
+
+```text
+Each names at least one licence file, every named path is under the module test folder and none names the old folder, and the rule reports made-up content that names the old folder
+```
+
+```text
+CI, local ignore rules and the live examine runs generate and read the licence file where the tests expect it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingTestDataPlacementTest\.cs
+
+```text
+A file whose licence line is split over two lines or built from a variable holding only the folder
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P6
+
+```text
+Existing licence, authentication and RBAC behaviour is exercised after the move
+```
+
+```text
+Same answers as before
+```
+
+```text
+Nothing a user sees changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+This oracle observes placement only; behaviour is preserved by the existing licence unit and controller tests and the live authentication probes
+```
+
+crafter and EXAMINE
+
 ## Expectations
 
 ### Rows

@@ -585,6 +585,108 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The test assembly is read for the classes that hold the licence test data and the licence integration test
+</code></pre>
+
+<pre><code>Each exists once and lives in the Licensing module test namespace
+</code></pre>
+
+<pre><code>The Licensing test tree matches the module one to one
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingTestDataPlacementTest.cs</p>
+
+<pre><code>A second copy of the class is left in the old namespace and the name check counts only one of them
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The test output folder is searched for the two committed licence files
+</code></pre>
+
+<pre><code>Both are in the module folder and neither is in the old folder
+</code></pre>
+
+<pre><code>The licensing tests find their licence files where the module tree says they are
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingTestDataPlacementTest.cs</p>
+
+<pre><code>The project file copies each file to both folders
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The ignore list, both workflows, the test project file and the examine builder are read from the repository root
+</code></pre>
+
+<pre><code>Each names at least one licence file, every named path is under the module test folder and none names the old folder, and the rule reports made-up content that names the old folder
+</code></pre>
+
+<pre><code>CI, local ignore rules and the live examine runs generate and read the licence file where the tests expect it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingTestDataPlacementTest.cs</p>
+
+<pre><code>A file whose licence line is split over two lines or built from a variable holding only the folder
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Existing licence, authentication and RBAC behaviour is exercised after the move
+</code></pre>
+
+<pre><code>Same answers as before
+</code></pre>
+
+<pre><code>Nothing a user sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>This oracle observes placement only; behaviour is preserved by the existing licence unit and controller tests and the live authentication probes
+</code></pre>
+
+<p>crafter and EXAMINE</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
