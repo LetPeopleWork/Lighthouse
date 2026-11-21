@@ -34,3 +34,13 @@ Notes:
 - Tags column minimum of 120 px, polled at 1280 px and at 375 px: green against current production. Break to run: set the Tags column to `fit: { kind: "text", minWidth: 40 }` in DataOverviewTable.tsx; the Tags poll must then fail. Not run in this pass.
 - The cue reading also fails when an aria-hidden, positioned, text-free overlay of ours inside the overflow root lacks data-side (the grid's own scrollbar track is excluded). Green today; break to run: drop `data-side` from the left cue in DataGridBase.tsx. Not run in this pass.
 - A Name focused at desktop width and the window narrowed to 375 px: RED, a real defect (see the report to the root); the Name cell (x 53..213) stays under the pinned actions column (starts at x 122) because no focus event follows the resize.
+
+## Deliberate breaks, phone actions menu (decision 7)
+
+Each break was one edit, one run of `pnpm exec vitest run src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx -t "<test>"` from `Lighthouse.Frontend`, then the file was restored from a copy (`cmp` identical) and the desktop test passed again.
+
+| Check | Break applied | Failing message | Restored |
+|---|---|---|---|
+| keeps the four action icons and no menu button on a desktop | the actions cell renders the menu whatever the width (`isMobile ?` became `true ?`) | `at desktop width the icons have room, so there is no menu button` | yes, green |
+| the menu leaves out Clone when the person may edit and delete but not clone | dropped the `canCloneRow` filter in the menu | `the menu must list exactly the actions the person may use ... expected [ Array(4) ] to deeply equal [ 'Details', 'Edit', 'Delete' ]` | yes, green |
+| opens the Delete confirmation for the row when Delete is chosen from the menu | Delete in the menu does nothing | `choosing Delete must ask for the confirmation of this very row, exactly once` | yes, green |

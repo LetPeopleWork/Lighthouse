@@ -1,0 +1,124 @@
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import {
+	ClickAwayListener,
+	IconButton,
+	MenuItem,
+	MenuList,
+	Paper,
+	Popper,
+	Tooltip,
+	useTheme,
+} from "@mui/material";
+import type React from "react";
+import { useRef, useState } from "react";
+
+interface RowActionsMenuProps {
+	rowName: string;
+	onDetails: () => void;
+	onEdit?: () => void;
+	onClone?: () => void;
+	onDelete?: () => void;
+}
+
+// The menu is drawn outside the grid, but React still passes its events up to the grid cell, which
+// would then focus the cell and scroll the table to its end.
+const keepFromTheGrid = (event: React.SyntheticEvent) =>
+	event.stopPropagation();
+
+const RowActionsMenu: React.FC<RowActionsMenuProps> = ({
+	rowName,
+	onDetails,
+	onEdit,
+	onClone,
+	onDelete,
+}) => {
+	const theme = useTheme();
+	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+	const button = useRef<HTMLButtonElement>(null);
+	const close = () => setAnchor(null);
+
+	const items: { label: string; run: (() => void) | undefined }[] = [
+		{ label: "Details", run: onDetails },
+		{ label: "Edit", run: onEdit },
+		{ label: "Clone", run: onClone },
+		{ label: "Delete", run: onDelete },
+	];
+
+	return (
+		<>
+			<Tooltip title="Actions">
+				<IconButton
+					size="small"
+					ref={button}
+					aria-label={`Actions for ${rowName}`}
+					aria-haspopup="menu"
+					aria-expanded={anchor !== null}
+					onClick={(event) => {
+						keepFromTheGrid(event);
+						setAnchor(event.currentTarget);
+					}}
+					onMouseDown={(event) => {
+						keepFromTheGrid(event);
+						// The browser would scroll the sticky button to where it sits before it sticks.
+						event.preventDefault();
+						event.currentTarget.focus({ preventScroll: true });
+					}}
+					onFocus={keepFromTheGrid}
+					onKeyDown={keepFromTheGrid}
+				>
+					<MoreVertIcon fontSize="small" />
+				</IconButton>
+			</Tooltip>
+			<Popper
+				open={anchor !== null}
+				anchorEl={anchor}
+				placement="bottom-end"
+				sx={{ zIndex: theme.zIndex.modal }}
+			>
+				<Paper
+					elevation={8}
+					onFocus={keepFromTheGrid}
+					onClick={keepFromTheGrid}
+					onMouseDown={(event) => {
+						keepFromTheGrid(event);
+						// The browser would scroll the sticky button to where it sits before it sticks.
+						event.preventDefault();
+						event.currentTarget.focus({ preventScroll: true });
+					}}
+					onKeyDown={keepFromTheGrid}
+				>
+					<ClickAwayListener onClickAway={close}>
+						<MenuList
+							autoFocusItem
+							onKeyDown={(event) => {
+								if (event.key === "Escape" || event.key === "Tab") {
+									if (event.key === "Escape") {
+										event.preventDefault();
+										button.current?.focus({ preventScroll: true });
+									}
+									close();
+								}
+							}}
+						>
+							{items.map(({ label, run }) =>
+								run ? (
+									<MenuItem
+										key={label}
+										onClick={() => {
+											close();
+											run();
+										}}
+									>
+										{label}
+									</MenuItem>
+								) : null,
+							)}
+						</MenuList>
+					</ClickAwayListener>
+				</Paper>
+			</Popper>
+		</>
+	);
+};
+
+export default RowActionsMenu;

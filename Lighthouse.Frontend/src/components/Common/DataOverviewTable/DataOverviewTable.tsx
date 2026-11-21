@@ -30,6 +30,7 @@ import type { DataGridColumn } from "../DataGrid/types";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 import { DeliveriesChips } from "./DeliveriesChips";
 import { ReportsChips } from "./ReportsChips";
+import RowActionsMenu from "./RowActionsMenu";
 
 interface DataOverviewTableProps<IFeatureOwner> {
 	data: IFeatureOwner[];
@@ -43,6 +44,8 @@ interface DataOverviewTableProps<IFeatureOwner> {
 }
 
 const NAME_MIN_WIDTH = 160;
+const PHONE_ACTIONS_WIDTH = 48;
+const DESKTOP_ACTIONS_WIDTH = 200;
 
 const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	data,
@@ -214,97 +217,116 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				{
 					field: "actions",
 					headerName: "Actions",
-					width: 200,
+					width: isMobile ? PHONE_ACTIONS_WIDTH : DESKTOP_ACTIONS_WIDTH,
 					sortable: false,
 					hideable: false,
 					fit: { kind: "actions" },
-					renderCell: ({ row }) => (
-						<Box
-							sx={{
-								display: "flex",
-								justifyContent: "flex-end",
-								gap: isTablet ? 0 : 1,
-								width: "100%",
-							}}
-						>
-							<Tooltip title="Details">
-								<IconButton
-									component={Link}
-									to={`/${api}/${row.id}`}
-									size={isTablet ? "small" : "medium"}
-									aria-label="Details"
-									sx={{
-										color: theme.palette.primary.main,
-										transition: "transform 0.2s",
-										"&:hover": { transform: "scale(1.1)" },
-									}}
-								>
-									<InfoIcon fontSize={isTablet ? "small" : "medium"} />
-								</IconButton>
-							</Tooltip>
-							{canEditRow(row) && (
-								<Tooltip title="Edit">
+					renderCell: ({ row }) =>
+						isMobile ? (
+							<RowActionsMenu
+								rowName={row.name}
+								onDetails={() =>
+									reportFailedNavigation(navigate(`/${api}/${row.id}`))
+								}
+								onEdit={
+									canEditRow(row)
+										? () =>
+												reportFailedNavigation(
+													navigate(`/${api}/edit/${row.id}`),
+												)
+										: undefined
+								}
+								onClone={canCloneRow(row) ? () => handleClone(row) : undefined}
+								onDelete={canDeleteRow(row) ? () => onDelete(row) : undefined}
+							/>
+						) : (
+							<Box
+								sx={{
+									display: "flex",
+									justifyContent: "flex-end",
+									gap: isTablet ? 0 : 1,
+									width: "100%",
+								}}
+							>
+								<Tooltip title="Details">
 									<IconButton
 										component={Link}
-										to={`/${api}/edit/${row.id}`}
+										to={`/${api}/${row.id}`}
 										size={isTablet ? "small" : "medium"}
-										aria-label="Edit"
+										aria-label="Details"
 										sx={{
 											color: theme.palette.primary.main,
 											transition: "transform 0.2s",
 											"&:hover": { transform: "scale(1.1)" },
 										}}
 									>
-										<EditIcon fontSize={isTablet ? "small" : "medium"} />
+										<InfoIcon fontSize={isTablet ? "small" : "medium"} />
 									</IconButton>
 								</Tooltip>
-							)}
-							{(api === "teams" || api === "portfolios") &&
-								canCloneRow(row) && (
-									<Tooltip title="Clone">
+								{canEditRow(row) && (
+									<Tooltip title="Edit">
 										<IconButton
-											onClick={() => handleClone(row)}
+											component={Link}
+											to={`/${api}/edit/${row.id}`}
 											size={isTablet ? "small" : "medium"}
+											aria-label="Edit"
 											sx={{
 												color: theme.palette.primary.main,
 												transition: "transform 0.2s",
 												"&:hover": { transform: "scale(1.1)" },
 											}}
-											aria-label="Clone"
 										>
-											<ContentCopyIcon
+											<EditIcon fontSize={isTablet ? "small" : "medium"} />
+										</IconButton>
+									</Tooltip>
+								)}
+								{(api === "teams" || api === "portfolios") &&
+									canCloneRow(row) && (
+										<Tooltip title="Clone">
+											<IconButton
+												onClick={() => handleClone(row)}
+												size={isTablet ? "small" : "medium"}
+												sx={{
+													color: theme.palette.primary.main,
+													transition: "transform 0.2s",
+													"&:hover": { transform: "scale(1.1)" },
+												}}
+												aria-label="Clone"
+											>
+												<ContentCopyIcon
+													fontSize={isTablet ? "small" : "medium"}
+												/>
+											</IconButton>
+										</Tooltip>
+									)}
+								{canDeleteRow(row) && (
+									<Tooltip title="Delete">
+										<IconButton
+											onClick={() => onDelete(row)}
+											size={isTablet ? "small" : "medium"}
+											aria-label="Delete"
+											sx={{
+												color: theme.palette.primary.main,
+												transition: "transform 0.2s",
+												"&:hover": { transform: "scale(1.1)" },
+											}}
+										>
+											<DeleteIcon
 												fontSize={isTablet ? "small" : "medium"}
+												data-testid="delete-item-button"
 											/>
 										</IconButton>
 									</Tooltip>
 								)}
-							{canDeleteRow(row) && (
-								<Tooltip title="Delete">
-									<IconButton
-										onClick={() => onDelete(row)}
-										size={isTablet ? "small" : "medium"}
-										aria-label="Delete"
-										sx={{
-											color: theme.palette.primary.main,
-											transition: "transform 0.2s",
-											"&:hover": { transform: "scale(1.1)" },
-										}}
-									>
-										<DeleteIcon
-											fontSize={isTablet ? "small" : "medium"}
-											data-testid="delete-item-button"
-										/>
-									</IconButton>
-								</Tooltip>
-							)}
-						</Box>
-					),
+							</Box>
+						),
 				},
 			);
 
 			return baseColumns;
 		}, [
 			api,
+			navigate,
 			theme,
 			isMobile,
 			isTablet,
