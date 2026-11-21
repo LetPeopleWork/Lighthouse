@@ -155,7 +155,70 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Running the architecture tests for the Access module rules passes, and each Access rule list (types per layer, Domain reach, outsider reach, Application reach, no other context) is inline by full type name and compared both ways against the compiled code.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A made-up Access offender at each list position (including one that reaches only through an attribute) is reported as a failure by a named Access rule, and no type is left under the old Services Auth or Authorization namespaces.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>Running the architecture tests for the Licensing module rules passes: Licensing types sit only in Application and Adapters/Http, none under the old Services Licensing namespaces, no reach to Access or other contexts, and the outsider lists (ForecastUpdater included) and platform reach list are compared both ways against compiled code.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>A made-up Licensing offender against each Licensing rule fails a named rule, and the Forecasting and Work Items lists naming Access or Licensing types use the new type names.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>The placement test passes: every Access and Licensing unit test is under Tests/Modules/Access or Tests/Modules/Licensing, no file of either context is left in Services/Interfaces or Services/Implementation (production or tests), no exception exists for the old Licensing test folder, and RbacIdentityPattern is gone with its assertion carried by the new module rules.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>A made-up Access or Licensing file placed in an old folder is caught and named by the placement test.
+</code></pre>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>The existing rules EveryActionDeclaresItsAccess, AccessTablesSingleReader, LicenseGateSingleSource and the Reports and Refinement guard rules still run and pass with all assertions kept, and the other existing tests stay green; no route, guard, scheme, RBAC or licence answer changes.
+</code></pre>
 
 <h2>Charter</h2>
 

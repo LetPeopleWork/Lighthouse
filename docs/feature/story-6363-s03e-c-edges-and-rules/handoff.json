@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 9,
-"F": 147,
+"E": 7,
+"F": 154,
 "K": 3,
 "L": 4,
 "P": 4,
@@ -512,6 +513,59 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F148"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F149"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F150"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F151"
+},
+{
+"id": "E5",
+"promises": [
+"P3"
+],
+"text": "F152"
+},
+{
+"id": "E6",
+"promises": [
+"P3"
+],
+"text": "F153"
+},
+{
+"id": "E7",
+"promises": [
+"P4"
+],
+"text": "F154"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6363 S03e Package Access and Licensing, feature C (edges and rules): Access has its own module rules with inline lists measured from the IL (C1); Licensing has its own module rules with every reader listed, ForecastUpdater included, and the neighbour lists re-keyed (C2); every Access and Licensing unit test sits under Tests/Modules, no file of either context is left in Services/{Interfaces,Implementation}, and RbacIdentityPattern is retired (C3). Rules only: production behaviour unchanged. DESIGN and DEVOPS: docs/feature/story-6363-s03e-package-access-licensing/feature-delta.md; features A (rules first) and B (the move, pushed 19d131189) are delivered.",
 "F10": "C3's placement check has no per-file exception for the old Licensing test folder: B4 moved the Licensing test data (TestLicenseData, the licence files, LicensingIntegrationTest) to Tests/Modules/Licensing (maintainer, 2026-11-17, answer 2).\n",
@@ -561,6 +615,13 @@
 "F145": "a neighbour list entry under an old Services name is named",
 "F146": "Finite set of types and edges; exact comparison decides each rule",
 "F147": "Licensing keeps its shape: types in Application and Adapters.Http and none in the old Services namespace, no Access type or other context reached, outsiders reach Application only from the API, the composition root, Access Application or as listed and Adapters.Http only from the API, Application reaches platform only as listed; neighbour lists use the new names",
+"F148": "Running the architecture tests for the Access module rules passes, and each Access rule list (types per layer, Domain reach, outsider reach, Application reach, no other context) is inline by full type name and compared both ways against the compiled code.",
+"F149": "A made-up Access offender at each list position (including one that reaches only through an attribute) is reported as a failure by a named Access rule, and no type is left under the old Services Auth or Authorization namespaces.",
+"F150": "Running the architecture tests for the Licensing module rules passes: Licensing types sit only in Application and Adapters/Http, none under the old Services Licensing namespaces, no reach to Access or other contexts, and the outsider lists (ForecastUpdater included) and platform reach list are compared both ways against compiled code.",
+"F151": "A made-up Licensing offender against each Licensing rule fails a named rule, and the Forecasting and Work Items lists naming Access or Licensing types use the new type names.",
+"F152": "The placement test passes: every Access and Licensing unit test is under Tests/Modules/Access or Tests/Modules/Licensing, no file of either context is left in Services/Interfaces or Services/Implementation (production or tests), no exception exists for the old Licensing test folder, and RbacIdentityPattern is gone with its assertion carried by the new module rules.",
+"F153": "A made-up Access or Licensing file placed in an old folder is caught and named by the placement test.",
+"F154": "The existing rules EveryActionDeclaresItsAccess, AccessTablesSingleReader, LicenseGateSingleSource and the Reports and Refinement guard rules still run and pass with all assertions kept, and the other existing tests stay green; no route, guard, scheme, RBAC or licence answer changes.",
 "F18": "C3: every Access and Licensing unit test sits under Tests/Modules, no file of either context is left in Services/{Interfaces,Implementation}, and RbacIdentityPattern is retired; a made-up file in an old folder is caught.",
 "F19": "Access and Licensing tests sit with their modules, and the old shared pattern is gone",
 "F2": "Access and Licensing each have module rules that fail on a new offender, and their tests sit with their modules",
