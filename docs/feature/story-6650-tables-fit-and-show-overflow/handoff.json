@@ -250,12 +250,39 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F357",
-"test": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx:1124"
+"still_passes_if": "F363",
+"test": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.test.tsx::returns the keyboard focus to the row's menu button when Escape closes the menu (reads the table's overflow state before opening and after Escape)"
 },
 "expected": "F355",
 "stimulus": "F354",
 "user_result": "F356"
+},
+{
+"covers": [
+"P9"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F367",
+"test": "Lighthouse.EndToEndTests/tests/specs/reports/ReportListTableFit.spec.ts::stored 900 px Name block (the wide stored Name keeps its width and the pinned actions keep Delete in view) | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.overflow.test.tsx::stored widths and Reset block (storedWidths) | Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.defaults.test.tsx::Reset layout lands on the defaults, not on every column shown"
+},
+"expected": "F365",
+"stimulus": "F364",
+"user_result": "F366"
+},
+{
+"covers": [
+"P9",
+"P12"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F371",
+"test": "Lighthouse.EndToEndTests/tests/specs/teams/OverviewTableFit.spec.ts::a coach finds Delete on a Team with a long name in a mid-width window, where the icons still show and the columns overflow"
+},
+"expected": "F369",
+"stimulus": "F368",
+"user_result": "F370"
 }
 ],
 "S4": [
@@ -326,7 +353,7 @@
 "C": 1,
 "D": 13,
 "E": 12,
-"F": 362,
+"F": 371,
 "K": 4,
 "L": 5,
 "N": 3,
@@ -1533,13 +1560,21 @@
 "F354": "On a phone-width Overview, the person opens a row's actions menu with the keyboard and closes it with Escape",
 "F355": "the menu closes, keyboard focus is back on that row's actions button, and the table has neither scrolled nor changed its edge shadows",
 "F356": "A keyboard user keeps their place in the table and the pinned actions column stays reachable",
-"F357": "focus lands on the body or on a grid cell after Escape, or the grid jumps to its end when the button gets focus",
 "F359": "A person opens the Overview of Teams or Portfolios on a phone, where four action icons would crowd out the Name, then opens a row's menu with a click, with Enter or Space, and with Enter and the arrow keys, and chooses Details, Edit, Clone or Delete; with the menu closed and the keyboard on the menu button the person presses the left arrow; at desktop width the same table is opened.",
 "F36": "Remaining tables behave the same",
 "F360": "On a phone each row has one pinned menu button named Actions for the row name, with the tooltip Actions, and no separate icons; the actions column is no wider than the button; opening the menu puts the keyboard focus inside it; the menu lists exactly the actions the person may use, in the order Details, Edit, Clone, Delete; each item does what its icon did and Delete asks the same confirmation; after Escape the focus is on the menu button and the button is in view; with the menu closed the left arrow moves the focus to the cell before the actions cell; at desktop width the four icons are back and there is no menu button.",
 "F361": "The person always finds the actions of a row in one pinned button that never scrolls away, and can use every action and move along the row with mouse or keyboard.",
 "F362": "The icons stay at phone width and only the column narrows; the menu button is not pinned or scrolls away; the menu offers actions the person may not use; Delete from the menu skips the confirmation or targets another row; the menu opens by mouse only; opening the menu leaves the focus outside it; the menu button swallows the arrow keys so the person cannot leave the actions cell; the menu button also shows at desktop width; the actions column stays 200 px wide on a phone. Known limitation (maintainer decision 8): at 375 px, opening the menu of the second Overview table can make the browser scroll that table to its end, and the browser check does not hide or undo that jump; it requires only that after Escape the focus is on the menu button and the button is in view. A follow-up Bug is to be raised.",
+"F363": "focus lands on the body or on a grid cell after Escape, or the grid jumps to its end when the button gets focus, or Escape changes which side shows a shadow",
+"F364": "The person had set a column width on the Overview before, reloads, or presses Reset layout",
+"F365": "a width the person set is kept, and Reset layout returns to the fitted layout; this is the shared grid's behaviour, proven on the report list and on the shared grid, not repeated per table",
+"F366": "A person's own column widths are respected, and one click puts the fitted layout back",
+"F367": "the shared grid ignores a stored width, or Reset keeps the person's width; an Overview-only check is not added because DataOverviewTable passes the same stored widths to the shared grid and has no width rule of its own",
+"F368": "In a mid-width window of about 700 px the Overview shows a Team with a long name, the four action icons still show and the columns do not fit",
+"F369": "Delete is in view at the start and at the end of the sideways scroll, the actions column is last and sits at the right edge, and the shadow shows on the right at the start and on the left only at the end",
 "F37": "the Feature, Work Item, archived Feature, Connections, third-party packages and Refinement tables",
+"F370": "At mid width the person still finds Delete and sees there is more to scroll to",
+"F371": "the actions column is not pinned, so Delete is out of view at the start of the scroll; the shadow is missing or on the wrong side",
 "F38": "each is opened at a narrow width",
 "F39": "each fits where it can and shows the cue where it cannot, with no per-table behaviour that contradicts the report list. Falsifier: one of these tables still scrolls its last column out of view with no cue.",
 "F4": "Report list shows Delete without scrolling",

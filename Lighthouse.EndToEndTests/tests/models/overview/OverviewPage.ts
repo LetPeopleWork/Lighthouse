@@ -214,6 +214,21 @@ export class OverviewTable {
 		);
 	}
 
+	/** True when the actions column is the table's last column and ends at the right edge of the table's box. */
+	async actionsColumnEndsAtTheRightEdge(): Promise<boolean> {
+		const scroller = await this.table
+			.locator(".MuiDataGrid-virtualScroller")
+			.boundingBox();
+		const last = this.table.locator('[role="columnheader"]').last();
+		const lastBox = await last.boundingBox();
+		return (
+			(await last.getAttribute("data-field")) === "actions" &&
+			scroller !== null &&
+			lastBox !== null &&
+			Math.abs(lastBox.x + lastBox.width - (scroller.x + scroller.width)) <= 20
+		);
+	}
+
 	/** Puts the keyboard focus on the owner's name, the way a person tabbing through the table does. */
 	async focusName(): Promise<void> {
 		await this.row

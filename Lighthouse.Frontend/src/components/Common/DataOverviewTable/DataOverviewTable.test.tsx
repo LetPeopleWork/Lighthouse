@@ -788,10 +788,13 @@ describe("The Overview table fits its columns and says when some are out of sigh
 	};
 
 	/** What the cell draws inside itself; the grid's own cell box ends every cell with an ellipsis. */
-	const isCutWithEllipsis = (cell: HTMLElement) =>
-		Array.from(cell.querySelectorAll<HTMLElement>("*")).some(
+	const cutElementOf = (cell: HTMLElement) =>
+		Array.from(cell.querySelectorAll<HTMLElement>("*")).find(
 			(element) => getComputedStyle(element).textOverflow === "ellipsis",
 		);
+
+	const isCutWithEllipsis = (cell: HTMLElement) =>
+		cutElementOf(cell) !== undefined;
 
 	const widthOf = (header: HTMLElement) => {
 		const width = Number.parseFloat(header.style.width);
@@ -818,6 +821,11 @@ describe("The Overview table fits its columns and says when some are out of sigh
 			isCutWithEllipsis(cellOf(container, "name")),
 			"a Team name longer than its column must end with an ellipsis instead of wrapping the row",
 		).toBe(true);
+		expect(
+			getComputedStyle(cutElementOf(cellOf(container, "name")) as HTMLElement)
+				.whiteSpace,
+			"the cut name must stay on one line, or the ellipsis never shows and the row grows taller",
+		).toBe("nowrap");
 		expect(
 			isCutWithEllipsis(cellOf(container, "tags")),
 			"the tags are text and must give way to the other columns like the name does",
@@ -1130,7 +1138,11 @@ describe("The Overview table fits its columns and says when some are out of sigh
 
 		it("returns the keyboard focus to the row's menu button when Escape closes the menu", async () => {
 			const user = userEvent.setup();
-			whenTheOverviewShows(sampleTeamData.slice(0, 2));
+			const { container } = whenTheOverviewShows(sampleTeamData.slice(0, 2));
+			const edgeCue = () =>
+				container.querySelector<HTMLElement>("[data-overflow]")?.dataset
+					.overflow;
+			const cueBefore = edgeCue();
 
 			menuButtonOf("Team 2").focus();
 			await user.keyboard("{Enter}");
@@ -1153,6 +1165,10 @@ describe("The Overview table fits its columns and says when some are out of sigh
 				menuButtonOf("Team 2"),
 				"after Escape the focus must go back to the button that opened the menu, so a keyboard user does not lose their place in the table",
 			).toHaveFocus();
+			expect(
+				edgeCue(),
+				"opening and closing the menu must leave the edge shadows as they were, so the person still sees which side has more columns",
+			).toBe(cueBefore);
 		});
 
 		it("opens the menu with Enter and chooses an item with the arrow keys and Enter", async () => {
@@ -1178,7 +1194,7 @@ describe("The Overview table fits its columns and says when some are out of sigh
 			whenTheScreenIsAPhone();
 		});
 
-		it("lets the arrow keys keep moving through the row's cells, and Enter and Space open the menu", async () => {
+		it("lets ArrowLeft on the menu button move through the row's cells", async () => {
 			const user = userEvent.setup();
 			const { container } = whenTheOverviewShows(sampleTeamData.slice(0, 1));
 			const actionsCell = container.querySelector<HTMLElement>(
@@ -1193,6 +1209,11 @@ describe("The Overview table fits its columns and says when some are out of sigh
 				document.activeElement?.closest('[role="gridcell"]'),
 				"ArrowLeft on the menu button must move the grid's focus to the cell before the actions cell, as it does from any other cell, so a keyboard user is not stuck in the last column",
 			).toBe(cellBefore);
+		});
+
+		it("opens the menu with Space on the menu button, as Enter does", async () => {
+			const user = userEvent.setup();
+			whenTheOverviewShows(sampleTeamData.slice(0, 1));
 
 			menuButtonOf("Team 1").focus();
 			await user.keyboard(" ");

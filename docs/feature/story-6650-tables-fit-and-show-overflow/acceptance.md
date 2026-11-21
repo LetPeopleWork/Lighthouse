@@ -476,10 +476,72 @@ A keyboard user keeps their place in the table and the pinned actions column sta
 
 Tested
 
-Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:1124
+Lighthouse\.Frontend\/src\/components\/Common\/DataOverviewTable\/DataOverviewTable\.test\.tsx\:\:returns the keyboard focus to the row\'s menu button when Escape closes the menu \(reads the table\'s overflow state before opening and after Escape\)
 
 ```text
-focus lands on the body or on a grid cell after Escape, or the grid jumps to its end when the button gets focus
+focus lands on the body or on a grid cell after Escape, or the grid jumps to its end when the button gets focus, or Escape changes which side shows a shadow
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P9
+
+```text
+The person had set a column width on the Overview before, reloads, or presses Reset layout
+```
+
+```text
+a width the person set is kept, and Reset layout returns to the fitted layout; this is the shared grid's behaviour, proven on the report list and on the shared grid, not repeated per table
+```
+
+```text
+A person's own column widths are respected, and one click puts the fitted layout back
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.EndToEndTests\/tests\/specs\/reports\/ReportListTableFit\.spec\.ts\:\:stored 900 px Name block \(the wide stored Name keeps its width and the pinned actions keep Delete in view\) \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.overflow\.test\.tsx\:\:stored widths and Reset block \(storedWidths\) \| Lighthouse\.Frontend\/src\/components\/Common\/DataGrid\/DataGridBase\.defaults\.test\.tsx\:\:Reset layout lands on the defaults\, not on every column shown
+
+```text
+the shared grid ignores a stored width, or Reset keeps the person's width; an Overview-only check is not added because DataOverviewTable passes the same stored widths to the shared grid and has no width rule of its own
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P9
+
+P12
+
+```text
+In a mid-width window of about 700 px the Overview shows a Team with a long name, the four action icons still show and the columns do not fit
+```
+
+```text
+Delete is in view at the start and at the end of the sideways scroll, the actions column is last and sits at the right edge, and the shadow shows on the right at the start and on the left only at the end
+```
+
+```text
+At mid width the person still finds Delete and sees there is more to scroll to
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.EndToEndTests\/tests\/specs\/teams\/OverviewTableFit\.spec\.ts\:\:a coach finds Delete on a Team with a long name in a mid\-width window\, where the icons still show and the columns overflow
+
+```text
+the actions column is not pinned, so Delete is out of view at the start of the scroll; the shadow is missing or on the wrong side
 ```
 
 ###### Obligations

@@ -8,6 +8,7 @@ const LONG_NAME =
 	"Platform Engineering Delivery Squad for the Northern Region with cross-functional ownership of billing";
 const DESKTOP = { width: 1280, height: 900 };
 const PHONE = { width: 375, height: 800 };
+const MID_WIDTH = { width: 700, height: 900 };
 const NAME_MINIMUM = 160;
 const MENU_COLUMN_MAXIMUM = 56;
 const TEXT_MINIMUM = 120;
@@ -237,5 +238,49 @@ testWithTeams(
 					"at 375 px the page must not scroll sideways; the table scrolls instead",
 			})
 			.toBe(false);
+	},
+);
+
+testWithTeams(
+	"a coach finds Delete on a Team with a long name in a mid-width window, where the icons still show and the columns overflow",
+	async ({ testData, overviewPage }) => {
+		const original = testData.teams[0].name;
+		await overviewPage.viewAt(DESKTOP.width, DESKTOP.height);
+		const overview = await overviewPage.renameTeam(original, LONG_NAME);
+		await overview.viewAt(MID_WIDTH.width, MID_WIDTH.height);
+		const teams = await overview.tableOf(LONG_NAME).waitUntilReady();
+
+		await expect
+			.poll(() => teams.iconActionsShown(), {
+				message:
+					"at 700 px the four action icons still show in the row; the menu is for phone width only",
+			})
+			.toBe(4);
+		await expect
+			.poll(() => teams.tableScrollsSideways(), {
+				message:
+					"at 700 px the columns do not fit, so the table scrolls sideways",
+			})
+			.toBe(true);
+		await thenDeleteIsInView(teams, "at 700 px, scrolled to the start");
+		await expect
+			.poll(() => teams.sidesWithACue(), {
+				message: "at 700 px the shadow must show on the right edge only",
+			})
+			.toEqual(["right"]);
+		await teams.scrollToTheEnd();
+		await thenDeleteIsInView(teams, "at 700 px, scrolled to the end");
+		await expect
+			.poll(() => teams.actionsColumnEndsAtTheRightEdge(), {
+				message:
+					"at 700 px the actions column must be the last column and sit at the table's right edge",
+			})
+			.toBe(true);
+		await expect
+			.poll(() => teams.sidesWithACue(), {
+				message:
+					"at the end of the range the shadow must show on the left only",
+			})
+			.toEqual(["left"]);
 	},
 );
