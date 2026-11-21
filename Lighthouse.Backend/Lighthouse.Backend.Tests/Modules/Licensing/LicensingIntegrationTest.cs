@@ -2,7 +2,7 @@ using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
+namespace Lighthouse.Backend.Tests.Modules.Licensing
 {
     public class LicensingIntegrationTest() : IntegrationTestBase
     {

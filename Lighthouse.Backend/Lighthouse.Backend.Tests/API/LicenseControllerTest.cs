@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task ImportLicense_ValidJsonFile_ReturnsOkWithLicenseInformation()
         {
-            var validLicenseJson = File.ReadAllText("Services/Implementation/Licensing/valid_expired_license.json");
+            var validLicenseJson = File.ReadAllText("Modules/Licensing/valid_expired_license.json");
             var expectedLicenseInfo = new LicenseInformation
             {
                 Name = "Benjamin Huser-Berta",
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task ImportLicense_InvalidJsonFile_ReturnsBadRequest()
         {
-            var invalidLicenseJson = File.ReadAllText("Services/Implementation/Licensing/invalid_license.json");
+            var invalidLicenseJson = File.ReadAllText("Modules/Licensing/invalid_license.json");
             var formFile = CreateMockFormFile("invalid_license.json", invalidLicenseJson);
             
             licenseServiceMock.Setup(s => s.ImportLicense(invalidLicenseJson))

@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.Licensing.Application;
-using Lighthouse.Backend.Tests.Services.Implementation.Licensing;
+using Lighthouse.Backend.Tests.Modules.Licensing;
 
 namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
 {

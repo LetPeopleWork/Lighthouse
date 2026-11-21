@@ -98,7 +98,7 @@ jobs:
 
       - name: Generate license for E2E Tests
         run: |
-          python Scripts/generate_license.py private_key.pem Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json "1886" "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+2 days' '+%Y-%m-%d')" "$(date -d '-3 days' '+%Y-%m-%d')"
+          python Scripts/generate_license.py private_key.pem Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Licensing/valid_not_expired_license.json "1886" "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+2 days' '+%Y-%m-%d')" "$(date -d '-3 days' '+%Y-%m-%d')"
 
       - name: Start Lighthouse for Auth tests
         run: |

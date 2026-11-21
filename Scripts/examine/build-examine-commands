@@ -438,7 +438,7 @@ base_sha="$(git -C "$repo" rev-parse --verify "${base}^{commit}")"
 candidate_sha="$(git -C "$repo" rev-parse --verify "${candidate}^{commit}")"
 echo "comparing base ${base_sha:0:9} with candidate ${candidate_sha:0:9}"
 seed=7310492118
-licence="$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json"
+licence="$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Licensing/valid_not_expired_license.json"
 [ -f "$licence" ] || echo "no premium licence file, so the larger demo scenarios refresh only in part (the same on both sides)"
 # The physical path: a symlink in it makes the compiler miss the .editorconfig sections and the build fails.
 work="$(cd "$(mktemp -d)" && pwd -P)"
@@ -847,7 +847,7 @@ chmod +x "$out/access-answers-compare"
 
 cat > "$pieces/probe-runner.sh" <<'EOF'
 backend="$repo/Lighthouse.Backend"
-licence="$backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json"
+licence="$backend/Lighthouse.Backend.Tests/Modules/Licensing/valid_not_expired_license.json"
 # The physical path: a symlink in it makes the compiler miss the .editorconfig sections and the build fails.
 work="$(cd "$(mktemp -d)" && pwd -P)"
 trap 'rm -rf "$work"' EXIT INT TERM
@@ -1260,7 +1260,7 @@ candidate="${2:-HEAD}"
 base_sha="$(git -C "$repo" rev-parse --verify "${base}^{commit}")"
 candidate_sha="$(git -C "$repo" rev-parse --verify "${candidate}^{commit}")"
 echo "comparing base ${base_sha:0:9} with candidate ${candidate_sha:0:9}"
-licence="$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json"
+licence="$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Licensing/valid_not_expired_license.json"
 # The physical path: a symlink in it makes the compiler miss the .editorconfig sections and the build fails.
 work="$(cd "$(mktemp -d)" && pwd -P)"
 cleanup() {
