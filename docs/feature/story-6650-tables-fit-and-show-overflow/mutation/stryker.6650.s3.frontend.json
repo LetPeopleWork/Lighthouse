@@ -1,0 +1,50 @@
+{
+	"$schema": "../../../../Lighthouse.Frontend/node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+	"packageManager": "pnpm",
+	"testRunner": "vitest",
+	"plugins": [
+		"@stryker-mutator/vitest-runner"
+	],
+	"vitest": {
+		"configFile": "vitest.stryker.6650.ts",
+		"related": false
+	},
+	"reporters": [
+		"clear-text",
+		"progress",
+		"json"
+	],
+	"coverageAnalysis": "perTest",
+	"incremental": true,
+	"incrementalFile": "reports/mutation/stryker-incremental-6650-s3.json",
+	"concurrency": 4,
+	"timeoutMS": 60000,
+	"inPlace": false,
+	"tsconfigFile": "no-tsconfig-rewrite.json",
+	"ignorePatterns": [
+		"/dist",
+		"/coverage",
+		"/playwright-report",
+		"/reports"
+	],
+	"mutate": [
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:45-46",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:112-112",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:131-131",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:148-148",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:177-177",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:193-193",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:209-209",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:217-217",
+		"src/components/Common/DataOverviewTable/DataOverviewTable.tsx:220-220"
+	],
+	"thresholds": {
+		"high": 90,
+		"low": 80,
+		"break": 80
+	},
+	"jsonReporter": {
+		"fileName": "reports/mutation/stryker-6650-s3-frontend.json"
+	},
+	"tempDirName": ".stryker-tmp-6650"
+}
