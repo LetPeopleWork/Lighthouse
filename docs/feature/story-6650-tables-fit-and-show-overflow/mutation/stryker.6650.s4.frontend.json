@@ -1,0 +1,53 @@
+{
+	"$schema": "../../../../Lighthouse.Frontend/node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+	"packageManager": "pnpm",
+	"testRunner": "vitest",
+	"plugins": [
+		"@stryker-mutator/vitest-runner"
+	],
+	"vitest": {
+		"configFile": "vitest.stryker.6650.ts",
+		"related": false
+	},
+	"reporters": [
+		"clear-text",
+		"progress",
+		"json"
+	],
+	"coverageAnalysis": "perTest",
+	"incremental": true,
+	"incrementalFile": "reports/mutation/stryker-incremental-6650-s4.json",
+	"concurrency": 4,
+	"timeoutMS": 60000,
+	"inPlace": false,
+	"tsconfigFile": "no-tsconfig-rewrite.json",
+	"ignorePatterns": [
+		"/dist",
+		"/coverage",
+		"/playwright-report",
+		"/reports"
+	],
+	"mutate": [
+		"src/components/Common/FeatureListDataGrid/columns.tsx:25-27",
+		"src/components/Common/FeatureListDataGrid/columns.tsx:117-117",
+		"src/components/Common/FeatureListDataGrid/columns.tsx:261-261",
+		"src/components/Common/FeatureListDataGrid/columns.tsx:263-264",
+		"src/components/Common/ParentWorkItemCell/ParentWorkItemCell.tsx:11-24",
+		"src/components/Common/ParentWorkItemCell/ParentWorkItemCell.tsx:30-30",
+		"src/components/Common/ParentWorkItemCell/ParentWorkItemCell.tsx:44-44",
+		"src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx:253-253",
+		"src/pages/Settings/Connections/ConnectionsSettings.tsx:136-136",
+		"src/pages/Teams/Detail/Refinement/refinementColumns.tsx:8-10",
+		"src/pages/Teams/Detail/Refinement/refinementColumns.tsx:120-120",
+		"src/pages/Teams/Detail/Refinement/refinementColumns.tsx:122-123"
+	],
+	"thresholds": {
+		"high": 90,
+		"low": 80,
+		"break": 80
+	},
+	"jsonReporter": {
+		"fileName": "reports/mutation/stryker-6650-s4-frontend.json"
+	},
+	"tempDirName": ".stryker-tmp-6650"
+}
