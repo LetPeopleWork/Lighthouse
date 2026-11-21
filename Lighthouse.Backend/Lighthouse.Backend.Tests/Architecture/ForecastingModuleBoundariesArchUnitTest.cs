@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string EntityFrameworkCore = @"^Microsoft\.EntityFrameworkCore(\.|$)";
 
-        private const string TheLicence = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Licensing(\.|$)";
+        private const string TheLicence = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Licensing(\.|$)" + "|" + ModuleRules.LicensingModule;
 
         private const string FlowMetricsInboundList = "OtherOutsideTypesReachingTheApplication";
 

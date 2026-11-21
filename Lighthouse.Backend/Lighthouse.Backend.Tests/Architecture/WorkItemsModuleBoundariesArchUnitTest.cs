@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string AnyModuleAdapters = @"^Lighthouse\.Backend\.Modules\.[^.]+\.Adapters(\.|$)";
 
-        private const string AccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)(\.|$)";
+        private const string AccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)(\.|$)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
 
         private const string OrganisationSetUp = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)$";
 

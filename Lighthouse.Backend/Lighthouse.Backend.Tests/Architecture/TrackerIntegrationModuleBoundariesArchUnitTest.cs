@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string PromisesAndTheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(DeliverySources|BackgroundServices|Update)(\.|$)|^Lighthouse\.Backend\.Modules\.Promises(\.|$)";
 
-        private const string RefinementReportsAccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Refinement|Reports|Auth|Authorization|Licensing)(\.|$)";
+        private const string RefinementReportsAccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Refinement|Reports|Auth|Authorization|Licensing)(\.|$)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
 
         private const string RetiredLeafPattern = "WorkTrackingIntegrationPattern";
 

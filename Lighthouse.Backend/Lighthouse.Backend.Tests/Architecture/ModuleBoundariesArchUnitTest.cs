@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         internal const string PromisesPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.DeliverySources(\.|$)|^Lighthouse\.Backend\.Modules\.Promises(\.|$)";
         private const string RbacIdentityPattern =
-            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)($|\..*)";
+            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)($|\..*)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
         internal const string RefinementPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Refinement($|\..*)";
         internal const string ReportsPattern =

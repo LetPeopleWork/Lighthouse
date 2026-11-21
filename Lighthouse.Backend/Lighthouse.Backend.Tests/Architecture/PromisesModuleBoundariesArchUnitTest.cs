@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices\.Update|Interfaces\.Update)(\.|$)";
 
-        private const string AccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)(\.|$)";
+        private const string AccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)(\.|$)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
 
         // Tracker integration's edges into Promises are held by Tracker integration's own rule, which lists each one
         // exactly and goes to none, so this rule looks at every other outside namespace.

@@ -26,6 +26,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string PromisesModule = @"^Lighthouse\.Backend\.Modules\.Promises(\.|$)";
 
+        public const string AccessModule = @"^Lighthouse\.Backend\.Modules\.Access(\.|$)";
+
+        public const string LicensingModule = @"^Lighthouse\.Backend\.Modules\.Licensing(\.|$)";
+
         public const string FlowMetricsAdapters = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Adapters(\.|$)";
 
         public const string TheCompositionRoot = "Lighthouse.Backend.Program";
