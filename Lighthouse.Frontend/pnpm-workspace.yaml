@@ -9,7 +9,7 @@ overrides:
   form-data: ^4.0.6
   immutable@>=5.0.0-beta.1 <5.1.8: ^5.2.1
   minimatch@>=7.0.0 <11.0.1: ^11.0.8
-  postcss: ^8.5.32
+  postcss: ^8.5.33
   qs@>=6.7.0 <6.16.1: ^6.17.1
   undici: ^8.12.4
   # Mutation testing's runner accepts any vitest from 2 upward, so the resolver was free to keep an
