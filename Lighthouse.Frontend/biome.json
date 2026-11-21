@@ -212,7 +212,6 @@
 				"src/components/Common/Connection/CreateConnectionWizard.tsx",
 				"src/components/Common/Connection/ModifyConnectionSettings.tsx",
 				"src/components/Common/DataGrid/DataGridBase.tsx",
-				"src/components/Common/DataOverviewTable/DataOverviewTable.tsx",
 				"src/components/Common/LicenseStatus/LicenseStatusDialog.tsx",
 				"src/components/Common/LicenseStatus/LicenseStatusIcon.tsx",
 				"src/components/Common/LicenseStatus/LicenseStatusContent.tsx",

@@ -1,16 +1,10 @@
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import InfoIcon from "@mui/icons-material/Info";
 import {
 	Alert,
 	Box,
 	Chip,
 	Container,
 	Fade,
-	IconButton,
 	Link as MuiLink,
-	Tooltip,
 	Typography,
 	useMediaQuery,
 	useTheme,
@@ -31,7 +25,7 @@ import type { DataGridColumn } from "../DataGrid/types";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 import { DeliveriesChips } from "./DeliveriesChips";
 import { ReportsChips } from "./ReportsChips";
-import RowActionsMenu from "./RowActionsMenu";
+import RowActionsCell from "./RowActionsCell";
 
 interface DataOverviewTableProps<IFeatureOwner> {
 	data: IFeatureOwner[];
@@ -227,111 +221,25 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 					sortable: false,
 					hideable: false,
 					fit: { kind: "actions" },
-					renderCell: ({ row }) =>
-						isMobile ? (
-							<RowActionsMenu
-								rowName={row.name}
-								onDetails={() =>
-									reportFailedNavigation(navigate(`/${api}/${row.id}`))
-								}
-								onEdit={
-									canEditRow(row)
-										? () =>
-												reportFailedNavigation(
-													navigate(`/${api}/edit/${row.id}`),
-												)
-										: undefined
-								}
-								onClone={canCloneHere(row) ? () => handleClone(row) : undefined}
-								onDelete={canDeleteRow(row) ? () => onDelete(row) : undefined}
-							/>
-						) : (
-							<Box
-								sx={{
-									display: "flex",
-									justifyContent: "flex-end",
-									gap: isTablet ? 0 : 1,
-									width: "100%",
-								}}
-							>
-								<Tooltip title="Details">
-									<IconButton
-										component={Link}
-										to={`/${api}/${row.id}`}
-										size={isTablet ? "small" : "medium"}
-										aria-label="Details"
-										sx={{
-											color: theme.palette.primary.main,
-											transition: "transform 0.2s",
-											"&:hover": { transform: "scale(1.1)" },
-										}}
-									>
-										<InfoIcon fontSize={isTablet ? "small" : "medium"} />
-									</IconButton>
-								</Tooltip>
-								{canEditRow(row) && (
-									<Tooltip title="Edit">
-										<IconButton
-											component={Link}
-											to={`/${api}/edit/${row.id}`}
-											size={isTablet ? "small" : "medium"}
-											aria-label="Edit"
-											sx={{
-												color: theme.palette.primary.main,
-												transition: "transform 0.2s",
-												"&:hover": { transform: "scale(1.1)" },
-											}}
-										>
-											<EditIcon fontSize={isTablet ? "small" : "medium"} />
-										</IconButton>
-									</Tooltip>
-								)}
-								{canCloneHere(row) && (
-									<Tooltip title="Clone">
-										<IconButton
-											onClick={() => handleClone(row)}
-											size={isTablet ? "small" : "medium"}
-											sx={{
-												color: theme.palette.primary.main,
-												transition: "transform 0.2s",
-												"&:hover": { transform: "scale(1.1)" },
-											}}
-											aria-label="Clone"
-										>
-											<ContentCopyIcon
-												fontSize={isTablet ? "small" : "medium"}
-											/>
-										</IconButton>
-									</Tooltip>
-								)}
-								{canDeleteRow(row) && (
-									<Tooltip title="Delete">
-										<IconButton
-											onClick={() => onDelete(row)}
-											size={isTablet ? "small" : "medium"}
-											aria-label="Delete"
-											sx={{
-												color: theme.palette.primary.main,
-												transition: "transform 0.2s",
-												"&:hover": { transform: "scale(1.1)" },
-											}}
-										>
-											<DeleteIcon
-												fontSize={isTablet ? "small" : "medium"}
-												data-testid="delete-item-button"
-											/>
-										</IconButton>
-									</Tooltip>
-								)}
-							</Box>
-						),
+					renderCell: ({ row }) => (
+						<RowActionsCell
+							row={row}
+							api={api}
+							isMobile={isMobile}
+							isTablet={isTablet}
+							canEdit={canEditRow(row)}
+							canClone={canCloneHere(row)}
+							canDelete={canDeleteRow(row)}
+							onClone={handleClone}
+							onDelete={onDelete}
+						/>
+					),
 				},
 			);
 
 			return baseColumns;
 		}, [
 			api,
-			navigate,
 			theme,
 			isMobile,
 			isTablet,
