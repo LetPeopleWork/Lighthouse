@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Tests.Acceptance.SystemWideAccess;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;

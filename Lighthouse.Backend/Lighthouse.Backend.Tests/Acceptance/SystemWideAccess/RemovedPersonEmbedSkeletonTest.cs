@@ -1,5 +1,5 @@
 using System.Net;
-using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 

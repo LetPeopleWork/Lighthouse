@@ -240,7 +240,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var collected = WhenTheAccessTypesAreCollectedFrom(ProductionModule.Value);
             var original = collected.Single(name => ShortNameOf(name) == "RbacAdministrationService");
-            var copy = "Lighthouse.Backend.Modules.Access.Application.RbacAdministrationService";
+            var copy = "Lighthouse.Backend.Services.Implementation.Authorization.RbacAdministrationService";
 
             var failure = Assert.Throws<AssertionException>(() => ThenTheyMatchTheAccessLists([.. collected, copy]))!.Message;
 
@@ -268,7 +268,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(failure, Does.Contain($"{nameof(AMadeUpRuleReachingTheApplication)} reaches Lighthouse.Backend.Services.Interfaces.Authorization.IRbacAdministrationService"),
+                Assert.That(failure, Does.Contain($"{nameof(AMadeUpRuleReachingTheApplication)} reaches Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService"),
                     "A made-up Domain type that calls an Application interface was not named with what it reaches. The Domain must not depend on the Application.");
                 Assert.That(failure, Does.Contain($"{nameof(AMadeUpRuleReachingThePlatform)} reaches Microsoft.AspNetCore.Http.HttpContext"),
                     "A made-up Domain type that reads the HTTP context was not named with what it reaches. The Domain must not depend on the platform.");
@@ -692,7 +692,7 @@ namespace Lighthouse.Backend.Modules.AccessFixtures.Membership
 
 namespace Lighthouse.Backend.Modules.AccessFixtures.DomainReach
 {
-    internal sealed class AMadeUpRuleReachingTheApplication(Lighthouse.Backend.Services.Interfaces.Authorization.IRbacAdministrationService rbac)
+    internal sealed class AMadeUpRuleReachingTheApplication(Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService rbac)
     {
         public object Rbac() => rbac;
     }

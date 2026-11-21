@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Tests.API.Integration.Refinement;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;

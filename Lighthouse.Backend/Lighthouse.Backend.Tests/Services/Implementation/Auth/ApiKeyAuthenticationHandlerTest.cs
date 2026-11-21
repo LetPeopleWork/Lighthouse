@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Services.Implementation.Auth;
-using Lighthouse.Backend.Services.Interfaces.Auth;
-using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Domain;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

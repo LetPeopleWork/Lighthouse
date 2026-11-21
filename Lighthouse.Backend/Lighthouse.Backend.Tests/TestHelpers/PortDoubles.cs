@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Microsoft.AspNetCore.Http;
 using Moq;

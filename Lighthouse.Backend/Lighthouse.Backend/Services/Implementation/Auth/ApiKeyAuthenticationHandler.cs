@@ -1,5 +1,5 @@
-using Lighthouse.Backend.Models.Auth;
-using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Domain;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;

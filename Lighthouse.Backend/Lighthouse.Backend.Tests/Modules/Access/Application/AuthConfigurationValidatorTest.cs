@@ -1,0 +1,241 @@
+using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Modules.Access.Application;
+
+namespace Lighthouse.Backend.Tests.Modules.Access.Application
+{
+    [TestFixture]
+    public class AuthConfigurationValidatorTest
+    {
+        [Test]
+        public void Validate_AuthDisabled_ReturnsValid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: false);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_AuthDisabled_WithEmptyAuthority_ReturnsValid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: false, authority: "");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_AuthorizationEnabled_AuthenticationDisabled_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var authConfig = CreateConfig(enabled: false);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: true);
+
+            var result = validator.Validate(authConfig, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Authorization"));
+            }
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_WithValidConfig_ReturnsValid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_MissingAuthority_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true, authority: "");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Authority"));
+            }
+
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_MissingClientId_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true, clientId: "");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("ClientId"));
+            }
+
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_WhitespaceAuthority_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true, authority: "   ");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Authority"));
+            }
+
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_WhitespaceClientId_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true, clientId: "   ");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("ClientId"));
+            }
+
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_InvalidAuthorityUrl_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true, authority: "not-a-url");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Authority"));
+            }
+
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_HttpAuthorityUrl_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true, authority: "http://idp.example.com");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("HTTPS"));
+            }
+
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_HttpsAuthorityUrl_ReturnsValid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true, authority: "https://idp.example.com");
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_EmptyScopes_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true, scopes: []);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("Scopes"));
+            }
+
+        }
+
+        [Test]
+        public void Validate_AuthEnabled_MissingOpenIdScope_ReturnsInvalid()
+        {
+            var validator = CreateSubject();
+            var config = CreateConfig(enabled: true, scopes: ["profile", "email"]);
+            var authorizationConfig = CreateAuthorizationConfig(enabled: false);
+
+            var result = validator.Validate(config, authorizationConfig);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.ErrorReason, Does.Contain("openid"));
+            }
+
+        }
+
+        private static AuthConfigurationValidator CreateSubject()
+        {
+            return new AuthConfigurationValidator();
+        }
+
+        private static AuthenticationConfiguration CreateConfig(
+            bool enabled = true,
+            string authority = "https://idp.example.com",
+            string clientId = "lighthouse-client",
+            string clientSecret = "secret",
+            string? callbackPath = null,
+            IReadOnlyList<string>? scopes = null)
+        {
+            return new AuthenticationConfiguration
+            {
+                Enabled = enabled,
+                Authority = authority,
+                ClientId = clientId,
+                ClientSecret = clientSecret,
+                CallbackPath = callbackPath ?? "/api/auth/callback",
+                Scopes = scopes ?? ["openid", "profile", "email"],
+            };
+        }
+
+        private static AuthorizationConfiguration CreateAuthorizationConfig(bool enabled)
+        {
+            return new AuthorizationConfiguration
+            {
+                Enabled = enabled,
+            };
+        }
+    }
+}

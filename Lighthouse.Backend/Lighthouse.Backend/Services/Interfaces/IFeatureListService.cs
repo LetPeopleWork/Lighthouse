@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
-using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Interfaces

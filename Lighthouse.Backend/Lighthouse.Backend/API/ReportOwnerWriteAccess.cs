@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 
 namespace Lighthouse.Backend.API

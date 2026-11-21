@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Modules.Access.Application;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture

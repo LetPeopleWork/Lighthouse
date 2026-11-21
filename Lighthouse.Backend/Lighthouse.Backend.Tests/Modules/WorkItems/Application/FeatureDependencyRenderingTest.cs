@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
-using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Moq;

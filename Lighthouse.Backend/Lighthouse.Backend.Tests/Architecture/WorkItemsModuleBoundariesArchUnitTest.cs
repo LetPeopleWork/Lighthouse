@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue =
         [
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
-            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Services.Interfaces.Authorization.IRbacAdministrationService",
+            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService",
             "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Services.Interfaces.IAppSettingService",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateCancellationContext",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Interfaces.IFeatureOrdering",

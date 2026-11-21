@@ -1,0 +1,348 @@
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Modules.Access.Application;
+using Lighthouse.Backend.Modules.Access.Domain;
+using Lighthouse.Backend.Services.Implementation.Refinement;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
+using Moq;
+using System.Security.Claims;
+
+namespace Lighthouse.Backend.Tests.Modules.Access.Application
+{
+    [TestFixture]
+    public class CurrentUserProfileServiceTest
+    {
+        private DbContextOptions<LighthouseAppContext> options;
+        private Mock<ICryptoService> cryptoService;
+        private Mock<ILogger<LighthouseAppContext>> appContextLogger;
+        private Mock<ILogger<CurrentUserProfileService>> serviceLogger;
+
+        private SqliteConnection connection;
+        private readonly FakeTimeProvider time = new(TheClocksInstant);
+
+        private static readonly DateTimeOffset TheClocksInstant = new(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
+
+        /// <summary>
+        /// The clock's local zone is moved far off UTC, so a stamp taken from the local wall clock
+        /// instead of the UTC instant lands fourteen hours away and fails on its value, not only on its kind.
+        /// </summary>
+        [SetUp]
+        public void SetUp()
+        {
+            time.SetLocalTimeZone(TestZones.FarAheadOfUtc);
+            cryptoService = new Mock<ICryptoService>();
+            appContextLogger = new Mock<ILogger<LighthouseAppContext>>();
+            serviceLogger = new Mock<ILogger<CurrentUserProfileService>>();
+
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            options = new DbContextOptionsBuilder<LighthouseAppContext>()
+                .UseSqlite(connection)
+                .Options;
+
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            context.Database.EnsureCreated();
+
+            // store connection so it stays open for the test lifetime
+            this.connection = connection;
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            connection?.Dispose();
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_FirstSignIn_StampsTheProfileWithTheClockInstant()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            await subject.GetOrCreateFromPrincipalAsync(BuildPrincipal(new Claim("sub", "auth0|first")), CancellationToken.None);
+
+            using var freshContext = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var stored = await freshContext.UserProfiles.SingleAsync(p => p.Subject == "auth0|first");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored.CreatedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(stored.CreatedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(stored.LastSeenAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(stored.LastSeenAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_ReturningUser_StampsLastSeenAtWithTheClockInstant()
+        {
+            using (var seedContext = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object))
+            {
+                seedContext.UserProfiles.Add(new UserProfile { Subject = "auth0|back", SubjectClaimType = "sub" });
+                await seedContext.SaveChangesAsync();
+            }
+
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            await subject.GetOrCreateFromPrincipalAsync(BuildPrincipal(new Claim("sub", "auth0|back")), CancellationToken.None);
+
+            using var freshContext = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var stored = await freshContext.UserProfiles.SingleAsync(p => p.Subject == "auth0|back");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored.LastSeenAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(stored.LastSeenAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_SubClaimPresent_CreatesProfile()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            var principal = BuildPrincipal(
+                new Claim("sub", "auth0|abc123"),
+                new Claim("name", "Story User"),
+                new Claim(ClaimTypes.Email, "story.user@example.com"));
+
+            var profile = await subject.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile, Is.Not.Null);
+                Assert.That(profile!.Subject, Is.EqualTo("auth0|abc123"));
+                Assert.That(profile.SubjectClaimType, Is.EqualTo("sub"));
+                Assert.That(profile.DisplayName, Is.EqualTo("Story User"));
+                Assert.That(profile.Email, Is.EqualTo("story.user@example.com"));
+                Assert.That(context.UserProfiles.Count(), Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_OidFallback_UsesOidAsStableSubject()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            var principal = BuildPrincipal(
+                new Claim("oid", "aad-oid-42"),
+                new Claim("name", "Oid User"));
+
+            var profile = await subject.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile, Is.Not.Null);
+                Assert.That(profile!.Subject, Is.EqualTo("aad-oid-42"));
+                Assert.That(profile.SubjectClaimType, Is.EqualTo("oid"));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_NoStableSubject_ReturnsNullAndDoesNotPersist()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            var principal = BuildPrincipal(
+                new Claim("name", "Missing Subject"),
+                new Claim(ClaimTypes.Email, "missing.subject@example.com"));
+
+            var profile = await subject.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile, Is.Null);
+                Assert.That(context.UserProfiles.Count(), Is.Zero);
+                serviceLogger.Verify(logger => logger.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => state.ToString() == "Current user profile rejected due to missing stable subject claim"),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_BothNameAndBothEmailClaims_PrefersTheShortNameAndTheSchemaEmail()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            var principal = BuildPrincipal(
+                new Claim("sub", "auth0|both"),
+                new Claim(ClaimTypes.Name, "Schema Name"),
+                new Claim("name", "Short Name"),
+                new Claim("email", "short@example.com"),
+                new Claim(ClaimTypes.Email, "schema@example.com"));
+
+            var profile = await service.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile?.DisplayName, Is.EqualTo("Short Name"));
+                Assert.That(profile?.Email, Is.EqualTo("schema@example.com"));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_OnlyTheOtherNameAndEmailClaims_FallsBackToThem()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            var principal = BuildPrincipal(
+                new Claim("sub", "auth0|fallback"),
+                new Claim(ClaimTypes.Name, "Schema Name"),
+                new Claim("email", "short@example.com"));
+
+            var profile = await service.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile?.DisplayName, Is.EqualTo("Schema Name"));
+                Assert.That(profile?.Email, Is.EqualTo("short@example.com"));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_ExistingProfile_UpdatesDisplayNameAndEmail()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+
+            context.UserProfiles.Add(new UserProfile
+            {
+                Subject = "auth0|existing",
+                SubjectClaimType = "sub",
+                DisplayName = "Old Name",
+                Email = "old@example.com",
+                CreatedAt = DateTime.UtcNow.AddDays(-10),
+                LastSeenAt = DateTime.UtcNow.AddDays(-1),
+            });
+            context.UserProfiles.Add(new UserProfile
+            {
+                Subject = "auth0|someone-else",
+                SubjectClaimType = "sub",
+                DisplayName = "Someone Else",
+                Email = "someone.else@example.com",
+                CreatedAt = DateTime.UtcNow.AddDays(-10),
+                LastSeenAt = DateTime.UtcNow.AddDays(-1),
+            });
+            await context.SaveChangesAsync();
+
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            var principal = BuildPrincipal(
+                new Claim("sub", "auth0|existing"),
+                new Claim("name", "New Name"),
+                new Claim("email", "new@example.com"));
+
+            var profile = await service.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None);
+
+            using var freshContext = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var stored = await freshContext.UserProfiles.SingleAsync(p => p.Subject == "auth0|existing");
+            var untouched = await freshContext.UserProfiles.SingleAsync(p => p.Subject == "auth0|someone-else");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile, Is.Not.Null);
+                Assert.That(profile!.DisplayName, Is.EqualTo("New Name"));
+                Assert.That(profile.Email, Is.EqualTo("new@example.com"));
+                Assert.That(freshContext.UserProfiles.Count(), Is.EqualTo(2));
+                Assert.That(stored.DisplayName, Is.EqualTo("New Name"));
+                Assert.That(stored.Email, Is.EqualTo("new@example.com"));
+                Assert.That(untouched.DisplayName, Is.EqualTo("Someone Else"));
+                Assert.That(untouched.Email, Is.EqualTo("someone.else@example.com"));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_ApiKeyPrincipal_LeavesTheOwnersProfileAsItWas()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            await AnasProfileWithoutADisplayName(context);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            var profile = await service.GetOrCreateFromPrincipalAsync(AnasApiKey(), CancellationToken.None);
+            var stored = await context.UserProfiles.AsNoTracking().SingleAsync(p => p.Subject == "ana");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile?.DisplayName, Is.Null);
+                Assert.That(profile?.Email, Is.EqualTo("ana@example.com"));
+                Assert.That(stored.DisplayName, Is.Null);
+                Assert.That(stored.Email, Is.EqualTo("ana@example.com"));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_ApiKeyPrincipalWhoseOwnerHasNoProfile_ReturnsNullAndDoesNotPersist()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            var profile = await service.GetOrCreateFromPrincipalAsync(AnasApiKey(), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(profile, Is.Null);
+                Assert.That(context.UserProfiles.Count(), Is.Zero);
+            }
+        }
+
+        [Test]
+        public async Task AVoteCastWithAnApiKeyIsShownUnderItsOwnerNotUnderTheKey()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            await AnasProfileWithoutADisplayName(context);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
+            var principal = AnasApiKey();
+            var resolver = new VoterIdentityResolver(
+                Mock.Of<IAuthModeResolver>(modes => modes.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Enabled }),
+                Mock.Of<IHttpContextAccessor>(accessor => accessor.HttpContext == new DefaultHttpContext { User = principal }));
+
+            var resolution = await resolver.ForWriteAsync(null, null, () => service.GetOrCreateFromPrincipalAsync(principal, CancellationToken.None));
+
+            Assert.That(resolution.Voter?.DisplayName, Is.EqualTo("ana@example.com"));
+        }
+
+        private static async Task AnasProfileWithoutADisplayName(LighthouseAppContext context)
+        {
+            context.UserProfiles.Add(new UserProfile
+            {
+                Subject = "ana",
+                SubjectClaimType = "sub",
+                DisplayName = null,
+                Email = "ana@example.com",
+                CreatedAt = DateTime.UtcNow.AddDays(-10),
+                LastSeenAt = DateTime.UtcNow.AddDays(-1),
+            });
+            await context.SaveChangesAsync();
+        }
+
+        private static ClaimsPrincipal AnasApiKey()
+            => ApiKeyPrincipalFactory.Create(
+                new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    ApiKeyId = 3,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Resolved,
+                    OwnerSubject = "ana",
+                },
+                "ApiKey");
+
+        private static ClaimsPrincipal BuildPrincipal(params Claim[] claims)
+        {
+            var identity = new ClaimsIdentity(claims, "TestAuthentication");
+            return new ClaimsPrincipal(identity);
+        }
+    }
+}

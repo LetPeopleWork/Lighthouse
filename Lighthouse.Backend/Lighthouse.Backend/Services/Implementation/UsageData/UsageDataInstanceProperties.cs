@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.UsageData;
 using Microsoft.Extensions.DependencyInjection;

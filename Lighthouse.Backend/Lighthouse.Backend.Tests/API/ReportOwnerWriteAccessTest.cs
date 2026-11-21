@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Modules.Access.Application;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API

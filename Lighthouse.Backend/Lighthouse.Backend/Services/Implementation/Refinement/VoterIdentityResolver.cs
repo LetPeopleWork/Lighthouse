@@ -1,8 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Implementation.Auth;
-using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Services.Interfaces.Refinement;
 
 namespace Lighthouse.Backend.Services.Implementation.Refinement

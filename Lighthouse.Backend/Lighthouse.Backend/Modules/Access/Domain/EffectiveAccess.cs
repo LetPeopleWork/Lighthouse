@@ -1,0 +1,246 @@
+using Lighthouse.Backend.Models.Authorization;
+
+namespace Lighthouse.Backend.Modules.Access.Domain
+{
+    /// <summary>
+    /// What one person may do: their System role, kept apart, and their role on each Team and Portfolio, which is the
+    /// higher of the role they hold on that unit and the role of every SSO group rule that reaches it, and Viewer on
+    /// every unit while everyone signed in can view. Admin on all reads as Team Admin on a Team and Portfolio Admin on
+    /// a Portfolio, and never as the System role. A rule only adds. The unit roles are worked out on the first unit
+    /// question, so asking for the System role never depends on them, nor on the switch.
+    /// </summary>
+    public sealed class EffectiveAccess
+    {
+        private static readonly PermissionRule EveryoneSignedInViewer = new(PermissionScopeType.AllUnits, null, UserRole.Viewer);
+
+        private readonly UserRole? systemRole;
+        private readonly Lazy<UnitRoles> unitRoles;
+
+        private EffectiveAccess(UserRole? systemRole, Lazy<UnitRoles> unitRoles)
+        {
+            this.systemRole = systemRole;
+            this.unitRoles = unitRoles;
+        }
+
+        /// <param name="ownerRows">The rows the person holds, on the System or on one unit each.</param>
+        /// <param name="ruleRows">The rows of the person's SSO groups that apply to a set of units rather than to one.</param>
+        public static EffectiveAccess Resolve(IEnumerable<PermissionRule> ownerRows, IEnumerable<PermissionRule> ruleRows)
+        {
+            return Resolve(ownerRows, ruleRows, static () => false);
+        }
+
+        /// <param name="ownerRows">The rows the person holds, on the System or on one unit each.</param>
+        /// <param name="ruleRows">The rows of the person's SSO groups that apply to a set of units rather than to one.</param>
+        /// <param name="everyoneSignedInCanView">
+        /// Asks whether everyone signed in can view, for a person whose profile is resolved. It is asked only with the
+        /// first unit question, so a switch that cannot be read fails that question and leaves the System role alone.
+        /// </param>
+        public static EffectiveAccess Resolve(
+            IEnumerable<PermissionRule> ownerRows,
+            IEnumerable<PermissionRule> ruleRows,
+            Func<bool> everyoneSignedInCanView)
+        {
+            var owned = ownerRows.ToList();
+            var systemRole = owned
+                .Where(row => row is { ScopeType: PermissionScopeType.System, ScopeId: null })
+                .Aggregate((UserRole?)null, (highest, row) => Higher(highest, row.Role));
+
+            return new EffectiveAccess(
+                systemRole,
+                new Lazy<UnitRoles>(() => UnitRoles.From(owned, WithEveryoneSignedIn(ruleRows, everyoneSignedInCanView))));
+        }
+
+        public bool IsSystemAdmin => systemRole == UserRole.SystemAdmin;
+
+        public bool AdministersAnyUnit => unitRoles.Value.AdministersAny;
+
+        public bool CanRead(PermissionScopeType unitType, int unitId)
+        {
+            var role = RoleOn(new UnitKey(unitType, unitId));
+            return role == UserRole.Viewer || (role is not null && role == AdminRoleOn(unitType));
+        }
+
+        public bool CanWrite(PermissionScopeType unitType, int unitId)
+        {
+            var role = RoleOn(new UnitKey(unitType, unitId));
+            return role is not null && role == AdminRoleOn(unitType);
+        }
+
+        /// <param name="unitType">Team or Portfolio.</param>
+        /// <param name="storedUnitIds">
+        /// Every stored unit of that type, since a rule names no unit and so cannot list the units it administers.
+        /// </param>
+        public IReadOnlyList<int> AdministeredUnitIds(PermissionScopeType unitType, IEnumerable<int> storedUnitIds)
+        {
+            return unitRoles.Value.HeldUnitIds(unitType)
+                .Union(storedUnitIds)
+                .Where(unitId => CanWrite(unitType, unitId))
+                .ToList();
+        }
+
+        /// <summary>
+        /// The access of an API key limited to these rows: each row the owner covers on that unit, at the key's own
+        /// scope. The key never takes over the owner's rules, so it reaches nothing beyond its own rows.
+        /// </summary>
+        public EffectiveAccess LimitedTo(IEnumerable<PermissionRule> keyRows)
+        {
+            return Resolve(keyRows.Where(Covers), []);
+        }
+
+        private bool Covers(PermissionRule keyRow)
+        {
+            if (IsSystemAdmin)
+            {
+                return true;
+            }
+
+            if (!UnitKey.TryFrom(keyRow, out var unit))
+            {
+                return false;
+            }
+
+            var ownerGives = RoleOn(unit) is { } ownerRole ? PriorityOn(unit.ScopeType, ownerRole) : 0;
+            return ownerGives > 0 && ownerGives >= PriorityOn(unit.ScopeType, keyRow.Role);
+        }
+
+        private UserRole? RoleOn(UnitKey unit)
+        {
+            return unitRoles.Value.RoleOn(unit);
+        }
+
+        // The switch can only give reading, so it joins the rules as one Viewer reach on all units.
+        private static IEnumerable<PermissionRule> WithEveryoneSignedIn(IEnumerable<PermissionRule> ruleRows, Func<bool> everyoneSignedInCanView)
+        {
+            return everyoneSignedInCanView() ? ruleRows.Append(EveryoneSignedInViewer) : ruleRows;
+        }
+
+        private static UserRole? AdminRoleOn(PermissionScopeType unitType)
+        {
+            return unitType switch
+            {
+                PermissionScopeType.Team => UserRole.TeamAdmin,
+                PermissionScopeType.Portfolio => UserRole.PortfolioAdmin,
+                _ => null,
+            };
+        }
+
+        private static UserRole Higher(UserRole? current, UserRole candidate)
+        {
+            return current is null || Priority(candidate) > Priority(current.Value) ? candidate : current.Value;
+        }
+
+        private static int Priority(UserRole role)
+        {
+            return role switch
+            {
+                UserRole.SystemAdmin => 4,
+                UserRole.TeamAdmin => 3,
+                UserRole.PortfolioAdmin => 3,
+                UserRole.Viewer => 2,
+                _ => 0,
+            };
+        }
+
+        // On a unit, only Viewer and the admin role of that kind of unit give anything there.
+        private static int PriorityOn(PermissionScopeType unitType, UserRole role)
+        {
+            return role == UserRole.Viewer || role == AdminRoleOn(unitType) ? Priority(role) : 0;
+        }
+
+        private readonly record struct UnitKey(PermissionScopeType ScopeType, int UnitId)
+        {
+            public static bool TryFrom(PermissionRule row, out UnitKey unit)
+            {
+                unit = default;
+                if (row.ScopeType is not (PermissionScopeType.Team or PermissionScopeType.Portfolio) || row.ScopeId is not { } unitId)
+                {
+                    return false;
+                }
+
+                unit = new UnitKey(row.ScopeType, unitId);
+                return true;
+            }
+        }
+
+        private sealed record Reach(AppliesTo AppliesTo, UserRole Role)
+        {
+            public bool Administers => AdministersOn(PermissionScopeType.Team) || AdministersOn(PermissionScopeType.Portfolio);
+
+            public UserRole? GivesOn(PermissionScopeType unitType)
+            {
+                if (!AppliesTo.Reaches(unitType))
+                {
+                    return null;
+                }
+
+                return Role == UserRole.UnitAdmin ? AdminRoleOn(unitType) : Role;
+            }
+
+            private bool AdministersOn(PermissionScopeType unitType)
+            {
+                return GivesOn(unitType) is { } given && given == AdminRoleOn(unitType);
+            }
+        }
+
+        private sealed class UnitRoles
+        {
+            private readonly Dictionary<UnitKey, UserRole> heldOnUnits;
+            private readonly List<Reach> reaches;
+
+            private UnitRoles(Dictionary<UnitKey, UserRole> heldOnUnits, List<Reach> reaches)
+            {
+                this.heldOnUnits = heldOnUnits;
+                this.reaches = reaches;
+            }
+
+            public static UnitRoles From(IEnumerable<PermissionRule> ownerRows, IEnumerable<PermissionRule> ruleRows)
+            {
+                var heldOnUnits = new Dictionary<UnitKey, UserRole>();
+                foreach (var row in ownerRows)
+                {
+                    if (UnitKey.TryFrom(row, out var unit))
+                    {
+                        heldOnUnits[unit] = HigherOn(unit.ScopeType, heldOnUnits.TryGetValue(unit, out var existing) ? existing : null, row.Role);
+                    }
+                }
+
+                var reaches = new List<Reach>();
+                foreach (var row in ruleRows)
+                {
+                    if (AppliesTo.TryFrom(row, out var appliesTo))
+                    {
+                        reaches.Add(new Reach(appliesTo, row.Role));
+                    }
+                }
+
+                return new UnitRoles(heldOnUnits, reaches);
+            }
+
+            public bool AdministersAny => heldOnUnits.Any(entry => entry.Value == AdminRoleOn(entry.Key.ScopeType))
+                || reaches.Any(reach => reach.Administers);
+
+            public UserRole? RoleOn(UnitKey unit)
+            {
+                UserRole? held = heldOnUnits.TryGetValue(unit, out var role) ? role : null;
+                return reaches
+                    .Select(reach => reach.GivesOn(unit.ScopeType))
+                    .OfType<UserRole>()
+                    .Aggregate(held, (highest, given) => HigherOn(unit.ScopeType, highest, given));
+            }
+
+            public IEnumerable<int> HeldUnitIds(PermissionScopeType unitType)
+            {
+                return heldOnUnits.Keys
+                    .Where(unit => unit.ScopeType == unitType)
+                    .Select(unit => unit.UnitId);
+            }
+
+            // On a unit, a role that does not belong to that unit type, such as Portfolio Admin on a Team, gives
+            // nothing there, so it must not hide a Viewer rule that reaches the unit.
+            private static UserRole HigherOn(PermissionScopeType unitType, UserRole? current, UserRole candidate)
+            {
+                return current is null || PriorityOn(unitType, candidate) > PriorityOn(unitType, current.Value) ? candidate : current.Value;
+            }
+        }
+    }
+}

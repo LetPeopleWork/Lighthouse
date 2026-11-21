@@ -1,7 +1,7 @@
 using System.Net;
 using System.Security.Claims;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
