@@ -7,7 +7,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Security.Claims;

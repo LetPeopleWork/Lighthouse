@@ -426,7 +426,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             yield return OtherContextCase("ReachingRefinement", "Lighthouse.Backend.Services.Interfaces.Refinement.IRefinementViewQuery", "ATrackerIntegrationTypeReachingRefinement_IsNamed");
             yield return OtherContextCase("ReachingReports", "Lighthouse.Backend.Services.Interfaces.Reports.IReportQueries", "ATrackerIntegrationTypeReachingReports_IsNamed");
             yield return OtherContextCase("ReachingAccess", "Lighthouse.Backend.Services.Interfaces.Authorization.IRbacAdministrationService", "ATrackerIntegrationTypeReachingAccess_IsNamed");
-            yield return OtherContextCase("ReachingTheLicence", "Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService", "ATrackerIntegrationTypeReachingTheLicence_IsNamed");
+            yield return OtherContextCase("ReachingTheLicence", "Lighthouse.Backend.Modules.Licensing.Application.ILicenseService", "ATrackerIntegrationTypeReachingTheLicence_IsNamed");
         }
 
         private static TestCaseData OtherContextCase(string caseName, string target, string name)
@@ -602,7 +602,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.Boundaries.Domai
 
     internal static class ADomainRuleAskingTheLicence
     {
-        public static bool Allows(global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService licence) => licence is not null;
+        public static bool Allows(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence) => licence is not null;
     }
 }
 
@@ -887,7 +887,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 {
     internal static class AConnector
     {
-        public static bool Reaches(global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService other) => other is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService other) => other is not null;
     }
 
     internal static class AConnectorMergingTheForecastBlock

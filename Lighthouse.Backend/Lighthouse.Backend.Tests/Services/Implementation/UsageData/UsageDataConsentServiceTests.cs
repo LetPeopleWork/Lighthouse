@@ -2,7 +2,7 @@ using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.UsageData;
 using Lighthouse.Backend.Services.Implementation.UsageData;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.UsageData;
 using Microsoft.Extensions.Options;

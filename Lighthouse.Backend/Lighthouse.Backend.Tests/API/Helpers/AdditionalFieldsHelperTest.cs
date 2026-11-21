@@ -1,6 +1,6 @@
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Helpers

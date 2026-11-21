@@ -416,7 +416,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("APromisesTypeReachingTheWriteBackRound_IsNamed");
             yield return new TestCaseData(typeof(ADeliveryServiceTouchingTheUpdateCode), OutboundTarget.Upstream, "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey")
                 .SetName("APromisesTypeReachingTheUpdateCode_IsNamed");
-            yield return new TestCaseData(typeof(ADeliveryServiceAskingTheLicence), OutboundTarget.Upstream, "Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService")
+            yield return new TestCaseData(typeof(ADeliveryServiceAskingTheLicence), OutboundTarget.Upstream, "Lighthouse.Backend.Modules.Licensing.Application.ILicenseService")
                 .SetName("APromisesTypeReachingLicensing_IsNamed");
         }
 
@@ -640,7 +640,7 @@ namespace Lighthouse.Backend.Modules.PromisesFixtures.Boundaries.Domain
         public int DaysFrom(DateOnly today) => ExpectedDate.DayNumber - today.DayNumber;
     }
 
-    internal sealed class ADeliveryBlockAskingTheLicence(global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService licence)
+    internal sealed class ADeliveryBlockAskingTheLicence(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence)
     {
         public bool CanShow() => licence.CanUsePremiumFeatures();
     }
@@ -783,7 +783,7 @@ namespace Lighthouse.Backend.Modules.PromisesFixtures.BoundariesOutbound.Touchin
 
 namespace Lighthouse.Backend.Modules.PromisesFixtures.BoundariesOutbound.AskingTheLicence.Application
 {
-    internal sealed class ADeliveryServiceAskingTheLicence(global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService licence)
+    internal sealed class ADeliveryServiceAskingTheLicence(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence)
     {
         public bool CanShow() => licence.CanUsePremiumFeatures();
     }

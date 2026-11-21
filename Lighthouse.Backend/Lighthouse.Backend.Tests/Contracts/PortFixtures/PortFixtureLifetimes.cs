@@ -6,7 +6,7 @@ using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Modules.Forecasting.Application;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
 using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 

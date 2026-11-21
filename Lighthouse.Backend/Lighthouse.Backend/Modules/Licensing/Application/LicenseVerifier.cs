@@ -1,12 +1,12 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 
-namespace Lighthouse.Backend.Services.Implementation.Licensing
+namespace Lighthouse.Backend.Modules.Licensing.Application
 {
     public class LicenseVerifier : ILicenseVerifier
     {

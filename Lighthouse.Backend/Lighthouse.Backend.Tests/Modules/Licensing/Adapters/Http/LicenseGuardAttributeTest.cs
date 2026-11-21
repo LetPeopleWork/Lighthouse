@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Licensing;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
+using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing;
+namespace Lighthouse.Backend.Tests.Modules.Licensing.Adapters.Http;
 
 public class LicenseGuardAttributeTest
 {

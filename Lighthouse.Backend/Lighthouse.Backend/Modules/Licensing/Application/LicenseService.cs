@@ -1,10 +1,10 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Text.Json;
 
-namespace Lighthouse.Backend.Services.Implementation.Licensing
+namespace Lighthouse.Backend.Modules.Licensing.Application
 {
     public class LicenseService(
         ILogger<LicenseService> logger,

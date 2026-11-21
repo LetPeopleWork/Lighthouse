@@ -1,7 +1,7 @@
 using Lighthouse.Backend.API.DTO.Reports;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Authorization;
-using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Microsoft.AspNetCore.Mvc;

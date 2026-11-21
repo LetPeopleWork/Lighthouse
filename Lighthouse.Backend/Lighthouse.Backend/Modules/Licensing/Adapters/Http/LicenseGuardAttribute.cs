@@ -1,10 +1,10 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace Lighthouse.Backend.Services.Implementation.Licensing
+namespace Lighthouse.Backend.Modules.Licensing.Adapters.Http
 {
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
     public class LicenseGuardAttribute : Attribute, IAsyncAuthorizationFilter

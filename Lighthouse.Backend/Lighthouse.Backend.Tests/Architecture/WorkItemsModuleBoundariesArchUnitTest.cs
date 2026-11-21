@@ -145,7 +145,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // settings and the clock, so their edges are listed here too. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue =
         [
-            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService",
+            "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Services.Interfaces.Authorization.IRbacAdministrationService",
             "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Services.Interfaces.IAppSettingService",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateCancellationContext",
@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string PortfolioMetricsService => typeof(global::Lighthouse.Backend.Modules.FlowMetrics.Application.IPortfolioMetricsService).FullName!;
 
-        private static string LicenceService => typeof(global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService).FullName!;
+        private static string LicenceService => typeof(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService).FullName!;
 
         [OneTimeTearDown]
         public void DisposeModules()
@@ -362,7 +362,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             yield return new TestCaseData(
                     typeof(AWorkItemServiceReadingTheLicenceTwice),
                     new[] { $"{typeof(AWorkItemServiceReadingTheLicenceTwice).FullName} -> {LicenceService}" },
-                    OutboundTarget.AccessLicensingOrganisationSetUpAndTheUpdateQueue, Edge(typeof(AWorkItemServiceReadingTheLicenceTwice), "Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseVerifier"))
+                    OutboundTarget.AccessLicensingOrganisationSetUpAndTheUpdateQueue, Edge(typeof(AWorkItemServiceReadingTheLicenceTwice), "Lighthouse.Backend.Modules.Licensing.Application.ILicenseVerifier"))
                 .SetName("AWorkItemsApplicationTypeReachingASecondLicenceType_IsNamed");
         }
 
@@ -596,7 +596,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.Boundaries.Domain
 
     internal static class ADomainCalculationAskingTheLicence
     {
-        public static bool Allows(global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService licence) => licence is not null;
+        public static bool Allows(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence) => licence is not null;
     }
 }
 
@@ -749,8 +749,8 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.BoundariesOutbound.Readin
 {
     internal static class AWorkItemServiceReadingTheLicenceTwice
     {
-        public static bool Asks(global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService licence) => licence is not null;
+        public static bool Asks(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence) => licence is not null;
 
-        public static bool Verifies(global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseVerifier verifier) => verifier is not null;
+        public static bool Verifies(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseVerifier verifier) => verifier is not null;
     }
 }

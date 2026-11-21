@@ -1,7 +1,8 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Tests.Services.Implementation.Licensing;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
+namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
 {
     [TestFixture]
     public class LicenseVerifierTest

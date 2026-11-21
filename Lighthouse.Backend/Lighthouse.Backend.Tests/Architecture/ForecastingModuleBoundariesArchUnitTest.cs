@@ -20,7 +20,7 @@ using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.Re
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.SecondLicensingType.Application;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.SecondUpdateType.Adapters;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationBelowItOrIntoTheLicence =
         [
-            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService -> Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService",
+            "Lighthouse.Backend.Modules.Forecasting.Application.ForecastFilterRuleService -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
         ];
 
         // The edges from Forecasting's Adapters into the update code the Team and Portfolio updaters use too. It stays
@@ -829,7 +829,7 @@ namespace Lighthouse.Backend.ForecastingModuleBoundariesFixtures.ApplicationNewc
 
 namespace Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.CompliantApplication.Application
 {
-    internal sealed class ACompliantForecastService(global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService licence)
+    internal sealed class ACompliantForecastService(global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence)
     {
         public bool CanForecast(global::Lighthouse.Backend.Models.Feature feature) => licence.CanUsePremiumFeatures() && feature.Id > 0;
     }
@@ -854,8 +854,8 @@ namespace Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutboun
 namespace Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.SecondLicensingType.Application
 {
     internal sealed class AForecastServiceReadingTheLicenceTwice(
-        global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService licence,
-        global::Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseVerifier verifier)
+        global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence,
+        global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseVerifier verifier)
     {
         public bool CanForecast(global::Lighthouse.Backend.Models.LicenseInformation license) => licence.CanUsePremiumFeatures() && verifier.VerifyLicense(license);
     }

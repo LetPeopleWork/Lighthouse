@@ -1,13 +1,13 @@
 ﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Modules.Licensing.Application;
+using Lighthouse.Backend.Tests.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
+namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
 {
     [TestFixture]
     public class LicenseServiceTest
