@@ -2,7 +2,8 @@
 "counters": {
 "C": 1,
 "D": 8,
-"F": 261,
+"E": 6,
+"F": 267,
 "K": 3,
 "L": 4,
 "P": 6,
@@ -5675,6 +5676,52 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F262"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F263"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F264"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F265"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F266"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F267"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6363 S03e Package Access and Licensing, feature B (the move): Licensing lives in Modules/Licensing/{Application, Adapters/Http} with its licence key (B1); Access Domain and Application types live in Modules/Access/{Domain, Application} with the admitted Models types, IRbacAdministrationService surface unchanged (B2); the guards, markers, filters and authentication handlers live in Modules/Access/Adapters/Http and the development log key follows (B3); the Licensing test data moves to Tests/Modules/Licensing (B4, maintainer answer 2026-11-17). Pure moves: behaviour unchanged. DESIGN and DEVOPS: docs/feature/story-6363-s03e-package-access-licensing/feature-delta.md; feature A (rules first, membership, probes) is delivered.",
 "F10": "Access and Licensing module rules and the unit-test placement rule (feature C); the rules-first patterns, membership lists and the two probes (feature A, delivered); entities and wire types in Models/Auth, Models/Authorization and Models/LicenseInformation, the six repositories and the two seeders (they stay); any schema change, rename, signature change or behaviour change; mutation and the finalize checklist (run after feature C, not nwdes slices). Nothing a user sees changes, so there is no UI sketch.",
@@ -5857,6 +5904,12 @@
 "F26": "Behaviour-free (D-0, D-4, D-5, D-10): no class is created, merged or renamed and no signature changes; the only new file is the EmbedHandshakeOutcome split of S2. Entities, wire types, the six repositories, the two seeders, controllers, DTOs, API helpers, EmbedConfiguration and AuthPostureBanner stay. The three direct LighthouseAppContext readers keep their edge (listed in feature C). Program.cs lines, order and lifetimes stay; only usings and full type names change. Scheme names, cookie names, the API-key header, the emergency-admin key and the auth-off one-subject behaviour are constants or configuration, not namespaces, and stay; the only configuration change is the development log key in S3.",
 "F260": "a workflow, gitignore, csproj or examine builder line naming the old folder fails naming the file and line",
 "F261": "Licensing test data and every path naming it live under Tests/Modules/Licensing; no file names the old folder",
+"F262": "After the move, a reader of the licensing code finds every licensing type in the Licensing module under its designed layer, with namespace matching folder, and no licensing type is still reachable under its old namespace; the licence still verifies against its embedded public key.",
+"F263": "The Access domain and application types sit in the Access module's Domain and Application folders, the Access domain depends on nothing but the shared kernel and the base library, and the RBAC administration service offers exactly the same public operations as before the move.",
+"F264": "The Access guards, markers, filters and authentication handlers sit in the Access HTTP adapter; the RBAC guard attribute and the four attributes are declared and behave as before, the count of guarded actions equals the count measured at the start of B3, and the development log setting still silences the authentication handler by its full type name.",
+"F265": "The licensing test data and licensing integration test sit under the Licensing tests folder, and every build, CI and configuration reference to them points there, so licensing tests and the live authentication runs still find the licence files.",
+"F266": "The unit tests of moved types sit in the matching tests module folder, and the architecture rules and lists name moved types at their new place and still detect a mismatch in either direction.",
+"F267": "A user or API client sees no change: auth mode, session, my-summary, RBAC status, system-wide rules, everyone-signed-in, API keys and licence status (before and after an import) answer as before, the database model is unchanged, the live authentication, RBAC and proxy-auth journeys pass and all existing tests stay green.",
 "F27": "Tests move with production (D-9 as amended by the maintainer on 2026-11-17): each slice moves the unit tests of its moved types with git mv to Lighthouse.Backend.Tests/Modules/<Access or Licensing>/<same layer>, namespace equals folder. S1: LicenseServiceTest and LicenseVerifierTest to Licensing/Application, LicenseGuardAttributeTest to Licensing/Adapters/Http. S2: ApiKeyPrincipalFactoryTest and Models/Authorization/EffectiveAccessTest to Access/Domain; ApiKeyServiceTest, AuthConfigurationValidatorTest, AuthModeResolverTest, CurrentUserProfileServiceTest, EmbedSessionTokenServiceTest, OidcGroupSnapshotWriterTest, RbacAdministrationServiceTest and CreateRightsAcceptanceTest to Access/Application. S3: ApiKeyAuthenticationHandlerTest, BlockedModeFilterTest, SmartAuthSchemeSelectorTest and RbacGuardAttributeTest to Access/Adapters/Http. PermissionRuleTest stays. S4 moves TestLicenseData, invalid_license.json, valid_expired_license.json and LicensingIntegrationTest to Tests/Modules/Licensing. None of the moved unit tests starts a host; the improve-the-tests rule is waived for move-only and using-only edits; the HostUsersStillToMove line of LicensingIntegrationTest follows its new full name.",
 "F28": "Rule lists follow the move and are never loosened (P5): full-name strings, typeof and global:: references to a moved type in ForecastingModuleBoundariesArchUnitTest, WorkItemsModuleBoundariesArchUnitTest, TrackerIntegrationModuleBoundariesArchUnitTest, PromisesModuleBoundariesArchUnitTest, AccessTablesSingleReaderArchUnitTest, EveryActionDeclaresItsAccessArchitectureTest, ReportsModuleArchUnitTest, RefinementModuleArchUnitTest and TestHostUseGuardTest.HostUsersStillToMove are rewritten in the slice that moves the type and stay compared both ways. The old-namespace alternatives feature A widened (RbacIdentityPattern and the neighbour patterns) keep both alternatives until feature C. AccessAndLicensingMembership and AccessAndLicensingRulesSeeTheModulesArchUnitTest are namespace-agnostic or declare their own fixture namespaces and stay unedited. One compile-forced exception: AccessAndLicensingMembershipArchUnitTest names IRbacAdministrationService by its old full name in a made-up Domain fixture (line 695) and in an expected failure text (line 270); S2 rewrites those two full names to Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService and nothing else in that file.",
 "F29": "Oracles (one new file per slice, D-12): S1-S3 are IL architecture tests over the compiled Lighthouse.Backend assembly through ModuleRules.TypesLiveInTheirLayer and DomainReachesOnlyTheKernelAndTheBaseLibrary, reading the type names from AccessAndLicensingMembership so a list name with no type fails (never vacuous), modelled on PromisesLayoutArchUnitTest and ForecastingDomainLayoutArchUnitTest; nested types are compared at top level. The preservation pins (IRbacAdministrationService public members in S2; RbacGuardAttribute constructors and public members, the AttributeUsage of RbacGuardAttribute, AccessMarkerAttribute, SignedInOnlyAttribute and CheckedInHandlerAttribute, the guarded-action count and the development log key in S3) are GREEN before the move and stay GREEN; the layout part is the RED. S4 is a placement test over the test assembly, its output folder and the repository files that name the licence fixture paths. Repository files are read from the folder holding Lighthouse.sln, found by walking up from the test assembly directory. No oracle starts a host.",

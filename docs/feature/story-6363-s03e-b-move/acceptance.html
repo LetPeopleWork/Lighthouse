@@ -155,7 +155,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>After the move, a reader of the licensing code finds every licensing type in the Licensing module under its designed layer, with namespace matching folder, and no licensing type is still reachable under its old namespace; the licence still verifies against its embedded public key.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>The Access domain and application types sit in the Access module&#x27;s Domain and Application folders, the Access domain depends on nothing but the shared kernel and the base library, and the RBAC administration service offers exactly the same public operations as before the move.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>The Access guards, markers, filters and authentication handlers sit in the Access HTTP adapter; the RBAC guard attribute and the four attributes are declared and behave as before, the count of guarded actions equals the count measured at the start of B3, and the development log setting still silences the authentication handler by its full type name.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>The licensing test data and licensing integration test sit under the Licensing tests folder, and every build, CI and configuration reference to them points there, so licensing tests and the live authentication runs still find the licence files.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>The unit tests of moved types sit in the matching tests module folder, and the architecture rules and lists name moved types at their new place and still detect a mismatch in either direction.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>A user or API client sees no change: auth mode, session, my-summary, RBAC status, system-wide rules, everyone-signed-in, API keys and licence status (before and after an import) answer as before, the database model is unchanged, the live authentication, RBAC and proxy-auth journeys pass and all existing tests stay green.
+</code></pre>
 
 <h2>Charter</h2>
 
