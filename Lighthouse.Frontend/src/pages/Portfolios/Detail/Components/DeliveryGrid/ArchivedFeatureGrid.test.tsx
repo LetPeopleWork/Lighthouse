@@ -1,22 +1,23 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeatureMetric } from "../../../../../models/Delivery/DeliveryMetricsHistory";
-import ArchivedFeatureGrid from "./ArchivedFeatureGrid";
 import {
 	givenANarrowWindow,
 	givenTextIsWiderThanItsColumn,
 	resetTheCut,
 	resetTheWindow,
 	thenALongTextIsCutToItsColumn,
-	thenTheColumnIsShownWhole,
 	thenTheFullTextIsInATooltip,
 	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
 	whenThePersonHoversOver,
 	whenThePersonReachesWithTheKeyboard,
 } from "../../../../../tests/SharedGridFitKit";
+import ArchivedFeatureGrid from "./ArchivedFeatureGrid";
 
 vi.mock("@mui/x-data-grid", async () =>
-	(await import("../../../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
+	(
+		await import("../../../../../tests/SharedGridFitKit")
+	).dataGridWithItsBoxStated(),
 );
 
 const { mockUseLicenseRestrictions } = vi.hoisted(() => ({

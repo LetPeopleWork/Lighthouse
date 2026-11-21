@@ -1,17 +1,6 @@
+import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	aFeature,
-	aWorkItem,
-	contextColumnsShown,
-	day,
-	estimateOf,
-	openTheDialog,
-	resetTheLayout,
-	theDialog,
-	turnColumn,
-} from "../../../tests/WorkItemsDialogTestKit";
-import { within } from "@testing-library/react";
 import {
 	givenANarrowWindow,
 	givenTextIsWiderThanItsColumn,
@@ -24,6 +13,17 @@ import {
 	whenThePersonHoversOver,
 	whenThePersonReachesWithTheKeyboard,
 } from "../../../tests/SharedGridFitKit";
+import {
+	aFeature,
+	aWorkItem,
+	contextColumnsShown,
+	day,
+	estimateOf,
+	openTheDialog,
+	resetTheLayout,
+	theDialog,
+	turnColumn,
+} from "../../../tests/WorkItemsDialogTestKit";
 
 vi.mock("@mui/x-data-grid", async () =>
 	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
@@ -226,7 +226,8 @@ describe("each context remembers its own layout", () => {
 describe("the Work Item dialog fits its columns and says when some are out of sight", () => {
 	const LONG_NAME =
 		"Replatform the order management stack onto the shared event backbone for every region";
-	const LONG_TEAM = "Platform Engineering Delivery Squad for the Northern Region";
+	const LONG_TEAM =
+		"Platform Engineering Delivery Squad for the Northern Region";
 
 	beforeEach(() => {
 		givenANarrowWindow();
@@ -283,7 +284,9 @@ describe("the Work Item dialog fits its columns and says when some are out of si
 		givenTextIsWiderThanItsColumn();
 		whenTheDialogOpensOnALongNamedFeature();
 
-		whenThePersonReachesWithTheKeyboard(within(theDialog()).getByText(LONG_NAME));
+		whenThePersonReachesWithTheKeyboard(
+			within(theDialog()).getByText(LONG_NAME),
+		);
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
 	});

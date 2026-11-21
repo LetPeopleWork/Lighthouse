@@ -5,26 +5,26 @@ import type { IEntityReference } from "../../../models/EntityReference";
 import { Feature } from "../../../models/Feature";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import {
+	givenANarrowWindow,
+	givenTextIsWiderThanItsColumn,
+	resetTheCut,
+	resetTheWindow,
+	thenALongTextIsCutToItsColumn,
+	thenHoveringOverItOpensNoTooltip,
+	thenTheActionsColumnIsPinnedAndLast,
+	thenTheColumnIsShownWhole,
+	thenTheFullTextIsInATooltip,
+	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
+	whenThePersonHoversOver,
+	whenThePersonReachesWithTheKeyboard,
+} from "../../../tests/SharedGridFitKit";
+import {
 	createForecastsColumn,
 	createNameColumn,
 	createParentColumn,
 	createStateColumn,
 } from "./columns";
 import FeatureListDataGrid from "./FeatureListDataGrid";
-import {
-	givenANarrowWindow,
-	givenTextIsWiderThanItsColumn,
-	resetTheCut,
-	resetTheWindow,
-	thenALongTextIsCutToItsColumn,
-	thenTheColumnIsShownWhole,
-	thenTheFullTextIsInATooltip,
-	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
-	whenThePersonHoversOver,
-	whenThePersonReachesWithTheKeyboard,
-	thenTheActionsColumnIsPinnedAndLast,
-	thenHoveringOverItOpensNoTooltip,
-} from "../../../tests/SharedGridFitKit";
 
 vi.mock("@mui/x-data-grid", async () =>
 	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),

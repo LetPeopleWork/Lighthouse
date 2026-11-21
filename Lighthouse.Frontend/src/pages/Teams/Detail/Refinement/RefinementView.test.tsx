@@ -15,7 +15,6 @@ import {
 	createMockApiServiceContext,
 	createMockFeatureService,
 } from "../../../../tests/MockApiServiceProvider";
-import RefinementView from "./RefinementView";
 import {
 	givenANarrowWindow,
 	givenTextIsWiderThanItsColumn,
@@ -28,9 +27,12 @@ import {
 	whenThePersonHoversOver,
 	whenThePersonReachesWithTheKeyboard,
 } from "../../../../tests/SharedGridFitKit";
+import RefinementView from "./RefinementView";
 
 vi.mock("@mui/x-data-grid", async () =>
-	(await import("../../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
+	(
+		await import("../../../../tests/SharedGridFitKit")
+	).dataGridWithItsBoxStated(),
 );
 
 /**
@@ -567,7 +569,9 @@ describe("the Refinement table fits its columns and says when some are out of si
 		givenTextIsWiderThanItsColumn();
 		await whenTheRefinementTabShowsALongNamedWorkItem();
 
-		whenThePersonReachesWithTheKeyboard(screen.getByText(`GR-058: ${LONG_NAME}`));
+		whenThePersonReachesWithTheKeyboard(
+			screen.getByText(`GR-058: ${LONG_NAME}`),
+		);
 
 		await thenTheFullTextIsInATooltip(LONG_NAME);
 	});

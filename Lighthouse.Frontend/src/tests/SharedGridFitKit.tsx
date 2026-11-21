@@ -17,7 +17,9 @@ export const box = { content: 0, viewport: 0, scrollLeft: 0 };
  * The grid module with its box stated by `box`. A test file installs it with
  * `vi.mock("@mui/x-data-grid", () => dataGridWithItsBoxStated())`.
  */
-export const dataGridWithItsBoxStated = async () => {
+export const dataGridWithItsBoxStated = async (): Promise<
+	Record<string, unknown>
+> => {
 	const actual =
 		await vi.importActual<typeof import("@mui/x-data-grid")>(
 			"@mui/x-data-grid",
@@ -182,7 +184,9 @@ export const thenTheTableSaysColumnsAreOutOfSightOnItsRight = (
 		"a shadow must sit on the right edge so the person sees there is more to scroll to",
 	).not.toBeNull();
 	expect(
-		descriptionOf(root.querySelector<HTMLElement>('[role="grid"]') as HTMLElement),
+		descriptionOf(
+			root.querySelector<HTMLElement>('[role="grid"]') as HTMLElement,
+		),
 		"a screen reader user must hear which side has hidden columns",
 	).toBe("This table scrolls sideways. More columns to the right.");
 };
@@ -206,7 +210,9 @@ export const thenTheFullTextIsInATooltip = async (fullText: string) => {
  * Hovering over text that fits its column, or over a cell that is never cut, opens no tooltip.
  * The clock is fake so the tooltip's own delay has passed when the absence is read.
  */
-export const thenHoveringOverItOpensNoTooltip = async (element: HTMLElement) => {
+export const thenHoveringOverItOpensNoTooltip = async (
+	element: HTMLElement,
+) => {
 	vi.useFakeTimers({ shouldAdvanceTime: true });
 	try {
 		fireEvent.mouseOver(element);

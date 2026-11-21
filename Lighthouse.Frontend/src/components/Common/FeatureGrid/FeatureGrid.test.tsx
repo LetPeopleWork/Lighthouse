@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
-import { FeatureGrid } from "./FeatureGrid";
 import {
 	givenANarrowWindow,
 	givenTextIsWiderThanItsColumn,
@@ -16,6 +15,7 @@ import {
 	whenThePersonHoversOver,
 	whenThePersonReachesWithTheKeyboard,
 } from "../../../tests/SharedGridFitKit";
+import { FeatureGrid } from "./FeatureGrid";
 
 vi.mock("@mui/x-data-grid", async () =>
 	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),

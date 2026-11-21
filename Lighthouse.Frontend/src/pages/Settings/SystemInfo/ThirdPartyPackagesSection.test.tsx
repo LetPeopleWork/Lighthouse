@@ -11,7 +11,6 @@ import {
 	createMockSystemInfoService,
 } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
-import ThirdPartyPackagesSection from "./ThirdPartyPackagesSection";
 import {
 	givenANarrowWindow,
 	givenTextIsWiderThanItsColumn,
@@ -24,6 +23,7 @@ import {
 	whenThePersonHoversOver,
 	whenThePersonReachesWithTheKeyboard,
 } from "../../../tests/SharedGridFitKit";
+import ThirdPartyPackagesSection from "./ThirdPartyPackagesSection";
 
 vi.mock("@mui/x-data-grid", async () =>
 	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),

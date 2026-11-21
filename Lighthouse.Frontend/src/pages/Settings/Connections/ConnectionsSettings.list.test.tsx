@@ -17,20 +17,20 @@ import {
 	createMockApiServiceContext,
 	createMockWorkTrackingSystemService,
 } from "../../../tests/MockApiServiceProvider";
-import ConnectionsSettings from "./ConnectionsSettings";
 import {
 	givenANarrowWindow,
 	givenTextIsWiderThanItsColumn,
 	resetTheCut,
 	resetTheWindow,
 	thenALongTextIsCutToItsColumn,
+	thenTheActionsColumnIsPinnedAndLast,
 	thenTheColumnIsShownWhole,
 	thenTheFullTextIsInATooltip,
 	thenTheTableSaysColumnsAreOutOfSightOnItsRight,
 	whenThePersonHoversOver,
 	whenThePersonReachesWithTheKeyboard,
-	thenTheActionsColumnIsPinnedAndLast,
 } from "../../../tests/SharedGridFitKit";
+import ConnectionsSettings from "./ConnectionsSettings";
 
 vi.mock("@mui/x-data-grid", async () =>
 	(await import("../../../tests/SharedGridFitKit")).dataGridWithItsBoxStated(),
