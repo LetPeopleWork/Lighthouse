@@ -222,9 +222,14 @@ export class OverviewTable {
 		const cell = this.table.locator('[role="gridcell"]:focus-within');
 		const box = (await cell.count()) === 1 ? await cell.boundingBox() : null;
 		const tableBox = await this.table.boundingBox();
-		const actions = await this.table
-			.locator('[role="columnheader"][data-field="actions"]')
-			.boundingBox();
+		const actionsHeader = this.table.locator(
+			'[role="columnheader"][data-field="actions"]',
+		);
+		await expect(
+			actionsHeader,
+			"the Overview table must have an actions column",
+		).toHaveCount(1);
+		const actions = await actionsHeader.boundingBox();
 		if (box === null || tableBox === null || actions === null) return false;
 		const isActions = (await this.focusedField()) === "actions";
 		const end = isActions ? tableBox.x + tableBox.width : actions.x;
@@ -239,6 +244,9 @@ export class OverviewTable {
 	 * until the actions cell has the focus. Every cell on the way must come to rest clear of the pinned actions column.
 	 */
 	async walkToActionsWithTheKeyboard(): Promise<string[]> {
+		await this.page.evaluate(() =>
+			(document.activeElement as HTMLElement | null)?.blur(),
+		);
 		await this.focusName();
 		const visited: string[] = [];
 		const MOST_CELLS = 8;
