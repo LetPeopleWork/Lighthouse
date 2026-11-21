@@ -16,6 +16,8 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { aReportList, aReportService } from "../../../tests/ReportsTestKit";
 import DataOverviewTable from "./DataOverviewTable";
+import RowActionsCell from "./RowActionsCell";
+import RowActionsMenu from "./RowActionsMenu";
 
 const mockNavigate = vi.fn();
 vi.mock("react-router", async () => {
@@ -1244,5 +1246,169 @@ describe("The Overview table fits its columns and says when some are out of sigh
 			widthOf(headerOf(container, "actions")),
 			"the desktop actions column holds four icons, so it is wider than the phone's menu column",
 		).toBeGreaterThan(MENU_MAXIMUM_WIDTH);
+	});
+});
+
+describe("RowActionsMenu keeps its events from the grid cell around it", () => {
+	const renderMenu = (onDetails = vi.fn()) => {
+		const reached = {
+			click: vi.fn(),
+			focus: vi.fn(),
+			keyDown: vi.fn(),
+			mouseDown: vi.fn(),
+		};
+		render(
+			// biome-ignore lint/a11y/noNoninteractiveElementInteractions: the same stand-in for the grid cell
+			// biome-ignore lint/a11y/noStaticElementInteractions: this wrapper stands in for the grid cell, whose events the menu must not reach
+			<div
+				onClick={reached.click}
+				onFocus={reached.focus}
+				onKeyDown={reached.keyDown}
+				onMouseDown={reached.mouseDown}
+			>
+				<RowActionsMenu rowName="Alpha" onDetails={onDetails} />
+			</div>,
+		);
+		return { reached, onDetails, button: screen.getByRole("button") };
+	};
+
+	it("does not pass a click on the button up to the cell", () => {
+		const { reached, button } = renderMenu();
+		fireEvent.click(button);
+		expect(reached.click).not.toHaveBeenCalled();
+		expect(screen.getByRole("menu")).toBeInTheDocument();
+	});
+
+	it.each(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"])(
+		"leaves %s on the button to the grid",
+		(key) => {
+			const { reached, button } = renderMenu();
+			fireEvent.keyDown(button, { key });
+			expect(reached.keyDown).toHaveBeenCalledTimes(1);
+		},
+	);
+
+	it("keeps Enter on the button from the grid", () => {
+		const { reached, button } = renderMenu();
+		fireEvent.keyDown(button, { key: "Enter" });
+		expect(reached.keyDown).not.toHaveBeenCalled();
+	});
+
+	it("keeps every key inside the open menu from the grid, and raises it above a dialog", async () => {
+		const { reached, button } = renderMenu();
+		fireEvent.click(button);
+		const menu = await screen.findByRole("menu");
+		fireEvent.keyDown(menu, { key: "ArrowDown" });
+		expect(reached.keyDown).not.toHaveBeenCalled();
+		expect(screen.getByRole("tooltip", { hidden: true })).toHaveStyle({
+			zIndex: "1300",
+		});
+	});
+
+	it("closes the menu when an item is chosen, and runs the item once", async () => {
+		const { onDetails, button } = renderMenu();
+		fireEvent.click(button);
+		const menu = await screen.findByRole("menu");
+		fireEvent.click(within(menu).getByRole("menuitem", { name: "Details" }));
+		expect(onDetails).toHaveBeenCalledTimes(1);
+		await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+	});
+
+	it("closes on Tab and leaves the focus and the key to the browser", async () => {
+		const { button } = renderMenu();
+		const focus = vi.spyOn(button, "focus");
+		fireEvent.click(button);
+		const menu = await screen.findByRole("menu");
+		const notPrevented = fireEvent.keyDown(menu, { key: "Tab" });
+		expect(notPrevented).toBe(true);
+		await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+		expect(focus).not.toHaveBeenCalled();
+	});
+
+	it("closes on Escape, keeps the key, and focuses the button without scrolling", async () => {
+		const { button } = renderMenu();
+		const focus = vi.spyOn(button, "focus");
+		fireEvent.click(button);
+		const menu = await screen.findByRole("menu");
+		const notPrevented = fireEvent.keyDown(menu, { key: "Escape" });
+		expect(notPrevented).toBe(false);
+		expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+		await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+	});
+});
+
+describe("RowActionsCell", () => {
+	const aRow = { id: 7, name: "Alpha" } as IFeatureOwner;
+	const renderCell = (isTablet: boolean) => {
+		const onClone = vi.fn();
+		const onDelete = vi.fn();
+		render(
+			<BrowserRouter>
+				<RowActionsCell
+					row={aRow}
+					api="teams"
+					isMobile={false}
+					isTablet={isTablet}
+					canEdit
+					canClone
+					canDelete
+					onClone={onClone}
+					onDelete={onDelete}
+				/>
+			</BrowserRouter>,
+		);
+		return { onClone, onDelete };
+	};
+	const cssText = () =>
+		Array.from(document.styleSheets)
+			.flatMap((sheet) => Array.from(sheet.cssRules))
+			.map((rule) => rule.cssText)
+			.join("");
+
+	it("lays the icons out at the right end of the cell, across its width", () => {
+		renderCell(false);
+		const row = screen.getByRole("link", { name: "Details" })
+			.parentElement as HTMLElement;
+		expect(row).toHaveStyle({
+			display: "flex",
+			justifyContent: "flex-end",
+			width: "100%",
+		});
+	});
+
+	it("links Details and Edit to the row, and runs Clone and Delete for the row", () => {
+		const { onClone, onDelete } = renderCell(false);
+		expect(screen.getByRole("link", { name: "Details" })).toHaveAttribute(
+			"href",
+			"/teams/7",
+		);
+		expect(screen.getByRole("link", { name: "Edit" })).toHaveAttribute(
+			"href",
+			"/teams/edit/7",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Clone" }));
+		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+		expect(onClone).toHaveBeenCalledExactlyOnceWith(aRow);
+		expect(onDelete).toHaveBeenCalledExactlyOnceWith(aRow);
+	});
+
+	it.each([
+		[true, "Small", "Medium"],
+		[false, "Medium", "Small"],
+	])("sizes buttons and icons for tablet=%s", (isTablet, wanted, other) => {
+		renderCell(isTablet);
+		const button = screen.getByRole("button", { name: "Clone" });
+		expect(button.className).toContain(`size${wanted}`);
+		expect(button.className).not.toContain(`size${other}`);
+		expect(button.querySelector("svg")?.getAttribute("class")).toContain(
+			`fontSize${wanted}`,
+		);
+	});
+
+	it("eases a button's growth on hover", () => {
+		renderCell(false);
+		const rules = cssText().replaceAll(/\s+/g, "");
+		expect(rules).toContain("transition:transform0.2s");
+		expect(rules).toMatch(/:hover\{transform:scale\(1\.1\);?\}/);
 	});
 });

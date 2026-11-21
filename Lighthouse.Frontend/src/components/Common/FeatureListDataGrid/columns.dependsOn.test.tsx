@@ -296,3 +296,26 @@ describe("the same column is read on both Feature lists, because there is only o
 		}
 	});
 });
+
+describe("the Dependencies column's text for a cut cell's tooltip", () => {
+	const offered = (dependsOn: IFeatureDependency[]) =>
+		createDependsOnColumn(THE_DEFAULT_TERMS).valueFormatter?.(
+			undefined as never,
+			feature(dependsOn) as never,
+			undefined as never,
+			undefined as never,
+		);
+
+	it("names every dependency as the cell names it, separated by commas, and says No access for a withheld one", () => {
+		expect(
+			offered([
+				aDependency(),
+				{ ...aDependency(), isWithheld: true } as IFeatureDependency,
+			]),
+		).toBe(`${aDependency().referenceId}: ${aDependency().name}, No access`);
+	});
+
+	it("offers an empty text when the Feature waits on nothing", () => {
+		expect(offered([])).toBe("");
+	});
+});

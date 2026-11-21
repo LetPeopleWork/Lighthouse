@@ -15,6 +15,7 @@ const box = vi.hoisted(() => ({
 	viewport: 0,
 	scrollLeft: 0,
 	api: undefined as { current: GridApi | undefined } | undefined,
+	gridProps: undefined as { onColumnOrderChange?: () => void } | undefined,
 }));
 
 vi.mock("@mui/x-data-grid", async () => {
@@ -48,8 +49,13 @@ vi.mock("@mui/x-data-grid", async () => {
 		return proxy;
 	};
 
+	const { createElement } = await import("react");
 	return {
 		...actual,
+		DataGrid: (props: { onColumnOrderChange?: () => void }) => {
+			box.gridProps = props;
+			return createElement(actual.DataGrid, props as never);
+		},
 		useGridApiRef: () => {
 			const ref = actual.useGridApiRef();
 			if (!stated.has(ref)) {
@@ -547,5 +553,216 @@ describe("Resizing a column is remembered once the person stops", () => {
 		} finally {
 			vi.useRealTimers();
 		}
+	});
+});
+
+describe("A drag that is cut short or unreadable writes nothing it should not", () => {
+	const storedWidths = () =>
+		JSON.parse(
+			localStorage.getItem("lighthouse:datagrid:overflow-reports:state") ??
+				"{}",
+		).columnWidths;
+
+	it("writes nothing when the table goes away before the person stops dragging", () => {
+		vi.useFakeTimers();
+		try {
+			const { unmount } = whenTheReportListIsShown();
+			act(() => {
+				box.api?.current?.publishEvent("columnResize", {
+					width: 150,
+					colDef: { field: "name" },
+				});
+			});
+			unmount();
+			vi.advanceTimersByTime(500);
+			expect(storedWidths()).toBeUndefined();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("ignores a drag that names a column but gives no width", () => {
+		vi.useFakeTimers();
+		try {
+			const { container } = whenTheReportListIsShown();
+			const header = () =>
+				container.querySelector(
+					'[role="columnheader"][data-field="name"]',
+				) as HTMLElement;
+			const before = header().style.width;
+			act(() => {
+				box.api?.current?.publishEvent("columnResize", {
+					colDef: { field: "name" },
+				});
+			});
+			vi.advanceTimersByTime(300);
+			expect(header().style.width).toBe(before);
+			expect(storedWidths()?.name).toBeUndefined();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("does not write a width the person dragged before choosing Reset layout", () => {
+		vi.useFakeTimers();
+		try {
+			whenTheReportListIsShown();
+			act(() => {
+				box.api?.current?.publishEvent("columnResize", {
+					width: 150,
+					colDef: { field: "name" },
+				});
+			});
+			act(() => {
+				screen.getByTestId("reset-layout-button").click();
+			});
+			vi.advanceTimersByTime(500);
+			expect(
+				storedWidths()?.name,
+				"a width dragged just before Reset layout must not come back when the save delay ends",
+			).toBeUndefined();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+});
+
+describe("A focused cell is scrolled clear of the pinned column once, and not after the table is gone", () => {
+	const PINNED_LEFT = 300;
+	const placeColumns = (container: HTMLElement) => {
+		const scroller = container.querySelector(
+			".MuiDataGrid-virtualScroller",
+		) as HTMLElement;
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+			function (this: HTMLElement) {
+				const field = this.dataset.field;
+				const scrolled = scroller.scrollLeft;
+				let left = 0;
+				let right = 0;
+				if (this === scroller) right = 400;
+				else if (field === "actions") {
+					left = PINNED_LEFT;
+					right = 400;
+				} else if (field === "name") {
+					left = 20 - scrolled;
+					right = 140 - scrolled;
+				} else if (field === "owner") {
+					left = 200 - scrolled;
+					right = 320 - scrolled;
+				}
+				return {
+					left,
+					right,
+					x: left,
+					width: right - left,
+					top: 0,
+					bottom: 40,
+					y: 0,
+					height: 40,
+					toJSON: () => ({}),
+				};
+			},
+		);
+		return scroller;
+	};
+	const cell = (field: string) =>
+		document.querySelector(
+			`[role="gridcell"][data-field="${field}"]`,
+		) as HTMLElement;
+	const later = () => new Promise((resolve) => setTimeout(resolve, 20));
+	const focusIn = (field: string) =>
+		cell(field).dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("does not scroll when the table is removed before the grid has had its turn", async () => {
+		const { container, unmount } = whenTheReportListIsShown();
+		const scroller = placeColumns(container);
+		act(() => focusIn("owner"));
+		unmount();
+		await later();
+		expect(scroller.scrollLeft).toBe(0);
+	});
+
+	it("lets only the last of two quick focus moves scroll", async () => {
+		const { container } = whenTheReportListIsShown();
+		const scroller = placeColumns(container);
+		act(() => {
+			focusIn("owner");
+			focusIn("name");
+		});
+		await later();
+		expect(
+			scroller.scrollLeft,
+			"the first focus is out of date; only the cell that holds the focus now decides the scrolling",
+		).toBe(0);
+	});
+});
+
+describe("Moving a column remembers the order the grid shows", () => {
+	const storedOrder = () =>
+		JSON.parse(
+			localStorage.getItem("lighthouse:datagrid:overflow-reports:state") ??
+				"{}",
+		).columnOrder;
+	// The community grid raises no column order event of its own, so the person's move reaches the table as the callback it gave the grid.
+	const whenTheyMoveAColumn = () =>
+		act(() => {
+			box.gridProps?.onColumnOrderChange?.();
+		});
+	const theApi = () =>
+		box.api?.current as unknown as {
+			getAllColumns: () => { field: string }[];
+			getVisibleColumns: () => { field: string }[];
+		};
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("stores every column in the order the grid has them", () => {
+		whenTheReportListIsShown();
+		const expected = theApi()
+			.getAllColumns()
+			.map((c) => c.field);
+		whenTheyMoveAColumn();
+		expect(storedOrder()).toEqual(expected);
+		expect(expected.length).toBeGreaterThan(1);
+	});
+
+	it("falls back to the visible columns, and says so, when the grid cannot list all of them", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		whenTheReportListIsShown();
+		const expected = theApi()
+			.getVisibleColumns()
+			.map((c) => c.field);
+		vi.spyOn(theApi(), "getAllColumns").mockImplementation(() => {
+			throw new Error("no list");
+		});
+		whenTheyMoveAColumn();
+		expect(warn).toHaveBeenCalledWith(
+			"Failed to getAllColumns for column order, falling back to visible columns",
+			expect.any(Error),
+		);
+		expect(storedOrder()).toEqual(expected);
+	});
+
+	it("falls back to the columns it was given, and says so, when the grid can list none", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		whenTheReportListIsShown();
+		vi.spyOn(theApi(), "getAllColumns").mockImplementation(() => {
+			throw new Error("no list");
+		});
+		vi.spyOn(theApi(), "getVisibleColumns").mockImplementation(() => {
+			throw new Error("no visible list");
+		});
+		whenTheyMoveAColumn();
+		expect(warn).toHaveBeenCalledWith(
+			"Failed to getVisibleColumns as fallback",
+			expect.any(Error),
+		);
+		expect(storedOrder()).toEqual(reportColumns.map((c) => c.field));
 	});
 });
