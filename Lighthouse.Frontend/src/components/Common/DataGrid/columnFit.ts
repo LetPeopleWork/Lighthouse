@@ -17,6 +17,9 @@ type ColumnFitKind = ColumnFit["kind"];
 /** The narrowest a text column gets when it declares no minimum of its own. */
 export const DEFAULT_TEXT_MIN_WIDTH = 120;
 
+/** The narrowest a Name column gets, so a person can still tell rows apart. */
+export const NAME_MIN_WIDTH = 160;
+
 /** The width the community grid gives a column that declares none. */
 const GRID_DEFAULT_WIDTH = 100;
 

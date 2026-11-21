@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useMemo, useState } from "react";
+import { NAME_MIN_WIDTH } from "../../../components/Common/DataGrid/columnFit";
 import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type {
 	DataGridColumn,
@@ -211,7 +212,6 @@ const NameCell: React.FC<{ readonly report: IReportListItem }> = ({
 	</Box>
 );
 
-const NAME_MIN_WIDTH = 160;
 const OWNER_MIN_WIDTH = 120;
 
 const ownerColumn: DataGridColumn<IReportListItem> = {

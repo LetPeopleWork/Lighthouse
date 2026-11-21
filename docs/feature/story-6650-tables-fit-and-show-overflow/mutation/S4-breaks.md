@@ -89,3 +89,5 @@ Each break was applied alone to production, the frontend rebuilt with `pnpm buil
 | tooltip text joins only the first dependency | the hover tooltip naming both | getByRole('tooltip', { name: 'Asteroid Mining Program' }) not visible |
 
 `endsInsideCell` now compares the right edge of the text the person sees (a Range over the line's text, clipped by the line's own box) with the cell's right edge, instead of the right edge of a block element; the `max-content` break is what turns it false.
+
+| find the pinned cell by `[role="gridcell"][data-field="actions"]` again (DataGridBase scrollCellClearOfPinned) | scrolls a focused cell clear of the pinned move menu | the focused State cell must end before the pinned move menu: expected 320 to be less than or equal to 300 |

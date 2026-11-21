@@ -416,11 +416,25 @@ function OverflowCue({
  * A focused cell that sits under the pinned actions column, or before the start of the table, is
  * scrolled into the visible part, so a keyboard user never loses sight of where they are.
  */
-function scrollFocusedCellIntoView(event: React.FocusEvent<HTMLElement>) {
-	const grid = event.currentTarget;
-	const target = event.target as HTMLElement;
-	// The grid scrolls to a focused cell itself, so this runs after it and has the last word.
-	globalThis.setTimeout(() => scrollCellClearOfPinned(grid, target), 0);
+function useScrollFocusedCellIntoView() {
+	const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (pending.current) globalThis.clearTimeout(pending.current);
+		};
+	}, []);
+
+	return useCallback((event: React.FocusEvent<HTMLElement>) => {
+		const grid = event.currentTarget;
+		const target = event.target as HTMLElement;
+		if (pending.current) globalThis.clearTimeout(pending.current);
+		// The grid scrolls to a focused cell itself, so this runs after it and has the last word.
+		pending.current = globalThis.setTimeout(
+			() => scrollCellClearOfPinned(grid, target),
+			0,
+		);
+	}, []);
 }
 
 function scrollCellClearOfPinned(grid: HTMLElement, target: HTMLElement) {
@@ -430,7 +444,7 @@ function scrollCellClearOfPinned(grid: HTMLElement, target: HTMLElement) {
 	);
 	if (!cell || !scroller) return;
 	const pinned = cell.parentElement?.querySelector<HTMLElement>(
-		'[role="gridcell"][data-field="actions"]',
+		`.${PINNED_ACTIONS_CLASS}`,
 	);
 	const place = cell.getBoundingClientRect();
 	if (pinned && pinned !== cell) {
@@ -482,6 +496,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	const rowPicking = useRowPicking(checkboxSelection);
 	const overflow = useHorizontalOverflow(apiRef);
 	const overflowDescriptionId = useId();
+	const scrollFocusedCellIntoView = useScrollFocusedCellIntoView();
 
 	// Generate localStorage key for this grid's persisted state (visibility, order, widths, sort)
 	const storageKeyForState = `lighthouse:datagrid:${storageKey}:state`;

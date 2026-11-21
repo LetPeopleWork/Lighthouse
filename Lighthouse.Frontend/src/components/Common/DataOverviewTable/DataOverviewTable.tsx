@@ -25,6 +25,7 @@ import { settingsTabPath } from "../../../models/Settings/settingsAreas";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { reportFailedNavigation } from "../../../utils/navigation";
+import { NAME_MIN_WIDTH } from "../DataGrid/columnFit";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
@@ -43,7 +44,6 @@ interface DataOverviewTableProps<IFeatureOwner> {
 	canDeleteRow?: (row: IFeatureOwner) => boolean;
 }
 
-const NAME_MIN_WIDTH = 160;
 const PHONE_ACTIONS_WIDTH = 48;
 const DESKTOP_ACTIONS_WIDTH = 200;
 
