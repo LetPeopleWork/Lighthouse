@@ -10,6 +10,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public string LegalCallers { get; } = legalCallers;
 
-        public string Of(string layer) => moduleName.EndsWith('s') ? $"{moduleName}' {layer}" : $"{moduleName}'s {layer}";
+        public string Of(string layer) => TakesABareApostrophe ? $"{moduleName}' {layer}" : $"{moduleName}'s {layer}";
+
+        // A plural such as "Flow metrics" takes a bare apostrophe; a singular noun ending in ss, such as "Access", takes 's.
+        private bool TakesABareApostrophe => moduleName.EndsWith('s') && !moduleName.EndsWith("ss", StringComparison.Ordinal);
     }
 }

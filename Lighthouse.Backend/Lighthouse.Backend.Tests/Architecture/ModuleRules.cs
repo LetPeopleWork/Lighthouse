@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// </summary>
         public static InboundVerdict DomainIsReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces = FlowMetricsModule, string domain = FlowMetricsDomain, string outside = AnyNamespace, ModuleWording? wording = null)
             => new(
-                OutsideDependents(module, moduleNamespaces, domain, outside),
+                OutsideDependents(module, domain, outside, moduleNamespaces),
                 listed,
                 $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{domain}\" only " +
                 $"from the types on the list, because {WordsFor(wording).Of("Domain")} holds the module's own calculations and the module answers the " +
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// </summary>
         public static InboundVerdict AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(ModuleDefinition module, string compositionRoot = TheCompositionRoot, string moduleNamespaces = FlowMetricsModule, string adapters = FlowMetricsAdapters, string outside = AnyNamespace, ModuleWording? wording = null)
             => new(
-                OutsideDependents(module, moduleNamespaces, adapters, outside),
+                OutsideDependents(module, adapters, outside, moduleNamespaces),
                 [compositionRoot],
                 $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{adapters}\" only " +
                 $"from the composition root {compositionRoot}, because {WordsFor(wording).Of("Adapters")} are how the module talks to storage and runs " +
@@ -82,12 +82,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var words = WordsFor(wording);
 
-            var notOutside = IlDependencies.TypesIn(module, moduleNamespaces)
-                .Concat(IlDependencies.TypesIn(module, legalCallerNamespaces))
-                .ToHashSet(StringComparer.Ordinal);
-
-            var dependents = IlDependencies.DependentsIn(module, outside, type => IsATypeIn(type, application))
-                .Where(dependent => !notOutside.Contains(dependent.TypeName))
+            var dependents = OutsideDependents(module, application, outside, moduleNamespaces, legalCallerNamespaces)
                 .Where(dependent => !Regex.IsMatch(dependent.TypeName, compositionRoot, RegexOptions.None, PatternTimeout))
                 .ToList();
 
@@ -101,6 +96,28 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"its own. Let the code react to a domain event the module publishes, or ask {words.LegalCallers} for the answer, " +
                 "instead of calling the Application directly; the list only shrinks.");
         }
+
+        /// <summary>
+        /// The outside types that reach the module's Http adapters are exactly the listed ones, once the module's own
+        /// types and the types in the legal callers' namespaces, nested types included, are set aside. A type that only
+        /// applies one of the adapters' attributes reaches them too.
+        /// </summary>
+        public static InboundVerdict HttpAdaptersAreReachedFromOutsideOnlyBy(
+            ModuleDefinition module,
+            IReadOnlyCollection<string> listed,
+            string moduleNamespaces,
+            string httpAdapters,
+            string legalCallerNamespaces,
+            string outside = AnyNamespace,
+            ModuleWording? wording = null)
+            => new(
+                OutsideDependents(module, httpAdapters, outside, moduleNamespaces, legalCallerNamespaces),
+                listed,
+                $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{httpAdapters}\" only " +
+                $"from namespaces matching \"{legalCallerNamespaces}\" or from the types on the list, because {WordsFor(wording).Of("Http adapters")} " +
+                "are the attributes, filters and authentication handlers the API applies and the composition root registers. Any other " +
+                "caller ties its code to how requests are authenticated and guarded, so the module can no longer change that on its own. " +
+                "Apply the attribute on an API controller, or call the module's Application, instead; the list only shrinks.");
 
         /// <summary>
         /// Every edge from a type in the Application to a type in the target namespaces, as "Dependent -> Target",
@@ -117,12 +134,12 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static ModuleWording WordsFor(ModuleWording? wording) => wording ?? ModuleWording.FlowMetrics;
 
-        private static List<IlDependent> OutsideDependents(ModuleDefinition module, string moduleNamespaces, string target, string outside)
+        private static List<IlDependent> OutsideDependents(ModuleDefinition module, string target, string outside, params string[] namespacesSetAside)
         {
-            var insideTheModule = IlDependencies.TypesIn(module, moduleNamespaces).ToHashSet(StringComparer.Ordinal);
+            var notOutside = namespacesSetAside.SelectMany(namespaces => IlDependencies.TypesIn(module, namespaces)).ToHashSet(StringComparer.Ordinal);
 
             return IlDependencies.DependentsIn(module, outside, type => IsATypeIn(type, target))
-                .Where(dependent => !insideTheModule.Contains(dependent.TypeName))
+                .Where(dependent => !notOutside.Contains(dependent.TypeName))
                 .ToList();
         }
 
