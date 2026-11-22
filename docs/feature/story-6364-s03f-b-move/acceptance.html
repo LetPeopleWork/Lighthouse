@@ -151,6 +151,140 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled backend for every type the platform membership map gives the key-ring move, in its new platform area and in its old namespace
+</code></pre>
+
+<pre><code>Each type is found exactly once in the Encryption platform area, none is left in its old namespace, and no listed name matches nothing
+</code></pre>
+
+<pre><code>A developer finds the key ring, secret custody, the crypto service and the key-ring file watcher under the platform Encryption area only
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformEncryptionLayoutArchUnitTest.EveryKeyRingType_LivesInItsPlatformArea_AndNoneIsLeftInItsOldNamespace</p>
+
+<pre><code>a moved type that kept an extra copy under a namespace the map never lists as old; member or behaviour changes, which the existing suite and EXAMINE probes guard
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Read the compiled test assembly for each unit-test class of the moved key-ring types, in the platform Encryption test namespace and in its old namespace, and for the two tests of shared Models types
+</code></pre>
+
+<pre><code>Each moved test class is found once in the platform Encryption test namespace and none in its old one; the two tests of Models types stay where they were
+</code></pre>
+
+<pre><code>A developer finds the key-ring tests next to their subjects under the platform test area, and the Models tests unmoved
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformEncryptionLayoutArchUnitTest.TheUnitTestsOfTheMovedTypes_LiveInTestsPlatformEncryption_AndNoneIsLeftInItsOldNamespace and TheTestsOfTheModelsTypesThatStay_StayInTheirOldNamespace</p>
+
+<pre><code>a test class moved but emptied of its tests; the existing suite guards that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the test-time budget and its Python check for the strings the map lists as renamed by the key-ring move
+</code></pre>
+
+<pre><code>Both files name the four budgeted Encryption test classes by their new full names and no longer by their old ones
+</code></pre>
+
+<pre><code>The test-time budget still applies to the secret custody, published key count, referenced key ids and readable-secrets tests after they move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformEncryptionLayoutArchUnitTest.TheTimeBudgetAndItsCheck_NameTheBudgetedEncryptionTestClassesInTheirNewPlace</p>
+
+<pre><code>a budget value changed together with the key; the budget check itself runs in the declared pytest command
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Run the subject-aware preservation check over every rule pattern of the test assembly, with the crypto service full-name constant holding either its old or its new text
+</code></pre>
+
+<pre><code>The check leaves a constant holding either text of its renamed row to the move, keeps taking up the update-queue rule, and stays green before and after the move
+</code></pre>
+
+<pre><code>Architecture rules keep guarding the key-ring types in their new place; none goes blind at the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformLaneRulesSeeTheMoveArchUnitTest</p>
+
+<pre><code>a constant holding the text of a renamed row of its own file is skipped even if it is really a namespace rule; the map row is then the owner
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>Run the full filtered backend suite and the platform comparison probes after the move
+</code></pre>
+
+<pre><code>Every existing test stays green and every platform answer, reaction order and database model is the same as before
+</code></pre>
+
+<pre><code>Nothing a user, an API client, a tracker or the database sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Full filtered backend suite (live connectors excluded) and the EXAMINE probes platform-answers-compare, refresh-reactions-compare and ef-model-unchanged</p>
+
+<pre><code>a behaviour change that no existing test or probe observes
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>

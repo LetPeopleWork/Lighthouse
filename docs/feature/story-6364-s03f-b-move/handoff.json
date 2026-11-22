@@ -1,8 +1,89 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"T1",
+"L1/F232",
+"L1/F233",
+"L1/F234"
+],
+"still_passes_if": "F554",
+"test": "Lighthouse.Backend.Tests.Architecture.PlatformEncryptionLayoutArchUnitTest.EveryKeyRingType_LivesInItsPlatformArea_AndNoneIsLeftInItsOldNamespace"
+},
+"expected": "F552",
+"stimulus": "F551",
+"user_result": "F553"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"T1",
+"L1/F235"
+],
+"still_passes_if": "F558",
+"test": "Lighthouse.Backend.Tests.Architecture.PlatformEncryptionLayoutArchUnitTest.TheUnitTestsOfTheMovedTypes_LiveInTestsPlatformEncryption_AndNoneIsLeftInItsOldNamespace and TheTestsOfTheModelsTypesThatStay_StayInTheirOldNamespace"
+},
+"expected": "F556",
+"stimulus": "F555",
+"user_result": "F557"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F562",
+"test": "Lighthouse.Backend.Tests.Architecture.PlatformEncryptionLayoutArchUnitTest.TheTimeBudgetAndItsCheck_NameTheBudgetedEncryptionTestClassesInTheirNewPlace"
+},
+"expected": "F560",
+"stimulus": "F559",
+"user_result": "F561"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F566",
+"test": "Lighthouse.Backend.Tests.Architecture.PlatformLaneRulesSeeTheMoveArchUnitTest"
+},
+"expected": "F564",
+"stimulus": "F563",
+"user_result": "F565"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F570",
+"test": "Full filtered backend suite (live connectors excluded) and the EXAMINE probes platform-answers-compare, refresh-reactions-compare and ef-model-unchanged"
+},
+"expected": "F568",
+"stimulus": "F567",
+"user_result": "F569"
+}
+]
+},
 "counters": {
 "D": 9,
 "E": 7,
-"F": 550,
+"F": 570,
 "K": 3,
 "L": 5,
 "P": 7,
@@ -9849,8 +9930,28 @@
 "F549": "Unit tests of moved types sit under Tests/Platform/<Area> with namespace equal to folder; every architecture rule and list naming a moved type uses its new place, and the subject-aware preservation law over the membership map stays green after each move (architecture-rules, backend-tests).",
 "F55": "an operator's own log-level override that names an old platform namespace loses effect after the move (none documented)",
 "F550": "Nothing user-, client-, tracker- or database-visible changes: platform-answers-compare reports IDENTICAL answers (system info, version, encryption/secrets state, database-management status, usage-data state, log level and problems, update status); refresh-reactions-compare IDENTICAL; ef-model-unchanged shows no model change; every live suite passes on the move push (ci-live-suites-show); the full filtered backend suite is green (backend-tests). Program.cs-only-usings and no config key, key-store directory, Redis channel or hub route change are not directly provable by a finite probe and go to candidate review.",
+"F551": "Read the compiled backend for every type the platform membership map gives the key-ring move, in its new platform area and in its old namespace",
+"F552": "Each type is found exactly once in the Encryption platform area, none is left in its old namespace, and no listed name matches nothing",
+"F553": "A developer finds the key ring, secret custody, the crypto service and the key-ring file watcher under the platform Encryption area only",
+"F554": "a moved type that kept an extra copy under a namespace the map never lists as old; member or behaviour changes, which the existing suite and EXAMINE probes guard",
+"F555": "Read the compiled test assembly for each unit-test class of the moved key-ring types, in the platform Encryption test namespace and in its old namespace, and for the two tests of shared Models types",
+"F556": "Each moved test class is found once in the platform Encryption test namespace and none in its old one; the two tests of Models types stay where they were",
+"F557": "A developer finds the key-ring tests next to their subjects under the platform test area, and the Models tests unmoved",
+"F558": "a test class moved but emptied of its tests; the existing suite guards that",
+"F559": "Read the test-time budget and its Python check for the strings the map lists as renamed by the key-ring move",
 "F56": "platform lane move",
+"F560": "Both files name the four budgeted Encryption test classes by their new full names and no longer by their old ones",
+"F561": "The test-time budget still applies to the secret custody, published key count, referenced key ids and readable-secrets tests after they move",
+"F562": "a budget value changed together with the key; the budget check itself runs in the declared pytest command",
+"F563": "Run the subject-aware preservation check over every rule pattern of the test assembly, with the crypto service full-name constant holding either its old or its new text",
+"F564": "The check leaves a constant holding either text of its renamed row to the move, keeps taking up the update-queue rule, and stays green before and after the move",
+"F565": "Architecture rules keep guarding the key-ring types in their new place; none goes blind at the move",
+"F566": "a constant holding the text of a renamed row of its own file is skipped even if it is really a namespace rule; the map row is then the owner",
+"F567": "Run the full filtered backend suite and the platform comparison probes after the move",
+"F568": "Every existing test stays green and every platform answer, reaction order and database model is the same as before",
+"F569": "Nothing a user, an API client, a tracker or the database sees changes",
 "F57": "each layout oracle fails naming the type when a moving type of its slice is in its old namespace, in both or in the wrong area",
+"F570": "a behaviour change that no existing test or probe observes",
 "F58": "each oracle resolves every listed name to a type (a name with no type fails), so the admitted layout has a concrete witness per type",
 "F59": "the oracles run by dotnet test over the compiled assembly; behaviour through HTTP, the hub and the application-service ports is observed by EXAMINE's platform-answers-compare and refresh-reactions-compare",
 "F6": "Every type the membership map tags B4 - the domain-event dispatcher with IDomainEventDispatcher and IDomainEventHandler<T>, the clock, RandomNumberService and the other host facilities - lives under Platform/DomainEvents or Platform/Host, namespace equal to folder, none left in its old namespace; the domain-event handlers stay with their contexts; the HostUsersStillToMove entries and the CalendarDayAnchorSeam path name the moved tests in their new place; the GlobalSuppressions.cs target of RandomNumberService.GetRandomNumber names its new full name.",

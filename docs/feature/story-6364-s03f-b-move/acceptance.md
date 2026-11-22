@@ -2,6 +2,160 @@
 
 ## Slices
 
+### S1
+
+##### Covers
+
+P1
+
+```text
+Read the compiled backend for every type the platform membership map gives the key-ring move, in its new platform area and in its old namespace
+```
+
+```text
+Each type is found exactly once in the Encryption platform area, none is left in its old namespace, and no listed name matches nothing
+```
+
+```text
+A developer finds the key ring, secret custody, the crypto service and the key-ring file watcher under the platform Encryption area only
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.PlatformEncryptionLayoutArchUnitTest\.EveryKeyRingType\_LivesInItsPlatformArea\_AndNoneIsLeftInItsOldNamespace
+
+```text
+a moved type that kept an extra copy under a namespace the map never lists as old; member or behaviour changes, which the existing suite and EXAMINE probes guard
+```
+
+###### Obligations
+
+
+
+
+
+
+##### Covers
+
+P6
+
+```text
+Read the compiled test assembly for each unit-test class of the moved key-ring types, in the platform Encryption test namespace and in its old namespace, and for the two tests of shared Models types
+```
+
+```text
+Each moved test class is found once in the platform Encryption test namespace and none in its old one; the two tests of Models types stay where they were
+```
+
+```text
+A developer finds the key-ring tests next to their subjects under the platform test area, and the Models tests unmoved
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.PlatformEncryptionLayoutArchUnitTest\.TheUnitTestsOfTheMovedTypes\_LiveInTestsPlatformEncryption\_AndNoneIsLeftInItsOldNamespace and TheTestsOfTheModelsTypesThatStay\_StayInTheirOldNamespace
+
+```text
+a test class moved but emptied of its tests; the existing suite guards that
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Read the test-time budget and its Python check for the strings the map lists as renamed by the key-ring move
+```
+
+```text
+Both files name the four budgeted Encryption test classes by their new full names and no longer by their old ones
+```
+
+```text
+The test-time budget still applies to the secret custody, published key count, referenced key ids and readable-secrets tests after they move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.PlatformEncryptionLayoutArchUnitTest\.TheTimeBudgetAndItsCheck\_NameTheBudgetedEncryptionTestClassesInTheirNewPlace
+
+```text
+a budget value changed together with the key; the budget check itself runs in the declared pytest command
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P6
+
+```text
+Run the subject-aware preservation check over every rule pattern of the test assembly, with the crypto service full-name constant holding either its old or its new text
+```
+
+```text
+The check leaves a constant holding either text of its renamed row to the move, keeps taking up the update-queue rule, and stays green before and after the move
+```
+
+```text
+Architecture rules keep guarding the key-ring types in their new place; none goes blind at the move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.PlatformLaneRulesSeeTheMoveArchUnitTest
+
+```text
+a constant holding the text of a renamed row of its own file is skipped even if it is really a namespace rule; the map row is then the owner
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P7
+
+```text
+Run the full filtered backend suite and the platform comparison probes after the move
+```
+
+```text
+Every existing test stays green and every platform answer, reaction order and database model is the same as before
+```
+
+```text
+Nothing a user, an API client, a tracker or the database sees changes
+```
+
+##### Disposition
+
+Tested
+
+Full filtered backend suite \(live connectors excluded\) and the EXAMINE probes platform\-answers\-compare\, refresh\-reactions\-compare and ef\-model\-unchanged
+
+```text
+a behaviour change that no existing test or probe observes
+```
+
+###### Obligations
+
 None.
 
 ## Expectations

@@ -120,19 +120,25 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ThePreservationCheck_LeavesAFullNameTheMoveRenames_ToTheMoveThatRenamesIt()
         {
-            var cryptoServiceFullName = (string)typeof(SecretCustodySeamArchUnitTest)
+            var cryptoService = PlatformLaneMembership.MovingTypes.Single(type => type.Name == "CryptoService");
+            var renamedRow = PlatformLaneMembership.StringsTheMoveRenames
+                .Single(entry => FileStem(entry.File) == nameof(SecretCustodySeamArchUnitTest) && entry.OldText == cryptoService.OldFullName);
+            var liveConstant = (string)typeof(SecretCustodySeamArchUnitTest)
                 .GetField("CryptoServiceFullName", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)!
                 .GetRawConstantValue()!;
-            var cryptoService = PlatformLaneMembership.MovingTypes.Single(type => type.Name == "CryptoService");
 
             var patterns = GivenTheRulePatternsOfTheTestAssembly();
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(
-                    IsMatch(cryptoService.OldFullName, cryptoServiceFullName) && !IsMatch(cryptoService.NewFullName, cryptoServiceFullName),
+                    IsMatch(cryptoService.OldFullName, renamedRow.OldText) && !IsMatch(cryptoService.NewFullName, renamedRow.OldText),
                     Is.True,
-                    $"The full name {cryptoServiceFullName} should answer yes under the old name and no under the new one; it is the example that shows a designation of one type is not a namespace rule. Why it matters: without it this test proves nothing about the skip. How to fix: pick another full name on the map's list of strings the move renames.");
+                    $"The full name {renamedRow.OldText} should answer yes under the old name and no under the new one; it is the example that shows a designation of one type is not a namespace rule. Why it matters: without it this test proves nothing about the skip. How to fix: pick another full name on the map's list of strings the move renames.");
+                Assert.That(
+                    liveConstant,
+                    Is.EqualTo(renamedRow.OldText).Or.EqualTo(renamedRow.NewText),
+                    $"SecretCustodySeamArchUnitTest.CryptoServiceFullName reads {liveConstant}, which is neither the old text {renamedRow.OldText} nor the new text {renamedRow.NewText} of its row on the map's list of strings the move renames. Why it matters: the skip is only shown for a constant that holds one of the two texts of its row. How to fix: give the constant the old full name before the key-ring move and the new one after it.");
                 Assert.That(
                     patterns.Select(pattern => pattern.Field),
                     Has.None.EqualTo($"{nameof(SecretCustodySeamArchUnitTest)}.CryptoServiceFullName"),
@@ -469,7 +475,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 where field.FieldType == typeof(string) && (field.IsLiteral || field.IsInitOnly)
                 let value = (field.IsLiteral ? field.GetRawConstantValue() : field.GetValue(null)) as string
                 where value is not null && IsARulePattern(type, value)
-                where !renamed.Any(entry => entry.OldText == value && FileStem(entry.File) == OutermostType(type).Name)
+                where !renamed.Any(entry => (entry.OldText == value || entry.NewText == value) && FileStem(entry.File) == OutermostType(type).Name)
                 where !(field.IsInitOnly && IsTheFullNameOfAMovingType(value))
                 select new RulePattern(FieldName(type, field), value)];
         }
