@@ -320,51 +320,31 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>The architecture tests ask every constant rule pattern of the test assembly, found by reflection, about each moving platform type under its old Services name and its new Platform name.
+<pre><code>Every regex rule field of the test assembly, constant or static read-only, is asked on the subject its rule reads (namespace or full name) about every moving platform type under its old and its new place
 </code></pre>
 
-<pre><code>Every pattern gives the same answer under both names; a pattern that differs is named with the moving type and both answers. Today 31 patterns differ.
+<pre><code>Every field that sees a moving type is declared with a role; a part of the code also sees the type in its new namespace, only through the whole area; an old location does not see the new place and carries no Platform alternative; each failure names the field, subject, role, type and both answers
 </code></pre>
 
-<pre><code>No architecture rule silently stops seeing a platform type when the type moves into Platform.
-</code></pre>
-
-<h5>Disposition</h5>
-
-<p>Tested</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::EveryRulePatternOfTheTestAssembly_AnswersTheSameForEachMovingPlatformType_UnderItsOldAndItsNewNamespace</p>
-
-<pre><code>A bare word or test-data constant that does not name Lighthouse.Backend and is not anchored loses sight of a moved type; such constants are not asked, by the documented rule-pattern criterion.
-</code></pre>
-
-<h6>Obligations</h6>
-
-
-
-<h5>Covers</h5>
-
-<p>P2</p>
-
-<pre><code>The same preservation check runs over made-up rule keys, one of them in a nested class, that see only the old place, both places, neither place, or are not a pattern.
-</code></pre>
-
-<pre><code>Only the key in the nested class that sees only the old place is named; the keys that see both or neither, and the string that is not a pattern, pass.
-</code></pre>
-
-<pre><code>A rule added later in any test class, nested or not, is checked without anyone listing it.
+<pre><code>No architecture rule silently stops seeing a platform type, or starts judging the new place as an old location, when the type moves
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::ThePreservationCheck_NamesAMadeUpPatternInANestedClassThatSeesOnlyTheOldPlace_AndPassesOnesThatSeeBothOrNeither</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::EveryRulePatternThatSeesAMovingPlatformType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads</p>
 
-<pre><code>A check that skipped classes outside the made-up keys namespace would pass this row; the real-pattern row and the update-queue rule row catch that.
+<pre><code>a role declared wrongly in PlatformLanePatternRoles (a forbidden target declared as an old location); review of the declared reasons guards that
 </code></pre>
 
 <h6>Obligations</h6>
+
+
+
+
+
+
 
 
 
@@ -374,13 +354,46 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>The preservation check meets a constant full name of one moving type that the membership map lists as renamed by a move, and a namespace rule of the update queue.
+<pre><code>The same role check runs over made-up rule keys in a nested fixture class: a namespace rule seeing only the old place, one widened by a type name, the same text read on full names, an old location widened into or given a type name in the new place, a whole-area widening, a widening into an unseen area, undeclared keys, composites of a blind and of a sound key, and a designation read from a type
 </code></pre>
 
-<pre><code>The full name is left out although its two answers differ; the update-queue rule is taken up.
+<pre><code>Exactly the blind, type-name, widened-old-location, unseen-area and undeclared keys and the blind composite are named, each with its kind; the full-name twin, the whole-area widening, the sound composite and the designation pass
 </code></pre>
 
-<pre><code>A full name of one type is renamed by its move, not widened to name two types.
+<pre><code>The check is shown to tell a rule that keeps its meaning from one that breaks it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt</p>
+
+<pre><code>a check that reads only fixture keys and misses real ones; the real test&#x27;s count guard of more than fifty fields covers that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The role check enumerates the rule fields, including a full name the membership map lists as renamed by the key-ring move
+</code></pre>
+
+<pre><code>The renamed full name is left out and a real update-queue rule is taken up
+</code></pre>
+
+<pre><code>A designation of one type is left to the move that renames it rather than widened to name two types
 </code></pre>
 
 <h5>Disposition</h5>
@@ -389,33 +402,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::ThePreservationCheck_LeavesAFullNameTheMoveRenames_ToTheMoveThatRenamesIt</p>
 
-<pre><code>A renamed value matched in another class of the same listed file; the skip matches by the class name of the file, so only a same-named class there would slip.
+<pre><code>a check that skips every full-name-shaped constant, not only the renamed ones
 </code></pre>
 
 <h6>Obligations</h6>
-
 
 
 <h5>Covers</h5>
 
 <p>P2</p>
 
-<pre><code>Every rule pattern that mentions Platform is asked about every production type outside Lighthouse.Backend.Platform, with and without its Platform alternatives.
+<pre><code>Every Platform alternative of a rule field is asked, on the field&#x27;s declared subject, about the production namespaces and full names outside Lighthouse.Backend.Platform
 </code></pre>
 
-<pre><code>No production type outside Platform is matched only through a Platform alternative.
+<pre><code>No field matches anything outside Platform only through its Platform alternative
 </code></pre>
 
-<pre><code>Widening a rule for the move puts no unrelated type under it.
+<pre><code>A widening for the move puts no unrelated code under a rule
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::NoPlatformAlternativeOfARulePattern_MatchesAProductionTypeOutsidePlatform</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::NoPlatformAlternativeOfARulePattern_MatchesAProductionNamespaceOrTypeOutsidePlatform</p>
 
-<pre><code>A widening to all of Lighthouse.Backend written without the word Platform; the existing architecture tests over compliant code and the preservation law answer that case.
+<pre><code>an alternative that would reach outside only through a namespace no production type uses yet
 </code></pre>
 
 <h6>Obligations</h6>
@@ -426,13 +438,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>The Platform-alternative check runs over a made-up key with an unanchored Platform alternative and one with an anchored Platform.DomainEvents alternative.
+<pre><code>The Platform-alternative check runs over the made-up keys, one of them carrying an unanchored Platform alternative read on full names
 </code></pre>
 
-<pre><code>The unanchored key is named for production types such as the platform service interface; the anchored key passes.
+<pre><code>Only that key is named, matching the platform service outside Platform; the anchored keys pass
 </code></pre>
 
-<pre><code>An over-wide alternative is caught before it hides as a passing rule.
+<pre><code>The check is shown to catch a too-wide alternative
 </code></pre>
 
 <h5>Disposition</h5>
@@ -441,7 +453,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::ThePlatformAlternativeCheck_NamesAMadeUpAlternativeThatReachesOutsidePlatform_AndPassesAnAnchoredOne</p>
 
-<pre><code>Platform written right after a character other than an escaped dot, an opening bracket or a bar, which the token match does not take out.
+<pre><code>a check that asks a namespace-declared key only about full names
 </code></pre>
 
 <h6>Obligations</h6>

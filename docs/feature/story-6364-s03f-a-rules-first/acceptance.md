@@ -196,58 +196,34 @@ crafter and reviewer\, through the backend gate
 P2
 
 ```text
-The architecture tests ask every constant rule pattern of the test assembly, found by reflection, about each moving platform type under its old Services name and its new Platform name.
+Every regex rule field of the test assembly, constant or static read-only, is asked on the subject its rule reads (namespace or full name) about every moving platform type under its old and its new place
 ```
 
 ```text
-Every pattern gives the same answer under both names; a pattern that differs is named with the moving type and both answers. Today 31 patterns differ.
+Every field that sees a moving type is declared with a role; a part of the code also sees the type in its new namespace, only through the whole area; an old location does not see the new place and carries no Platform alternative; each failure names the field, subject, role, type and both answers
 ```
 
 ```text
-No architecture rule silently stops seeing a platform type when the type moves into Platform.
+No architecture rule silently stops seeing a platform type, or starts judging the new place as an old location, when the type moves
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:EveryRulePatternOfTheTestAssembly\_AnswersTheSameForEachMovingPlatformType\_UnderItsOldAndItsNewNamespace
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:EveryRulePatternThatSeesAMovingPlatformType\_IsDeclared\_AndKeepsItsRoleOnTheSubjectItsRuleReads
 
 ```text
-A bare word or test-data constant that does not name Lighthouse.Backend and is not anchored loses sight of a moved type; such constants are not asked, by the documented rule-pattern criterion.
+a role declared wrongly in PlatformLanePatternRoles (a forbidden target declared as an old location); review of the declared reasons guards that
 ```
 
 ###### Obligations
 
 
 
-##### Covers
 
-P2
 
-```text
-The same preservation check runs over made-up rule keys, one of them in a nested class, that see only the old place, both places, neither place, or are not a pattern.
-```
 
-```text
-Only the key in the nested class that sees only the old place is named; the keys that see both or neither, and the string that is not a pattern, pass.
-```
-
-```text
-A rule added later in any test class, nested or not, is checked without anyone listing it.
-```
-
-##### Disposition
-
-Tested
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:ThePreservationCheck\_NamesAMadeUpPatternInANestedClassThatSeesOnlyTheOldPlace\_AndPassesOnesThatSeeBothOrNeither
-
-```text
-A check that skipped classes outside the made-up keys namespace would pass this row; the real-pattern row and the update-queue rule row catch that.
-```
-
-###### Obligations
 
 
 
@@ -258,15 +234,52 @@ A check that skipped classes outside the made-up keys namespace would pass this 
 P2
 
 ```text
-The preservation check meets a constant full name of one moving type that the membership map lists as renamed by a move, and a namespace rule of the update queue.
+The same role check runs over made-up rule keys in a nested fixture class: a namespace rule seeing only the old place, one widened by a type name, the same text read on full names, an old location widened into or given a type name in the new place, a whole-area widening, a widening into an unseen area, undeclared keys, composites of a blind and of a sound key, and a designation read from a type
 ```
 
 ```text
-The full name is left out although its two answers differ; the update-queue rule is taken up.
+Exactly the blind, type-name, widened-old-location, unseen-area and undeclared keys and the blind composite are named, each with its kind; the full-name twin, the whole-area widening, the sound composite and the designation pass
 ```
 
 ```text
-A full name of one type is renamed by its move, not widened to name two types.
+The check is shown to tell a rule that keeps its meaning from one that breaks it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:TheRoleCheck\_NamesEachMadeUpPatternThatBreaksItsRole\_AndPassesTheOnesThatKeepIt
+
+```text
+a check that reads only fixture keys and misses real ones; the real test's count guard of more than fifty fields covers that
+```
+
+###### Obligations
+
+
+
+
+
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+The role check enumerates the rule fields, including a full name the membership map lists as renamed by the key-ring move
+```
+
+```text
+The renamed full name is left out and a real update-queue rule is taken up
+```
+
+```text
+A designation of one type is left to the move that renames it rather than widened to name two types
 ```
 
 ##### Disposition
@@ -276,11 +289,10 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:ThePreservationCheck\_LeavesAFullNameTheMoveRenames\_ToTheMoveThatRenamesIt
 
 ```text
-A renamed value matched in another class of the same listed file; the skip matches by the class name of the file, so only a same-named class there would slip.
+a check that skips every full-name-shaped constant, not only the renamed ones
 ```
 
 ###### Obligations
-
 
 
 ##### Covers
@@ -288,25 +300,25 @@ A renamed value matched in another class of the same listed file; the skip match
 P2
 
 ```text
-Every rule pattern that mentions Platform is asked about every production type outside Lighthouse.Backend.Platform, with and without its Platform alternatives.
+Every Platform alternative of a rule field is asked, on the field's declared subject, about the production namespaces and full names outside Lighthouse.Backend.Platform
 ```
 
 ```text
-No production type outside Platform is matched only through a Platform alternative.
+No field matches anything outside Platform only through its Platform alternative
 ```
 
 ```text
-Widening a rule for the move puts no unrelated type under it.
+A widening for the move puts no unrelated code under a rule
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:NoPlatformAlternativeOfARulePattern\_MatchesAProductionTypeOutsidePlatform
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:NoPlatformAlternativeOfARulePattern\_MatchesAProductionNamespaceOrTypeOutsidePlatform
 
 ```text
-A widening to all of Lighthouse.Backend written without the word Platform; the existing architecture tests over compliant code and the preservation law answer that case.
+an alternative that would reach outside only through a namespace no production type uses yet
 ```
 
 ###### Obligations
@@ -318,15 +330,15 @@ A widening to all of Lighthouse.Backend written without the word Platform; the e
 P2
 
 ```text
-The Platform-alternative check runs over a made-up key with an unanchored Platform alternative and one with an anchored Platform.DomainEvents alternative.
+The Platform-alternative check runs over the made-up keys, one of them carrying an unanchored Platform alternative read on full names
 ```
 
 ```text
-The unanchored key is named for production types such as the platform service interface; the anchored key passes.
+Only that key is named, matching the platform service outside Platform; the anchored keys pass
 ```
 
 ```text
-An over-wide alternative is caught before it hides as a passing rule.
+The check is shown to catch a too-wide alternative
 ```
 
 ##### Disposition
@@ -336,7 +348,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:ThePlatformAlternativeCheck\_NamesAMadeUpAlternativeThatReachesOutsidePlatform\_AndPassesAnAnchoredOne
 
 ```text
-Platform written right after a character other than an escaped dot, an opening bracket or a bar, which the token match does not take out.
+a check that asks a namespace-declared key only about full names
 ```
 
 ###### Obligations

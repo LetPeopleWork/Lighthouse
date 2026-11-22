@@ -117,34 +117,23 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F183",
+"L4/F340",
+"L4/F341",
+"L4/F342",
+"L4/F343",
+"L4/F344",
+"L4/F345",
+"L4/F346",
+"L4/F347",
+"L4/F349",
 "T2"
 ],
-"still_passes_if": "F229",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::EveryRulePatternOfTheTestAssembly_AnswersTheSameForEachMovingPlatformType_UnderItsOldAndItsNewNamespace"
+"still_passes_if": "F358",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::EveryRulePatternThatSeesAMovingPlatformType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads"
 },
-"expected": "F227",
-"stimulus": "F226",
-"user_result": "F228"
-},
-{
-"covers": [
-"P2"
-],
-"disposition": {
-"kind": "Tested",
-"obligations": [
-"L4/F183",
-"L4/F184",
-"L4/F186",
-"L4/F187"
-],
-"still_passes_if": "F233",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::ThePreservationCheck_NamesAMadeUpPatternInANestedClassThatSeesOnlyTheOldPlace_AndPassesOnesThatSeeBothOrNeither"
-},
-"expected": "F231",
-"stimulus": "F230",
-"user_result": "F232"
+"expected": "F356",
+"stimulus": "F355",
+"user_result": "F357"
 },
 {
 "covers": [
@@ -153,15 +142,38 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F188",
-"L4/F186"
+"L4/F340",
+"L4/F341",
+"L4/F342",
+"L4/F343",
+"L4/F344",
+"L4/F345",
+"L4/F346",
+"L4/F347",
+"L4/F349"
 ],
-"still_passes_if": "F237",
+"still_passes_if": "F362",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt"
+},
+"expected": "F360",
+"stimulus": "F359",
+"user_result": "F361"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F188"
+],
+"still_passes_if": "F366",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::ThePreservationCheck_LeavesAFullNameTheMoveRenames_ToTheMoveThatRenamesIt"
 },
-"expected": "F235",
-"stimulus": "F234",
-"user_result": "F236"
+"expected": "F364",
+"stimulus": "F363",
+"user_result": "F365"
 },
 {
 "covers": [
@@ -170,15 +182,15 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F185",
+"L4/F348",
 "T2"
 ],
-"still_passes_if": "F241",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::NoPlatformAlternativeOfARulePattern_MatchesAProductionTypeOutsidePlatform"
+"still_passes_if": "F370",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::NoPlatformAlternativeOfARulePattern_MatchesAProductionNamespaceOrTypeOutsidePlatform"
 },
-"expected": "F239",
-"stimulus": "F238",
-"user_result": "F240"
+"expected": "F368",
+"stimulus": "F367",
+"user_result": "F369"
 },
 {
 "covers": [
@@ -187,14 +199,14 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L4/F185"
+"L4/F348"
 ],
-"still_passes_if": "F245",
+"still_passes_if": "F374",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::ThePlatformAlternativeCheck_NamesAMadeUpAlternativeThatReachesOutsidePlatform_AndPassesAnAnchoredOne"
 },
-"expected": "F243",
-"stimulus": "F242",
-"user_result": "F244"
+"expected": "F372",
+"stimulus": "F371",
+"user_result": "F373"
 },
 {
 "covers": [
@@ -437,7 +449,7 @@
 "counters": {
 "D": 10,
 "E": 6,
-"F": 354,
+"F": 374,
 "K": 5,
 "L": 4,
 "P": 6,
@@ -1612,28 +1624,8 @@
 "F223": "No production file changes; every existing test stays green.",
 "F224": "Nothing a user, a tracker or the database sees changes.",
 "F225": "This slice adds test files only; behaviour preservation is observed by the existing backend suite, the build and EXAMINE, not by an architecture rule over the compiled code.",
-"F226": "The architecture tests ask every constant rule pattern of the test assembly, found by reflection, about each moving platform type under its old Services name and its new Platform name.",
-"F227": "Every pattern gives the same answer under both names; a pattern that differs is named with the moving type and both answers. Today 31 patterns differ.",
-"F228": "No architecture rule silently stops seeing a platform type when the type moves into Platform.",
-"F229": "A bare word or test-data constant that does not name Lighthouse.Backend and is not anchored loses sight of a moved type; such constants are not asked, by the documented rule-pattern criterion.",
 "F23": "A changed platform answer after the move is caught at EXAMINE",
-"F230": "The same preservation check runs over made-up rule keys, one of them in a nested class, that see only the old place, both places, neither place, or are not a pattern.",
-"F231": "Only the key in the nested class that sees only the old place is named; the keys that see both or neither, and the string that is not a pattern, pass.",
-"F232": "A rule added later in any test class, nested or not, is checked without anyone listing it.",
-"F233": "A check that skipped classes outside the made-up keys namespace would pass this row; the real-pattern row and the update-queue rule row catch that.",
-"F234": "The preservation check meets a constant full name of one moving type that the membership map lists as renamed by a move, and a namespace rule of the update queue.",
-"F235": "The full name is left out although its two answers differ; the update-queue rule is taken up.",
-"F236": "A full name of one type is renamed by its move, not widened to name two types.",
-"F237": "A renamed value matched in another class of the same listed file; the skip matches by the class name of the file, so only a same-named class there would slip.",
-"F238": "Every rule pattern that mentions Platform is asked about every production type outside Lighthouse.Backend.Platform, with and without its Platform alternatives.",
-"F239": "No production type outside Platform is matched only through a Platform alternative.",
 "F24": "Confirmed (D-0, D-11, D-12, P6): feature A changes no production code, schema, DI registration, configuration, GlobalSuppressions.cs, analyser config or Program.cs. Only test-side architecture rule files, Scripts/test-selection/path-classifier.sh, the EXAMINE command builder, its test script and .nwave/examine.json change. Nothing moves in feature A; the moves, the list and path strings that name a moved type and the suppression targets are feature B (story-6364-s03f-b-move); the platform lane rules R-PL1 to R-PL4 and unit-test placement are feature C. Data, migrations, every repository, the host band, context seeders and update pipelines stay (D-0, D-4, D-5, D-6).",
-"F240": "Widening a rule for the move puts no unrelated type under it.",
-"F241": "A widening to all of Lighthouse.Backend written without the word Platform; the existing architecture tests over compliant code and the preservation law answer that case.",
-"F242": "The Platform-alternative check runs over a made-up key with an unanchored Platform alternative and one with an anchored Platform.DomainEvents alternative.",
-"F243": "The unanchored key is named for production types such as the platform service interface; the anchored key passes.",
-"F244": "An over-wide alternative is caught before it hides as a passing rule.",
-"F245": "Platform written right after a character other than an escaped dot, an opening bracket or a bar, which the token match does not take out.",
 "F246": "The dispatcher selection of the handler rules runs over the product and over the test assembly, which holds types whose namespace only spells the old dispatcher namespace.",
 "F247": "In the product it selects the dispatcher and its nested types, under the old or the new name; in the test assembly it selects nothing. Today it selects the test types that spell the old namespace.",
 "F248": "The handler rules keep checking the event dispatcher after it moves.",
@@ -1743,7 +1735,27 @@
 "F352": "Carrier/subject distinction: the rule consumers apply a pattern to the namespace of the outermost type (IlDependencies.ResidesInNamespaceMatching, IlDependencies.cs:44-49; ArchUnit ResideInNamespaceMatching), not to the full name; a per-type alternative ending in a type name passes a full-name law and never matches a namespace. Cure: each field is evaluated on its declared subject.",
 "F353": "KernelRules.TheUpdateQueue at 62aefb5a5 gained a Platform.UpdateQueue alternative listing AdmittedCancellations ... UpdateTaskNaming by name: it matches the full name Lighthouse.Backend.Platform.UpdateQueue.AdmittedCancellations (full-name oracle green 8/8) and not the namespace Lighthouse.Backend.Platform.UpdateQueue, so after the move the kernel rule stops seeing the type (S2 slice review R2).",
 "F354": "Every regex rule field of the test assembly keeps its declared role for each moving platform type on the subject its rule applies it to (namespace or full name), no added alternative reaches outside Platform, and no rule string names a moving area by its old path except the listed B renames.",
+"F355": "Every regex rule field of the test assembly, constant or static read-only, is asked on the subject its rule reads (namespace or full name) about every moving platform type under its old and its new place",
+"F356": "Every field that sees a moving type is declared with a role; a part of the code also sees the type in its new namespace, only through the whole area; an old location does not see the new place and carries no Platform alternative; each failure names the field, subject, role, type and both answers",
+"F357": "No architecture rule silently stops seeing a platform type, or starts judging the new place as an old location, when the type moves",
+"F358": "a role declared wrongly in PlatformLanePatternRoles (a forbidden target declared as an old location); review of the declared reasons guards that",
+"F359": "The same role check runs over made-up rule keys in a nested fixture class: a namespace rule seeing only the old place, one widened by a type name, the same text read on full names, an old location widened into or given a type name in the new place, a whole-area widening, a widening into an unseen area, undeclared keys, composites of a blind and of a sound key, and a designation read from a type",
 "F36": "IlDependencies.TypesIn also returns nested types; an exact-set check compares top-level types (the part before +). IlDependencies misses catch-clause, event and attribute named-argument references. Regex evaluation uses the existing pattern timeout.",
+"F360": "Exactly the blind, type-name, widened-old-location, unseen-area and undeclared keys and the blind composite are named, each with its kind; the full-name twin, the whole-area widening, the sound composite and the designation pass",
+"F361": "The check is shown to tell a rule that keeps its meaning from one that breaks it",
+"F362": "a check that reads only fixture keys and misses real ones; the real test's count guard of more than fifty fields covers that",
+"F363": "The role check enumerates the rule fields, including a full name the membership map lists as renamed by the key-ring move",
+"F364": "The renamed full name is left out and a real update-queue rule is taken up",
+"F365": "A designation of one type is left to the move that renames it rather than widened to name two types",
+"F366": "a check that skips every full-name-shaped constant, not only the renamed ones",
+"F367": "Every Platform alternative of a rule field is asked, on the field's declared subject, about the production namespaces and full names outside Lighthouse.Backend.Platform",
+"F368": "No field matches anything outside Platform only through its Platform alternative",
+"F369": "A widening for the move puts no unrelated code under a rule",
+"F370": "an alternative that would reach outside only through a namespace no production type uses yet",
+"F371": "The Platform-alternative check runs over the made-up keys, one of them carrying an unanchored Platform alternative read on full names",
+"F372": "Only that key is named, matching the platform service outside Platform; the anchored keys pass",
+"F373": "The check is shown to catch a too-wide alternative",
+"F374": "a check that asks a namespace-declared key only about full names",
 "F38": "The EXAMINE capture runs with authentication off and no network: the GitHub calls (version hasupdate and new) are left to the GithubIntegration suite on the move push; Redis and Postgres update locks under a real cluster and a key ring on a mounted file are left to container and unit tests. No stored or validated input bound changes; none is introduced.",
 "F39": "Reads types and edges from the compiled IL over Mono.Cecil; the A1 membership check and the A2 outside-Platform check read through it; no second IL reader.",
 "F4": "Every rule pattern in the test assembly gives the same answer for each moving platform type under its new Platform namespace as under its old one, and no added alternative matches a production type outside Platform; the inline DomainEvents fragment is replaced by the exact dispatcher type.",

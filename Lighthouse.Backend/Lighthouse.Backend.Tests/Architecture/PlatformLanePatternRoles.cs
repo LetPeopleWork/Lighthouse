@@ -1,0 +1,121 @@
+namespace Lighthouse.Backend.Tests.Architecture
+{
+    /// <summary>What a rule pattern is matched against by the rule that uses it.</summary>
+    internal enum PatternSubject
+    {
+        /// <summary>The namespace of the outermost type, as the IL and ArchUnit namespace selections read it.</summary>
+        Namespace,
+
+        /// <summary>The full name of the type.</summary>
+        FullName,
+    }
+
+    /// <summary>What a rule pattern stands for, which decides whether it must follow a platform type when the type moves.</summary>
+    internal enum PatternRole
+    {
+        /// <summary>A part of the code (a context, the platform, the update code): it must keep seeing the type after the move.</summary>
+        Context,
+
+        /// <summary>An old location (the Services folder): it must not see the type in its new place.</summary>
+        Place,
+    }
+
+    /// <summary>
+    /// How one rule pattern is read: on which subject, in which role, and why. A pattern built from another one by
+    /// concatenation names that component and is read the way the component is read.
+    /// </summary>
+    internal sealed record PatternDeclaration(PatternSubject? Subject, PatternRole? Role, string? CompositeOf, string Reason)
+    {
+        public static PatternDeclaration Context(PatternSubject subject, string reason) => new(subject, PatternRole.Context, null, reason);
+
+        public static PatternDeclaration Place(PatternSubject subject, string reason) => new(subject, PatternRole.Place, null, reason);
+
+        public static PatternDeclaration Composite(string component, string reason) => new(null, null, component, reason);
+    }
+
+    /// <summary>
+    /// Every rule pattern of the test assembly that sees a moving platform type, under its old or its new name, with the
+    /// subject its rule matches it against and the role it plays. A pattern is keyed by its class (nested classes joined
+    /// with dots) and field name.
+    /// </summary>
+    internal static class PlatformLanePatternRoles
+    {
+        private const PatternSubject Namespace = PatternSubject.Namespace;
+
+        private const PatternSubject FullName = PatternSubject.FullName;
+
+        private const string TheWholeBackend = "names the whole backend, so it sees every type wherever it lives";
+
+        private const string AProjectFolder = "the name of the backend project folder, read as a path; it names the whole backend under either name";
+
+        public static IReadOnlyDictionary<string, PatternDeclaration> PatternRoles { get; } = new Dictionary<string, PatternDeclaration>(StringComparer.Ordinal)
+        {
+            // Parts of the code a rule protects or forbids: they must keep seeing a platform type after it moves.
+            ["KernelRules.TheServices"] = PatternDeclaration.Context(Namespace, "the application services the kernel rules keep the kernel away from; the platform services stay among them after the move"),
+            ["KernelRules.TheUpdateQueue"] = PatternDeclaration.Context(Namespace, "the update queue, forbidden to the kernel and shared as the update code by Forecasting and Work Items, wherever it lives"),
+            ["ApplicationCoreRules.ApplicationCore"] = PatternDeclaration.Context(Namespace, "the application core the core rules hold to account, which takes in the platform"),
+            ["AccessModuleBoundariesArchUnitTest.ThePlatform"] = PatternDeclaration.Context(Namespace, "the platform Access may sit on, wherever its types live"),
+            ["AccessModuleBoundariesArchUnitTest.TheUpdateCode"] = PatternDeclaration.Context(Namespace, "the update code Access must not reach, wherever it lives"),
+            ["AccessModuleBoundariesArchUnitTest.TheLayersBelowTheApplicationAndThePlatform"] = PatternDeclaration.Composite("AccessModuleBoundariesArchUnitTest.ThePlatform", "built from the platform key; the other parts see no moving type"),
+            ["AccessModuleBoundariesArchUnitTest.TheOtherContexts"] = PatternDeclaration.Composite("AccessModuleBoundariesArchUnitTest.TheUpdateCode", "built from the update-code key; the other parts see no moving type"),
+            ["LicensingModuleBoundariesArchUnitTest.ThePlatform"] = PatternDeclaration.Context(Namespace, "the platform Licensing may sit on, wherever its types live"),
+            ["LicensingModuleBoundariesArchUnitTest.TheUpdateCode"] = PatternDeclaration.Context(Namespace, "the update code Licensing must not reach, wherever it lives"),
+            ["LicensingModuleBoundariesArchUnitTest.TheLayersBelowTheApplicationAndThePlatform"] = PatternDeclaration.Composite("LicensingModuleBoundariesArchUnitTest.ThePlatform", "built from the platform key; the other parts see no moving type"),
+            ["LicensingModuleBoundariesArchUnitTest.AccessAndTheOtherContexts"] = PatternDeclaration.Composite("LicensingModuleBoundariesArchUnitTest.TheUpdateCode", "built from the update-code key; the other parts see no moving type"),
+            ["PromisesModuleBoundariesArchUnitTest.ThePlatform"] = PatternDeclaration.Context(Namespace, "the platform Promises may sit on, wherever its types live"),
+            ["PromisesModuleBoundariesArchUnitTest.TheUpdateCode"] = PatternDeclaration.Context(Namespace, "the update code Promises reaches only through listed edges, wherever it lives"),
+            ["PromisesModuleBoundariesArchUnitTest.TheLayersBelowTheApplicationAndThePlatform"] = PatternDeclaration.Composite("PromisesModuleBoundariesArchUnitTest.ThePlatform", "built from the platform key; the other parts see no moving type"),
+            ["PromisesModuleBoundariesArchUnitTest.TheNamespacedUpstreamCode"] = PatternDeclaration.Composite("PromisesModuleBoundariesArchUnitTest.TheUpdateCode", "built from the update-code key; the other parts see no moving type"),
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.TheKeyRing"] = PatternDeclaration.Context(Namespace, "the key ring Tracker integration may sit on, wherever it lives"),
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.PromisesAndTheUpdateCode"] = PatternDeclaration.Context(Namespace, "Promises and the update code, which Tracker integration must not reach, wherever they live"),
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.TheLayersBelowTheApplicationAndThePlatform"] = PatternDeclaration.Composite("TrackerIntegrationModuleBoundariesArchUnitTest.TheKeyRing", "built from the key-ring key; the stored-records and demo-data parts are read the same way"),
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts"] = PatternDeclaration.Composite("TrackerIntegrationModuleBoundariesArchUnitTest.PromisesAndTheUpdateCode", "built from the Promises and update-code key; the other parts see no moving type"),
+            ["WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp"] = PatternDeclaration.Context(Namespace, "the organisation set-up services Work Items reaches only through listed edges; the platform types among them stay reached after the move"),
+            ["WorkItemsModuleBoundariesArchUnitTest.AccessLicensingOrganisationSetUpAndTheUpdateQueue"] = PatternDeclaration.Composite("WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp", "built from the organisation set-up key and the kernel's update-queue key, both parts of the code"),
+            ["DependencyAwareForecastSeamArchUnitTest.TheUpdateComponents"] = PatternDeclaration.Context(Namespace, "the update components the forecast seam must not reach, wherever they live"),
+            ["ModuleBoundariesArchUnitTest.PortfolioDeliveryPattern"] = PatternDeclaration.Context(Namespace, "the portfolio and delivery update layer of the module map, wherever its types live"),
+            ["RefinementModuleArchUnitTest.ServicesImplementationPattern"] = PatternDeclaration.Context(Namespace, "the service implementations Refinement must not depend on; a platform implementation stays one after the move"),
+            ["RefinementModuleArchUnitTest.BackgroundUpdatesPattern"] = PatternDeclaration.Context(Namespace, "the background update code Refinement must not depend on, wherever it lives"),
+            ["RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace"] = PatternDeclaration.Context(Namespace, "the flat service implementations the blackout seam must not depend on; the platform implementations among them stay forbidden after the move"),
+            ["RealityCheckReadOnlyArchUnitTest.ImplementationPattern"] = PatternDeclaration.Context(Namespace, "the implementations the read-only check examines, which take in the platform"),
+            ["StalenessPolicyPurityArchUnitTest.ServicesPattern"] = PatternDeclaration.Context(Namespace, "the services the staleness policy must stay free of, which take in the platform"),
+            ["RepositoryRecognition.PlatformPersistencePattern"] = PatternDeclaration.Context(Namespace, "the persistence code a repository is recognised by, wherever the database and seeding types live"),
+            ["TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace"] = PatternDeclaration.Context(Namespace, "the implementation code the board port must not name; a platform implementation stays one after the move"),
+            ["PlatformLaneMembershipArchUnitTest.PlatformLaneNamespaces"] = PatternDeclaration.Context(Namespace, "the namespaces the platform lane is measured in, old and new"),
+
+            // Old locations: a rule asks whether a type is still left there, so they must not see the new place.
+            ["PromisesLayoutArchUnitTest.WhereTheServicesLivedBefore"] = PatternDeclaration.Place(Namespace, "where the Promises services lived before they moved into their module; a Promises type is never looked for in the platform"),
+            ["PromisesPoliciesLayoutArchUnitTest.WhereTheHandlersLivedBefore"] = PatternDeclaration.Place(Namespace, "where the Promises handlers lived before they moved into their module"),
+            ["PromisesMembershipArchUnitTest.NamespacesOfTheMembersFoundByName"] = PatternDeclaration.Place(Namespace, "the flat Services namespaces where Promises members are found by name; no Promises member moves into the platform"),
+            ["TrackerIntegrationApplicationLayoutArchUnitTest.WhereTheTypesLivedBefore"] = PatternDeclaration.Place(Namespace, "where the Tracker integration application types lived before they moved into their module"),
+            ["TrackerIntegrationConnectorsLayoutArchUnitTest.WhereTheTypesLivedBefore"] = PatternDeclaration.Place(Namespace, "where the connectors lived before they moved into their module"),
+            ["TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.WhereTheTypesLivedBefore"] = PatternDeclaration.Place(Namespace, "where the OAuth and health types lived before they moved into their module"),
+            ["TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.WhereTheValueTypesLivedBefore"] = PatternDeclaration.Place(Namespace, "where the OAuth and health value types lived before they moved into their module"),
+            ["WorkItemsApplicationLayoutArchUnitTest.WhereTheTypesLivedBefore"] = PatternDeclaration.Place(FullName, "the old Services prefix of a Work Items type named in source text, read on full names"),
+            ["WorkItemsPoliciesLayoutArchUnitTest.WhereTheHandlersLivedBefore"] = PatternDeclaration.Place(Namespace, "where the Work Items handlers lived before they moved into their module"),
+            ["WorkItemsPoliciesLayoutArchUnitTest.AnOldNamespacePrefix"] = PatternDeclaration.Place(FullName, "the old namespace prefix of a Work Items handler named in source text, read on full names"),
+
+            // Patterns that take in the whole backend, or everything outside one module, and see every type in either place.
+            ["AccessHttpAdaptersLayoutArchUnitTest.TheWholeAssembly"] = PatternDeclaration.Context(Namespace, TheWholeBackend),
+            ["PromisesLayoutArchUnitTest.TheWholeAssembly"] = PatternDeclaration.Context(Namespace, TheWholeBackend),
+            ["TrackerIntegrationApplicationLayoutArchUnitTest.TheWholeAssembly"] = PatternDeclaration.Context(Namespace, TheWholeBackend),
+            ["ConnectorsDeclareNoUnsupportedMembersArchUnitTest.AllOfTheBackend"] = PatternDeclaration.Context(Namespace, TheWholeBackend),
+            ["AdditionalFieldInUseRulePurityArchUnitTest.AnythingOfLighthouseOutsideModels"] = PatternDeclaration.Context(Namespace, "everything of the backend outside Models, which takes in the platform in either place"),
+            ["PromisesModuleBoundariesArchUnitTest.OutsideTrackerIntegration"] = PatternDeclaration.Context(Namespace, "everything outside Tracker integration, which takes in the platform in either place"),
+            ["AccessAndLicensingUnitTestPlacementTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["CalendarDayAnchorSeamArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["CategoryListOwnershipGuardTest.ProductionProject"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["DependencySingleDecisionArchUnitTest.BackendProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["FastWithManyFeaturesArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["JiraRouteLiteralsTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["OverTimeReconstructionSeamArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["ProductionSource.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["PromisesUnitTestPlacementTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["SecretReadPathSourceStructureTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["SecretRotationWriteSurfaceTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["TrackerIntegrationUnitTestPlacementTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["UpdateCancellationContextWriterArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+            ["ZonedTimestampParsingArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
+        };
+    }
+}

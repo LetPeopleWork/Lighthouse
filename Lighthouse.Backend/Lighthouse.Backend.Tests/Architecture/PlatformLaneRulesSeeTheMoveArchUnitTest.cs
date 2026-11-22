@@ -8,23 +8,25 @@ namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
     /// The platform types are about to move out of Services into Lighthouse.Backend.Platform. Every architecture rule that
-    /// finds them by name must give the same answer after the move as before, or the move quietly switches the rule off: a
-    /// rule that looks only at the old place passes because it no longer finds anything there.
+    /// finds them by name must keep its meaning after the move, or the move quietly switches the rule off: a rule that
+    /// looks only at the old place passes because it no longer finds anything there.
     /// <para>
-    /// Which strings count as rule patterns: every constant string field of this test assembly, in any class and any nested
-    /// class, that parses as a regular expression, names Lighthouse.Backend, and is either anchored at its start (a namespace
-    /// pattern, wherever it is declared) or declared among the architecture rules. A bare word used as a label or test data
-    /// elsewhere ("Encryption", "Implementation", a team called Platform) is not a rule and is not asked. A message or a file
-    /// path answers no for both names of every moving type, so it passes without a list of exceptions. A constant that
-    /// names one type or one file by its full name or path, rather than a namespace, is on the membership map's list of
-    /// strings the move renames and is left to the move that renames it: widening it would make it name two types.
+    /// Which strings count as rule patterns: every constant or static read-only string field of this test assembly, in any
+    /// class and any nested class, that parses as a regular expression, names Lighthouse.Backend, and is either anchored at
+    /// its start or declared among the architecture rules. A constant that names one type or one file by its full name or
+    /// path is on the membership map's list of strings the move renames and is left to the move that renames it.
+    /// </para>
+    /// <para>
+    /// A pattern is asked on the subject its rule matches it against, the namespace of the outermost type or the full
+    /// name, as declared in <see cref="PlatformLanePatternRoles"/>. A pattern that sees a moving type must be declared
+    /// there with its role: a part of the code must see the type in its new place too, and only by taking in the whole
+    /// area the type moves into; an old location must not see it there. A pattern that sees a moving type and is not
+    /// declared fails until it is.
     /// </para>
     /// <para>
     /// Strings that are not constants escape reflection, so the rule files are also read as text. A string there may not
     /// name a moving area as a whole, or a moving type, by its old Services path, unless the membership map lists it as
-    /// renamed by a move. Strings that name a type or test that stays where it is (an update pipeline, a handler that
-    /// already lives in its module, a test class) are not about the move and pass, as do the rule patterns the first check
-    /// already governs, which keep their old alternatives until the old places are empty.
+    /// renamed by a move.
     /// </para>
     /// </summary>
     [TestFixture]
@@ -35,6 +37,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 
         private static readonly string FixtureNamespace = typeof(MadeUpRuleKeys).Namespace!;
+
+        private static readonly Type[] TheCheckItself = [typeof(PlatformLaneRulesSeeTheMoveArchUnitTest), typeof(PlatformLaneMembership), typeof(PlatformLanePatternRoles)];
 
         private static readonly string[] MovingAreasOfServices =
             ["Encryption", "DatabaseManagement", "UsageData", "Logging", "DomainEvents", "BackgroundServices.Update", "Update"];
@@ -56,6 +60,15 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly Lazy<ModuleDefinition> TestModule = new(() => IlDependencies.ReadModule(typeof(PlatformLaneRulesSeeTheMoveArchUnitTest).Assembly));
 
+        private enum RoleBreak
+        {
+            NotDeclared,
+            StopsSeeingTheType,
+            SeesTheTypeInItsNewPlace,
+            SeesAnAreaItNeverSaw,
+            KeepsAPlatformAlternativeAsAnOldLocation,
+        }
+
         [OneTimeTearDown]
         public void DisposeModules()
         {
@@ -71,31 +84,37 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void EveryRulePatternOfTheTestAssembly_AnswersTheSameForEachMovingPlatformType_UnderItsOldAndItsNewNamespace()
+        public void EveryRulePatternThatSeesAMovingPlatformType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads()
         {
             var patterns = GivenTheRulePatternsOfTheTestAssembly();
 
-            var blind = WhenEachPatternIsAskedAboutEveryMovingTypeUnderBothNames(patterns);
+            var breaks = WhenEachPatternIsAskedOnItsSubjectAboutEveryMovingType(patterns, PlatformLanePatternRoles.PatternRoles);
 
-            ThenNoPatternAnswersDifferently(
-                blind,
-                "a rule that matches a platform type under its old namespace and not under Lighthouse.Backend.Platform stops seeing that type the moment it moves, and the rule then passes because it finds nothing to check.",
-                @"add to the pattern an alternative for the area the type moves into, of the form ^Lighthouse\.Backend\.Platform\.<Area>(\.|$), keep every old alternative, and add no alternative that reaches outside Lighthouse.Backend.Platform. A pattern that names one type or file by its full name belongs on the membership map's list of strings the move renames instead.");
+            ThenNoPatternBreaksItsRole(breaks);
         }
 
         [Test]
-        public void ThePreservationCheck_NamesAMadeUpPatternInANestedClassThatSeesOnlyTheOldPlace_AndPassesOnesThatSeeBothOrNeither()
+        public void TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole_AndPassesTheOnesThatKeepIt()
         {
             var patterns = GivenTheMadeUpRulePatterns();
 
-            var blind = WhenEachPatternIsAskedAboutEveryMovingTypeUnderBothNames(patterns);
+            var breaks = WhenEachPatternIsAskedOnItsSubjectAboutEveryMovingType(patterns, MadeUpRuleRoles.Roles);
 
-            ThenThePatternsNamedAre(
-                blind.Select(finding => finding.Field).Distinct().ToList(),
-                named: [$"{nameof(MadeUpRuleKeys)}.{nameof(MadeUpRuleKeys.Nested)}.{nameof(MadeUpRuleKeys.Nested.SeesOnlyTheOldPlace)}"],
-                notNamed: [$"{nameof(MadeUpRuleKeys)}.{nameof(MadeUpRuleKeys.SeesBothPlaces)}", $"{nameof(MadeUpRuleKeys)}.{nameof(MadeUpRuleKeys.SeesNeitherPlace)}", $"{nameof(MadeUpRuleKeys)}.{nameof(MadeUpRuleKeys.NotARegularExpression)}"],
-                "The preservation check, run over made-up rule keys found by reflection",
-                "the check must find every constant pattern on its own, nested classes included, and compare the answer under the new name with the answer under the old one; a check that reads a hand list, skips nested classes or looks only at the old answer would let a blind rule through.");
+            ThenTheBreaksNamedAre(
+                breaks,
+                [
+                    (nameof(MadeUpRuleKeys.AContextThatSeesOnlyTheOldPlace), RoleBreak.StopsSeeingTheType),
+                    (nameof(MadeUpRuleKeys.AContextNamespaceWidenedByTypeName), RoleBreak.StopsSeeingTheType),
+                    (nameof(MadeUpRuleKeys.APlaceWidenedIntoTheNewPlace), RoleBreak.SeesTheTypeInItsNewPlace),
+                    (nameof(MadeUpRuleKeys.APlaceWidenedIntoTheNewPlace), RoleBreak.KeepsAPlatformAlternativeAsAnOldLocation),
+                    (nameof(MadeUpRuleKeys.APlaceGivenATypeNameInTheNewPlace), RoleBreak.KeepsAPlatformAlternativeAsAnOldLocation),
+                    (nameof(MadeUpRuleKeys.AContextWidenedIntoAnAreaItNeverSaw), RoleBreak.SeesAnAreaItNeverSaw),
+                    (nameof(MadeUpRuleKeys.APlatformAlternativeThatReachesOutside), RoleBreak.SeesAnAreaItNeverSaw),
+                    ($"{nameof(MadeUpRuleKeys.Nested)}.{nameof(MadeUpRuleKeys.Nested.UndeclaredButSeesTheOldPlace)}", RoleBreak.NotDeclared),
+                    ($"{nameof(MadeUpRuleKeys.Nested)}.{nameof(MadeUpRuleKeys.Nested.UndeclaredButSeesOnlyTheNewPlace)}", RoleBreak.NotDeclared),
+                    ($"{nameof(MadeUpRuleKeys.Nested)}.{nameof(MadeUpRuleKeys.Nested.ACompositeOfAContextThatSeesOnlyTheOldPlace)}", RoleBreak.StopsSeeingTheType),
+                ],
+                "a check that asks a namespace rule about full names, lets an undeclared pattern pass, accepts an old location that sees the new place, admits a part of the code into an area it never saw, ignores a composite's component, or skips static read-only fields and nested classes lets a rule go blind or wrong at the move, and passes the real rules it should name.");
         }
 
         [Test]
@@ -111,7 +130,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(
-                    Regex.IsMatch(cryptoService.OldFullName, cryptoServiceFullName, RegexOptions.None, PatternTimeout) && !Regex.IsMatch(cryptoService.NewFullName, cryptoServiceFullName, RegexOptions.None, PatternTimeout),
+                    IsMatch(cryptoService.OldFullName, cryptoServiceFullName) && !IsMatch(cryptoService.NewFullName, cryptoServiceFullName),
                     Is.True,
                     $"The full name {cryptoServiceFullName} should answer yes under the old name and no under the new one; it is the example that shows a designation of one type is not a namespace rule. Why it matters: without it this test proves nothing about the skip. How to fix: pick another full name on the map's list of strings the move renames.");
                 Assert.That(
@@ -121,21 +140,21 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(
                     patterns.Select(pattern => pattern.Field),
                     Does.Contain($"{nameof(KernelRules)}.{nameof(KernelRules.TheUpdateQueue)}"),
-                    "The preservation check did not take up KernelRules.TheUpdateQueue, a namespace rule of the update queue. Why it matters: a check that misses real rules guards nothing. How to fix: enumerate every constant string field of the test assembly that parses as a regular expression.");
+                    "The preservation check did not take up KernelRules.TheUpdateQueue, a namespace rule of the update queue. Why it matters: a check that misses real rules guards nothing. How to fix: enumerate every constant and static read-only string field of the test assembly that parses as a regular expression.");
             }
         }
 
         [Test]
-        public void NoPlatformAlternativeOfARulePattern_MatchesAProductionTypeOutsidePlatform()
+        public void NoPlatformAlternativeOfARulePattern_MatchesAProductionNamespaceOrTypeOutsidePlatform()
         {
             var patterns = GivenTheRulePatternsOfTheTestAssembly();
 
-            var reachingOutside = WhenThePlatformAlternativesAreAskedAboutEveryProductionTypeOutsidePlatform(patterns);
+            var reachingOutside = WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform(patterns, PlatformLanePatternRoles.PatternRoles);
 
             Assert.That(
                 reachingOutside,
                 Is.Empty,
-                "These rule patterns match a production type outside Lighthouse.Backend.Platform only through their Platform alternative:" + Environment.NewLine +
+                "These rule patterns match a production namespace or type outside Lighthouse.Backend.Platform only through their Platform alternative:" + Environment.NewLine +
                 string.Join(Environment.NewLine, reachingOutside) + Environment.NewLine +
                 @"Why it matters: an alternative added for the move must see the moved types and nothing else; one that reaches outside Platform puts types under a rule that was never about them. How to fix: write the alternative as ^Lighthouse\.Backend\.Platform\.<Area>(\.|$), anchored and ending at a namespace boundary.");
         }
@@ -145,14 +164,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var patterns = GivenTheMadeUpRulePatterns();
 
-            var reachingOutside = WhenThePlatformAlternativesAreAskedAboutEveryProductionTypeOutsidePlatform(patterns);
+            var reachingOutside = WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform(patterns, MadeUpRuleRoles.Roles);
 
-            ThenThePatternsNamedAre(
-                reachingOutside.Select(finding => finding.Split(' ')[0]).Distinct().ToList(),
-                named: [$"{nameof(MadeUpRuleKeys)}.{nameof(MadeUpRuleKeys.APlatformAlternativeThatReachesOutside)}"],
-                notNamed: [$"{nameof(MadeUpRuleKeys)}.{nameof(MadeUpRuleKeys.SeesBothPlaces)}"],
-                "The Platform-alternative check, run over made-up rule keys",
-                "an unanchored Platform alternative matches production types such as the platform service interface that sit outside Lighthouse.Backend.Platform today; the check must name it and pass an alternative anchored on Lighthouse.Backend.Platform.<Area>.");
+            var named = reachingOutside.Select(finding => finding.Split(' ')[0]).Distinct().ToList();
+            Assert.That(
+                named,
+                Is.EquivalentTo(new[] { $"{nameof(MadeUpRuleKeys)}.{nameof(MadeUpRuleKeys.APlatformAlternativeThatReachesOutside)}" }),
+                $"The Platform-alternative check named [{string.Join(", ", reachingOutside)}]. Expected only the made-up key whose unanchored Platform alternative matches the full name of the platform service, which sits outside Lighthouse.Backend.Platform today, and none of the keys anchored on Lighthouse.Backend.Platform.<Area>. Why it matters: a check that names compliant keys gets switched off, and one that misses a too-wide alternative lets a rule take in types it was never about. How to fix: ask each Platform alternative about the production namespaces or full names outside Platform, on the subject the pattern is declared with.");
         }
 
         [Test]
@@ -230,8 +248,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static List<RulePattern> GivenTheRulePatternsOfTheTestAssembly()
         {
-            var patterns = RulePatternsOf(typeof(PlatformLaneRulesSeeTheMoveArchUnitTest).Assembly.GetTypes().Where(type => !InFixtures(type)));
-            Assert.That(patterns, Has.Count.GreaterThan(50), $"Only {patterns.Count} rule patterns were found in the test assembly, so the check would pass without looking at the rules. How to fix: enumerate the constant string fields of every class, nested ones included.");
+            var patterns = RulePatternsOf(typeof(PlatformLaneRulesSeeTheMoveArchUnitTest).Assembly.GetTypes().Where(type => !InFixtures(type) && !TheCheckItself.Contains(type)));
+            Assert.That(patterns, Has.Count.GreaterThan(50), $"Only {patterns.Count} rule patterns were found in the test assembly, so the check would pass without looking at the rules. How to fix: enumerate the constant and static read-only string fields of every class, nested ones included.");
             return patterns;
         }
 
@@ -240,29 +258,89 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static HashSet<string> GivenThePatternValuesThePreservationCheckGoverns()
             => [.. GivenTheRulePatternsOfTheTestAssembly()
-                .Where(pattern => PlatformLaneMembership.MovingTypes.Any(type => IsMatch(type.OldFullName, pattern.Value) || IsMatch(type.NewFullName, pattern.Value)))
+                .Where(pattern => PlatformLaneMembership.MovingTypes.Any(type => SubjectsOf(type).Any(subject => IsMatch(subject, pattern.Value))))
                 .Select(pattern => pattern.Value)];
 
-        private static List<BlindAnswer> WhenEachPatternIsAskedAboutEveryMovingTypeUnderBothNames(IEnumerable<RulePattern> patterns)
-            => [.. from pattern in patterns
-                from type in PlatformLaneMembership.MovingTypes
-                let underTheOldName = IsMatch(type.OldFullName, pattern.Value)
-                let underTheNewName = IsMatch(type.NewFullName, pattern.Value)
-                where underTheOldName != underTheNewName
-                select new BlindAnswer(pattern.Field, pattern.Value, type, underTheOldName, underTheNewName)];
-
-        private static List<string> WhenThePlatformAlternativesAreAskedAboutEveryProductionTypeOutsidePlatform(IEnumerable<RulePattern> patterns)
+        private static List<PatternBreak> WhenEachPatternIsAskedOnItsSubjectAboutEveryMovingType(IEnumerable<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles)
         {
-            var outsidePlatform = IlDependencies.TypesIn(ProductionModule.Value, @"^Lighthouse\.Backend(\.|$)")
+            var breaks = new List<PatternBreak>();
+
+            foreach (var pattern in patterns)
+            {
+                var declared = Resolve(pattern.Field, roles);
+                if (declared is null)
+                {
+                    breaks.AddRange(
+                        from type in PlatformLaneMembership.MovingTypes
+                        where IsMatch(type.OldNamespace, pattern.Value) || IsMatch(type.NewNamespace, pattern.Value) || IsMatch(type.OldFullName, pattern.Value) || IsMatch(type.NewFullName, pattern.Value)
+                        select new PatternBreak(pattern, "not declared", type, string.Empty, false, string.Empty, false, RoleBreak.NotDeclared));
+                    continue;
+                }
+
+                var (subject, role) = declared.Value;
+                var answers = PlatformLaneMembership.MovingTypes
+                    .Select(type => (Type: type, Old: OldSubject(type, subject), New: NewSubject(type, subject)))
+                    .Select(asked => (asked.Type, asked.Old, asked.New, UnderTheOld: IsMatch(asked.Old, pattern.Value), UnderTheNew: IsMatch(asked.New, pattern.Value)))
+                    .ToList();
+                var areasSeenBefore = answers.Where(answer => answer.UnderTheOld).Select(answer => answer.Type.Area).ToHashSet(StringComparer.Ordinal);
+
+                if (role == PatternRole.Place && PlatformToken.IsMatch(pattern.Value))
+                {
+                    var type = answers.Where(answer => answer.UnderTheOld).Select(answer => answer.Type).FirstOrDefault() ?? PlatformLaneMembership.MovingTypes[0];
+                    breaks.Add(new PatternBreak(
+                        pattern,
+                        $"{subject}, {role}",
+                        type,
+                        OldSubject(type, subject),
+                        IsMatch(OldSubject(type, subject), pattern.Value),
+                        NewSubject(type, subject),
+                        IsMatch(NewSubject(type, subject), pattern.Value),
+                        RoleBreak.KeepsAPlatformAlternativeAsAnOldLocation));
+                }
+
+                foreach (var answer in answers)
+                {
+                    var roleBreak = (role, answer.UnderTheOld, answer.UnderTheNew) switch
+                    {
+                        (PatternRole.Context, true, false) => RoleBreak.StopsSeeingTheType,
+                        (PatternRole.Context, false, true) when !areasSeenBefore.Contains(answer.Type.Area) => RoleBreak.SeesAnAreaItNeverSaw,
+                        (PatternRole.Place, _, true) => RoleBreak.SeesTheTypeInItsNewPlace,
+                        _ => (RoleBreak?)null,
+                    };
+
+                    if (roleBreak is not null)
+                    {
+                        breaks.Add(new PatternBreak(pattern, $"{subject}, {role}", answer.Type, answer.Old, answer.UnderTheOld, answer.New, answer.UnderTheNew, roleBreak.Value));
+                    }
+                }
+            }
+
+            return breaks;
+        }
+
+        private static List<string> WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform(IEnumerable<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles)
+        {
+            var typesOutside = IlDependencies.TypesIn(ProductionModule.Value, @"^Lighthouse\.Backend(\.|$)")
                 .Where(typeName => !IsMatch(typeName, ThePlatformNamespace))
+                .ToList();
+            var namespacesOutside = ProductionModule.Value.Types
+                .Select(type => type.Namespace)
+                .Where(name => IsMatch(name, @"^Lighthouse\.Backend(\.|$)") && !IsMatch(name, ThePlatformNamespace))
+                .Distinct(StringComparer.Ordinal)
                 .ToList();
 
             return [.. from pattern in patterns
                 let withoutPlatform = PlatformToken.Replace(pattern.Value, "(?!)")
                 where withoutPlatform != pattern.Value
-                from typeName in outsidePlatform
-                where IsMatch(typeName, pattern.Value) && !IsMatch(typeName, withoutPlatform)
-                select $"{pattern.Field} = {pattern.Value} matches {typeName}"];
+                let subject = Resolve(pattern.Field, roles)?.Subject
+                from name in subject switch
+                {
+                    PatternSubject.Namespace => namespacesOutside,
+                    PatternSubject.FullName => typesOutside,
+                    _ => namespacesOutside.Concat(typesOutside),
+                }
+                where IsMatch(name, pattern.Value) && !IsMatch(name, withoutPlatform)
+                select $"{pattern.Field} = {pattern.Value} matches {name}"];
         }
 
         private static List<string> WhenTheStringsOfTheFileAreRead(string relativePath, string source, HashSet<string> governedPatterns)
@@ -304,50 +382,65 @@ namespace Lighthouse.Backend.Tests.Architecture
             return found;
         }
 
-        private static void ThenNoPatternAnswersDifferently(List<BlindAnswer> blind, string why, string how)
+        private static void ThenNoPatternBreaksItsRole(List<PatternBreak> breaks)
         {
-            var byPattern = blind.GroupBy(finding => finding.Field).ToList();
+            var byPattern = breaks.GroupBy(found => found.Pattern.Field).ToList();
             var report = byPattern.Select(group =>
-                $"{group.Key} = {group.First().Pattern}{Environment.NewLine}" +
-                string.Join(Environment.NewLine, group.Take(3).Select(finding =>
-                    $"    {finding.Type.OldFullName} -> {Answer(finding.UnderTheOldName)}, {finding.Type.NewFullName} -> {Answer(finding.UnderTheNewName)}")) +
+                $"{group.Key} = {group.First().Pattern.Value} ({group.First().Declared}){Environment.NewLine}" +
+                string.Join(Environment.NewLine, group.Take(3).Select(Describe)) +
                 (group.Count() > 3 ? $"{Environment.NewLine}    and {group.Count() - 3} more moving types" : string.Empty));
 
             Assert.That(
                 byPattern.Select(group => group.Key),
                 Is.Empty,
-                $"{byPattern.Count} rule patterns answer differently for a moving platform type under its old and its new namespace:{Environment.NewLine}" +
-                string.Join(Environment.NewLine, report) + $"{Environment.NewLine}Why it matters: {why} How to fix: {how}");
+                $"{byPattern.Count} rule patterns would not keep their meaning when the platform types move:{Environment.NewLine}" +
+                string.Join(Environment.NewLine, report) + Environment.NewLine +
+                "Why it matters: a rule matches a pattern against the namespace of a type or its full name; a part of the code that does not match the new namespace stops seeing the type the moment it moves and then passes because it finds nothing, and an old location that matches the new place starts judging code that no longer lives there. " +
+                @"How to fix: declare an undeclared pattern in PlatformLanePatternRoles with its subject, role and reason; give a part of the code one alternative per area it saw, ^Lighthouse\.Backend\.Platform\.<Area>(\.|$), and no alternative that names a type; take every Platform alternative off an old location; keep every old alternative.");
         }
 
-        private static void ThenThePatternsNamedAre(List<string> found, string[] named, string[] notNamed, string check, string why)
+        private static void ThenTheBreaksNamedAre(List<PatternBreak> breaks, (string Field, RoleBreak Break)[] expected, string why)
         {
-            using (Assert.EnterMultipleScope())
+            var named = breaks
+                .Select(found => (Field: found.Pattern.Field[(nameof(MadeUpRuleKeys).Length + 1)..], found.Break))
+                .Distinct()
+                .ToList();
+
+            Assert.That(
+                named,
+                Is.EquivalentTo(expected),
+                $"The role check, run over made-up rule keys found by reflection, named [{string.Join(", ", named)}] and should have named exactly [{string.Join(", ", expected)}]." + Environment.NewLine +
+                string.Join(Environment.NewLine, breaks.Take(12).Select(Describe)) + Environment.NewLine +
+                $"Why it matters: {why} How to fix: run the same check the real rules get over these made-up keys, on the subject and role each is declared with.");
+        }
+
+        private static string Describe(PatternBreak found)
+            => found.Break == RoleBreak.NotDeclared
+                ? $"    not declared, sees {found.Type.Name} ({found.Type.OldFullName} -> {found.Type.NewFullName})"
+                : $"    {found.Break}: {found.Type.Name}: {found.OldSubject} -> {Answer(found.UnderTheOld)}, {found.NewSubject} -> {Answer(found.UnderTheNew)}";
+
+        private static (PatternSubject Subject, PatternRole Role)? Resolve(string field, IReadOnlyDictionary<string, PatternDeclaration> roles)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var key = field;
+            while (roles.TryGetValue(key, out var declaration) && seen.Add(key))
             {
-                foreach (var pattern in named)
+                if (declaration.CompositeOf is null)
                 {
-                    Assert.That(found, Does.Contain(pattern), $"{check} did not name {pattern}. Named: [{string.Join(", ", found)}]. Why it matters: {why} How to fix: run the same check the real rules get over these made-up keys.");
+                    return declaration.Subject is { } subject && declaration.Role is { } role ? (subject, role) : null;
                 }
 
-                foreach (var pattern in notNamed)
-                {
-                    Assert.That(found, Does.Not.Contain(pattern), $"{check} named {pattern}, which answers the same before and after the move or is not a pattern. Why it matters: a check that names compliant keys gets switched off. How to fix: name a key only when its two answers differ.");
-                }
+                key = declaration.CompositeOf;
             }
+
+            return null;
         }
 
-        private static List<RulePattern> RulePatternsOf(IEnumerable<Type> types)
-        {
-            var renamed = PlatformLaneMembership.StringsTheMoveRenames;
+        private static string OldSubject(PlatformLaneType type, PatternSubject subject) => subject == PatternSubject.Namespace ? type.OldNamespace : type.OldFullName;
 
-            return [.. from type in types
-                from field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
-                where field.IsLiteral && field.FieldType == typeof(string)
-                let value = field.GetRawConstantValue() as string
-                where value is not null && IsARulePattern(type, value)
-                where !renamed.Any(entry => entry.OldText == value && FileStem(entry.File) == OutermostType(type).Name)
-                select new RulePattern(FieldName(type, field), value)];
-        }
+        private static string NewSubject(PlatformLaneType type, PatternSubject subject) => subject == PatternSubject.Namespace ? type.NewNamespace : type.NewFullName;
+
+        private static string[] SubjectsOf(PlatformLaneType type) => [type.OldNamespace, type.NewNamespace, type.OldFullName, type.NewFullName];
 
         private static IEnumerable<Regex> OldPathReferencesOfTheMap()
         {
@@ -366,11 +459,26 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
+        private static List<RulePattern> RulePatternsOf(IEnumerable<Type> types)
+        {
+            var renamed = PlatformLaneMembership.StringsTheMoveRenames;
+
+            return [.. from type in types
+                where !type.ContainsGenericParameters
+                from field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                where field.FieldType == typeof(string) && (field.IsLiteral || field.IsInitOnly)
+                let value = (field.IsLiteral ? field.GetRawConstantValue() : field.GetValue(null)) as string
+                where value is not null && IsARulePattern(type, value)
+                where !renamed.Any(entry => entry.OldText == value && FileStem(entry.File) == OutermostType(type).Name)
+                where !(field.IsInitOnly && IsTheFullNameOfAMovingType(value))
+                select new RulePattern(FieldName(type, field), value)];
+        }
+
         private static List<(string RelativePath, string Source)> RuleFiles()
         {
             var root = RepositoryRoot();
             var architecture = Path.Combine(root, "Lighthouse.Backend", "Lighthouse.Backend.Tests", "Architecture");
-            string[] notRules = [$"{nameof(PlatformLaneMembership)}.cs", $"{nameof(PlatformLaneRulesSeeTheMoveArchUnitTest)}.cs"];
+            string[] notRules = [$"{nameof(PlatformLaneMembership)}.cs", $"{nameof(PlatformLanePatternRoles)}.cs", $"{nameof(PlatformLaneRulesSeeTheMoveArchUnitTest)}.cs"];
 
             var files = Directory.EnumerateFiles(architecture, "*.cs", SearchOption.AllDirectories)
                 .Where(path => !notRules.Contains(Path.GetFileName(path), StringComparer.Ordinal))
@@ -411,7 +519,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        private static bool IsMatch(string input, string pattern) => Regex.IsMatch(input, pattern, RegexOptions.None, PatternTimeout);
+        // A read-only field holding exactly one moving type's full name is read from the type itself (typeof), so it
+        // follows the type by compilation; it designates one type and is not a pattern a rule matches namespaces with.
+        private static bool IsTheFullNameOfAMovingType(string value)
+            => PlatformLaneMembership.MovingTypes.Any(type => value == type.OldFullName || value == type.NewFullName);
+
+        private static bool IsMatch(string input, string pattern) =>Regex.IsMatch(input, pattern, RegexOptions.None, PatternTimeout);
 
         private static bool InFixtures(Type type) => type.Namespace?.StartsWith(FixtureNamespace, StringComparison.Ordinal) == true;
 
@@ -426,13 +539,13 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private sealed record RulePattern(string Field, string Value);
 
-        private sealed record BlindAnswer(string Field, string Pattern, PlatformLaneType Type, bool UnderTheOldName, bool UnderTheNewName);
+        private sealed record PatternBreak(RulePattern Pattern, string Declared, PlatformLaneType Type, string OldSubject, bool UnderTheOld, string NewSubject, bool UnderTheNew, RoleBreak Break);
     }
 }
 
 namespace Lighthouse.Backend.Tests.Architecture.PlatformLaneRulesSeeTheMoveFixtures
 {
-    /// <summary>Made-up rule keys the checks above are run over, to show they name a blind key and pass the others.</summary>
+    /// <summary>Made-up rule keys the checks above are run over, to show they name a key that breaks its role and pass the others.</summary>
     internal static class MadeUpRuleKeys
     {
         public const string SeesBothPlaces = @"^Lighthouse\.Backend\.(Services\.(Implementation|Interfaces)\.DomainEvents|Platform\.DomainEvents)(\.|$)";
@@ -441,12 +554,54 @@ namespace Lighthouse.Backend.Tests.Architecture.PlatformLaneRulesSeeTheMoveFixtu
 
         public const string NotARegularExpression = "(Services.Implementation.DomainEvents";
 
+        public const string AContextThatSeesOnlyTheOldPlace = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.DomainEvents(\.|$)";
+
+        public const string AContextNamespaceWidenedByTypeName = @"^Lighthouse\.Backend\.(Services\.(Implementation|Interfaces)\.DomainEvents(\.|$)|Platform\.DomainEvents\.[^.]+$)";
+
+        public const string AFullNameWidenedByTypeName = AContextNamespaceWidenedByTypeName;
+
+        public const string APlaceWidenedIntoTheNewPlace = SeesBothPlaces;
+
+        public const string APlaceGivenATypeNameInTheNewPlace = @"^Lighthouse\.Backend\.Services\.Implementation\.DomainEvents(\.|$)|^Lighthouse\.Backend\.Platform\.DomainEvents\.DomainEventDispatcher$";
+
+        public const string AContextWidenedByTheWholeArea = @"^Lighthouse\.Backend\.(Services\.Implementation\.Encryption|Platform\.Encryption)(\.|$)";
+
+        public const string AContextWidenedIntoAnAreaItNeverSaw = @"^Lighthouse\.Backend\.(Services\.(Implementation|Interfaces)\.DomainEvents|Platform\.(DomainEvents|Logging))(\.|$)";
+
         public const string APlatformAlternativeThatReachesOutside = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.DomainEvents(\.|$)|Platform";
 
         internal static class Nested
         {
-            public const string SeesOnlyTheOldPlace = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.DomainEvents(\.|$)";
+            public const string UndeclaredButSeesTheOldPlace = @"^Lighthouse\.Backend\.Services\.Implementation\.Logging(\.|$)";
+
+            public static readonly string UndeclaredButSeesOnlyTheNewPlace = @"^Lighthouse\.Backend\.Platform\.Logging(\.|$)";
+
+            public static readonly string ACompositeOfAContextThatSeesOnlyTheOldPlace = AContextThatSeesOnlyTheOldPlace + "|" + SeesNeitherPlace;
+
+            public static readonly string ACompositeOfAContextThatSeesBothPlaces = SeesBothPlaces + "|" + SeesNeitherPlace;
+
+            public static readonly string ADesignationReadFromTheType =
+                typeof(Lighthouse.Backend.Data.LighthouseAppContext).Assembly.GetTypes().Single(type => type.Name == "DomainEventDispatcher").FullName!;
         }
+    }
+
+    /// <summary>The subject and role of each made-up key, as the real rules have theirs in PlatformLanePatternRoles.</summary>
+    internal static class MadeUpRuleRoles
+    {
+        public static IReadOnlyDictionary<string, PatternDeclaration> Roles { get; } = new Dictionary<string, PatternDeclaration>(StringComparer.Ordinal)
+        {
+            ["MadeUpRuleKeys.SeesBothPlaces"] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code that already names the new place"),
+            ["MadeUpRuleKeys.AContextThatSeesOnlyTheOldPlace"] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code that was never widened"),
+            ["MadeUpRuleKeys.AContextNamespaceWidenedByTypeName"] = PatternDeclaration.Context(PatternSubject.Namespace, "a namespace rule widened by type names, which no namespace matches"),
+            ["MadeUpRuleKeys.AFullNameWidenedByTypeName"] = PatternDeclaration.Context(PatternSubject.FullName, "the same text read on full names, where the type names do match"),
+            ["MadeUpRuleKeys.APlaceWidenedIntoTheNewPlace"] = PatternDeclaration.Place(PatternSubject.Namespace, "an old location that was given the new place"),
+            ["MadeUpRuleKeys.APlaceGivenATypeNameInTheNewPlace"] = PatternDeclaration.Place(PatternSubject.Namespace, "an old location given a type-name alternative in the new place, which no namespace matches but which still names the new place"),
+            ["MadeUpRuleKeys.AContextWidenedByTheWholeArea"] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code widened by its whole area, which takes in the area's interfaces it did not see before"),
+            ["MadeUpRuleKeys.AContextWidenedIntoAnAreaItNeverSaw"] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code widened into the logging area as well"),
+            ["MadeUpRuleKeys.APlatformAlternativeThatReachesOutside"] = PatternDeclaration.Context(PatternSubject.FullName, "a full-name rule with an unanchored Platform alternative"),
+            ["MadeUpRuleKeys.Nested.ACompositeOfAContextThatSeesOnlyTheOldPlace"] = PatternDeclaration.Composite("MadeUpRuleKeys.AContextThatSeesOnlyTheOldPlace", "built from the blind part of the code"),
+            ["MadeUpRuleKeys.Nested.ACompositeOfAContextThatSeesBothPlaces"] = PatternDeclaration.Composite("MadeUpRuleKeys.SeesBothPlaces", "built from the part of the code that names both places"),
+        };
     }
 }
 
