@@ -17,13 +17,23 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ApplicationNamespace = "Lighthouse.Backend.Modules.TrackerIntegration.Application";
 
-        private const string WhereTheTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories)(\.|$)";
+        private const string WhereTheTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories|Platform)(\.|$)";
 
         private const string TheWholeAssembly = @"^Lighthouse\.Backend\.";
 
         private const string WhereTheBoardPortLives = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.Application$";
 
-        private const string AnImplementationNamespace = @"^Lighthouse\.Backend\.(Services\.Implementation|Modules\.TrackerIntegration\.Adapters)(\.|$)";
+        private const string AnImplementationNamespace = @"^Lighthouse\.Backend\.(Services\.Implementation|Modules\.TrackerIntegration\.Adapters)(\.|$)"
+            + @"|^Lighthouse\.Backend\.Platform\.(Encryption\.(AKeyOnlyItsOwnerCanReplace|ConfiguredKeyRingSource|ConnectionSecrets|DatabaseSecretPresenceProbe|DatabaseSecretReadabilityProbe|EncryptionKeyRingBootstrapper|EncryptionKeyRingHolder|GeneratedKeyRingMinter|GeneratedKeyRingStore|IKeyStoreFileSystem|IStoredSecretPresenceProbe|IStoredSecretReadabilityProbe|KeyRingSerializer|KeyStoreCase|KeyStoreFile|KeyStoreLocation|KeyStoreMigration|KeyStoreMigrationOutcome|KeyStoreResolver|KeySupply|KeyThatReadsNothing|LegacyDefaultEncryptionKey|MintingNotPermittedException|MountedFileKeyRingSource|NoDurableKeyStore|OneSecretPassAtATime|PhysicalKeyStoreFileSystem|PublishedKeyAsTheActiveKey|PublishedKeySecretCount|ReadableSecretsNotOnTheActiveKey|ReferencedKeyIds|SecretCustodyService|SecretEnvelope|SecretStateClassifier|StoredSecret|StoredSecretFinding|StoredSecretLocation|StoredSecretLocations|StoredSecretPresence|StoredSecretReadability|StoredSecretSummaryReader|SuppliedKeyRing|UnreadableSecretException|UnreadableStoredSecrets|WhereTheKeyCameFrom|CryptoService|KeyRingFileWatcher)"
+            + @"|DatabaseManagement\.(CommandRunner|DatabaseMaintenanceGate|DatabaseManagementService|DatabaseOperationTracker|GateAcquisitionResult|PostgresDatabaseManagementProvider|SqliteDatabaseManagementProvider)"
+            + @"|DemoData\.(DemoDataService)"
+            + @"|Seeding\.(InstallTimestampSeeder)|Persistence"
+            + @"|UsageData\.(PostHogUsageDataPublisher|UsageDataConsentService|UsageDataConsentToken|UsageDataDeploymentModeResolver|UsageDataEventQueue|UsageDataGate|UsageDataInstanceProperties|UsageDataMasterSwitch|UsageDataPublishing|UsageDataConsentPruningService|UsageDataForwardingService)"
+            + @"|Logging\.(RecentProblemsReport|RecentProblemsSink|ConfigFileUpdater|SerilogLogConfiguration)"
+            + @"|Releases\.(AssemblyService|GitHubService|LighthouseReleaseService)"
+            + @"|DomainEvents\.(DomainEventDispatcher)"
+            + @"|Host\.(FileSystemService|LighthouseClock|PlatformExtensions|PlatformService|ProcessService|RandomNumberService|ServiceConfig|SystemInfoService)"
+            + @"|UpdateQueue\.(AdmittedCancellations|AdmittedWorkOrdering|InProcessUpdateCancellationNotifier|InProcessUpdateCompletionNotifier|InProcessUpdateExecutionLock|InProcessUpdateStatusStore|PostgresUpdateExecutionLock|RedisUpdateCancellationNotifier|RedisUpdateCompletionNotifier|RedisUpdateStatusStore|UpdateCancellationContext|UpdateCancellationPolicy|UpdateEntityKind|UpdateEntityKinds|UpdateKey|UpdateMoments|UpdateNotificationHub|UpdateProgress|UpdateQueueService|UpdateStatus|UpdateSubstrate|UpdateTaskNaming|RefreshRoundSummary|RefreshRoundSummaryLine))(\.|$)";
 
         private const string FixturePorts = @"^Lighthouse\.Backend\.Modules\.TrackerIntegrationFixtures\.ApplicationLayout\.Ports$";
 

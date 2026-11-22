@@ -32,12 +32,14 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string FixtureFormerHome = @"^Lighthouse\.Backend\.Modules\.WorkItemsFixtures\.PoliciesLayout\.Services\.Implementation\.DomainEvents(\.|$)";
 
-        private const string WhereTheHandlersLivedBefore = @"^Lighthouse\.Backend\.Services\.Implementation\.(DomainEvents|BackgroundServices\.Update)(\.|$)";
+        private const string WhereTheHandlersLivedBefore = @"^Lighthouse\.Backend\.Services\.Implementation\.(DomainEvents|BackgroundServices\.Update)(\.|$)"
+            + @"|^Lighthouse\.Backend\.Platform\.(DomainEvents\.(DomainEventDispatcher)"
+            + @"|UpdateQueue\.(AdmittedCancellations|AdmittedWorkOrdering|InProcessUpdateCancellationNotifier|InProcessUpdateCompletionNotifier|InProcessUpdateExecutionLock|InProcessUpdateStatusStore|PostgresUpdateExecutionLock|RedisUpdateCancellationNotifier|RedisUpdateCompletionNotifier|RedisUpdateStatusStore|UpdateCancellationContext|UpdateCancellationPolicy|UpdateEntityKind|UpdateEntityKinds|UpdateKey|UpdateMoments|UpdateNotificationHub|UpdateProgress|UpdateQueueService|UpdateStatus|UpdateSubstrate|UpdateTaskNaming))(\.|$)";
 
         private const string TheDomainEventHandlerPort = "Lighthouse.Backend.Services.Interfaces.DomainEvents.IDomainEventHandler`1";
 
         private const string AnOldNamespacePrefix =
-            @"(?<![\w.])(Lighthouse\.Backend\.)?Services\.Implementation\.(DomainEvents|BackgroundServices\.Update)\.";
+            @"(?<![\w.])(Lighthouse\.Backend\.)?(Services\.Implementation\.(DomainEvents|BackgroundServices\.Update)\.|Platform\.(DomainEvents\.(?=DomainEventDispatcher\b)|UpdateQueue\.(?=(AdmittedCancellations|AdmittedWorkOrdering|InProcessUpdateCancellationNotifier|InProcessUpdateCompletionNotifier|InProcessUpdateExecutionLock|InProcessUpdateStatusStore|PostgresUpdateExecutionLock|RedisUpdateCancellationNotifier|RedisUpdateCompletionNotifier|RedisUpdateStatusStore|UpdateCancellationContext|UpdateCancellationPolicy|UpdateEntityKind|UpdateEntityKinds|UpdateKey|UpdateMoments|UpdateNotificationHub|UpdateProgress|UpdateQueueService|UpdateStatus|UpdateSubstrate|UpdateTaskNaming)\b)))";
 
         // Each file declares one top-level type named like the file.
         private static readonly string[] Policies =

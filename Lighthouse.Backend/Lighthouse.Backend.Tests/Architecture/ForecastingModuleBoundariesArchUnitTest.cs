@@ -440,7 +440,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"Types in Forecasting's Adapters, namespaces matching \"{adapters}\", should reach the update code in namespaces matching " +
                 $"\"{sharedUpdateCode}\" only through the listed edges, because that code is shared with the Team and Portfolio " +
                 "updaters and is still to be split by module; every new edge ties Forecasting's background work tighter to the other " +
-                "updaters. Use the update contracts in Services.Interfaces.Update instead.");
+                "updaters. Use the update queue's contracts, its interfaces, instead.");
 
         private static InboundVerdict ForecastingsRuleOverMadeUpTypes(ReachedLayer layer, IReadOnlyCollection<string> outsideNamespaces, IReadOnlyCollection<string> listed, string? compositionRootNamed = null)
             => layer switch

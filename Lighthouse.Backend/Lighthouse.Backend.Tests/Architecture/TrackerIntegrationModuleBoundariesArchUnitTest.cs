@@ -47,13 +47,17 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string AnyModuleAdapters = @"^Lighthouse\.Backend\.Modules\.[^.]+\.Adapters(\.|$)";
 
-        private const string TheKeyRing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Encryption(\.|$)";
+        private const string TheKeyRing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Encryption(\.|$)"
+            + @"|^Lighthouse\.Backend\.Platform\.(Encryption\.(AKeyOnlyItsOwnerCanReplace|ConfiguredKeyRingSource|ConnectionSecrets|DatabaseSecretPresenceProbe|DatabaseSecretReadabilityProbe|EncryptionKeyRingBootstrapper|EncryptionKeyRingHolder|GeneratedKeyRingMinter|GeneratedKeyRingStore|IKeyStoreFileSystem|IStoredSecretPresenceProbe|IStoredSecretReadabilityProbe|KeyRingSerializer|KeyStoreCase|KeyStoreFile|KeyStoreLocation|KeyStoreMigration|KeyStoreMigrationOutcome|KeyStoreResolver|KeySupply|KeyThatReadsNothing|LegacyDefaultEncryptionKey|MintingNotPermittedException|MountedFileKeyRingSource|NoDurableKeyStore|OneSecretPassAtATime|PhysicalKeyStoreFileSystem|PublishedKeyAsTheActiveKey|PublishedKeySecretCount|ReadableSecretsNotOnTheActiveKey|ReferencedKeyIds|SecretCustodyService|SecretEnvelope|SecretStateClassifier|StoredSecret|StoredSecretFinding|StoredSecretLocation|StoredSecretLocations|StoredSecretPresence|StoredSecretReadability|StoredSecretSummaryReader|SuppliedKeyRing|UnreadableSecretException|UnreadableStoredSecrets|WhereTheKeyCameFrom|IEncryptionKeyRingHolder|IKeyRingMinter|IPublishedKeySecretCount|IReadableSecretsNotOnTheActiveKey|IReferencedKeyIds|ISecretCustodyReader|ISecretCustodyService|IStoredSecretSummary|KeyCustodyDescription|StoredSecretSummary))(\.|$)";
 
         private const string TheDemoData = @"^Lighthouse\.Backend\.Factories(\.|$)";
 
         private const string OtherModules = @"^Lighthouse\.Backend\.Modules\.(WorkItems|Forecasting|FlowMetrics)(\.|$)";
 
-        private const string PromisesAndTheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(DeliverySources|BackgroundServices|Update)(\.|$)|^Lighthouse\.Backend\.Modules\.Promises(\.|$)";
+        private const string PromisesAndTheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(DeliverySources|BackgroundServices|Update)(\.|$)|^Lighthouse\.Backend\.Modules\.Promises(\.|$)"
+            + @"|^Lighthouse\.Backend\.Platform\.(Encryption\.(KeyRingFileWatcher)"
+            + @"|UsageData\.(UsageDataConsentPruningService|UsageDataForwardingService)"
+            + @"|UpdateQueue\.(AdmittedCancellations|AdmittedWorkOrdering|InProcessUpdateCancellationNotifier|InProcessUpdateCompletionNotifier|InProcessUpdateExecutionLock|InProcessUpdateStatusStore|PostgresUpdateExecutionLock|RedisUpdateCancellationNotifier|RedisUpdateCompletionNotifier|RedisUpdateStatusStore|UpdateCancellationContext|UpdateCancellationPolicy|UpdateEntityKind|UpdateEntityKinds|UpdateKey|UpdateMoments|UpdateNotificationHub|UpdateProgress|UpdateQueueService|UpdateStatus|UpdateSubstrate|UpdateTaskNaming|IUpdateCancellationNotifier|IUpdateCompletionNotifier|IUpdateExecutionLock|IUpdateQueueService|IUpdateStatusStore|IUpdateTaskNaming))(\.|$)";
 
         private const string RefinementReportsAccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Refinement|Reports|Auth|Authorization|Licensing)(\.|$)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
 

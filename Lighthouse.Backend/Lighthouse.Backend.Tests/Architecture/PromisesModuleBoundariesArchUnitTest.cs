@@ -53,9 +53,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string AnyModuleAdapters = @"^Lighthouse\.Backend\.Modules\.[^.]+\.Adapters(\.|$)";
 
-        private const string ThePlatform = @"^Lighthouse\.Backend\.Services(\.|$)";
+        private const string ThePlatform = @"^Lighthouse\.Backend\.(Services|Platform)(\.|$)";
 
-        private const string TheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices\.Update|Interfaces\.Update)(\.|$)";
+        private const string TheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices\.Update|Interfaces\.Update)(\.|$)"
+            + @"|^Lighthouse\.Backend\.Platform\.(UpdateQueue\.(AdmittedCancellations|AdmittedWorkOrdering|InProcessUpdateCancellationNotifier|InProcessUpdateCompletionNotifier|InProcessUpdateExecutionLock|InProcessUpdateStatusStore|PostgresUpdateExecutionLock|RedisUpdateCancellationNotifier|RedisUpdateCompletionNotifier|RedisUpdateStatusStore|UpdateCancellationContext|UpdateCancellationPolicy|UpdateEntityKind|UpdateEntityKinds|UpdateKey|UpdateMoments|UpdateNotificationHub|UpdateProgress|UpdateQueueService|UpdateStatus|UpdateSubstrate|UpdateTaskNaming|IUpdateCancellationNotifier|IUpdateCompletionNotifier|IUpdateExecutionLock|IUpdateQueueService|IUpdateStatusStore|IUpdateTaskNaming))(\.|$)";
 
         private const string AccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)(\.|$)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
 

@@ -16,7 +16,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         internal const string ForecastingPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Forecast($|\..*)|^Lighthouse\.Backend\.Modules\.Forecasting(\.|$)";
         internal const string PortfolioDeliveryPattern =
-            @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices|Interfaces\.Update)($|\..*)";
+            @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices|Interfaces\.Update)($|\..*)"
+            + @"|^Lighthouse\.Backend\.Platform\.(Encryption\.(KeyRingFileWatcher)"
+            + @"|UsageData\.(UsageDataConsentPruningService|UsageDataForwardingService)"
+            + @"|UpdateQueue\.(AdmittedCancellations|AdmittedWorkOrdering|InProcessUpdateCancellationNotifier|InProcessUpdateCompletionNotifier|InProcessUpdateExecutionLock|InProcessUpdateStatusStore|PostgresUpdateExecutionLock|RedisUpdateCancellationNotifier|RedisUpdateCompletionNotifier|RedisUpdateStatusStore|UpdateCancellationContext|UpdateCancellationPolicy|UpdateEntityKind|UpdateEntityKinds|UpdateKey|UpdateMoments|UpdateNotificationHub|UpdateProgress|UpdateQueueService|UpdateStatus|UpdateSubstrate|UpdateTaskNaming|IUpdateCancellationNotifier|IUpdateCompletionNotifier|IUpdateExecutionLock|IUpdateQueueService|IUpdateStatusStore|IUpdateTaskNaming))(\.|$)";
         internal const string PromisesPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.DeliverySources(\.|$)|^Lighthouse\.Backend\.Modules\.Promises(\.|$)";
         internal const string RefinementPattern =

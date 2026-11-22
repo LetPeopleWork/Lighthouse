@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -17,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     internal static class ApplicationCoreRules
     {
         /// <summary>The application core: Services, and the modules its types move into one at a time.</summary>
-        public const string ApplicationCore = @"^Lighthouse\.Backend\.(Services|Modules)(\.|$)";
+        public const string ApplicationCore = @"^Lighthouse\.Backend\.(Services|Modules|Platform)(\.|$)";
 
         public const string TheApi = @"^Lighthouse\.Backend\.API(\.|$)";
 
@@ -177,18 +178,23 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private static readonly string DomainEventHandlerInterface = typeof(IDomainEventHandler<>).FullName!;
 
-        /// <summary>Every type whose full name carries the domain-events implementation namespace, with the types nested in it.</summary>
-        public static readonly HandlerSelection ByDomainEventsNamespace = new(
-            type => type.FullName.Contains(".Services.Implementation.DomainEvents", StringComparison.Ordinal),
-            "Types in the .Services.Implementation.DomainEvents namespace");
+        private static readonly string TheDispatcher = typeof(DomainEventDispatcher).FullName!;
 
         /// <summary>
-        /// Every concrete domain-event handler, wherever its namespace, together with every type the domain-events
-        /// namespace holds, so a handler that moves out of that namespace stays checked, and so does the dispatcher.
+        /// The domain-event dispatcher, the only type of the domain-events namespace, with the types nested in it. It is
+        /// picked by its type rather than by a piece of its namespace, so the selection follows it when it moves.
+        /// </summary>
+        public static readonly HandlerSelection ByDomainEventsNamespace = new(
+            IsTheDispatcherOrNestedInIt,
+            $"The domain-event dispatcher {TheDispatcher} and the types nested in it");
+
+        /// <summary>
+        /// Every concrete domain-event handler, wherever its namespace, together with the dispatcher and the types nested
+        /// in it, so a handler that moves out of the domain-events namespace stays checked, and so does the dispatcher.
         /// </summary>
         public static readonly HandlerSelection DomainEventHandlersAndTheDomainEventsNamespace = new(
             type => ByDomainEventsNamespace.selects(type) || IsDomainEventHandler(type),
-            "Domain-event handlers, wherever they live, and the types in the .Services.Implementation.DomainEvents namespace");
+            $"Domain-event handlers, wherever they live, and the domain-event dispatcher {TheDispatcher} with the types nested in it");
 
         private readonly Func<TypeDefinition, bool> selects;
 
@@ -207,6 +213,19 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(selects)
                 .SelectMany(TypeAndItsNestedTypes)
                 .DistinctBy(type => type.FullName, StringComparer.Ordinal)];
+
+        private static bool IsTheDispatcherOrNestedInIt(TypeDefinition type)
+        {
+            for (var current = type; current is not null; current = current.DeclaringType)
+            {
+                if (current.FullName == TheDispatcher)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         private static bool IsDomainEventHandler(TypeDefinition type)
             => type is { IsAbstract: false, IsInterface: false }

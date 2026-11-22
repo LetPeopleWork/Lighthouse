@@ -20,9 +20,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ModuleNamespace = "Lighthouse.Backend.Modules.TrackerIntegration";
 
-        private const string WhereTheTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories)(\.|$)";
+        private const string WhereTheTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories|Platform)(\.|$)";
 
-        private const string WhereTheValueTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories|Models)(\.|$)";
+        private const string WhereTheValueTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories|Models|Platform)(\.|$)";
 
         private const string TheModels = @"^Lighthouse\.Backend\.Models(\.|$)";
 

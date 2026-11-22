@@ -32,7 +32,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>The namespaces of the persistence platform: the stored records and what keeps them, the connectors' OAuth tokens included.</summary>
         public const string PlatformPersistencePattern =
-            @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.(Repositories|DatabaseManagement|DomainEvents|Seeding|OAuth)|Modules\.TrackerIntegration\.(Application|Adapters)\.OAuth|Modules\.\w+\.Adapters\.Persistence)($|\..*)";
+            @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.(Repositories|DatabaseManagement|DomainEvents|Seeding|OAuth)|Modules\.TrackerIntegration\.(Application|Adapters)\.OAuth|Modules\.\w+\.Adapters\.Persistence)($|\..*)"
+            + @"|^Lighthouse\.Backend\.Platform\.(DatabaseManagement|Seeding|DomainEvents)(\.|$)";
 
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 

@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string FixtureReachingStorageOrClean = FixtureApplications + "(ReachingStorage|Clean)$";
 
         private const string WhereTheTypesLivedBefore =
-            @"(?<![\w.])(Lighthouse\.Backend\.)?Services\.(Implementation|Interfaces)\.((WorkItems|TeamData|WorkItemRules|Dependencies|Parents)\.)?";
+            @"(?<![\w.])(Lighthouse\.Backend\.)?(Services\.(Implementation|Interfaces)|Platform)\.((WorkItems|TeamData|WorkItemRules|Dependencies|Parents)\.)?";
 
         // Generic types carry their arity in the compiled name.
         private static readonly string[] ApplicationTypes =
