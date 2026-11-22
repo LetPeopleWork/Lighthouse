@@ -83,7 +83,7 @@ Governed slices: S1, S2, S3, S4, S5
 #### K2
 
 ```text
-Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the one exception of the S1 support amendment in the CryptoServiceFullName decision, made by the S1 acceptance designer before craft. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.
+Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision) and PlatformLaneMembershipArchUnitTest (F2), made by the S1 acceptance designer before craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest) and F3 (7 listed ICryptoService edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths, made by the S1 crafter. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.
 ```
 Governed slices: S1, S2, S3, S4, S5
 
@@ -1019,7 +1019,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/SecretCustodySeam
 Extend
 
 ```text
-rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs
+rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F1: NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll exempts exactly CryptoService and KeyRingFileWatcher by name, with the reason beside it, so its subjects stay today's set
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/SecretReadPathSourceStructureTest\.cs
@@ -1043,7 +1043,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegratio
 Extend
 
 ```text
-rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs
+rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F3: list the 7 ICryptoService edges (5 in ModuleEdgesIntoOtherContexts, ConnectionHealthService and OAuthService in ApplicationEdgesBelowItIntoAdaptersOrThePlatform) with the reason "existed before the move: ICryptoService was a loose platform interface the rule did not see", and make ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed and its EveryEntryDeleted case expect the fixture's new offender set
 ```
 
 Scripts\/test\-timings\/test\-time\-budget\.json
@@ -2095,6 +2095,8 @@ python -m pytest Scripts/test-timings/tests/test_check_budget_time_budgets.py
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneMembershipArchUnitTest\.cs
+
 #### Public oracle
 
 ```text
@@ -2125,7 +2127,17 @@ None.
 
 ##### Decisions
 
-None.
+```text
+F1 (maintainer, 2026-11-22): SecretCustodySeamArchUnitTest.NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll gains a named exemption of exactly CryptoService and KeyRingFileWatcher, the two key-handling types that log and that the rule kept outside its namespace for that reason; once EncryptionNamespacePrefix becomes Lighthouse.Backend.Platform.Encryption. the rule's subjects stay exactly today's set. The reason is written beside the exemption in plain language. Owner: maintainer. S1 crafter target. Rejected: a separate Platform area or sub-namespace for the two types (contradicts the one-area placement of the membership map); a narrower subject pattern (changes the rule's reach for future types).
+```
+
+```text
+F2 (maintainer, 2026-11-22): feature A's PlatformLaneMembershipArchUnitTest tests ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice and ATypeMovedIntoTheWrongArea_IsNamedAsNotInTheCode_AndAsNotOnTheMap take their example from the membership map (its row's OldFullName and NewFullName, using whichever full name the compiled assembly holds), so they build the failure they assert before and after the move. A recorded exception of the same kind as the PlatformLaneRulesSeeTheMove amendment: made by the S1 acceptance designer before craft, as an S1 support, changing only the choice of example; every assertion stays. PlatformLaneMembership and PlatformLanePatternRoles stay unedited. Owner: maintainer. Rejected: an example type of a later move (breaks again at that move).
+```
+
+```text
+F3 (maintainer, 2026-11-22): the whole-area Context pattern ^Lighthouse.Backend.Platform.Encryption(.|$) makes 7 existing ICryptoService edges visible. TrackerIntegrationModuleBoundariesArchUnitTest lists them with the reason "existed before the move: ICryptoService was a loose platform interface the rule did not see": in ModuleEdgesIntoOtherContexts JiraCloudBasicAuthStrategy, LinearApiKeyAuthStrategy, PatAuthStrategy, ServiceNowBasicAuthStrategy and LinearWorkTrackingConnector to Lighthouse.Backend.Platform.Encryption.ICryptoService; in ApplicationEdgesBelowItIntoAdaptersOrThePlatform ConnectionHealthService and OAuthService to the same. The fixture test ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed and the matching EveryEntryDeletedFromATrackerIntegrationList case expect the new offender set of the AConnectionServiceReadingSecrets fixture (ConnectionSecrets and ICryptoService in Platform.Encryption). No pattern is widened or narrowed and no other entry changes, so the rule stays as strict as before. Owner: maintainer. S1 crafter targets.
+```
 
 ##### Constraints
 

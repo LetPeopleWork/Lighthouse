@@ -221,7 +221,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>K2</h4>
 
-<pre><code>Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A&#x27;s oracles and supports are never edited, with the one exception of the S1 support amendment in the CryptoServiceFullName decision, made by the S1 acceptance designer before craft. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.
+<pre><code>Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A&#x27;s oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision) and PlatformLaneMembershipArchUnitTest (F2), made by the S1 acceptance designer before craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest) and F3 (7 listed ICryptoService edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) are the only edits of existing tests beyond K1&#x27;s moves, namespace lines, usings, full-name strings and paths, made by the S1 crafter. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.
 </code></pre>
 <p>Governed slices: S1, S2, S3, S4, S5</p>
 
@@ -1032,7 +1032,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs
+<pre><code>rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F1: NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll exempts exactly CryptoService and KeyRingFileWatcher by name, with the reason beside it, so its subjects stay today&#x27;s set
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretReadPathSourceStructureTest.cs</p>
@@ -1053,7 +1053,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs
+<pre><code>rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F3: list the 7 ICryptoService edges (5 in ModuleEdgesIntoOtherContexts, ConnectionHealthService and OAuthService in ApplicationEdgesBelowItIntoAdaptersOrThePlatform) with the reason &quot;existed before the move: ICryptoService was a loose platform interface the rule did not see&quot;, and make ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed and its EveryEntryDeleted case expect the fixture&#x27;s new offender set
 </code></pre>
 
 <p>Scripts/test-timings/test-time-budget.json</p>
@@ -1975,6 +1975,8 @@ python -m pytest Scripts/test-timings/tests/test_check_budget_time_budgets.py
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs</p>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs</p>
+
 <h4>Public oracle</h4>
 
 <pre><code>Run PlatformEncryptionLayoutArchUnitTest over the compiled Lighthouse.Backend assembly and the test assembly: take every PlatformLaneMembership.MovingTypes entry of the KeyRing move (areas Encryption), look its name up in its new namespace and in its old one, and look each test class the slice moves up in Lighthouse.Backend.Tests.Platform.&lt;Area&gt; and in its old namespace
@@ -2002,7 +2004,14 @@ python -m pytest Scripts/test-timings/tests/test_check_budget_time_budgets.py
 
 <h5>Decisions</h5>
 
-<p>None.</p>
+<pre><code>F1 (maintainer, 2026-11-22): SecretCustodySeamArchUnitTest.NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll gains a named exemption of exactly CryptoService and KeyRingFileWatcher, the two key-handling types that log and that the rule kept outside its namespace for that reason; once EncryptionNamespacePrefix becomes Lighthouse.Backend.Platform.Encryption. the rule&#x27;s subjects stay exactly today&#x27;s set. The reason is written beside the exemption in plain language. Owner: maintainer. S1 crafter target. Rejected: a separate Platform area or sub-namespace for the two types (contradicts the one-area placement of the membership map); a narrower subject pattern (changes the rule&#x27;s reach for future types).
+</code></pre>
+
+<pre><code>F2 (maintainer, 2026-11-22): feature A&#x27;s PlatformLaneMembershipArchUnitTest tests ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice and ATypeMovedIntoTheWrongArea_IsNamedAsNotInTheCode_AndAsNotOnTheMap take their example from the membership map (its row&#x27;s OldFullName and NewFullName, using whichever full name the compiled assembly holds), so they build the failure they assert before and after the move. A recorded exception of the same kind as the PlatformLaneRulesSeeTheMove amendment: made by the S1 acceptance designer before craft, as an S1 support, changing only the choice of example; every assertion stays. PlatformLaneMembership and PlatformLanePatternRoles stay unedited. Owner: maintainer. Rejected: an example type of a later move (breaks again at that move).
+</code></pre>
+
+<pre><code>F3 (maintainer, 2026-11-22): the whole-area Context pattern ^Lighthouse.Backend.Platform.Encryption(.|$) makes 7 existing ICryptoService edges visible. TrackerIntegrationModuleBoundariesArchUnitTest lists them with the reason &quot;existed before the move: ICryptoService was a loose platform interface the rule did not see&quot;: in ModuleEdgesIntoOtherContexts JiraCloudBasicAuthStrategy, LinearApiKeyAuthStrategy, PatAuthStrategy, ServiceNowBasicAuthStrategy and LinearWorkTrackingConnector to Lighthouse.Backend.Platform.Encryption.ICryptoService; in ApplicationEdgesBelowItIntoAdaptersOrThePlatform ConnectionHealthService and OAuthService to the same. The fixture test ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed and the matching EveryEntryDeletedFromATrackerIntegrationList case expect the new offender set of the AConnectionServiceReadingSecrets fixture (ConnectionSecrets and ICryptoService in Platform.Encryption). No pattern is widened or narrowed and no other entry changes, so the rule stays as strict as before. Owner: maintainer. S1 crafter targets.
+</code></pre>
 
 <h5>Constraints</h5>
 
