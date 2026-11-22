@@ -792,9 +792,9 @@ dotnet test Lighthouse.Backend --filter "TestCategory!=JiraIntegration&TestCateg
 
 #### Supports
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/PlacementFixtures\/Modules\/Access
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/PlacementFixtures\/Modules\/Access\/Application\/ACompliantTwinOfTheAccessPlacementRule\.cs
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/PlacementFixtures\/Modules\/Licensing
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/PlacementFixtures\/Modules\/Licensing\/Application\/ACompliantTwinOfTheLicensingPlacementRule\.cs
 
 #### Public oracle
 
