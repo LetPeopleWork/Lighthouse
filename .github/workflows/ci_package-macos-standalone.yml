@@ -48,7 +48,7 @@ jobs:
           cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
 
       - name: Install Rust stable with Apple Silicon target
-        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           targets: aarch64-apple-darwin
 
