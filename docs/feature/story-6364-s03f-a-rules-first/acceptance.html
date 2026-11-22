@@ -155,7 +155,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A contributor can run the architecture-rules check and see that the platform lane&#x27;s membership (each platform type with its area, old and new namespace, and the files that stay with their owner) is pinned: the check passes while every listed type sits in its old or new namespace, and names the offender when a listed type is missing or a listed name does not exist. It also reports no domain-event handler outside Modules, and lists every suppression or analyser-config target naming a moving type.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>A contributor sees by running architecture-rules and backend-tests that each existing architecture rule pattern answers the same for a moving platform type under its new Platform namespace as under its old one, that no added alternative matches a production type outside Platform, and that the old inline DomainEvents fragment is gone, replaced by the exact dispatcher type.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>A contributor reading the rule files, and the architecture-rules check, finds no string naming a moving area (Encryption, DatabaseManagement, UsageData, Logging, DomainEvents, BackgroundServices.Update, Interfaces.Update) or moving loose type by its old Services.Implementation, Services.Interfaces or Services/Implementation path, other than entries the membership list marks as renamed by a later move slice.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>Asking test-selection-show about a changed Platform/Releases/GitHubService.cs, or its test path, shows the GitHub live suite selected; paths that were selected before (or deliberately not selected) still show the same selection as before.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>The platform-answers-compare examine command is declared and admitted before any file moves; platform-answers-selftest shows it works: it prints DIFFERENT and exits 1 when one platform answer (system info, version without GitHub calls, encryption/secrets state, database-management status, usage-data state, log level and problems, update status) differs between two revisions, prints IDENTICAL and exits 0 when none differ, ignores volatile fields, and fails (not IDENTICAL) when nothing was compared.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>Running backend-tests shows every existing test green, and the platform answers compared across the pre-feature and feature revisions come out IDENTICAL: nothing a user, tracker or the database sees changes, and no production file moved or changed behaviour in feature A.
+</code></pre>
 
 <h2>Charter</h2>
 
