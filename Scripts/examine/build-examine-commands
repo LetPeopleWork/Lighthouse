@@ -845,6 +845,162 @@ EOF
 sed 's/@BASE@/d7304b1e7/' "$pieces/compare.sh" >> "$out/access-answers-compare"
 chmod +x "$out/access-answers-compare"
 
+{
+  cat "$pieces/project.cs"
+  cat <<'EOF'
+// Starts the backend of one revision in this process with authentication off and writes the body of every platform
+// answer that needs no network: the system info, the current version, whether it can update itself and how it was
+// distributed, the encryption state and the secrets check, the database-management status, the usage-data state,
+// the log level, the supported log levels and the recorded problems, and the update status. The version answers
+// that ask GitHub for a newer release are left out, so the capture never calls out.
+// Arguments: <output-folder> <work-folder> <seed, not used> <licence-file, not used>
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Mvc.Testing;
+
+var outDir = args[0];
+var workDir = args[1];
+Directory.CreateDirectory(outDir);
+Console.WriteLine($"masked keys: {string.Join(", ", MaskedKeys.Names)}");
+
+Environment.SetEnvironmentVariable("Authentication__Enabled", "false");
+Environment.SetEnvironmentVariable("Database__Provider", "sqlite");
+Environment.SetEnvironmentVariable("Database__ConnectionString", $"Data Source={Path.Combine(workDir, "LighthouseAppContext.db")}");
+Environment.SetEnvironmentVariable("Encryption__KeyStorePath", Path.Combine(workDir, "keys"));
+Environment.SetEnvironmentVariable("Encryption__StartEvenIfNothingStoredCanBeRead", "true");
+Environment.SetEnvironmentVariable("Serilog__WriteTo__0__Args__path", Path.Combine(workDir, "logs", "log-.txt"));
+Environment.SetEnvironmentVariable("RateLimits__Enabled", "false");
+Environment.SetEnvironmentVariable("Lighthouse__TimeZone", "UTC");
+
+await using var factory = new WebApplicationFactory<Lighthouse.Backend.Program>();
+var client = factory.CreateClient();
+client.Timeout = TimeSpan.FromMinutes(3);
+var writeOptions = new JsonSerializerOptions { WriteIndented = true };
+
+var answers = await Round([
+    ("system-info", "/api/latest/systeminfo", null),
+    ("version-current", "/api/latest/version/current", null),
+    ("version-update-supported", "/api/latest/version/updateSupported", null),
+    ("version-distribution", "/api/latest/version/distribution", null),
+    ("encryption-state", "/api/latest/encryption", null),
+    ("encryption-secrets", "/api/latest/encryption/secrets", null),
+    ("database-management-status", "/api/latest/database-management/status", null),
+    ("usage-data-state", "/api/latest/usagedata/state", null),
+    ("log-level", "/api/latest/logs/level", null),
+    ("log-levels-supported", "/api/latest/logs/level/supported", null),
+    ("log-problems", "/api/latest/logs/problems", null),
+    ("update-status", "/api/latest/update/status", null),
+]);
+
+// The system info, the encryption state and the log name the folders this run works in and the folder the revision
+// was checked out to; both are new on every run, so they are written as <work> and <source>. Whatever follows them
+// in a path is kept, so a path that changes in any other way still shows.
+var runRoots = new RunRoots(Path.GetDirectoryName(Path.GetFullPath("@BACKEND@"))!, workDir);
+foreach (var (name, json) in answers)
+{
+    await File.WriteAllTextAsync(Path.Combine(outDir, name + ".json"), runRoots.Replaced(json) + "\n");
+}
+Console.WriteLine($"captured {answers.Count} answers");
+return 0;
+EOF
+  cat "$pieces/round.cs"
+  cat <<'EOF'
+// The process id, when the instance was installed and when a problem was recorded are new on every run, not part
+// of the answer; their values are blanked at any depth and so not compared.
+public static class MaskedKeys
+{
+    public static readonly string[] Names = ["processId", "installTimestamp", "recordedAt"];
+}
+
+// A root may be written with forward slashes, with backslashes, or with backslashes escaped inside a JSON string;
+// every spelling is replaced, the longer root first so a root that contains the other is replaced whole.
+public sealed class RunRoots(string source, string work)
+{
+    private readonly (string Root, string Placeholder)[] roots =
+        new[] { (source, "<source>"), (work, "<work>") }
+            .Select(r => (Path.GetFullPath(r.Item1).TrimEnd('/', '\\'), r.Item2))
+            .OrderByDescending(r => r.Item1.Length)
+            .ToArray();
+
+    public string Replaced(string json)
+    {
+        foreach (var (root, placeholder) in roots)
+        {
+            var forward = root.Replace('\\', '/');
+            var backward = root.Replace('/', '\\');
+            foreach (var spelling in new[] { backward.Replace("\\", "\\\\"), backward, forward }.Distinct())
+            {
+                json = json.Replace(spelling, placeholder, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        return json;
+    }
+}
+EOF
+} > "$out/platform-answers-capture.cs"
+
+cat > "$out/platform-answers-compare" <<EOF
+#!/usr/bin/env bash
+# Captures the platform answers on two git revisions and compares them. Each revision's backend starts in this
+# process with authentication off and a fresh database; it reads the system info, the current version, whether
+# the version can update itself and how it was distributed, the encryption state and the encryption secrets check,
+# the database-management status, the usage-data state, the log level, the supported log levels, the recorded
+# problems and the update status. The version answers that ask GitHub for a newer release (hasupdate, new) are
+# left out, so nothing calls out to the network.
+# Prints one line per kind of answer and a last VERDICT line; exit 0 and "IDENTICAL" mean every answer was
+# compared, answered with a 2xx status on both sides, and matches; exit 1 and "DIFFERENT" mean at least one answer
+# differs, and the first lines of the differences name the changed answers. It fails when no answer was compared
+# or when any captured answer is not a 2xx.
+# The values of the keys processId, installTimestamp and recordedAt are new on every run; they are blanked at any
+# depth and so not compared. Every other value, the ones beside them included, is compared.
+# The folder each run works in and the folder its revision is checked out to are written as <work> and <source>
+# wherever an answer names them; the rest of such a path is compared. The encryption key ids carry the date the
+# key was made, so two captures match only when both are taken on the same day.
+# Usage: platform-answers-compare [base-revision [candidate-revision]]   (takes about 2 to 4 minutes)
+#   no arguments   compares base e80d610cc (a revision before any platform code moves) with HEAD;
+#                  this is the before/after check
+#   one argument   is the base revision; the candidate is HEAD
+#   two arguments  are the base and the candidate revision
+# Given the same revision twice it shows the capture itself is repeatable.
+#        platform-answers-compare --compare-captures BASE_FOLDER CANDIDATE_FOLDER
+#   compares two capture folders written earlier, without capturing; the same keys are blanked first, and the
+#   report and exit codes are the same
+set -euo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+repo="$repo"
+driver="$out/platform-answers-capture.cs"
+EOF
+sed -e 's/@ANSWER@/platform answer/g' -e 's/@DONE@/read/' -e 's/@SUBJECT@/platform/' \
+  "$pieces/compare-captures.sh" >> "$out/platform-answers-compare"
+cat >> "$out/platform-answers-compare" <<'EOF'
+# Folders captured earlier may carry the raw values of a run, so the same keys the capture blanks are blanked here,
+# on copies, before they are compared. A side that is not a folder is passed on as it is, for the compare to refuse.
+masked_keys='["processId", "installTimestamp", "recordedAt"]'
+masked_copy() {
+  local folder=$1 copy=$2 file
+  [ -d "$folder" ] || { echo "$folder"; return; }
+  cp -R "$folder" "$copy"
+  while IFS= read -r file; do
+    jq --argjson keys "$masked_keys" \
+      'walk(if type == "object" then with_entries(if (.key | IN($keys[])) then .value = "<differs per run>" else . end) else . end)' \
+      "$file" > "$file.masked" && mv "$file.masked" "$file" || rm -f "$file.masked"
+  done < <(find "$copy" -name '*.json')
+  echo "$copy"
+}
+if [ "${1:-}" = --compare-captures ]; then
+  [ "$#" -eq 3 ] || { echo "Usage: platform-answers-compare --compare-captures BASE_FOLDER CANDIDATE_FOLDER"; exit 2; }
+  masked="$(mktemp -d)"
+  trap 'rm -rf "$masked"' EXIT
+  echo "masked keys: processId, installTimestamp, recordedAt (their values are not compared)"
+  compare_captures "$(masked_copy "$2" "$masked/base")" "$(masked_copy "$3" "$masked/candidate")"
+  exit 0
+fi
+EOF
+sed 's/@BASE@/e80d610cc/' "$pieces/compare.sh" >> "$out/platform-answers-compare"
+chmod +x "$out/platform-answers-compare"
+
 cat > "$pieces/probe-runner.sh" <<'EOF'
 backend="$repo/Lighthouse.Backend"
 licence="$backend/Lighthouse.Backend.Tests/Modules/Licensing/valid_not_expired_license.json"
@@ -1738,3 +1894,16 @@ export HOME="$home"
 bash "$repo/Scripts/examine/test-access-answers-compare.sh" 2>&1
 EOF
 chmod +x "$out/access-answers-selftest"
+
+cat > "$out/platform-answers-selftest" <<EOF
+#!/usr/bin/env bash
+# Shows that platform-answers-compare can tell answers apart. Runs its compare stage on capture folders written for
+# the purpose: one pair that differs in a single platform answer (it must say DIFFERENT and exit 1), one identical
+# pair (IDENTICAL, exit 0), one pair that differs only in values of the run (IDENTICAL), one where a stable value
+# beside those changed (DIFFERENT) and one empty pair (it must not pass). Prints each check and the total.
+# Usage: platform-answers-selftest   (takes a few seconds)
+set -euo pipefail
+export HOME="$home"
+bash "$repo/Scripts/examine/test-platform-answers-compare.sh" 2>&1
+EOF
+chmod +x "$out/platform-answers-selftest"
