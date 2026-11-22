@@ -317,12 +317,127 @@
 "stimulus": "F301",
 "user_result": "F303"
 }
+],
+"S4": [
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F136"
+],
+"still_passes_if": "F308",
+"test": "Scripts/examine/test-platform-answers-compare.sh"
+},
+"expected": "F306",
+"stimulus": "F305",
+"user_result": "F307"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F135"
+],
+"still_passes_if": "F312",
+"test": "Scripts/examine/test-platform-answers-compare.sh"
+},
+"expected": "F310",
+"stimulus": "F309",
+"user_result": "F311"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F137"
+],
+"still_passes_if": "F315",
+"test": "Scripts/examine/test-platform-answers-compare.sh"
+},
+"expected": "F310",
+"stimulus": "F313",
+"user_result": "F314"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F136",
+"L3/F137"
+],
+"still_passes_if": "F319",
+"test": "Scripts/examine/test-platform-answers-compare.sh"
+},
+"expected": "F317",
+"stimulus": "F316",
+"user_result": "F318"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F138"
+],
+"still_passes_if": "F323",
+"test": "Scripts/examine/test-platform-answers-compare.sh"
+},
+"expected": "F321",
+"stimulus": "F320",
+"user_result": "F322"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F327",
+"test": "Scripts/examine/test-platform-answers-compare.sh"
+},
+"expected": "F325",
+"stimulus": "F324",
+"user_result": "F326"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F331",
+"test": "Scripts/examine/test-access-answers-compare.sh"
+},
+"expected": "F329",
+"stimulus": "F328",
+"user_result": "F330"
+}
 ]
 },
 "counters": {
 "D": 10,
 "E": 6,
-"F": 304,
+"F": 331,
 "K": 5,
 "L": 4,
 "P": 6,
@@ -1585,9 +1700,36 @@
 "F302": "Every one keeps its earlier selection: the old release-code paths still run the live GitHub suite, and no other suite selection changes",
 "F303": "CI runs the same suites as before for every change it already knew; nothing else a contributor sees changes",
 "F304": "A change that alters the selection for a path neither script lists; the existing cases cover each pattern of the classifier",
+"F305": "Two platform answer captures that differ only in the log level are compared",
+"F306": "The verdict is DIFFERENT with exit 1; the log level is reported as 1 compared and 1 different, the unchanged system info as 1 compared and 0 different, and the differences name the log level answer",
+"F307": "The examiner sees which platform answer a move changed",
+"F308": "A compare that reports the right counts and names the file but prints the differences of every answer, not only the changed one, would still pass",
+"F309": "Two identical platform answer captures held in separate folders are compared",
 "F31": "Confirmed (D-13, D-14, brief decisions): rigor thorough for feature A (architect, acceptance designer, crafter opus; reviewers and EXAMINE sonnet); no review window; EXAMINE observes through architecture-rules, ef-model-unchanged, platform-answers-compare once A4 adds it, refresh-reactions-compare, test-selection-show, ci-live-suites-show and backend-tests. The mutation bar applies once at the end of S03f to the moved production code; feature A changes no production code. Usage-data event, UI sketch, loading and failure looks: not applicable.",
+"F310": "The verdict is IDENTICAL over all 12 captured answers with exit 0",
+"F311": "The examiner can trust a matching answer comparison after the move",
+"F312": "A compare that says IDENTICAL whenever both folders hold the same answer names would pass here; the changed-answer case catches it",
+"F313": "Two captures from different runs differ only in the process id, the install time and when a problem was recorded",
+"F314": "Two runs of an unchanged revision match, so values that change on every run do not mislead the examiner",
+"F315": "A compare that masks more keys than the values of the run would pass here; the stable-beside-volatile case catches it",
+"F316": "Two captures from different runs differ in the database provider and in a recorded problem's message, beside the values that change on every run",
+"F317": "The verdict is DIFFERENT with exit 1, and both the system info and the recorded problems are reported as 1 compared and 1 different",
+"F318": "A real change sitting next to a run value is still caught",
+"F319": "A mask that blanks a stable field other than the database provider or the problem message, such as the operating system, would still pass",
 "F32": "Carriers: the platform lane map is a static class PlatformLaneMembership in the Architecture folder (shape of PromisesMembership and AccessAndLicensingMembership: per moving type its short or full name, area, old namespace and new namespace; the files that stay with owner; the suppression and analyser-config targets naming a moving type; the strings each B slice renames), owner the A1 oracle; rule patterns stay const strings in their test classes and ModuleRules, KernelRules and ApplicationCoreRules, owner each rule class; the IL is read through IlDependencies over Mono.Cecil; the dispatcher selection is HandlerSelection in ApplicationCoreRules, selecting the dispatcher and its nested (compiler-generated) types; the GitHub selection is GITHUB_REGEX in path-classifier.sh, owner that script; platform-answers-compare and platform-answers-selftest are generated bash scripts under Scripts/examine/bin, owner build-examine-commands. No production carrier, effect, error type or per-process state changes.",
+"F320": "Two empty capture folders are compared",
+"F321": "The command does not exit 0, never says IDENTICAL, and says nothing was compared",
+"F322": "An empty capture is never taken as proof that nothing changed",
+"F323": "A command that always fails saying nothing was compared would pass here; the identical case catches it",
+"F324": "The examiner reads the usage of the platform answers command, the list of admitted examine probes, and runs the selftest",
+"F325": "The usage names the system info, the version with the GitHub calls left out, the encryption and secrets state, the database-management status, the usage-data state, the log level and problems, and the update status; the probe list admits the compare command and its selftest; the selftest runs these checks and passes with their total",
+"F326": "The examiner can run the probe before any platform file moves and knows what a matching run proves",
+"F327": "A usage that names an answer the capture does not actually read would still pass; only the full capture run by the examiner shows that",
+"F328": "The existing Access and Licensing answers checks run after the new command is added",
+"F329": "They still pass, so the shared capture and compare pieces keep their behaviour",
 "F33": "Formal verification not applicable (feature-delta Formal verification; quint 0.33.1 and OpenJDK 21 probed, no checker selected): no state, ordering, concurrency, recovery or liveness claim changes; the update queue, the locks and the dispatcher move unchanged in feature B. The preservation law of A2 is decided exhaustively over the finite domain (moving types x const patterns) by an executable check in the default suite; the membership is decided by the IL; the classifier and the compare command by enumerated cases. A Quint, TLA+ or Agda model would restate the namespace map and could not fail. Property tests not applicable: every domain is finite and enumerated exhaustively, so a generator adds no coverage. Paradigm object_oriented is kept; the targets are test-side rules and bash scripts outside the OO domain core, so no domain owner, value object or Object Calisthenics rule is in play.",
+"F330": "Existing examine commands answer as before",
+"F331": "A change to the shared pieces that only alters a command other than access-answers-compare would still pass this check",
 "F34": "Behaviour-free: routes, DTOs, responses, configuration keys, key-store names, Redis channels, the hub route, DI and Program.cs, log categories, the EF model and every suppression target stay the same in feature A; every existing test stays green.",
 "F35": "Never loosen a rule: a widening adds only Lighthouse.Backend.Platform.<Area> alternatives for the areas of types the pattern matched before; no alternative may match a production type outside Platform; no existing assertion, listed entry or alternative is removed in feature A. Every rule edit is proved by a reverted throwaway probe.",
 "F36": "IlDependencies.TypesIn also returns nested types; an exact-set check compares top-level types (the part before +). IlDependencies misses catch-clause, event and attribute named-argument references. Regex evaluation uses the existing pattern timeout.",

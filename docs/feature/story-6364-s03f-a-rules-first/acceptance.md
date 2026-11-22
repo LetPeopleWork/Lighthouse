@@ -555,6 +555,212 @@ A change that alters the selection for a path neither script lists; the existing
 
 
 
+### S4
+
+##### Covers
+
+P5
+
+```text
+Two platform answer captures that differ only in the log level are compared
+```
+
+```text
+The verdict is DIFFERENT with exit 1; the log level is reported as 1 compared and 1 different, the unchanged system info as 1 compared and 0 different, and the differences name the log level answer
+```
+
+```text
+The examiner sees which platform answer a move changed
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-platform\-answers\-compare\.sh
+
+```text
+A compare that reports the right counts and names the file but prints the differences of every answer, not only the changed one, would still pass
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Two identical platform answer captures held in separate folders are compared
+```
+
+```text
+The verdict is IDENTICAL over all 12 captured answers with exit 0
+```
+
+```text
+The examiner can trust a matching answer comparison after the move
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-platform\-answers\-compare\.sh
+
+```text
+A compare that says IDENTICAL whenever both folders hold the same answer names would pass here; the changed-answer case catches it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Two captures from different runs differ only in the process id, the install time and when a problem was recorded
+```
+
+```text
+The verdict is IDENTICAL over all 12 captured answers with exit 0
+```
+
+```text
+Two runs of an unchanged revision match, so values that change on every run do not mislead the examiner
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-platform\-answers\-compare\.sh
+
+```text
+A compare that masks more keys than the values of the run would pass here; the stable-beside-volatile case catches it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+Two captures from different runs differ in the database provider and in a recorded problem's message, beside the values that change on every run
+```
+
+```text
+The verdict is DIFFERENT with exit 1, and both the system info and the recorded problems are reported as 1 compared and 1 different
+```
+
+```text
+A real change sitting next to a run value is still caught
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-platform\-answers\-compare\.sh
+
+```text
+A mask that blanks a stable field other than the database provider or the problem message, such as the operating system, would still pass
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P5
+
+```text
+Two empty capture folders are compared
+```
+
+```text
+The command does not exit 0, never says IDENTICAL, and says nothing was compared
+```
+
+```text
+An empty capture is never taken as proof that nothing changed
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-platform\-answers\-compare\.sh
+
+```text
+A command that always fails saying nothing was compared would pass here; the identical case catches it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P5
+
+```text
+The examiner reads the usage of the platform answers command, the list of admitted examine probes, and runs the selftest
+```
+
+```text
+The usage names the system info, the version with the GitHub calls left out, the encryption and secrets state, the database-management status, the usage-data state, the log level and problems, and the update status; the probe list admits the compare command and its selftest; the selftest runs these checks and passes with their total
+```
+
+```text
+The examiner can run the probe before any platform file moves and knows what a matching run proves
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-platform\-answers\-compare\.sh
+
+```text
+A usage that names an answer the capture does not actually read would still pass; only the full capture run by the examiner shows that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P6
+
+```text
+The existing Access and Licensing answers checks run after the new command is added
+```
+
+```text
+They still pass, so the shared capture and compare pieces keep their behaviour
+```
+
+```text
+Existing examine commands answer as before
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/examine\/test\-access\-answers\-compare\.sh
+
+```text
+A change to the shared pieces that only alters a command other than access-answers-compare would still pass this check
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
