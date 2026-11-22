@@ -314,6 +314,242 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>crafter and reviewer, through the backend gate</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The architecture tests ask every constant rule pattern of the test assembly, found by reflection, about each moving platform type under its old Services name and its new Platform name.
+</code></pre>
+
+<pre><code>Every pattern gives the same answer under both names; a pattern that differs is named with the moving type and both answers. Today 31 patterns differ.
+</code></pre>
+
+<pre><code>No architecture rule silently stops seeing a platform type when the type moves into Platform.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::EveryRulePatternOfTheTestAssembly_AnswersTheSameForEachMovingPlatformType_UnderItsOldAndItsNewNamespace</p>
+
+<pre><code>A bare word or test-data constant that does not name Lighthouse.Backend and is not anchored loses sight of a moved type; such constants are not asked, by the documented rule-pattern criterion.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The same preservation check runs over made-up rule keys, one of them in a nested class, that see only the old place, both places, neither place, or are not a pattern.
+</code></pre>
+
+<pre><code>Only the key in the nested class that sees only the old place is named; the keys that see both or neither, and the string that is not a pattern, pass.
+</code></pre>
+
+<pre><code>A rule added later in any test class, nested or not, is checked without anyone listing it.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::ThePreservationCheck_NamesAMadeUpPatternInANestedClassThatSeesOnlyTheOldPlace_AndPassesOnesThatSeeBothOrNeither</p>
+
+<pre><code>A check that skipped classes outside the made-up keys namespace would pass this row; the real-pattern row and the update-queue rule row catch that.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The preservation check meets a constant full name of one moving type that the membership map lists as renamed by a move, and a namespace rule of the update queue.
+</code></pre>
+
+<pre><code>The full name is left out although its two answers differ; the update-queue rule is taken up.
+</code></pre>
+
+<pre><code>A full name of one type is renamed by its move, not widened to name two types.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::ThePreservationCheck_LeavesAFullNameTheMoveRenames_ToTheMoveThatRenamesIt</p>
+
+<pre><code>A renamed value matched in another class of the same listed file; the skip matches by the class name of the file, so only a same-named class there would slip.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Every rule pattern that mentions Platform is asked about every production type outside Lighthouse.Backend.Platform, with and without its Platform alternatives.
+</code></pre>
+
+<pre><code>No production type outside Platform is matched only through a Platform alternative.
+</code></pre>
+
+<pre><code>Widening a rule for the move puts no unrelated type under it.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::NoPlatformAlternativeOfARulePattern_MatchesAProductionTypeOutsidePlatform</p>
+
+<pre><code>A widening to all of Lighthouse.Backend written without the word Platform; the existing architecture tests over compliant code and the preservation law answer that case.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The Platform-alternative check runs over a made-up key with an unanchored Platform alternative and one with an anchored Platform.DomainEvents alternative.
+</code></pre>
+
+<pre><code>The unanchored key is named for production types such as the platform service interface; the anchored key passes.
+</code></pre>
+
+<pre><code>An over-wide alternative is caught before it hides as a passing rule.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::ThePlatformAlternativeCheck_NamesAMadeUpAlternativeThatReachesOutsidePlatform_AndPassesAnAnchoredOne</p>
+
+<pre><code>Platform written right after a character other than an escaped dot, an opening bracket or a bar, which the token match does not take out.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The dispatcher selection of the handler rules runs over the product and over the test assembly, which holds types whose namespace only spells the old dispatcher namespace.
+</code></pre>
+
+<pre><code>In the product it selects the dispatcher and its nested types, under the old or the new name; in the test assembly it selects nothing. Today it selects the test types that spell the old namespace.
+</code></pre>
+
+<pre><code>The handler rules keep checking the event dispatcher after it moves.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::TheDispatcherSelection_SelectsTheDispatcherAndItsNestedTypesByType_AndNoTypeThatOnlySpellsItsOldNamespace</p>
+
+<pre><code>A selection by the simple name of the dispatcher instead of its type, which picks only the dispatcher in the product and nothing in the test assembly today.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Every string in the architecture rule files is read as text and looked at for a moving area as a whole, or a moving type, under its old Services path.
+</code></pre>
+
+<pre><code>No such string is left except what the membership map renames for that file and the constant rule patterns the preservation check governs. Today four are named: the dispatcher fragment and its two descriptions in the core rules, and the update-contracts hint in the Forecasting rules.
+</code></pre>
+
+<pre><code>No rule string keeps pointing at the old place after the move.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::NoStringInTheRuleFiles_NamesAMovingAreaOrMovingTypeByItsOldPath_UnlessTheMoveRenamesIt</p>
+
+<pre><code>An old path built by concatenating separate fragments, or written in a raw string literal, which the text scan does not join or read.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The old-path check reads made-up strings: the inline dispatcher fragment, an old-area message, a moving file path, a non-constant pattern, the full name of a moving type, a staying handler test, a staying update pipeline, a test class name and a governed rule pattern; and the full name again in the file the map renames it in.
+</code></pre>
+
+<pre><code>The first five are named with file and line; the other four pass; the full name passes in the file the map renames it in.
+</code></pre>
+
+<pre><code>The check names old paths of moving things only, so it is not switched off for noise.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs::TheOldPathCheck_NamesMadeUpStringsThatNameTheOldPlace_AndPassesTheOnesThatAreNotAboutTheMove</p>
+
+<pre><code>A moving type named by its short name alone, without its old namespace, which is not an old path and is not looked for.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The whole backend suite, live connectors left out, runs on the code as it is today after the rules are widened.
+</code></pre>
+
+<pre><code>Every existing test stays green; no production file changes.
+</code></pre>
+
+<pre><code>Nothing a user, a tracker or the database sees changes.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend full suite under the CLAUDE.md filter that leaves out the live-connector categories</p>
+
+<pre><code>A widening that changes which real types a rule examines without changing any verdict on today code; the preservation and Platform-alternative rows bound that.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

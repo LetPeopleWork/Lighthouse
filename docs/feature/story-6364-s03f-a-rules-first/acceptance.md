@@ -189,6 +189,278 @@ This slice adds test files only; behaviour preservation is observed by the exist
 
 crafter and reviewer\, through the backend gate
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+The architecture tests ask every constant rule pattern of the test assembly, found by reflection, about each moving platform type under its old Services name and its new Platform name.
+```
+
+```text
+Every pattern gives the same answer under both names; a pattern that differs is named with the moving type and both answers. Today 31 patterns differ.
+```
+
+```text
+No architecture rule silently stops seeing a platform type when the type moves into Platform.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:EveryRulePatternOfTheTestAssembly\_AnswersTheSameForEachMovingPlatformType\_UnderItsOldAndItsNewNamespace
+
+```text
+A bare word or test-data constant that does not name Lighthouse.Backend and is not anchored loses sight of a moved type; such constants are not asked, by the documented rule-pattern criterion.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+The same preservation check runs over made-up rule keys, one of them in a nested class, that see only the old place, both places, neither place, or are not a pattern.
+```
+
+```text
+Only the key in the nested class that sees only the old place is named; the keys that see both or neither, and the string that is not a pattern, pass.
+```
+
+```text
+A rule added later in any test class, nested or not, is checked without anyone listing it.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:ThePreservationCheck\_NamesAMadeUpPatternInANestedClassThatSeesOnlyTheOldPlace\_AndPassesOnesThatSeeBothOrNeither
+
+```text
+A check that skipped classes outside the made-up keys namespace would pass this row; the real-pattern row and the update-queue rule row catch that.
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+The preservation check meets a constant full name of one moving type that the membership map lists as renamed by a move, and a namespace rule of the update queue.
+```
+
+```text
+The full name is left out although its two answers differ; the update-queue rule is taken up.
+```
+
+```text
+A full name of one type is renamed by its move, not widened to name two types.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:ThePreservationCheck\_LeavesAFullNameTheMoveRenames\_ToTheMoveThatRenamesIt
+
+```text
+A renamed value matched in another class of the same listed file; the skip matches by the class name of the file, so only a same-named class there would slip.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Every rule pattern that mentions Platform is asked about every production type outside Lighthouse.Backend.Platform, with and without its Platform alternatives.
+```
+
+```text
+No production type outside Platform is matched only through a Platform alternative.
+```
+
+```text
+Widening a rule for the move puts no unrelated type under it.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:NoPlatformAlternativeOfARulePattern\_MatchesAProductionTypeOutsidePlatform
+
+```text
+A widening to all of Lighthouse.Backend written without the word Platform; the existing architecture tests over compliant code and the preservation law answer that case.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+The Platform-alternative check runs over a made-up key with an unanchored Platform alternative and one with an anchored Platform.DomainEvents alternative.
+```
+
+```text
+The unanchored key is named for production types such as the platform service interface; the anchored key passes.
+```
+
+```text
+An over-wide alternative is caught before it hides as a passing rule.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:ThePlatformAlternativeCheck\_NamesAMadeUpAlternativeThatReachesOutsidePlatform\_AndPassesAnAnchoredOne
+
+```text
+Platform written right after a character other than an escaped dot, an opening bracket or a bar, which the token match does not take out.
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The dispatcher selection of the handler rules runs over the product and over the test assembly, which holds types whose namespace only spells the old dispatcher namespace.
+```
+
+```text
+In the product it selects the dispatcher and its nested types, under the old or the new name; in the test assembly it selects nothing. Today it selects the test types that spell the old namespace.
+```
+
+```text
+The handler rules keep checking the event dispatcher after it moves.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:TheDispatcherSelection\_SelectsTheDispatcherAndItsNestedTypesByType\_AndNoTypeThatOnlySpellsItsOldNamespace
+
+```text
+A selection by the simple name of the dispatcher instead of its type, which picks only the dispatcher in the product and nothing in the test assembly today.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Every string in the architecture rule files is read as text and looked at for a moving area as a whole, or a moving type, under its old Services path.
+```
+
+```text
+No such string is left except what the membership map renames for that file and the constant rule patterns the preservation check governs. Today four are named: the dispatcher fragment and its two descriptions in the core rules, and the update-contracts hint in the Forecasting rules.
+```
+
+```text
+No rule string keeps pointing at the old place after the move.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:NoStringInTheRuleFiles\_NamesAMovingAreaOrMovingTypeByItsOldPath\_UnlessTheMoveRenamesIt
+
+```text
+An old path built by concatenating separate fragments, or written in a raw string literal, which the text scan does not join or read.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+The old-path check reads made-up strings: the inline dispatcher fragment, an old-area message, a moving file path, a non-constant pattern, the full name of a moving type, a staying handler test, a staying update pipeline, a test class name and a governed rule pattern; and the full name again in the file the map renames it in.
+```
+
+```text
+The first five are named with file and line; the other four pass; the full name passes in the file the map renames it in.
+```
+
+```text
+The check names old paths of moving things only, so it is not switched off for noise.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:TheOldPathCheck\_NamesMadeUpStringsThatNameTheOldPlace\_AndPassesTheOnesThatAreNotAboutTheMove
+
+```text
+A moving type named by its short name alone, without its old namespace, which is not an old path and is not looked for.
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P6
+
+```text
+The whole backend suite, live connectors left out, runs on the code as it is today after the rules are widened.
+```
+
+```text
+Every existing test stays green; no production file changes.
+```
+
+```text
+Nothing a user, a tracker or the database sees changes.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend full suite under the CLAUDE\.md filter that leaves out the live\-connector categories
+
+```text
+A widening that changes which real types a rule examines without changing any verdict on today code; the preservation and Platform-alternative rows bound that.
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
