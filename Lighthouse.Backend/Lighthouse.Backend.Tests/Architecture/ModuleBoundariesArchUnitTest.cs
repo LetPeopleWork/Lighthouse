@@ -19,8 +19,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices|Interfaces\.Update)($|\..*)";
         internal const string PromisesPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.DeliverySources(\.|$)|^Lighthouse\.Backend\.Modules\.Promises(\.|$)";
-        private const string RbacIdentityPattern =
-            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)($|\..*)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
         internal const string RefinementPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Refinement($|\..*)";
         internal const string ReportsPattern =
@@ -60,9 +58,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly GivenTypesConjunctionWithDescription PromisesModule =
             Types().That().ResideInNamespaceMatching(PromisesPattern).As("Promises");
-
-        private static readonly GivenTypesConjunctionWithDescription RbacIdentityModule =
-            Types().That().ResideInNamespaceMatching(RbacIdentityPattern).As("RBAC/Identity");
 
         private static readonly GivenTypesConjunctionWithDescription RefinementModule =
             Types().That().ResideInNamespaceMatching(RefinementPattern).As("Refinement");
@@ -121,7 +116,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(ForecastingModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(PortfolioDeliveryModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(PromisesModule.GetObjects(Architecture), Is.Not.Empty);
-                Assert.That(RbacIdentityModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(PlatformPersistenceModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(RefinementModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(ReportsModule.GetObjects(Architecture), Is.Not.Empty);

@@ -2,11 +2,9 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using AccessInTheModule = Lighthouse.Backend.Modules.Access.Application.AccessAndLicensingFixtures;
-using AccessInTheOldPlace = Lighthouse.Backend.Services.Implementation.Authorization.AccessAndLicensingFixtures;
 using AccessNamesake = Lighthouse.Backend.Modules.AccessFixtures.RulesSeeTheModules;
 using ForecastingCallers = Lighthouse.Backend.Modules.Forecasting.Application.AccessAndLicensingFixtures;
 using LicensingInTheModule = Lighthouse.Backend.Modules.Licensing.Application.AccessAndLicensingFixtures;
-using LicensingInTheOldPlace = Lighthouse.Backend.Services.Implementation.Licensing.AccessAndLicensingFixtures;
 using LicensingNamesake = Lighthouse.Backend.Modules.LicensingFixtures.RulesSeeTheModules;
 using PromisesCallers = Lighthouse.Backend.Modules.Promises.Application.AccessAndLicensingFixtures;
 using TrackerConnectors = Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AccessAndLicensingFixtures;
@@ -21,8 +19,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// longer finds anything there. The real code holds no type in the new places yet, so each rule's own key is read from
     /// the rule and run over made-up types: one under the module, its twin in the old place, and a namesake just outside
     /// the module (Modules.AccessFixtures, Modules.LicensingFixtures). The made-up type under the module must be named
-    /// exactly as its twin is; the namesake never. Access asking Licensing is legal, because Licensing sits upstream of
-    /// every context, so the module map keeps both ends of that edge in one module.
+    /// exactly as its twin is; the namesake never.
     /// </summary>
     [TestFixture]
     public class AccessAndLicensingRulesSeeTheModulesArchUnitTest
@@ -58,26 +55,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 TestModule.Value.Dispose();
             }
-        }
-
-        [TestCase(Side.Access)]
-        [TestCase(Side.Licensing)]
-        public void AServiceUnderTheModuleReachingARepository_IsNamedByTheModuleMapsAccessAndLicensingNamespaces_AsItsTwinInTheOldPlaceIs(Side side)
-        {
-            var accessAndLicensing = GivenTheKeyOf(typeof(ModuleBoundariesArchUnitTest), "RbacIdentityPattern");
-
-            var named = WhenTheRuleRunsOver(
-                [ReachingARepository(side, Place.TheModule), ReachingARepository(side, Place.TheOldPlace), ReachingARepository(side, Place.JustOutsideTheModule), ReadingValuesOnlyInTheModule(side)],
-                inSubject: typeNamespace => Matches(typeNamespace, accessAndLicensing),
-                forbidden: RepositoryRecognition.IsRepository);
-
-            ThenTheRuleNamesTheOffendersAndNotTheOthers(
-                named,
-                [ReachingARepository(side, Place.TheModule), ReachingARepository(side, Place.TheOldPlace)],
-                [ReachingARepository(side, Place.JustOutsideTheModule), ReadingValuesOnlyInTheModule(side)],
-                "The module map's Access and Licensing namespaces",
-                "once Access and Licensing move to Modules/Access and Modules/Licensing, the module map must still tell them apart from every other module, or a rule built on it would quietly stop seeing them; a namespace that only shares the prefix, Modules.AccessFixtures or Modules.LicensingFixtures, is neither.",
-                @"add ^Lighthouse\.Backend\.Modules\.(Access|Licensing)(\.|$) to RbacIdentityPattern beside the old ^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)($|\..*), and keep the old alternative.");
         }
 
         [TestCase(Side.Access)]
@@ -152,28 +129,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 @"add |Modules\.Licensing to TheLicence, for example ^Lighthouse\.Backend\.(Services\.(Implementation|Interfaces)\.Licensing|Modules\.Licensing)(\.|$), add no Access alternative, and keep the listed ForecastFilterRuleService edge.");
         }
 
-        [Test]
-        public void AnAccessServiceAskingTheLicenceUnderTheModules_StaysInsideOneModuleOnTheModuleMap_AsItsTwinInTheOldPlaceDoes()
-        {
-            var accessAndLicensing = GivenTheKeyOf(typeof(ModuleBoundariesArchUnitTest), "RbacIdentityPattern");
-
-            var outsideTheModule = WhenTheModuleMapPlacesBothEndsOf(
-                accessAndLicensing,
-                [
-                    (typeof(AccessInTheModule.AnAccessServiceAskingTheLicence), typeof(LicensingInTheModule.ALicensingService)),
-                    (typeof(AccessInTheOldPlace.AnAccessServiceAskingTheLicence), typeof(LicensingInTheOldPlace.ALicensingService)),
-                ]);
-
-            Assert.That(
-                outsideTheModule,
-                Is.Empty,
-                $"The module map's Access and Licensing namespaces left an end of the Access to Licensing edge outside the module: [{string.Join(", ", outsideTheModule)}]. " +
-                "Why it matters: Access asking the licence is legal, because Licensing sits upstream of every context; a map that put Access in Modules/Access " +
-                "outside the module, or Licensing in Modules/Licensing outside it, would turn today's legal reads of the licence by the auth mode resolver and " +
-                "the RBAC administration service into a boundary crossing once they move. " +
-                @"How to fix: let RbacIdentityPattern take in both ^Lighthouse\.Backend\.Modules\.Access(\.|$) and ^Lighthouse\.Backend\.Modules\.Licensing(\.|$), beside the old alternative.");
-        }
-
         private static string GivenTheKeyOf(Type rule, string member)
         {
             var field = rule.GetField(member, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
@@ -196,24 +151,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(madeUpType => IlDependencies.DependentsIn(TestModule.Value, $"^{Regex.Escape(madeUpType.Namespace!)}$", forbidden)
                     .Any(dependent => dependent.TypeName == madeUpType.FullName))
                 .Select(madeUpType => madeUpType.FullName!)];
-
-        private static List<string> WhenTheModuleMapPlacesBothEndsOf(string moduleMapKey, IReadOnlyCollection<(Type Asker, Type Asked)> edges)
-        {
-            foreach (var (asker, asked) in edges)
-            {
-                Assert.That(
-                    IlDependencies.DependentsIn(TestModule.Value, $"^{Regex.Escape(asker.Namespace!)}$", reached => reached.FullName == asked.FullName)
-                        .Any(dependent => dependent.TypeName == asker.FullName),
-                    Is.True,
-                    $"The made-up {asker.FullName} no longer reaches {asked.FullName}. Why it matters: the check needs a real Access to Licensing " +
-                    "edge in the IL to say anything. How to fix: let the made-up Access service call the made-up Licensing service again.");
-            }
-
-            return [.. edges
-                .SelectMany(edge => new[] { edge.Asker, edge.Asked })
-                .Where(end => !Matches(end.Namespace!, moduleMapKey))
-                .Select(end => end.FullName!)];
-        }
 
         private static void ThenTheRuleNamesTheOffendersAndNotTheOthers(List<string> named, Type[] offenders, Type[] others, string key, string why, string how)
         {
@@ -252,10 +189,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             => (side, place) switch
             {
                 (Side.Access, Place.TheModule) => typeof(AccessInTheModule.AnAccessServiceReachingARepository),
-                (Side.Access, Place.TheOldPlace) => typeof(AccessInTheOldPlace.AnAccessServiceReachingARepository),
                 (Side.Access, Place.JustOutsideTheModule) => typeof(AccessNamesake.AnAccessServiceReachingARepository),
                 (Side.Licensing, Place.TheModule) => typeof(LicensingInTheModule.ALicensingServiceReachingARepository),
-                (Side.Licensing, Place.TheOldPlace) => typeof(LicensingInTheOldPlace.ALicensingServiceReachingARepository),
                 (Side.Licensing, Place.JustOutsideTheModule) => typeof(LicensingNamesake.ALicensingServiceReachingARepository),
                 _ => throw new ArgumentOutOfRangeException(nameof(side), side, null),
             };
@@ -332,11 +267,6 @@ namespace Lighthouse.Backend.Modules.Access.Application.AccessAndLicensingFixtur
         public static bool Reaches(global::Lighthouse.Backend.Services.Interfaces.Repositories.IRepository<global::Lighthouse.Backend.Models.Delivery> deliveries) => deliveries is not null;
     }
 
-    internal static class AnAccessServiceAskingTheLicence
-    {
-        public static bool Asks() => global::Lighthouse.Backend.Modules.Licensing.Application.AccessAndLicensingFixtures.ALicensingService.Allows(2);
-    }
-
     internal static class AnAccessService
     {
         public static bool Allows(int level) => level > 0;
@@ -358,16 +288,6 @@ namespace Lighthouse.Backend.Modules.Licensing.Application.AccessAndLicensingFix
 
 namespace Lighthouse.Backend.Services.Implementation.Authorization.AccessAndLicensingFixtures
 {
-    internal static class AnAccessServiceReachingARepository
-    {
-        public static bool Reaches(global::Lighthouse.Backend.Services.Interfaces.Repositories.IRepository<global::Lighthouse.Backend.Models.Delivery> deliveries) => deliveries is not null;
-    }
-
-    internal static class AnAccessServiceAskingTheLicence
-    {
-        public static bool Asks() => global::Lighthouse.Backend.Services.Implementation.Licensing.AccessAndLicensingFixtures.ALicensingService.Allows(2);
-    }
-
     internal static class AnAccessService
     {
         public static bool Allows(int level) => level > 0;
@@ -376,11 +296,6 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization.AccessAndLice
 
 namespace Lighthouse.Backend.Services.Implementation.Licensing.AccessAndLicensingFixtures
 {
-    internal static class ALicensingServiceReachingARepository
-    {
-        public static bool Reaches(global::Lighthouse.Backend.Services.Interfaces.Repositories.IRepository<global::Lighthouse.Backend.Models.Delivery> deliveries) => deliveries is not null;
-    }
-
     internal static class ALicensingService
     {
         public static bool Allows(int level) => level > 0;
