@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Lighthouse.Backend.Models.Encryption;
-using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Startup;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;

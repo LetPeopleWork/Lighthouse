@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
-using Lighthouse.Backend.Services.Interfaces.Encryption;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;

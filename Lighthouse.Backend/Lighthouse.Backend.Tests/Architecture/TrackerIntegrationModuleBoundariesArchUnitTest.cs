@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string OtherModules = @"^Lighthouse\.Backend\.Modules\.(WorkItems|Forecasting|FlowMetrics)(\.|$)";
 
         private const string PromisesAndTheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(DeliverySources|BackgroundServices|Update)(\.|$)|^Lighthouse\.Backend\.Modules\.Promises(\.|$)"
-            + @"|^Lighthouse\.Backend\.Platform\.(Encryption|UsageData|UpdateQueue)(\.|$)";
+            + @"|^Lighthouse\.Backend\.Platform\.(UsageData|UpdateQueue)(\.|$)";
 
         private const string RefinementReportsAccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Refinement|Reports|Auth|Authorization|Licensing)(\.|$)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
 
@@ -122,11 +122,15 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.AuthenticationMethodSchema -> Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps.AzureDevOpsWorkTrackingOptionNames",
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.AuthenticationMethodSchema -> Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira.JiraWorkTrackingOptionNames",
-            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthService -> Lighthouse.Backend.Services.Implementation.Encryption.ConnectionSecrets",
+            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthService -> Lighthouse.Backend.Platform.Encryption.ConnectionSecrets",
+            // Existed before the move: ICryptoService was a loose platform interface the rule did not see.
+            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthService -> Lighthouse.Backend.Platform.Encryption.ICryptoService",
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthService -> Lighthouse.Backend.Services.Implementation.Repositories.ConnectionHealthVerdictRepository",
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthService -> Lighthouse.Backend.Services.Implementation.Repositories.RepositoryBase`1",
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthService -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
-            "Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth.OAuthService -> Lighthouse.Backend.Services.Implementation.Encryption.UnreadableSecretException",
+            // Existed before the move: ICryptoService was a loose platform interface the rule did not see.
+            "Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth.OAuthService -> Lighthouse.Backend.Platform.Encryption.ICryptoService",
+            "Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth.OAuthService -> Lighthouse.Backend.Platform.Encryption.UnreadableSecretException",
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth.OAuthService -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.WorkTrackingConnectorFactory -> Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv.CsvWorkTrackingConnector",
             "Lighthouse.Backend.Modules.TrackerIntegration.Application.WorkTrackingSystemFactory -> Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps.AzureDevOpsWorkTrackingOptionNames",
@@ -368,6 +372,20 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed()
+        {
+            var reader = $"{MadeUpOutboundCases}.ReadingTheKeyRing.Application.AConnectionServiceReadingSecrets";
+            var verdict = ApplicationOutboundRule(TestModule.Value, OutboundCase("ReadingTheKeyRing", ".Application"), OutboundCase("ReadingTheKeyRing", ".Adapters"), []);
+
+            // The secrets reader takes the crypto service as a parameter, so reading the key ring reaches both types.
+            ThenTheFailureNamesOnly(
+                verdict.Check,
+                $"Not on the list, and offending: {reader} -> Lighthouse.Backend.Platform.Encryption.ConnectionSecrets, {reader} -> Lighthouse.Backend.Platform.Encryption.ICryptoService. ",
+                [],
+                "the Application outbound rule");
+        }
+
+        [Test]
         public void ATrackerIntegrationApplicationTypeBuildingAConnectorThroughAListedEdge_PassesTheRule()
         {
             var verdict = ApplicationOutboundRule(
@@ -412,7 +430,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             yield return OutboundCaseData(
                 "RunningAnotherModulesAdapter", "AConnectionServiceRunningAForecastJob", "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater", "ATrackerIntegrationApplicationTypeRunningAnotherModulesAdapter_IsNamed");
             yield return OutboundCaseData("ReadingAnUnlistedRepository", "AConnectionServiceReadingCredentials", "Lighthouse.Backend.Services.Implementation.Repositories.OAuthCredentialRepository", "ATrackerIntegrationApplicationTypeReadingARepositoryOffTheList_IsNamed");
-            yield return OutboundCaseData("ReadingTheKeyRing", "AConnectionServiceReadingSecrets", "Lighthouse.Backend.Services.Implementation.Encryption.ConnectionSecrets", "ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed");
         }
 
         private static TestCaseData OutboundCaseData(string caseName, string dependent, string target, string name)
@@ -777,7 +794,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 {
     internal static class AConnectionServiceReadingSecrets
     {
-        public static int Reads(global::Lighthouse.Backend.Models.WorkTrackingSystemConnection connection) => global::Lighthouse.Backend.Services.Implementation.Encryption.ConnectionSecrets.FieldsThatCannotBeRead(connection, null!).Count();
+        public static int Reads(global::Lighthouse.Backend.Models.WorkTrackingSystemConnection connection) => global::Lighthouse.Backend.Platform.Encryption.ConnectionSecrets.FieldsThatCannotBeRead(connection, null!).Count();
     }
 }
 

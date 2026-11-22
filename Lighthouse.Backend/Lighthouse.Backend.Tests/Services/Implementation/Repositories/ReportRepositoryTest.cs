@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Reports;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;

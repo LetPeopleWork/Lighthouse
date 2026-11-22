@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models.Encryption;
-using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Startup;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;

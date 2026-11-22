@@ -6,7 +6,7 @@ using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
-using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;

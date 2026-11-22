@@ -1,8 +1,7 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Encryption;
-using Lighthouse.Backend.Services.Implementation.Encryption;
-using Lighthouse.Backend.Services.Interfaces.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

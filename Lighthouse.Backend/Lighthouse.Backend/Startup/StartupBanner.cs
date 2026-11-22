@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using System.Globalization;
 using System.Runtime.InteropServices;
 

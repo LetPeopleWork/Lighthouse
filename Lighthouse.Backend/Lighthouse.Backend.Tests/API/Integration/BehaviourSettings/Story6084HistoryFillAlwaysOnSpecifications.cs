@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
                 Factory.Services.GetRequiredService<ILogger<DatabaseManagementService>>(),
                 Factory.Services,
                 Factory.Services.GetRequiredService<TimeProvider>(),
-                Factory.Services.GetRequiredService<Lighthouse.Backend.Services.Interfaces.Encryption.IEncryptionKeyRingHolder>());
+                Factory.Services.GetRequiredService<Lighthouse.Backend.Platform.Encryption.IEncryptionKeyRingHolder>());
 
         private void TheBackupsDatabaseIsPutInPlace()
         {

@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;

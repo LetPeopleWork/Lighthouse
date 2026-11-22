@@ -3,7 +3,7 @@ using System.Text;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Linear;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;

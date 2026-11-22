@@ -9,6 +9,7 @@ using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.UsageData;

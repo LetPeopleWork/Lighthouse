@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Health;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;

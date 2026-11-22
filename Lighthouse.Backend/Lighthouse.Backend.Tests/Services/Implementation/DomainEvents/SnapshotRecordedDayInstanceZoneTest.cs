@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Modules.Promises.Application.Policies;
 using Lighthouse.Backend.Services.Interfaces;

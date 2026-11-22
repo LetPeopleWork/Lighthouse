@@ -2,7 +2,7 @@ using System.Text;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Auth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
                 Throws.InstanceOf<ArgumentNullException>());
         }
 
-        private sealed class RecordingCryptoService : Lighthouse.Backend.Services.Interfaces.ICryptoService
+        private sealed class RecordingCryptoService : Lighthouse.Backend.Platform.Encryption.ICryptoService
         {
             public List<string> Decrypted { get; } = [];
 

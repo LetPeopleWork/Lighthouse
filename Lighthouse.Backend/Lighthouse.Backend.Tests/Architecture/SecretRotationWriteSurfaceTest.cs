@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
-        private const string TheOnePassThatWrites = "Services/Implementation/Encryption/SecretCustodyService.cs";
+        private const string TheOnePassThatWrites = "Platform/Encryption/SecretCustodyService.cs";
 
         private const string GuardedWrite = "ExecuteUpdateAsync";
 

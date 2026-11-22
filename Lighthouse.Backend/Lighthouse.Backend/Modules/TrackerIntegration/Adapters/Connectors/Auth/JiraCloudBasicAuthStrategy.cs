@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Jira;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 

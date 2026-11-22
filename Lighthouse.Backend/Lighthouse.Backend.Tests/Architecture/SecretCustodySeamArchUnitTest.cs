@@ -2,8 +2,7 @@ using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.Encryption;
-using Lighthouse.Backend.Services.Interfaces.Encryption;
+using Lighthouse.Backend.Platform.Encryption;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -20,9 +19,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class SecretCustodySeamArchUnitTest
     {
-        private const string CryptoServiceFullName = "Lighthouse.Backend.Services.Implementation.CryptoService";
+        private const string CryptoServiceFullName = "Lighthouse.Backend.Platform.Encryption.CryptoService";
 
-        private const string UnreadableSecretExceptionFullName = "Lighthouse.Backend.Services.Implementation.Encryption.UnreadableSecretException";
+        private const string UnreadableSecretExceptionFullName = "Lighthouse.Backend.Platform.Encryption.UnreadableSecretException";
 
         private const string SecretStateFullName = "Lighthouse.Backend.Models.Encryption.SecretState";
 
@@ -35,9 +34,17 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string HttpNamespace = "System.Net.Http.";
 
-        private const string EncryptionNamespacePrefix = "Lighthouse.Backend.Services.Implementation.Encryption.";
+        private const string EncryptionNamespacePrefix = "Lighthouse.Backend.Platform.Encryption.";
 
         private const string LoggingNamespace = "Microsoft.Extensions.Logging";
+
+        // These two log by design, which is why they sat outside the key-holding namespace before it moved
+        // into the platform area beside them; the rule keeps judging every other type there, as it did then.
+        private static readonly string[] TheTwoThatLogByDesign =
+        [
+            CryptoServiceFullName,
+            "Lighthouse.Backend.Platform.Encryption.KeyRingFileWatcher",
+        ];
 
         private const string StoredCredential = "a stored credential";
 
@@ -161,6 +168,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var ableToLog = Architecture.Types
                 .Where(type => type.FullName.StartsWith(EncryptionNamespacePrefix, StringComparison.Ordinal))
+                .Where(type => !TheTwoThatLogByDesign.Contains(type.FullName, StringComparer.Ordinal))
                 .Where(type => type.Dependencies.Any(
                     dependency => dependency.Target.FullName.StartsWith(LoggingNamespace, StringComparison.Ordinal)))
                 .Select(type => type.FullName)

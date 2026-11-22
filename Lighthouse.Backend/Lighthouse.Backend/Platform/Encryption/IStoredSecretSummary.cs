@@ -1,0 +1,23 @@
+namespace Lighthouse.Backend.Platform.Encryption
+{
+    // Whose key this instance is on and where that key is kept, worked out once at startup from the ring
+    // that was actually resolved and the directory it was actually resolved from. Handed round as a
+    // finished sentence rather than as the ingredients, so nothing downstream can reach for
+    // configuration and arrive at a different answer than the key in force.
+    public sealed record KeyCustodyDescription(string Line);
+
+    // What the encryption settings need to know about the stored secrets: how many are still readable with
+    // the key published with the product, which keys the rest say wrote them, and how many could be moved
+    // onto the key in force. The last one is its own fact rather than something inferred from the second,
+    // because a credential written before the envelope format says nothing about which key wrote it.
+    public sealed record StoredSecretSummary(
+        int UnderThePublishedKey, IReadOnlyCollection<string> KeyIdsSeen, int ReadableNotOnTheActiveKey);
+
+    // Asked as one question because it is one screen. The two answers read the same three columns for
+    // the same payload, and separate ports would be two chances for a caller to ask for one, forget the
+    // other, and draw a panel that is half right.
+    public interface IStoredSecretSummary
+    {
+        Task<StoredSecretSummary> ReadAsync(CancellationToken cancellationToken = default);
+    }
+}

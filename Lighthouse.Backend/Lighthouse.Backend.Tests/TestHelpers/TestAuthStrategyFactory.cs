@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Auth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
+using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;

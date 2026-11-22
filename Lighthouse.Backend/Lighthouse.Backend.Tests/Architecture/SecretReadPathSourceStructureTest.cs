@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
-        private const string EncryptionImplementationDirectory = "Services/Implementation/Encryption/";
+        private const string EncryptionImplementationDirectory = "Platform/Encryption/";
 
         private const string ClassifierRelativePath = EncryptionImplementationDirectory + "SecretStateClassifier.cs";
 
