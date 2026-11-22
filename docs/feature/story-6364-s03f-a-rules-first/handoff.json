@@ -1,33 +1,1017 @@
 {
 "counters": {
-"F": 23,
+"D": 10,
+"F": 195,
+"K": 5,
+"L": 4,
 "P": 6,
-"S": 4
+"S": 4,
+"T": 2,
+"Y": 5
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F52",
+"driven_ports": [
+"F50",
+"F51"
+],
+"driving_port": "F49"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F57",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F56"
+},
+{
+"axis": "Inhabitation",
+"basis": "F58",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F56"
+},
+{
+"axis": "PublicReachability",
+"basis": "F59",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F56"
+},
+{
+"axis": "Liveness",
+"basis": "F60",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F56"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F34"
+},
+{
+"id": "K2",
+"text": "F35"
+},
+{
+"id": "K3",
+"text": "F36"
+},
+{
+"id": "K4",
+"text": "F37"
+},
+{
+"id": "K5",
+"text": "F38"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F24"
+},
+{
+"id": "D2",
+"slices": [
+"S1"
+],
+"text": "F25"
+},
+{
+"id": "D3",
+"slices": [
+"S2"
+],
+"text": "F26"
+},
+{
+"id": "D4",
+"slices": [
+"S2"
+],
+"text": "F27"
+},
+{
+"id": "D5",
+"slices": [
+"S2"
+],
+"text": "F28"
+},
+{
+"id": "D6",
+"slices": [
+"S3"
+],
+"text": "F29"
+},
+{
+"id": "D7",
+"slices": [
+"S4"
+],
+"text": "F30"
+},
+{
+"id": "D8",
+"text": "F31"
+},
+{
+"id": "D9",
+"text": "F32"
+},
+{
+"id": "D10",
+"text": "F33"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F47"
+},
+{
+"analysis": "contract_tests",
+"reason": "F48"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:13",
+"reason": "F39",
+"symbol": "IlDependencies"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembership.cs:11",
+"reason": "F40",
+"symbol": "AccessAndLicensingMembership"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingRulesSeeTheModulesArchUnitTest.cs:1",
+"reason": "F41",
+"symbol": "AccessAndLicensingRulesSeeTheModulesArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:15",
+"reason": "F42",
+"symbol": "ModuleRules"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:811",
+"reason": "F43",
+"symbol": "access-answers-compare"
+},
+{
+"decision": "Extend",
+"locator": "Scripts/examine/build-examine-commands:1",
+"reason": "F44",
+"symbol": "build-examine-commands"
+},
+{
+"decision": "Extend",
+"locator": "Scripts/test-selection/path-classifier.sh:17",
+"reason": "F45",
+"symbol": "GITHUB_REGEX"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/test-selection/test-path-classifier.sh:14",
+"reason": "F46",
+"symbol": "assert"
+}
+],
+"risks": [
+{
+"allowed": "F63",
+"forbidden": "F64",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "story-6364-s03f-a-rules-first",
+"preserved": "F62",
+"residue": "F65",
+"source": "F61"
+},
+{
+"allowed": "F68",
+"forbidden": "F69",
+"id": "Y2",
+"kind": "Bypass",
+"owner": "story-6364-s03f-c-edges-and-rules",
+"preserved": "F67",
+"residue": "F70",
+"source": "F66"
+},
+{
+"allowed": "F73",
+"forbidden": "F74",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "story-6364-s03f-a-rules-first",
+"preserved": "F72",
+"residue": "F75",
+"source": "F71"
+},
+{
+"allowed": "F78",
+"forbidden": "F79",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "story-6364-s03f-a-rules-first",
+"preserved": "F77",
+"residue": "F80",
+"source": "F76"
+},
+{
+"allowed": "F83",
+"forbidden": "F84",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "story-6364-s03f-b-move",
+"preserved": "F82",
+"residue": "F85",
+"source": "F81"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "story-6364-s03f-a-rules-first",
+"state": "F53"
+},
+{
+"kind": "Excluded",
+"owner": "story-6364-s03f-a-rules-first",
+"state": "F54"
+},
+{
+"kind": "Unknown",
+"owner": "story-6364-s03f-a-rules-first",
+"state": "F55"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs",
+"public_oracle": {
+"expected": "F87",
+"falsifier": "F88",
+"promises": [
+"P1",
+"P6"
+],
+"stimulus": "F86"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PlatformLaneMembershipArchUnitTest\"",
+"id": "T1",
+"obligation": "F103",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "PlatformLaneMembershipArchUnitTest",
+"statement": "F92",
+"treatment": {
+"cases": [
+"F93",
+"F94",
+"F95",
+"F96",
+"F97",
+"F98",
+"F99",
+"F100",
+"F101"
+],
+"kind": "Finite",
+"reason": "F102"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "impact",
+"reason": "F90"
+},
+{
+"analysis": "prefactoring",
+"reason": "F91"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingMembershipArchUnitTest.cs:21",
+"reason": "F89",
+"symbol": "AccessAndLicensingMembershipArchUnitTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs"
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PlatformLaneMembershipArchUnitTest\"",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs",
+"public_oracle": {
+"expected": "F152",
+"falsifier": "F153",
+"promises": [
+"P2",
+"P3",
+"P6"
+],
+"stimulus": "F151"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PlatformLaneRulesSeeTheMoveArchUnitTest\"",
+"id": "T2",
+"obligation": "F195",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs:20",
+"reason": "F167"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs:18",
+"reason": "F168"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:56",
+"reason": "F169"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:58",
+"reason": "F170"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:58",
+"reason": "F169"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:50",
+"reason": "F171"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:434",
+"reason": "F173"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs:18",
+"reason": "F174"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:19",
+"reason": "F175"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:24",
+"reason": "F176"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs:18",
+"reason": "F177"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs:19",
+"reason": "F178"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs:159",
+"reason": "F179"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F180"
+}
+],
+"laws": [
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "PlatformLaneRulesSeeTheMoveArchUnitTest",
+"statement": "F182",
+"treatment": {
+"cases": [
+"F183",
+"F184",
+"F185",
+"F186",
+"F187",
+"F188",
+"F189",
+"F190"
+],
+"kind": "Finite",
+"reason": "F191"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F181"
+}
+],
+"refuted": [
+{
+"cause": "F193",
+"counterexample": "F194",
+"statement": "F192"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs:181",
+"reason": "F154",
+"symbol": "ByDomainEventsNamespace"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs:18",
+"reason": "F155",
+"symbol": "KernelRules"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:56",
+"reason": "F156",
+"symbol": "ThePlatform"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:58",
+"reason": "F157",
+"symbol": "ThePlatform"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:58",
+"reason": "F158",
+"symbol": "ThePlatform"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:50",
+"reason": "F159",
+"symbol": "TheKeyRing"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:57",
+"reason": "F160",
+"symbol": "OrganisationSetUp"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:434",
+"reason": "F161",
+"symbol": "ForecastingsAdaptersOutboundRule"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs:18",
+"reason": "F162",
+"symbol": "TheUpdateComponents"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:19",
+"reason": "F163",
+"symbol": "ModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:24",
+"reason": "F164",
+"symbol": "ServicesImplementationPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs:18",
+"reason": "F165",
+"symbol": "PromisesMembershipArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs:19",
+"reason": "F166",
+"symbol": "WhereTheHandlersLivedBefore"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs",
+"reason": "F139"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs",
+"reason": "F140"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F141"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F142"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F142"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F143"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F144"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
+"reason": "F145"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs",
+"reason": "F146"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F147"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs",
+"reason": "F148"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesMembershipArchUnitTest.cs",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs",
+"reason": "F150"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PlatformLaneRulesSeeTheMoveArchUnitTest\"",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+},
+"S3": {
+"oracle": "Scripts/test-selection/test-path-classifier-platform.sh",
+"public_oracle": {
+"expected": "F106",
+"falsifier": "F107",
+"promises": [
+"P4",
+"P6"
+],
+"stimulus": "F105"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "ci",
+"locator": "Scripts/test-selection/path-classifier.sh:17",
+"reason": "F108"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "ci",
+"locator": "Scripts/test-selection/test-path-classifier.sh:1",
+"reason": "F109"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "ci",
+"locator": ".github/workflows/ci_changes.yml:1",
+"reason": "F110"
+}
+],
+"laws": [
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "path-classifier.sh",
+"statement": "F113",
+"treatment": {
+"cases": [
+"F114",
+"F115",
+"F116",
+"F117",
+"F118",
+"F119"
+],
+"kind": "Finite",
+"reason": "F120"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F111"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F112"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Scripts/test-selection/path-classifier.sh",
+"reason": "F104"
+}
+],
+"verification": [
+"bash Scripts/test-selection/test-path-classifier-platform.sh",
+"bash Scripts/test-selection/test-path-classifier.sh"
+]
+},
+"S4": {
+"oracle": "Scripts/examine/test-platform-answers-compare.sh",
+"public_oracle": {
+"expected": "F124",
+"falsifier": "F125",
+"promises": [
+"P5",
+"P6"
+],
+"stimulus": "F123"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "script",
+"locator": "Scripts/examine/build-examine-commands:811",
+"reason": "F129"
+},
+{
+"decision": "Changed",
+"kind": "config",
+"locator": ".nwave/examine.json:2",
+"reason": "F130"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "script",
+"locator": "Scripts/examine/build-examine-commands:364",
+"reason": "F131"
+}
+],
+"laws": [
+{
+"id": "L3",
+"kind": "Algebraic",
+"layer": "Adapter",
+"owner": "platform-answers-compare",
+"statement": "F134",
+"treatment": {
+"cases": [
+"F135",
+"F136",
+"F137",
+"F138"
+],
+"kind": "Finite",
+"reason": "F102"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F132"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F133"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:364",
+"reason": "F126",
+"symbol": "compare_captures"
+},
+{
+"decision": "Reuse",
+"locator": "Scripts/examine/build-examine-commands:1730",
+"reason": "F127",
+"symbol": "access-answers-selftest"
+},
+{
+"decision": "Extend",
+"locator": ".nwave/examine.json:2",
+"reason": "F128",
+"symbol": "commands"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Scripts/examine/build-examine-commands",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": ".nwave/examine.json",
+"reason": "F122"
+}
+],
+"verification": [
+"bash Scripts/examine/test-platform-answers-compare.sh",
+"bash Scripts/examine/build-examine-commands",
+"bash Scripts/examine/test-access-answers-compare.sh"
+]
+}
+}
 },
 "facts": {
 "F1": "ADO Story #6364 S03f Platform composition root, feature A (rules first): the platform lane's membership is measured from the IL and fixed (A1); every rule that sees a moved platform type today still sees it after the move, and no rule string names a moving area by its old path (A2); a change to the release code under Platform/Releases still selects the GitHub live suite (A3); an answers probe for the platform's endpoints exists before any file moves and reports a changed answer (A4). Rules, scripts and probes only: production behaviour unchanged. DESIGN and DEVOPS: docs/feature/story-6364-s03f-platform-composition-root/feature-delta.md.",
 "F10": "Moving any platform file or test, and renaming the list and path strings that name a moved type (feature B, B1-B5); the platform lane rules R-PL1 to R-PL4 and unit-test placement (feature C, C1-C2); Data, migrations and every repository (stay, D-0 and D-4); the host band Startup, Health, Configuration, Standalone, Cache, Extensions, Factories (stays); context seeders and update pipelines (stay); an AddPlatform extension (S09a); inverting DatabaseMaintenanceGate to Flow metrics (improvement item, not filed); Redis and Postgres update locks under a real cluster and a key ring on a mounted file (left to container and unit tests, not to the answers probe).",
+"F100": "suppression target naming a moving type not listed: named",
+"F101": "Models candidate failing a condition: left out with the condition named",
+"F102": "Closed finite set of cases; each case is enumerated, no generator adds coverage.",
+"F103": "The platform lane membership, its areas and old and new namespaces, the files that stay, the handler placement and the suppression targets naming moving types are measured from the IL and pinned both ways, namespace-agnostic.",
+"F104": "GITHUB_REGEX (line 17) also selects GitHubService and LighthouseReleaseService files under Platform/Releases of the production and test projects.",
+"F105": "bash Scripts/test-selection/test-path-classifier-platform.sh sources path-classifier.sh and classifies diff lists: Lighthouse.Backend/Lighthouse.Backend/Platform/Releases/GitHubService.cs alone, Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/GitHubServiceTest.cs alone, a LighthouseReleaseService file under Platform/Releases, and a file under another Platform area (Platform/Encryption/CryptoService.cs).",
+"F106": "The Platform/Releases GitHub and release-service paths, production and test, give github=true and backend=true; the other Platform area gives github=false and backend=true; the script prints its pass and fail counts and exits 0; the existing test-path-classifier.sh still passes every case unchanged.",
+"F107": "Today Platform/Releases/GitHubService.cs and its test path give github=false (RED). A widening that selects github for every Platform path, drops the old Services path, or changes another classifier output fails this script or the existing one.",
+"F108": "GITHUB_REGEX gains the Platform/Releases path.",
+"F109": "Existing cases keep their expected selection; the file is not edited.",
 "F11": "Rigor thorough for feature A: architect, acceptance designer and crafter on opus; reviewers and EXAMINE on sonnet (DESIGN open question 8, AFK default taken; maintainer asleep, root context 2026-11-22).",
+"F110": "Consumes the classifier outputs by the same keys; one more path selects github.",
+"F111": "One regex widened in place; no preserving move makes it easier.",
+"F112": "No dependency, boundary or owner law; the obligation is a CI selection, covered by the script oracle.",
+"F113": "classify_github(path) is true for a GitHubService or LighthouseReleaseService file under Services/(Implementation|Interfaces) or Platform/Releases of the production or test project, and false otherwise; every other classifier output is unchanged for every path.",
+"F114": "Platform/Releases/GitHubService.cs: github=true",
+"F115": "Tests Platform/Releases/GitHubServiceTest.cs: github=true",
+"F116": "Platform/Releases LighthouseReleaseService: github=true",
+"F117": "Platform/Encryption file: github=false, backend=true",
+"F118": "old Services paths: github=true as before",
+"F119": "every existing test-path-classifier.sh case: unchanged",
 "F12": "S03f starts only after S03e (Story 6363) is closed, which it is; size L for the Story, about 10-11 days, 11 slices in three features (A 4, B 5, C 2), no split of the ADO Story; no review window (behaviour-free); UI sketch, loading and failure looks N/A; usage-data event N/A because nothing a user sees or does changes (DESIGN and DEVOPS record, AFK defaults taken).",
+"F120": "Closed finite set of representative paths; each case is enumerated, no generator adds coverage.",
+"F121": "Generate platform-answers-compare on the shared capture and compare pieces with a --compare-captures stage and its masked volatile keys, and platform-answers-selftest that runs the slice test script.",
+"F122": "Declare platform-answers-compare and platform-answers-selftest as admitted EXAMINE probes.",
+"F123": "bash Scripts/examine/test-platform-answers-compare.sh builds the EXAMINE commands and runs platform-answers-compare --compare-captures on fixture capture folders it writes: one pair that differs in one platform answer (for example the log level), one identical pair, one pair that differs only in a field named volatile, and one empty pair; it also reads .nwave/examine.json.",
+"F124": "The differing pair prints DIFFERENT naming the changed answer and exits 1; the identical pair and the volatile-only pair print IDENTICAL and exit 0; the empty pair fails because nothing was compared; the command usage names the captured answers (system info, version without the GitHub calls, encryption and secrets state, database-management status, usage-data state, log level and problems, update status); .nwave/examine.json declares platform-answers-compare and platform-answers-selftest.",
+"F125": "Today the command does not exist (RED). A command that always prints IDENTICAL, always prints DIFFERENT, answers IDENTICAL when nothing was compared, or masks a stable answer field fails the script.",
+"F126": "Shared compare stage over two capture folders; fails when a side is not a capture folder or an answer is not 2xx.",
+"F127": "Model for the selftest probe that runs the slice test script for the examiner.",
+"F128": "The commands list owns the admitted EXAMINE probes; two entries added.",
+"F129": "New generated platform-answers-compare beside access-answers-compare, and platform-answers-selftest.",
 "F13": "EXAMINE observes through admitted probes only: architecture-rules (Platform and all), ef-model-unchanged, platform-answers-compare once A4 adds it, refresh-reactions-compare, test-selection-show, ci-live-suites-show, backend-tests (D-13).",
+"F130": "Two new probe entries.",
+"F131": "Existing compare commands keep their behaviour; the shared pieces are reused, not changed; test-access-answers-compare.sh stays green.",
+"F132": "The compare stage already takes capture folders (access-answers-compare --compare-captures); no preserving move is needed.",
+"F133": "No dependency, boundary or owner law; the obligation is behavioural and covered by the script oracle.",
+"F134": "compare(X, X) is IDENTICAL with exit 0; compare(X, Y) with one platform answer changed is DIFFERENT with exit 1 naming it; compare(X, Y) differing only in masked volatile fields is IDENTICAL; a comparison of empty captures fails.",
+"F135": "identical pair",
+"F136": "one answer changed",
+"F137": "only a volatile field changed",
+"F138": "nothing compared",
+"F139": "ApplicationCore (line 20) gains Platform; HandlerSelection.ByDomainEventsNamespace (line 182) selects the dispatcher by its exact type and its nested types; descriptions updated.",
 "F14": "Quint scenario exploration not relevant to any value of feature A: no state, ordering, concurrency, recovery or liveness claim changes; the preservation law is decided exhaustively over a finite domain by an executable check, so a model would restate the namespace map and could not fail (DESIGN formal verification).",
+"F140": "TheServices (line 18) gains Platform; TheUpdateQueue (line 20) gains Platform.UpdateQueue.",
+"F141": "ThePlatform (line 56) and TheUpdateCode (line 58) gain Platform and Platform.UpdateQueue.",
+"F142": "ThePlatform (line 58) and TheUpdateCode (line 62) gain Platform and Platform.UpdateQueue.",
+"F143": "TheKeyRing (line 50) gains Platform.Encryption; PromisesAndTheUpdateCode (line 56) gains Platform.UpdateQueue. An edge newly visible through the widening is listed only if it exists on the pre-move IL, with a reason.",
+"F144": "OrganisationSetUp (line 57) gains the areas of the loose types that move (Host, Encryption, Logging, Releases, DemoData, Persistence, UpdateQueue) as the law requires; list strings are renamed in B.",
+"F145": "The shared update-code pattern gains Platform.UpdateQueue as the law requires.",
+"F146": "TheUpdateComponents (line 18) gains Platform.UpdateQueue.",
+"F147": "The update pattern at line 19 gains Platform.UpdateQueue.",
+"F148": "ServicesImplementationPattern (line 24) gains Platform as the law requires.",
+"F149": "The (\\.DomainEvents)? pattern gains Platform.DomainEvents.",
 "F15": "Order: A1 before A2, because the preservation law runs over the membership map; A3 lands before B3 so the GitHub suite is selected on the move push; A4 before any file moves. The endpoints that answer without network and their volatile fields are measured in A4; the full list of patterns the law finds is measured in A2.",
+"F150": "WhereTheHandlersLivedBefore (line 19) gains Platform.DomainEvents.",
+"F151": "The architecture rule tests run PlatformLaneRulesSeeTheMoveArchUnitTest: it enumerates by reflection every const string field of the test assembly that parses as a regex and is not a full-name or path string listed in the A1 map as renamed by a B slice, and for each moving type of the A1 map (PlatformLaneMembership) evaluates the pattern on the old full name and on the new Lighthouse.Backend.Platform.<Area> full name; it evaluates every Platform alternative against the production types the IL finds outside Lighthouse.Backend.Platform; it reads the dispatcher selection of ApplicationCoreRules on the IL; and it reads the rule files as text for string literals naming a moving area or a moving loose type by its old Services.Implementation, Services.Interfaces or Services/Implementation path.",
+"F152": "For every pattern and every moving type the two answers are equal; no Platform alternative matches a production type outside Platform; the dispatcher selection selects DomainEventDispatcher and its nested types by type, not by namespace fragment; no old-path literal is left except the entries the A1 map lists as renamed by a B slice; every existing architecture test stays green on today code. A failure names the pattern (class and field), the moving type and both answers, or the file, line and literal.",
+"F153": "Today about 20 patterns answer true on the old name and false on the new (RED), and ApplicationCoreRules.cs:182 names .Services.Implementation.DomainEvents (RED). A widening that misses one pattern, widens to all of Lighthouse.Backend (matching outside Platform), removes an old alternative, or leaves the fragment fails the oracle or an existing test. A check that reads only a hand list of patterns, compares only the old answer, or skips nested classes passes those cases and is rejected.",
+"F154": "Owner of the dispatcher selection read by ApplicationCoreRulesReachModulesArchUnitTest lines 159 and 168; its predicate becomes the exact type, not a second selection.",
+"F155": "Owner of TheServices and TheUpdateQueue, consumed by the kernel rules and by Forecasting as its shared update code default; widened in place.",
+"F156": "Sole owner of the Promises platform and update-code keys; widened in place.",
+"F157": "Sole owner of the Access platform and update-code keys; widened in place.",
+"F158": "Sole owner of the Licensing platform and update-code keys; widened in place.",
+"F159": "Sole owner of the Tracker integration key-ring and update-code keys; widened in place.",
 "F16": "A1: the platform lane membership is measured from the IL and fixed in a namespace-agnostic test that fails when a listed type is missing or a listed name does not exist, finds no domain-event handler outside Modules, and records the suppression and analyser-config targets naming moving types.",
+"F160": "Sole owner of the Work Items loose-Services key; widened in place.",
+"F161": "Owner of the Forecasting shared update-code selection; widened through KernelRules or in place.",
+"F162": "Sole owner of the seam update-components key; widened in place.",
+"F163": "Owner of the module-map update pattern at line 19; widened in place.",
+"F164": "Sole owner of the Refinement Services.Implementation key; widened in place.",
+"F165": "Owner of the Promises membership DomainEvents pattern; widened in place.",
+"F166": "Sole owner of the Promises policies old-place key; widened in place.",
+"F167": "ApplicationCore gains Platform; the dispatcher selection at line 182 becomes the exact type.",
+"F168": "TheServices and TheUpdateQueue gain Platform alternatives.",
+"F169": "ThePlatform and TheUpdateCode widened.",
 "F17": "The move in feature B has a fixed, measured list of what moves, where, and what stays with which owner",
+"F170": "ThePlatform and TheUpdateCode widened; the composed TheOtherContexts inherits the widening.",
+"F171": "TheKeyRing and PromisesAndTheUpdateCode widened; newly visible pre-move edges listed with a reason.",
+"F172": "OrganisationSetUp widened by the areas of the moving loose types.",
+"F173": "Shared update code widened through KernelRules.TheUpdateQueue or in place, as the law requires.",
+"F174": "TheUpdateComponents widened.",
+"F175": "Update pattern widened.",
+"F176": "ServicesImplementationPattern widened.",
+"F177": "DomainEvents pattern widened.",
+"F178": "WhereTheHandlersLivedBefore widened.",
+"F179": "Reads ByDomainEventsNamespace; same verdicts with the exact-type selection.",
 "F18": "A2: every rule pattern gives the same answer for each moving platform type under its old and its new namespace, no added alternative matches a production type outside Platform, and no rule string names a moving area by its old path.",
+"F180": "No production edit in feature A.",
+"F181": "The patterns are widened in place; no preserving move makes the widening easier.",
+"F182": "For every const regex pattern P of the test assembly outside the A1 rename list and every moving type T of the A1 map, IsMatch(old(T), P) == IsMatch(new(T), P); every Platform alternative matches no production type outside Lighthouse.Backend.Platform; no rule-file literal names a moving area or moving loose type by its old path outside the A1 rename list.",
+"F183": "pattern matching the old name and not the new: named with both answers",
+"F184": "pattern matching neither or both: pass",
+"F185": "Platform alternative matching a production type outside Platform: named",
+"F186": "const pattern added later in any test class: enumerated",
+"F187": "const in a nested test class: enumerated",
+"F188": "full-name or path string on the A1 rename list: skipped",
+"F189": "inline .Services.Implementation.DomainEvents literal: named",
 "F19": "No rule silently stops seeing a platform type when it moves",
+"F190": "today code: every existing architecture test green",
+"F191": "Exhaustive over the finite domain (moving types x const patterns, about 137 x a few hundred); no generator adds coverage.",
+"F192": "Every const string of the test assembly gives the same IsMatch answer for each moving type under its old and new full name.",
+"F193": "Law scope: a const full-name or path string (a designation of one type or file, renamed in its B slice) parses as a regex but is not a namespace rule; widening it would make it name two types.",
+"F194": "SecretCustodySeamArchUnitTest.CryptoServiceFullName = Lighthouse.Backend.Services.Implementation.CryptoService matches the old name and not Lighthouse.Backend.Platform.Encryption.CryptoService; it is renamed in B1 and carried on the A1 rename list instead.",
+"F195": "Every const regex rule pattern of the test assembly answers the same for each moving platform type under its old and new namespace, no added alternative reaches outside Platform, and no rule string names a moving area by its old path except the listed B renames.",
 "F2": "The platform types can move to Platform/ without any rule, CI selection or answer silently changing",
 "F20": "A3: a change to Platform/Releases/GitHubService.cs or its test path selects the GitHub live suite, and the existing classifier cases keep their selection.",
 "F21": "The live GitHub suite still runs when the release code moves",
 "F22": "A4: the platform-answers-compare examine command says DIFFERENT (exit 1) for two captures differing in one answer, IDENTICAL (exit 0) for identical ones, and fails when nothing was compared.",
 "F23": "A changed platform answer after the move is caught at EXAMINE",
+"F24": "Confirmed (D-0, D-11, D-12, P6): feature A changes no production code, schema, DI registration, configuration, GlobalSuppressions.cs, analyser config or Program.cs. Only test-side architecture rule files, Scripts/test-selection/path-classifier.sh, the EXAMINE command builder, its test script and .nwave/examine.json change. Nothing moves in feature A; the moves, the list and path strings that name a moved type and the suppression targets are feature B (story-6364-s03f-b-move); the platform lane rules R-PL1 to R-PL4 and unit-test placement are feature C. Data, migrations, every repository, the host band, context seeders and update pipelines stay (D-0, D-4, D-5, D-6).",
+"F25": "Confirmed (D-1, D-2, D-3, D-5, D-6, D-7, E9, E13): the platform lane lives in Lighthouse.Backend.Platform.<Area>, namespace = folder, no layers; areas Encryption, DatabaseManagement, UsageData, Logging, DomainEvents, UpdateQueue, Releases, Host, DemoData, Seeding, Persistence. Membership is the ADR-270 platform set (about 137 files: key ring and secret custody, database management, demo data, ISeeder and InstallTimestampSeeder, LostRaceTolerantSave, usage data, logging, releases, the dispatcher with IDomainEventDispatcher and IDomainEventHandler, the clock and host facilities, the update queue mechanics). A Models type joins only under the four S03a conditions (not an EF entity, not on the wire, not reached by a kernel type, not used outside the lane). Stay with a named owner: Data, every repository with IRepository and RepositoryBase, the seven context seeders, TeamUpdater, PortfolioUpdater, UpdateServiceBase and their interfaces, AppSettingService. A1 measures the map from the IL (each type, area, old and new namespace; the files that stay with owner; the suppression and analyser-config targets naming a moving type; the list and path strings each B slice renames) and pins it; the text counts are not trusted.",
+"F26": "Confirmed (D-9, E1, Ratchet design): every const string field of the test assembly that parses as a regex is enumerated by reflection, so a pattern added later is covered. For every pattern P and every moving type T of the A1 map, Regex.IsMatch(old(T), P) == Regex.IsMatch(new(T), P). Patterns only gain alternatives of the form ^Lighthouse\\.Backend\\.Platform\\.<Area>(\\.|$) for the areas of the types the pattern matched before (ApplicationCore gains Platform; KernelRules TheServices and TheUpdateQueue; the Promises, Access and Licensing ThePlatform and TheUpdateCode; Tracker integration TheKeyRing and PromisesAndTheUpdateCode; Work Items OrganisationSetUp by the areas of the loose types; Forecasting, DependencyAwareForecastSeam, ModuleBoundaries line 19 and Refinement update code; the Promises (\\.DomainEvents)? patterns). No added alternative matches a production type outside Platform. Old alternatives stay until feature C. The full list of failing patterns is measured at the A2 RED.",
+"F27": "Confirmed (E1, P2): HandlerSelection.ByDomainEventsNamespace in ApplicationCoreRules (line 182) stops matching the inline .Services.Implementation.DomainEvents fragment and selects the dispatcher by its exact type (typeof(DomainEventDispatcher), the only type in that namespace), so the selection follows the move by compilation; its readers in ApplicationCoreRulesReachModulesArchUnitTest (lines 159, 168) keep their verdicts.",
+"F28": "Confirmed (P3, Ratchet design): non-constant fragments escape reflection, so a second assertion reads the rule files as text: no string literal names a moving area (Encryption, DatabaseManagement, UsageData, Logging, DomainEvents, BackgroundServices.Update, Interfaces.Update) or a moving loose type by its old Services.Implementation, Services.Interfaces or Services/Implementation path, except the entries the A1 map lists as renamed by a B slice (E4, E5 list and path strings). Known today: ApplicationCoreRules.cs:182.",
+"F29": "Confirmed (D-12, E3): GITHUB_REGEX in Scripts/test-selection/path-classifier.sh (line 17) gains the Platform/Releases path of the production and test projects, so a change to Platform/Releases/GitHubService.cs, LighthouseReleaseService or their tests selects the GitHub live suite. A3 lands before B3 so the move push runs the GitHub suite. Every case already in test-path-classifier.sh keeps its answer.",
 "F3": "The membership of the platform lane is measured from the compiled code and fixed in a test: each platform type with its area, its old and its new namespace, and the files that stay with their owner; the test finds each listed type in its old or its new namespace, fails when a listed type is missing or a listed name does not exist, finds no domain-event handler outside Modules, and records every suppression or analyser-config target that names a moving type.",
+"F30": "Confirmed (D-13, X3, E10): a new EXAMINE command platform-answers-compare (CREATE_NEW, thin, on the shared capture and compare pieces of build-examine-commands in the shape of access-answers-compare) starts each revision in-process with authentication off and reads the platform answers that need no network: GET systeminfo, version current, updateSupported and distribution (not hasupdate or new, which call GitHub), encryption and encryption/secrets, database-management/status, usagedata/state, logs level, level/supported and problems, update status. Volatile fields (uptime, memory, clock values) are blanked at any depth by its masked keys; which endpoints answer and which fields are volatile are measured in A4. IDENTICAL exit 0, DIFFERENT exit 1 naming the changed answer, and it fails when nothing was compared. Its compare stage is reachable on two capture folders (--compare-captures BASE CANDIDATE). Declared in .nwave/examine.json with a platform-answers-selftest probe before any file moves.",
+"F31": "Confirmed (D-13, D-14, brief decisions): rigor thorough for feature A (architect, acceptance designer, crafter opus; reviewers and EXAMINE sonnet); no review window; EXAMINE observes through architecture-rules, ef-model-unchanged, platform-answers-compare once A4 adds it, refresh-reactions-compare, test-selection-show, ci-live-suites-show and backend-tests. The mutation bar applies once at the end of S03f to the moved production code; feature A changes no production code. Usage-data event, UI sketch, loading and failure looks: not applicable.",
+"F32": "Carriers: the platform lane map is a static class PlatformLaneMembership in the Architecture folder (shape of PromisesMembership and AccessAndLicensingMembership: per moving type its short or full name, area, old namespace and new namespace; the files that stay with owner; the suppression and analyser-config targets naming a moving type; the strings each B slice renames), owner the A1 oracle; rule patterns stay const strings in their test classes and ModuleRules, KernelRules and ApplicationCoreRules, owner each rule class; the IL is read through IlDependencies over Mono.Cecil; the dispatcher selection is HandlerSelection in ApplicationCoreRules, selecting the dispatcher and its nested (compiler-generated) types; the GitHub selection is GITHUB_REGEX in path-classifier.sh, owner that script; platform-answers-compare and platform-answers-selftest are generated bash scripts under Scripts/examine/bin, owner build-examine-commands. No production carrier, effect, error type or per-process state changes.",
+"F33": "Formal verification not applicable (feature-delta Formal verification; quint 0.33.1 and OpenJDK 21 probed, no checker selected): no state, ordering, concurrency, recovery or liveness claim changes; the update queue, the locks and the dispatcher move unchanged in feature B. The preservation law of A2 is decided exhaustively over the finite domain (moving types x const patterns) by an executable check in the default suite; the membership is decided by the IL; the classifier and the compare command by enumerated cases. A Quint, TLA+ or Agda model would restate the namespace map and could not fail. Property tests not applicable: every domain is finite and enumerated exhaustively, so a generator adds no coverage. Paradigm object_oriented is kept; the targets are test-side rules and bash scripts outside the OO domain core, so no domain owner, value object or Object Calisthenics rule is in play.",
+"F34": "Behaviour-free: routes, DTOs, responses, configuration keys, key-store names, Redis channels, the hub route, DI and Program.cs, log categories, the EF model and every suppression target stay the same in feature A; every existing test stays green.",
+"F35": "Never loosen a rule: a widening adds only Lighthouse.Backend.Platform.<Area> alternatives for the areas of types the pattern matched before; no alternative may match a production type outside Platform; no existing assertion, listed entry or alternative is removed in feature A. Every rule edit is proved by a reverted throwaway probe.",
+"F36": "IlDependencies.TypesIn also returns nested types; an exact-set check compares top-level types (the part before +). IlDependencies misses catch-clause, event and attribute named-argument references. Regex evaluation uses the existing pattern timeout.",
+"F37": "One oracle file per slice; an approved oracle or support file of this feature is never edited, not even a using line; oracles name production types as strings. No nWave scenario tags in code; the Lighthouse test-writing skill wins over nWave timing and PBT defaults.",
+"F38": "The EXAMINE capture runs with authentication off and no network: the GitHub calls (version hasupdate and new) are left to the GithubIntegration suite on the move push; Redis and Postgres update locks under a real cluster and a key ring on a mounted file are left to container and unit tests. No stored or validated input bound changes; none is introduced.",
+"F39": "Reads types and edges from the compiled IL over Mono.Cecil; the A1 membership check and the A2 outside-Platform check read through it; no second IL reader.",
 "F4": "Every rule pattern in the test assembly gives the same answer for each moving platform type under its new Platform namespace as under its old one, and no added alternative matches a production type outside Platform; the inline DomainEvents fragment is replaced by the exact dispatcher type.",
+"F40": "Shape for PlatformLaneMembership with PromisesMembership: names without namespace so one list holds before and after the move, a full name only where a short name is shared. Platform is a lane, not a module, so a new list owns its own facts; no second owner of the platform membership exists.",
+"F41": "The rules-see-the-move idea is extended: instead of one made-up offender per known rule key, A2 checks every const pattern at once by a law over the A1 map, so a key the re-grep misses is still covered.",
+"F42": "Its module constants are among the patterns the law enumerates; Platform is not a module, so no PlatformModule constant is added and no rule is copied.",
+"F43": "Closest precedent: its generated driver, masked keys and the shared compare-captures piece with --compare-captures carry platform-answers-compare; the new command needs other endpoints, its volatile-field mask and its own subject wording.",
+"F44": "Owns every generated EXAMINE command and the shared pieces; gains platform-answers-compare and platform-answers-selftest, no copy of the pieces.",
+"F45": "Sole owner of the GitHub live-suite selection by path, read by ci_changes.yml and dev-test.sh; widened in place, no second selector.",
+"F46": "The source-the-classifier and assert harness of test-path-classifier.sh is the shape of the new A3 oracle file (one oracle per slice); its existing cases are the preservation check of A3.",
+"F47": "No shared contract changes shape: path-classifier.sh keeps its output keys and every existing selection, .nwave/examine.json gains entries within its existing format, the generated commands are read by the examiner only, and no wire, DTO, schema or persisted format changes.",
+"F48": "No producer and consumer change apart: one deployable; the classifier and its CI consumers change in the same commit and are covered by the classifier oracles.",
+"F49": "Architecture rule tests over the compiled production IL and the test assembly (dotnet test, Architecture namespace); the path classifier driven by its bash test scripts; the EXAMINE command builder and its generated platform-answers-compare, driven by its bash test script",
 "F5": "No string in the rule files names a moving area (Encryption, DatabaseManagement, UsageData, Logging, DomainEvents, BackgroundServices.Update, Interfaces.Update) or a moving loose type by its old Services.Implementation, Services.Interfaces or Services/Implementation path, except the entries the membership list names as renamed by a move slice.",
+"F50": "IlDependencies module reader over Mono.Cecil, and reflection over the test assembly for const patterns",
+"F51": "git revisions and the backend HTTP API, run in-process with authentication off and no network, for the answers capture",
+"F52": "Tests and scripts read production; production never references a test, fixture or script.",
+"F53": "Production unchanged; the platform lane map pinned from the IL; every const pattern gives the same answer for each moving type under its old and its new namespace; the dispatcher selected by its exact type; no old-path literal left except the listed B renames; Platform/Releases selects the GitHub suite; platform-answers-compare and its selftest declared.",
+"F54": "A moving type whose new namespace a pattern answers differently from its old one; an added alternative matching a production type outside Platform; a loosened rule or removed alternative; a classifier case changing its selection; an IDENTICAL verdict on a changed or empty comparison.",
+"F55": "The exact membership, the admitted Models types and the suppression and analyser-config targets (A1 measures); the full list of failing patterns (A2 measures at its RED); which platform endpoints answer with authentication off and no network on demo data, and which fields are volatile (A4 measures).",
+"F56": "Feature A guards for the platform lane move",
+"F57": "A list check fails on a missing listed type and on a name that does not exist; the law fails for any pattern whose answer differs between old and new namespace and for an alternative matching outside Platform; the literal check names any old-path literal not listed; the classifier test fails on a GitHub path not selected or a changed existing case; the compare command cannot answer IDENTICAL for a changed or empty comparison.",
+"F58": "Today code passes the pinned map; the widened patterns satisfy the law on today and on the post-move names; Platform/Releases paths select github=true with every old case unchanged; two identical capture folders answer IDENTICAL.",
+"F59": "Each guard is reached through its public driver: dotnet test on the Architecture namespace, bash on test-path-classifier-platform.sh and test-path-classifier.sh, bash on test-platform-answers-compare.sh, and the examiner probes architecture-rules, test-selection-show, platform-answers-compare and platform-answers-selftest declared in .nwave/examine.json.",
 "F6": "A change to Platform/Releases/GitHubService.cs, or to its test path, selects the GitHub live suite in CI test selection, and every path the classifier already handled keeps its selection.",
+"F60": "Not applicable: no queue, schedule, retry or eventual progress claim; every guard is a bounded synchronous run.",
+"F61": "Assumption negated: rules name the platform lane by area. They name it as Services (E1); a move to Platform drops types from about 20 patterns, so Models could reach the key ring and Promises the clock unseen.",
+"F62": "Every pattern answers the same for each moving type under old and new namespace",
+"F63": "Patterns gain Platform.<Area> alternatives",
+"F64": "A moved type escaping a rule; an alternative matching outside Platform",
+"F65": "A pattern built at run time from pieces or an inline fragment escapes reflection: the A2 literal check and the both-ways list comparisons fail loudly on rename in B",
+"F66": "IlDependencies misses catch-clause, event and attribute named-argument references; reflection sees only const fields",
+"F67": "Edges through signatures, fields, calls, constructors and attribute types; every const pattern",
+"F68": "Those reference kinds and static readonly or interpolated patterns stay unseen by the law",
+"F69": "Claiming the law covers them",
 "F7": "A platform-answers-compare examine command, declared in .nwave/examine.json before any file moves, compares the platform answers of two revisions (system info, version without the GitHub calls, encryption and secrets state, database-management status, usage-data state, log level and problems, update status; volatile fields dropped) and says DIFFERENT with exit 1 when one answer changed, IDENTICAL with exit 0 when none did, and fails when nothing was compared.",
+"F70": "Interpolated patterns composed from consts (TheOtherContexts) inherit the widening of their parts; the C1 falsifiers cover the lane rules",
+"F71": "Assumption negated: CI selects live suites by content. GitHub is selected by path (E3).",
+"F72": "The GitHub suite runs on the push that moves the release code",
+"F73": "GITHUB_REGEX gains the Platform/Releases path",
+"F74": "A release-code change with github=false; an existing case changing selection",
+"F75": "Another future path-keyed selector: test-selection-show in EXAMINE",
+"F76": "Assumption negated: every listed platform endpoint answers with authentication off and no network on demo data, with stable fields",
+"F77": "No false IDENTICAL",
+"F78": "The command fails loudly when nothing was compared or an answer is not 2xx; volatile fields blanked",
+"F79": "IDENTICAL on an empty or failing comparison; a stable field masked away",
 "F8": "Nothing a user, a tracker or the database sees changes: no production file moves or changes behaviour in feature A, and every existing test stays green.",
-"F9": "The IL-measured platform lane membership map (types, areas, old and new namespaces, files that stay with owner, suppression and analyser-config targets naming moving types); the preservation law over every const regex in the test assembly with the widening it requires, the dispatcher fragment made exact, and the old-path literal check; the GitHub live-suite selection for Platform/Releases in path-classifier.sh; the platform-answers-compare examine command and its declaration in .nwave/examine.json."
+"F80": "A4 reports which endpoints answer and which fields are volatile; GitHub calls stay with the GithubIntegration suite on the move push",
+"F81": "Assumption negated: no parallel Story touches the same loose files (S03i, #6657, Epic 6474 slice 12). Second set walked against the finished design: a worktree without the premium licence fixture, the Standalone build, a Redis cluster deployment.",
+"F82": "The map measured from the IL at the start of each B slice",
+"F83": "Their files stay in Services here; Licensing fixture failures are environmental; namespaces do not change the assembly; channel literals unchanged",
+"F84": "A stale map silently passing",
+"F85": "The later Story rebases; the map check fails on a missing or unknown name",
+"F86": "The architecture rule tests run the platform lane membership check over the compiled production IL: each moving type listed in PlatformLaneMembership with its area, old namespace and new Lighthouse.Backend.Platform.<Area> namespace, the files that stay listed with their owner, compared with the top-level types the IL finds in the old platform namespaces and in Lighthouse.Backend.Platform; the domain-event handler implementors found in the IL; and the GlobalSuppressions.cs, .editorconfig and .globalconfig files of both projects read for targets naming a moving type.",
+"F87": "The check passes on today code and finds each listed type in its old or its new namespace; no IDomainEventHandler implementor lives outside Lighthouse.Backend.Modules; the listed suppression and analyser-config targets (today RandomNumberService.GetRandomNumber, PostgresDatabaseManagementProvider and LighthouseReleaseService in GlobalSuppressions.cs) equal the targets found naming a moving type, each with the B slice that rewrites it. A failure names each missing listed type, each listed name that does not exist and each unlisted type that appears.",
+"F88": "Written before the list is filled, the check fails naming the unlisted platform types (RED). A list with one entry removed, one made-up entry added, or a name that does not exist fails and names it; a made-up handler outside Modules is named; a suppression target naming a moving type that is not listed is named. A check that compares one way only, counts entries, reads only the old or only the new namespace, or matches a shared short name without its namespace passes those cases and is rejected.",
+"F89": "Shape of the namespace-agnostic both-ways membership comparison and the four-condition Models admission check.",
+"F9": "The IL-measured platform lane membership map (types, areas, old and new namespaces, files that stay with owner, suppression and analyser-config targets naming moving types); the preservation law over every const regex in the test assembly with the widening it requires, the dispatcher fragment made exact, and the old-path literal check; the GitHub live-suite selection for Platform/Releases in path-classifier.sh; the platform-answers-compare examine command and its declaration in .nwave/examine.json.",
+"F90": "No crafter target: the acceptance designer authors the oracle and its membership list; no production, rule or analyser file changes.",
+"F91": "No code target.",
+"F92": "The listed platform membership equals the set of top-level types the IL finds in the old platform namespaces and in Lighthouse.Backend.Platform, both ways, each listed name found exactly once in its old or its new namespace; no IDomainEventHandler implementor lies outside Modules; the listed suppression and analyser-config targets equal those found naming a moving type.",
+"F93": "list equals IL: pass",
+"F94": "listed type missing: named",
+"F95": "listed name that does not exist: named",
+"F96": "unlisted type present: named",
+"F97": "type found in the new namespace instead of the old: pass",
+"F98": "nested type: reduced to its outer type",
+"F99": "handler outside Modules: named"
 },
 "product": {
 "decisions": [
