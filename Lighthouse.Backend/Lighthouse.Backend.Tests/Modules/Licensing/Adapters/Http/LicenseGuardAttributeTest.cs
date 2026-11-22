@@ -122,6 +122,53 @@ public class LicenseGuardAttributeTest
         }
     }
 
+    [Test]
+    public async Task LicenseGuard_WithoutLimitFlags_AllowsExecutionWhateverTheCounts()
+    {
+        licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
+        teamRepositoryMock.Setup(r => r.GetAll()).Returns(GetTeams(50));
+        projectRepositoryMock.Setup(r => r.GetAll()).Returns(GetProjects(50));
+
+        await new LicenseGuardAttribute().OnAuthorizationAsync(context);
+
+        Assert.That(context.Result, Is.Null);
+    }
+
+    [Test]
+    public async Task LicenseGuard_TeamCountExactlyAtTheLimit_AllowsExecution()
+    {
+        licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
+        teamRepositoryMock.Setup(r => r.GetAll()).Returns(GetTeams(3));
+
+        await new LicenseGuardAttribute { CheckTeamConstraint = true }.OnAuthorizationAsync(context);
+
+        Assert.That(context.Result, Is.Null);
+    }
+
+    [Test]
+    public async Task LicenseGuard_PortfolioCountExactlyAtTheLimit_AllowsExecution()
+    {
+        licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
+        projectRepositoryMock.Setup(r => r.GetAll()).Returns(GetProjects(1));
+
+        await new LicenseGuardAttribute { CheckPortfolioConstraint = true }.OnAuthorizationAsync(context);
+
+        Assert.That(context.Result, Is.Null);
+    }
+
+    [Test]
+    public async Task LicenseGuard_RepositoryNotRegistered_ReturnsServerError()
+    {
+        licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
+        var services = new ServiceCollection();
+        services.AddSingleton(licenseServiceMock.Object);
+        context.HttpContext.RequestServices = services.BuildServiceProvider();
+
+        await new LicenseGuardAttribute { CheckTeamConstraint = true }.OnAuthorizationAsync(context);
+
+        Assert.That(((StatusCodeResult)context.Result!).StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
+    }
+
     private IQueryable<Team> GetTeams(int count) =>
         Enumerable.Range(1, count).Select(i => new Team { Id = i, Name = $"Team {i}" }).AsQueryable();
 
