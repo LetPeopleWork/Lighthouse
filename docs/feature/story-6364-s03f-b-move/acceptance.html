@@ -155,7 +155,70 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Key ring, secret custody, CryptoService, key-ring file watcher and admitted Encryption types are all under Platform/Encryption with namespace equal to folder and none in an old namespace; the architecture-rules layout oracle passes and the time-budget check (test-time-budget.json and its Python test) still finds the four Encryption test classes by their new names (test-selection-show, backend-tests).
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>Database-management, demo-data, seeding (ISeeder, InstallTimestampSeeder) and persistence (LostRaceTolerantSave) types sit in their Platform folders with namespace equal to folder; the seven context seeders stay in place and still seed; dotnet build stays clean with the suppression naming the new full name; the architecture-rules layout oracle and backend-tests pass.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>Usage-data, logging and release types sit under Platform/UsageData, Platform/Logging and Platform/Releases with namespace equal to folder; the usage-data pipe sends the same events (platform-answers-compare usage-data state identical); a change under Platform/Releases still selects the GitHub live suite (test-selection-show) and that suite passes (ci-live-suites-show).
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>Domain-event dispatcher, its interfaces, clock, RandomNumberService and host facilities sit under Platform/DomainEvents or Platform/Host with namespace equal to folder; handlers stay with their contexts; domain-event reactions occur in the same order (refresh-reactions-compare IDENTICAL); the moved tests are named at their new place in the architecture lists and the build is clean.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>Update-queue mechanics types sit under Platform/UpdateQueue with namespace equal to folder and none in an old namespace; TeamUpdater, PortfolioUpdater, UpdateServiceBase&lt;T&gt; and their three interfaces are unmoved; update status is identical before and after (platform-answers-compare); architecture-rules layout oracle passes.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>Unit tests of moved types sit under Tests/Platform/&lt;Area&gt; with namespace equal to folder; every architecture rule and list naming a moved type uses its new place, and the subject-aware preservation law over the membership map stays green after each move (architecture-rules, backend-tests).
+</code></pre>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P7</p>
+
+<pre><code>Nothing user-, client-, tracker- or database-visible changes: platform-answers-compare reports IDENTICAL answers (system info, version, encryption/secrets state, database-management status, usage-data state, log level and problems, update status); refresh-reactions-compare IDENTICAL; ef-model-unchanged shows no model change; every live suite passes on the move push (ci-live-suites-show); the full filtered backend suite is green (backend-tests). Program.cs-only-usings and no config key, key-store directory, Redis channel or hub route change are not directly provable by a finite probe and go to candidate review.
+</code></pre>
 
 <h2>Charter</h2>
 

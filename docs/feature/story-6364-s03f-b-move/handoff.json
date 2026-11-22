@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 9,
-"F": 543,
+"E": 7,
+"F": 550,
 "K": 3,
 "L": 5,
 "P": 7,
@@ -9292,6 +9293,59 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F544"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F545"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F546"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F547"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F548"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F549"
+},
+{
+"id": "E7",
+"promises": [
+"P7"
+],
+"text": "F550"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6364 S03f Platform composition root, feature B (the move): the key ring and secret custody live in Platform/Encryption (B1); database management, demo data, the seeder port and the race-tolerant save live in Platform/ (B2); usage data, logging and releases live in Platform/ (B3); the dispatcher and its contracts, the clock and the host facilities live in Platform/ (B4); the update queue's mechanics live in Platform/UpdateQueue while the pipelines stay (B5). Pure moves: behaviour unchanged, proven by the feature A probes. Builds on feature A's subject-aware preservation law (confirmed by the maintainer 2026-11-22). DESIGN and DEVOPS: docs/feature/story-6364-s03f-platform-composition-root/feature-delta.md.",
 "F10": "Pure moves of the platform production types measured in feature A's membership map into Platform/<Area> (Encryption, DatabaseManagement, DemoData, Seeding, Persistence, UsageData, Logging, Releases, DomainEvents, Host, UpdateQueue; namespace equal to folder), the unit tests of the moved types into Tests/Platform/<Area>, and the usings, rule and list strings, test-time budget keys, HostUsersStillToMove entries, test paths and GlobalSuppressions.cs targets that follow; behaviour unchanged.",
@@ -9787,7 +9841,14 @@
 "F541": "the strings the map lists for the UpdateQueue move name the new place; no rule loosened",
 "F542": "For each UpdateQueue entry t of PlatformLaneMembership.MovingTypes: exactly one type named t.Name exists in t.NewNamespace and none in t.OldNamespace; for each test class the slice moves, it exists in Lighthouse.Backend.Tests.Platform.<Area> and not in its old namespace; each pipeline type of TypesThatStay exists in its namespace and not in Lighthouse.Backend.Platform",
 "F543": "every UpdateQueue type of PlatformLaneMembership lives in Lighthouse.Backend.Platform.<Area> and none in its old namespace; the slice's moved test classes live in Lighthouse.Backend.Tests.Platform.<Area>; the six pipeline types stay",
+"F544": "Key ring, secret custody, CryptoService, key-ring file watcher and admitted Encryption types are all under Platform/Encryption with namespace equal to folder and none in an old namespace; the architecture-rules layout oracle passes and the time-budget check (test-time-budget.json and its Python test) still finds the four Encryption test classes by their new names (test-selection-show, backend-tests).",
+"F545": "Database-management, demo-data, seeding (ISeeder, InstallTimestampSeeder) and persistence (LostRaceTolerantSave) types sit in their Platform folders with namespace equal to folder; the seven context seeders stay in place and still seed; dotnet build stays clean with the suppression naming the new full name; the architecture-rules layout oracle and backend-tests pass.",
+"F546": "Usage-data, logging and release types sit under Platform/UsageData, Platform/Logging and Platform/Releases with namespace equal to folder; the usage-data pipe sends the same events (platform-answers-compare usage-data state identical); a change under Platform/Releases still selects the GitHub live suite (test-selection-show) and that suite passes (ci-live-suites-show).",
+"F547": "Domain-event dispatcher, its interfaces, clock, RandomNumberService and host facilities sit under Platform/DomainEvents or Platform/Host with namespace equal to folder; handlers stay with their contexts; domain-event reactions occur in the same order (refresh-reactions-compare IDENTICAL); the moved tests are named at their new place in the architecture lists and the build is clean.",
+"F548": "Update-queue mechanics types sit under Platform/UpdateQueue with namespace equal to folder and none in an old namespace; TeamUpdater, PortfolioUpdater, UpdateServiceBase<T> and their three interfaces are unmoved; update status is identical before and after (platform-answers-compare); architecture-rules layout oracle passes.",
+"F549": "Unit tests of moved types sit under Tests/Platform/<Area> with namespace equal to folder; every architecture rule and list naming a moved type uses its new place, and the subject-aware preservation law over the membership map stays green after each move (architecture-rules, backend-tests).",
 "F55": "an operator's own log-level override that names an old platform namespace loses effect after the move (none documented)",
+"F550": "Nothing user-, client-, tracker- or database-visible changes: platform-answers-compare reports IDENTICAL answers (system info, version, encryption/secrets state, database-management status, usage-data state, log level and problems, update status); refresh-reactions-compare IDENTICAL; ef-model-unchanged shows no model change; every live suite passes on the move push (ci-live-suites-show); the full filtered backend suite is green (backend-tests). Program.cs-only-usings and no config key, key-store directory, Redis channel or hub route change are not directly provable by a finite probe and go to candidate review.",
 "F56": "platform lane move",
 "F57": "each layout oracle fails naming the type when a moving type of its slice is in its old namespace, in both or in the wrong area",
 "F58": "each oracle resolves every listed name to a type (a name with no type fails), so the admitted layout has a concrete witness per type",
