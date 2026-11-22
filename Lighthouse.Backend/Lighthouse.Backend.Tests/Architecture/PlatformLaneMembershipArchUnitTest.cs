@@ -152,7 +152,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice()
         {
             var moved = MovingTypeNamed("CryptoService");
-            var found = WhenTheLaneTypesAreCollectedFrom(ProductionModule.Value).Append(moved.NewFullName).ToList();
+            var collected = WhenTheLaneTypesAreCollectedFrom(ProductionModule.Value).ToList();
+            var held = CurrentFullNameOf(moved, collected);
+            var found = collected.Append(held == moved.OldFullName ? moved.NewFullName : moved.OldFullName).ToList();
 
             var failure = FailureOf(() => ThenTheyMatchTheMap(found, PlatformLaneMembership.MovingTypes, PlatformLaneMembership.TypesThatStay));
 
@@ -164,9 +166,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var moved = MovingTypeNamed("CryptoService");
             var wrongArea = $"Lighthouse.Backend.Platform.Logging.{moved.Name}";
-            var found = WhenTheLaneTypesAreCollectedFrom(ProductionModule.Value)
-                .Select(name => name == moved.OldFullName ? wrongArea : name)
-                .ToList();
+            var collected = WhenTheLaneTypesAreCollectedFrom(ProductionModule.Value).ToList();
+            var held = CurrentFullNameOf(moved, collected);
+            var found = collected.Select(name => name == held ? wrongArea : name).ToList();
 
             var failure = FailureOf(() => ThenTheyMatchTheMap(found, PlatformLaneMembership.MovingTypes, PlatformLaneMembership.TypesThatStay));
 

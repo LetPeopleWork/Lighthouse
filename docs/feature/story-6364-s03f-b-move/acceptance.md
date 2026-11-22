@@ -158,6 +158,36 @@ a behaviour change that no existing test or probe observes
 
 None.
 
+##### Covers
+
+P6
+
+```text
+Run the membership map check with a made-up copy of the crypto service beside it, and with the crypto service moved into the wrong platform area, taking the example from the map row and from whichever full name the compiled code holds
+```
+
+```text
+The check names the crypto service as found twice in the first case, and names it as not in the code and the wrong-area name as not on the map in the second, both before and after the key-ring move
+```
+
+```text
+The membership map keeps catching a type left behind or moved to the wrong place after the key ring moves; it does not go red because of the move itself
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.PlatformLaneMembershipArchUnitTest
+
+```text
+the example type is moved by a later slice in a way the map row does not list; the map row is then the owner
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

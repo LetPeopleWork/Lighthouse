@@ -77,13 +77,26 @@
 "expected": "F568",
 "stimulus": "F567",
 "user_result": "F569"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F580",
+"test": "Lighthouse.Backend.Tests.Architecture.PlatformLaneMembershipArchUnitTest"
+},
+"expected": "F578",
+"stimulus": "F577",
+"user_result": "F579"
 }
 ]
 },
 "counters": {
 "D": 9,
 "E": 7,
-"F": 576,
+"F": 580,
 "K": 3,
 "L": 5,
 "P": 7,
@@ -9963,7 +9976,11 @@
 "F574": "F1 (maintainer, 2026-11-22): SecretCustodySeamArchUnitTest.NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll gains a named exemption of exactly CryptoService and KeyRingFileWatcher, the two key-handling types that log and that the rule kept outside its namespace for that reason; once EncryptionNamespacePrefix becomes Lighthouse.Backend.Platform.Encryption. the rule's subjects stay exactly today's set. The reason is written beside the exemption in plain language. Owner: maintainer. S1 crafter target. Rejected: a separate Platform area or sub-namespace for the two types (contradicts the one-area placement of the membership map); a narrower subject pattern (changes the rule's reach for future types).\n",
 "F575": "F2 (maintainer, 2026-11-22): feature A's PlatformLaneMembershipArchUnitTest tests ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice and ATypeMovedIntoTheWrongArea_IsNamedAsNotInTheCode_AndAsNotOnTheMap take their example from the membership map (its row's OldFullName and NewFullName, using whichever full name the compiled assembly holds), so they build the failure they assert before and after the move. A recorded exception of the same kind as the PlatformLaneRulesSeeTheMove amendment: made by the S1 acceptance designer before craft, as an S1 support, changing only the choice of example; every assertion stays. PlatformLaneMembership and PlatformLanePatternRoles stay unedited. Owner: maintainer. Rejected: an example type of a later move (breaks again at that move).\n",
 "F576": "F3 (maintainer, 2026-11-22): the whole-area Context pattern ^Lighthouse.Backend.Platform.Encryption(.|$) makes 7 existing ICryptoService edges visible. TrackerIntegrationModuleBoundariesArchUnitTest lists them with the reason \"existed before the move: ICryptoService was a loose platform interface the rule did not see\": in ModuleEdgesIntoOtherContexts JiraCloudBasicAuthStrategy, LinearApiKeyAuthStrategy, PatAuthStrategy, ServiceNowBasicAuthStrategy and LinearWorkTrackingConnector to Lighthouse.Backend.Platform.Encryption.ICryptoService; in ApplicationEdgesBelowItIntoAdaptersOrThePlatform ConnectionHealthService and OAuthService to the same. The fixture test ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed and the matching EveryEntryDeletedFromATrackerIntegrationList case expect the new offender set of the AConnectionServiceReadingSecrets fixture (ConnectionSecrets and ICryptoService in Platform.Encryption). No pattern is widened or narrowed and no other entry changes, so the rule stays as strict as before. Owner: maintainer. S1 crafter targets.\n",
+"F577": "Run the membership map check with a made-up copy of the crypto service beside it, and with the crypto service moved into the wrong platform area, taking the example from the map row and from whichever full name the compiled code holds",
+"F578": "The check names the crypto service as found twice in the first case, and names it as not in the code and the wrong-area name as not on the map in the second, both before and after the key-ring move",
+"F579": "The membership map keeps catching a type left behind or moved to the wrong place after the key ring moves; it does not go red because of the move itself",
 "F58": "each oracle resolves every listed name to a type (a name with no type fails), so the admitted layout has a concrete witness per type",
+"F580": "the example type is moved by a later slice in a way the map row does not list; the map row is then the owner",
 "F59": "the oracles run by dotnet test over the compiled assembly; behaviour through HTTP, the hub and the application-service ports is observed by EXAMINE's platform-answers-compare and refresh-reactions-compare",
 "F6": "Every type the membership map tags B4 - the domain-event dispatcher with IDomainEventDispatcher and IDomainEventHandler<T>, the clock, RandomNumberService and the other host facilities - lives under Platform/DomainEvents or Platform/Host, namespace equal to folder, none left in its old namespace; the domain-event handlers stay with their contexts; the HostUsersStillToMove entries and the CalendarDayAnchorSeam path name the moved tests in their new place; the GlobalSuppressions.cs target of RandomNumberService.GetRandomNumber names its new full name.",
 "F60": "not applicable: no progress, scheduling or fairness claim changes; the update queue, locks and dispatcher move unchanged",
