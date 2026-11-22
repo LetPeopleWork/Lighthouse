@@ -96,7 +96,7 @@
 "counters": {
 "D": 9,
 "E": 7,
-"F": 580,
+"F": 585,
 "K": 3,
 "L": 5,
 "P": 7,
@@ -165,7 +165,7 @@
 "S4",
 "S5"
 ],
-"text": "F571"
+"text": "F581"
 },
 {
 "id": "K3",
@@ -476,8 +476,9 @@
 ],
 "decisions": [
 "F574",
-"F575",
-"F576"
+"F583",
+"F584",
+"F585"
 ],
 "impact": [
 {
@@ -1665,7 +1666,8 @@
 },
 "supports": [
 "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs",
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembershipArchUnitTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLanePatternRoles.cs"
 ],
 "targets": [
 {
@@ -1981,7 +1983,7 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
-"reason": "F573"
+"reason": "F582"
 },
 {
 "change": "Extend",
@@ -9970,17 +9972,18 @@
 "F569": "Nothing a user, an API client, a tracker or the database sees changes",
 "F57": "each layout oracle fails naming the type when a moving type of its slice is in its old namespace, in both or in the wrong area",
 "F570": "a behaviour change that no existing test or probe observes",
-"F571": "Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision) and PlatformLaneMembershipArchUnitTest (F2), made by the S1 acceptance designer before craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest) and F3 (7 listed ICryptoService edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths, made by the S1 crafter. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.\n",
 "F572": "rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F1: NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll exempts exactly CryptoService and KeyRingFileWatcher by name, with the reason beside it, so its subjects stay today's set\n",
-"F573": "rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F3: list the 7 ICryptoService edges (5 in ModuleEdgesIntoOtherContexts, ConnectionHealthService and OAuthService in ApplicationEdgesBelowItIntoAdaptersOrThePlatform) with the reason \"existed before the move: ICryptoService was a loose platform interface the rule did not see\", and make ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed and its EveryEntryDeleted case expect the fixture's new offender set\n",
 "F574": "F1 (maintainer, 2026-11-22): SecretCustodySeamArchUnitTest.NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll gains a named exemption of exactly CryptoService and KeyRingFileWatcher, the two key-handling types that log and that the rule kept outside its namespace for that reason; once EncryptionNamespacePrefix becomes Lighthouse.Backend.Platform.Encryption. the rule's subjects stay exactly today's set. The reason is written beside the exemption in plain language. Owner: maintainer. S1 crafter target. Rejected: a separate Platform area or sub-namespace for the two types (contradicts the one-area placement of the membership map); a narrower subject pattern (changes the rule's reach for future types).\n",
-"F575": "F2 (maintainer, 2026-11-22): feature A's PlatformLaneMembershipArchUnitTest tests ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice and ATypeMovedIntoTheWrongArea_IsNamedAsNotInTheCode_AndAsNotOnTheMap take their example from the membership map (its row's OldFullName and NewFullName, using whichever full name the compiled assembly holds), so they build the failure they assert before and after the move. A recorded exception of the same kind as the PlatformLaneRulesSeeTheMove amendment: made by the S1 acceptance designer before craft, as an S1 support, changing only the choice of example; every assertion stays. PlatformLaneMembership and PlatformLanePatternRoles stay unedited. Owner: maintainer. Rejected: an example type of a later move (breaks again at that move).\n",
-"F576": "F3 (maintainer, 2026-11-22): the whole-area Context pattern ^Lighthouse.Backend.Platform.Encryption(.|$) makes 7 existing ICryptoService edges visible. TrackerIntegrationModuleBoundariesArchUnitTest lists them with the reason \"existed before the move: ICryptoService was a loose platform interface the rule did not see\": in ModuleEdgesIntoOtherContexts JiraCloudBasicAuthStrategy, LinearApiKeyAuthStrategy, PatAuthStrategy, ServiceNowBasicAuthStrategy and LinearWorkTrackingConnector to Lighthouse.Backend.Platform.Encryption.ICryptoService; in ApplicationEdgesBelowItIntoAdaptersOrThePlatform ConnectionHealthService and OAuthService to the same. The fixture test ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed and the matching EveryEntryDeletedFromATrackerIntegrationList case expect the new offender set of the AConnectionServiceReadingSecrets fixture (ConnectionSecrets and ICryptoService in Platform.Encryption). No pattern is widened or narrowed and no other entry changes, so the rule stays as strict as before. Owner: maintainer. S1 crafter targets.\n",
 "F577": "Run the membership map check with a made-up copy of the crypto service beside it, and with the crypto service moved into the wrong platform area, taking the example from the map row and from whichever full name the compiled code holds",
 "F578": "The check names the crypto service as found twice in the first case, and names it as not in the code and the wrong-area name as not on the map in the second, both before and after the key-ring move",
 "F579": "The membership map keeps catching a type left behind or moved to the wrong place after the key ring moves; it does not go red because of the move itself",
 "F58": "each oracle resolves every listed name to a type (a name with no type fails), so the admitted layout has a concrete witness per type",
 "F580": "the example type is moved by a later slice in a way the map row does not list; the map row is then the owner",
+"F581": "Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision, and honouring F4's per-type exception), PlatformLaneMembershipArchUnitTest (F2) and PlatformLanePatternRoles (F4's per-type exception for PromisesAndTheUpdateCode and KeyRingFileWatcher), made by the S1 acceptance designer before craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest), F3 (2 listed ICryptoService Application edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) and F4 (no Platform.Encryption alternative in PromisesAndTheUpdateCode or its composites there) are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths, made by the S1 crafter. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.\n",
+"F582": "rewrite the KeyRing rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F3: list the 2 ICryptoService edges ConnectionHealthService and OAuthService in ApplicationEdgesBelowItIntoAdaptersOrThePlatform with the reason \"existed before the move: ICryptoService was a loose platform interface the rule did not see\", add no entry to ModuleEdgesIntoOtherContexts, and make ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed and its EveryEntryDeleted case expect the fixture's new offender set; F4: PromisesAndTheUpdateCode and every composite built from it carry no Platform.Encryption alternative\n",
+"F583": "F2 (maintainer, 2026-11-22): feature A's PlatformLaneMembershipArchUnitTest tests ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice and ATypeMovedIntoTheWrongArea_IsNamedAsNotInTheCode_AndAsNotOnTheMap take their example from the membership map (its row's OldFullName and NewFullName, using whichever full name the compiled assembly holds), so they build the failure they assert before and after the move. A recorded exception of the same kind as the PlatformLaneRulesSeeTheMove amendment: made by the S1 acceptance designer before craft, as an S1 support, changing only the choice of example; every assertion stays. PlatformLaneMembership stays unedited; PlatformLanePatternRoles changes only by F4's per-type exception. Owner: maintainer. Rejected: an example type of a later move (breaks again at that move).\n",
+"F584": "F3 (maintainer, 2026-11-22, narrowed by F4): the whole-area Context pattern ^Lighthouse.Backend.Platform.Encryption(.|$) makes 2 existing ICryptoService edges visible. TrackerIntegrationModuleBoundariesArchUnitTest lists them in ApplicationEdgesBelowItIntoAdaptersOrThePlatform, ConnectionHealthService and OAuthService to Lighthouse.Backend.Platform.Encryption.ICryptoService, with the reason \"existed before the move: ICryptoService was a loose platform interface the rule did not see\". ModuleEdgesIntoOtherContexts gains no entry: under F4 the other-contexts pattern does not widen, so the connector edges stay outside it as before. The fixture test ATrackerIntegrationApplicationTypeReadingTheKeyRingOffTheList_IsNamed and the matching EveryEntryDeletedFromATrackerIntegrationList case expect the new offender set of the AConnectionServiceReadingSecrets fixture (ConnectionSecrets and ICryptoService in Platform.Encryption). No other entry changes, so the rule stays as strict as before. Owner: maintainer. S1 crafter targets.\n",
+"F585": "F4 (maintainer, 2026-11-22, \"the pattern does not widen\"): KeyRingFileWatcher matched TrackerIntegrationModuleBoundariesArchUnitTest.PromisesAndTheUpdateCode only through its old BackgroundServices folder: a Place match of that one type, not the Promises or update context. So PromisesAndTheUpdateCode, and every composite built from it, gets no Platform.Encryption alternative, and TrackerIntegration_ReachesNoOtherContext stays as it is. Carrier: feature A's PlatformLanePatternRoles gains a per-type exception (\"this field's match of type T was folder-only; T's area is not widened for this field\") naming PromisesAndTheUpdateCode and KeyRingFileWatcher, and PlatformLaneRulesSeeTheMoveArchUnitTest honours it, so the preservation law does not demand the Encryption widening for that field only; every other role and widening stays. Both are S1 supports, edited by the S1 acceptance designer before craft, a recorded exception of the same kind as F2. The S1 crafter keeps the Encryption area out of PromisesAndTheUpdateCode and every composite built from it (removing any alternative the rejected craft added). Owner: maintainer. Rejected: widening the pattern by whole area (the other-contexts pattern would take in all of Platform.Encryption, which it never covered).\n",
 "F59": "the oracles run by dotnet test over the compiled assembly; behaviour through HTTP, the hub and the application-service ports is observed by EXAMINE's platform-answers-compare and refresh-reactions-compare",
 "F6": "Every type the membership map tags B4 - the domain-event dispatcher with IDomainEventDispatcher and IDomainEventHandler<T>, the clock, RandomNumberService and the other host facilities - lives under Platform/DomainEvents or Platform/Host, namespace equal to folder, none left in its old namespace; the domain-event handlers stay with their contexts; the HostUsersStillToMove entries and the CalendarDayAnchorSeam path name the moved tests in their new place; the GlobalSuppressions.cs target of RandomNumberService.GetRandomNumber names its new full name.",
 "F60": "not applicable: no progress, scheduling or fairness claim changes; the update queue, locks and dispatcher move unchanged",
