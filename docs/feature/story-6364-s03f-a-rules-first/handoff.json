@@ -268,7 +268,7 @@
 "counters": {
 "D": 10,
 "E": 6,
-"F": 260,
+"F": 292,
 "K": 5,
 "L": 4,
 "P": 6,
@@ -623,6 +623,9 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs"
 }
 ],
+"decisions": [
+"F272"
+],
 "impact": [
 {
 "decision": "Changed",
@@ -713,6 +716,66 @@
 "kind": "production",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
 "reason": "F180"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs:30",
+"reason": "F283"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs:48",
+"reason": "F284"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12",
+"reason": "F285"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs:34",
+"reason": "F286"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16",
+"reason": "F287"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:20",
+"reason": "F288"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs:21",
+"reason": "F289"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs:23",
+"reason": "F290"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs:46",
+"reason": "F291"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:35",
+"reason": "F292"
 }
 ],
 "laws": [
@@ -829,6 +892,66 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs:19",
 "reason": "F166",
 "symbol": "WhereTheHandlersLivedBefore"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs:30",
+"reason": "F273",
+"symbol": "WhereTheServicesLivedBefore"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs:48",
+"reason": "F274",
+"symbol": "ImplementationPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12",
+"reason": "F275",
+"symbol": "ServiceImplementationNamespace"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs:34",
+"reason": "F276",
+"symbol": "PlatformPersistencePattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16",
+"reason": "F277",
+"symbol": "ServicesPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:20",
+"reason": "F278",
+"symbol": "WhereTheTypesLivedBefore"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs:21",
+"reason": "F279",
+"symbol": "WhereTheTypesLivedBefore"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs:23",
+"reason": "F280",
+"symbol": "WhereTheTypesLivedBefore"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs:46",
+"reason": "F281",
+"symbol": "WhereTheTypesLivedBefore"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:35",
+"reason": "F282",
+"symbol": "WhereTheHandlersLivedBefore"
 }
 ]
 },
@@ -871,7 +994,7 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
-"reason": "F145"
+"reason": "F261"
 },
 {
 "change": "Extend",
@@ -897,6 +1020,56 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesPoliciesLayoutArchUnitTest.cs",
 "reason": "F150"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs",
+"reason": "F262"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs",
+"reason": "F263"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs",
+"reason": "F264"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs",
+"reason": "F265"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs",
+"reason": "F266"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs",
+"reason": "F267"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs",
+"reason": "F268"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs",
+"reason": "F269"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs",
+"reason": "F270"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs",
+"reason": "F271"
 }
 ],
 "verification": [
@@ -1181,7 +1354,6 @@
 "F142": "ThePlatform (line 58) and TheUpdateCode (line 62) gain Platform and Platform.UpdateQueue.",
 "F143": "TheKeyRing (line 50) gains Platform.Encryption; PromisesAndTheUpdateCode (line 56) gains Platform.UpdateQueue. An edge newly visible through the widening is listed only if it exists on the pre-move IL, with a reason.",
 "F144": "OrganisationSetUp (line 57) gains the areas of the loose types that move (Host, Encryption, Logging, Releases, DemoData, Persistence, UpdateQueue) as the law requires; list strings are renamed in B.",
-"F145": "The shared update-code pattern gains Platform.UpdateQueue as the law requires.",
 "F146": "TheUpdateComponents (line 18) gains Platform.UpdateQueue.",
 "F147": "The update pattern at line 19 gains Platform.UpdateQueue.",
 "F148": "ServicesImplementationPattern (line 24) gains Platform as the law requires.",
@@ -1310,9 +1482,41 @@
 "F259": "Every existing test stays green; no production file changes.",
 "F26": "Confirmed (D-9, E1, Ratchet design): every const string field of the test assembly that parses as a regex is enumerated by reflection, so a pattern added later is covered. For every pattern P and every moving type T of the A1 map, Regex.IsMatch(old(T), P) == Regex.IsMatch(new(T), P). Patterns only gain alternatives of the form ^Lighthouse\\.Backend\\.Platform\\.<Area>(\\.|$) for the areas of the types the pattern matched before (ApplicationCore gains Platform; KernelRules TheServices and TheUpdateQueue; the Promises, Access and Licensing ThePlatform and TheUpdateCode; Tracker integration TheKeyRing and PromisesAndTheUpdateCode; Work Items OrganisationSetUp by the areas of the loose types; Forecasting, DependencyAwareForecastSeam, ModuleBoundaries line 19 and Refinement update code; the Promises (\\.DomainEvents)? patterns). No added alternative matches a production type outside Platform. Old alternatives stay until feature C. The full list of failing patterns is measured at the A2 RED.",
 "F260": "A widening that changes which real types a rule examines without changing any verdict on today code; the preservation and Platform-alternative rows bound that.",
+"F261": "The shared update-code pattern gains Platform.UpdateQueue as the law requires. The rule's failure hint at line ~443 ('Use the update contracts in Services.Interfaces.Update instead') is reworded so it names the update contracts without their old path.",
+"F262": "WhereTheServicesLivedBefore fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen",
+"F263": "ImplementationPattern fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen",
+"F264": "ServiceImplementationNamespace (an exact-namespace string) fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen",
+"F265": "PlatformPersistencePattern fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen",
+"F266": "ServicesPattern fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen",
+"F267": "WhereTheTypesLivedBefore and AnImplementationNamespace fail the A2 preservation law at RED: widen the failing const patterns in place under the same law; never loosen",
+"F268": "WhereTheTypesLivedBefore fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen",
+"F269": "WhereTheTypesLivedBefore and WhereTheValueTypesLivedBefore fail the A2 preservation law at RED: widen the failing const patterns in place under the same law; never loosen",
 "F27": "Confirmed (E1, P2): HandlerSelection.ByDomainEventsNamespace in ApplicationCoreRules (line 182) stops matching the inline .Services.Implementation.DomainEvents fragment and selects the dispatcher by its exact type (typeof(DomainEventDispatcher), the only type in that namespace), so the selection follows the move by compilation; its readers in ApplicationCoreRulesReachModulesArchUnitTest (lines 159, 168) keep their verdicts.",
+"F270": "WhereTheTypesLivedBefore (an unanchored text scan) fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen",
+"F271": "WhereTheHandlersLivedBefore and AnOldNamespacePrefix fail the A2 preservation law at RED: widen the failing const patterns in place under the same law; never loosen",
+"F272": "Encryption is widened per moving type, never per area. The preservation law holds for each moving type, so a pattern that matched only Services.(Implementation|Interfaces).Encryption cannot simply gain Platform.Encryption: the loose Encryption-area types CryptoService, ICryptoService and KeyRingFileWatcher, which that pattern did not match under their old Services paths, would then match under their new namespace but not the old one, and the law would fail the other way. The crafter adds to such a pattern exactly the moving types the old pattern matched, by their new names, and never widens what the pattern means. Found by the A2 acceptance designer at RED.",
+"F273": "Sole owner of the Promises layout old-services pattern; the A2 RED names it as failing the preservation law; widened in place, no new rule or shared constant.",
+"F274": "Owner of the RealityCheck read-only implementation selection (aliases ApplicationCoreRules.ApplicationCore); the A2 RED names it as failing; widened in place or through its alias owner, as the law requires.",
+"F275": "Sole owner of the blackout-events seam namespace, an exact-namespace string; the A2 RED names it as failing; widened in place so each moving type it saw is still seen under Platform.",
+"F276": "Sole owner of the platform persistence recognition pattern; the A2 RED names it as failing; widened in place.",
+"F277": "Owner of the staleness-policy purity services selection (aliases ApplicationCoreRules.ApplicationCore); the A2 RED names it as failing; widened in place or through its alias owner, as the law requires.",
+"F278": "Sole owner of the TrackerIntegration application layout old-location patterns WhereTheTypesLivedBefore (line 20) and AnImplementationNamespace (line 26); the A2 RED names both as failing; widened in place.",
+"F279": "Sole owner of the TrackerIntegration connectors layout old-location pattern; the A2 RED names it as failing; widened in place.",
 "F28": "Confirmed (P3, Ratchet design): non-constant fragments escape reflection, so a second assertion reads the rule files as text: no string literal names a moving area (Encryption, DatabaseManagement, UsageData, Logging, DomainEvents, BackgroundServices.Update, Interfaces.Update) or a moving loose type by its old Services.Implementation, Services.Interfaces or Services/Implementation path, except the entries the A1 map lists as renamed by a B slice (E4, E5 list and path strings). Known today: ApplicationCoreRules.cs:182.",
+"F280": "Sole owner of the OAuth and health layout old-location patterns WhereTheTypesLivedBefore (line 23) and WhereTheValueTypesLivedBefore (line 25); the A2 RED names both as failing; widened in place.",
+"F281": "Sole owner of the WorkItems application layout old-location pattern, an unanchored text scan; the A2 RED names it as failing; widened in place.",
+"F282": "Sole owner of the WorkItems policies old-handler patterns WhereTheHandlersLivedBefore (line 35) and AnOldNamespacePrefix (line 39); the A2 RED names both as failing; widened in place.",
+"F283": "WhereTheServicesLivedBefore widened in place under the preservation law; the rule's verdicts on today's types are unchanged.",
+"F284": "ImplementationPattern widened under the preservation law; the rule's verdicts on today's types are unchanged.",
+"F285": "ServiceImplementationNamespace widened under the preservation law; the seam rule's verdicts on today's types are unchanged.",
+"F286": "PlatformPersistencePattern widened under the preservation law; its consumers' verdicts on today's types are unchanged.",
+"F287": "ServicesPattern widened under the preservation law; the rule's verdicts on today's types are unchanged.",
+"F288": "WhereTheTypesLivedBefore and AnImplementationNamespace (line 26) widened under the preservation law; verdicts on today's types are unchanged.",
+"F289": "WhereTheTypesLivedBefore widened under the preservation law; verdicts on today's types are unchanged.",
 "F29": "Confirmed (D-12, E3): GITHUB_REGEX in Scripts/test-selection/path-classifier.sh (line 17) gains the Platform/Releases path of the production and test projects, so a change to Platform/Releases/GitHubService.cs, LighthouseReleaseService or their tests selects the GitHub live suite. A3 lands before B3 so the move push runs the GitHub suite. Every case already in test-path-classifier.sh keeps its answer.",
+"F290": "WhereTheTypesLivedBefore and WhereTheValueTypesLivedBefore (line 25) widened under the preservation law; verdicts on today's types are unchanged.",
+"F291": "WhereTheTypesLivedBefore (unanchored text scan) widened under the preservation law; verdicts on today's types are unchanged.",
+"F292": "WhereTheHandlersLivedBefore and AnOldNamespacePrefix (line 39) widened under the preservation law; verdicts on today's types are unchanged.",
 "F3": "The membership of the platform lane is measured from the compiled code and fixed in a test: each platform type with its area, its old and its new namespace, and the files that stay with their owner; the test finds each listed type in its old or its new namespace, fails when a listed type is missing or a listed name does not exist, finds no domain-event handler outside Modules, and records every suppression or analyser-config target that names a moving type.",
 "F30": "Confirmed (D-13, X3, E10): a new EXAMINE command platform-answers-compare (CREATE_NEW, thin, on the shared capture and compare pieces of build-examine-commands in the shape of access-answers-compare) starts each revision in-process with authentication off and reads the platform answers that need no network: GET systeminfo, version current, updateSupported and distribution (not hasupdate or new, which call GitHub), encryption and encryption/secrets, database-management/status, usagedata/state, logs level, level/supported and problems, update status. Volatile fields (uptime, memory, clock values) are blanked at any depth by its masked keys; which endpoints answer and which fields are volatile are measured in A4. IDENTICAL exit 0, DIFFERENT exit 1 naming the changed answer, and it fails when nothing was compared. Its compare stage is reachable on two capture folders (--compare-captures BASE CANDIDATE). Declared in .nwave/examine.json with a platform-answers-selftest probe before any file moves.",
 "F31": "Confirmed (D-13, D-14, brief decisions): rigor thorough for feature A (architect, acceptance designer, crafter opus; reviewers and EXAMINE sonnet); no review window; EXAMINE observes through architecture-rules, ef-model-unchanged, platform-answers-compare once A4 adds it, refresh-reactions-compare, test-selection-show, ci-live-suites-show and backend-tests. The mutation bar applies once at the end of S03f to the moved production code; feature A changes no production code. Usage-data event, UI sketch, loading and failure looks: not applicable.",

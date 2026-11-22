@@ -835,7 +835,7 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 
 <p>Extend</p>
 
-<pre><code>The shared update-code pattern gains Platform.UpdateQueue as the law requires.
+<pre><code>The shared update-code pattern gains Platform.UpdateQueue as the law requires. The rule&#x27;s failure hint at line ~443 (&#x27;Use the update contracts in Services.Interfaces.Update instead&#x27;) is reworded so it names the update contracts without their old path.
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs</p>
@@ -871,6 +871,76 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <p>Extend</p>
 
 <pre><code>WhereTheHandlersLivedBefore (line 19) gains Platform.DomainEvents.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WhereTheServicesLivedBefore fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>ImplementationPattern fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>ServiceImplementationNamespace (an exact-namespace string) fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs</p>
+
+<p>Extend</p>
+
+<pre><code>PlatformPersistencePattern fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>ServicesPattern fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WhereTheTypesLivedBefore and AnImplementationNamespace fail the A2 preservation law at RED: widen the failing const patterns in place under the same law; never loosen
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WhereTheTypesLivedBefore fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WhereTheTypesLivedBefore and WhereTheValueTypesLivedBefore fail the A2 preservation law at RED: widen the failing const patterns in place under the same law; never loosen
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WhereTheTypesLivedBefore (an unanchored text scan) fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WhereTheHandlersLivedBefore and AnOldNamespacePrefix fail the A2 preservation law at RED: widen the failing const patterns in place under the same law; never loosen
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs</p>
@@ -913,7 +983,8 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 
 <h5>Decisions</h5>
 
-<p>None.</p>
+<pre><code>Encryption is widened per moving type, never per area. The preservation law holds for each moving type, so a pattern that matched only Services.(Implementation|Interfaces).Encryption cannot simply gain Platform.Encryption: the loose Encryption-area types CryptoService, ICryptoService and KeyRingFileWatcher, which that pattern did not match under their old Services paths, would then match under their new namespace but not the old one, and the law would fail the other way. The crafter adds to such a pattern exactly the moving types the old pattern matched, by their new names, and never widens what the pattern means. Found by the A2 acceptance designer at RED.
+</code></pre>
 
 <h5>Constraints</h5>
 
@@ -1036,6 +1107,96 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <p>Extend</p>
 
 <pre><code>Sole owner of the Promises policies old-place key; widened in place.
+</code></pre>
+
+<p>WhereTheServicesLivedBefore</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs:30</p>
+
+<p>Extend</p>
+
+<pre><code>Sole owner of the Promises layout old-services pattern; the A2 RED names it as failing the preservation law; widened in place, no new rule or shared constant.
+</code></pre>
+
+<p>ImplementationPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs:48</p>
+
+<p>Extend</p>
+
+<pre><code>Owner of the RealityCheck read-only implementation selection (aliases ApplicationCoreRules.ApplicationCore); the A2 RED names it as failing; widened in place or through its alias owner, as the law requires.
+</code></pre>
+
+<p>ServiceImplementationNamespace</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12</p>
+
+<p>Extend</p>
+
+<pre><code>Sole owner of the blackout-events seam namespace, an exact-namespace string; the A2 RED names it as failing; widened in place so each moving type it saw is still seen under Platform.
+</code></pre>
+
+<p>PlatformPersistencePattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs:34</p>
+
+<p>Extend</p>
+
+<pre><code>Sole owner of the platform persistence recognition pattern; the A2 RED names it as failing; widened in place.
+</code></pre>
+
+<p>ServicesPattern</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16</p>
+
+<p>Extend</p>
+
+<pre><code>Owner of the staleness-policy purity services selection (aliases ApplicationCoreRules.ApplicationCore); the A2 RED names it as failing; widened in place or through its alias owner, as the law requires.
+</code></pre>
+
+<p>WhereTheTypesLivedBefore</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:20</p>
+
+<p>Extend</p>
+
+<pre><code>Sole owner of the TrackerIntegration application layout old-location patterns WhereTheTypesLivedBefore (line 20) and AnImplementationNamespace (line 26); the A2 RED names both as failing; widened in place.
+</code></pre>
+
+<p>WhereTheTypesLivedBefore</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs:21</p>
+
+<p>Extend</p>
+
+<pre><code>Sole owner of the TrackerIntegration connectors layout old-location pattern; the A2 RED names it as failing; widened in place.
+</code></pre>
+
+<p>WhereTheTypesLivedBefore</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs:23</p>
+
+<p>Extend</p>
+
+<pre><code>Sole owner of the OAuth and health layout old-location patterns WhereTheTypesLivedBefore (line 23) and WhereTheValueTypesLivedBefore (line 25); the A2 RED names both as failing; widened in place.
+</code></pre>
+
+<p>WhereTheTypesLivedBefore</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs:46</p>
+
+<p>Extend</p>
+
+<pre><code>Sole owner of the WorkItems application layout old-location pattern, an unanchored text scan; the A2 RED names it as failing; widened in place.
+</code></pre>
+
+<p>WhereTheHandlersLivedBefore</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:35</p>
+
+<p>Extend</p>
+
+<pre><code>Sole owner of the WorkItems policies old-handler patterns WhereTheHandlersLivedBefore (line 35) and AnOldNamespacePrefix (line 39); the A2 RED names both as failing; widened in place.
 </code></pre>
 
 <h5>Impact</h5>
@@ -1173,6 +1334,96 @@ dotnet test Lighthouse.Backend --filter &quot;TestCategory!=JiraIntegration&amp;
 <p>UnchangedCompatible</p>
 
 <pre><code>No production edit in feature A.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesLayoutArchUnitTest.cs:30</p>
+
+<p>Changed</p>
+
+<pre><code>WhereTheServicesLivedBefore widened in place under the preservation law; the rule&#x27;s verdicts on today&#x27;s types are unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs:48</p>
+
+<p>Changed</p>
+
+<pre><code>ImplementationPattern widened under the preservation law; the rule&#x27;s verdicts on today&#x27;s types are unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs:12</p>
+
+<p>Changed</p>
+
+<pre><code>ServiceImplementationNamespace widened under the preservation law; the seam rule&#x27;s verdicts on today&#x27;s types are unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs:34</p>
+
+<p>Changed</p>
+
+<pre><code>PlatformPersistencePattern widened under the preservation law; its consumers&#x27; verdicts on today&#x27;s types are unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/StalenessPolicyPurityArchUnitTest.cs:16</p>
+
+<p>Changed</p>
+
+<pre><code>ServicesPattern widened under the preservation law; the rule&#x27;s verdicts on today&#x27;s types are unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationApplicationLayoutArchUnitTest.cs:20</p>
+
+<p>Changed</p>
+
+<pre><code>WhereTheTypesLivedBefore and AnImplementationNamespace (line 26) widened under the preservation law; verdicts on today&#x27;s types are unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationConnectorsLayoutArchUnitTest.cs:21</p>
+
+<p>Changed</p>
+
+<pre><code>WhereTheTypesLivedBefore widened under the preservation law; verdicts on today&#x27;s types are unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest.cs:23</p>
+
+<p>Changed</p>
+
+<pre><code>WhereTheTypesLivedBefore and WhereTheValueTypesLivedBefore (line 25) widened under the preservation law; verdicts on today&#x27;s types are unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsApplicationLayoutArchUnitTest.cs:46</p>
+
+<p>Changed</p>
+
+<pre><code>WhereTheTypesLivedBefore (unanchored text scan) widened under the preservation law; verdicts on today&#x27;s types are unchanged.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs:35</p>
+
+<p>Changed</p>
+
+<pre><code>WhereTheHandlersLivedBefore and AnOldNamespacePrefix (line 39) widened under the preservation law; verdicts on today&#x27;s types are unchanged.
 </code></pre>
 
 <h5>Agreement</h5>
