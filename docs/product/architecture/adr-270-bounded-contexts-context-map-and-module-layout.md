@@ -14,9 +14,9 @@
 > features (Epic 6455 "deeper hierarchies" first). They are **not** refactoring work: no packaging Story builds
 > Signals, the promise lifecycle events, levels above the Feature, or organisation-wide defaults for SLE and staleness.
 >
-> **Moved so far (2026-11-17):** Flow metrics, by the pilot Story 6358, Forecasting, by Story 6361, Work Items,
-> by Story 6360, Tracker integration, by Story 6359, and Promises, by Story 6362. For these five contexts this ADR
-> describes today's code, apart from what is still marked target only (per-level granularity, forecasts composed over
+> **Moved so far (2026-11-22):** Flow metrics, by the pilot Story 6358, Forecasting, by Story 6361, Work Items,
+> by Story 6360, Tracker integration, by Story 6359, Promises, by Story 6362, and Access and Licensing, by Story 6363.
+> For these seven contexts this ADR describes today's code, apart from what is still marked target only (per-level granularity, forecasts composed over
 > more than one level above the leaf, the leaf unit's capacity inputs in Forecasting's own extension, the Team and
 > Portfolio refresh pipelines that still sit in the update code, and the entities, events and DTOs that stay in `Models`
 > and `API/DTO`). Every other context is still where §4 places it.
@@ -68,8 +68,8 @@ set-up, the Deliveries go to Promises. RBAC/Identity splits into Access and Lice
 | **Signals** | supporting | Turns state into attention: red, amber and green on two levels, the health of a unit or level (for example how many of its items are blocked or stale) and the promise (a Feature's or Delivery's likelihood of hitting its date). It owns thresholds, the current state and the history of when a signal changed, and it suggests when a promise should be renegotiated. One context so that the threshold-and-history mechanism is built once, not twice in Metrics and Promises. | Signal thresholds, current states, change history | None | **Target only.** Nothing to package; SLE risk stays in Flow metrics until the first Signals feature |
 | **Refinement** | supporting | At the leaf, a way of working: which Work Items are in refinement, how many more the Team needs, sizing votes and stages. On levels above the leaf a different form may come, sizing items approximately for reference-class forecasting, where it would feed Forecasting. | The Refinement settings, the sizing log, stage resolution, the need band | Refinement | **Packaged** (the leaf form). Refinement above the leaf is target |
 | **Reports** | supporting | Turns live numbers into a frozen record for others. Then & Now is the first report type; more follow (metric charts, signals). It conforms to Flow metrics for numbers and is the outbound channel to people outside Lighthouse (PDF export today; scheduled delivery in future). | Reports and their frozen windows (Then), templates, the metric catalog | Reports | **Packaged**; scheduled delivery and further report types are target |
-| **Access** | generic | Who may do what: organisation-wide roles (System Admin, broad readers, Admin on all) plus membership per unit. It follows the units that exist and has no story of its own beyond that. *Not allowed* is Access; *not relevant* (which level a person sees by default) is not. | Users, roles, unit memberships, IdP group mappings, API keys, embed sessions | RBAC / Identity (minus licensing) | **Packaged**; membership per unit on any level is target |
-| **Licensing** | generic | Whether Premium is available and how many units the free tier allows, published as facts the others react to: licence loaded, licence in its last 30 days, licence expired. | The licence, its verification, the free-tier limits | RBAC / Identity (`Services.*.Licensing`, the premium gate), as ARCHITECTURE.md §4 and the `Services.Implementation.Licensing` namespace show. The board's "inside Platform" was a slip | **Packaged** (small). The three licence events are **target**; today all three facts are derived on read |
+| **Access** | generic | Who may do what: organisation-wide roles (System Admin, broad readers, Admin on all) plus membership per unit. It follows the units that exist and has no story of its own beyond that. *Not allowed* is Access; *not relevant* (which level a person sees by default) is not. | Users, roles, unit memberships, IdP group mappings, API keys, embed sessions | RBAC / Identity (minus licensing) | **Packaged** in `Modules/Access` by Story 6363 (2026-11-22): RBAC administration, the current user's profile, API keys, embed sessions, the OIDC group snapshot writer, the auth mode resolver and configuration validator, Feature move authorization, and the ASP.NET guards, markers and authentication handlers in `Adapters/Http`. Its entities, the types the controllers read or return, the six repositories, the two seeders and the controllers still sit in `Models`, `Services`, `Seeding` and `API`; only four small value types of `Models` moved. Membership per unit on any level is target |
+| **Licensing** | generic | Whether Premium is available and how many units the free tier allows, published as facts the others react to: licence loaded, licence in its last 30 days, licence expired. | The licence, its verification, the free-tier limits | RBAC / Identity (`Services.*.Licensing`, the premium gate), as ARCHITECTURE.md §4 and the `Services.Implementation.Licensing` namespace show. The board's "inside Platform" was a slip | **Packaged** (small) in `Modules/Licensing` by Story 6363 (2026-11-22): the licence service and verifier with their ports, the public key beside the verifier, and the licence guard attribute in `Adapters/Http`. The licence entity and its DTOs stay in `Models` and `API/DTO`. The three licence events are **target**; today all three facts are derived on read |
 | *(Platform lane)* | **not a context** | Composition-root infrastructure below the domain: the encryption key ring, backups and restore, demo data, version update, log level, usage-data consent and forwarding, start-up housekeeping, the `DbContext` and database management, the domain-event dispatcher, the update queue's mechanics, health and graceful shutdown. No user names any of it as part of the story. | The infrastructure the contexts run on | Platform / Persistence, and the host band | Stays in the composition root |
 
 Nine modules therefore become **eleven contexts** (ten packaged from today's code, Signals target only), with Platform
@@ -201,10 +201,10 @@ them from the code or the walk, and the maintainer accepted them with the ADR.
 | Flow metrics → Reports | conformist ("a report and the tab never disagree") | Reads through the same metrics contract the tab uses | Yes (Reports depends on Metrics) | |
 | Signals → Reports | conformist | Includes signals as they are | Target only | |
 | Reports → people outside Lighthouse | published language | PDF export today; scheduled delivery in future | n/a (outbound) | |
-| Access → every context except Organisation set-up | generic; guards | Guards at each context's API adapter; owner-scoped listing through `IRbacAdministrationService` | Yes for Reports (depends on RBAC); elsewhere the guards sit in the API band | |
+| Access → every context except Organisation set-up | generic; guards | Guards at each context's API adapter; owner-scoped listing through `IRbacAdministrationService`. Since Story 6363 (2026-11-22) the guards live in `Modules.Access.Adapters.Http`, the service in `Modules.Access.Application`, and five outside types besides `API` and the composition root ask Access's `Application` (listed in R-A4) | Yes for Reports (depends on RBAC); elsewhere the guards sit in the API band | |
 | Organisation set-up → Access | conformist: memberships follow the units that exist | Unit identifiers | Through the kernel today. New edge | **Derived** |
-| OIDC identity provider → Access | external upstream; thin translation of claims (a small ACL) | Claims parsed into roles and groups | Yes | |
-| Licensing → every context except Organisation set-up | generic; published events (loaded, last 30 days, expired) | Reacts to licence events; asks "is Premium available" through its contract | Today checked on read; the refresh paths (Portfolio/Delivery) depend on RBAC/Identity, which §4 does not allow. Ratchet candidate | |
+| OIDC identity provider → Access | external upstream; thin translation of claims (a small ACL) | Claims parsed into roles and groups (`GroupClaimParser` in `Modules.Access.Domain` since Story 6363, called from the composition root) | Yes | |
+| Licensing → every context except Organisation set-up | generic; published events (loaded, last 30 days, expired) | Reacts to licence events; asks "is Premium available" through its contract. Since Story 6363 (2026-11-22) eleven outside types besides `API`, the composition root and Access's `Application` ask `ILicenseService`, each listed by name in R-L3 | Today checked on read; the refresh paths (Portfolio/Delivery) depend on RBAC/Identity, which §4 does not allow. Ratchet candidate | |
 | Licensing → Work Items | generic; published events | Stops refreshing when the licence expires and more units exist than the free tier allows | Same ratchet candidate as above | **Derived** |
 | Organisation set-up → Licensing | customer/supplier | Counts units against the free-tier limit | Through the kernel today | **Derived** |
 | Public HTTP API → SPA, Lighthouse-Clients (CLI and MCP) | open host service with a published language | HTTP, the clients' contract | Yes (the API is the driving adapter) | |
@@ -402,6 +402,63 @@ Placement decisions the measurement settled:
   Delivery repository files (platform persistence, S05d), the eight files of the write-back round (#6657) and the nine
   ordering and ranking files (Organisation set-up, S03i).
 
+### Edges measured by packaging Access and Licensing (2026-11-22)
+
+Story 6363 moved Access into `Modules/Access` and Licensing into `Modules/Licensing` and measured every edge into and
+out of both from the compiled IL, in the same way as the five Stories before it. Each list is inline, fails on a
+newcomer and on a stale entry, and only shrinks (ADR-268). The rules live in
+`Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs` and
+`LicensingModuleBoundariesArchUnitTest.cs` and call the shared `ModuleRules`, each with a `ModuleWording` of its own.
+`AccessAndLicensingMembershipArchUnitTest` fixes the membership, by short name so it held before and after the move.
+
+| Rule | What it allows | Baseline (outside types, or edges) |
+|---|---|---|
+| R-A1, layers | Every listed Access type lives in its layer, and none is left in the old `Services` Auth and Authorization namespaces | `Domain` 8 types (4 from `Services`, 4 from `Models`), `Application` 16, `Adapters.Http` 8 |
+| R-A2, Domain outbound | Access's `Domain` depends only on the kernel and the .NET base library | empty |
+| R-A3, Domain inbound | `API` and the composition root (legal), plus the list | 1: `FeatureListService` (`FeatureReadability`) |
+| R-A4, Application inbound | `API` and the composition root (legal), plus the list | 5: `FeatureDependencyRendering` (Work Items), `FeatureListActiveWork`, `FeatureListService`, `VoterIdentityResolver` (Refinement), `UsageDataInstanceProperties`. The report commands and queries and the usage-data consent service, expected from the design, do not reach Access |
+| R-A5, Http adapters inbound | `API` and the composition root only | 1 listed: `Program` (it registers the authentication handlers, the scheme selector and the blocked-mode filter) |
+| R-A6, Application outbound | No `API` or module `Adapters` type; Licensing's `Application` is legal; EF Core, the data layer and the platform only through the list | 21 edges: the API key repository and the generic repository, the embed session repository, the platform service (`AuthModeResolver`), and `LighthouseAppContext` with the EF Core types it brings, used directly by `RbacAdministrationService`, `CurrentUserProfileService` and `OidcGroupSnapshotWriter` (proposed owner: the repositories-by-role Epic 6507; no item filed) |
+| R-A7, upstream | Access reaches no other context | empty |
+| R-L1, layers | Every listed Licensing type lives in its layer, and none is left in the old `Services` Licensing namespaces | `Application` 4 types, `Adapters.Http` 1 |
+| R-L2, outbound | Licensing reaches no Access type and no other context | empty |
+| R-L3, Application inbound | `API`, the composition root and Access's `Application` (legal), plus the list | 11: `ForecastUpdater`, `ForecastFilterRuleService`, `DependencyDecision`, `PortfolioUpdater`, `TeamUpdater`, `UsageDataConsentPruningService`, `ReportCommands`, `ReportQueries`, `UsageDataConsentService`, `UsageDataInstanceProperties`, `WriteBackTriggerService` (ratchet candidate 2; owners Epic 6474 and #6657) |
+| R-L4, Http adapters inbound | `API` only | empty |
+| R-L5, Application outbound | The platform only through the list | 2: `LicenseService` to the clock and the generic repository |
+
+What the Story changed in the neighbours' rules:
+
+- One new shared rule, `ModuleRules.HttpAdaptersAreReachedFromOutsideOnlyBy`, guards who may reach a module's
+  `Adapters.Http`, attributes included (a type that only applies a guard attribute still counts as reaching it). Both
+  modules use it. `ModuleWording` now writes "Access's", because a name ending in "ss" takes an apostrophe and an s.
+- Every rule that named Access or Licensing by the old namespaces, in the Work Items, Tracker integration, Forecasting
+  and Promises rule files and in the module map, was widened to also see `Modules.Access` and `Modules.Licensing`
+  before anything moved, each proven with a made-up type. When nothing old matched any more, the module map's
+  `RbacIdentityPattern` was retired; its one assertion (the module is not empty) is carried by the new layer rules.
+- The neighbours' lists keep their entries under the new names: Work Items' `DependencyDecision` to
+  `ILicenseService` and `FeatureDependencyRendering` to `IRbacAdministrationService`, and Forecasting's
+  `ForecastFilterRuleService` to `ILicenseService`. They are those modules' own outbound edges and only shrink with
+  ratchet candidate 2.
+
+Placement decisions the measurement settled:
+
+- Four `Models` types moved into Access's `Domain`, the only ones that passed the four conditions of Story 6359:
+  `ApiKeyOwnerResolutionState`, `ApiKeyValidationResult`, `AuthConfigurationValidationResult` and `EffectiveAccess`.
+  `EmbedHandshakeOutcome`, declared in the embed-session file, became a file of its own in `Domain`.
+  `AuthMode`, `UserRole`, the permission types and every type a controller reads or returns stay.
+- The ASP.NET guards, markers, filters and authentication handlers live in a new `Adapters/Http` folder of each
+  module: they are driving adapters of the ASP.NET pipeline, so they do not belong in `Application`, and the guards are
+  each context's rule of entry, not one controller's. `Http` sits beside Tracker integration's `Adapters/Connectors`
+  and `Adapters/OAuth`.
+- The licence public key moved with `LicenseVerifier` into `Modules/Licensing/Application`; the verifier finds it by
+  the end of its resource name, so only the two project-file paths changed.
+- Access is allowed to ask Licensing by namespace; Licensing reaches no Access type.
+- Stay outside, each with an owner: the six repositories (platform, the repositories-by-role work), the two seeders
+  (start-up, S09a), the controllers and DTOs (S12), the embed configuration and `Program.cs` (composition root), the
+  voter identity resolver (Refinement, S03g), and the three Access services that use the database context directly.
+- The licence test data (`TestLicenseData`, the three licence files and `LicensingIntegrationTest`) moved with the
+  Licensing tests to `Tests/Modules/Licensing`, at the maintainer's request, so the test tree mirrors the module tree.
+
 ### Ratchet candidates
 
 Each of these is an edge today's code takes that §4 does not allow, or one that points the wrong way once its two
@@ -425,6 +482,9 @@ guard (ADR-268) or removes it.
    `ForecastUpdater.cs:293`). `ForecastFilterRuleService` → `ILicenseService` is the one entry of the Forecasting
    Application's outbound list. The updater's own licence read is in no list: the Adapters rule checks only the
    shared update code.*
+   *Story 6363 (2026-11-22):* left as it is. Licensing's `Application` is now a module, and all 11 outside types that
+   ask `ILicenseService` (the three updaters among them, `ForecastUpdater` included) are listed by name in its inbound
+   rule (R-L3). The list shrinks when Epic 6474 and #6657 turn the reads into reactions.
 3. **Deliveries talk to the tracker without the ACL's contract.** `Services/Implementation/DeliverySources/DeliverySourceResolver.cs:9`
    and `DeliveryForecastPublishingService.cs:12` take `IWorkTrackingConnectorFactory`. Portfolio/Delivery →
    WorkTracking-Integration is not a legal edge, and the board's map has no edge from Tracker integration to Promises.
@@ -672,7 +732,8 @@ Other precise names that already say their role (`SyncModeResolver`, `StageRuleM
 - `Domain`: the context's entities, value objects, domain events and rules. Depends on nothing but the shared kernel.
 - `Application`: use cases, policies, queries, and the **ports they need, next to them**.
 - `Adapters`: `Api` (controllers and their request and response types), `Persistence` (repositories, readers,
-  stores), `Connectors` where a context talks to an outside system, and so on.
+  stores), `Connectors` where a context talks to an outside system, `Http` (the ASP.NET pipeline pieces a context owns:
+  guard and marker attributes, filters, authentication handlers; Story 6363), and so on.
 - Interfaces are co-located: a port lives next to the use case that needs it, not in a global `Services/Interfaces`
   folder.
 - ArchUnitNET enforces "Domain ↛ Adapters" and "Domain ↛ Application" per context, and the legal edges between
@@ -729,6 +790,19 @@ Other precise names that already say their role (`SyncModeResolver`, `StageRuleM
   stay with the platform until S05d. Its unit tests: `Application` (7), `Application/Policies` (2), kept there by
   `PromisesUnitTestPlacementTest`. Entities, the kernel Delivery types, the source types and the wire DTOs stay in
   `Models` and `API/DTO`.
+- Access today (Story 6363, 2026-11-22, counted from the folders): `Domain` (8 files: `EffectiveAccess`, the API key
+  principal factory, `FeatureReadability`, the OIDC group claim parser, `EmbedHandshakeOutcome` and three result and
+  state value types), `Application` (16: RBAC administration, the current user's profile, API keys, embed sessions, the
+  OIDC group snapshot writer, the auth mode resolver, the auth configuration validator and Feature move authorization,
+  with their eight interfaces), `Adapters/Http` (8: the guard, access marker, signed-in-only and checked-in-handler
+  attributes, the API key and disabled-authentication handlers, the scheme selector and the blocked-mode filter). 32
+  files in all. No `Adapters/Persistence`: the six repositories stay with the platform and three services use the
+  database context directly (listed). Its unit tests: `Domain` (2), `Application` (8), `Adapters/Http` (4), kept there
+  by `AccessAndLicensingUnitTestPlacementTest`.
+- Licensing today (Story 6363, 2026-11-22): `Application` (4 files and `public_key.pem`: the licence service and
+  verifier and their interfaces), `Adapters/Http` (1, the licence guard attribute). No `Domain`: the free-tier limits
+  live in the licence service and the guard. Its unit tests: `Application` (2), `Adapters/Http` (1); the licence test
+  data and `LicensingIntegrationTest` sit in `Tests/Modules/Licensing` beside them.
 
 Chosen over:
 - **Flat, role-named folders** per module: the layers are not visible, so the dependency rule cannot be read off the

@@ -1,0 +1,21 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Modules/Access/Domain/FeatureReadability.cs",
+      "**/Modules/Access/Domain/GroupClaimParser.cs",
+      "**/Modules/Access/Adapters/Http/DisabledAuthenticationHandler.cs",
+      "**/Modules/Access/Application/FeatureMoveAuthorization.cs",
+      "**/Modules/Licensing/Adapters/Http/LicenseGuardAttribute.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~FeatureReadabilityTest|FullyQualifiedName~GroupClaimParserTest|FullyQualifiedName~DisabledAuthenticationHandlerTest|FullyQualifiedName~FeatureMoveAuthorizationTest|FullyQualifiedName~LicenseGuardAttributeTest|FullyQualifiedName~Tests.Acceptance.SystemWideAccess|FullyQualifiedName~Tests.API.AuthControllerTest|FullyQualifiedName~Tests.API.CreateRightsControllerGuardTest)&FullyQualifiedName!~RemovedPersonEmbedSkeleton&FullyQualifiedName!~WriteBack&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

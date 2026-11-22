@@ -1421,7 +1421,7 @@ flowchart TB
 | **Forecasting** | `Services.Implementation.Forecast.*`, `PercentileCalculator`, `XmRCalculator` | Monte-Carlo / forecast computation, forecast filter rules | Subscribes to `PortfolioFeaturesRefreshed` |
 | **Portfolio / Delivery** (its Delivery half packaged as **Promises** by Story 6362) | `Modules.Promises.{Domain, Application, Application.Policies}` (Delivery rules, sources, forecast publishing, the forecast block); `PortfolioMetricsService`, delivery repos and the update code stay in `Services` | Portfolio + Delivery config, delivery rule recompute | Subscribes to refresh events |
 | **Metrics / Time-in-state** | `Services.Implementation.BaseMetricsService`, `TeamMetricsService`, `PortfolioMetricsService`, `Cache` | Read-side metric projections + cache + invalidation | The CQRS-lite read side (Q3) |
-| **RBAC / Identity** | `Services.Implementation.Authorization.*`, `Auth.*`, `ApiKey*` | Authn/authz, group mappings, API keys | Cross-cutting guard at controller boundary |
+| **RBAC / Identity** (packaged as **Access** and **Licensing** by Story 6363) | `Modules.Access.{Domain, Application, Adapters.Http}`, `Modules.Licensing.{Application, Adapters.Http}` (RBAC administration, API keys, embed sessions, the guards and authentication handlers; the licence service, verifier and guard); the repositories, seeders and controllers stay outside | Authn/authz, group mappings, API keys, the premium gate | Cross-cutting guard at controller boundary |
 | **Platform / Persistence** | `Services.Implementation.Repositories.*`, `DatabaseManagement.*` | `IRepository<T>`, provider switch, backup/restore, maintenance gate | Shared kernel for all modules |
 
 **Options for boundary enforcement:**
@@ -11754,3 +11754,88 @@ ADR-270 (Decision 1 Promises row, "Every edge", "Edges measured by packaging Pro
 Decision 5 glossary: description block merge, Decision 6, "Left open" on Feature ranking, write-back, the update queue
 and `ManualRank`), ADR-285 (the connector port), ADR-268 (ratchet convention), ADR-012 (the rule service's pinned
 signature, unchanged).
+
+## Application Architecture — story-6363 s03e package access and licensing
+
+Feature: S03e Package Access and Licensing, Story 6363, Epic 6510. Waves: DESIGN to DELIVER and finalize. Date:
+2026-11-22. Paradigm: OOP, behaviour-free refactoring; no schema change, no route or DTO change. Workspaces:
+`docs/feature/story-6363-s03e-package-access-licensing/` (design), `story-6363-s03e-a-rules-first`,
+`story-6363-s03e-b-move`, `story-6363-s03e-c-edges-and-rules`.
+
+### Module layout (as shipped)
+
+Roots `Lighthouse.Backend/Lighthouse.Backend/Modules/Access/` and `Modules/Licensing/`, inside the one assembly.
+Namespace = folder. 27 files moved from `Services`, 4 from `Models`; one file was split out of the embed-session file.
+
+| Layer (namespace under `Lighthouse.Backend.Modules`) | Files | What it holds |
+|---|---:|---|
+| `Access.Domain` | 8 | `EffectiveAccess`, `ApiKeyPrincipalFactory`, `FeatureReadability`, `GroupClaimParser`, `EmbedHandshakeOutcome`, `ApiKeyOwnerResolutionState`, `ApiKeyValidationResult`, `AuthConfigurationValidationResult`. The kernel and the .NET base library only |
+| `Access.Application` | 16 | RBAC administration (`IRbacAdministrationService`, public surface unchanged), the current user's profile, API keys, embed sessions, the OIDC group snapshot writer, the auth mode resolver and configuration validator, Feature move authorization, with their eight interfaces |
+| `Access.Adapters.Http` | 8 | `RbacGuardAttribute`, `AccessMarkerAttribute`, `SignedInOnlyAttribute`, `CheckedInHandlerAttribute`, `ApiKeyAuthenticationHandler`, `DisabledAuthenticationHandler`, `SmartAuthSchemeSelector`, `BlockedModeFilter` |
+| `Licensing.Application` | 4 + key | `ILicenseService`, `LicenseService`, `ILicenseVerifier`, `LicenseVerifier`, and `public_key.pem` as an embedded resource beside the verifier |
+| `Licensing.Adapters.Http` | 1 | `LicenseGuardAttribute` |
+
+Unit tests moved with the production code to `Lighthouse.Backend.Tests/Modules/{Access (14 files), Licensing (3 files)}`,
+and the licence test data and `LicensingIntegrationTest` moved to `Tests/Modules/Licensing`.
+`AccessAndLicensingUnitTestPlacementTest` keeps them there and checks that no file of either context is left in the old
+folders.
+
+Outside the modules, unchanged and each with an owner: the entities and the types controllers read or return (S04b,
+S12c); the controllers and DTOs (`API`, S12); the six repositories (platform, repositories by role); the two seeders and
+`Program.cs` (S09a); the voter identity resolver (Refinement, S03g); three Access services that use the database
+context directly (listed).
+
+### Decisions and rejected options
+
+| Decision | Chosen | Rejected, and why |
+|---|---|---|
+| Where the ASP.NET guards and handlers live | `Adapters/Http` in each module | `Application` (puts framework types in the use-case layer), `API` (they are a context's rule of entry, not one controller's; S12 owns `API`) |
+| Persistence | The repositories stay; three Application edges to the database context are listed | New Access persistence ports now (new ports and rewired callers in a move Story on the highest-stakes service); moving the repositories to `Adapters/Persistence` (`ApiKey` is also read by Tracker integration and usage data) |
+| Access and Licensing | Access may ask Licensing by namespace; Licensing reaches no Access type | Treating the edge as listed (Licensing is upstream of every context) |
+| The licence key | Moves with the verifier; two project-file paths follow | Leaving it in the old folder (a folder with one non-code file) |
+| Shared rule for HTTP adapters | `ModuleRules.HttpAdaptersAreReachedFromOutsideOnlyBy`, used by both modules, attributes included | A copy per module (the rule is the same, the namespaces differ) |
+
+### Rule shapes
+
+Every rule reads the compiled IL through `IlDependencies` and calls the shared `ModuleRules` with the module's
+namespaces and its own `ModuleWording`; every list is inline and compared both ways (ADR-268), with made-up types that
+prove a newcomer and a stale entry fail and a compliant twin passes. One made-up offender reaches Access only through an
+attribute it applies.
+
+| Rule | Baseline (measured from the IL) |
+|---|---|
+| R-A1 Layout | `Domain` 8 types, `Application` 16, `Adapters.Http` 8 |
+| R-A2 Domain outbound | empty |
+| R-A3 Domain inbound | 1: `FeatureListService` |
+| R-A4 Application inbound | 5: `FeatureDependencyRendering`, `FeatureListActiveWork`, `FeatureListService`, `VoterIdentityResolver`, `UsageDataInstanceProperties` |
+| R-A5 Http adapters inbound | 1: `Program` |
+| R-A6 Application outbound | 21 edges: API key, embed session and generic repositories, the platform service, the database context and the EF Core types three services use |
+| R-A7 Upstream | empty |
+| R-L1 Layout | `Application` 4, `Adapters.Http` 1 |
+| R-L2 Outbound | empty |
+| R-L3 Application inbound | 11 listed types that ask `ILicenseService` (ratchet candidate 2) |
+| R-L4 Http adapters inbound | empty |
+| R-L5 Application outbound | 2: the clock and the generic repository |
+
+Before the move, `AccessAndLicensingRulesSeeTheModulesArchUnitTest` widened every rule that named Access or Licensing by
+the old namespaces to see the new ones, each proven with a made-up type; `AccessAndLicensingMembershipArchUnitTest`
+fixes the membership. After it, the module map's `RbacIdentityPattern` was retired.
+
+### Behaviour-free proof
+
+Existing tests stayed green apart from moves, `using` lines and rule-file strings. New public commands: the examine
+command `access-answers-compare` (Access and Licensing answers of two revisions, with a licence import between two licence
+reads) and `ci-auth-suites-show` (the authentication, RBAC and proxy-auth results of a CI run). Layout pins check the
+public surface of `IRbacAdministrationService`, the guard attributes' shape and the guarded-action count. The
+development log key for the disabled-authentication handler follows its new namespace. `Program.cs` keeps its
+registrations and their order, with `using` changes only; no `AddAccess` or `AddLicensing` extension (S09a).
+
+### Left
+
+Repositories by role (Epic 6507): the six repositories and the three direct database context users. Epic 6474 and #6657:
+the 11 licence readers. S03g, S09a, S12, S04b and S12c as above.
+
+### ADR references
+
+ADR-270 (Decision 1 Access and Licensing rows, "Every edge", "Edges measured by packaging Access and Licensing", ratchet
+candidate 2, Decision 6), ADR-268 (ratchet convention), ADR-001 (RBAC through one port).
