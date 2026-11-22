@@ -404,7 +404,7 @@ namespace Lighthouse.Backend.Tests.API
                 {1, 5 },
             };
 
-            var expectedForecast = new HowManyForecast(simulationResult, 1, DateTime.UtcNow);
+            var expectedForecast = new HowManyForecast(simulationResult, 1, TestToday.FrozenNow.UtcDateTime);
 
             forecastServiceMock.Setup(x => x.PredictWorkItemCreation(expectedTeam, itemCreationPredictionInput.WorkItemTypes, itemCreationPredictionInput.StartDate, itemCreationPredictionInput.EndDate, 30))
                 .Returns(expectedForecast);

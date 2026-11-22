@@ -273,8 +273,8 @@ namespace Lighthouse.Backend.Tests.API
             var newTeamSettings = new TeamSettingDto
             {
                 Name = "New Team",
-                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-10),
-                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-10),
+                ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1),
                 WorkTrackingSystemConnectionId = 1
             };
 
@@ -295,8 +295,8 @@ namespace Lighthouse.Backend.Tests.API
             var newTeamSettings = new TeamSettingDto
             {
                 Name = "New Team",
-                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
-                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(5),
+                ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(5),
                 WorkTrackingSystemConnectionId = 1
             };
 
@@ -341,8 +341,8 @@ namespace Lighthouse.Backend.Tests.API
             var newTeamSettings = new TeamSettingDto
             {
                 Name = "New Team",
-                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
-                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1),
                 DoneItemsCutoffDays = 180,
                 ThroughputHistory = 30,
                 WorkTrackingSystemConnectionId = 1
@@ -681,7 +681,7 @@ namespace Lighthouse.Backend.Tests.API
                 blackoutPeriodServiceMock.Object,
                 rbacAdministrationServiceMock.Object,
                 forecastFilterRuleServiceMock.Object,
-                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow),
+                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(TestToday.FrozenNow),
                 new OwnerSettingRefusals(workTrackingSystemConnectionRepositoryMock.Object, terminologyServiceMock.Object));
         }
     }

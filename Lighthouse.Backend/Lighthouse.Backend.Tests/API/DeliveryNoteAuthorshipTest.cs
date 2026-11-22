@@ -244,7 +244,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 DeliveryId = DeliveryId,
                 Text = text,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = TestToday.FrozenNow.UtcDateTime,
                 AuthorUserProfileId = authorId,
                 AuthorDisplayName = authorId is null ? null : $"User {authorId}",
             };

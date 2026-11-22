@@ -177,7 +177,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             {
                 Id = 1,
                 Name = "Release 1",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
             };
 
             delivery.ReplaceFeatures(features);

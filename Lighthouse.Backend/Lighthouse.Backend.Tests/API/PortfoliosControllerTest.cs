@@ -156,8 +156,8 @@ namespace Lighthouse.Backend.Tests.API
             var newPortfolioSetting = new PortfolioSettingDto
             {
                 Name = "New Portfolio",
-                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-10),
-                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-10),
+                ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1),
                 WorkTrackingSystemConnectionId = 1
             };
 
@@ -178,8 +178,8 @@ namespace Lighthouse.Backend.Tests.API
             var newPortfolioSetting = new PortfolioSettingDto
             {
                 Name = "New Portfolio",
-                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
-                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(5),
+                ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(5),
                 WorkTrackingSystemConnectionId = 1
             };
 
@@ -200,8 +200,8 @@ namespace Lighthouse.Backend.Tests.API
             var newPortfolioSetting = new PortfolioSettingDto
             {
                 Name = "New Portfolio",
-                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
-                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1),
                 DoneItemsCutoffDays = 180,
                 WorkTrackingSystemConnectionId = 1
             };

@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         [Test]
         public void Validate_StartDateSetEndDateNull_ReturnsInvalid()
         {
-            var start = DateTime.UtcNow.Date.AddDays(-30);
+            var start = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30);
 
             var result = BaselineValidationService.Validate(start, null, 180, TestToday.Ambient);
 
@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         [Test]
         public void Validate_StartDateNullEndDateSet_ReturnsInvalid()
         {
-            var end = DateTime.UtcNow.Date.AddDays(-1);
+            var end = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1);
 
             var result = BaselineValidationService.Validate(null, end, 180, TestToday.Ambient);
 
@@ -44,8 +44,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         [Test]
         public void Validate_EndDateBeforeStartDate_ReturnsInvalid()
         {
-            var start = DateTime.UtcNow.Date.AddDays(-10);
-            var end = DateTime.UtcNow.Date.AddDays(-20);
+            var start = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-10);
+            var end = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-20);
 
             var result = BaselineValidationService.Validate(start, end, 180, TestToday.Ambient);
 
@@ -59,8 +59,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         [Test]
         public void Validate_BaselineShorterThan14Days_ReturnsInvalid()
         {
-            var start = DateTime.UtcNow.Date.AddDays(-10);
-            var end = DateTime.UtcNow.Date.AddDays(-1);
+            var start = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-10);
+            var end = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1);
 
             var result = BaselineValidationService.Validate(start, end, 180, TestToday.Ambient);
 
@@ -74,8 +74,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         [Test]
         public void Validate_BaselineExactly14Days_ReturnsValid()
         {
-            var start = DateTime.UtcNow.Date.AddDays(-15);
-            var end = DateTime.UtcNow.Date.AddDays(-1);
+            var start = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-15);
+            var end = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1);
 
             var result = BaselineValidationService.Validate(start, end, 180, TestToday.Ambient);
 
@@ -85,8 +85,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         [Test]
         public void Validate_EndDateInFuture_ReturnsInvalid()
         {
-            var start = DateTime.UtcNow.Date.AddDays(-30);
-            var end = DateTime.UtcNow.Date.AddDays(5);
+            var start = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30);
+            var end = TestToday.FrozenNow.UtcDateTime.Date.AddDays(5);
 
             var result = BaselineValidationService.Validate(start, end, 180, TestToday.Ambient);
 
@@ -138,8 +138,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         [Test]
         public void Validate_BaselineOutsideCutoff_ReturnsInvalid()
         {
-            var start = DateTime.UtcNow.Date.AddDays(-200);
-            var end = DateTime.UtcNow.Date.AddDays(-180);
+            var start = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-200);
+            var end = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-180);
 
             var result = BaselineValidationService.Validate(start, end, 180, TestToday.Ambient);
 
@@ -154,8 +154,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         public void Validate_CutOffSetToZero_ReturnsValid()
         {
             // CutOff = 0 means full history
-            var start = DateTime.UtcNow.Date.AddDays(-60);
-            var end = DateTime.UtcNow.Date.AddDays(-30);
+            var start = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-60);
+            var end = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30);
 
             var result = BaselineValidationService.Validate(start, end, 0, TestToday.Ambient);
 
@@ -165,8 +165,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         [Test]
         public void Validate_ValidBaseline_ReturnsValid()
         {
-            var start = DateTime.UtcNow.Date.AddDays(-60);
-            var end = DateTime.UtcNow.Date.AddDays(-30);
+            var start = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-60);
+            var end = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30);
 
             var result = BaselineValidationService.Validate(start, end, 180, TestToday.Ambient);
 
@@ -176,8 +176,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Domain
         [Test]
         public void Validate_BaselineStartAtCutoffBoundary_ReturnsValid()
         {
-            var start = DateTime.UtcNow.Date.AddDays(-179);
-            var end = DateTime.UtcNow.Date.AddDays(-1);
+            var start = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-179);
+            var end = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1);
 
             var result = BaselineValidationService.Validate(start, end, 180, TestToday.Ambient);
 

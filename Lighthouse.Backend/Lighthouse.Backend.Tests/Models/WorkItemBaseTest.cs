@@ -21,8 +21,8 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var subject = CreateSubject();
 
-            subject.StartedDate = DateTime.UtcNow.AddDays(-2);
-            subject.ClosedDate = DateTime.UtcNow.AddDays(-1);
+            subject.StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2);
+            subject.ClosedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
             subject.StateCategory = state;
 
             var cycleTime = subject.CycleTime(TestToday.Zone);
@@ -34,8 +34,8 @@ namespace Lighthouse.Backend.Tests.Models
         public void GetCycleTime_ItemClosed_NoStartedDate_UsesCreatedDateForDifference()
         {
             var subject = CreateSubject();
-            subject.ClosedDate = DateTime.UtcNow.AddDays(-1);
-            subject.CreatedDate = DateTime.UtcNow.AddDays(-2);
+            subject.ClosedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
+            subject.CreatedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2);
             subject.StateCategory = StateCategories.Done;
 
             var cycleTime = subject.CycleTime(TestToday.Zone);
@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.Models
         public void GetCycleTime_ItemClosed_NoStartedDate_NoCreatedDate_Returns1()
         {
             var subject = CreateSubject();
-            subject.ClosedDate = DateTime.UtcNow.AddDays(-1);
+            subject.ClosedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
             subject.StateCategory = StateCategories.Done;
 
             var cycleTime = subject.CycleTime(TestToday.Zone);
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Models
         public void GetCycleTime_ItemClosed_NoClosedDate_Returns1()
         {
             var subject = CreateSubject();
-            subject.StartedDate = DateTime.UtcNow.AddDays(-2);
+            subject.StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2);
             subject.StateCategory = StateCategories.Done;
 
             var cycleTime = subject.CycleTime(TestToday.Zone);
@@ -90,8 +90,8 @@ namespace Lighthouse.Backend.Tests.Models
         public void GetCycleTime_ItemClosed_StartedDateAfterClosedDate_Returns1()
         {
             var subject = CreateSubject();
-            subject.ClosedDate = DateTime.UtcNow.AddDays(-15);
-            subject.StartedDate = DateTime.UtcNow.AddDays(-1);
+            subject.ClosedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-15);
+            subject.StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
             subject.StateCategory = StateCategories.Done;
 
             var cycleTime = subject.CycleTime(TestToday.Zone);
@@ -104,8 +104,8 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var subject = CreateSubject();
 
-            subject.ClosedDate = DateTime.UtcNow.AddDays(-1);
-            subject.StartedDate = DateTime.UtcNow.AddDays(-2);
+            subject.ClosedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
+            subject.StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2);
             subject.StateCategory = StateCategories.Done;
 
             var cycleTime = subject.CycleTime(TestToday.Zone);
@@ -118,8 +118,8 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var subject = CreateSubject();
 
-            subject.ClosedDate = DateTime.UtcNow.AddDays(-1);
-            subject.StartedDate = DateTime.UtcNow.AddDays(-1);
+            subject.ClosedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
+            subject.StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
             subject.StateCategory = StateCategories.Done;
 
             var cycleTime = subject.CycleTime(TestToday.Zone);
@@ -149,7 +149,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var subject = CreateSubject();
 
-            subject.StartedDate = DateTime.UtcNow.AddDays(-2);
+            subject.StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2);
             subject.StateCategory = state;
 
             var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);

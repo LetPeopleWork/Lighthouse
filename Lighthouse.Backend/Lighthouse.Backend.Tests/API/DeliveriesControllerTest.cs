@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int portfolioId = 1;
-            var deliveryDate = DateTime.UtcNow.AddDays(30);
+            var deliveryDate = TestToday.FrozenNow.UtcDateTime.AddDays(30);
 
             // Create feature with 80% likelihood forecast
             var simulationResult = new Dictionary<int, int>
@@ -147,7 +147,7 @@ namespace Lighthouse.Backend.Tests.API
             // Arrange
             const int portfolioId = 1;
             const string name = "Q1 Release";
-            var date = DateTime.UtcNow.AddDays(30);
+            var date = TestToday.FrozenNow.UtcDateTime.AddDays(30);
             var featureIds = new List<int> { 1, 2 };
 
             var features = GetTestFeatures(featureIds, portfolioId);
@@ -178,7 +178,7 @@ namespace Lighthouse.Backend.Tests.API
             // Arrange
             const int portfolioId = 1;
             const string name = "Past Release";
-            var pastDate = DateTime.UtcNow.AddDays(-1);
+            var pastDate = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
             var featureIds = new List<int>();
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
@@ -206,7 +206,7 @@ namespace Lighthouse.Backend.Tests.API
             // Arrange
             const int portfolioId = 1;
             const string name = "Q2 Release";
-            var date = DateTime.UtcNow.AddDays(30);
+            var date = TestToday.FrozenNow.UtcDateTime.AddDays(30);
             var featureIds = new List<int>();
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(false);
@@ -240,7 +240,7 @@ namespace Lighthouse.Backend.Tests.API
             // Arrange
             const int portfolioId = 1;
             const string name = "First Release";
-            var date = DateTime.UtcNow.AddDays(30);
+            var date = TestToday.FrozenNow.UtcDateTime.AddDays(30);
             var featureIds = new List<int>();
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(false);
@@ -396,7 +396,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             const int deliveryId = 42;
             const int portfolioId = 7;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(10), portfolioId) { Id = deliveryId };
+            var existingDelivery = new Delivery("Existing", TestToday.FrozenNow.UtcDateTime.AddDays(10), portfolioId) { Id = deliveryId };
 
             deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
             rbacAdministrationServiceMock
@@ -413,7 +413,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Renamed",
-                Date = DateTime.UtcNow.AddDays(20),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(20),
                 FeatureIds = []
             };
 
@@ -470,7 +470,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int portfolioId = 1;
-            var deliveryDate = DateTime.UtcNow.AddDays(30);
+            var deliveryDate = TestToday.FrozenNow.UtcDateTime.AddDays(30);
 
             // Create team and feature work
             var team = new Team { Id = 1, Name = "Test Team" };
@@ -544,8 +544,8 @@ namespace Lighthouse.Backend.Tests.API
         public void GetByPortfolio_WithRecordedSnapshots_ReturnsMetricSnapshotCountPerDelivery()
         {
             const int portfolioId = 1;
-            var deliveryWithout = new Delivery("No Snapshots", DateTime.UtcNow.AddDays(30), portfolioId) { Id = 10 };
-            var deliveryWith = new Delivery("Four Snapshots", DateTime.UtcNow.AddDays(60), portfolioId) { Id = 20 };
+            var deliveryWithout = new Delivery("No Snapshots", TestToday.FrozenNow.UtcDateTime.AddDays(30), portfolioId) { Id = 10 };
+            var deliveryWith = new Delivery("Four Snapshots", TestToday.FrozenNow.UtcDateTime.AddDays(60), portfolioId) { Id = 20 };
 
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
                 .Returns([deliveryWithout, deliveryWith]);
@@ -574,8 +574,8 @@ namespace Lighthouse.Backend.Tests.API
             const int portfolioId = 1;
             var expectedDeliveries = new List<Delivery>
             {
-                new("Q1 Release", DateTime.UtcNow.AddDays(30), portfolioId),
-                new("Q2 Release", DateTime.UtcNow.AddDays(90), portfolioId)
+                new("Q1 Release", TestToday.FrozenNow.UtcDateTime.AddDays(30), portfolioId),
+                new("Q2 Release", TestToday.FrozenNow.UtcDateTime.AddDays(90), portfolioId)
             };
 
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
@@ -606,8 +606,8 @@ namespace Lighthouse.Backend.Tests.API
             const int portfolioId = 1;
             var expectedDeliveries = new List<Delivery>
             {
-                new("Q1 Release", DateTime.UtcNow.AddDays(30), portfolioId),
-                new("Hotfix Release", DateTime.UtcNow.AddDays(10), portfolioId)
+                new("Q1 Release", TestToday.FrozenNow.UtcDateTime.AddDays(30), portfolioId),
+                new("Hotfix Release", TestToday.FrozenNow.UtcDateTime.AddDays(10), portfolioId)
             };
 
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
@@ -636,7 +636,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int deliveryId = 1;
-            var existingDelivery = new Delivery("Original Name", DateTime.UtcNow.AddDays(10), 1);
+            var existingDelivery = new Delivery("Original Name", TestToday.FrozenNow.UtcDateTime.AddDays(10), 1);
             var portfolio = new Portfolio { Id = existingDelivery.PortfolioId };
             var feature1 = new Feature { Id = 1, Name = "Feature 1", Portfolios = { portfolio } };
             var feature2 = new Feature { Id = 2, Name = "Feature 2", Portfolios = { portfolio } };
@@ -644,7 +644,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Updated Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 FeatureIds = [1, 2]
             };
 
@@ -676,7 +676,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Test Delivery",
-                Date = DateTime.UtcNow.AddDays(-1), // Past date
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(-1), // Past date
                 FeatureIds = [1]
             };
 
@@ -701,7 +701,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "",
-                Date = DateTime.UtcNow.AddDays(10),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(10),
                 FeatureIds = [1]
             };
 
@@ -726,7 +726,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Test Delivery",
-                Date = DateTime.UtcNow.AddDays(10),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(10),
                 FeatureIds = [1]
             };
 
@@ -748,11 +748,11 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int deliveryId = 1;
-            var existingDelivery = new Delivery("Test", DateTime.UtcNow.AddDays(10), 1);
+            var existingDelivery = new Delivery("Test", TestToday.FrozenNow.UtcDateTime.AddDays(10), 1);
             var request = new UpdateDeliveryRequest
             {
                 Name = "Test Delivery",
-                Date = DateTime.UtcNow.AddDays(10),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(10),
                 FeatureIds = [999]
             };
 
@@ -772,7 +772,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private static Delivery GetTestDelivery()
         {
-            return new Delivery("Existing Delivery", DateTime.UtcNow.AddDays(60), 1);
+            return new Delivery("Existing Delivery", TestToday.FrozenNow.UtcDateTime.AddDays(60), 1);
         }
 
         [Test]
@@ -783,7 +783,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Rule-Based Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
@@ -810,7 +810,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Rule-Based Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Rules = []
@@ -835,7 +835,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Rule-Based Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
@@ -870,7 +870,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Rule-Based Delivery (OR)",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Mode = "or",
@@ -898,7 +898,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Rule-Based Delivery (no mode)",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
@@ -926,7 +926,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Rule-Based Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
@@ -973,7 +973,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Rule-Based Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
@@ -1023,7 +1023,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Manual Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.Manual,
                 FeatureIds = featureIds,
                 Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
@@ -1056,13 +1056,13 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             var deliveryId = 1;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
+            var existingDelivery = new Delivery("Existing", TestToday.FrozenNow.UtcDateTime.AddDays(60), 1) { Id = deliveryId };
             deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var request = new UpdateDeliveryRequest
             {
                 Name = "Updated Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
@@ -1086,13 +1086,13 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             var deliveryId = 1;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
+            var existingDelivery = new Delivery("Existing", TestToday.FrozenNow.UtcDateTime.AddDays(60), 1) { Id = deliveryId };
             deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var request = new UpdateDeliveryRequest
             {
                 Name = "Updated Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Rules = []
@@ -1114,13 +1114,13 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int deliveryId = 1;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
+            var existingDelivery = new Delivery("Existing", TestToday.FrozenNow.UtcDateTime.AddDays(60), 1) { Id = deliveryId };
             deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var request = new UpdateDeliveryRequest
             {
                 Name = "Rule-Based Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 FeatureIds = [],
                 Rules = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Feature" }]
@@ -1148,7 +1148,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int deliveryId = 1;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1)
+            var existingDelivery = new Delivery("Existing", TestToday.FrozenNow.UtcDateTime.AddDays(60), 1)
             {
                 Id = deliveryId,
                 SelectionMode = DeliverySelectionMode.RuleBased,
@@ -1164,7 +1164,7 @@ namespace Lighthouse.Backend.Tests.API
             var request = new UpdateDeliveryRequest
             {
                 Name = "Manual Delivery",
-                Date = DateTime.UtcNow.AddDays(30),
+                Date = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 SelectionMode = DeliverySelectionMode.Manual,
                 FeatureIds = featureIds,
                 Rules = null

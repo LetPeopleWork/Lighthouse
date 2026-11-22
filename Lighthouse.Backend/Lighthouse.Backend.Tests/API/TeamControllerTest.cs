@@ -360,7 +360,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase("Existing Query")]
         public async Task UpdateTeam_GivenNewQuery_KeepsExistingWorkItems(string workItemQuery)
         {
-            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = TestToday.FrozenNow.UtcDateTime };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -396,7 +396,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase("User Story", "Bug", "Task")]
         public async Task UpdateTeam_GivenWorkItemTypes_KeepsExistingWorkItems(params string[] workItemTypes)
         {
-            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = TestToday.FrozenNow.UtcDateTime };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -433,7 +433,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(new[] { "To Do" }, new[] { "Doing" }, new[] { "Done", "Closed" })]
         public async Task UpdateTeam_GivenChangedStates_KeepsExistingWorkItems(string[] toDoStates, string[] doingStates, string[] doneStates)
         {
-            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = TestToday.FrozenNow.UtcDateTime };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -468,7 +468,7 @@ namespace Lighthouse.Backend.Tests.API
         [TestCase(1, true)]
         public async Task UpdateTeam_GivenWorkTrackingSystemConnectionId_DeletesExistingWorkItems(int workTrackingSystemConnectionId, bool shouldDelete)
         {
-            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
+            var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = TestToday.FrozenNow.UtcDateTime };
 
             teamRepositoryMock.Setup(x => x.GetById(132)).Returns(existingTeam);
 
@@ -566,8 +566,8 @@ namespace Lighthouse.Backend.Tests.API
 
             var dto = new TeamSettingDto
             {
-                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-10),
-                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-10),
+                ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1),
                 WorkTrackingSystemConnectionId = 1
             };
 
@@ -590,8 +590,8 @@ namespace Lighthouse.Backend.Tests.API
 
             var dto = new TeamSettingDto
             {
-                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
-                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(5),
+                ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(5),
                 WorkTrackingSystemConnectionId = 1
             };
 
@@ -697,8 +697,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 ThroughputHistory = 0,
                 UseFixedDatesForThroughput = true,
-                ThroughputHistoryStartDate = DateTime.UtcNow.Date.AddDays(-60),
-                ThroughputHistoryEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                ThroughputHistoryStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-60),
+                ThroughputHistoryEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1),
                 WorkTrackingSystemConnectionId = 1,
                 DoneItemsCutoffDays = 180
             };
@@ -717,8 +717,8 @@ namespace Lighthouse.Backend.Tests.API
 
             var dto = new TeamSettingDto
             {
-                ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
-                ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-30),
+                ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1),
                 WorkTrackingSystemConnectionId = 1,
                 DoneItemsCutoffDays = 180,
                 ThroughputHistory = 30
@@ -1250,8 +1250,8 @@ namespace Lighthouse.Backend.Tests.API
             switch (refused)
             {
                 case RefusedSetting.Baseline:
-                    dto.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-10);
-                    dto.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1);
+                    dto.ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-10);
+                    dto.ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-1);
                     break;
                 case RefusedSetting.StateMappings:
                     dto.StateMappings =
@@ -1300,7 +1300,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(x => x.AllWithoutForecasts()).Returns(portfolios);
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new OwnerSettingRefusals(connectionRepositoryMock.Object, terminologyServiceMock.Object));
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(TestToday.FrozenNow), new OwnerSettingRefusals(connectionRepositoryMock.Object, terminologyServiceMock.Object));
         }
     }
 }

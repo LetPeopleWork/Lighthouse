@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         public void GetInProgressFeaturesForProject_ReturnsActiveFeatures()
         {
             // Act
-            var result = subject.GetInProgressFeaturesForPortfolio(portfolio, DateTime.UtcNow.Date).ToList();
+            var result = subject.GetInProgressFeaturesForPortfolio(portfolio, TestToday.FrozenNow.UtcDateTime.Date).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -214,7 +214,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 AddInProgressFeatureAged(age);
             }
 
-            var percentiles = subject.GetWorkItemAgePercentilesForPortfolio(portfolio, DateTime.UtcNow.Date).ToList();
+            var percentiles = subject.GetWorkItemAgePercentilesForPortfolio(portfolio, TestToday.FrozenNow.UtcDateTime.Date).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -237,13 +237,13 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = 1,
                 StateCategory = StateCategories.Done,
-                StartedDate = DateTime.UtcNow.AddDays(-30),
-                ClosedDate = DateTime.UtcNow.AddDays(-2),
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-30),
+                ClosedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2),
             };
             done.Portfolios.Add(portfolio);
             features.Add(done);
 
-            var percentiles = subject.GetWorkItemAgePercentilesForPortfolio(portfolio, DateTime.UtcNow.Date).ToList();
+            var percentiles = subject.GetWorkItemAgePercentilesForPortfolio(portfolio, TestToday.FrozenNow.UtcDateTime.Date).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -261,13 +261,13 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = 99,
                 StateCategory = StateCategories.Done,
-                StartedDate = DateTime.UtcNow.AddDays(-100),
-                ClosedDate = DateTime.UtcNow,
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-100),
+                ClosedDate = TestToday.FrozenNow.UtcDateTime,
             };
             closed.Portfolios.Add(portfolio);
             features.Add(closed);
 
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.FrozenNow.UtcDateTime.Date;
             var cycleTimePercentiles = subject.GetCycleTimePercentilesForPortfolio(portfolio, endDate.AddDays(-101), endDate).ToList();
             var agePercentiles = subject.GetWorkItemAgePercentilesForPortfolio(portfolio, endDate).ToList();
 
@@ -427,7 +427,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             feature2.Portfolios.Add(portfolio);
             features.Add(feature2);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, TestToday.FrozenNow.UtcDateTime.Date);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -441,12 +441,12 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = 1,
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.AddDays(-5),
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-5),
             };
             feature.Portfolios.Add(otherProject);
             features.Add(feature);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, TestToday.FrozenNow.UtcDateTime.Date);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -459,12 +459,12 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = 1,
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.AddDays(-5),
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-5),
             };
             feature.Portfolios.Add(portfolio);
             features.Add(feature);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, TestToday.FrozenNow.UtcDateTime.Date);
 
             Assert.That(totalAge, Is.EqualTo(6));
         }
@@ -477,7 +477,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = 1,
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.AddDays(-10),
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-10),
             };
             feature1.Portfolios.Add(portfolio);
             features.Add(feature1);
@@ -486,7 +486,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = 2,
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.AddDays(-5),
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-5),
             };
             feature2.Portfolios.Add(portfolio);
             features.Add(feature2);
@@ -495,12 +495,12 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = 3,
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.AddDays(-2),
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2),
             };
             feature3.Portfolios.Add(portfolio);
             features.Add(feature3);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, TestToday.FrozenNow.UtcDateTime.Date);
 
             // 11 + 6 + 3 = 20
             Assert.That(totalAge, Is.EqualTo(20));
@@ -514,7 +514,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = 1,
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.AddDays(-7),
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-7),
             };
             feature1.Portfolios.Add(portfolio);
             features.Add(feature1);
@@ -523,8 +523,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = 2,
                 StateCategory = StateCategories.Done,
-                StartedDate = DateTime.UtcNow.AddDays(-15),
-                ClosedDate = DateTime.UtcNow.AddDays(-3),
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-15),
+                ClosedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-3),
             };
             feature2.Portfolios.Add(portfolio);
             features.Add(feature2);
@@ -537,7 +537,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             feature3.Portfolios.Add(portfolio);
             features.Add(feature3);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, TestToday.FrozenNow.UtcDateTime.Date);
 
             Assert.That(totalAge, Is.EqualTo(8));
         }
@@ -551,12 +551,12 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Id = 1,
                 StateCategory = StateCategories.Doing,
                 StartedDate = null,
-                CreatedDate = DateTime.UtcNow.AddDays(-9),
+                CreatedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-9),
             };
             feature.Portfolios.Add(portfolio);
             features.Add(feature);
 
-            var totalAge = subject.GetTotalWorkItemAge(portfolio, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(portfolio, TestToday.FrozenNow.UtcDateTime.Date);
 
             Assert.That(totalAge, Is.EqualTo(10));
         }
@@ -591,7 +591,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Name = "Feature 4",
                 ReferenceId = "F4",
                 StateCategory = StateCategories.ToDo,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = TestToday.FrozenNow.UtcDateTime
             });
             features[features.Count - 1].Portfolios.Add(portfolio);
 
@@ -666,7 +666,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Name = "Feature 6",
                 ReferenceId = "F6",
                 StateCategory = StateCategories.ToDo,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = TestToday.FrozenNow.UtcDateTime
             });
             features[features.Count - 1].Portfolios.Add(portfolio);
 
@@ -676,7 +676,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Name = "Feature 7",
                 ReferenceId = "F7",
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.AddDays(-2)
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2)
             });
             features[features.Count - 1].Portfolios.Add(portfolio);
 
@@ -706,7 +706,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Name = "Feature 1",
                 ReferenceId = "F1",
                 StateCategory = StateCategories.ToDo,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = TestToday.FrozenNow.UtcDateTime
             });
             features[features.Count - 1].Portfolios.Add(portfolio);
 
@@ -716,7 +716,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Name = "Feature 2",
                 ReferenceId = "F2",
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.AddDays(-2)
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2)
             });
             features[features.Count - 1].Portfolios.Add(portfolio);
 
@@ -764,7 +764,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Name = "Feature 8",
                 ReferenceId = "F8",
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.AddDays(-2)
+                StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-2)
             });
             features[features.Count - 1].Portfolios.Add(otherProject);
 
@@ -789,7 +789,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetThroughputProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetThroughputProcessBehaviourChart(portfolio, TestToday.FrozenNow.UtcDateTime.AddDays(-7), TestToday.FrozenNow.UtcDateTime);
 
             using (Assert.EnterMultipleScope())
             {
@@ -805,8 +805,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayStart = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var displayEnd = TestToday.FrozenNow.UtcDateTime.Date;
 
             var result = subject.GetThroughputProcessBehaviourChart(portfolio, displayStart, displayEnd);
 
@@ -821,10 +821,10 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         [Test]
         public void GetThroughputProcessBehaviourChart_ValidBaseline_BaselineConfiguredIsTrue()
         {
-            portfolio.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-60).Date;
-            portfolio.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.AddDays(-16).Date;
+            portfolio.ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.AddDays(-60).Date;
+            portfolio.ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.AddDays(-16).Date;
 
-            var result = subject.GetThroughputProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7).Date, DateTime.UtcNow.Date);
+            var result = subject.GetThroughputProcessBehaviourChart(portfolio, TestToday.FrozenNow.UtcDateTime.AddDays(-7).Date, TestToday.FrozenNow.UtcDateTime.Date);
 
             Assert.That(result.BaselineConfigured, Is.True);
         }
@@ -888,7 +888,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetWipProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetWipProcessBehaviourChart(portfolio, TestToday.FrozenNow.UtcDateTime.AddDays(-7), TestToday.FrozenNow.UtcDateTime);
 
             using (Assert.EnterMultipleScope())
             {
@@ -904,8 +904,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayStart = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var displayEnd = TestToday.FrozenNow.UtcDateTime.Date;
 
             var result = subject.GetWipProcessBehaviourChart(portfolio, displayStart, displayEnd);
 
@@ -923,7 +923,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, TestToday.FrozenNow.UtcDateTime.AddDays(-7), TestToday.FrozenNow.UtcDateTime);
 
             using (Assert.EnterMultipleScope())
             {
@@ -939,8 +939,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayStart = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var displayEnd = TestToday.FrozenNow.UtcDateTime.Date;
 
             var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, displayStart, displayEnd);
 
@@ -958,7 +958,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetCycleTimeProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetCycleTimeProcessBehaviourChart(portfolio, TestToday.FrozenNow.UtcDateTime.AddDays(-7), TestToday.FrozenNow.UtcDateTime);
 
             using (Assert.EnterMultipleScope())
             {
@@ -974,8 +974,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayStart = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var displayEnd = TestToday.FrozenNow.UtcDateTime.Date;
 
             // Add a closed feature in the display range
             var feature = new Feature
@@ -1006,7 +1006,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var result = subject.GetFeatureSizeProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var result = subject.GetFeatureSizeProcessBehaviourChart(portfolio, TestToday.FrozenNow.UtcDateTime.AddDays(-7), TestToday.FrozenNow.UtcDateTime);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1023,8 +1023,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
             // Default test features have Size == 0 (no FeatureWork assigned)
-            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayStart = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var displayEnd = TestToday.FrozenNow.UtcDateTime.Date;
 
             var feature = new Feature
             {
@@ -1053,8 +1053,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.ProcessBehaviourChartBaselineStartDate = null;
             portfolio.ProcessBehaviourChartBaselineEndDate = null;
 
-            var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayStart = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var displayEnd = TestToday.FrozenNow.UtcDateTime.Date;
 
             var team = new Team();
             var feature = new Feature
@@ -1141,8 +1141,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         [Test]
         public void GetFeatureSizeProcessBehaviourChart_ValidBaseline_BaselineConfiguredIsTrue()
         {
-            portfolio.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.AddDays(-60).Date;
-            portfolio.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.AddDays(-16).Date;
+            portfolio.ProcessBehaviourChartBaselineStartDate = TestToday.FrozenNow.UtcDateTime.AddDays(-60).Date;
+            portfolio.ProcessBehaviourChartBaselineEndDate = TestToday.FrozenNow.UtcDateTime.AddDays(-16).Date;
 
             var team = new Team();
             var baselineFeature = new Feature
@@ -1158,7 +1158,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             baselineFeature.Portfolios.Add(portfolio);
             features.Add(baselineFeature);
 
-            var result = subject.GetFeatureSizeProcessBehaviourChart(portfolio, DateTime.UtcNow.AddDays(-7).Date, DateTime.UtcNow.Date);
+            var result = subject.GetFeatureSizeProcessBehaviourChart(portfolio, TestToday.FrozenNow.UtcDateTime.AddDays(-7).Date, TestToday.FrozenNow.UtcDateTime.Date);
 
             Assert.That(result.BaselineConfigured, Is.True);
         }
@@ -1170,7 +1170,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         {
             portfolio.OwningEstimationField(null);
 
-            var result = subject.GetFeatureSizeEstimationData(portfolio, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, TestToday.FrozenNow.UtcDateTime.AddDays(-30), TestToday.FrozenNow.UtcDateTime);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1185,7 +1185,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.OwningEstimationField(42);
             features.Clear();
 
-            var result = subject.GetFeatureSizeEstimationData(portfolio, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+            var result = subject.GetFeatureSizeEstimationData(portfolio, TestToday.FrozenNow.UtcDateTime.AddDays(-30), TestToday.FrozenNow.UtcDateTime);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1201,8 +1201,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.OwningEstimationField(fieldId);
             portfolio.OwningNonNumericEstimation(false);
 
-            var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var startDate = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var endDate = TestToday.FrozenNow.UtcDateTime.Date;
 
             // Feature 1 is Done with an estimate
             features[0].AdditionalFieldValues[fieldId] = "5";
@@ -1228,8 +1228,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             const int fieldId = 42;
             portfolio.OwningEstimationField(fieldId);
 
-            var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var startDate = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var endDate = TestToday.FrozenNow.UtcDateTime.Date;
 
             // Add a ToDo feature with estimate
             var todoFeature = new Feature
@@ -1270,8 +1270,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.OwningNonNumericEstimation(true);
             portfolio.OwningEstimationCategories(["XS", "S", "M", "L", "XL"]);
 
-            var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var startDate = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var endDate = TestToday.FrozenNow.UtcDateTime.Date;
 
             features[0].ClosedDate = startDate.AddDays(3);
             features[0].AdditionalFieldValues[fieldId] = "M";
@@ -1303,8 +1303,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.OwningEstimationField(fieldId);
             portfolio.OwningNonNumericEstimation(false);
 
-            var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var startDate = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var endDate = TestToday.FrozenNow.UtcDateTime.Date;
 
             // Feature 1: valid estimate
             features[0].ClosedDate = startDate.AddDays(3);
@@ -1333,8 +1333,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.OwningEstimationField(fieldId);
             portfolio.OwningEstimationUnit("Story Points");
 
-            var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var startDate = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var endDate = TestToday.FrozenNow.UtcDateTime.Date;
 
             features[0].ClosedDate = startDate.AddDays(3);
             features[0].AdditionalFieldValues[fieldId] = "5";
@@ -1351,8 +1351,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             portfolio.OwningEstimationField(fieldId);
             portfolio.OwningNonNumericEstimation(false);
 
-            var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var startDate = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var endDate = TestToday.FrozenNow.UtcDateTime.Date;
 
             features[0].ClosedDate = startDate.AddDays(3);
             features[0].AdditionalFieldValues[fieldId] = "abc";
@@ -1374,8 +1374,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             const int fieldId = 42;
             portfolio.OwningEstimationField(fieldId);
 
-            var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var startDate = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var endDate = TestToday.FrozenNow.UtcDateTime.Date;
 
             features[0].ClosedDate = startDate.AddDays(3);
             features[0].AdditionalFieldValues[fieldId] = "3.5";
@@ -1391,8 +1391,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             const int fieldId = 42;
             portfolio.OwningEstimationField(fieldId);
 
-            var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var startDate = TestToday.FrozenNow.UtcDateTime.AddDays(-30).Date;
+            var endDate = TestToday.FrozenNow.UtcDateTime.Date;
 
             // Two features with the same estimate value still get separate entries
             features[0].ClosedDate = startDate.AddDays(3);
@@ -1751,7 +1751,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             {
                 Id = ++inProgressFeatureSequence,
                 StateCategory = StateCategories.Doing,
-                StartedDate = DateTime.UtcNow.Date.AddDays(-(ageDays - 1)),
+                StartedDate = TestToday.FrozenNow.UtcDateTime.Date.AddDays(-(ageDays - 1)),
             };
             feature.Portfolios.Add(portfolio);
             features.Add(feature);

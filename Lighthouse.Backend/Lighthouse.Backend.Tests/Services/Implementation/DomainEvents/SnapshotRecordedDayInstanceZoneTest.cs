@@ -430,7 +430,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             // Deliberately anchored on TestToday rather than this fixture's boundary clock: the
             // target date only has to clear Delivery's future-date guard, and it is irrelevant to
             // the subject here, which is the recorded DAY KEY.
-            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            var delivery = new Delivery("Release 1", TestToday.FrozenNow.UtcDateTime.AddDays(30), portfolio.Id);
             delivery.ReplaceFeatures([feature]);
             var deliveryRepository = serviceScope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
             deliveryRepository.Add(delivery);

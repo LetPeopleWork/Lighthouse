@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
                     Name = "Invalid License",
                     Organization = "Test Org",
                     Email = "invalid@mail.com",
-                    ExpiryDate = DateTime.UtcNow.AddDays(10),
+                    ExpiryDate = TestToday.FrozenNow.UtcDateTime.AddDays(10),
                     Signature = "invalid_signature"
                 }
             });
@@ -159,7 +159,7 @@ namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
                 Name = "Benjamin",
                 Organization = "Let People Work",
                 Email = "benjamin@letpeople.work",
-                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                ExpiryDate = TestToday.FrozenNow.UtcDateTime.AddYears(1),
             };
 
             var licenseVerifierMock = new Mock<ILicenseVerifier>();
@@ -209,8 +209,8 @@ namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
                 Name = "Benjamin",
                 Organization = "Let People Work",
                 Email = "benjamin@letpeople.work",
-                ExpiryDate = DateTime.UtcNow.AddYears(1),
-                ValidFrom = DateTime.UtcNow.AddDays(10),
+                ExpiryDate = TestToday.FrozenNow.UtcDateTime.AddYears(1),
+                ValidFrom = TestToday.FrozenNow.UtcDateTime.AddDays(10),
             };
 
             var licenseVerifierMock = new Mock<ILicenseVerifier>();
@@ -235,8 +235,8 @@ namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
                 Name = "Benjamin",
                 Organization = "Let People Work",
                 Email = "benjamin@letpeople.work",
-                ExpiryDate = DateTime.UtcNow.AddYears(1),
-                ValidFrom = DateTime.UtcNow.AddDays(-10),
+                ExpiryDate = TestToday.FrozenNow.UtcDateTime.AddYears(1),
+                ValidFrom = TestToday.FrozenNow.UtcDateTime.AddDays(-10),
             };
 
             var licenseVerifierMock = new Mock<ILicenseVerifier>();
@@ -261,7 +261,7 @@ namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
                 Name = "Benjamin",
                 Organization = "Let People Work",
                 Email = "benjamin@letpeople.work",
-                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                ExpiryDate = TestToday.FrozenNow.UtcDateTime.AddYears(1),
                 ValidFrom = TestToday.AmbientAsUtcMidnight,
             };
 
@@ -287,7 +287,7 @@ namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
                 Name = "Benjamin",
                 Organization = "Let People Work",
                 Email = "benjamin@letpeople.work",
-                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                ExpiryDate = TestToday.FrozenNow.UtcDateTime.AddYears(1),
                 ValidFrom = null,
             };
 
@@ -339,7 +339,7 @@ namespace Lighthouse.Backend.Tests.Modules.Licensing.Application
                 Name = "Test User",
                 Organization = "Test Org",
                 Email = "test@example.com",
-                ExpiryDate = DateTime.UtcNow.AddDays(30),
+                ExpiryDate = TestToday.FrozenNow.UtcDateTime.AddDays(30),
                 Signature = "test_signature"
             };
 

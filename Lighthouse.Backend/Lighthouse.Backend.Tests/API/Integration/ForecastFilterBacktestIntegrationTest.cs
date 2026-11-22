@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             forecastServiceMock
                 .Setup(s => s.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
-                .Returns(new HowManyForecast(new Dictionary<int, int> { { 10, 1 } }, 14, DateTime.UtcNow));
+                .Returns(new HowManyForecast(new Dictionary<int, int> { { 10, 1 } }, 14, TestToday.FrozenNow.UtcDateTime));
 
             teamMetricsServiceMock
                 .Setup(s => s.GetThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -174,7 +174,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             forecastServiceMock
                 .Setup(s => s.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
                 .Callback<RunChartData, int>((_, days) => capturedHorizon.Value = days)
-                .Returns(new HowManyForecast(new Dictionary<int, int> { { 10, 1 } }, 14, DateTime.UtcNow));
+                .Returns(new HowManyForecast(new Dictionary<int, int> { { 10, 1 } }, 14, TestToday.FrozenNow.UtcDateTime));
             return capturedHorizon;
         }
 

@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         public void Should_Calculate_Likelihood_Based_On_Feature_Forecasts()
         {
             // Arrange
-            var deliveryDate = DateTime.UtcNow.AddDays(30);
+            var deliveryDate = TestToday.FrozenNow.UtcDateTime.AddDays(30);
 
             // Create a forecast that shows 75% likelihood to complete within 30 days
             var simulationResult = new Dictionary<int, int>
@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         public void Should_Return_Hundred_Likelihood_When_No_Features_Have_Forecasts()
         {
             // Arrange
-            var deliveryDate = DateTime.UtcNow.AddDays(30);
+            var deliveryDate = TestToday.FrozenNow.UtcDateTime.AddDays(30);
 
             var feature = new Feature();
 
@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         public void Should_Calculate_Minimum_Likelihood_Across_Multiple_Features()
         {
             // Arrange
-            var deliveryDate = DateTime.UtcNow.AddDays(30);
+            var deliveryDate = TestToday.FrozenNow.UtcDateTime.AddDays(30);
 
             // Feature 1: 80% likelihood to complete within 30 days
             var simulationResult1 = new Dictionary<int, int>
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         public void Should_Include_Individual_Feature_Likelihoods()
         {
             // Arrange
-            var deliveryDate = DateTime.UtcNow.AddDays(30);
+            var deliveryDate = TestToday.FrozenNow.UtcDateTime.AddDays(30);
 
             // Feature 1: 80% likelihood
             var simulationResult1 = new Dictionary<int, int>
@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void Should_Report_Insufficient_Data_When_Any_Contributing_Feature_Is_Insufficient()
         {
-            var deliveryDate = DateTime.UtcNow.AddDays(30);
+            var deliveryDate = TestToday.FrozenNow.UtcDateTime.AddDays(30);
 
             var sufficientForecast = CreateForecastWithLikelihood(80);
             sufficientForecast.HasSufficientData = true;

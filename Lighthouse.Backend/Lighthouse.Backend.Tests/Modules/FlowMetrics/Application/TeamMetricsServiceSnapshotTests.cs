@@ -514,7 +514,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 StateCategory = StateCategories.Done,
                 TeamId = testTeam.Id,
                 StartedDate = startedDate ?? Day1,
-                ClosedDate = closedDate ?? DateTime.UtcNow,
+                ClosedDate = closedDate ?? TestToday.FrozenNow.UtcDateTime,
             };
             workItems.Add(item);
         }
