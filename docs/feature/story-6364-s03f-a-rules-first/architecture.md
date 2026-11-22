@@ -24,7 +24,7 @@ Governed slices: S1
 #### D3
 
 ```text
-Confirmed (D-9, E1, Ratchet design): every const string field of the test assembly that parses as a regex is enumerated by reflection, so a pattern added later is covered. For every pattern P and every moving type T of the A1 map, Regex.IsMatch(old(T), P) == Regex.IsMatch(new(T), P). Patterns only gain alternatives of the form ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types the pattern matched before (ApplicationCore gains Platform; KernelRules TheServices and TheUpdateQueue; the Promises, Access and Licensing ThePlatform and TheUpdateCode; Tracker integration TheKeyRing and PromisesAndTheUpdateCode; Work Items OrganisationSetUp by the areas of the loose types; Forecasting, DependencyAwareForecastSeam, ModuleBoundaries line 19 and Refinement update code; the Promises (\.DomainEvents)? patterns). No added alternative matches a production type outside Platform. Old alternatives stay until feature C. The full list of failing patterns is measured at the A2 RED.
+Confirmed (D-9, E1, Ratchet design), amended after the S2 slice review: every const and static readonly string field of the test assembly that parses as a regex is enumerated by reflection, so a pattern added later is covered. The law is subject-aware: each field is evaluated against the subject its rule applies it to, declared per field in PlatformLanePatternRoles: Namespace (the namespace of the outermost type, as IlDependencies.ResidesInNamespaceMatching and ArchUnit ResideInNamespaceMatching read it) or FullName (old against new full name); a static readonly composite is declared CompositeOf its component field and follows it by reference. A field whose old subject matches a moving type carries a role with a reason: Context (must also match the new subject; a Namespace field widens only with the whole area namespace ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) and accepts that it then sees every type of that area, which makes a forbidden-target rule stricter; any IL edge newly visible through it is listed in its rule with a reason) or Place (stands for "the Services folder"; must not match the new subject and gains no Platform alternative). An undeclared field matching either subject fails until declared. No added alternative matches a production namespace or full name outside Platform. Old alternatives stay until feature B.
 ```
 Governed slices: S2
 
@@ -97,7 +97,7 @@ IlDependencies.TypesIn also returns nested types; an exact-set check compares to
 #### K4
 
 ```text
-One oracle file per slice; an approved oracle or support file of this feature is never edited, not even a using line; oracles name production types as strings. No nWave scenario tags in code; the Lighthouse test-writing skill wins over nWave timing and PBT defaults.
+One oracle file per slice; an approved oracle or support file of this feature is never edited by craft, not even a using line; only a recorded design amendment reopens one, through its acceptance designer and a new oracle review. The S2 amendment reopens PlatformLaneRulesSeeTheMoveArchUnitTest and adds the S2 support PlatformLanePatternRoles.cs; PlatformLaneMembership.cs, the approved S1 support, stays unchanged. Oracles name production types as strings. No nWave scenario tags in code; the Lighthouse test-writing skill wins over nWave timing and PBT defaults.
 ```
 
 #### K5
@@ -803,7 +803,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleA
 Extend
 
 ```text
-ServicesImplementationPattern (line 24) gains Platform as the law requires.
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesMembershipArchUnitTest\.cs
@@ -819,7 +819,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesPoliciesL
 Extend
 
 ```text
-WhereTheHandlersLivedBefore (line 19) gains Platform.DomainEvents.
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesLayoutArchUnitTest\.cs
@@ -827,7 +827,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesLayoutArc
 Extend
 
 ```text
-WhereTheServicesLivedBefore fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RealityCheckReadOnlyArchUnitTest\.cs
@@ -835,7 +835,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RealityCheckReadO
 Extend
 
 ```text
-ImplementationPattern fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RecurringBlackoutEventsSeamArchUnitTest\.cs
@@ -843,7 +843,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RecurringBlackout
 Extend
 
 ```text
-ServiceImplementationNamespace (an exact-namespace string) fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RepositoryRecognition\.cs
@@ -851,7 +851,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RepositoryRecogni
 Extend
 
 ```text
-PlatformPersistencePattern fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/StalenessPolicyPurityArchUnitTest\.cs
@@ -859,7 +859,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/StalenessPolicyPu
 Extend
 
 ```text
-ServicesPattern fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationApplicationLayoutArchUnitTest\.cs
@@ -867,7 +867,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegratio
 Extend
 
 ```text
-WhereTheTypesLivedBefore and AnImplementationNamespace fail the A2 preservation law at RED: widen the failing const patterns in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationConnectorsLayoutArchUnitTest\.cs
@@ -875,7 +875,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegratio
 Extend
 
 ```text
-WhereTheTypesLivedBefore fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationOAuthAndHealthLayoutArchUnitTest\.cs
@@ -883,7 +883,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegratio
 Extend
 
 ```text
-WhereTheTypesLivedBefore and WhereTheValueTypesLivedBefore fail the A2 preservation law at RED: widen the failing const patterns in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsApplicationLayoutArchUnitTest\.cs
@@ -891,7 +891,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsApplicat
 Extend
 
 ```text
-WhereTheTypesLivedBefore (an unanchored text scan) fails the A2 preservation law at RED: widen the failing const pattern in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsPoliciesLayoutArchUnitTest\.cs
@@ -899,7 +899,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/WorkItemsPolicies
 Extend
 
 ```text
-WhereTheHandlersLivedBefore and AnOldNamespacePrefix fail the A2 preservation law at RED: widen the failing const patterns in place under the same law; never loosen
+Each field the A2 RED names is classified in PlatformLanePatternRoles by the acceptance designer: a Context Namespace field is widened in place only by ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field (an old location such as WhereTheTypesLivedBefore) gets no Platform alternative; any per-type or Platform alternative commit 62aefb5a5 added that the role does not require is removed. Never loosen.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs
@@ -914,20 +914,20 @@ dotnet test Lighthouse.Backend --filter "TestCategory!=JiraIntegration&TestCateg
 
 #### Supports
 
-None.
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLanePatternRoles\.cs
 
 #### Public oracle
 
 ```text
-The architecture rule tests run PlatformLaneRulesSeeTheMoveArchUnitTest: it enumerates by reflection every const string field of the test assembly that parses as a regex and is not a full-name or path string listed in the A1 map as renamed by a B slice, and for each moving type of the A1 map (PlatformLaneMembership) evaluates the pattern on the old full name and on the new Lighthouse.Backend.Platform.<Area> full name; it evaluates every Platform alternative against the production types the IL finds outside Lighthouse.Backend.Platform; it reads the dispatcher selection of ApplicationCoreRules on the IL; and it reads the rule files as text for string literals naming a moving area or a moving loose type by its old Services.Implementation, Services.Interfaces or Services/Implementation path.
+The architecture rule tests run PlatformLaneRulesSeeTheMoveArchUnitTest: it enumerates by reflection every const and static readonly string field of the test assembly that parses as a regex and is not on the A1 rename list, looks up the subject and role PlatformLanePatternRoles declares for it, and for each moving type of the A1 map evaluates the field on that subject under the old and the new Lighthouse.Backend.Platform.<Area> placement: the namespace of the outermost type for a Namespace field, as IlDependencies.ResidesInNamespaceMatching and ArchUnit ResideInNamespaceMatching read it, or the full name for a FullName field. It evaluates every Platform alternative against the production namespaces and full names the IL finds outside Lighthouse.Backend.Platform, reads the dispatcher selection of ApplicationCoreRules on the IL, and reads the rule files as text for string literals naming a moving area or a moving loose type by its old path.
 ```
 
 ```text
-For every pattern and every moving type the two answers are equal; no Platform alternative matches a production type outside Platform; the dispatcher selection selects DomainEventDispatcher and its nested types by type, not by namespace fragment; no old-path literal is left except the entries the A1 map lists as renamed by a B slice; every existing architecture test stays green on today code. A failure names the pattern (class and field), the moving type and both answers, or the file, line and literal.
+Every field that matches the old subject of a moving type is declared and keeps its role: a Context field also matches the new subject, a Place field does not; a field matches a type only under its new subject only as a Context field widened by the whole area of that type; no undeclared field matches either subject; no Platform alternative matches a production namespace or full name outside Platform; the dispatcher selection selects DomainEventDispatcher and its nested types by type; no old-path literal is left except the A1 rename-list entries; every existing architecture test stays green on today code. A failure names the field (class and field), its subject and role, the moving type and both answers, or the file, line and literal.
 ```
 
 ```text
-Today about 20 patterns answer true on the old name and false on the new (RED), and ApplicationCoreRules.cs:182 names .Services.Implementation.DomainEvents (RED). A widening that misses one pattern, widens to all of Lighthouse.Backend (matching outside Platform), removes an old alternative, or leaves the fragment fails the oracle or an existing test. A check that reads only a hand list of patterns, compares only the old answer, or skips nested classes passes those cases and is rejected.
+At 62aefb5a5 KernelRules.TheUpdateQueue, ModuleBoundariesArchUnitTest line 20 and DependencyAwareForecastSeamArchUnitTest line 19 carry per-type alternatives ^Lighthouse\.Backend\.Platform\.(UpdateQueue\.(AdmittedCancellations|...))(\.|$) that match the new full name and not the namespace Lighthouse.Backend.Platform.UpdateQueue: the revised check names them (RED), as it names every Place field 62aefb5a5 widened with Platform and every field not yet declared. A check that evaluates full names for a Namespace field, treats an undeclared field as passing, accepts a Place field matching the new subject, skips static readonly fields or nested classes, or reads only a hand list of patterns passes those cases and is rejected.
 ```
 
 ##### Promises
@@ -947,7 +947,7 @@ None.
 ##### Decisions
 
 ```text
-Encryption is widened per moving type, never per area. The preservation law holds for each moving type, so a pattern that matched only Services.(Implementation|Interfaces).Encryption cannot simply gain Platform.Encryption: the loose Encryption-area types CryptoService, ICryptoService and KeyRingFileWatcher, which that pattern did not match under their old Services paths, would then match under their new namespace but not the old one, and the law would fail the other way. The crafter adds to such a pattern exactly the moving types the old pattern matched, by their new names, and never widens what the pattern means. Found by the A2 acceptance designer at RED.
+Subject-aware preservation law, adopted from story 6468 D-7 (one law, one carrier family): it replaces the per-type full-name widening of commit 62aefb5a5 and the earlier per-type Encryption decision, which the namespace subject supersedes. Carrier: a new S2 support file PlatformLanePatternRoles.cs (static class PlatformLanePatternRoles, owner the S2 acceptance designer) holds the closed choices PatternSubject {Namespace, FullName} and PatternRole {Context, Place}, one declaration record per field (class.field key, subject or CompositeOf(component), role, reason) and the map PatternRoles. It is a new file, not a member of PlatformLaneMembership, because that file is the approved S1 support. Story 6468 reuses these types for its own map; when it lifts the law to a shared NamespaceMoveLaw the types move with it, one owner. Crafter targets stay the rule files: every per-type Platform alternative of 62aefb5a5 is replaced; a Context Namespace field gains only ^Lighthouse\.Backend\.Platform\.<Area>(\.|$) for the areas of the types it matched before; a Place field gets no Platform alternative, and any that 62aefb5a5 added to it is removed. The acceptance designer declares every field the RED names, with a reason; the crafter never edits PatternRoles.
 ```
 
 ##### Constraints
@@ -1471,7 +1471,7 @@ None.
 ###### L4
 
 ```text
-For every const regex pattern P of the test assembly outside the A1 rename list and every moving type T of the A1 map, IsMatch(old(T), P) == IsMatch(new(T), P); every Platform alternative matches no production type outside Lighthouse.Backend.Platform; no rule-file literal names a moving area or moving loose type by its old path outside the A1 rename list.
+For every const or static readonly string field P of the test assembly that parses as a regex, outside the A1 rename list, and every moving type T of the A1 map, with s the subject PlatformLanePatternRoles declares for P (Namespace: outermost-type namespace; FullName: full name; CompositeOf: the subject of its component): if IsMatch(P, s_old(T)) then P carries a role, and Context requires IsMatch(P, s_new(T)) while Place requires not IsMatch(P, s_new(T)); if not IsMatch(P, s_old(T)) then IsMatch(P, s_new(T)) is admitted only for a Context field and only when another moving type of the area of T matched P under its old subject (the whole-area widening); an undeclared field matching either subject of any T fails; every Platform alternative matches no production namespace (Namespace) or full name (FullName) outside Lighthouse.Backend.Platform; no rule-file literal names a moving area or moving loose type by its old path outside the A1 rename list.
 ```
 
 Invariant
@@ -1487,23 +1487,43 @@ Finite
 ###### Cases
 
 ```text
-pattern matching the old name and not the new: named with both answers
+Namespace field matching the old namespace and not the new: named with both answers
 ```
 
 ```text
-pattern matching neither or both: pass
+Context Namespace field whose Platform alternative ends in a type name (matches the new full name, not the new namespace): named
 ```
 
 ```text
-Platform alternative matching a production type outside Platform: named
+Place field matching the new subject: named
 ```
 
 ```text
-const pattern added later in any test class: enumerated
+undeclared field matching either subject: named as undeclared
 ```
 
 ```text
-const in a nested test class: enumerated
+Context field widened by a whole area, matching a type of that area it did not see before: admitted
+```
+
+```text
+Context field matching a type only under the new subject in an area it never saw: named
+```
+
+```text
+FullName field: evaluated on old and new full names
+```
+
+```text
+static readonly composite declared CompositeOf its component: follows it
+```
+
+```text
+Platform alternative matching a production namespace or full name outside Platform: named
+```
+
+```text
+const or static readonly pattern added later in any test class, nested or not: enumerated
 ```
 
 ```text
@@ -1519,7 +1539,7 @@ today code: every existing architecture test green
 ```
 
 ```text
-Exhaustive over the finite domain (moving types x const patterns, about 137 x a few hundred); no generator adds coverage.
+Exhaustive over the finite domain (moving types x regex fields x two subjects); no generator adds coverage.
 ```
 
 ###### Evidence
@@ -1538,6 +1558,18 @@ Law scope: a const full-name or path string (a designation of one type or file, 
 
 ```text
 SecretCustodySeamArchUnitTest.CryptoServiceFullName = Lighthouse.Backend.Services.Implementation.CryptoService matches the old name and not Lighthouse.Backend.Platform.Encryption.CryptoService; it is renamed in B1 and carried on the A1 rename list instead.
+```
+
+```text
+Comparing every pattern on the old and the new full name of each moving type proves that a rule still sees the type after the move.
+```
+
+```text
+Carrier/subject distinction: the rule consumers apply a pattern to the namespace of the outermost type (IlDependencies.ResidesInNamespaceMatching, IlDependencies.cs:44-49; ArchUnit ResideInNamespaceMatching), not to the full name; a per-type alternative ending in a type name passes a full-name law and never matches a namespace. Cure: each field is evaluated on its declared subject.
+```
+
+```text
+KernelRules.TheUpdateQueue at 62aefb5a5 gained a Platform.UpdateQueue alternative listing AdmittedCancellations ... UpdateTaskNaming by name: it matches the full name Lighthouse.Backend.Platform.UpdateQueue.AdmittedCancellations (full-name oracle green 8/8) and not the namespace Lighthouse.Backend.Platform.UpdateQueue, so after the move the kernel rule stops seeing the type (S2 slice review R2).
 ```
 
 ##### Claims
@@ -1565,7 +1597,7 @@ None.
 ###### T2
 
 ```text
-Every const regex rule pattern of the test assembly answers the same for each moving platform type under its old and new namespace, no added alternative reaches outside Platform, and no rule string names a moving area by its old path except the listed B renames.
+Every regex rule field of the test assembly keeps its declared role for each moving platform type on the subject its rule applies it to (namespace or full name), no added alternative reaches outside Platform, and no rule string names a moving area by its old path except the listed B renames.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs
