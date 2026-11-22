@@ -117,5 +117,16 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["UpdateCancellationContextWriterArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
             ["ZonedTimestampParsingArchUnitTest.ProductionProjectDirectory"] = PatternDeclaration.Context(Namespace, AProjectFolder),
         };
+
+        /// <summary>
+        /// A part of the code that saw one moving type only through the folder the type lived in, not because the type
+        /// belongs to that part of the code. For that pattern, and every pattern built from it, the type is read as an
+        /// old location: the pattern must not follow the type into its new place, and the type's area is not widened.
+        /// Keyed by the pattern (class and field, as in <see cref="PatternRoles"/>) and the name of the moving type.
+        /// </summary>
+        public static IReadOnlyDictionary<(string Field, string Type), string> FolderOnlyMatches { get; } = new Dictionary<(string Field, string Type), string>
+        {
+            [("TrackerIntegrationModuleBoundariesArchUnitTest.PromisesAndTheUpdateCode", "KeyRingFileWatcher")] = "the key-ring watcher lived in the BackgroundServices folder the update code also lives in; it is neither Promises nor update code, so Tracker integration may still sit on the key ring after the move",
+        };
     }
 }

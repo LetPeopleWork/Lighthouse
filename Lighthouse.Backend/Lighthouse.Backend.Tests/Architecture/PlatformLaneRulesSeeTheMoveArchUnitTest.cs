@@ -67,6 +67,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             SeesTheTypeInItsNewPlace,
             SeesAnAreaItNeverSaw,
             KeepsAPlatformAlternativeAsAnOldLocation,
+            FollowsATypeItSawOnlyByFolder,
         }
 
         [OneTimeTearDown]
@@ -88,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var patterns = GivenTheRulePatternsOfTheTestAssembly();
 
-            var breaks = WhenEachPatternIsAskedOnItsSubjectAboutEveryMovingType(patterns, PlatformLanePatternRoles.PatternRoles);
+            var breaks = WhenEachPatternIsAskedOnItsSubjectAboutEveryMovingType(patterns, PlatformLanePatternRoles.PatternRoles, PlatformLanePatternRoles.FolderOnlyMatches);
 
             ThenNoPatternBreaksItsRole(breaks);
         }
@@ -98,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var patterns = GivenTheMadeUpRulePatterns();
 
-            var breaks = WhenEachPatternIsAskedOnItsSubjectAboutEveryMovingType(patterns, MadeUpRuleRoles.Roles);
+            var breaks = WhenEachPatternIsAskedOnItsSubjectAboutEveryMovingType(patterns, MadeUpRuleRoles.Roles, MadeUpRuleRoles.FolderOnlyMatches);
 
             ThenTheBreaksNamedAre(
                 breaks,
@@ -110,11 +111,12 @@ namespace Lighthouse.Backend.Tests.Architecture
                     (nameof(MadeUpRuleKeys.APlaceGivenATypeNameInTheNewPlace), RoleBreak.KeepsAPlatformAlternativeAsAnOldLocation),
                     (nameof(MadeUpRuleKeys.AContextWidenedIntoAnAreaItNeverSaw), RoleBreak.SeesAnAreaItNeverSaw),
                     (nameof(MadeUpRuleKeys.APlatformAlternativeThatReachesOutside), RoleBreak.SeesAnAreaItNeverSaw),
+                    (nameof(MadeUpRuleKeys.AFolderOnlyMatchThatFollowsTheTypeIntoItsNewPlace), RoleBreak.FollowsATypeItSawOnlyByFolder),
                     ($"{nameof(MadeUpRuleKeys.Nested)}.{nameof(MadeUpRuleKeys.Nested.UndeclaredButSeesTheOldPlace)}", RoleBreak.NotDeclared),
                     ($"{nameof(MadeUpRuleKeys.Nested)}.{nameof(MadeUpRuleKeys.Nested.UndeclaredButSeesOnlyTheNewPlace)}", RoleBreak.NotDeclared),
                     ($"{nameof(MadeUpRuleKeys.Nested)}.{nameof(MadeUpRuleKeys.Nested.ACompositeOfAContextThatSeesOnlyTheOldPlace)}", RoleBreak.StopsSeeingTheType),
                 ],
-                "a check that asks a namespace rule about full names, lets an undeclared pattern pass, accepts an old location that sees the new place, admits a part of the code into an area it never saw, ignores a composite's component, or skips static read-only fields and nested classes lets a rule go blind or wrong at the move, and passes the real rules it should name.");
+                "a check that asks a namespace rule about full names, lets an undeclared pattern pass, accepts an old location that sees the new place, admits a part of the code into an area it never saw, ignores a composite's component, lets a part of the code follow a type it saw only by its folder, or skips static read-only fields and nested classes lets a rule go blind or wrong at the move, and passes the real rules it should name.");
         }
 
         [Test]
@@ -267,7 +269,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(pattern => PlatformLaneMembership.MovingTypes.Any(type => SubjectsOf(type).Any(subject => IsMatch(subject, pattern.Value))))
                 .Select(pattern => pattern.Value)];
 
-        private static List<PatternBreak> WhenEachPatternIsAskedOnItsSubjectAboutEveryMovingType(IEnumerable<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles)
+        private static List<PatternBreak> WhenEachPatternIsAskedOnItsSubjectAboutEveryMovingType(IEnumerable<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles, IReadOnlyDictionary<(string Field, string Type), string> folderOnlyMatches)
         {
             var breaks = new List<PatternBreak>();
 
@@ -288,7 +290,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                     .Select(type => (Type: type, Old: OldSubject(type, subject), New: NewSubject(type, subject)))
                     .Select(asked => (asked.Type, asked.Old, asked.New, UnderTheOld: IsMatch(asked.Old, pattern.Value), UnderTheNew: IsMatch(asked.New, pattern.Value)))
                     .ToList();
-                var areasSeenBefore = answers.Where(answer => answer.UnderTheOld).Select(answer => answer.Type.Area).ToHashSet(StringComparer.Ordinal);
+                var seenOnlyByFolder = PatternAndItsComponents(pattern.Field, roles)
+                    .SelectMany(field => folderOnlyMatches.Keys.Where(match => match.Field == field).Select(match => match.Type))
+                    .ToHashSet(StringComparer.Ordinal);
+                var areasSeenBefore = answers.Where(answer => answer.UnderTheOld && !seenOnlyByFolder.Contains(answer.Type.Name)).Select(answer => answer.Type.Area).ToHashSet(StringComparer.Ordinal);
 
                 if (role == PatternRole.Place && PlatformToken.IsMatch(pattern.Value))
                 {
@@ -306,8 +311,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
                 foreach (var answer in answers)
                 {
-                    var roleBreak = (role, answer.UnderTheOld, answer.UnderTheNew) switch
+                    var roleBreak = (seenOnlyByFolder.Contains(answer.Type.Name) ? PatternRole.Place : role, answer.UnderTheOld, answer.UnderTheNew) switch
                     {
+                        (PatternRole.Place, _, true) when seenOnlyByFolder.Contains(answer.Type.Name) => RoleBreak.FollowsATypeItSawOnlyByFolder,
                         (PatternRole.Context, true, false) => RoleBreak.StopsSeeingTheType,
                         (PatternRole.Context, false, true) when !areasSeenBefore.Contains(answer.Type.Area) => RoleBreak.SeesAnAreaItNeverSaw,
                         (PatternRole.Place, _, true) => RoleBreak.SeesTheTypeInItsNewPlace,
@@ -402,7 +408,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"{byPattern.Count} rule patterns would not keep their meaning when the platform types move:{Environment.NewLine}" +
                 string.Join(Environment.NewLine, report) + Environment.NewLine +
                 "Why it matters: a rule matches a pattern against the namespace of a type or its full name; a part of the code that does not match the new namespace stops seeing the type the moment it moves and then passes because it finds nothing, and an old location that matches the new place starts judging code that no longer lives there. " +
-                @"How to fix: declare an undeclared pattern in PlatformLanePatternRoles with its subject, role and reason; give a part of the code one alternative per area it saw, ^Lighthouse\.Backend\.Platform\.<Area>(\.|$), and no alternative that names a type; take every Platform alternative off an old location; keep every old alternative.");
+                @"How to fix: declare an undeclared pattern in PlatformLanePatternRoles with its subject, role and reason; give a part of the code one alternative per area it saw, ^Lighthouse\.Backend\.Platform\.<Area>(\.|$), and no alternative that names a type; take every Platform alternative off an old location; keep every old alternative; a pattern listed in PlatformLanePatternRoles.FolderOnlyMatches saw that type only by its folder, so take the type's new place out of that pattern and every pattern built from it, and widen it by no area for that type.");
         }
 
         private static void ThenTheBreaksNamedAre(List<PatternBreak> breaks, (string Field, RoleBreak Break)[] expected, string why)
@@ -440,6 +446,15 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             return null;
+        }
+
+        private static IEnumerable<string> PatternAndItsComponents(string field, IReadOnlyDictionary<string, PatternDeclaration> roles)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (var key = field; key is not null && seen.Add(key); key = roles.TryGetValue(key, out var declaration) ? declaration.CompositeOf : null)
+            {
+                yield return key;
+            }
         }
 
         private static string OldSubject(PlatformLaneType type, PatternSubject subject) => subject == PatternSubject.Namespace ? type.OldNamespace : type.OldFullName;
@@ -576,6 +591,10 @@ namespace Lighthouse.Backend.Tests.Architecture.PlatformLaneRulesSeeTheMoveFixtu
 
         public const string APlatformAlternativeThatReachesOutside = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.DomainEvents(\.|$)|Platform";
 
+        public const string AFolderOnlyMatchThatFollowsTheTypeIntoItsNewPlace = @"^Lighthouse\.Backend\.(Services\.Implementation\.BackgroundServices|Platform\.Encryption)\.KeyRingFileWatcher$";
+
+        public const string AFolderOnlyMatchLeftInTheOldPlace = @"^Lighthouse\.Backend\.Services\.Implementation\.BackgroundServices\.KeyRingFileWatcher$";
+
         internal static class Nested
         {
             public const string UndeclaredButSeesTheOldPlace = @"^Lighthouse\.Backend\.Services\.Implementation\.Logging(\.|$)";
@@ -605,8 +624,17 @@ namespace Lighthouse.Backend.Tests.Architecture.PlatformLaneRulesSeeTheMoveFixtu
             ["MadeUpRuleKeys.AContextWidenedByTheWholeArea"] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code widened by its whole area, which takes in the area's interfaces it did not see before"),
             ["MadeUpRuleKeys.AContextWidenedIntoAnAreaItNeverSaw"] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code widened into the logging area as well"),
             ["MadeUpRuleKeys.APlatformAlternativeThatReachesOutside"] = PatternDeclaration.Context(PatternSubject.FullName, "a full-name rule with an unanchored Platform alternative"),
+            ["MadeUpRuleKeys.AFolderOnlyMatchThatFollowsTheTypeIntoItsNewPlace"] = PatternDeclaration.Context(PatternSubject.FullName, "a part of the code that saw the key-ring watcher only by its folder and was widened into the watcher's new place"),
+            ["MadeUpRuleKeys.AFolderOnlyMatchLeftInTheOldPlace"] = PatternDeclaration.Context(PatternSubject.FullName, "a part of the code that saw the key-ring watcher only by its folder and stays out of the watcher's new place"),
             ["MadeUpRuleKeys.Nested.ACompositeOfAContextThatSeesOnlyTheOldPlace"] = PatternDeclaration.Composite("MadeUpRuleKeys.AContextThatSeesOnlyTheOldPlace", "built from the blind part of the code"),
             ["MadeUpRuleKeys.Nested.ACompositeOfAContextThatSeesBothPlaces"] = PatternDeclaration.Composite("MadeUpRuleKeys.SeesBothPlaces", "built from the part of the code that names both places"),
+        };
+
+        /// <summary>The made-up folder-only matches, as the real rules have theirs in PlatformLanePatternRoles.</summary>
+        public static IReadOnlyDictionary<(string Field, string Type), string> FolderOnlyMatches { get; } = new Dictionary<(string Field, string Type), string>
+        {
+            [("MadeUpRuleKeys.AFolderOnlyMatchThatFollowsTheTypeIntoItsNewPlace", "KeyRingFileWatcher")] = "saw the watcher only by its folder",
+            [("MadeUpRuleKeys.AFolderOnlyMatchLeftInTheOldPlace", "KeyRingFileWatcher")] = "saw the watcher only by its folder",
         };
     }
 }

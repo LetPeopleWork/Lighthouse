@@ -188,6 +188,35 @@ the example type is moved by a later slice in a way the map row does not list; t
 
 None.
 
+##### Covers
+
+P6
+
+```text
+The preservation law reads every rule pattern against the B1 moves, with KeyRingFileWatcher listed in PlatformLanePatternRoles.FolderOnlyMatches as seen only by its BackgroundServices folder by TrackerIntegrationModuleBoundariesArchUnitTest.PromisesAndTheUpdateCode
+```
+
+```text
+PromisesAndTheUpdateCode and its composite OtherContexts keep no Platform.Encryption alternative: following the watcher into Platform.Encryption is named FollowsATypeItSawOnlyByFolder, any other Encryption type it then sees is named SeesAnAreaItNeverSaw; every other role and widening is unchanged; a made-up folder-only key widened into the new place is named and one left in the old place passes
+```
+
+```text
+Tracker integration may still sit on the key ring after it moves to Platform/Encryption, and its other-contexts rule takes in none of Platform.Encryption, which it never covered
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:EveryRulePatternThatSeesAMovingPlatformType\_IsDeclared\_AndKeepsItsRoleOnTheSubjectItsRuleReads
+
+```text
+the Encryption area is widened into PromisesAndTheUpdateCode or a composite built from it, or the folder-only exception is dropped from the law (the made-up falsifier then fails)
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
