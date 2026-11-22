@@ -22,16 +22,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     public class RefinementModuleArchUnitTest
     {
         private const string ServicesImplementationPattern = @"^Lighthouse\.Backend\.Services\.Implementation($|\..*)"
-            + @"|^Lighthouse\.Backend\.Platform\.(Encryption\.(AKeyOnlyItsOwnerCanReplace|ConfiguredKeyRingSource|ConnectionSecrets|DatabaseSecretPresenceProbe|DatabaseSecretReadabilityProbe|EncryptionKeyRingBootstrapper|EncryptionKeyRingHolder|GeneratedKeyRingMinter|GeneratedKeyRingStore|IKeyStoreFileSystem|IStoredSecretPresenceProbe|IStoredSecretReadabilityProbe|KeyRingSerializer|KeyStoreCase|KeyStoreFile|KeyStoreLocation|KeyStoreMigration|KeyStoreMigrationOutcome|KeyStoreResolver|KeySupply|KeyThatReadsNothing|LegacyDefaultEncryptionKey|MintingNotPermittedException|MountedFileKeyRingSource|NoDurableKeyStore|OneSecretPassAtATime|PhysicalKeyStoreFileSystem|PublishedKeyAsTheActiveKey|PublishedKeySecretCount|ReadableSecretsNotOnTheActiveKey|ReferencedKeyIds|SecretCustodyService|SecretEnvelope|SecretStateClassifier|StoredSecret|StoredSecretFinding|StoredSecretLocation|StoredSecretLocations|StoredSecretPresence|StoredSecretReadability|StoredSecretSummaryReader|SuppliedKeyRing|UnreadableSecretException|UnreadableStoredSecrets|WhereTheKeyCameFrom|CryptoService|KeyRingFileWatcher)"
-            + @"|DatabaseManagement\.(CommandRunner|DatabaseMaintenanceGate|DatabaseManagementService|DatabaseOperationTracker|GateAcquisitionResult|PostgresDatabaseManagementProvider|SqliteDatabaseManagementProvider)"
-            + @"|DemoData\.(DemoDataService)"
-            + @"|Seeding\.(InstallTimestampSeeder)|Persistence"
-            + @"|UsageData\.(PostHogUsageDataPublisher|UsageDataConsentService|UsageDataConsentToken|UsageDataDeploymentModeResolver|UsageDataEventQueue|UsageDataGate|UsageDataInstanceProperties|UsageDataMasterSwitch|UsageDataPublishing|UsageDataConsentPruningService|UsageDataForwardingService)"
-            + @"|Logging\.(RecentProblemsReport|RecentProblemsSink|ConfigFileUpdater|SerilogLogConfiguration)"
-            + @"|Releases\.(AssemblyService|GitHubService|LighthouseReleaseService)"
-            + @"|DomainEvents\.(DomainEventDispatcher)"
-            + @"|Host\.(FileSystemService|LighthouseClock|PlatformExtensions|PlatformService|ProcessService|RandomNumberService|ServiceConfig|SystemInfoService)"
-            + @"|UpdateQueue\.(AdmittedCancellations|AdmittedWorkOrdering|InProcessUpdateCancellationNotifier|InProcessUpdateCompletionNotifier|InProcessUpdateExecutionLock|InProcessUpdateStatusStore|PostgresUpdateExecutionLock|RedisUpdateCancellationNotifier|RedisUpdateCompletionNotifier|RedisUpdateStatusStore|UpdateCancellationContext|UpdateCancellationPolicy|UpdateEntityKind|UpdateEntityKinds|UpdateKey|UpdateMoments|UpdateNotificationHub|UpdateProgress|UpdateQueueService|UpdateStatus|UpdateSubstrate|UpdateTaskNaming|RefreshRoundSummary|RefreshRoundSummaryLine))(\.|$)";
+            + @"|^Lighthouse\.Backend\.Platform\.(Encryption|DatabaseManagement|DemoData|Seeding|Persistence|UsageData|Logging|Releases|DomainEvents|Host|UpdateQueue)(\.|$)";
 
         private const string ApiLayerPattern = @"^Lighthouse\.Backend\.API($|\..*)";
 

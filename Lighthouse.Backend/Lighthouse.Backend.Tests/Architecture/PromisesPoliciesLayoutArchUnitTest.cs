@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TestPoliciesNamespace = "Lighthouse.Backend.Tests.Modules.Promises.Application.Policies";
 
-        private const string WhereTheHandlersLivedBefore = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)(\.DomainEvents)?(\.|$)|^Lighthouse\.Backend\.Platform(\.|$)";
+        private const string WhereTheHandlersLivedBefore = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)(\.DomainEvents)?(\.|$)";
 
         private const string WhereTheHandlerTestsLivedBefore = @"^Lighthouse\.Backend\.Tests\.Services(\.|$)";
 

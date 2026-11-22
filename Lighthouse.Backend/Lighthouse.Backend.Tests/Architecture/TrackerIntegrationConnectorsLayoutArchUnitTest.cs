@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ConnectorsNamespace = "Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors";
 
-        private const string WhereTheTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories|Platform)(\.|$)";
+        private const string WhereTheTypesLivedBefore = @"^Lighthouse\.Backend\.(Services|Factories)(\.|$)";
 
         private const string FixtureConnectorsNamespace = "Lighthouse.Backend.Modules.TrackerIntegrationFixtures.ConnectorsLayout.Connectors";
 

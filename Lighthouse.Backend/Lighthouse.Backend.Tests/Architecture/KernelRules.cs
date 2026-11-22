@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string TheServices = @"^Lighthouse\.Backend\.(Services|Platform)(\.|$)";
 
-        public const string TheUpdateQueue = @"^Lighthouse\.Backend\.Services\.Implementation\.BackgroundServices\.Update(\.|$)|^Lighthouse\.Backend\.Platform\.(UpdateQueue\.(AdmittedCancellations|AdmittedWorkOrdering|InProcessUpdateCancellationNotifier|InProcessUpdateCompletionNotifier|InProcessUpdateExecutionLock|InProcessUpdateStatusStore|PostgresUpdateExecutionLock|RedisUpdateCancellationNotifier|RedisUpdateCompletionNotifier|RedisUpdateStatusStore|UpdateCancellationContext|UpdateCancellationPolicy|UpdateEntityKind|UpdateEntityKinds|UpdateKey|UpdateMoments|UpdateNotificationHub|UpdateProgress|UpdateQueueService|UpdateStatus|UpdateSubstrate|UpdateTaskNaming))(\.|$)";
+        public const string TheUpdateQueue = @"^Lighthouse\.Backend\.Services\.Implementation\.BackgroundServices\.Update(\.|$)|^Lighthouse\.Backend\.Platform\.UpdateQueue(\.|$)";
 
         /// <summary>No type in the Models reaches a type in the application core: Services, or a module.</summary>
         public static KernelRuleVerdict ModelsDoNotDependOnServices(ModuleDefinition module, string models = TheModels, string services = ApplicationCoreRules.ApplicationCore)

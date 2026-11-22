@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string AccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)(\.|$)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
 
-        private const string OrganisationSetUp = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)$";
+        private const string OrganisationSetUp = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)$|^Lighthouse\.Backend\.Platform\.(DemoData|Encryption|Host|Logging|Persistence|Releases|UpdateQueue)(\.|$)";
 
         private const string TheDomainEventHandlerPort = "Lighthouse.Backend.Services.Interfaces.DomainEvents.IDomainEventHandler`1";
 

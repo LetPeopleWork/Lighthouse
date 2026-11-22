@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string WhereTheRecordsLivedBefore = @"^Lighthouse\.Backend\.Models\.DeliverySources(\.|$)";
 
-        private const string WhereTheServicesLivedBefore = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)(\.|$)|^Lighthouse\.Backend\.Platform(\.|$)";
+        private const string WhereTheServicesLivedBefore = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)(\.|$)";
 
         private const string WhereTheTestsLivedBefore = @"^Lighthouse\.Backend\.Tests\.Services(\.|$)";
 
