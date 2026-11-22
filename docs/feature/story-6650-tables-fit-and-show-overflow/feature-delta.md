@@ -23,6 +23,7 @@ already show whether people act on a table.
 | 6 | 2026-11-17 | **Rigor:** S1 `thorough` (the shared fit and the sticky pinning: Opus crafter and acceptance designer, Sonnet reviewers); S2–S4 `standard` (Sonnet; Haiku reviewers). |
 | 7 | 2026-11-21 | **Overview at phone width:** when the table is too narrow for the four action icons (Details, Edit, Clone, Delete) beside a readable Name, they collapse into one pinned "⋮" menu button (about 48 px) that opens Details, Edit, Clone and Delete (only the actions the person may use). Sketch approved as shown: `Name ▸ … Features │ ⋮` per row, menu listing the four actions. Found by the completion pass: at 375 px the pinned 200 px actions column covered the Name (grid 269 px). |
 | 8 | 2026-11-21 | **Known limitation accepted:** at 375 px, opening the "⋮" menu on the second Overview table can make the browser scroll that table to its end (a native scroll when a menu item takes focus; cause not found after three craft passes). Focus return and the menu stay as built; the browser check observes focus and the button without hiding the jump. A follow-up Bug is to be created with the maintainer. |
+| 9 | 2026-11-22 | **No follow-up Bug for decision 8 for now.** The menu-open jump stays a known limitation, recorded here only; it was seen in a 375 px browser window and is not confirmed on a real phone. |
 
 Open for the S2 acceptance designer, within the sketch: the exact screen-reader wording of the overflow text (for example
 "More columns to the right"). Loading and failure looks are unchanged: no new data is fetched.
