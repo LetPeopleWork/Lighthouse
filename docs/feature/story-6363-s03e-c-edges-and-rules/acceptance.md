@@ -403,6 +403,133 @@ Preservation is observed by the existing suites in the slice's full verification
 
 nw\-software\-crafter\-reviewer
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Check where every unit test of an Access or Licensing type sits in the test project, and run the same check over made-up test trees and made-up classes
+```
+
+```text
+Each such test sits under Modules/Access or Modules/Licensing in the folder of its subject's layer, with that folder's namespace; a made-up test left in an old folder, at a root, in the wrong layer or in the other module, and a class declared in a module namespace outside its folder, are named; a test in its layer, its twin in the folder, a lookalike name, a helper, a test of another context and the integration, acceptance, contract and architecture tests are not
+```
+
+```text
+A maintainer finds every Access and Licensing unit test next to the module and layer it tests
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessAndLicensingUnitTestPlacementTest\.cs
+
+```text
+a misplaced test whose file name does not start with an Access or Licensing type name; it is caught only when it sits in an old folder, by the no-file-left check
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Look for any file in the old Services Implementation or Interfaces folders Auth, Authorization and Licensing, in the production code and in the tests, and run the same check over made-up source trees
+```
+
+```text
+No file is found there and no file is excused; a made-up newcomer in each old folder and a file deeper below one are named, and files in the modules, in other Services folders and in folders whose names only start alike are not
+```
+
+```text
+Nothing of Access or Licensing is left in the old shared Services folders, and a file put there later is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessAndLicensingUnitTestPlacementTest\.cs
+
+```text
+an Access type placed in another Services folder, such as Services/Implementation directly; the rule judges folders, and the module rules judge namespaces
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Read every constant and static string namespace key of the shared module map and match each against made-up type names in the old Services Auth, Authorization and Licensing namespaces, and do the same over made-up module maps
+```
+
+```text
+No key of the shared module map takes in an old name; today the Access and Licensing key does and is named until it is retired; in the made-up maps, keys that take in an old name, as constants or static fields, are named, and module, neighbour and lookalike keys are not
+```
+
+```text
+The old Access and Licensing entry of the shared module map is gone; Access and Licensing are guarded only by their own module rules
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessAndLicensingUnitTestPlacementTest\.cs
+
+```text
+an old-namespace pattern kept inside a static string array of the map; only constants and static string fields are read, as the design states
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P4
+
+```text
+Run the whole backend suite without the live connector categories after the slice
+```
+
+```text
+Every existing test stays green apart from the two module-map tests retired with the old key; no production file changes
+```
+
+```text
+Users, trackers, the database and the licence check see no change
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend \(dotnet test with the live\-connector categories excluded\)
+
+```text
+a production edit that no existing test observes; review of the diff catches it
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

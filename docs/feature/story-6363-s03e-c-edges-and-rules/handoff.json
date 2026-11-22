@@ -231,12 +231,87 @@
 "stimulus": "F203",
 "user_result": "F205"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F121",
+"L3/F123",
+"T3"
+],
+"still_passes_if": "F215",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingUnitTestPlacementTest.cs"
+},
+"expected": "F213",
+"stimulus": "F212",
+"user_result": "F214"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F122",
+"L3/F123",
+"T3"
+],
+"still_passes_if": "F219",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingUnitTestPlacementTest.cs"
+},
+"expected": "F217",
+"stimulus": "F216",
+"user_result": "F218"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F123",
+"L3/F124",
+"T3"
+],
+"still_passes_if": "F223",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingUnitTestPlacementTest.cs"
+},
+"expected": "F221",
+"stimulus": "F220",
+"user_result": "F222"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F227",
+"test": "Lighthouse.Backend (dotnet test with the live-connector categories excluded)"
+},
+"expected": "F225",
+"stimulus": "F224",
+"user_result": "F226"
+}
 ]
 },
 "counters": {
 "D": 9,
 "E": 7,
-"F": 211,
+"F": 227,
 "K": 3,
 "L": 4,
 "P": 4,
@@ -931,6 +1006,22 @@
 "F209": "Confirmed (root decision 2026-11-22, S1 craft blocked by design): ModuleWording.Of (ModuleWording.cs:13) writes a bare apostrophe after any name ending in s, which gives \"Access' Http adapters\", wrong English for a singular noun ending in -ss, while the approved oracle expects \"Access's Http adapters\". The wording is fixed, not the oracle: S1 extends Of so a name ending in \"ss\" takes \"'s\" and only other names ending in s take a bare apostrophe, so \"Flow metrics'\" and \"Promises'\" keep their text and \"Access's\" is right. Carrier: the string Of returns; owner the test-side ModuleWording class; no per-process state. No other ModuleWording member changes and every existing test that reads wording stays green.",
 "F210": "The one owner of how a rule text names a module, built in the oracle from the module name and its legal callers; Of() is extended for names ending in ss rather than adding a second possessive helper or a per-module override",
 "F211": "Of() gains the ss case; its output changes only for a module name ending in ss (Access); the Flow metrics, Promises, Work Items, Forecasting, Tracker integration and Licensing texts are unchanged",
+"F212": "Check where every unit test of an Access or Licensing type sits in the test project, and run the same check over made-up test trees and made-up classes",
+"F213": "Each such test sits under Modules/Access or Modules/Licensing in the folder of its subject's layer, with that folder's namespace; a made-up test left in an old folder, at a root, in the wrong layer or in the other module, and a class declared in a module namespace outside its folder, are named; a test in its layer, its twin in the folder, a lookalike name, a helper, a test of another context and the integration, acceptance, contract and architecture tests are not",
+"F214": "A maintainer finds every Access and Licensing unit test next to the module and layer it tests",
+"F215": "a misplaced test whose file name does not start with an Access or Licensing type name; it is caught only when it sits in an old folder, by the no-file-left check",
+"F216": "Look for any file in the old Services Implementation or Interfaces folders Auth, Authorization and Licensing, in the production code and in the tests, and run the same check over made-up source trees",
+"F217": "No file is found there and no file is excused; a made-up newcomer in each old folder and a file deeper below one are named, and files in the modules, in other Services folders and in folders whose names only start alike are not",
+"F218": "Nothing of Access or Licensing is left in the old shared Services folders, and a file put there later is caught",
+"F219": "an Access type placed in another Services folder, such as Services/Implementation directly; the rule judges folders, and the module rules judge namespaces",
+"F220": "Read every constant and static string namespace key of the shared module map and match each against made-up type names in the old Services Auth, Authorization and Licensing namespaces, and do the same over made-up module maps",
+"F221": "No key of the shared module map takes in an old name; today the Access and Licensing key does and is named until it is retired; in the made-up maps, keys that take in an old name, as constants or static fields, are named, and module, neighbour and lookalike keys are not",
+"F222": "The old Access and Licensing entry of the shared module map is gone; Access and Licensing are guarded only by their own module rules",
+"F223": "an old-namespace pattern kept inside a static string array of the map; only constants and static string fields are read, as the design states",
+"F224": "Run the whole backend suite without the live connector categories after the slice",
+"F225": "Every existing test stays green apart from the two module-map tests retired with the old key; no production file changes",
+"F226": "Users, trackers, the database and the licence check see no change",
+"F227": "a production edit that no existing test observes; review of the diff catches it",
 "F23": "Confirmed (DESIGN record, RbacIdentityPattern retired in C3): ModuleBoundariesArchUnitTest.cs loses RbacIdentityPattern (lines 22-23), RbacIdentityModule (lines 64-65) and its one assertion, the not-empty check at line 124; no other member of that file changes. The not-empty claim is carried by the new module rules: TypesLiveInTheirLayer fails on a listed Access or Licensing type that is absent (MissingSubjects) and DomainReachesOnlyTheKernelAndTheBaseLibrary fails on an empty Access Domain. The key is also read by name in feature A's oracle AccessAndLicensingRulesSeeTheModulesArchUnitTest: the two tests that read it (AServiceUnderTheModuleReachingARepository_IsNamedByTheModuleMapsAccessAndLicensingNamespaces_AsItsTwinInTheOldPlaceIs, lines 63-81, and AnAccessServiceAskingTheLicenceUnderTheModules_StaysInsideOneModuleOnTheModuleMap_AsItsTwinInTheOldPlaceDoes, lines 155-175) and the private helpers and fixtures only they use are removed in the same slice, because the module map they guard no longer exists; its Access-asks-Licensing legality is carried by R-A7 (Licensing not forbidden) and R-L3 (Access Application a legal caller). Every other test of that file, and the old-place alternatives in the Work Items, Tracker integration, Promises and Forecasting keys, stay unchanged.",
 "F24": "Confirmed (D-9, maintainer answer 2026-11-17): Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingUnitTestPlacementTest.cs, modelled on PromisesUnitTestPlacementTest, checks that every unit test of an Access or Licensing type (the AccessAndLicensingMembership types) lives under Tests/Modules/Access or Tests/Modules/Licensing in the folder of its subject's layer (Domain, Application, Adapters/Http), and that no file is left in Services/Implementation or Services/Interfaces under Auth, Authorization or Licensing, in production or tests, with no per-file exception (B4 moved the licence data; LicensingTestDataPlacementTest stays as it is). Integration, acceptance, controller, contract and architecture test roots are not judged; tests of other contexts that mock an Access or Licensing port are not Access unit tests. Each rule also runs on a made-up tree (PlacementFixtures/Modules/Access, PlacementFixtures/Modules/Licensing and a made-up file in an old folder), which must be reported. Measured: those old folders hold 0 files today.",
 "F26": "Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of the file tree: namespace placement, the exact set of edges per rule, the location of each test file, and the absence of a key that sees the old namespaces. Each is decided exactly by its NUnit architecture oracle (Finite laws) with a made-up offender per rule as falsifier. No Quint, TLA+ or Agda model is selected: no state machine, ordering, concurrency, recovery or progress claim exists (no production code changes), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: the rule lists are string sets compared both ways by InlineBaseline; the C# compiler checks the new rule's signature; property tests add nothing over a finite edge set. Paradigm object_oriented (repository authority); the work is test-side rule code; nw-code-design-oo smells applied: duplicated knowledge (one shared rule, not a copy per module) and a false reason in a rule text; namespace patterns stay strings, as in every existing rule file.",
