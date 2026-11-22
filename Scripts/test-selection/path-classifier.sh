@@ -14,7 +14,7 @@ JIRA_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests
 ADO_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/AzureDevOps/'
 LINEAR_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/Linear/'
 SERVICENOW_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Modules/TrackerIntegration/Adapters/Connectors/ServiceNow/'
-GITHUB_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/(Implementation|Interfaces)/[^/]*([Gg]it[Hh]ubService|LighthouseReleaseService)[^/]*\.cs$'
+GITHUB_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/(Services/(Implementation|Interfaces)|Platform/Releases)/[^/]*([Gg]it[Hh]ubService|LighthouseReleaseService)[^/]*\.cs$'
 
 # A change in any of these locations must force every integration category to
 # run (a regression here can break any connector):
