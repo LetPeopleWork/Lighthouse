@@ -461,6 +461,100 @@ A widening that changes which real types a rule examines without changing any ve
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P4
+
+```text
+A change touches only the GitHub service, the Lighthouse release service, one of their interfaces or one of their tests, now kept with the platform's release code
+```
+
+```text
+CI test selection runs the live GitHub suite and the backend suite for that change, and no tracker live suite
+```
+
+```text
+A change to the release code cannot reach main without the suite that talks to GitHub having run
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/test\-selection\/test\-path\-classifier\-platform\.sh
+
+```text
+A widening that also selects the GitHub suite for other release-area files not checked here, such as a nested folder under the release area; the other-file and other-area cases catch the broad widenings
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P4
+
+```text
+A change touches only platform code that does not talk to GitHub: another file of the release area, or a file of another platform area such as encryption
+```
+
+```text
+CI test selection runs the backend suite for that change and no live suite, the GitHub one included
+```
+
+```text
+Platform changes that cannot break GitHub do not spend live GitHub quota, and still run the backend tests
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/test\-selection\/test\-path\-classifier\-platform\.sh
+
+```text
+A widening that selects the GitHub suite for a platform area not among the two checked; the encryption case stands for every other area and the assembly-service case for the rest of the release area
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+P6
+
+```text
+Every change the classifier already handled is classified again, among them the GitHub and release service at their old service paths
+```
+
+```text
+Every one keeps its earlier selection: the old release-code paths still run the live GitHub suite, and no other suite selection changes
+```
+
+```text
+CI runs the same suites as before for every change it already knew; nothing else a contributor sees changes
+```
+
+##### Disposition
+
+Tested
+
+Scripts\/test\-selection\/test\-path\-classifier\.sh
+
+```text
+A change that alters the selection for a path neither script lists; the existing cases cover each pattern of the classifier
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows

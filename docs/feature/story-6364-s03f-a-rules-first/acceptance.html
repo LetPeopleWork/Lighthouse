@@ -550,6 +550,88 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A change touches only the GitHub service, the Lighthouse release service, one of their interfaces or one of their tests, now kept with the platform&#x27;s release code
+</code></pre>
+
+<pre><code>CI test selection runs the live GitHub suite and the backend suite for that change, and no tracker live suite
+</code></pre>
+
+<pre><code>A change to the release code cannot reach main without the suite that talks to GitHub having run
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/test-selection/test-path-classifier-platform.sh</p>
+
+<pre><code>A widening that also selects the GitHub suite for other release-area files not checked here, such as a nested folder under the release area; the other-file and other-area cases catch the broad widenings
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A change touches only platform code that does not talk to GitHub: another file of the release area, or a file of another platform area such as encryption
+</code></pre>
+
+<pre><code>CI test selection runs the backend suite for that change and no live suite, the GitHub one included
+</code></pre>
+
+<pre><code>Platform changes that cannot break GitHub do not spend live GitHub quota, and still run the backend tests
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/test-selection/test-path-classifier-platform.sh</p>
+
+<pre><code>A widening that selects the GitHub suite for a platform area not among the two checked; the encryption case stands for every other area and the assembly-service case for the rest of the release area
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<p>P6</p>
+
+<pre><code>Every change the classifier already handled is classified again, among them the GitHub and release service at their old service paths
+</code></pre>
+
+<pre><code>Every one keeps its earlier selection: the old release-code paths still run the live GitHub suite, and no other suite selection changes
+</code></pre>
+
+<pre><code>CI runs the same suites as before for every change it already knew; nothing else a contributor sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/test-selection/test-path-classifier.sh</p>
+
+<pre><code>A change that alters the selection for a path neither script lists; the existing cases cover each pattern of the classifier
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

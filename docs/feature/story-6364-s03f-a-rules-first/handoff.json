@@ -263,12 +263,66 @@
 "stimulus": "F258",
 "user_result": "F224"
 }
+],
+"S3": [
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F114",
+"L2/F115",
+"L2/F116"
+],
+"still_passes_if": "F296",
+"test": "Scripts/test-selection/test-path-classifier-platform.sh"
+},
+"expected": "F294",
+"stimulus": "F293",
+"user_result": "F295"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F117"
+],
+"still_passes_if": "F300",
+"test": "Scripts/test-selection/test-path-classifier-platform.sh"
+},
+"expected": "F298",
+"stimulus": "F297",
+"user_result": "F299"
+},
+{
+"covers": [
+"P4",
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F118",
+"L2/F119"
+],
+"still_passes_if": "F304",
+"test": "Scripts/test-selection/test-path-classifier.sh"
+},
+"expected": "F302",
+"stimulus": "F301",
+"user_result": "F303"
+}
 ]
 },
 "counters": {
 "D": 10,
 "E": 6,
-"F": 292,
+"F": 304,
 "K": 5,
 "L": 4,
 "P": 6,
@@ -1517,8 +1571,20 @@
 "F290": "WhereTheTypesLivedBefore and WhereTheValueTypesLivedBefore (line 25) widened under the preservation law; verdicts on today's types are unchanged.",
 "F291": "WhereTheTypesLivedBefore (unanchored text scan) widened under the preservation law; verdicts on today's types are unchanged.",
 "F292": "WhereTheHandlersLivedBefore and AnOldNamespacePrefix (line 39) widened under the preservation law; verdicts on today's types are unchanged.",
+"F293": "A change touches only the GitHub service, the Lighthouse release service, one of their interfaces or one of their tests, now kept with the platform's release code",
+"F294": "CI test selection runs the live GitHub suite and the backend suite for that change, and no tracker live suite",
+"F295": "A change to the release code cannot reach main without the suite that talks to GitHub having run",
+"F296": "A widening that also selects the GitHub suite for other release-area files not checked here, such as a nested folder under the release area; the other-file and other-area cases catch the broad widenings",
+"F297": "A change touches only platform code that does not talk to GitHub: another file of the release area, or a file of another platform area such as encryption",
+"F298": "CI test selection runs the backend suite for that change and no live suite, the GitHub one included",
+"F299": "Platform changes that cannot break GitHub do not spend live GitHub quota, and still run the backend tests",
 "F3": "The membership of the platform lane is measured from the compiled code and fixed in a test: each platform type with its area, its old and its new namespace, and the files that stay with their owner; the test finds each listed type in its old or its new namespace, fails when a listed type is missing or a listed name does not exist, finds no domain-event handler outside Modules, and records every suppression or analyser-config target that names a moving type.",
 "F30": "Confirmed (D-13, X3, E10): a new EXAMINE command platform-answers-compare (CREATE_NEW, thin, on the shared capture and compare pieces of build-examine-commands in the shape of access-answers-compare) starts each revision in-process with authentication off and reads the platform answers that need no network: GET systeminfo, version current, updateSupported and distribution (not hasupdate or new, which call GitHub), encryption and encryption/secrets, database-management/status, usagedata/state, logs level, level/supported and problems, update status. Volatile fields (uptime, memory, clock values) are blanked at any depth by its masked keys; which endpoints answer and which fields are volatile are measured in A4. IDENTICAL exit 0, DIFFERENT exit 1 naming the changed answer, and it fails when nothing was compared. Its compare stage is reachable on two capture folders (--compare-captures BASE CANDIDATE). Declared in .nwave/examine.json with a platform-answers-selftest probe before any file moves.",
+"F300": "A widening that selects the GitHub suite for a platform area not among the two checked; the encryption case stands for every other area and the assembly-service case for the rest of the release area",
+"F301": "Every change the classifier already handled is classified again, among them the GitHub and release service at their old service paths",
+"F302": "Every one keeps its earlier selection: the old release-code paths still run the live GitHub suite, and no other suite selection changes",
+"F303": "CI runs the same suites as before for every change it already knew; nothing else a contributor sees changes",
+"F304": "A change that alters the selection for a path neither script lists; the existing cases cover each pattern of the classifier",
 "F31": "Confirmed (D-13, D-14, brief decisions): rigor thorough for feature A (architect, acceptance designer, crafter opus; reviewers and EXAMINE sonnet); no review window; EXAMINE observes through architecture-rules, ef-model-unchanged, platform-answers-compare once A4 adds it, refresh-reactions-compare, test-selection-show, ci-live-suites-show and backend-tests. The mutation bar applies once at the end of S03f to the moved production code; feature A changes no production code. Usage-data event, UI sketch, loading and failure looks: not applicable.",
 "F32": "Carriers: the platform lane map is a static class PlatformLaneMembership in the Architecture folder (shape of PromisesMembership and AccessAndLicensingMembership: per moving type its short or full name, area, old namespace and new namespace; the files that stay with owner; the suppression and analyser-config targets naming a moving type; the strings each B slice renames), owner the A1 oracle; rule patterns stay const strings in their test classes and ModuleRules, KernelRules and ApplicationCoreRules, owner each rule class; the IL is read through IlDependencies over Mono.Cecil; the dispatcher selection is HandlerSelection in ApplicationCoreRules, selecting the dispatcher and its nested (compiler-generated) types; the GitHub selection is GITHUB_REGEX in path-classifier.sh, owner that script; platform-answers-compare and platform-answers-selftest are generated bash scripts under Scripts/examine/bin, owner build-examine-commands. No production carrier, effect, error type or per-process state changes.",
 "F33": "Formal verification not applicable (feature-delta Formal verification; quint 0.33.1 and OpenJDK 21 probed, no checker selected): no state, ordering, concurrency, recovery or liveness claim changes; the update queue, the locks and the dispatcher move unchanged in feature B. The preservation law of A2 is decided exhaustively over the finite domain (moving types x const patterns) by an executable check in the default suite; the membership is decided by the IL; the classifier and the compare command by enumerated cases. A Quint, TLA+ or Agda model would restate the namespace map and could not fail. Property tests not applicable: every domain is finite and enumerated exhaustively, so a generator adds no coverage. Paradigm object_oriented is kept; the targets are test-side rules and bash scripts outside the OO domain core, so no domain owner, value object or Object Calisthenics rule is in play.",
