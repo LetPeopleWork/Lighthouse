@@ -46,8 +46,8 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Testcontainers.PostgreSql" Version="4.16.0" />
-		<PackageReference Include="Testcontainers.Redis" Version="4.16.0" />
+		<PackageReference Include="Testcontainers.PostgreSql" Version="4.17.0" />
+		<PackageReference Include="Testcontainers.Redis" Version="4.17.0" />
 		<PackageReference Include="TngTech.ArchUnitNET" Version="0.13.5" />
 		<PackageReference Include="TngTech.ArchUnitNET.NUnit" Version="0.13.5" />
 	</ItemGroup>
