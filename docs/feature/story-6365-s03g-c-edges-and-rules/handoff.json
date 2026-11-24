@@ -93,12 +93,12 @@
 "obligations": [
 "T1"
 ],
-"still_passes_if": "F111",
+"still_passes_if": "F123",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs"
 },
-"expected": "F109",
-"stimulus": "F108",
-"user_result": "F110"
+"expected": "F121",
+"stimulus": "F120",
+"user_result": "F122"
 },
 {
 "covers": [
@@ -131,13 +131,29 @@
 "expected": "F117",
 "stimulus": "F116",
 "user_result": "F118"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F127",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs"
+},
+"expected": "F125",
+"stimulus": "F124",
+"user_result": "F126"
 }
 ]
 },
 "counters": {
 "D": 5,
 "E": 6,
-"F": 119,
+"F": 127,
 "K": 1,
 "P": 3,
 "S": 2,
@@ -557,6 +573,9 @@
 }
 ]
 },
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLanePatternRoles.cs"
+],
 "verification": [
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefinementModuleBoundariesArchUnitTest",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
@@ -621,11 +640,7 @@
 "F105": "Only the API, the composition root and Refinement Application reach the Domain, only the API and the composition root reach the Application, both lists are empty on today's code; a made-up newcomer is named while the API, root and a listed caller are not, a deleted listed caller is named as offending, and a gone entry is named for deletion; the failure speaks of Refinement and the API",
 "F106": "A new caller of Refinement is caught and the failure names it in Refinement wording",
 "F107": "A rule that treats all of Lighthouse.Backend.API or the whole root namespace as legal, or one that ignores calls written only inside an async method, would still pass; the newcomer fixtures include an async-only caller and unlisted namespaces",
-"F108": "A Refinement Application type starts holding an EF Core set, the data context, an API type, a module adapter, Tracker integration or update code",
-"F109": "Today's Application reaches none of them with an empty list; a made-up type for each of the six is named with its edge in Refinement wording and a compliant twin that reaches a clock and legal neighbour Applications passes",
 "F11": "C1: no rule constant or string literal in the test project matches the old Refinement namespaces or paths any more; every Refinement rule names Modules.Refinement only and keeps its verdict.",
-"F110": "Refinement cannot start depending on storage, the API, adapters, trackers or the update queue unseen",
-"F111": "A forbidden-code pattern missing one target (for example update code) would still pass; one fixture per target refuses that",
 "F112": "A Refinement Application type starts reaching Access, Organisation set-up, the Platform lane or a repository along an edge not on the list, or a listed edge disappears",
 "F113": "The 14 edges measured from the compiled code (Access identity, blackout service, clock, recurrence, Work Item and sizing-log repositories and the generic repository) equal the inline list both ways; deleting any entry is named as offending, a listed edge with no code is named for deletion, and a made-up unlisted Access, set-up, Platform lane or repository edge is named",
 "F114": "A new edge from Refinement into those contexts is caught, and a removed edge forces the list to shrink",
@@ -635,6 +650,14 @@
 "F118": "No visible change; only test-side rules were added",
 "F119": "A rule set that passes because its patterns match nothing would still pass on real code; the C1 pattern check and the non-empty examined-type checks in the shared rules refuse blind patterns",
 "F12": "No rule still points at where Refinement used to live",
+"F120": "A Refinement Application type starts holding an EF Core set, the data context, an API type, a module adapter, Tracker integration, an update queue type or an update interface",
+"F121": "Today's Application reaches none of them with an empty list; a made-up type for each of the seven targets, the update interfaces (update service, team and portfolio updaters) included, is named with its edge in Refinement wording, and a compliant twin that reaches a clock and legal neighbour Applications passes; the forbidden-code pattern is the update code of the Access rules plus the update queue",
+"F122": "Refinement cannot start depending on storage, the API, adapters, trackers or the update pipeline unseen",
+"F123": "A forbidden-code pattern missing one target, for example the update interfaces under Services.Interfaces.Update, would still pass; one fixture per target, including an update-interface fixture, refuses that",
+"F124": "A Refinement rule constant names the module without anchoring its end, or a new alternative is added to the Tracker integration, Access, Licensing or per-type Refinement patterns",
+"F125": "Every Modules.Refinement alternative of the Refinement rule constants (the shared pattern, the Tracker integration, Access and Licensing composites, the per-type patterns and this file's own patterns) fails to match a namespace that only starts like the module's; a made-up constant with an open end is named and its anchored twin is not. This is where the lookalike check that the retired move law carried now lives",
+"F126": "A rule written for Refinement never silently constrains or excuses a neighbouring namespace",
+"F127": "A constant ending in the bare module name, which also matches a neighbouring namespace, would still pass any rule that only checks that each alternative matches a Refinement type; matching a lookalike namespace refuses it",
 "F13": "C2: Refinement has its own module rules R-R1 to R-R6 on ModuleRules, read from the IL with measured inline lists, and each catches a made-up offender in Refinement's own wording.",
 "F14": "A new edge into or out of Refinement is caught by its own rules",
 "F15": "Question 1 (preservation law): retire feature A's Refinement call of the move law. Delete RefinementRulesSeeTheMoveArchUnitTest, RefinementPatternRoles and RefinementStringsTheMoveRenames, and drop the rename-list use in RefinementLivesInItsModuleArchUnitTest. Reason: the move is complete and feature B pins every type to its new namespace, so a law that compares old and new sight has no old side left, and a Refinement call kept as a move-complete check would be a second owner next to the C1 oracle. NamespaceMoveLaw, PatternDeclaration and PatternRoleMap stay: PlatformLaneRulesSeeTheMoveArchUnitTest still uses them.",

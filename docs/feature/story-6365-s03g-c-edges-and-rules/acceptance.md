@@ -158,15 +158,15 @@ A rule that treats all of Lighthouse.Backend.API or the whole root namespace as 
 P2
 
 ```text
-A Refinement Application type starts holding an EF Core set, the data context, an API type, a module adapter, Tracker integration or update code
+A Refinement Application type starts holding an EF Core set, the data context, an API type, a module adapter, Tracker integration, an update queue type or an update interface
 ```
 
 ```text
-Today's Application reaches none of them with an empty list; a made-up type for each of the six is named with its edge in Refinement wording and a compliant twin that reaches a clock and legal neighbour Applications passes
+Today's Application reaches none of them with an empty list; a made-up type for each of the seven targets, the update interfaces (update service, team and portfolio updaters) included, is named with its edge in Refinement wording, and a compliant twin that reaches a clock and legal neighbour Applications passes; the forbidden-code pattern is the update code of the Access rules plus the update queue
 ```
 
 ```text
-Refinement cannot start depending on storage, the API, adapters, trackers or the update queue unseen
+Refinement cannot start depending on storage, the API, adapters, trackers or the update pipeline unseen
 ```
 
 ##### Disposition
@@ -176,7 +176,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs
 
 ```text
-A forbidden-code pattern missing one target (for example update code) would still pass; one fixture per target refuses that
+A forbidden-code pattern missing one target, for example the update interfaces under Services.Interfaces.Update, would still pass; one fixture per target, including an update-interface fixture, refuses that
 ```
 
 ###### Obligations
@@ -235,6 +235,35 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleB
 
 ```text
 A rule set that passes because its patterns match nothing would still pass on real code; the C1 pattern check and the non-empty examined-type checks in the shared rules refuse blind patterns
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A Refinement rule constant names the module without anchoring its end, or a new alternative is added to the Tracker integration, Access, Licensing or per-type Refinement patterns
+```
+
+```text
+Every Modules.Refinement alternative of the Refinement rule constants (the shared pattern, the Tracker integration, Access and Licensing composites, the per-type patterns and this file's own patterns) fails to match a namespace that only starts like the module's; a made-up constant with an open end is named and its anchored twin is not. This is where the lookalike check that the retired move law carried now lives
+```
+
+```text
+A rule written for Refinement never silently constrains or excuses a neighbouring namespace
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs
+
+```text
+A constant ending in the bare module name, which also matches a neighbouring namespace, would still pass any rule that only checks that each alternative matches a Refinement type; matching a lookalike namespace refuses it
 ```
 
 ###### Obligations

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.SizingFixtures.Boundaries.Domain;
@@ -13,10 +14,12 @@ using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnl
 using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingTheData.Application;
 using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingTrackerIntegration.Application;
 using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.TouchingTheUpdateCode.Application;
+using Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.TouchingTheUpdateContracts.Application;
 using Lighthouse.Backend.SizingBoundariesFixtures.ApplicationNewcomer;
 using Lighthouse.Backend.SizingBoundariesFixtures.CompositionRoot;
 using Lighthouse.Backend.SizingBoundariesFixtures.DomainNewcomer;
 using Lighthouse.Backend.SizingBoundariesFixtures.ListedCallers;
+using Lighthouse.Backend.Tests.Architecture.RefinementLookalikeFixtures;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -74,6 +77,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string AGoneEntry = "Lighthouse.Backend.SizingBoundariesFixtures.Gone.AFormerVotesCaller";
 
         private const string AGoneEdge = "Lighthouse.Backend.Modules.Refinement.Application.AFormerCalendar -> Lighthouse.Backend.Platform.Host.ILighthouseClock";
+
+        private const int MinimumRefinementRuleConstants = 7;
+
+        private static readonly string[] TypesAModuleLookalikeMightHold = ["Domain.NeedBand", "Application.RefinementResolution", "Application.RefinementCadenceCalendar"];
 
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 
@@ -167,8 +174,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.Refinement.Application.VoterIdentityResolver -> Lighthouse.Backend.Modules.Access.Application.IAuthModeResolver",
         ];
 
+        private const string TheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices\.Update|Interfaces\.Update)(\.|$)|^Lighthouse\.Backend\.Platform\.UpdateQueue(\.|$)";
+
         private static readonly string TheForbiddenCode =
-            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{TrackerIntegration})|(?:{KernelRules.TheUpdateQueue})";
+            $"(?:{EntityFrameworkCore})|(?:{ApplicationCoreRules.TheData})|(?:{ApplicationCoreRules.TheApi})|(?:{AnyModuleAdapters})|(?:{TrackerIntegration})|(?:{TheUpdateCode})";
 
         // Organisation set-up has no namespace of its own yet: its settings, blackout periods and recurrence sit in the
         // top-level Services namespaces, and the Platform lane and the repositories sit under Services and Platform too.
@@ -369,6 +378,40 @@ namespace Lighthouse.Backend.Tests.Architecture
             ThenTheGoneEntryIsNamedForDeletion(AccessSetUpPlatformAndRepositoriesRule(TestModule.Value, namespaces, [listed, AGoneEdge]).Check, AGoneEdge, "the Access, set-up, Platform and repositories rule");
         }
 
+        [Test]
+        public void NoRefinementAlternativeOfTheRuleConstantsMatchesALookalikeNamespace()
+        {
+            var constants = RefinementRuleConstants(TypesOfTheTestAssemblyOutsideFixtures());
+
+            var loose = ConstantsMatchingALookalike(constants);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(constants, Has.Count.GreaterThanOrEqualTo(MinimumRefinementRuleConstants),
+                    $"Only {constants.Count} rule constants name Modules.Refinement and at least {MinimumRefinementRuleConstants} exist (the shared pattern, the Tracker integration, Access and Licensing composites, the per-type patterns and this file's own). " +
+                    "Why it matters: a constant that vanished from the check would pass it for free. How to fix: keep every Refinement rule constant in the population the check reads.");
+                Assert.That(loose, Is.Empty,
+                    $"{loose.Count} of the {constants.Count} Refinement rule constants also match a namespace that only starts like the module's:" + Environment.NewLine +
+                    string.Join(Environment.NewLine, loose) + Environment.NewLine +
+                    "Why it matters: a rule that names the module without anchoring its end also constrains a neighbouring namespace, so a type there would be held to Refinement's rules, or let through them. " +
+                    "How to fix: end the alternative with (\\.|$) or an exact type name.");
+            }
+        }
+
+        [Test]
+        public void AMadeUpRefinementConstantWithoutAnAnchoredEnd_IsNamedAsMatchingALookalike_AndItsAnchoredTwinIsNot()
+        {
+            var constants = RefinementRuleConstants(TypesOfTheTestAssemblyInTheLookalikeFixtures());
+
+            var loose = ConstantsMatchingALookalike(constants);
+
+            Assert.That(
+                loose,
+                Has.Count.EqualTo(1).And.All.StartWith($"{nameof(AnUnanchoredRefinementRule)}.{nameof(AnUnanchoredRefinementRule.Rule)}"),
+                $"Of {constants.Count} made-up Refinement rule constants the check named [{string.Join("; ", loose)}], and should name only the one whose end is not anchored. " +
+                "Why it matters: a check blind to a loose end lets a rule spill over onto a neighbouring namespace. How to fix: match every alternative against the lookalike namespace.");
+        }
+
         private static IEnumerable<TestCaseData> RefinementApplicationTypesReachingForbiddenCode()
         {
             yield return new TestCaseData(typeof(ASizingServiceHoldingADbSet), "Microsoft.EntityFrameworkCore.DbSet`1")
@@ -383,6 +426,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("ARefinementApplicationTypeReachingTrackerIntegration_IsNamed");
             yield return new TestCaseData(typeof(ASizingServiceTouchingTheUpdateCode), "Lighthouse.Backend.Platform.UpdateQueue.UpdateKey")
                 .SetName("ARefinementApplicationTypeReachingTheUpdateCode_IsNamed");
+            yield return new TestCaseData(typeof(ASizingServiceReachingTheUpdateContracts), "Lighthouse.Backend.Services.Interfaces.Update.IUpdateService")
+                .SetName("ARefinementApplicationTypeReachingTheUpdateContracts_IsNamed");
         }
 
         private static IEnumerable<TestCaseData> RefinementApplicationTypesReachingUnlistedEdges()
@@ -477,6 +522,36 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"Namespace \"{layerNamespace}\" should hold exactly the types its list names, because the list is where a type is placed in " +
                 "Refinement's layer on purpose. A type that lands in the layer unlisted was placed there without that decision. Add it to the " +
                 "layer's list if it belongs to Refinement, or move it to the module that owns it.");
+        }
+
+        // The old-path sweep keeps a bare module prefix to pick out the alternatives it checks; it is a selector, not a rule.
+        private static List<Type> TypesOfTheTestAssemblyOutsideFixtures()
+            => [.. typeof(RefinementModuleBoundariesArchUnitTest).Assembly.GetTypes()
+                .Where(type => type.Namespace?.Split('.').Any(part => part.EndsWith("Fixtures", StringComparison.Ordinal)) != true)
+                .Where(type => (type.DeclaringType ?? type) != typeof(RefinementRulesNameOnlyTheModuleArchUnitTest))];
+
+        private static List<Type> TypesOfTheTestAssemblyInTheLookalikeFixtures()
+            => [.. typeof(RefinementModuleBoundariesArchUnitTest).Assembly.GetTypes().Where(type => type.Namespace == typeof(AnUnanchoredRefinementRule).Namespace)];
+
+        private static List<(string Field, string Value)> RefinementRuleConstants(IEnumerable<Type> types)
+            => [.. from type in types
+                   where !type.ContainsGenericParameters
+                   from field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                   where field.FieldType == typeof(string) && (field.IsLiteral || field.IsInitOnly)
+                   let value = (field.IsLiteral ? field.GetRawConstantValue() : field.GetValue(null)) as string
+                   where value is not null && value.Contains(@"Modules\.Refinement", StringComparison.Ordinal)
+                   select (Field: $"{(type.DeclaringType ?? type).Name}.{field.Name}", Value: value)];
+
+        private static List<string> ConstantsMatchingALookalike(IEnumerable<(string Field, string Value)> constants)
+        {
+            var lookalikes = TypesAModuleLookalikeMightHold
+                .Select(type => string.Concat("Lighthouse.Backend.Modules.", "Refinement", "Lookalike", ".", type))
+                .ToList();
+
+            return [.. from constant in constants
+                       let lookalike = lookalikes.FirstOrDefault(name => Regex.IsMatch(name, constant.Value, RegexOptions.CultureInvariant, PatternTimeout))
+                       where lookalike is not null
+                       select $"{constant.Field} = {constant.Value} matches {lookalike}"];
         }
 
         private static string OutsideFixtures(params string[] namespaces)
@@ -702,6 +777,14 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.TouchingT
     }
 }
 
+namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.TouchingTheUpdateContracts.Application
+{
+    internal sealed class ASizingServiceReachingTheUpdateContracts(global::Lighthouse.Backend.Services.Interfaces.Update.IUpdateService updates)
+    {
+        public int Describe() => updates.GetHashCode();
+    }
+}
+
 namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnlistedAccessType.Application
 {
     internal sealed class AnApplicationTypeReachingAnUnlistedAccessType(global::Lighthouse.Backend.Modules.Access.Application.IAuthModeResolver authMode)
@@ -731,5 +814,19 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingA
     internal sealed class AnApplicationTypeReachingAnUnlistedRepository(global::Lighthouse.Backend.Services.Interfaces.Repositories.IWorkItemRepository workItems)
     {
         public int Describe() => workItems.GetHashCode();
+    }
+}
+
+namespace Lighthouse.Backend.Tests.Architecture.RefinementLookalikeFixtures
+{
+    // Made-up rule constants; the unanchored one is assembled from pieces so its text is not a rule pattern of its own.
+    internal static class AnUnanchoredRefinementRule
+    {
+        public const string Rule = @"^Lighthouse\.Backend\.Modules\." + "Refinement";
+    }
+
+    internal static class AnAnchoredRefinementRule
+    {
+        public const string Rule = @"^Lighthouse\.Backend\.Modules\." + @"Refinement(\.|$)";
     }
 }

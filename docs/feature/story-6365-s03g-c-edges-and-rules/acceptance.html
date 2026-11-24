@@ -286,13 +286,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>A Refinement Application type starts holding an EF Core set, the data context, an API type, a module adapter, Tracker integration or update code
+<pre><code>A Refinement Application type starts holding an EF Core set, the data context, an API type, a module adapter, Tracker integration, an update queue type or an update interface
 </code></pre>
 
-<pre><code>Today&#x27;s Application reaches none of them with an empty list; a made-up type for each of the six is named with its edge in Refinement wording and a compliant twin that reaches a clock and legal neighbour Applications passes
+<pre><code>Today&#x27;s Application reaches none of them with an empty list; a made-up type for each of the seven targets, the update interfaces (update service, team and portfolio updaters) included, is named with its edge in Refinement wording, and a compliant twin that reaches a clock and legal neighbour Applications passes; the forbidden-code pattern is the update code of the Access rules plus the update queue
 </code></pre>
 
-<pre><code>Refinement cannot start depending on storage, the API, adapters, trackers or the update queue unseen
+<pre><code>Refinement cannot start depending on storage, the API, adapters, trackers or the update pipeline unseen
 </code></pre>
 
 <h5>Disposition</h5>
@@ -301,7 +301,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
 
-<pre><code>A forbidden-code pattern missing one target (for example update code) would still pass; one fixture per target refuses that
+<pre><code>A forbidden-code pattern missing one target, for example the update interfaces under Services.Interfaces.Update, would still pass; one fixture per target, including an update-interface fixture, refuses that
 </code></pre>
 
 <h6>Obligations</h6>
@@ -352,6 +352,31 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
 
 <pre><code>A rule set that passes because its patterns match nothing would still pass on real code; the C1 pattern check and the non-empty examined-type checks in the shared rules refuse blind patterns
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A Refinement rule constant names the module without anchoring its end, or a new alternative is added to the Tracker integration, Access, Licensing or per-type Refinement patterns
+</code></pre>
+
+<pre><code>Every Modules.Refinement alternative of the Refinement rule constants (the shared pattern, the Tracker integration, Access and Licensing composites, the per-type patterns and this file&#x27;s own patterns) fails to match a namespace that only starts like the module&#x27;s; a made-up constant with an open end is named and its anchored twin is not. This is where the lookalike check that the retired move law carried now lives
+</code></pre>
+
+<pre><code>A rule written for Refinement never silently constrains or excuses a neighbouring namespace
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs</p>
+
+<pre><code>A constant ending in the bare module name, which also matches a neighbouring namespace, would still pass any rule that only checks that each alternative matches a Refinement type; matching a lookalike namespace refuses it
 </code></pre>
 
 <h6>Obligations</h6>
