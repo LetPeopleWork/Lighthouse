@@ -1,6 +1,6 @@
 using System.Reflection;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 

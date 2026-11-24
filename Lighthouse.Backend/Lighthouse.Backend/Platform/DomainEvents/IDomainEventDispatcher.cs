@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Events;
 
-namespace Lighthouse.Backend.Services.Interfaces.DomainEvents
+namespace Lighthouse.Backend.Platform.DomainEvents
 {
     /// <summary>
     /// Inbound application port for in-process domain-event publication (ADR-027 D1/D2). Publishing an event

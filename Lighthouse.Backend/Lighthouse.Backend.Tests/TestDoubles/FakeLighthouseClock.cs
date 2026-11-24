@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Time.Testing;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.TestDoubles
 {

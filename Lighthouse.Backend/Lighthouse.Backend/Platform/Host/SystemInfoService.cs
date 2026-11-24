@@ -9,7 +9,7 @@ using Npgsql;
 using System.Globalization;
 using System.Runtime.InteropServices;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Platform.Host
 {
     public class SystemInfoService : ISystemInfoService
     {

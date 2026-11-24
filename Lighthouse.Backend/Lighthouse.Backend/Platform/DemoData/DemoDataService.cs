@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Platform.DemoData
 {

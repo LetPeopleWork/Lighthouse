@@ -21,6 +21,7 @@ using Moq;
 using Serilog;
 using Serilog.Extensions.Logging;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 {

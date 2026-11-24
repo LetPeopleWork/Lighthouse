@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
 {

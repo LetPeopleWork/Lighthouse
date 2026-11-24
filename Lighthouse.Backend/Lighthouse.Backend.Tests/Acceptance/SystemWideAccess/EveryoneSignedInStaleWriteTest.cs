@@ -8,6 +8,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Lighthouse.Backend.Tests.Acceptance.SystemWideAccess.EveryoneSignedInScenario;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {

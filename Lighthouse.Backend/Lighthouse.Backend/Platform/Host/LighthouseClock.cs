@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Platform.Host
 {
     public sealed class LighthouseClock : ILighthouseClock
     {

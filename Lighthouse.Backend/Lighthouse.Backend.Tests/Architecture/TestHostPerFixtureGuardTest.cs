@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataConsentRateLimitTests"] = HasOneTestOnly,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataEventCeilingTests"] = CountersArePerHost,
             ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest"] = MostOfItsTimeIsInTheTestBodies,
-            ["Lighthouse.Backend.Tests.Services.Implementation.LighthouseClockTest"] = OnlyAFewTestsStartAHost,
+            ["Lighthouse.Backend.Tests.Platform.Host.LighthouseClockTest"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application.OAuth.OAuthProviderRegistryTest"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application.OAuth.OAuthStateSecretPersistenceTest"] = HasOneTestOnly,
             ["Lighthouse.Backend.Tests.Startup.EncryptionBootstrapOrderTests"] = OnlyAFewTestsStartAHost,

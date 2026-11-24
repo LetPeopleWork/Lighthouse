@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth
 {

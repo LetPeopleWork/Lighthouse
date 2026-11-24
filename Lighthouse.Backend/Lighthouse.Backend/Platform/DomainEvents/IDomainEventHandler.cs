@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Events;
 
-namespace Lighthouse.Backend.Services.Interfaces.DomainEvents
+namespace Lighthouse.Backend.Platform.DomainEvents
 {
     public interface IDomainEventHandler<in TEvent> where TEvent : IDomainEvent
     {

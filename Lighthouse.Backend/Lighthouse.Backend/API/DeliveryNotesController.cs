@@ -9,6 +9,7 @@ using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.API
 {

@@ -1,11 +1,10 @@
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Services.Implementation.DomainEvents;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Tests.Platform.DomainEvents
 {
     public class DomainEventDispatcherTest
     {

@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

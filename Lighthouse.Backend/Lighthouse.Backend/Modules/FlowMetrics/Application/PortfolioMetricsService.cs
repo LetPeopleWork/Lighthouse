@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {

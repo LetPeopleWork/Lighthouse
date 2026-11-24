@@ -9,6 +9,7 @@ using Moq;
 using NUnit.Framework;
 using System.Collections.Concurrent;
 using System.Text.Json;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {

@@ -6,8 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Lighthouse.Backend.Platform.Host;
 
-namespace Lighthouse.Backend.Tests.Services
+namespace Lighthouse.Backend.Tests.Platform.Host
 {
     public class SystemInfoServiceTest
     {

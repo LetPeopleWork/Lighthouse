@@ -11,6 +11,7 @@ using Lighthouse.Backend.Tests.API.Integration.Reports;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Acceptance.BaselineReportCreation
 {

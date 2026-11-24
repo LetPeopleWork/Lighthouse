@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
-using Lighthouse.Backend.Services.Implementation.DomainEvents;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 

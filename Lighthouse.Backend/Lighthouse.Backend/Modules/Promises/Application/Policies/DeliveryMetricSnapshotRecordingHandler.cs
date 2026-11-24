@@ -1,9 +1,10 @@
 using System.Diagnostics;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.Promises.Application;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.Promises.Application.Policies
 {

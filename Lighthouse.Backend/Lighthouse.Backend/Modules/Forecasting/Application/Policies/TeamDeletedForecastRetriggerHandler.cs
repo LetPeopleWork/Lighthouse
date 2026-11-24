@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Modules.Forecasting.Application.Policies

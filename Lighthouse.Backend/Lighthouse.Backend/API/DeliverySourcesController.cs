@@ -11,6 +11,7 @@ using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.AspNetCore.Mvc;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Promises.Application;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.API
 {

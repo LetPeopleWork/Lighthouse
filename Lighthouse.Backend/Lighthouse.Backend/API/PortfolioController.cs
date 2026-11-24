@@ -13,6 +13,7 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.API
 {

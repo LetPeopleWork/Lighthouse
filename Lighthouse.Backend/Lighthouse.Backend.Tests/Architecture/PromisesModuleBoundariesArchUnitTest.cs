@@ -140,21 +140,21 @@ namespace Lighthouse.Backend.Tests.Architecture
         // handler contract; the repositories and the blackout periods have no module of their own yet. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationBelowItOrIntoThePlatform =
         [
-            "Lighthouse.Backend.Modules.Promises.Application.DeliveryForecastPublishingService -> Lighthouse.Backend.Services.Interfaces.ILighthouseClock",
+            "Lighthouse.Backend.Modules.Promises.Application.DeliveryForecastPublishingService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Promises.Application.DeliveryForecastPublishingService -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",
             "Lighthouse.Backend.Modules.Promises.Application.DeliveryMetricValuesProjector -> Lighthouse.Backend.Services.Interfaces.IBlackoutPeriodService",
             "Lighthouse.Backend.Modules.Promises.Application.DeliveryRuleService -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",
-            "Lighthouse.Backend.Modules.Promises.Application.DeliverySourceSyncService -> Lighthouse.Backend.Services.Interfaces.ILighthouseClock",
+            "Lighthouse.Backend.Modules.Promises.Application.DeliverySourceSyncService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Promises.Application.DeliverySourceSyncService -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",
             "Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastPublishingService -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",
             "Lighthouse.Backend.Modules.Promises.Application.IDeliveryRuleService -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",
             "Lighthouse.Backend.Modules.Promises.Application.IDeliverySourceSyncService -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",
-            "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryForecastPublishingHandler -> Lighthouse.Backend.Services.Interfaces.DomainEvents.IDomainEventHandler`1",
+            "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryForecastPublishingHandler -> Lighthouse.Backend.Platform.DomainEvents.IDomainEventHandler`1",
             "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryForecastPublishingHandler -> Lighthouse.Backend.Services.Interfaces.Repositories.IDeliveryRepository",
             "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryForecastPublishingHandler -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
             "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryForecastPublishingHandler -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",
-            "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryMetricSnapshotRecordingHandler -> Lighthouse.Backend.Services.Interfaces.DomainEvents.IDomainEventHandler`1",
-            "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryMetricSnapshotRecordingHandler -> Lighthouse.Backend.Services.Interfaces.ILighthouseClock",
+            "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryMetricSnapshotRecordingHandler -> Lighthouse.Backend.Platform.DomainEvents.IDomainEventHandler`1",
+            "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryMetricSnapshotRecordingHandler -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryMetricSnapshotRecordingHandler -> Lighthouse.Backend.Services.Interfaces.Repositories.IDeliveryMetricSnapshotRepository",
             "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryMetricSnapshotRecordingHandler -> Lighthouse.Backend.Services.Interfaces.Repositories.IDeliveryRepository",
             "Lighthouse.Backend.Modules.Promises.Application.Policies.DeliveryMetricSnapshotRecordingHandler -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
@@ -377,7 +377,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void APromisesApplicationReachingOnlyAListedPlatformEdgeAndWorkItemsAndTrackerIntegrationApplications_PassesBothOutboundRules()
         {
-            var listedEdge = Edge(typeof(ACompliantDeliveryService), "Lighthouse.Backend.Services.Interfaces.ILighthouseClock");
+            var listedEdge = Edge(typeof(ACompliantDeliveryService), "Lighthouse.Backend.Platform.Host.ILighthouseClock");
 
             var belowOrPlatform = ApplicationOutboundRule(TestModule.Value, NamespacePatternOf(typeof(ACompliantDeliveryService)), TheLayersBelowTheApplicationAndThePlatform, [listedEdge]);
             var upstream = ModuleUpstreamRule(TestModule.Value, NamespacePatternOf(typeof(ACompliantDeliveryService)), []);
@@ -734,7 +734,7 @@ namespace Lighthouse.Backend.PromisesBoundariesFixtures.PoliciesNewcomer
 namespace Lighthouse.Backend.Modules.PromisesFixtures.BoundariesOutbound.Compliant.Application
 {
     internal sealed class ACompliantDeliveryService(
-        global::Lighthouse.Backend.Services.Interfaces.ILighthouseClock clock,
+        global::Lighthouse.Backend.Platform.Host.ILighthouseClock clock,
         global::Lighthouse.Backend.Modules.WorkItems.Application.ITeamDataService teams,
         global::Lighthouse.Backend.Modules.TrackerIntegration.Application.IWorkTrackingConnectorFactory connectors)
     {

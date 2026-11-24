@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Platform.Host
 {
     /// <summary>
     /// Bug #5567 - the named seam for "which calendar day is it?". An instant has no time zone; a

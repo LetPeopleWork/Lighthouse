@@ -16,6 +16,7 @@ using Microsoft.Extensions.Time.Testing;
 using Moq;
 using System.Net;
 using System.Text;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application.OAuth
 {

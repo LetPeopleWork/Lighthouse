@@ -5,6 +5,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Serilog.Events;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Platform.Logging
 {

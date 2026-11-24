@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

@@ -335,7 +335,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var theForecastItself = Types().That()
                 .Are(typeof(ForecastService)).Or()
                 .Are(typeof(SimulationResult)).Or()
-                .Are(typeof(Lighthouse.Backend.Services.Implementation.RandomNumberService));
+                .Are(typeof(Lighthouse.Backend.Platform.Host.RandomNumberService));
 
             var whatTheForecastMayReach = Types().That()
                 .Are(typeof(IWhatTheForecastWaitsFor)).Or()

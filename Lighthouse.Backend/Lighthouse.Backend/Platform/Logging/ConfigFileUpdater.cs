@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Services.Interfaces;
 using Newtonsoft.Json.Linq;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Platform.Logging
 {

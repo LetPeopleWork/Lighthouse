@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Services.Interfaces;
 using Serilog.Core;
 using Serilog.Events;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Platform.Logging
 {

@@ -1,5 +1,5 @@
 using Lighthouse.Backend.API;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Lighthouse.Backend.Modules.WorkItems.Domain;

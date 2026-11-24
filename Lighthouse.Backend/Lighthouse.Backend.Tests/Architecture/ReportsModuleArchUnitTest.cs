@@ -25,6 +25,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

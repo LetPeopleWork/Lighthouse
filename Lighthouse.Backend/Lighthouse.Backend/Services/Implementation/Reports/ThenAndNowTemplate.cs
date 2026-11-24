@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Services.Implementation.Reports
 {

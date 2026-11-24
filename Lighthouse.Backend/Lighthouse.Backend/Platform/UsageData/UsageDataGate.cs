@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Platform.UsageData
 {

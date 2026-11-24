@@ -5,6 +5,7 @@ using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.UsageData;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Options;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Platform.UsageData
 {

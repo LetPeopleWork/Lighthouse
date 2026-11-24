@@ -23,6 +23,7 @@ using NUnit.Framework;
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {

@@ -12,6 +12,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 using NUnit.Framework;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
 {

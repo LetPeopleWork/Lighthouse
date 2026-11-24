@@ -2,6 +2,7 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.WebUtilities;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
 {

@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Tests.API.Integration.Refinement;
 using NUnit.Framework;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Contracts.Refinement
 {

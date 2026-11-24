@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// The one place allowed to reduce an instant to a calendar day: it IS the seam. Expressed
         /// once, as a constant, so the exemption never spreads into scattered string comparisons.
         /// </summary>
-        private const string ClockAdapterRelativePath = "Services/Implementation/LighthouseClock.cs";
+        private const string ClockAdapterRelativePath = "Platform/Host/LighthouseClock.cs";
 
         /// <summary>
         /// A guard that silently scans nothing is worse than no guard. The production project held

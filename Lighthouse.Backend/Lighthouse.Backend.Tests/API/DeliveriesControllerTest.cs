@@ -19,6 +19,7 @@ using System.Security.Claims;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Modules.Promises.Application;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.API
 {

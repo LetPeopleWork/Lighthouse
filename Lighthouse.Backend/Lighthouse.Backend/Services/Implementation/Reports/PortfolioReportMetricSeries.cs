@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using static Lighthouse.Backend.Services.Implementation.Reports.ReportSeriesReading;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Services.Implementation.Reports
 {

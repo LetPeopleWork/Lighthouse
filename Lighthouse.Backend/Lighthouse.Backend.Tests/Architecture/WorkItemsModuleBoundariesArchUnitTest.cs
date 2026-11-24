@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string OrganisationSetUp = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)$|^Lighthouse\.Backend\.Platform\.(DemoData|Encryption|Host|Logging|Persistence|Releases|UpdateQueue)(\.|$)";
 
-        private const string TheDomainEventHandlerPort = "Lighthouse.Backend.Services.Interfaces.DomainEvents.IDomainEventHandler`1";
+        private const string TheDomainEventHandlerPort = "Lighthouse.Backend.Platform.DomainEvents.IDomainEventHandler`1";
 
         private const string FlowMetricsInboundList = "OtherOutsideTypesReachingTheApplication";
 
@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Services.Interfaces.IAppSettingService",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateCancellationContext",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Interfaces.IFeatureOrdering",
-            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Interfaces.ILighthouseClock",
+            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
         ];
 
         private static readonly string TheLayersBelowTheApplication =
@@ -623,7 +623,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.Boundaries.Application
 
 namespace Lighthouse.Backend.Modules.WorkItemsFixtures.Boundaries.Application.Policies
 {
-    internal sealed class AHandlerInThePolicies : global::Lighthouse.Backend.Services.Interfaces.DomainEvents.IDomainEventHandler<global::Lighthouse.Backend.Models.Events.TeamDataRefreshed>
+    internal sealed class AHandlerInThePolicies : global::Lighthouse.Backend.Platform.DomainEvents.IDomainEventHandler<global::Lighthouse.Backend.Models.Events.TeamDataRefreshed>
     {
         public Task HandleAsync(global::Lighthouse.Backend.Models.Events.TeamDataRefreshed domainEvent, CancellationToken cancellationToken) => Task.CompletedTask;
     }

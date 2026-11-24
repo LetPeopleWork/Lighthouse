@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {

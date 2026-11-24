@@ -6,6 +6,7 @@ using Lighthouse.Backend.Modules.Licensing.Application;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Modules.Access.Application
 {

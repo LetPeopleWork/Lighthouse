@@ -14,6 +14,7 @@ using Lighthouse.Backend.Tests.API.Integration.Refinement;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using NUnit.Framework;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.Contracts.Refinement
 {

@@ -20,7 +20,7 @@ using Lighthouse.Backend.Platform.Logging;
 using Lighthouse.Backend.Platform.Releases;
 using Lighthouse.Backend.Platform.UsageData;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Modules.Forecasting.Adapters.Background;
@@ -39,7 +39,6 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.Csv;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.ServiceNow;
 using Lighthouse.Backend.Platform.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Startup;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -83,6 +82,7 @@ using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Promises.Application;
 using Lighthouse.Backend.Modules.Promises.Application.Policies;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend
 {

@@ -1,6 +1,6 @@
 ﻿using Lighthouse.Backend.Services.Interfaces;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Platform.Host
 {
     public class FileSystemService : IFileSystemService
     {

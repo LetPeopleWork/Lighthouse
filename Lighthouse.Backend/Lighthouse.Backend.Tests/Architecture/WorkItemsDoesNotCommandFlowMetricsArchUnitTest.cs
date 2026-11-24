@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.MetricsCommand.Applicatio
 
     internal static class ATeamRefreshThatAnnouncesItself
     {
-        public static async Task Refresh(global::Lighthouse.Backend.Models.Team team, global::Lighthouse.Backend.Services.Interfaces.DomainEvents.IDomainEventDispatcher dispatcher)
+        public static async Task Refresh(global::Lighthouse.Backend.Models.Team team, global::Lighthouse.Backend.Platform.DomainEvents.IDomainEventDispatcher dispatcher)
         {
             await Task.Yield();
             await dispatcher.PublishAsync(new global::Lighthouse.Backend.Models.Events.TeamDataRefreshed(team.Id));

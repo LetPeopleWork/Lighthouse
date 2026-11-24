@@ -9,8 +9,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
+using Lighthouse.Backend.Platform.Host;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Platform.Host
 {
     /// <summary>
     /// The codebase conflated "store instants in UTC" with

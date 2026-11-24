@@ -1,11 +1,11 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Tests.Platform.DomainEvents
 {
     [TestFixture]
     public class DomainEventDispatcherGoldTest : IntegrationTestBase

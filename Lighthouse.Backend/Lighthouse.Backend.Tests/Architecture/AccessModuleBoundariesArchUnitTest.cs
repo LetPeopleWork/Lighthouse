@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             "Lighthouse.Backend.Modules.Access.Application.ApiKeyService -> Lighthouse.Backend.Services.Interfaces.Repositories.IApiKeyRepository",
             "Lighthouse.Backend.Modules.Access.Application.ApiKeyService -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
-            "Lighthouse.Backend.Modules.Access.Application.AuthModeResolver -> Lighthouse.Backend.Services.Interfaces.IPlatformService",
+            "Lighthouse.Backend.Modules.Access.Application.AuthModeResolver -> Lighthouse.Backend.Platform.Host.IPlatformService",
             "Lighthouse.Backend.Modules.Access.Application.CurrentUserProfileService -> Lighthouse.Backend.Data.LighthouseAppContext",
             "Lighthouse.Backend.Modules.Access.Application.CurrentUserProfileService -> Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry`1",
             "Lighthouse.Backend.Modules.Access.Application.CurrentUserProfileService -> Microsoft.EntityFrameworkCore.DbContext",
@@ -323,7 +323,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AnAccessApplicationReachingOnlyAListedPlatformEdgeAndLicensing_PassesBothOutboundRules()
         {
-            var listedEdge = ModuleBoundaryChecks.Edge(typeof(ACompliantAccessService), "Lighthouse.Backend.Services.Interfaces.ILighthouseClock");
+            var listedEdge = ModuleBoundaryChecks.Edge(typeof(ACompliantAccessService), "Lighthouse.Backend.Platform.Host.ILighthouseClock");
             var namespaces = ModuleBoundaryChecks.NamespacePatternOf(typeof(ACompliantAccessService));
 
             var belowOrPlatform = ApplicationOutboundRule(TestModule.Value, namespaces, [listedEdge]);
@@ -456,7 +456,7 @@ namespace Lighthouse.Backend.Modules.AccessFixtures.Boundaries.Domain
         public bool Allows(int needed) => Level >= needed;
     }
 
-    internal sealed class AnAccessAnswerAskingThePlatform(global::Lighthouse.Backend.Services.Interfaces.ILighthouseClock clock)
+    internal sealed class AnAccessAnswerAskingThePlatform(global::Lighthouse.Backend.Platform.Host.ILighthouseClock clock)
     {
         public int Describe() => clock.GetHashCode();
     }
@@ -542,7 +542,7 @@ namespace Lighthouse.Backend.AccessBoundariesFixtures.AttributeOnlyNewcomer
 namespace Lighthouse.Backend.Modules.AccessFixtures.BoundariesOutbound.Compliant.Application
 {
     internal sealed class ACompliantAccessService(
-        global::Lighthouse.Backend.Services.Interfaces.ILighthouseClock clock,
+        global::Lighthouse.Backend.Platform.Host.ILighthouseClock clock,
         global::Lighthouse.Backend.Modules.Licensing.Application.ILicenseService licence)
     {
         public string Describe() => $"{clock.GetHashCode()} {licence.CanUsePremiumFeatures()}";

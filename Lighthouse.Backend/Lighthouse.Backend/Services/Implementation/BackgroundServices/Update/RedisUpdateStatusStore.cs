@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using StackExchange.Redis;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {

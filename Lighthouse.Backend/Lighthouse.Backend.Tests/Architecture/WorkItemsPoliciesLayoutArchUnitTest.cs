@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string WhereTheHandlersLivedBefore = @"^Lighthouse\.Backend\.Services\.Implementation\.(DomainEvents|BackgroundServices\.Update)(\.|$)";
 
-        private const string TheDomainEventHandlerPort = "Lighthouse.Backend.Services.Interfaces.DomainEvents.IDomainEventHandler`1";
+        private const string TheDomainEventHandlerPort = "Lighthouse.Backend.Platform.DomainEvents.IDomainEventHandler`1";
 
         private const string AnOldNamespacePrefix =
             @"(?<![\w.])(Lighthouse\.Backend\.)?(Services\.Implementation\.(DomainEvents|BackgroundServices\.Update)\.)";
@@ -274,7 +274,7 @@ namespace Lighthouse.Backend.Modules.WorkItemsFixtures.PoliciesLayout.Policies
 {
     internal sealed record APolicyEvent : IDomainEvent;
 
-    internal sealed class AWellPlacedHandler : global::Lighthouse.Backend.Services.Interfaces.DomainEvents.IDomainEventHandler<APolicyEvent>
+    internal sealed class AWellPlacedHandler : global::Lighthouse.Backend.Platform.DomainEvents.IDomainEventHandler<APolicyEvent>
     {
         public Task HandleAsync(APolicyEvent domainEvent, CancellationToken cancellationToken) => Task.CompletedTask;
     }

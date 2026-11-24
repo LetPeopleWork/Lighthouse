@@ -124,7 +124,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // platform: the licence service reads the clock and keeps the licence through the generic repository.
         private static readonly string[] EdgesOfTheApplicationBelowItOrIntoThePlatform =
         [
-            "Lighthouse.Backend.Modules.Licensing.Application.LicenseService -> Lighthouse.Backend.Services.Interfaces.ILighthouseClock",
+            "Lighthouse.Backend.Modules.Licensing.Application.LicenseService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Licensing.Application.LicenseService -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
         ];
 
@@ -265,7 +265,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             const string underTheModule = "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService";
             const string underTheOldName = "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService";
             const string underAGoneModuleType = "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.Access.Application.IAFormerAccessPort";
-            const string notAccessOrLicensing = "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Interfaces.ILighthouseClock";
+            const string notAccessOrLicensing = "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock";
 
             var failure = Assert.Throws<AssertionException>(
                 () => ThenTheListNamesAccessAndLicensingOnlyUnderTheModules("a made-up list", [underTheModule, underTheOldName, underAGoneModuleType, notAccessOrLicensing]),
@@ -331,7 +331,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ALicensingApplicationReachingOnlyAListedPlatformEdge_PassesBothOutboundRules()
         {
-            var listedEdge = ModuleBoundaryChecks.Edge(typeof(ACompliantLicenceService), "Lighthouse.Backend.Services.Interfaces.ILighthouseClock");
+            var listedEdge = ModuleBoundaryChecks.Edge(typeof(ACompliantLicenceService), "Lighthouse.Backend.Platform.Host.ILighthouseClock");
             var namespaces = ModuleBoundaryChecks.NamespacePatternOf(typeof(ACompliantLicenceService));
 
             var belowOrPlatform = ApplicationOutboundRule(TestModule.Value, namespaces, [listedEdge]);
@@ -723,7 +723,7 @@ namespace Lighthouse.Backend.LicensingBoundariesFixtures.HttpNewcomer
 
 namespace Lighthouse.Backend.Modules.LicensingFixtures.BoundariesOutbound.Compliant.Application
 {
-    internal sealed class ACompliantLicenceService(global::Lighthouse.Backend.Services.Interfaces.ILighthouseClock clock)
+    internal sealed class ACompliantLicenceService(global::Lighthouse.Backend.Platform.Host.ILighthouseClock clock)
     {
         public int Describe() => clock.GetHashCode();
     }

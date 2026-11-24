@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Text.Json;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.Licensing.Application
 {

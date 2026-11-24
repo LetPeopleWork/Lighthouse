@@ -22,6 +22,7 @@ using Microsoft.Extensions.Time.Testing;
 using NUnit.Framework;
 using System.Security.Claims;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 {

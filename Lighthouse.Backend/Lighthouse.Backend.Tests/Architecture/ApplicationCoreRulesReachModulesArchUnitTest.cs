@@ -6,7 +6,7 @@ using Lighthouse.Backend.Models.CoreRulesFixtures.ReachingNoCore;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.CoreRulesFixtures;
 using Lighthouse.Backend.Services.Implementation.DomainEvents.CoreRulesFixtures;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -370,7 +370,7 @@ namespace Lighthouse.Backend.Models.CoreRulesFixtures.Events
 namespace Lighthouse.Backend.Services.Implementation.DomainEvents.CoreRulesFixtures
 {
     using Lighthouse.Backend.Models.CoreRulesFixtures.Events;
-    using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+    using Lighthouse.Backend.Platform.DomainEvents;
     using Microsoft.Extensions.DependencyInjection;
 
     internal sealed class ServicesHandlerUsingTheServiceLocator(IServiceProvider services) : IDomainEventHandler<AFixtureEvent>
@@ -395,7 +395,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents.CoreRulesFixtu
 namespace Lighthouse.Backend.Modules.CoreRulesFixtures.Handlers
 {
     using Lighthouse.Backend.Models.CoreRulesFixtures.Events;
-    using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+    using Lighthouse.Backend.Platform.DomainEvents;
     using Microsoft.Extensions.DependencyInjection;
 
     internal sealed class ModuleHandlerUsingTheServiceLocator(IServiceProvider services) : IDomainEventHandler<AFixtureEvent>
@@ -456,7 +456,7 @@ namespace Lighthouse.Backend.Models.CoreRulesFixtures.ReachingNoCore
 namespace Lighthouse.Backend.Services.Implementation.DomainEvents.CoreRulesFixtures
 {
     using Lighthouse.Backend.Models.CoreRulesFixtures.Events;
-    using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+    using Lighthouse.Backend.Platform.DomainEvents;
 
     internal sealed class ServicesHandlerTakingItsCollaboratorsAndAwaitingItsSave(IFixtureRepository repository) : IDomainEventHandler<AFixtureEvent>
     {
@@ -471,7 +471,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents.CoreRulesFixtu
 namespace Lighthouse.Backend.Modules.CoreRulesFixtures.Handlers
 {
     using Lighthouse.Backend.Models.CoreRulesFixtures.Events;
-    using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+    using Lighthouse.Backend.Platform.DomainEvents;
 
     internal sealed class ModuleHandlerTakingItsCollaboratorsAndAwaitingItsSave(IFixtureRepository repository) : IDomainEventHandler<AFixtureEvent>
     {

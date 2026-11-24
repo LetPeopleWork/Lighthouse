@@ -1,8 +1,8 @@
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lighthouse.Backend.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Platform.DomainEvents
 {
     public class DomainEventDispatcher(IServiceScopeFactory serviceScopeFactory, ILogger<DomainEventDispatcher> logger) : IDomainEventDispatcher
     {

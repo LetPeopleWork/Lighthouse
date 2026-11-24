@@ -33,6 +33,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
+using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 {
