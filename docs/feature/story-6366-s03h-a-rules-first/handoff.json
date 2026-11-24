@@ -1,8 +1,131 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F82",
+"L1",
+"T1"
+],
+"still_passes_if": "F131",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs::TheReportsTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove_EachFoundOnce"
+},
+"expected": "F129",
+"stimulus": "F128",
+"user_result": "F130"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F83",
+"L1/F84",
+"L1/F85"
+],
+"still_passes_if": "F135",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs::AMapWithOneTypeLeftOff_NamesThatTypeAsNotOnTheMap"
+},
+"expected": "F133",
+"stimulus": "F132",
+"user_result": "F134"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F85"
+],
+"still_passes_if": "F139",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs::TheCollection_TakesEveryTopLevelTypeInTheOldAndTheNewNamespaces_AndNothingElse"
+},
+"expected": "F137",
+"stimulus": "F136",
+"user_result": "F138"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F86",
+"L1/F87",
+"L1/F88",
+"L1/F89",
+"L1"
+],
+"still_passes_if": "F143",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs::EachFileIsDomain_ExactlyWhenItIsNoPortFile_AndEveryTypeItDeclaresReachesOnlyTheSharedModelsTheBaseLibraryAndTheDomain"
+},
+"expected": "F141",
+"stimulus": "F140",
+"user_result": "F142"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F90"
+],
+"still_passes_if": "F147",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs::EachTypeThatStays_IsInTheCompiledCodeWhereListed_AndEveryTypeOfTheStayingReportsNamespacesIsListed"
+},
+"expected": "F145",
+"stimulus": "F144",
+"user_result": "F146"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F91",
+"T1"
+],
+"still_passes_if": "F151",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs::TheTargetsNamingAMovingType_AreExactlyTheOnesListed"
+},
+"expected": "F149",
+"stimulus": "F148",
+"user_result": "F150"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F155",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture (FullyQualifiedName~Lighthouse.Backend.Tests.Architecture)"
+},
+"expected": "F153",
+"stimulus": "F152",
+"user_result": "F154"
+}
+]
+},
 "counters": {
 "D": 6,
 "E": 7,
-"F": 127,
+"F": 155,
 "K": 6,
 "L": 2,
 "P": 4,
@@ -588,9 +711,37 @@
 "F125": "Exhaustive over the finite domain (moving types x regex fields x two subjects, plus the test project literals); no generator adds coverage.",
 "F126": "Every rule pattern keeps its role for each moving Reports type through the move, no added alternative reaches outside Modules.Reports, and no old-path literal exists outside the fixed rename list.",
 "F127": "The shared law keeps every platform verdict.",
+"F128": "The Reports membership check runs over the compiled code: every top-level type in the old Reports namespaces and under Modules.Reports is compared with the moving types on the map, each listed with its file, layer and old namespace.",
+"F129": "On today's code all 36 listed moving types are found, each exactly once, in their old namespace, and the code holds no Reports type the map leaves out; written before the map was filled, the check failed naming all 36 types as not on the map.",
 "F13": "No alternative added to a rule pattern matches any production type outside Modules.Reports; probing the rules with non-Reports production class fragments shows no new match.",
+"F130": "The maintainer has a fixed, measured list of the 36 Reports types that move, with the layer each goes to, and nothing a user sees changes.",
+"F131": "A type listed in the wrong layer whose old namespace is still found passes this comparison; the layer rule judges it instead.",
+"F132": "The membership comparison is run on altered lists and altered code: one type left off, a made-up name added, a listed type taken out of the code, one type swapped for a made-up one, a type found in its new namespace, a type left behind beside its moved copy, a type moved into another layer, a namesake in another old namespace, and one type listed twice.",
+"F133": "Each altered case fails and names exactly the type concerned under the right heading (not on the map, not in the code, found twice, listed twice), except the type found in its new namespace, which still matches.",
+"F134": "A change to the Reports code or to the map that breaks the membership is named type by type, so the maintainer knows which entry to fix.",
+"F135": "A map entry with the right name and namespace but a wrong file name passes the comparison; the layer rule groups by file and review reads the file names.",
+"F136": "The collection of Reports types is run over a made-up list of names in the old namespaces, the Metrics namespace, Modules.Reports and its layers, nested and compiler-made names, lookalike namespaces, a staying model and a test namespace.",
+"F137": "It takes exactly the top-level types of the old Reports namespaces and of every namespace under Modules.Reports, a nested type as its holder, and leaves out compiler-made names, lookalikes, the staying model and the test namespace.",
+"F138": "No Reports type can join or leave the module unseen during the move, and a lookalike does not join it by mistake.",
+"F139": "A collection that reads only the sub-namespaces named here would still pass; a sub-namespace nobody named yet is covered only by the open pattern.",
 "F14": "No rule constant or string literal in the test project names Reports by the old Services.Implementation.Reports, Services.Interfaces.Reports or Services/(Implementation|Interfaces)/Reports path, except entries of a fixed rename list; the check fails when a listed literal no longer exists or an unlisted one appears, and the list can only shrink.",
+"F140": "The layer of every moving file is checked against what its types reach in the compiled code, and the check is run on altered lists: DailySeriesSummary listed as Domain, ReportCapPolicy listed as Application, a Metrics file listed as Application and another file as Application Metrics, a port record listed as Domain and a non-port file marked as a port file, and a made-up Domain type reaching a lookalike of Models or System, a namesake of a Domain type and a made-up fixture type of the same name.",
+"F141": "On today's code exactly ReportCapPolicy, ReportSeriesReading and ReportWindowPolicy are Domain, the 11 port files are Application with all their records, the 8 other Metrics files are Application Metrics and the rest Application; each altered list fails naming its file with the reason (DailySeriesSummary with the Flow metrics Domain type it reaches), and correct files, the kernel, the base library and the Domain itself are not named.",
+"F142": "The Domain of Reports holds only rules that depend on the shared Models and the base library, and a file that could be Domain is not hidden in the Application.",
+"F143": "A reach the compiled code does not show, such as a reference only in a catch clause, an event or an attribute argument, passes as kernel-only.",
+"F144": "Each listed staying Reports type (ReportRepository, every Models.Reports type, the three controllers, the controller base, the owner write access and the seven request types) is looked up in the compiled code at its listed namespace, and the check is run with one entry in the wrong namespace, one under a made-up name, a moving type listed as staying and a Models.Reports type left off.",
+"F145": "All listed staying types are found where listed and every type of Models.Reports and of the Reports requests is listed; each altered entry is named and correct entries are not.",
+"F146": "Every Reports type that does not move is named with its owner and why it stays.",
+"F147": "A wrong owner or reason text passes; review judges those. A staying type outside the Reports-named namespaces that nobody listed is not found by the completeness part.",
+"F148": "The suppression, analyser, CI-selection, test-budget, host-user, Stryker and log-override files are read for targets naming a moving Reports type by its old or new name, path or test name, and compared with the listed targets; the check is run with a made-up file of such targets, with a listed target its file no longer holds, with one rewritten to the new namespace, and with a scan file missing.",
+"F149": "Today no such target exists and none is listed; the made-up targets naming a moving type are named and those naming staying types, staying tests or a lookalike are not; the vanished listed target is named, the rewritten one still matches, and the missing scan file is named.",
 "F15": "Nothing a user, a tracker or the database sees changes: the ef-model-unchanged probe reports the EF model identical to before, and no production file moves or changes behaviour in feature A.",
+"F150": "No warning suppression, test selection, test budget, mutation run or log level silently stops applying when Reports moves.",
+"F151": "A target built at run time from fragments, or one in a file kind outside the scanned set, passes unseen.",
+"F152": "The whole architecture rule suite and the backend build run with the new membership check added and no production file changed.",
+"F153": "The build has no warning and every architecture rule passes; only two test-side files are added.",
+"F154": "Nothing a user, a tracker or the database sees changes.",
+"F155": "A production change outside what the architecture rules read passes here; the host's full filtered backend run and the empty production diff carry that.",
 "F16": "Every existing backend test stays green after the change, as seen through the backend-tests and test-selection-show probes.",
 "F17": "Carriers and owners, all test side in Lighthouse.Backend.Tests.Architecture (object_oriented): ReportsMembership (S1 support) holds the moving Reports types, each with its short name, its file, its layer from the closed choice ReportsLayer {Domain, Application, ApplicationMetrics}, its port-file flag, its old namespace and its new namespace Lighthouse.Backend.Modules.Reports.Domain, .Application or .Application.Metrics; the Reports types and files that stay (ReportRepository, the Models/Reports types, the three Reports controllers, ReportsControllerBase, ReportOwnerWriteAccess and the four API/DTO/Reports requests), each with namespace or path, owner and reason; and the targets found naming a moving type, each with file, target and kind (suppression, analyser, CI selection, test budget, host user, Stryker, log override). ReportsPatternRoles and ReportsStringsTheMoveRenames are S2 supports that feed the existing shared NamespaceMoveLaw (NamespaceMove, PatternRoleMap, PatternDeclaration, RoleBreak). No production carrier, effect, error type or per-process state changes; the only effects are reading the compiled production and test assemblies and repository text files; every failure is an NUnit assertion message stating WHAT, WHY and HOW.",
 "F18": "Claim-to-checker: the membership and the preservation law are relations over a finite, closed domain (the compiled types of the production assembly, the const and static readonly string fields of the test assembly, two subjects per type, the string literals of the test project). They are executed exhaustively by native NUnit over the real IL. No Quint, TLA+ or Agda model: no state, transition, ordering, concurrency, time or unbounded input is claimed, so no checker install or waiver is needed. Property-based testing does not apply: closed finite domain, every case enumerated. Layers affected: only the test-side architecture rules (Infrastructure layer of the test project); production Domain, Application and Adapter layers are unchanged.",
