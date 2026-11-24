@@ -809,7 +809,9 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 ##### Decisions
 
-None.
+```text
+Whole-parent patterns (Confirmed, AFK root decision): RefinementPatternRoles carries a short declared list of patterns that cover the whole destination parent. Today the list holds only PlatformLaneMembershipArchUnitTest.ModuleNamespaces, which means every module where a domain-event handler may live. The S2 oracle accepts new sight of the moved types for a listed pattern only when it matches the parent namespace Lighthouse.Backend.Modules itself and the new namespace of every moving type. An unlisted pattern that newly sees the moved types still breaks, and a listed pattern that matches less than the whole parent fails. NamespaceMoveLaw and PlatformLaneMembershipArchUnitTest stay unchanged and are not targets. Rejected: a new role and API in the shared law for one pattern; making PlatformLaneMembershipArchUnitTest a target, because its meaning is right; an unchecked exclusion, because it could hide a real break.
+```
 
 ##### Constraints
 

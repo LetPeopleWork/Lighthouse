@@ -109,7 +109,7 @@
 "counters": {
 "D": 7,
 "E": 12,
-"F": 194,
+"F": 195,
 "K": 6,
 "L": 2,
 "P": 4,
@@ -423,6 +423,9 @@
 "obligation": "F147",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs"
 }
+],
+"decisions": [
+"F195"
 ],
 "impact": [
 {
@@ -889,6 +892,7 @@
 "F192": "No target names a moving type today; a made-up target naming one by old name, new name, old path or its test's old name is named, one naming a staying type or a lookalike namespace is not, a listed target its file no longer holds is named, a listed target rewritten to the new namespace still matches, and a missing file the scan must read is named",
 "F193": "No warning suppression, test selection, budget or mutation run silently stops covering Refinement code when it moves",
 "F194": "A target in a file outside the scanned set, such as an archived document",
+"F195": "Whole-parent patterns (Confirmed, AFK root decision): RefinementPatternRoles carries a short declared list of patterns that cover the whole destination parent. Today the list holds only PlatformLaneMembershipArchUnitTest.ModuleNamespaces, which means every module where a domain-event handler may live. The S2 oracle accepts new sight of the moved types for a listed pattern only when it matches the parent namespace Lighthouse.Backend.Modules itself and the new namespace of every moving type. An unlisted pattern that newly sees the moved types still breaks, and a listed pattern that matches less than the whole parent fails. NamespaceMoveLaw and PlatformLaneMembershipArchUnitTest stay unchanged and are not targets. Rejected: a new role and API in the shared law for one pattern; making PlatformLaneMembershipArchUnitTest a target, because its meaning is right; an unchecked exclusion, because it could hide a real break.",
 "F2": "The Refinement types can move to Modules/Refinement without any rule silently changing its answer",
 "F20": "Claim-to-checker: the membership and the preservation law are relations over a finite, closed domain (the compiled types of the production assembly, the const and static readonly string fields of the test assembly, two subjects per type, the string literals of the test project). They are executed exhaustively by native NUnit over the real IL, which is stronger than a model of them. No Quint, TLA+ or Agda model: no state, transition, ordering, concurrency, time or unbounded input is claimed. Property-based testing does not apply: closed finite domain, every case enumerated. Layers affected: only the test-side architecture rules (Infrastructure layer of the test project); Domain, Application and Adapter layers of production are unchanged.",
 "F21": "Shared law: LIFT. PlatformLaneRulesSeeTheMoveArchUnitTest is platform-specific: it reads PlatformLaneMembership.MovingTypes and StringsTheMoveRenames directly and hard-codes ThePlatformNamespace, the Platform alternative token and MovingAreasOfServices, so no map can be passed in. S2 therefore starts with a refactor(architecture) commit that lifts the law into NamespaceMoveLaw, a class constructed from a move map (moving types with area, old and new namespace and full name; the strings the move renames; the new root namespace and its alternative token) and a pattern-role map; PatternSubject, PatternRole and PatternDeclaration move from PlatformLanePatternRoles into it (one owner). The platform test keeps its test methods, made-up fixtures and verdicts and calls NamespaceMoveLaw with the platform map; the Refinement test calls it with the Refinement map. Rejected: a Refinement copy of the law (two owners deciding the same rule) and one fixture type per pattern (covers only the patterns someone remembered).",
