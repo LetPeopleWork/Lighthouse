@@ -18,7 +18,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     /// The clean-up that runs after every Portfolio refresh and at every start keeps a Feature only while it is in a
     /// Portfolio, or while it is a parent item that a Feature in a Portfolio still names as its parent. Everything
     /// else is deleted with its remaining work and its forecasts, so it leaves the Team's Features tab and the
-    /// forecasts. A store that already holds such leftovers is cleaned by the same run, with no migration.
+    /// forecasts. A kept parent item that is in no Portfolio itself is kept only as its children's parent name: its
+    /// remaining work is deleted, so it is on no Team's Features tab and in no forecast. A store that already holds
+    /// such leftovers is cleaned by the same run, with no migration.
     /// </summary>
     [TestFixture]
     public class OrphanedFeatureCleanupServiceTests
@@ -82,6 +84,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task AFormerFeatureKeptOnlyAsTheParentOfAFeatureInAPortfolio_LosesItsRemainingWork_SoNoTeamShowsItAndTheFeaturesBelowItMoveUpInTheForecasts()
+        {
+            var team = await store.ATeam("Team");
+            var otherTeam = await store.ATeam("Other Team");
+            var portfolio = await store.APortfolio("Portfolio");
+            await store.AFormerParentItem(team, "FORMER-PARENT-1", remainingWork: 5, withAForecast: true, alsoWorkedOnBy: [otherTeam]);
+            await store.AFeature(team, "CURRENT-1", remainingWork: 3, inPortfolios: [portfolio]);
+            await store.AFeature(team, "CHILD-1", remainingWork: 2, inPortfolios: [portfolio], parent: "FORMER-PARENT-1");
+
+            await TheCleanupRuns();
+
+            await TheStoredFeaturesAre("FORMER-PARENT-1", "CURRENT-1", "CHILD-1");
+            TheChildStillShowsItsParentsName("FORMER-PARENT-1");
+            await TheRemainingWorkIs(("CURRENT-1", 3), ("CHILD-1", 2));
+            TheTeamsFeaturesTabShows(team, "CURRENT-1", "CHILD-1");
+            TheTeamsFeaturesTabShows(otherTeam);
+            TheForecastsOfTheTeamsTakeInThisOrder([team, otherTeam], "CURRENT-1", "CHILD-1");
+        }
+
+        [Test]
         public async Task AParentItemWhoseOnlyChildIsInNoPortfolio_IsDeletedWithThatChild()
         {
             var team = await store.ATeam("Team");
@@ -140,12 +162,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 "Delete such a Feature, with its remaining work, in the clean-up.");
         }
 
+        private void TheChildStillShowsItsParentsName(string parent)
+        {
+            Assert.That(store.TheParentNamesShownFor(parent), Is.EqualTo(new[] { parent }),
+                "The parent of a Feature in a Portfolio no longer resolves to its name after the clean-up. " +
+                "The Feature's page shows its parent by name, so a parent item outside every Portfolio is kept for that name. " +
+                "Remove only the parent item's remaining work, never the parent item itself.");
+        }
+
+        private void TheForecastsOfTheTeamsTakeInThisOrder(Team[] teams, params string[] references)
+        {
+            Assert.That(store.TheFeaturesTheTeamsForecastsTakeIn(teams), Is.EqualTo(references),
+                "The forecasts of the Teams do not take in exactly the Features in a Portfolio, in their order. " +
+                "A parent item kept only for its name still takes the Teams' throughput ahead of the real Features and pushes their forecasts later. " +
+                "Delete the remaining work of every Feature that is in no Portfolio in the clean-up, rather than setting it to zero.");
+        }
+
         private async Task TheRemainingWorkIs(params (string Feature, int Remaining)[] remainingWork)
         {
             Assert.That(await store.RemainingWork(), Is.EquivalentTo(remainingWork),
                 "The remaining work stored after the clean-up is not the remaining work of the Features kept, unchanged. " +
-                "Remaining work of a deleted Feature keeps it on the Team's Features tab, and the remaining work of a Feature in a Portfolio is what its progress and forecast read. " +
-                "Delete the remaining work together with the Feature, and leave that of a Feature in a Portfolio as it was.");
+                "Remaining work of a Feature in no Portfolio keeps it on the Team's Features tab and in the forecasts, and the remaining work of a Feature in a Portfolio is what its progress and forecast read. " +
+                "Delete the remaining work of every Feature in no Portfolio, with the Feature or, for a parent item kept only for its name, on its own, and leave that of a Feature in a Portfolio as it was.");
         }
 
         private async Task NoForecastIsLeftOver()
@@ -226,8 +264,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             => Store(team, reference, remainingWork, inPortfolios ?? [], parent, flaggedAsParent: false, withAForecast);
 
         /// <summary>An item the parent half of a refresh stored as a parent, which stays flagged as one ever after.</summary>
-        public Task AFormerParentItem(Team team, string reference, int remainingWork, bool withAForecast, Portfolio[]? inPortfolios = null)
-            => Store(team, reference, remainingWork, inPortfolios ?? [], parent: "", flaggedAsParent: true, withAForecast);
+        public Task AFormerParentItem(Team team, string reference, int remainingWork, bool withAForecast, Portfolio[]? inPortfolios = null, Team[]? alsoWorkedOnBy = null)
+            => Store(team, reference, remainingWork, inPortfolios ?? [], parent: "", flaggedAsParent: true, withAForecast, alsoWorkedOnBy ?? []);
 
         public IOrphanedFeatureCleanupService TheCleanup()
         {
@@ -255,10 +293,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             return [.. Features(context).FeaturesOfTeam(team.Id).Select(feature => feature.ReferenceId)];
         }
 
-        public List<string> TheFeaturesTheTeamsForecastsTakeIn(Team team)
+        public List<string> TheFeaturesTheTeamsForecastsTakeIn(params Team[] teams)
         {
             using var context = NewContext();
-            return [.. Features(context).FeaturesWorkedOnBy([team.Id]).Select(feature => feature.ReferenceId)];
+            return [.. Features(context).FeaturesWorkedOnBy([.. teams.Select(team => team.Id)]).Select(feature => feature.ReferenceId)];
+        }
+
+        public List<string> TheParentNamesShownFor(string parent)
+        {
+            using var context = NewContext();
+            return [.. Features(context).ParentsOf([parent]).Select(found => found.Name)];
         }
 
         public async Task<List<(string Feature, int Remaining)>> RemainingWork()
@@ -294,7 +338,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private static FeatureRepository Features(LighthouseAppContext context)
             => new(context, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>());
 
-        private async Task Store(Team team, string reference, int remainingWork, Portfolio[] portfolios, string parent, bool flaggedAsParent, bool withAForecast)
+        private async Task Store(Team team, string reference, int remainingWork, Portfolio[] portfolios, string parent, bool flaggedAsParent, bool withAForecast, Team[]? alsoWorkedOnBy = null)
         {
             var feature = new Feature(team, remainingWork)
             {
@@ -307,6 +351,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             foreach (var portfolio in portfolios)
             {
                 feature.Portfolios.Add(portfolio);
+            }
+
+            foreach (var otherTeam in alsoWorkedOnBy ?? [])
+            {
+                feature.AddOrUpdateWorkForTeam(otherTeam, remainingWork, remainingWork);
             }
 
             if (withAForecast)
