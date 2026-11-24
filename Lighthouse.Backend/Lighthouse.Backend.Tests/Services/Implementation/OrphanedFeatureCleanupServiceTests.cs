@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     {
         private FeatureStore store = null!;
         private int deletedByTheLastRun;
+        private readonly List<(int Deleted, FeatureHistory? Watched)> runs = [];
 
         [SetUp]
         public void SetUp()
@@ -133,6 +134,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await TheStoreIsStill(cleanedStore);
         }
 
+        [Test]
+        public async Task AFormerFeatureThatAFeatureInAPortfolioNamesAsItsParent_StaysTheSameItemWithItsHistoryAndForecastOverRepeatedCleanups()
+        {
+            var team = await store.ATeam("Team");
+            var portfolio = await store.APortfolio("Portfolio");
+            await store.AFeature(team, "PARENT-1", remainingWork: 0, withAForecast: true);
+            await store.TheFeatureMovedThroughStates("PARENT-1", "To Do", "Doing", "Done");
+            await store.AFeature(team, "CHILD-1", remainingWork: 2, inPortfolios: [portfolio], parent: "PARENT-1");
+            var parentId = await store.TheIdOf("PARENT-1");
+
+            await TheCleanupRunsThreeTimesWatching("PARENT-1");
+
+            EveryRunLeftTheParent(parentId, withStateChanges: 2, withForecasts: 1);
+            NoRunAfterTheFirstDeletedAnything();
+        }
+
         private async Task TheCleanupRuns()
         {
             deletedByTheLastRun = await store.TheCleanup().CleanupAsync();
@@ -194,6 +211,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 "Delete the forecasts together with the Feature.");
         }
 
+        private async Task TheCleanupRunsThreeTimesWatching(string reference)
+        {
+            for (var run = 0; run < 3; run++)
+            {
+                var deleted = await store.TheCleanup().CleanupAsync();
+                runs.Add((deleted, await store.TheHistoryOf(reference)));
+            }
+        }
+
+        private void EveryRunLeftTheParent(int id, int withStateChanges, int withForecasts)
+        {
+            var asStored = new FeatureHistory(id, withStateChanges, withForecasts);
+            Assert.That(runs.Select(run => run.Watched), Is.EqualTo(new[] { asStored, asStored, asStored }),
+                "After some clean-up run the parent item is gone, has another Id, or lost state changes or forecasts. " +
+                "A Feature in a Portfolio still names it as its parent, so deleting it and storing it again on the next refresh throws away its history and its forecasts each time. " +
+                "Keep every Feature that a Feature in a Portfolio names as its parent, whether or not it was ever stored as a parent item, and leave its state changes and forecasts alone.");
+        }
+
+        private void NoRunAfterTheFirstDeletedAnything()
+        {
+            Assert.That(runs.Skip(1).Select(run => run.Deleted), Has.Exactly(2).Items.And.All.Zero,
+                "A clean-up run after the first reported deleted Features on a store nothing had changed. " +
+                "The clean-up runs after every refresh and at every start, so a run that keeps finding something to delete deletes and re-creates items over and over. " +
+                "Make the rule depend only on Portfolios and parent links, so one run leaves nothing for the next.");
+        }
+
         private void NothingWasDeleted()
         {
             Assert.That(deletedByTheLastRun, Is.Zero,
@@ -210,6 +253,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 "Make the rule depend only on Portfolios and parent links, so one run leaves nothing for the next.");
         }
     }
+
+    /// <summary>One stored Feature by Id, with how many state changes and forecasts it has.</summary>
+    internal sealed record FeatureHistory(int Id, int StateChanges, int Forecasts);
 
     /// <summary>The stored Features by Id with their remaining work; equal when the same Features with the same work are stored.</summary>
     internal sealed record StoreSnapshot(string Features, string RemainingWork);
@@ -318,6 +364,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             using var context = NewContext();
             return await context.Set<WhenForecast>().CountAsync();
+        }
+
+        public async Task TheFeatureMovedThroughStates(string reference, params string[] states)
+        {
+            var feature = await seed.Features.SingleAsync(stored => stored.ReferenceId == reference);
+            var day = new DateTime(2026, 1, 5, 9, 0, 0, DateTimeKind.Utc);
+            for (var step = 1; step < states.Length; step++)
+            {
+                seed.FeatureStateTransitions.Add(new FeatureStateTransition
+                {
+                    FeatureId = feature.Id,
+                    FromState = states[step - 1],
+                    ToState = states[step],
+                    TransitionedAt = day.AddDays(step),
+                });
+            }
+
+            await seed.SaveChangesAsync();
+        }
+
+        public async Task<int> TheIdOf(string reference)
+        {
+            using var context = NewContext();
+            return await context.Features.Where(feature => feature.ReferenceId == reference).Select(feature => feature.Id).SingleAsync();
+        }
+
+        public async Task<FeatureHistory?> TheHistoryOf(string reference)
+        {
+            using var context = NewContext();
+            var id = await context.Features.Where(feature => feature.ReferenceId == reference).Select(feature => (int?)feature.Id).SingleOrDefaultAsync();
+            if (id is null)
+            {
+                return null;
+            }
+
+            var stateChanges = await context.FeatureStateTransitions.CountAsync(transition => transition.FeatureId == id);
+            var forecasts = await context.Set<WhenForecast>().CountAsync(forecast => forecast.FeatureId == id);
+            return new FeatureHistory(id.Value, stateChanges, forecasts);
         }
 
         public async Task<StoreSnapshot> Snapshot()
