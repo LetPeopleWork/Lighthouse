@@ -16,8 +16,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ProductionProject = "Lighthouse.Backend/Lighthouse.Backend/";
 
-        private const string NamespacePrefix = "Lighthouse.Backend.";
-
         private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(LighthouseAppContext).Assembly));
@@ -168,7 +166,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ALeftoverRenameEntry_IsNamedByItsFile_AndAnEmptyListPasses()
         {
-            var leftover = new RefinementRename("SomeTest.cs", "Services/Implementation/Refinement/NeedBand.cs", "Modules/Refinement/Domain/NeedBand.cs");
+            var moved = MovingType("NeedBand");
+            var leftover = new RefinementRename("SomeTest.cs", $"{OldFolderOf(moved)}/{moved.File}", $"Modules/Refinement/{moved.Layer}/{moved.File}");
 
             var problems = WhenTheRenameListIsChecked([leftover]);
 
@@ -280,7 +279,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string FileOf(RefinementType type) => $"{ProductionProject}Modules/Refinement/{type.Layer}/{type.File}";
 
-        private static string OldFolderOf(RefinementType type) => type.OldNamespace[NamespacePrefix.Length..].Replace('.', '/');
+        private static string OldFolderOf(RefinementType type) => string.Join('/', type.OldNamespace.Split('.').Skip(2));
 
         private static bool IsInTheModule(string ns) => ns == RefinementType.NewRootNamespace || ns.StartsWith(RefinementType.NewRootNamespace + ".", StringComparison.Ordinal);
 
