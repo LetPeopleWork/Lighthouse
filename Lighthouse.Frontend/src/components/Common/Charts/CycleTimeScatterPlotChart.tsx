@@ -20,19 +20,13 @@ import {
 	type ScatterMarkerProps,
 	ScatterPlot,
 } from "@mui/x-charts";
-import {
-	QueryClient,
-	QueryClientContext,
-	skipToken,
-	useQuery,
-} from "@tanstack/react-query";
+import { QueryClientContext, skipToken, useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
 import {
 	combineWidgetStatuses,
 	useReportWidgetStatus,
-	type WidgetStatus,
 } from "../../../hooks/useReportWidgetStatus";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { ICycleTimeOutliers } from "../../../models/Metrics/CycleTimeOutliers";
@@ -65,12 +59,8 @@ import { getColorMapForKeys } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
-import {
-	type CycleTimeMeasure,
-	DefaultCycleTimeMeasure,
-	NamedCycleTimeMeasure,
-	type PlottedWorkItem,
-} from "./cycleTimeMeasure";
+import { fetcherIdOf, withoutAProvider } from "./chartQueryClient";
+import type { PlottedWorkItem } from "./cycleTimeMeasure";
 import LegendChip from "./LegendChip";
 import OffScaleLineMarkers, { MARKER_ROW_HEIGHT } from "./OffScaleLineMarkers";
 import { outlierHeaderChip } from "./outlierHeaderChip";
@@ -84,6 +74,12 @@ import {
 } from "./outlierPlot";
 import PercentileLegend from "./PercentileLegend";
 import TimeBlackoutOverlay from "./TimeBlackoutOverlay";
+import {
+	type NamedMeasureProps,
+	type NamedSelection,
+	shownPopulation,
+	useNamedPopulation,
+} from "./useNamedCycleTimePopulation";
 import { useFrameIsReady, useHeaderSlotContent } from "./widgetHeaderSlot";
 
 interface IGroupedWorkItem {
@@ -173,20 +169,6 @@ const ScatterMarker = (
 	);
 };
 
-/** Asks the backend for the Work Items that reached the definition's end state in the date range. */
-type NamedDataFetcher = (definitionId: number) => Promise<IWorkItem[]>;
-
-// A named measure plots its own Work Items, so offering one without a way to fetch them cannot compile.
-type NamedMeasureProps =
-	| {
-			namedCycleTimeDefinitions?: never;
-			onFetchNamedCycleTimeData?: never;
-	  }
-	| {
-			namedCycleTimeDefinitions: INamedCycleTimeDefinition[];
-			onFetchNamedCycleTimeData: NamedDataFetcher;
-	  };
-
 type CycleTimeScatterPlotChartProps = NamedMeasureProps & {
 	percentileValues: IPercentileValue[];
 	cycleTimeDataPoints: IWorkItem[];
@@ -209,20 +191,6 @@ type OutlierFetcher = NonNullable<
 	CycleTimeScatterPlotChartProps["onFetchCycleTimeOutliers"]
 >;
 
-// Each fetcher a view hands over stands for one owner and date range, so a new fetcher is a new question.
-const fetcherIds = new WeakMap<object, number>();
-let lastFetcherId = 0;
-const fetcherIdOf = (fetcher: object | undefined): number | null => {
-	if (!fetcher) return null;
-	let id = fetcherIds.get(fetcher);
-	if (id === undefined) {
-		lastFetcherId += 1;
-		id = lastFetcherId;
-		fetcherIds.set(fetcher, id);
-	}
-	return id;
-};
-
 interface OutlierHandling {
 	readonly hideOutliers: boolean;
 	readonly verdict: ICycleTimeOutliers | null;
@@ -242,9 +210,6 @@ function outlierHeaderSlot(
 	}
 	return outlierHeaderChip(chip);
 }
-
-// A chart without a fetcher asks nothing, and may be drawn outside a query provider.
-const withoutAProvider = new QueryClient();
 
 interface OutlierVerdictState {
 	/** The outlier ids and limit of the current question, or null while there is no answer for it. */
@@ -290,107 +255,6 @@ function useOutlierVerdict({
 	if (query.isError) return { verdict: null, status: "error" };
 	if (query.data === undefined) return { verdict: null, status: "loading" };
 	return { verdict: query.data, status: "ready" };
-}
-
-/** The Work Items one named Cycle Time measured, tagged with that definition. */
-interface NamedPopulation {
-	readonly definitionId: number;
-	readonly items: IWorkItem[];
-}
-
-interface NamedPopulationState {
-	/** The answer to show: the selected definition's, or while it loads the one shown before it. */
-	readonly answer: NamedPopulation | null;
-	readonly status: WidgetStatus;
-}
-
-/** The named measure the reader selected, with the fetcher that answers for its Work Items. */
-interface NamedSelection {
-	readonly definitionId: number;
-	readonly fetcher: NamedDataFetcher;
-}
-
-interface NamedPopulationQuestion {
-	readonly ownerKind: WorkItemsDialogOwnerKind;
-	readonly ownerId?: number;
-	readonly startDate?: Date;
-	readonly endDate?: Date;
-	readonly selection: NamedSelection | null;
-}
-
-// Keyed by owner, range and definition, so an answer for a measure the reader has left lands in its
-// own entry and never on the chart.
-function useNamedPopulation({
-	ownerKind,
-	ownerId,
-	startDate,
-	endDate,
-	selection,
-}: NamedPopulationQuestion): NamedPopulationState {
-	const client = useContext(QueryClientContext) ?? withoutAProvider;
-	const query = useQuery(
-		{
-			queryKey: [
-				"namedCycleTimeData",
-				ownerKind,
-				ownerId ?? null,
-				startDate?.toISOString() ?? null,
-				endDate?.toISOString() ?? null,
-				fetcherIdOf(selection?.fetcher),
-				selection?.definitionId ?? null,
-			],
-			queryFn: selection
-				? async (): Promise<NamedPopulation> => ({
-						definitionId: selection.definitionId,
-						items: await selection.fetcher(selection.definitionId),
-					})
-				: skipToken,
-			placeholderData: (previous: NamedPopulation | undefined) => previous,
-		},
-		client,
-	);
-
-	const { data, isError, isPlaceholderData } = query;
-	const isSelected = selection !== null;
-	return useMemo((): NamedPopulationState => {
-		if (!isSelected) return { answer: null, status: "ready" };
-		if (isError) return { answer: null, status: "error" };
-		if (data === undefined || isPlaceholderData) {
-			return { answer: data ?? null, status: "loading" };
-		}
-		return { answer: data, status: "ready" };
-	}, [isSelected, data, isError, isPlaceholderData]);
-}
-
-const DEFAULT_MEASURE = new DefaultCycleTimeMeasure();
-
-interface ShownPopulation {
-	readonly measure: CycleTimeMeasure;
-	readonly items: readonly IWorkItem[];
-}
-
-/**
- * What the chart plots: the default Cycle Time's closed Work Items, or a named measure's own
- * population. While a named answer is on its way the previous dots stay, for the frame to dim; after
- * a failure none are shown as if they were the answer.
- */
-function shownPopulation(
-	defaultItems: readonly IWorkItem[],
-	definitions: readonly INamedCycleTimeDefinition[],
-	named: NamedPopulationState,
-): ShownPopulation {
-	if (named.status === "error") return { measure: DEFAULT_MEASURE, items: [] };
-	const answer = named.answer;
-	const definition =
-		answer &&
-		definitions.find((candidate) => candidate.id === answer.definitionId);
-	if (!answer || !definition) {
-		return { measure: DEFAULT_MEASURE, items: defaultItems };
-	}
-	return {
-		measure: new NamedCycleTimeMeasure(definition),
-		items: answer.items,
-	};
 }
 
 const DEFAULT_SELECTION = "default";
