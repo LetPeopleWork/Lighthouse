@@ -3,9 +3,11 @@ using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
@@ -76,6 +78,8 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
+            var cancellationToken = HttpContext?.RequestAborted ?? default;
+
             await updateQueueService.EnqueueAndAwaitAsync(
                 UpdateType.PortfolioDelete,
                 portfolioId,
@@ -87,8 +91,11 @@ namespace Lighthouse.Backend.API
 
                     var logs = sp.GetRequiredService<IRefreshLogService>();
                     await logs.RemoveRefreshLogsForEntity(RefreshType.Portfolio, portfolioId);
+
+                    var dispatcher = sp.GetRequiredService<IDomainEventDispatcher>();
+                    await dispatcher.PublishAsync(new PortfolioDeleted(portfolioId), cancellationToken);
                 },
-                HttpContext?.RequestAborted ?? default);
+                cancellationToken);
 
             return NoContent();
         }

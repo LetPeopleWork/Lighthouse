@@ -116,31 +116,12 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             logger.LogInformation("Removing Project with {Id}", id);
             var itemToRemove = Context.Portfolios
                 .Include(p => p.Features)
-                    .ThenInclude(f => f.Portfolios)
                 .SingleOrDefault(p => p.Id == id);
 
             if (itemToRemove != null)
             {
-                RemoveOrphanedFeatures(id, itemToRemove);
-
                 Context.Portfolios.Remove(itemToRemove);
             }
-        }
-
-        private void RemoveOrphanedFeatures(int id, Portfolio? itemToRemove)
-        {
-            var orphanedFeatures = new List<Feature>();
-            foreach (var feature in itemToRemove.Features)
-            {
-                feature.Portfolios.Remove(itemToRemove);
-                if (feature.Portfolios.Count == 0)
-                {
-                    logger.LogInformation("Feature {Feature} ({Id}) is not related to any portfolio - removing.", feature.Name, id);
-                    orphanedFeatures.Add(feature);
-                }
-            }
-
-            Context.Features.RemoveRange(orphanedFeatures);
         }
 
         private IQueryable<Portfolio> PortfoliosWithoutForecasts()

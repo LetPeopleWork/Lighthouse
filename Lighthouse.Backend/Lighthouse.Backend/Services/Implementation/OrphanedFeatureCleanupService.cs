@@ -13,8 +13,11 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var featuresInAPortfolio = db.Features.Where(f => f.Portfolios.Any());
+
             var deleted = await db.Features
-                .Where(f => !f.IsParentFeature && !f.Portfolios.Any())
+                .Where(f => !f.Portfolios.Any()
+                    && !(f.IsParentFeature && featuresInAPortfolio.Any(child => child.ParentReferenceId == f.ReferenceId)))
                 .ExecuteDeleteAsync(cancellationToken);
             if (deleted > 0)
             {
