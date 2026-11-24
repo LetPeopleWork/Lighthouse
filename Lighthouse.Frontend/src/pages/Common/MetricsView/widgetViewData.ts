@@ -137,7 +137,11 @@ export function buildViewData(
 		}
 		// Until the measure's own Work Items arrive, listing the default closed ones under its name
 		// would present a different population as the one the percentiles count.
-		return { id, items: inputs.scopedPercentileItems ?? [] };
+		return {
+			id,
+			endState: definition.endState,
+			items: inputs.scopedPercentileItems ?? [],
+		};
 	})();
 
 	const opens = (context: WorkItemsDialogContextId) => ({
@@ -189,7 +193,7 @@ export function buildViewData(
 			: undefined,
 		percentiles: namedPercentilesScope
 			? {
-					title: `Closed ${terms.workItems}`,
+					title: `${terms.workItems} that reached ${namedPercentilesScope.endState}`,
 					items: namedPercentilesScope.items,
 					...closedItems,
 					cycleTimeScope: namedPercentilesScope.id,
