@@ -339,4 +339,82 @@ None.
 
 ## Examination
 
-None.
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules (full, no fragment; examiner workspace): exit 0; Total tests 1813, Passed 1813, Test Run Successful; includes RefinementPattern, Tracker integration, Access and Licensing list tests, per-type RefinementModuleArchUnitTest patterns (all Passed). Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/arch-all.out. Per-rule-name comparison with the pre-candidate run was not available to the examiner.
+```
+
+```text
+Probe architecture-rules Refinement (examiner workspace): exit 0; 141/141 Passed, Test Run Successful. Includes R-R rule tests: EveryTypeThatStays_IsInTheCompiledCodeWhereListed; TheRefinementTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove; TheForecastingApplication_IsReachedFromOutsideOnlyBy...; ARefinementApplicationTypeReaching{UnlistedAccessType,UnlistedSetUpType,UnlistedPlatformLaneType,UnlistedRepository,EntityFrameworkCoreDbSet,TheDataLayer,TheApi,ModuleAdapter,TrackerIntegration,TheUpdateCode,TheUpdateContracts}_IsNamed; ARefinementDomainTypeReachingAService_IsNamed; AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches; ARefinementApplicationReachingOnlyALegalNeighbourAndTheClock_PassesBothOutboundRules; AnOutsideTypeOffTheList_ReachingTheRefinementApplication/Domain_IsNamed. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/arch-refinement.out
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules Refinement (examiner workspace): exit 0; 141/141 Passed, Test Run Successful. Includes R-R rule tests: EveryTypeThatStays_IsInTheCompiledCodeWhereListed; TheRefinementTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove; TheForecastingApplication_IsReachedFromOutsideOnlyBy...; ARefinementApplicationTypeReaching{UnlistedAccessType,UnlistedSetUpType,UnlistedPlatformLaneType,UnlistedRepository,EntityFrameworkCoreDbSet,TheDataLayer,TheApi,ModuleAdapter,TrackerIntegration,TheUpdateCode,TheUpdateContracts}_IsNamed; ARefinementDomainTypeReachingAService_IsNamed; AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches; ARefinementApplicationReachingOnlyALegalNeighbourAndTheClock_PassesBothOutboundRules; AnOutsideTypeOffTheList_ReachingTheRefinementApplication/Domain_IsNamed. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/arch-refinement.out
+```
+
+```text
+Probe backend-tests RefinementModuleBoundaries (examiner workspace): exit 0; 33/33 Passed, Test Run Successful. Includes EveryRefinementType_LivesInItsLayer_AndNoneIsLeftUnderServices (per layer), NoRefinementAlternativeOfTheRuleConstantsMatchesALookalikeNamespace, TheRefinementDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/be-boundaries.out
+```
+
+```text
+Non-probe (examiner limit): the Refinement rule content (inline list equal to IL measurement in both directions, measured Access/Set-up/Platform/Repository list) is shown only by passing test names; the list contents were not read.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Probe ef-model-unchanged (examiner workspace): exit 0; Sqlite: 'No changes have been made to the model since the last migration.'; Postgres: same. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/ef.out
+```
+
+### E7
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules Refinement (examiner workspace): exit 0; 141/141 Passed, Test Run Successful. Includes R-R rule tests: EveryTypeThatStays_IsInTheCompiledCodeWhereListed; TheRefinementTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove; TheForecastingApplication_IsReachedFromOutsideOnlyBy...; ARefinementApplicationTypeReaching{UnlistedAccessType,UnlistedSetUpType,UnlistedPlatformLaneType,UnlistedRepository,EntityFrameworkCoreDbSet,TheDataLayer,TheApi,ModuleAdapter,TrackerIntegration,TheUpdateCode,TheUpdateContracts}_IsNamed; ARefinementDomainTypeReachingAService_IsNamed; AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches; ARefinementApplicationReachingOnlyALegalNeighbourAndTheClock_PassesBothOutboundRules; AnOutsideTypeOffTheList_ReachingTheRefinementApplication/Domain_IsNamed. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/arch-refinement.out
+```
+
+```text
+Probe backend-tests RefinementRulesNameOnly (examiner workspace): exit 0; 11/11 Passed, Test Run Successful. Includes MadeUpRuleConstantsInEachFormerFormAreNamedAndAModulesOnlyConstantIsNot, NoRuleConstantNamesRefinementByItsFormerPlace, NoStringLiteralOutsideTheMeasurementFilesNamesRefinementByItsFormerPlace, TheListedMeasurementFilesAreExactlyTheFilesThatKeepAFormerForm. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/be-nameonly.out
+```
+
+```text
+Non-probe (examiner limit): no public observation shows the absence of old Refinement namespace or folder strings in test-project sources, nor compares rule files against the prior rule files for loosening. Source/diff inspection is outside the examiner boundary; the only related public evidence is passing oracle tests (O3, O5) whose content is not visible. Global absence is a candidate-review item.
+```
+
+### E8
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests RefinementModuleBoundaries (examiner workspace): exit 0; 33/33 Passed, Test Run Successful. Includes EveryRefinementType_LivesInItsLayer_AndNoneIsLeftUnderServices (per layer), NoRefinementAlternativeOfTheRuleConstantsMatchesALookalikeNamespace, TheRefinementDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/be-boundaries.out
+```
+
+### E9
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests (bare full filtered suite; examiner workspace, one run): Test Run Successful; Total 14685, Passed 14673, Skipped 12, Failed 0. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/examine-full-backend.out. The 12 skipped tests were not identified by the examiner.
+```

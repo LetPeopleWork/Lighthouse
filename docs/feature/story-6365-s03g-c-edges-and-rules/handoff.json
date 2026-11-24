@@ -153,7 +153,7 @@
 "counters": {
 "D": 5,
 "E": 9,
-"F": 130,
+"F": 138,
 "K": 1,
 "P": 3,
 "S": 2,
@@ -583,6 +583,49 @@
 }
 }
 },
+"examination": {
+"E2": {
+"observations": [
+"F131",
+"F132"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F132",
+"F133",
+"F134"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F135"
+],
+"verdict": "met"
+},
+"E7": {
+"observations": [
+"F132",
+"F136",
+"F137"
+],
+"verdict": "met"
+},
+"E8": {
+"observations": [
+"F133"
+],
+"verdict": "met"
+},
+"E9": {
+"observations": [
+"F138"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -662,6 +705,14 @@
 "F129": "backend-tests RefinementModuleBoundaries reports every made-up-offender case passing, one per rule R-R1 to R-R6 and per list position: each made-up offender makes its rule fail. That the failure message speaks Refinement's own wording is owned by the oracle approval and the whole-candidate review, not by a public probe.",
 "F13": "C2: Refinement has its own module rules R-R1 to R-R6 on ModuleRules, read from the IL with measured inline lists, and each catches a made-up offender in Refinement's own wording.",
 "F130": "The whole filtered backend-tests run finishes with zero failures. That no rule or list was loosened against the earlier rule files is owned by the whole-candidate review, not by a public probe.",
+"F131": "Probe architecture-rules (full, no fragment; examiner workspace): exit 0; Total tests 1813, Passed 1813, Test Run Successful; includes RefinementPattern, Tracker integration, Access and Licensing list tests, per-type RefinementModuleArchUnitTest patterns (all Passed). Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/arch-all.out. Per-rule-name comparison with the pre-candidate run was not available to the examiner.",
+"F132": "Probe architecture-rules Refinement (examiner workspace): exit 0; 141/141 Passed, Test Run Successful. Includes R-R rule tests: EveryTypeThatStays_IsInTheCompiledCodeWhereListed; TheRefinementTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove; TheForecastingApplication_IsReachedFromOutsideOnlyBy...; ARefinementApplicationTypeReaching{UnlistedAccessType,UnlistedSetUpType,UnlistedPlatformLaneType,UnlistedRepository,EntityFrameworkCoreDbSet,TheDataLayer,TheApi,ModuleAdapter,TrackerIntegration,TheUpdateCode,TheUpdateContracts}_IsNamed; ARefinementDomainTypeReachingAService_IsNamed; AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches; ARefinementApplicationReachingOnlyALegalNeighbourAndTheClock_PassesBothOutboundRules; AnOutsideTypeOffTheList_ReachingTheRefinementApplication/Domain_IsNamed. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/arch-refinement.out",
+"F133": "Probe backend-tests RefinementModuleBoundaries (examiner workspace): exit 0; 33/33 Passed, Test Run Successful. Includes EveryRefinementType_LivesInItsLayer_AndNoneIsLeftUnderServices (per layer), NoRefinementAlternativeOfTheRuleConstantsMatchesALookalikeNamespace, TheRefinementDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/be-boundaries.out",
+"F134": "Non-probe (examiner limit): the Refinement rule content (inline list equal to IL measurement in both directions, measured Access/Set-up/Platform/Repository list) is shown only by passing test names; the list contents were not read.",
+"F135": "Probe ef-model-unchanged (examiner workspace): exit 0; Sqlite: 'No changes have been made to the model since the last migration.'; Postgres: same. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/ef.out",
+"F136": "Probe backend-tests RefinementRulesNameOnly (examiner workspace): exit 0; 11/11 Passed, Test Run Successful. Includes MadeUpRuleConstantsInEachFormerFormAreNamedAndAModulesOnlyConstantIsNot, NoRuleConstantNamesRefinementByItsFormerPlace, NoStringLiteralOutsideTheMeasurementFilesNamesRefinementByItsFormerPlace, TheListedMeasurementFilesAreExactlyTheFilesThatKeepAFormerForm. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/be-nameonly.out",
+"F137": "Non-probe (examiner limit): no public observation shows the absence of old Refinement namespace or folder strings in test-project sources, nor compares rule files against the prior rule files for loosening. Source/diff inspection is outside the examiner boundary; the only related public evidence is passing oracle tests (O3, O5) whose content is not visible. Global absence is a candidate-review item.",
+"F138": "Probe backend-tests (bare full filtered suite; examiner workspace, one run): Test Run Successful; Total 14685, Passed 14673, Skipped 12, Failed 0. Output file /tmp/claude-1000/-storage-repos-Lighthouse/b2180cf9-f85c-4987-9198-d31a827aa267/scratchpad/examine-full-backend.out. The 12 skipped tests were not identified by the examiner.",
 "F14": "A new edge into or out of Refinement is caught by its own rules",
 "F15": "Question 1 (preservation law): retire feature A's Refinement call of the move law. Delete RefinementRulesSeeTheMoveArchUnitTest, RefinementPatternRoles and RefinementStringsTheMoveRenames, and drop the rename-list use in RefinementLivesInItsModuleArchUnitTest. Reason: the move is complete and feature B pins every type to its new namespace, so a law that compares old and new sight has no old side left, and a Refinement call kept as a move-complete check would be a second owner next to the C1 oracle. NamespaceMoveLaw, PatternDeclaration and PatternRoleMap stay: PlatformLaneRulesSeeTheMoveArchUnitTest still uses them.",
 "F16": "Question 2 (C1 oracle): one new file RefinementRulesNameOnlyTheModuleArchUnitTest owns the whole check. It reads every rule constant of the test assembly by reflection and sweeps every string literal of the test project sources for the four old forms (the old Implementation and Interfaces Refinement namespaces, as a plain name, a regex alternative or a group member, and the two old folder paths). A hit is allowed only in a declared measurement file (RefinementMembership, RefinementMembershipArchUnitTest, RefinementLivesInItsModuleArchUnitTest, RefinementUnitTestsBesideTheModuleArchUnitTest, NamespaceMoveLaw and the oracle itself); that list is compared both ways, so a listed file with no hit fails until it is removed. It also asserts that each Refinement rule pattern still matches a Refinement type in its new namespace, so narrowing cannot make a rule blind. Made-up offenders are fixtures declared to the oracle.",
