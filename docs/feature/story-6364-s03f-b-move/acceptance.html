@@ -338,6 +338,161 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Look up every database-management, demo-data, seeder-port, install-timestamp-seeder and race-tolerant-save type of the platform membership map in its new platform area and in its old namespace
+</code></pre>
+
+<pre><code>Each type exists exactly once in Platform under its own area and none remains in its old namespace; a type left behind or a listed name that matches no type fails naming it
+</code></pre>
+
+<pre><code>Platform code for database management, demo data, seeding and the race-tolerant save is found by namespace in one place
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::EveryDatabaseAndSeedingType_LivesInItsPlatformArea_AndNoneIsLeftInItsOldNamespace</p>
+
+<pre><code>A type placed in the wrong platform area is still caught by the per-area check; none known
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Look up the seven unit-test classes of the moved types in the test assembly, in their new Tests/Platform area and in their old namespace
+</code></pre>
+
+<pre><code>Each test class lives in its Tests.Platform area namespace and none is left in Tests.Services.Implementation
+</code></pre>
+
+<pre><code>Tests sit next to the platform area they test
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::TheUnitTestsOfTheMovedTypes_LiveInTestsPlatformTheirArea_AndNoneIsLeftInItsOldNamespace</p>
+
+<pre><code>A test class is renamed rather than moved; the missing name fails
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Look up the seven context seeders in the production assembly in Services.Implementation.Seeding and in Platform.Seeding
+</code></pre>
+
+<pre><code>Every context seeder stays exactly once in Services.Implementation.Seeding and none appears in Platform.Seeding
+</code></pre>
+
+<pre><code>Seeders keep belonging to their contexts; only the seeder port and install-timestamp seeder are platform
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::TheSevenContextSeeders_StayInServicesImplementationSeeding_ReachingTheSeederPortInItsNewPlace</p>
+
+<pre><code>A context seeder is duplicated into a different namespace than Platform.Seeding; not a stated promise
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the global analyser suppression file for the Postgres management provider target
+</code></pre>
+
+<pre><code>The target names the provider&#x27;s new full name and no longer its old one
+</code></pre>
+
+<pre><code>The build stays clean after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::TheSuppressionOnThePostgresProvider_NamesItsNewFullName</p>
+
+<pre><code>Both old and new targets present is rejected; a suppression removed entirely is also rejected as the new name is missing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Read each architecture-test file whose rule or source-path string names a moved type
+</code></pre>
+
+<pre><code>Each string reads the new full name or path and not the old one
+</code></pre>
+
+<pre><code>Architecture rules keep watching the moved types and are not loosened
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::TheRuleAndListStringsThatNameAMovedType_NameItsNewPlaceOnly</p>
+
+<pre><code>Rule deleted and replaced by one containing the new text but weaker; reviewer and the preservation-law test own that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>Run the existing feature probes and the full filtered backend suite after the move
+</code></pre>
+
+<pre><code>Behaviour, API answers, EF model and registrations are unchanged and every existing test stays green
+</code></pre>
+
+<pre><code>Nothing a user or API client sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Behaviour preservation is observed by the existing suite and the platform-answers-compare probe at craft and EXAMINE, not by a new layout oracle
+</code></pre>
+
+<p>crafter-and-examine</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

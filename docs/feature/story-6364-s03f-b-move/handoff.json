@@ -107,12 +107,113 @@
 "stimulus": "F586",
 "user_result": "F588"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"T2",
+"L2/F232",
+"L2/F233",
+"L2/F234"
+],
+"still_passes_if": "F593",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::EveryDatabaseAndSeedingType_LivesInItsPlatformArea_AndNoneIsLeftInItsOldNamespace"
+},
+"expected": "F591",
+"stimulus": "F590",
+"user_result": "F592"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"T2",
+"L2/F235"
+],
+"still_passes_if": "F597",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::TheUnitTestsOfTheMovedTypes_LiveInTestsPlatformTheirArea_AndNoneIsLeftInItsOldNamespace"
+},
+"expected": "F595",
+"stimulus": "F594",
+"user_result": "F596"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F601",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::TheSevenContextSeeders_StayInServicesImplementationSeeding_ReachingTheSeederPortInItsNewPlace"
+},
+"expected": "F599",
+"stimulus": "F598",
+"user_result": "F600"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F605",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::TheSuppressionOnThePostgresProvider_NamesItsNewFullName"
+},
+"expected": "F603",
+"stimulus": "F602",
+"user_result": "F604"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F609",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDatabaseAndSeedingLayoutArchUnitTest.cs::TheRuleAndListStringsThatNameAMovedType_NameItsNewPlaceOnly"
+},
+"expected": "F607",
+"stimulus": "F606",
+"user_result": "F608"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "crafter-and-examine",
+"reason": "F613"
+},
+"expected": "F611",
+"stimulus": "F610",
+"user_result": "F612"
+}
 ]
 },
 "counters": {
 "D": 9,
 "E": 7,
-"F": 589,
+"F": 613,
 "K": 3,
 "L": 5,
 "P": 7,
@@ -10005,9 +10106,33 @@
 "F588": "Tracker integration may still sit on the key ring after it moves to Platform/Encryption, and its other-contexts rule takes in none of Platform.Encryption, which it never covered",
 "F589": "the Encryption area is widened into PromisesAndTheUpdateCode or a composite built from it, or the folder-only exception is dropped from the law (the made-up falsifier then fails)",
 "F59": "the oracles run by dotnet test over the compiled assembly; behaviour through HTTP, the hub and the application-service ports is observed by EXAMINE's platform-answers-compare and refresh-reactions-compare",
+"F590": "Look up every database-management, demo-data, seeder-port, install-timestamp-seeder and race-tolerant-save type of the platform membership map in its new platform area and in its old namespace",
+"F591": "Each type exists exactly once in Platform under its own area and none remains in its old namespace; a type left behind or a listed name that matches no type fails naming it",
+"F592": "Platform code for database management, demo data, seeding and the race-tolerant save is found by namespace in one place",
+"F593": "A type placed in the wrong platform area is still caught by the per-area check; none known",
+"F594": "Look up the seven unit-test classes of the moved types in the test assembly, in their new Tests/Platform area and in their old namespace",
+"F595": "Each test class lives in its Tests.Platform area namespace and none is left in Tests.Services.Implementation",
+"F596": "Tests sit next to the platform area they test",
+"F597": "A test class is renamed rather than moved; the missing name fails",
+"F598": "Look up the seven context seeders in the production assembly in Services.Implementation.Seeding and in Platform.Seeding",
+"F599": "Every context seeder stays exactly once in Services.Implementation.Seeding and none appears in Platform.Seeding",
 "F6": "Every type the membership map tags B4 - the domain-event dispatcher with IDomainEventDispatcher and IDomainEventHandler<T>, the clock, RandomNumberService and the other host facilities - lives under Platform/DomainEvents or Platform/Host, namespace equal to folder, none left in its old namespace; the domain-event handlers stay with their contexts; the HostUsersStillToMove entries and the CalendarDayAnchorSeam path name the moved tests in their new place; the GlobalSuppressions.cs target of RandomNumberService.GetRandomNumber names its new full name.",
 "F60": "not applicable: no progress, scheduling or fairness claim changes; the update queue, locks and dispatcher move unchanged",
+"F600": "Seeders keep belonging to their contexts; only the seeder port and install-timestamp seeder are platform",
+"F601": "A context seeder is duplicated into a different namespace than Platform.Seeding; not a stated promise",
+"F602": "Read the global analyser suppression file for the Postgres management provider target",
+"F603": "The target names the provider's new full name and no longer its old one",
+"F604": "The build stays clean after the move",
+"F605": "Both old and new targets present is rejected; a suppression removed entirely is also rejected as the new name is missing",
+"F606": "Read each architecture-test file whose rule or source-path string names a moved type",
+"F607": "Each string reads the new full name or path and not the old one",
+"F608": "Architecture rules keep watching the moved types and are not loosened",
+"F609": "Rule deleted and replaced by one containing the new text but weaker; reviewer and the preservation-law test own that",
 "F61": "Assumption negated: rules name the lane by area. They name it as Services; a move would drop types from about 20 patterns",
+"F610": "Run the existing feature probes and the full filtered backend suite after the move",
+"F611": "Behaviour, API answers, EF model and registrations are unchanged and every existing test stays green",
+"F612": "Nothing a user or API client sees changes",
+"F613": "Behaviour preservation is observed by the existing suite and the platform-answers-compare probe at craft and EXAMINE, not by a new layout oracle",
 "F62": "every rule keeps its verdict for every moved type",
 "F63": "a rule pattern gains a Platform alternative only through feature A's roles",
 "F64": "a rule goes blind or sees a type outside Platform",

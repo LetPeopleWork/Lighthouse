@@ -217,6 +217,185 @@ the Encryption area is widened into PromisesAndTheUpdateCode or a composite buil
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Look up every database-management, demo-data, seeder-port, install-timestamp-seeder and race-tolerant-save type of the platform membership map in its new platform area and in its old namespace
+```
+
+```text
+Each type exists exactly once in Platform under its own area and none remains in its old namespace; a type left behind or a listed name that matches no type fails naming it
+```
+
+```text
+Platform code for database management, demo data, seeding and the race-tolerant save is found by namespace in one place
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDatabaseAndSeedingLayoutArchUnitTest\.cs\:\:EveryDatabaseAndSeedingType\_LivesInItsPlatformArea\_AndNoneIsLeftInItsOldNamespace
+
+```text
+A type placed in the wrong platform area is still caught by the per-area check; none known
+```
+
+###### Obligations
+
+
+
+
+
+
+##### Covers
+
+P6
+
+```text
+Look up the seven unit-test classes of the moved types in the test assembly, in their new Tests/Platform area and in their old namespace
+```
+
+```text
+Each test class lives in its Tests.Platform area namespace and none is left in Tests.Services.Implementation
+```
+
+```text
+Tests sit next to the platform area they test
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDatabaseAndSeedingLayoutArchUnitTest\.cs\:\:TheUnitTestsOfTheMovedTypes\_LiveInTestsPlatformTheirArea\_AndNoneIsLeftInItsOldNamespace
+
+```text
+A test class is renamed rather than moved; the missing name fails
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Look up the seven context seeders in the production assembly in Services.Implementation.Seeding and in Platform.Seeding
+```
+
+```text
+Every context seeder stays exactly once in Services.Implementation.Seeding and none appears in Platform.Seeding
+```
+
+```text
+Seeders keep belonging to their contexts; only the seeder port and install-timestamp seeder are platform
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDatabaseAndSeedingLayoutArchUnitTest\.cs\:\:TheSevenContextSeeders\_StayInServicesImplementationSeeding\_ReachingTheSeederPortInItsNewPlace
+
+```text
+A context seeder is duplicated into a different namespace than Platform.Seeding; not a stated promise
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Read the global analyser suppression file for the Postgres management provider target
+```
+
+```text
+The target names the provider's new full name and no longer its old one
+```
+
+```text
+The build stays clean after the move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDatabaseAndSeedingLayoutArchUnitTest\.cs\:\:TheSuppressionOnThePostgresProvider\_NamesItsNewFullName
+
+```text
+Both old and new targets present is rejected; a suppression removed entirely is also rejected as the new name is missing
+```
+
+###### Obligations
+
+
+##### Covers
+
+P6
+
+```text
+Read each architecture-test file whose rule or source-path string names a moved type
+```
+
+```text
+Each string reads the new full name or path and not the old one
+```
+
+```text
+Architecture rules keep watching the moved types and are not loosened
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDatabaseAndSeedingLayoutArchUnitTest\.cs\:\:TheRuleAndListStringsThatNameAMovedType\_NameItsNewPlaceOnly
+
+```text
+Rule deleted and replaced by one containing the new text but weaker; reviewer and the preservation-law test own that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+Run the existing feature probes and the full filtered backend suite after the move
+```
+
+```text
+Behaviour, API answers, EF model and registrations are unchanged and every existing test stays green
+```
+
+```text
+Nothing a user or API client sees changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Behaviour preservation is observed by the existing suite and the platform-answers-compare probe at craft and EXAMINE, not by a new layout oracle
+```
+
+crafter\-and\-examine
+
 ## Expectations
 
 ### Rows
