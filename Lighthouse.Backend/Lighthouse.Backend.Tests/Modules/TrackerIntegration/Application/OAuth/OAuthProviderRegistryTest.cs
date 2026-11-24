@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Connectors.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -88,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application.OAuth
         {
             var mock = new Mock<IOAuthProvider>();
             mock.SetupGet(p => p.ProviderKey).Returns(providerKey);
-            mock.SetupGet(p => p.DefaultScopes).Returns(Array.Empty<string>());
+            mock.Setup(p => p.ScopesFor(It.IsAny<WorkItemRights>())).Returns(Array.Empty<string>());
             return mock.Object;
         }
     }

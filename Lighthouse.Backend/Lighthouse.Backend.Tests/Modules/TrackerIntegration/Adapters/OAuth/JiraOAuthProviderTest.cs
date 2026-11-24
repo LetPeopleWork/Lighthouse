@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.OAuth;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
@@ -40,11 +41,11 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.OAuth
         ];
 
         [Test]
-        public void DefaultScopes_ContainsRequiredAtlassianScopesIncludingJiraSoftwareGranularScopes()
+        public void ScopesFor_AnyNeed_ContainsRequiredAtlassianScopesIncludingJiraSoftwareGranularScopes()
         {
             var provider = CreateProvider(CreateHandler((_, _) => Task.FromResult(EmptyResponse())));
 
-            Assert.That(provider.DefaultScopes, Is.EquivalentTo(ExpectedDefaultScopes));
+            Assert.That(provider.ScopesFor(WorkItemRights.ReadAndWrite), Is.EquivalentTo(ExpectedDefaultScopes));
         }
 
         [Test]

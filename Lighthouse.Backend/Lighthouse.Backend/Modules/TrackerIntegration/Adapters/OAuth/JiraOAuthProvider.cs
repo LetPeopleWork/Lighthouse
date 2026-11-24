@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.OAuth;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -46,7 +47,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
 
         public string ProviderKey => AuthenticationMethodKeys.JiraOAuth;
 
-        public IReadOnlyList<string> DefaultScopes => AtlassianDefaultScopes;
+        public IReadOnlyList<string> ScopesFor(WorkItemRights needed) => AtlassianDefaultScopes;
 
         public Uri BuildAuthorizationUrl(OAuthFlowContext context)
         {

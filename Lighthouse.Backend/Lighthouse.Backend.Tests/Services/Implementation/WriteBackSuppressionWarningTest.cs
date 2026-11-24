@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -284,6 +285,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         private WriteBackService CreateSubject()
-            => new(connectorFactoryMock.Object, loggerMock.Object, workItemRepositoryMock.Object, featureRepositoryMock.Object);
+            => new(connectorFactoryMock.Object, loggerMock.Object, workItemRepositoryMock.Object, featureRepositoryMock.Object, Mock.Of<IRepository<OAuthCredential>>());
     }
 }

@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Lighthouse.Backend.Platform.Host;
@@ -30,7 +31,7 @@ namespace Lighthouse.Backend.Tests.TestDoubles
 
         public string ProviderKey => inner.ProviderKey;
 
-        public IReadOnlyList<string> DefaultScopes => inner.DefaultScopes;
+        public IReadOnlyList<string> ScopesFor(WorkItemRights needed) => inner.ScopesFor(needed);
 
         public Uri BuildAuthorizationUrl(OAuthFlowContext context) => inner.BuildAuthorizationUrl(context);
 

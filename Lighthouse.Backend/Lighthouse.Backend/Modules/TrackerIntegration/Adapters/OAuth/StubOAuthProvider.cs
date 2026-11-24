@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 using Microsoft.AspNetCore.WebUtilities;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
@@ -43,7 +44,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
 
         public string ProviderKey => providerKey;
 
-        public IReadOnlyList<string> DefaultScopes => StubDefaultScopes;
+        public IReadOnlyList<string> ScopesFor(WorkItemRights needed) => StubDefaultScopes;
 
         public Uri BuildAuthorizationUrl(OAuthFlowContext context)
         {

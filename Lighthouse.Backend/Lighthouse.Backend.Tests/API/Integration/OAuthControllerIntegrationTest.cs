@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             providerMock = new Mock<IOAuthProvider>();
             providerMock.SetupGet(p => p.ProviderKey).Returns(ProviderKey);
-            providerMock.SetupGet(p => p.DefaultScopes).Returns(DefaultProviderScopes);
+            providerMock.Setup(p => p.ScopesFor(It.IsAny<WorkItemRights>())).Returns(DefaultProviderScopes);
 
             licenseServiceMock = new Mock<ILicenseService>();
             licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             providerMock.Reset();
             providerMock.SetupGet(p => p.ProviderKey).Returns(ProviderKey);
-            providerMock.SetupGet(p => p.DefaultScopes).Returns(DefaultProviderScopes);
+            providerMock.Setup(p => p.ScopesFor(It.IsAny<WorkItemRights>())).Returns(DefaultProviderScopes);
 
             licenseServiceMock.Reset();
             licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
@@ -420,7 +420,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var inert = new Mock<IOAuthProvider>();
             inert.SetupGet(p => p.ProviderKey).Returns(providerKey);
-            inert.SetupGet(p => p.DefaultScopes).Returns(Array.Empty<string>());
+            inert.Setup(p => p.ScopesFor(It.IsAny<WorkItemRights>())).Returns(Array.Empty<string>());
             return inert.Object;
         }
     }

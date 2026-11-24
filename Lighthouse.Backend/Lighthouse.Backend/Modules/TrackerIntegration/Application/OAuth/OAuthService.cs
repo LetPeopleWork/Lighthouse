@@ -113,7 +113,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth
                 connection.Id,
                 connection.AuthenticationMethodKey,
                 durationMs,
-                provider.DefaultScopes);
+                flowContext.Scopes);
 
             return new OAuthCompleteResult(connection.Id, OAuthCredentialStatus.Valid, null);
         }
@@ -130,6 +130,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth
                 existing.ExpiresAt = tokens.ExpiresAt;
                 existing.Status = OAuthCredentialStatus.Valid;
                 existing.UpdatedAt = now;
+                existing.GrantedRights = tokens.GrantedRights;
                 credentialRepository.Update(existing);
                 return;
             }
@@ -142,6 +143,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth
                 ExpiresAt = tokens.ExpiresAt,
                 Status = OAuthCredentialStatus.Valid,
                 UpdatedAt = now,
+                GrantedRights = tokens.GrantedRights,
             });
         }
 
@@ -342,7 +344,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth
                 clientSecret,
                 redirectUri,
                 stateToken,
-                provider.DefaultScopes,
+                provider.ScopesFor(connection.NeededWorkItemRights),
                 tenantId);
         }
 

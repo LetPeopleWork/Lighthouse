@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.WriteBack;
 
 namespace Lighthouse.Backend.Models
@@ -20,6 +21,10 @@ namespace Lighthouse.Backend.Models
         public List<AdditionalFieldDefinition> AdditionalFieldDefinitions { get; } = [];
 
         public List<WriteBackMappingDefinition> WriteBackMappingDefinitions { get; } = [];
+
+        /// <summary>Writing work items is needed only once write-back is set up on this connection.</summary>
+        public WorkItemRights NeededWorkItemRights
+            => WriteBackMappingDefinitions.Count > 0 ? WorkItemRights.ReadAndWrite : WorkItemRights.Read;
 
         /// <summary>Deprecated: the first field of <see cref="ParentSourcesForTeams"/>, kept for a build one release back.</summary>
         public int? ParentOverrideForTeams

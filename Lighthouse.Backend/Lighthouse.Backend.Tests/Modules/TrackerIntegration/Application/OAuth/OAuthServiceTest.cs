@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application.OAuth
             providerRegistryMock = new Mock<IOAuthProviderRegistry>();
             providerMock = new Mock<IOAuthProvider>();
             providerMock.SetupGet(p => p.ProviderKey).Returns(ProviderKey);
-            providerMock.SetupGet(p => p.DefaultScopes).Returns(DefaultProviderScopes);
+            providerMock.Setup(p => p.ScopesFor(It.IsAny<WorkItemRights>())).Returns(DefaultProviderScopes);
             providerRegistryMock.Setup(r => r.GetByKey(ProviderKey)).Returns(providerMock.Object);
 
             connectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();

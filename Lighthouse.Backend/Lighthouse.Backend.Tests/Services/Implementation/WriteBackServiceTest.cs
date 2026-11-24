@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation;
@@ -616,7 +617,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private WriteBackService CreateService()
         {
-            return new WriteBackService(connectorFactoryMock.Object, loggerMock.Object, workItemRepositoryMock.Object, featureRepositoryMock.Object);
+            return new WriteBackService(connectorFactoryMock.Object, loggerMock.Object, workItemRepositoryMock.Object, featureRepositoryMock.Object, Mock.Of<IRepository<OAuthCredential>>());
         }
 
         private static WorkTrackingSystemConnection CreateConnection(WorkTrackingSystems system)

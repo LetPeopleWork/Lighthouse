@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
             modelBuilder.Entity("DeliveryFeature", b =>
                 {
@@ -907,6 +907,9 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("GrantedRights")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("RefreshToken")
                         .IsRequired()

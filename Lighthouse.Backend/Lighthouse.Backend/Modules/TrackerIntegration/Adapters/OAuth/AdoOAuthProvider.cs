@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
 
@@ -19,10 +20,19 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
 
         private const string AzureDevOpsResourceId = "499b84ac-1321-427f-aa17-267ca6975798";
 
-        private static readonly IReadOnlyList<string> AzureDevOpsDefaultScopes =
+        private const string WorkItemsReadAndWriteScope = "vso.work_write";
+        private const string OfflineAccessScope = "offline_access";
+
+        private static readonly IReadOnlyList<string> AzureDevOpsReadScopes =
         [
-            AzureDevOpsResourceId + "/vso.work_write",
-            "offline_access",
+            AzureDevOpsResourceId + "/vso.work",
+            OfflineAccessScope,
+        ];
+
+        private static readonly IReadOnlyList<string> AzureDevOpsReadAndWriteScopes =
+        [
+            AzureDevOpsResourceId + "/" + WorkItemsReadAndWriteScope,
+            OfflineAccessScope,
         ];
 
         private static readonly JsonSerializerOptions TokenResponseJsonOptions = new()
@@ -43,7 +53,8 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
 
         public string ProviderKey => AuthenticationMethodKeys.AzureDevOpsOAuth;
 
-        public IReadOnlyList<string> DefaultScopes => AzureDevOpsDefaultScopes;
+        public IReadOnlyList<string> ScopesFor(WorkItemRights needed)
+            => needed == WorkItemRights.ReadAndWrite ? AzureDevOpsReadAndWriteScopes : AzureDevOpsReadScopes;
 
         public Uri BuildAuthorizationUrl(OAuthFlowContext context)
         {
@@ -133,7 +144,18 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
                 tokenResponse.Scope);
 
             var expiresAt = timeProvider.GetUtcNow().AddSeconds(tokenResponse.ExpiresIn);
-            return new OAuthTokens(tokenResponse.AccessToken, tokenResponse.RefreshToken, expiresAt);
+            return new OAuthTokens(tokenResponse.AccessToken, tokenResponse.RefreshToken, expiresAt, FromGrantedScope(tokenResponse.Scope));
+        }
+
+        // Microsoft names the write scope with or without its resource prefix. Anything else, a missing scope
+        // included, grants no more than reading.
+        private static WorkItemRights FromGrantedScope(string? scope)
+        {
+            var entries = (scope ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            var grantsWrite = entries.Any(entry =>
+                entry == WorkItemsReadAndWriteScope || entry.EndsWith("/" + WorkItemsReadAndWriteScope, StringComparison.Ordinal));
+
+            return grantsWrite ? WorkItemRights.ReadAndWrite : WorkItemRights.Read;
         }
 
         private OAuthProviderResponseException BuildErrorException(int httpStatus, string responseBody)
@@ -166,7 +188,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
             [property: JsonPropertyName("refresh_token")] string RefreshToken,
             [property: JsonPropertyName("expires_in")] int ExpiresIn,
             [property: JsonPropertyName("token_type")] string TokenType,
-            [property: JsonPropertyName("scope")] string Scope);
+            [property: JsonPropertyName("scope")] string? Scope);
 
         private sealed record MicrosoftErrorResponse(
             [property: JsonPropertyName("error")] string? Error,

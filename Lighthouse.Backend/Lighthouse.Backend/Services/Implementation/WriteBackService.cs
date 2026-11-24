@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -11,7 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation
         IWorkTrackingConnectorFactory connectorFactory,
         ILogger<WriteBackService> logger,
         IWorkItemRepository workItemRepository,
-        IRepository<Feature> featureRepository)
+        IRepository<Feature> featureRepository,
+        IRepository<OAuthCredential> credentialRepository)
         : IWriteBackService
     {
         public async Task<WriteBackResult> WriteFieldsToWorkItems(
@@ -154,6 +156,14 @@ namespace Lighthouse.Backend.Services.Implementation
                 return new WriteBackResult();
             }
 
+            if (SignInLacksTheRightsToWrite(connection))
+            {
+                logger.LogWarning(
+                    "Write-back on connection {ConnectionId} ({ConnectionName}) skipped {UpdateCount} update(s): its sign-in was granted read rights only. Sign in again on the connection's settings to allow writing.",
+                    connection.Id, connection.Name, changes.Count);
+                return new WriteBackResult();
+            }
+
             if (connectorFactory.GetWorkTrackingConnector(connection.WorkTrackingSystem) is not IWriteBackTarget target)
             {
                 throw new NotSupportedException($"Write-back is not supported for {connection.WorkTrackingSystem}.");
@@ -164,6 +174,13 @@ namespace Lighthouse.Backend.Services.Implementation
             await PersistWrittenValues(changes, result);
 
             return result;
+        }
+
+        // A connection without an OAuth sign-in, one with a personal access token for example, is not limited here.
+        private bool SignInLacksTheRightsToWrite(WorkTrackingSystemConnection connection)
+        {
+            var credential = credentialRepository.GetByPredicate(c => c.WorkTrackingSystemConnectionId == connection.Id);
+            return credential?.LacksRightsFor(connection.NeededWorkItemRights) ?? false;
         }
 
         /// <summary>

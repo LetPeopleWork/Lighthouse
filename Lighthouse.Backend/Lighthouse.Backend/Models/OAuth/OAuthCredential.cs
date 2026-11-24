@@ -15,5 +15,16 @@ namespace Lighthouse.Backend.Models.OAuth
         public OAuthCredentialStatus Status { get; set; }
 
         public DateTimeOffset UpdatedAt { get; set; }
+
+        /// <summary>The rights the identity platform granted at the last sign-in; null when that sign-in predates recording them.</summary>
+        public WorkItemRights? GrantedRights { get; set; }
+
+        /// <summary>
+        /// A sign-in stored before rights were recorded counts as write-consented: until then every Azure DevOps
+        /// sign-in asked for write rights, and those connections must keep writing back.
+        /// </summary>
+        public bool HasWriteConsent => GrantedRights != WorkItemRights.Read;
+
+        public bool LacksRightsFor(WorkItemRights needed) => needed == WorkItemRights.ReadAndWrite && !HasWriteConsent;
     }
 }

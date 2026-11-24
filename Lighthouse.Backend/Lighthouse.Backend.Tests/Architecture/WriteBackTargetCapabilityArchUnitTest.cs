@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.OAuth;
 using System.Reflection;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
@@ -166,7 +167,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             scenario.Features.Setup(repository => repository.GetAll()).Returns([scenario.Feature]);
             scenario.WorkItems.Setup(repository => repository.GetAll()).Returns([scenario.WorkItem]);
 
-            var service = new WriteBackService(connectorFactory.Object, NullLogger<WriteBackService>.Instance, scenario.WorkItems.Object, scenario.Features.Object);
+            var service = new WriteBackService(connectorFactory.Object, NullLogger<WriteBackService>.Instance, scenario.WorkItems.Object, scenario.Features.Object, Mock.Of<IRepository<OAuthCredential>>());
 
             return service.WriteFieldsToWorkItems(scenario.Connection, scenario.Updates);
         }
