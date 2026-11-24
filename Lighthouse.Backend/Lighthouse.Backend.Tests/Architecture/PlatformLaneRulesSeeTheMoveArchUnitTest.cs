@@ -157,7 +157,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var patterns = GivenTheRulePatternsOfTheTestAssembly();
 
-            var reachingOutside = WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform(patterns, PlatformLanePatternRoles.PatternRoles);
+            var outside = GivenTheProductionNamesOutsidePlatform();
+
+            var reachingOutside = WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform(patterns, PlatformLanePatternRoles.PatternRoles, outside);
 
             Assert.That(
                 reachingOutside,
@@ -172,13 +174,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var patterns = GivenTheMadeUpRulePatterns();
 
-            var reachingOutside = WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform(patterns, MadeUpRuleRoles.Roles);
+            var production = GivenTheProductionNamesOutsidePlatform();
+            var madeUpNamespace = "Lighthouse.Backend.Services.PlatformLookalike";
+            var outside = new OutsideNames(
+                [.. production.Namespaces, madeUpNamespace],
+                [.. production.FullNames, madeUpNamespace + ".AMadeUpType"]);
+
+            var reachingOutside = WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform(patterns, MadeUpRuleRoles.Roles, outside);
 
             var named = reachingOutside.Select(finding => finding.Split(' ')[0]).Distinct().ToList();
             Assert.That(
                 named,
                 Is.EquivalentTo(new[] { $"{nameof(MadeUpRuleKeys)}.{nameof(MadeUpRuleKeys.APlatformAlternativeThatReachesOutside)}" }),
-                $"The Platform-alternative check named [{string.Join(", ", reachingOutside)}]. Expected only the made-up key whose unanchored Platform alternative matches the full name of the platform service, which sits outside Lighthouse.Backend.Platform today, and none of the keys anchored on Lighthouse.Backend.Platform.<Area>. Why it matters: a check that names compliant keys gets switched off, and one that misses a too-wide alternative lets a rule take in types it was never about. How to fix: ask each Platform alternative about the production namespaces or full names outside Platform, on the subject the pattern is declared with.");
+                $"The Platform-alternative check, asked about the production names plus a made-up outside name (Lighthouse.Backend.Services.PlatformLookalike), named [{string.Join(", ", reachingOutside)}]. Expected only the made-up key whose unanchored Platform alternative matches the made-up outside name, and none of the keys anchored on Lighthouse.Backend.Platform.<Area>. Why it matters: a check that names compliant keys gets switched off, and one that misses a too-wide alternative lets a rule take in types it was never about. How to fix: ask each Platform alternative about the production namespaces or full names outside Platform, on the subject the pattern is declared with.");
         }
 
         [Test]
@@ -330,7 +338,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             return breaks;
         }
 
-        private static List<string> WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform(IEnumerable<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles)
+        private sealed record OutsideNames(IReadOnlyList<string> Namespaces, IReadOnlyList<string> FullNames);
+
+        private static OutsideNames GivenTheProductionNamesOutsidePlatform()
         {
             var typesOutside = IlDependencies.TypesIn(ProductionModule.Value, @"^Lighthouse\.Backend(\.|$)")
                 .Where(typeName => !IsMatch(typeName, ThePlatformNamespace))
@@ -340,6 +350,14 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(name => IsMatch(name, @"^Lighthouse\.Backend(\.|$)") && !IsMatch(name, ThePlatformNamespace))
                 .Distinct(StringComparer.Ordinal)
                 .ToList();
+
+            return new OutsideNames(namespacesOutside, typesOutside);
+        }
+
+        private static List<string> WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform(IEnumerable<RulePattern> patterns, IReadOnlyDictionary<string, PatternDeclaration> roles, OutsideNames outside)
+        {
+            var namespacesOutside = outside.Namespaces;
+            var typesOutside = outside.FullNames;
 
             return [.. from pattern in patterns
                 let withoutPlatform = PlatformToken.Replace(pattern.Value, "(?!)")
