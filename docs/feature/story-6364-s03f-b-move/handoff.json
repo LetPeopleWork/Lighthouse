@@ -468,7 +468,7 @@
 "counters": {
 "D": 10,
 "E": 7,
-"F": 682,
+"F": 686,
 "K": 3,
 "L": 5,
 "P": 7,
@@ -9789,6 +9789,61 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F683",
+"F684"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F683",
+"F684"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F683",
+"F685",
+"F686"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F683",
+"F684",
+"F685"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F683",
+"F684",
+"F685"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F683",
+"F684"
+],
+"verdict": "met"
+},
+"E7": {
+"observations": [
+"F684",
+"F685",
+"F686"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -10482,6 +10537,10 @@
 "F680": "rewrite the UpdateQueue rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F6-S5: list the 2 ForecastUpdater edges to Lighthouse.Backend.Platform.UpdateQueue.IUpdateQueueService and Lighthouse.Backend.Platform.UpdateQueue.IUpdateStatusStore in EdgesOfTheAdaptersIntoTheSharedUpdateCode with the reason \"existed before the move: the update queue's interfaces sat in Services.Interfaces.Update, which the rule did not see\", and adjust the list's comment so it says the list only shrinks apart from edges a move makes visible; no other entry, pattern or message changes\n",
 "F681": "F6-S5 (engineering choice taken in AFK mode, open to the maintainer; the same kind of exception as F3): KernelRules.TheUpdateQueue already sees Lighthouse.Backend.Platform.UpdateQueue, so after the move it also sees the update queue's interfaces that sit in Services.Interfaces.Update today, and RefreshRoundSummary and RefreshRoundSummaryLine. ForecastUpdater depends on IUpdateQueueService and IUpdateStatusStore, so ForecastingModuleBoundariesArchUnitTest's Adapters outbound rule names two edges that existed before the move. The S5 crafter lists exactly these two in EdgesOfTheAdaptersIntoTheSharedUpdateCode: Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.IUpdateQueueService and Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.IUpdateStatusStore, with the reason \"existed before the move: the update queue's interfaces sat in Services.Interfaces.Update, which the rule did not see\". The list's comment is adjusted so it stays true: the list only shrinks, apart from edges a move makes visible. No other entry changes; the rule's pattern and message are unchanged, so no rule is loosened. Owner: maintainer. Rejected: narrowing KernelRules.TheUpdateQueue so it excludes the interfaces (changes a shared rule every context uses); a craft-time exemption (loosens the rule).\n",
 "F682": "the strings the map lists for the UpdateQueue move name the new place; F6-S5 lists the 2 pre-existing ForecastUpdater edges the move makes visible to the Adapters outbound rule; no rule loosened\n",
+"F683": "Platform folders hold the moved types: Encryption (39 files incl CryptoService, KeyRingFileWatcher), DatabaseManagement, DemoData, Seeding (ISeeder, InstallTimestampSeeder), Persistence (LostRaceTolerantSave), UsageData, Logging, Releases, DomainEvents (3), Host, UpdateQueue. Seven context seeders remain in Services/Implementation/Seeding. GlobalSuppressions targets name Platform.Host.RandomNumberService, Platform.DatabaseManagement.PostgresDatabaseManagementProvider, Platform.Releases.LighthouseReleaseService. test-time-budget.json names the 4 Encryption tests under Lighthouse.Backend.Tests.Platform.Encryption; python budget test passes (40 OK). HostUsersStillToMove names Tests.Platform.DomainEvents.DomainEventDispatcherGoldTest and Tests.Platform.Host.LighthouseClockTest.",
+"F684": "backend-tests probe (full filtered suite): Test Run Successful, total 14589, passed 14577, skipped 12, no failures. architecture-rules Platform: 298 total, 298 passed (layout oracles, membership and preservation law).",
+"F685": "platform-answers-compare: IDENTICAL, all 12 answers match (database-management-status, encryption-secrets, encryption-state, log-level, log-problems, system-info, update-status, usage-data-state, version-*). refresh-reactions-compare: IDENTICAL, 3 observable reactions same outcome (blocked-period reactions not observable on either side). ef-model-unchanged: Sqlite and Postgres report no model changes.",
+"F686": "ci-live-suites-show 1132dff6e (CI run 45391079036, backend job success): Jira passed 1, Ado passed 5, GitHub suite passed 32, Linear 0 and ServiceNow 0 tests ran, no failures. test-selection-show for Platform/Releases/LighthouseReleaseService.cs: github true, backend true. Not provable by finite probe: Program.cs-only-usings, no config key/Redis/hub route change (candidate review).",
 "F69": "the law reports NotDeclared or the example test fails after a correct rename",
 "F7": "Every update-queue mechanics type the membership map tags B5 lives under Platform/UpdateQueue, namespace equal to folder, none left in its old namespace; TeamUpdater, PortfolioUpdater, UpdateServiceBase<T> and their three interfaces did not move.",
 "F70": "another renamed constant outside StringsTheMoveRenames: the law names it and the slice's acceptance designer takes it to the architect",

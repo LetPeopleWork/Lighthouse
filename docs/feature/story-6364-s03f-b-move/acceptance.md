@@ -928,4 +928,116 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Platform folders hold the moved types: Encryption (39 files incl CryptoService, KeyRingFileWatcher), DatabaseManagement, DemoData, Seeding (ISeeder, InstallTimestampSeeder), Persistence (LostRaceTolerantSave), UsageData, Logging, Releases, DomainEvents (3), Host, UpdateQueue. Seven context seeders remain in Services/Implementation/Seeding. GlobalSuppressions targets name Platform.Host.RandomNumberService, Platform.DatabaseManagement.PostgresDatabaseManagementProvider, Platform.Releases.LighthouseReleaseService. test-time-budget.json names the 4 Encryption tests under Lighthouse.Backend.Tests.Platform.Encryption; python budget test passes (40 OK). HostUsersStillToMove names Tests.Platform.DomainEvents.DomainEventDispatcherGoldTest and Tests.Platform.Host.LighthouseClockTest.
+```
+
+```text
+backend-tests probe (full filtered suite): Test Run Successful, total 14589, passed 14577, skipped 12, no failures. architecture-rules Platform: 298 total, 298 passed (layout oracles, membership and preservation law).
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Platform folders hold the moved types: Encryption (39 files incl CryptoService, KeyRingFileWatcher), DatabaseManagement, DemoData, Seeding (ISeeder, InstallTimestampSeeder), Persistence (LostRaceTolerantSave), UsageData, Logging, Releases, DomainEvents (3), Host, UpdateQueue. Seven context seeders remain in Services/Implementation/Seeding. GlobalSuppressions targets name Platform.Host.RandomNumberService, Platform.DatabaseManagement.PostgresDatabaseManagementProvider, Platform.Releases.LighthouseReleaseService. test-time-budget.json names the 4 Encryption tests under Lighthouse.Backend.Tests.Platform.Encryption; python budget test passes (40 OK). HostUsersStillToMove names Tests.Platform.DomainEvents.DomainEventDispatcherGoldTest and Tests.Platform.Host.LighthouseClockTest.
+```
+
+```text
+backend-tests probe (full filtered suite): Test Run Successful, total 14589, passed 14577, skipped 12, no failures. architecture-rules Platform: 298 total, 298 passed (layout oracles, membership and preservation law).
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Platform folders hold the moved types: Encryption (39 files incl CryptoService, KeyRingFileWatcher), DatabaseManagement, DemoData, Seeding (ISeeder, InstallTimestampSeeder), Persistence (LostRaceTolerantSave), UsageData, Logging, Releases, DomainEvents (3), Host, UpdateQueue. Seven context seeders remain in Services/Implementation/Seeding. GlobalSuppressions targets name Platform.Host.RandomNumberService, Platform.DatabaseManagement.PostgresDatabaseManagementProvider, Platform.Releases.LighthouseReleaseService. test-time-budget.json names the 4 Encryption tests under Lighthouse.Backend.Tests.Platform.Encryption; python budget test passes (40 OK). HostUsersStillToMove names Tests.Platform.DomainEvents.DomainEventDispatcherGoldTest and Tests.Platform.Host.LighthouseClockTest.
+```
+
+```text
+platform-answers-compare: IDENTICAL, all 12 answers match (database-management-status, encryption-secrets, encryption-state, log-level, log-problems, system-info, update-status, usage-data-state, version-*). refresh-reactions-compare: IDENTICAL, 3 observable reactions same outcome (blocked-period reactions not observable on either side). ef-model-unchanged: Sqlite and Postgres report no model changes.
+```
+
+```text
+ci-live-suites-show 1132dff6e (CI run 45391079036, backend job success): Jira passed 1, Ado passed 5, GitHub suite passed 32, Linear 0 and ServiceNow 0 tests ran, no failures. test-selection-show for Platform/Releases/LighthouseReleaseService.cs: github true, backend true. Not provable by finite probe: Program.cs-only-usings, no config key/Redis/hub route change (candidate review).
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Platform folders hold the moved types: Encryption (39 files incl CryptoService, KeyRingFileWatcher), DatabaseManagement, DemoData, Seeding (ISeeder, InstallTimestampSeeder), Persistence (LostRaceTolerantSave), UsageData, Logging, Releases, DomainEvents (3), Host, UpdateQueue. Seven context seeders remain in Services/Implementation/Seeding. GlobalSuppressions targets name Platform.Host.RandomNumberService, Platform.DatabaseManagement.PostgresDatabaseManagementProvider, Platform.Releases.LighthouseReleaseService. test-time-budget.json names the 4 Encryption tests under Lighthouse.Backend.Tests.Platform.Encryption; python budget test passes (40 OK). HostUsersStillToMove names Tests.Platform.DomainEvents.DomainEventDispatcherGoldTest and Tests.Platform.Host.LighthouseClockTest.
+```
+
+```text
+backend-tests probe (full filtered suite): Test Run Successful, total 14589, passed 14577, skipped 12, no failures. architecture-rules Platform: 298 total, 298 passed (layout oracles, membership and preservation law).
+```
+
+```text
+platform-answers-compare: IDENTICAL, all 12 answers match (database-management-status, encryption-secrets, encryption-state, log-level, log-problems, system-info, update-status, usage-data-state, version-*). refresh-reactions-compare: IDENTICAL, 3 observable reactions same outcome (blocked-period reactions not observable on either side). ef-model-unchanged: Sqlite and Postgres report no model changes.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Platform folders hold the moved types: Encryption (39 files incl CryptoService, KeyRingFileWatcher), DatabaseManagement, DemoData, Seeding (ISeeder, InstallTimestampSeeder), Persistence (LostRaceTolerantSave), UsageData, Logging, Releases, DomainEvents (3), Host, UpdateQueue. Seven context seeders remain in Services/Implementation/Seeding. GlobalSuppressions targets name Platform.Host.RandomNumberService, Platform.DatabaseManagement.PostgresDatabaseManagementProvider, Platform.Releases.LighthouseReleaseService. test-time-budget.json names the 4 Encryption tests under Lighthouse.Backend.Tests.Platform.Encryption; python budget test passes (40 OK). HostUsersStillToMove names Tests.Platform.DomainEvents.DomainEventDispatcherGoldTest and Tests.Platform.Host.LighthouseClockTest.
+```
+
+```text
+backend-tests probe (full filtered suite): Test Run Successful, total 14589, passed 14577, skipped 12, no failures. architecture-rules Platform: 298 total, 298 passed (layout oracles, membership and preservation law).
+```
+
+```text
+platform-answers-compare: IDENTICAL, all 12 answers match (database-management-status, encryption-secrets, encryption-state, log-level, log-problems, system-info, update-status, usage-data-state, version-*). refresh-reactions-compare: IDENTICAL, 3 observable reactions same outcome (blocked-period reactions not observable on either side). ef-model-unchanged: Sqlite and Postgres report no model changes.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Platform folders hold the moved types: Encryption (39 files incl CryptoService, KeyRingFileWatcher), DatabaseManagement, DemoData, Seeding (ISeeder, InstallTimestampSeeder), Persistence (LostRaceTolerantSave), UsageData, Logging, Releases, DomainEvents (3), Host, UpdateQueue. Seven context seeders remain in Services/Implementation/Seeding. GlobalSuppressions targets name Platform.Host.RandomNumberService, Platform.DatabaseManagement.PostgresDatabaseManagementProvider, Platform.Releases.LighthouseReleaseService. test-time-budget.json names the 4 Encryption tests under Lighthouse.Backend.Tests.Platform.Encryption; python budget test passes (40 OK). HostUsersStillToMove names Tests.Platform.DomainEvents.DomainEventDispatcherGoldTest and Tests.Platform.Host.LighthouseClockTest.
+```
+
+```text
+backend-tests probe (full filtered suite): Test Run Successful, total 14589, passed 14577, skipped 12, no failures. architecture-rules Platform: 298 total, 298 passed (layout oracles, membership and preservation law).
+```
+
+### E7
+
+met
+
+#### Observations
+
+```text
+backend-tests probe (full filtered suite): Test Run Successful, total 14589, passed 14577, skipped 12, no failures. architecture-rules Platform: 298 total, 298 passed (layout oracles, membership and preservation law).
+```
+
+```text
+platform-answers-compare: IDENTICAL, all 12 answers match (database-management-status, encryption-secrets, encryption-state, log-level, log-problems, system-info, update-status, usage-data-state, version-*). refresh-reactions-compare: IDENTICAL, 3 observable reactions same outcome (blocked-period reactions not observable on either side). ef-model-unchanged: Sqlite and Postgres report no model changes.
+```
+
+```text
+ci-live-suites-show 1132dff6e (CI run 45391079036, backend job success): Jira passed 1, Ado passed 5, GitHub suite passed 32, Linear 0 and ServiceNow 0 tests ran, no failures. test-selection-show for Platform/Releases/LighthouseReleaseService.cs: github true, backend true. Not provable by finite probe: Program.cs-only-usings, no config key/Redis/hub route change (candidate review).
+```

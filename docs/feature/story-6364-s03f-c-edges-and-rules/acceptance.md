@@ -740,4 +740,66 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules run: 1717/1717 passed, 142 platform-lane rule/falsifier rows passed incl. PlatformLane_LivesInItsPlatformArea_AndNoneIsLeftUnderServices, _ReachesNoApiType, _ReachesNoContextsAdapters, _ReachesCodeStillInServices_OnlyThroughTheListedEdges (both-ways, per-position rows).
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules run: 1717/1717 passed, 142 platform-lane rule/falsifier rows passed incl. PlatformLane_LivesInItsPlatformArea_AndNoneIsLeftUnderServices, _ReachesNoApiType, _ReachesNoContextsAdapters, _ReachesCodeStillInServices_OnlyThroughTheListedEdges (both-ways, per-position rows).
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+architecture-rules run: 1717/1717 passed, 142 platform-lane rule/falsifier rows passed incl. PlatformLane_LivesInItsPlatformArea_AndNoneIsLeftUnderServices, _ReachesNoApiType, _ReachesNoContextsAdapters, _ReachesCodeStillInServices_OnlyThroughTheListedEdges (both-ways, per-position rows).
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+backend-tests PlatformLaneUnitTestPlacement: 170/170 pass: real-tree placement, staying test files exist, production Services/Interfaces+Implementation equal named list; made-up old-folder test, unlisted/gone/ownerless/platform file, lookalike folders behave.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+backend-tests PlatformLaneUnitTestPlacement: 170/170 pass: real-tree placement, staying test files exist, production Services/Interfaces+Implementation equal named list; made-up old-folder test, unlisted/gone/ownerless/platform file, lookalike folders behave.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Full backend-tests: 14589 total, 14577 passed, 12 skipped, successful. platform-answers-compare: IDENTICAL, 12 answers 0 different. ef-model-unchanged: Sqlite and Postgres no changes. test-selection-show printed only flags (backend false etc), did not name the two oracles. refresh-reactions comparison and build warning count not separately probed. CI at 1132dff6e: backend success.
+```
+
+```text
+refresh-reactions-compare: VERDICT IDENTICAL, 3 observable reactions same on both sides (4 blocked-period reactions not observable on either side). test-selection-show with PlatformLaneBoundariesArchUnitTest.cs and PlatformLaneUnitTestPlacementTest.cs (Lighthouse.Backend.Tests/Architecture): backend: true. test-selection-show scenarios: passed 92, failed 0. No declared probe shows a build warning count (ci-live-suites-show has none); evidence is CI backend job success on 1132dff6e plus local backend-tests/architecture-rules builds succeeding under TreatWarningsAsErrors (project rule makes any warning a build failure), which suffices from the user's view.
+```

@@ -843,4 +843,66 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules PlatformLane probe: 251 tests passed, 0 failed; covers membership map, handler-outside-Modules, suppression targets, old-path strings, dispatcher selection by type, made-up negatives named.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules PlatformLane probe: 251 tests passed, 0 failed; covers membership map, handler-outside-Modules, suppression targets, old-path strings, dispatcher selection by type, made-up negatives named.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+architecture-rules PlatformLane probe: 251 tests passed, 0 failed; covers membership map, handler-outside-Modules, suppression targets, old-path strings, dispatcher selection by type, made-up negatives named.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+bash test-path-classifier-platform.sh: passed 10 failed 0 exit 0; test-path-classifier.sh: passed 92 failed 0. test-selection-show probe refused (args not workspace-relative), so that command was not probed; the underlying classifier scripts were.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+platform-answers-selftest probe: all 29 checks passed incl. usage names answers, examine.json admits compare and selftest, DIFFERENT/IDENTICAL/volatile/empty cases.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Full backend-tests probe (whole suite, live tracker categories excluded): Test Run Successful, 14589 total, 14577 passed, 12 skipped, 0 failed.
+```
+
+```text
+Real two-revision platform-answers-compare (default revisions): 12 answers, each 1 compared 0 different; VERDICT: IDENTICAL, all 12 platform answers match.
+```

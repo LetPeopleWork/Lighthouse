@@ -449,7 +449,7 @@
 "counters": {
 "D": 10,
 "E": 6,
-"F": 374,
+"F": 379,
 "K": 5,
 "L": 4,
 "P": 6,
@@ -1450,6 +1450,45 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F375"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F375"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F375"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F376"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F377"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F378",
+"F379"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1756,6 +1795,11 @@
 "F372": "Only that key is named, matching the platform service outside Platform; the anchored keys pass",
 "F373": "The check is shown to catch a too-wide alternative",
 "F374": "a check that asks a namespace-declared key only about full names",
+"F375": "architecture-rules PlatformLane probe: 251 tests passed, 0 failed; covers membership map, handler-outside-Modules, suppression targets, old-path strings, dispatcher selection by type, made-up negatives named.",
+"F376": "bash test-path-classifier-platform.sh: passed 10 failed 0 exit 0; test-path-classifier.sh: passed 92 failed 0. test-selection-show probe refused (args not workspace-relative), so that command was not probed; the underlying classifier scripts were.",
+"F377": "platform-answers-selftest probe: all 29 checks passed incl. usage names answers, examine.json admits compare and selftest, DIFFERENT/IDENTICAL/volatile/empty cases.",
+"F378": "Full backend-tests probe (whole suite, live tracker categories excluded): Test Run Successful, 14589 total, 14577 passed, 12 skipped, 0 failed.",
+"F379": "Real two-revision platform-answers-compare (default revisions): 12 answers, each 1 compared 0 different; VERDICT: IDENTICAL, all 12 platform answers match.",
 "F38": "The EXAMINE capture runs with authentication off and no network: the GitHub calls (version hasupdate and new) are left to the GithubIntegration suite on the move push; Redis and Postgres update locks under a real cluster and a key ring on a mounted file are left to container and unit tests. No stored or validated input bound changes; none is introduced.",
 "F39": "Reads types and edges from the compiled IL over Mono.Cecil; the A1 membership check and the A2 outside-Platform check read through it; no second IL reader.",
 "F4": "Every rule pattern in the test assembly gives the same answer for each moving platform type under its new Platform namespace as under its old one, and no added alternative matches a production type outside Platform; the inline DomainEvents fragment is replaced by the exact dispatcher type.",

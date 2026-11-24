@@ -383,7 +383,7 @@
 "counters": {
 "D": 7,
 "E": 6,
-"F": 232,
+"F": 236,
 "K": 3,
 "L": 2,
 "P": 6,
@@ -927,6 +927,45 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F233"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F233"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F233"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F234"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F234"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F235",
+"F236"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1123,6 +1162,10 @@
 "F230": "On the tree before S2's craft, C2's rule passes with the measured stay lists.\n",
 "F231": "Feature B moved GitHubService to Platform/Releases and PlatformExtensions to Platform/Host but left their unit tests in Tests/Services/Implementation; the DESIGN staying-test inventory listed Services test folders by kind, not by the subject of each test, so it missed them.\n",
 "F232": "HEAD 7d4883cfe: Lighthouse.Backend.Tests/Services/Implementation/GithubServiceTest.cs (subject GitHubService) and Lighthouse.Backend.Tests/Services/Implementation/PlatformExtensionTest.cs (subject PlatformExtensions) are named by the real-tree placement rule as platform tests outside Tests/Platform/<Area>. Resolved by F7-S2's move, not by a stay-list entry.\n",
+"F233": "architecture-rules run: 1717/1717 passed, 142 platform-lane rule/falsifier rows passed incl. PlatformLane_LivesInItsPlatformArea_AndNoneIsLeftUnderServices, _ReachesNoApiType, _ReachesNoContextsAdapters, _ReachesCodeStillInServices_OnlyThroughTheListedEdges (both-ways, per-position rows).",
+"F234": "backend-tests PlatformLaneUnitTestPlacement: 170/170 pass: real-tree placement, staying test files exist, production Services/Interfaces+Implementation equal named list; made-up old-folder test, unlisted/gone/ownerless/platform file, lookalike folders behave.",
+"F235": "Full backend-tests: 14589 total, 14577 passed, 12 skipped, successful. platform-answers-compare: IDENTICAL, 12 answers 0 different. ef-model-unchanged: Sqlite and Postgres no changes. test-selection-show printed only flags (backend false etc), did not name the two oracles. refresh-reactions comparison and build warning count not separately probed. CI at 1132dff6e: backend success.",
+"F236": "refresh-reactions-compare: VERDICT IDENTICAL, 3 observable reactions same on both sides (4 blocked-period reactions not observable on either side). test-selection-show with PlatformLaneBoundariesArchUnitTest.cs and PlatformLaneUnitTestPlacementTest.cs (Lighthouse.Backend.Tests/Architecture): backend: true. test-selection-show scenarios: passed 92, failed 0. No declared probe shows a build warning count (ci-live-suites-show has none); evidence is CI backend job success on 1132dff6e plus local backend-tests/architecture-rules builds succeeding under TreatWarningsAsErrors (project rule makes any warning a build failure), which suffices from the user's view.",
 "F24": "Confirmed (F14, F15, D-13, D-14): C1's RED is assertion-level, observed with the oracle written before its R-PL4 list is filled (the real-IL R-PL4 test fails naming every unlisted edge) and with each falsifier asserting that the verdict names its made-up offender; C2's RED is structural, observed with the stay lists written empty (the real-tree rule names the unlisted staying files) and the made-up file in an old folder named. Behaviour is proved by the unchanged suites and EXAMINE through the admitted probes (architecture-rules, backend-tests); feature C changes no production code. The mutation bar (D-14) applies once after feature C to the moved production code; feature C adds none. One commit per slice; C1 and C2 are pushed together after the whole-candidate review. Rigor thorough: architect, acceptance designer and crafter opus; reviewers and EXAMINE sonnet. Usage-data event, UI sketch, loading and failure looks: not applicable.",
 "F25": "Carriers and owners: the rules and their inline lists live in their oracle classes (Architecture/PlatformLaneBoundariesArchUnitTest for R-PL1 to R-PL4; Architecture/PlatformLaneUnitTestPlacementTest for the placement rule and the per-file, per-owner list of production files that stay in Services/Interfaces and Services/Implementation, as (Path, Owner) tuples in the PromisesUnitTestPlacementTest shape). The IL is read through IlDependencies over Mono.Cecil, reached via ModuleRules.OutboundEdges and ModuleRules.TypesLiveInTheirLayer; verdicts are OutboundVerdict and KernelRuleVerdict compared through InlineBaseline. The type list is PlatformLaneMembership.MovingTypes, read only. Made-up offenders live in support fixture files in namespaces that do not start with Lighthouse.Backend.Platform, Lighthouse.Backend.Services or Lighthouse.Backend.Tests.Platform, so no real rule sees them. No production carrier, effect, error type or per-process state exists or changes. Paradigm object_oriented is kept; the targets are test-side rules outside the OO domain core, so no domain owner, value object or Object Calisthenics rule is in play.",
 "F26": "Formal verification not applicable (quint --version 0.33.1 and java -version OpenJDK 21.0.13.1 probed; no checker selected): feature C has no state, ordering, concurrency, recovery or liveness claim. Each claim is a set comparison over a finite domain decided exhaustively by the compiled IL or the file tree: R-PL1 (map rows against types found), R-PL2 and R-PL3 (edge set empty), R-PL4 (edge set equals the inline list both ways), placement (files found against the stay lists both ways). A Quint, TLA+ or Agda model would restate the list and could not fail. Property tests not applicable: every domain is finite and enumerated, and each list position has its own falsifier case. Cross-layer algebra: only the test-side rule layer is affected; states are the edge or file sets found, operations are the rule runs, observations are the verdict messages; no production layer changes.",
