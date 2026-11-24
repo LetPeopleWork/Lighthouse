@@ -178,7 +178,7 @@ overrides:
   fast-uri: ^4.2.3
   form-data: ^4.0.6
   immutable@>=5.0.0-beta.1 <5.1.8: ^5.2.1
-  minimatch@>=7.0.0 <11.0.1: ^11.0.8
+  minimatch@>=7.0.0 <11.0.1: ^11.0.9
   postcss: ^8.5.33
   qs@>=6.7.0 <6.16.1: ^6.17.1
   undici: ^8.12.4
@@ -2785,8 +2785,8 @@ packages:
   minimalistic-assert@1.0.1:
     resolution: {integrity: sha512-UtJcAD4yEaGtjPezWuO9wC4nwUnVH/8/Im3yEHQP4b67cXlD/Qr9hdITCU1xDbSEXg2XKNaP8jsReV7vQd00/A==}
 
-  minimatch@11.0.8:
-    resolution: {integrity: sha512-nFQuYSTVrGvysVBps5Ih+0BdnYFN/Cj3C816r6+p7yK+FHrVLGE4O4N9AFwykrlNlvM2HYt+Rad1Uiro6h88Ig==}
+  minimatch@11.0.9:
+    resolution: {integrity: sha512-KCFkfyjqerNlSstjlhIGNXIKZGA/6O4V4RlhZ+Dsr621SPPw0mzlypE9D9ZOoPiVefHID+j7/XuMMlqfD/F60Q==}
     engines: {node: 20 || >=22}
 
   mitt@3.0.1:
@@ -4509,7 +4509,7 @@ snapshots:
       execa: 9.6.1
       json-rpc-2.0: 1.7.1
       lodash.groupby: 4.6.0
-      minimatch: 11.0.8
+      minimatch: 11.0.9
       mutation-server-protocol: 0.4.1
       mutation-testing-elements: 3.8.4
       mutation-testing-metrics: 3.8.4
@@ -6023,7 +6023,7 @@ snapshots:
 
   minimalistic-assert@1.0.1: {}
 
-  minimatch@11.0.8:
+  minimatch@11.0.9:
     dependencies:
       '@isaacs/nonrecursive-glob-match': 1.1.0
       brace-expansion: 5.0.13
