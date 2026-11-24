@@ -306,4 +306,94 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe O4: backend-tests OAuthWriteConsent (fragment) ran 25 tests, 25 passed, Test Run Successful, exit 0. Names include: without write-back asks Atlassian only to read; with write-back asks Atlassian to read and write work items; Microsoft equivalents; grant without any scope or of another write scope sends nothing; grant naming write rights lets write-back send; connection signed in before rights were recorded counts as read-only and sends nothing; after admin signs in again with write consent write-back sends the change; read-only sign-in: write-back sends nothing and logs one warning. Limit: runner names and pass results only; assertion bodies not visible to the examiner; no captured HTTP stimulus or log text.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe O4: backend-tests OAuthWriteConsent (fragment) ran 25 tests, 25 passed, Test Run Successful, exit 0. Names include: without write-back asks Atlassian only to read; with write-back asks Atlassian to read and write work items; Microsoft equivalents; grant without any scope or of another write scope sends nothing; grant naming write rights lets write-back send; connection signed in before rights were recorded counts as read-only and sends nothing; after admin signs in again with write consent write-back sends the change; read-only sign-in: write-back sends nothing and logs one warning. Limit: runner names and pass results only; assertion bodies not visible to the examiner; no captured HTTP stimulus or log text.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Probe O4: backend-tests OAuthWriteConsent (fragment) ran 25 tests, 25 passed, Test Run Successful, exit 0. Names include: without write-back asks Atlassian only to read; with write-back asks Atlassian to read and write work items; Microsoft equivalents; grant without any scope or of another write scope sends nothing; grant naming write rights lets write-back send; connection signed in before rights were recorded counts as read-only and sends nothing; after admin signs in again with write consent write-back sends the change; read-only sign-in: write-back sends nothing and logs one warning. Limit: runner names and pass results only; assertion bodies not visible to the examiner; no captured HTTP stimulus or log text.
+```
+
+### E4
+
+unmet
+
+#### Observations
+
+```text
+Probe O5: frontend-tests WriteConsentAlert ran 3 files, 13 tests, 13 passed. Names include: Jira connection told it can only read from Jira keeping Sign in again; Azure DevOps connection told it can only read from Azure DevOps keeping Sign in again; connection page shows read-only rights and a warning and signing in again reloads; connections list shows the warning only beside the connection needing consent; shows nothing once write consent given. Limit: names and pass results only; the literal Rights Read label and exact warning text are not visible in the probe output.
+```
+
+```text
+Non-probe O2: admitted probe list has no Jira OAuth sign-in, write-consent warning or write-back surface. backend-tests with no fragment runs the whole suite; cancelled after exceeding the 5-minute budget with no output. No user-visible Jira sign-in URL, connection list, log line or write-back was captured for E1-E8.
+```
+
+observation_gap
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Probe O4: backend-tests OAuthWriteConsent (fragment) ran 25 tests, 25 passed, Test Run Successful, exit 0. Names include: without write-back asks Atlassian only to read; with write-back asks Atlassian to read and write work items; Microsoft equivalents; grant without any scope or of another write scope sends nothing; grant naming write rights lets write-back send; connection signed in before rights were recorded counts as read-only and sends nothing; after admin signs in again with write consent write-back sends the change; read-only sign-in: write-back sends nothing and logs one warning. Limit: runner names and pass results only; assertion bodies not visible to the examiner; no captured HTTP stimulus or log text.
+```
+
+### E6
+
+unmet
+
+#### Observations
+
+```text
+Probe O4: backend-tests OAuthWriteConsent (fragment) ran 25 tests, 25 passed, Test Run Successful, exit 0. Names include: without write-back asks Atlassian only to read; with write-back asks Atlassian to read and write work items; Microsoft equivalents; grant without any scope or of another write scope sends nothing; grant naming write rights lets write-back send; connection signed in before rights were recorded counts as read-only and sends nothing; after admin signs in again with write consent write-back sends the change; read-only sign-in: write-back sends nothing and logs one warning. Limit: runner names and pass results only; assertion bodies not visible to the examiner; no captured HTTP stimulus or log text.
+```
+
+```text
+Non-probe O2: admitted probe list has no Jira OAuth sign-in, write-consent warning or write-back surface. backend-tests with no fragment runs the whole suite; cancelled after exceeding the 5-minute budget with no output. No user-visible Jira sign-in URL, connection list, log line or write-back was captured for E1-E8.
+```
+
+observation_gap
+
+### E7
+
+met
+
+#### Observations
+
+```text
+Probe O5: frontend-tests WriteConsentAlert ran 3 files, 13 tests, 13 passed. Names include: Jira connection told it can only read from Jira keeping Sign in again; Azure DevOps connection told it can only read from Azure DevOps keeping Sign in again; connection page shows read-only rights and a warning and signing in again reloads; connections list shows the warning only beside the connection needing consent; shows nothing once write consent given. Limit: names and pass results only; the literal Rights Read label and exact warning text are not visible in the probe output.
+```
+
+### E8
+
+met
+
+#### Observations
+
+```text
+Probe O5: frontend-tests WriteConsentAlert ran 3 files, 13 tests, 13 passed. Names include: Jira connection told it can only read from Jira keeping Sign in again; Azure DevOps connection told it can only read from Azure DevOps keeping Sign in again; connection page shows read-only rights and a warning and signing in again reloads; connections list shows the warning only beside the connection needing consent; shows nothing once write consent given. Limit: names and pass results only; the literal Rights Read label and exact warning text are not visible in the probe output.
+```
