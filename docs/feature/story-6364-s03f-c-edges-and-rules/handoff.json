@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 7,
-"F": 126,
+"E": 6,
+"F": 132,
 "K": 3,
 "L": 2,
 "P": 6,
@@ -491,6 +492,52 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F127"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F128"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F129"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F130"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F131"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F132"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6364 S03f Platform composition root, feature C (edges and rules): the platform lane gets its own rules measured from the IL, R-PL1 to R-PL4, with falsifiers per rule and list position (C1); every platform unit test sits under Tests/Platform, no platform file is left in Services/{Interfaces,Implementation}, and the files that stay are named per file with owner (C2). Builds on feature A's membership map and preservation law and feature B's moves (all pushed). Behaviour unchanged. DESIGN and DEVOPS: docs/feature/story-6364-s03f-platform-composition-root/feature-delta.md.",
 "F10": "Any production, Program.cs, configuration, schema or behaviour change; any further move of types (feature B, delivered) and the membership map, preservation law, GitHub classifier and platform-answers-compare (feature A, delivered); listing the lane's edges into modules a second time (they stay under the modules' inbound rules) and changing other modules' lists, including B's F6-S5 ForecastUpdater edges; inverting DatabaseMaintenanceGate -> Flow metrics (improvement item, not filed); legalising the dispatcher contracts and the clock by namespace (own Story); moving Data, the repositories, the update pipelines, the context seeders or the host band; mutation, ADR-270, ARCHITECTURE.md section 4 and the finalize checklist (after feature C, not nwdes slices). Nothing a user sees changes, so no UI sketch, no loading or failure look and no usage-data event.\n",
@@ -523,7 +570,13 @@
 "F124": "Finite domain: the files on disk and the list entries, enumerated exhaustively.",
 "F125": "Platform unit tests under Tests/Platform/<Area> and the per-file, per-owner stay list of Services/Interfaces and Services/Implementation, over every file present now or added later, with falsifiers on made-up trees",
 "F126": "R-PL4, read from the compiled IL: the platform lane reaches code still in Services only through one inline list of edges by full type name, measured from the IL in C1 and listed exactly as the IL shows them, compared both ways, never loosened. The design's IL probe measured 19 edges: the repository edges of DemoDataService, UpdateTaskNaming, UsageDataGate, UsageDataMasterSwitch, UsageDataConsentService and UsageDataConsentPruningService; SystemInfoService, InstallTimestampSeeder and UsageDataConsentService to IAppSettingService; and UpdateQueueService (with its nested HeldUpdate) to the write-back types WriteBackCollector, WriteBackRound, WriteBackRoundContext and IWriteBackService. The update pipelines are reached only through DI and are not an edge. A made-up new edge into Services that is not on the list fails, and a listed edge that no longer exists fails, for every list position (the ModuleRulesCatchANewOffender falsifier shape).\n",
+"F127": "A maintainer sees, from the architecture-rules run, that the layout rule for the platform lane passes today: every type in the membership map sits in its Platform area, namespace equal to folder, and none is left under Services. A made-up listed type under Services or in the wrong area would fail the rule and the failure names the type and its expected area.",
+"F128": "A maintainer sees, from the architecture-rules run, that the two boundary rules pass with an empty baseline: no Platform type reaches an API type or a module's Adapters. A made-up offending platform type would fail the matching rule and the message speaks of the platform lane, not a module.",
+"F129": "A maintainer sees that the platform lane's edges into Services are one inline list by full type name, matching the 19 edges the IL shows, checked both ways. A made-up new edge not on the list fails, and a listed edge that no longer exists fails. The list is not loosened.",
 "F13": "The R-PL4 list is measured from the IL in C1 (the DESIGN baseline is a text search only); every list is inline, by full type name, compared both ways and never loosened, and its falsifiers reuse the ModuleRules OutboundEdges and ModuleRulesCatchANewOffender shape with a lane wording instead of a ModuleWording module name. C2 reuses the PromisesUnitTestPlacementTest shape with named exceptions.\n",
+"F130": "A future contributor who puts a unit test of a platform type in an old Tests/Services folder is stopped by the placement rule, whose message names the test and the Tests/Platform/<Area> folder it belongs in. The tests that stay by design (update pipelines, context gold tests, seeders, repositories, zip host fixtures) are not flagged, and today's suite passes the rule.",
+"F131": "A maintainer sees that every production file left in Services/Interfaces and Services/Implementation is named per file with its owner, and that none is a platform file. A made-up new file there fails the rule, and a listed file that no longer exists fails too.",
+"F132": "Nothing a user, API client, tracker or the database sees changes: the platform-answers and refresh-reactions comparisons report IDENTICAL, the EF model is unchanged, feature A's preservation law and B's five layout rules and every existing architecture rule keep their verdicts with nothing loosened, the lane's module edges are not listed a second time, the filtered backend suite is green and the build has zero warnings. The test-selection show confirms the two new oracles are part of the selection.",
 "F14": "Each slice's RED: C1 fails on a made-up offender per rule and per list position; C2 is structural, failing on a made-up file in an old folder. Behaviour is proved by the unchanged tests and EXAMINE through admitted probes (D-13).\n",
 "F15": "One commit per slice; C1 and C2 are pushed together after the whole-candidate review. Rigor thorough for feature C: product owner, architect, acceptance designer and crafter opus, reviewers and EXAMINE sonnet (open question 8 AFK default).\n",
 "F16": "C1: the platform lane has its own rules, measured from the IL: R-PL1 (each listed type in its Platform/<Area>, none under Services), R-PL2 (no API), R-PL3 (no module Adapters) and R-PL4 (edges into code still in Services only through a measured list), each caught failing on a made-up offender per rule and per list position.",

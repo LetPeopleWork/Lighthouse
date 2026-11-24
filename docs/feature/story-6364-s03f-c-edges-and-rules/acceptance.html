@@ -155,7 +155,61 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A maintainer sees, from the architecture-rules run, that the layout rule for the platform lane passes today: every type in the membership map sits in its Platform area, namespace equal to folder, and none is left under Services. A made-up listed type under Services or in the wrong area would fail the rule and the failure names the type and its expected area.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>A maintainer sees, from the architecture-rules run, that the two boundary rules pass with an empty baseline: no Platform type reaches an API type or a module&#x27;s Adapters. A made-up offending platform type would fail the matching rule and the message speaks of the platform lane, not a module.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>A maintainer sees that the platform lane&#x27;s edges into Services are one inline list by full type name, matching the 19 edges the IL shows, checked both ways. A made-up new edge not on the list fails, and a listed edge that no longer exists fails. The list is not loosened.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>A future contributor who puts a unit test of a platform type in an old Tests/Services folder is stopped by the placement rule, whose message names the test and the Tests/Platform/&lt;Area&gt; folder it belongs in. The tests that stay by design (update pipelines, context gold tests, seeders, repositories, zip host fixtures) are not flagged, and today&#x27;s suite passes the rule.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>A maintainer sees that every production file left in Services/Interfaces and Services/Implementation is named per file with its owner, and that none is a platform file. A made-up new file there fails the rule, and a listed file that no longer exists fails too.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>Nothing a user, API client, tracker or the database sees changes: the platform-answers and refresh-reactions comparisons report IDENTICAL, the EF model is unchanged, feature A&#x27;s preservation law and B&#x27;s five layout rules and every existing architecture rule keep their verdicts with nothing loosened, the lane&#x27;s module edges are not listed a second time, the filtered backend suite is green and the build has zero warnings. The test-selection show confirms the two new oracles are part of the selection.
+</code></pre>
 
 <h2>Charter</h2>
 
