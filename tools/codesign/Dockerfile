@@ -1,7 +1,7 @@
 # The self-hosted GitHub runner that signs the Windows release binaries on the maintainer's machine.
 # Built and published by .github/workflows/codesign-runner-image.yml; compose.yaml starts it on boot.
 
-FROM ubuntu:26.04@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96 AS runner-download
+FROM ubuntu:26.04@sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db AS runner-download
 
 # renovate: datasource=github-releases depName=actions/runner
 ARG RUNNER_VERSION=2.338.2
@@ -18,7 +18,7 @@ RUN curl --proto "=https" --tlsv1.2 -fsSL -o /tmp/actions-runner.tar.gz "https:/
  && tar -xzf /tmp/actions-runner.tar.gz -C /opt/runner \
  && rm /tmp/actions-runner.tar.gz
 
-FROM ubuntu:26.04@sha256:065aa8626841f16057b78b027b464cd59c4fac36c204c72dcbf48d66f5fa8a96
+FROM ubuntu:26.04@sha256:d66b366dac61b575bee2aef07e9c26e8070096fbe84a3d4d3eb0da069b5d76db
 
 LABEL org.opencontainers.image.source=https://github.com/LetPeopleWork/Lighthouse
 LABEL org.opencontainers.image.description="Self-hosted GitHub runner that signs the Lighthouse Windows binaries"
