@@ -155,10 +155,14 @@ describe("View Data of the Cycle Time percentiles with a named Cycle Time", () =
 		).toBeNull();
 	});
 
-	it("lists the named measure's own Work Items, also one that is not closed, and none that only the default closed list holds", () => {
+	it("lists and titles the named measure's own Work Items, also one that is not closed, and none that only the default closed list holds", () => {
 		const list = percentilesListWith({
 			definitionId: readyForRelease.id,
 			itemsOfTheMeasure: theMeasuresOwnItems,
+		});
+		const defaultList = percentilesListWith({
+			definitionId: null,
+			itemsOfTheMeasure: null,
 		});
 
 		expect(
@@ -171,10 +175,16 @@ describe("View Data of the Cycle Time percentiles with a named Cycle Time", () =
 			namedCycleTimeDefinitions: [readyForRelease],
 		});
 		expect(
-			namesIn(
-				percentilesListWith({ definitionId: null, itemsOfTheMeasure: null }),
-			),
+			list?.title,
+			"With a named measure selected the list holds Work Items that are not closed, so its title must name the measure's end state instead of calling them closed. Title the list '<Work Items term> that reached <end state>'.",
+		).toBe("Work Items that reached Ready for Release");
+		expect(
+			namesIn(defaultList),
 			"On Default the list stays the closed Work Items of the range.",
 		).toEqual(["A", "C"]);
+		expect(
+			defaultList?.title,
+			"On Default the list keeps its title for the closed Work Items of the range.",
+		).toBe("Closed Work Items");
 	});
 });
