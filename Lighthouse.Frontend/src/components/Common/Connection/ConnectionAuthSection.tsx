@@ -1,9 +1,13 @@
 import { TextField, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import type { IAuthenticationMethod } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import type {
+	IAuthenticationMethod,
+	WorkItemRights,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
 import {
+	describeGrantedRights,
 	resolveAuthOptionHelperText,
 	secretCannotBeRead,
 } from "./connectionFormRules";
@@ -13,6 +17,8 @@ interface ConnectionAuthSectionProps {
 	selectedAuthMethod: IAuthenticationMethod | null;
 	isEditMode: boolean;
 	lockOAuthField: boolean;
+	/** What the saved sign-in may do; absent while unknown or for a connection that does not record it. */
+	grantedRights?: WorkItemRights;
 	onOptionChange: (option: IWorkTrackingSystemOption, newValue: string) => void;
 }
 
@@ -21,6 +27,7 @@ const ConnectionAuthSection: React.FC<ConnectionAuthSectionProps> = ({
 	selectedAuthMethod,
 	isEditMode,
 	lockOAuthField,
+	grantedRights,
 	onOptionChange,
 }) => (
 	<Grid size={{ xs: 12 }}>
@@ -55,6 +62,11 @@ const ConnectionAuthSection: React.FC<ConnectionAuthSectionProps> = ({
 				);
 			})}
 		</Grid>
+		{grantedRights !== undefined && (
+			<Typography variant="body2" sx={{ mt: 1 }}>
+				{describeGrantedRights(grantedRights)}
+			</Typography>
+		)}
 	</Grid>
 );
 

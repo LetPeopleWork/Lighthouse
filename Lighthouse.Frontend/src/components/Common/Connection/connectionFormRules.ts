@@ -1,4 +1,7 @@
-import type { IAuthenticationMethod } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import type {
+	IAuthenticationMethod,
+	WorkItemRights,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	type IWorkTrackingSystemOption,
 	SecretStates,
@@ -41,3 +44,12 @@ export const resolveAuthOptionHelperText = (
 
 	return undefined;
 };
+
+const WORK_ITEM_RIGHTS_WORDING: Record<WorkItemRights, string> = {
+	Read: "Read work items",
+	ReadAndWrite: "Read and write work items",
+};
+
+/** The one line that says what the connection's sign-in may do with work items. */
+export const describeGrantedRights = (rights: WorkItemRights): string =>
+	`Rights: ${WORK_ITEM_RIGHTS_WORDING[rights]}`;

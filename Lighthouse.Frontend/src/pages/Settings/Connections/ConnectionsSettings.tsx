@@ -18,6 +18,7 @@ import { useCallback, useContext, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import ReconnectBanner from "../../../components/Common/Connections/ReconnectBanner";
+import WriteConsentAlert from "../../../components/Common/Connections/WriteConsentAlert";
 import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
@@ -210,13 +211,18 @@ const ConnectionsList: React.FC<{
 			)}
 
 			{connections
-				.filter((connection) => connection.requiresReconnect === true)
+				.filter(
+					(connection) =>
+						connection.requiresReconnect === true ||
+						connection.needsWriteConsent === true,
+				)
 				.map((connection) => (
 					<Box key={`reconnect-${connection.id}`} sx={{ mb: 2 }}>
 						<ReconnectBanner
 							connection={connection}
 							onReconnected={onChanged}
 						/>
+						<WriteConsentAlert connection={connection} onSignedIn={onChanged} />
 					</Box>
 				))}
 

@@ -126,6 +126,9 @@ export type IConnectionDefaults = Partial<
 		Record<ParentSourcesListName, readonly ParentSourceEntry[] | null>
 >;
 
+/** What a connection's sign-in may do with work items in the tracker, as the server recorded it. */
+export type WorkItemRights = "Read" | "ReadAndWrite";
+
 export interface IWorkTrackingSystemConnection {
 	workTrackingSystemGetDataRetrievalDisplayName(): string;
 	id: number | null;
@@ -138,6 +141,8 @@ export interface IWorkTrackingSystemConnection {
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
 	requiresReconnect?: boolean;
+	grantedRights?: WorkItemRights;
+	needsWriteConsent?: boolean;
 	concurrencyToken?: string;
 	usedBy?: IConnectionUsage;
 	defaults?: IConnectionDefaults;
@@ -157,6 +162,8 @@ export class WorkTrackingSystemConnection
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
 	requiresReconnect?: boolean;
+	grantedRights?: WorkItemRights;
+	needsWriteConsent?: boolean;
 	concurrencyToken?: string;
 	usedBy?: IConnectionUsage;
 	defaults?: IConnectionDefaults;
@@ -173,6 +180,8 @@ export class WorkTrackingSystemConnection
 		additionalFieldDefinitions?: IAdditionalFieldDefinition[];
 		writeBackMappingDefinitions?: IWriteBackMappingDefinition[];
 		requiresReconnect?: boolean;
+		grantedRights?: WorkItemRights;
+		needsWriteConsent?: boolean;
 		concurrencyToken?: string;
 		usedBy?: IConnectionUsage;
 		defaults?: IConnectionDefaults;
@@ -188,6 +197,8 @@ export class WorkTrackingSystemConnection
 		this.additionalFieldDefinitions = data.additionalFieldDefinitions ?? [];
 		this.writeBackMappingDefinitions = data.writeBackMappingDefinitions ?? [];
 		this.requiresReconnect = data.requiresReconnect;
+		this.grantedRights = data.grantedRights;
+		this.needsWriteConsent = data.needsWriteConsent;
 		this.concurrencyToken = data.concurrencyToken;
 		this.usedBy = data.usedBy;
 		this.defaults = data.defaults;

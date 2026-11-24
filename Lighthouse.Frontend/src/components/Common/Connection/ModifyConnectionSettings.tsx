@@ -37,6 +37,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
+import WriteConsentAlert from "../Connections/WriteConsentAlert";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import ConnectionAuthSection from "./ConnectionAuthSection";
@@ -413,6 +414,11 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		showAuthFields ? allOptions : otherOptions,
 	);
 	const lockOAuthField = isEditMode && usesOAuth;
+	// The rights belong to the saved sign-in, so they say nothing once another method is picked.
+	const savedSignInRights =
+		isEditMode && selectedAuthMethod?.key === originalAuthMethodKey
+			? selectedWorkTrackingSystem?.grantedRights
+			: undefined;
 	const supportedDefaults = isEditMode
 		? (selectedWorkTrackingSystem?.supportedDefaults ?? [])
 		: [];
@@ -538,6 +544,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							selectedAuthMethod={selectedAuthMethod}
 							isEditMode={isEditMode}
 							lockOAuthField={lockOAuthField}
+							grantedRights={savedSignInRights}
 							onOptionChange={handleAuthOptionChange}
 						/>
 					)}
@@ -579,6 +586,16 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							/>
 						</Grid>
 					)}
+
+					{isEditMode &&
+						selectedWorkTrackingSystem?.needsWriteConsent === true && (
+							<Grid size={{ xs: 12 }}>
+								<WriteConsentAlert
+									connection={selectedWorkTrackingSystem}
+									onSignedIn={reloadConnection}
+								/>
+							</Grid>
+						)}
 
 					{/* Sync with Source (Write-Back Mappings) */}
 					<Grid size={{ xs: 12 }}>
