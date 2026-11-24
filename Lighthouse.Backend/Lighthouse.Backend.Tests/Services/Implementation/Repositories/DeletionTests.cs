@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Modules.Forecasting.Application;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -37,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        public async Task TeamInProject_DeleteProject_DeletesFeaturesAndProjectAsync()
+        public async Task TeamInProject_DeleteProjectThenCleanUp_DeletesFeaturesAndProjectAsync()
         {
             var team = new Team { Name = "MyTeam", WorkTrackingSystemConnection = workTrackingSystemConnection };
 
@@ -70,6 +71,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             // Act
             projectRepository.Remove(project.Id);
             await projectRepository.Save();
+            await ServiceProvider.GetRequiredService<IOrphanedFeatureCleanupService>().CleanupAsync();
 
             using (Assert.EnterMultipleScope())
             {
@@ -80,7 +82,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        public async Task TeamInProject_DeleteProjectWithMilestones_DeletesFeaturesAndProjectAsync()
+        public async Task TeamInProject_DeleteProjectWithMilestonesThenCleanUp_DeletesFeaturesAndProjectAsync()
         {
             var team = new Team { Name = "MyTeam", WorkTrackingSystemConnection = workTrackingSystemConnection };
 
@@ -117,6 +119,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             // Act
             projectRepository.Remove(project.Id);
             await projectRepository.Save();
+            await ServiceProvider.GetRequiredService<IOrphanedFeatureCleanupService>().CleanupAsync();
 
             using (Assert.EnterMultipleScope())
             {
