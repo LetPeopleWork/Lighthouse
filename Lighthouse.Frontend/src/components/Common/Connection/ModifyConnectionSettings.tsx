@@ -273,12 +273,33 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		[authOptions, otherOptions],
 	);
 
+	const forgetSignInRights = useCallback(() => {
+		setSelectedWorkTrackingSystem((current) =>
+			current === null
+				? null
+				: {
+						...current,
+						grantedRights: undefined,
+						needsWriteConsent: undefined,
+					},
+		);
+	}, []);
+
+	// A sign-in may have changed the rights, so when the connection cannot be read
+	// again the rights and warning from before it must not look current.
 	const reloadConnection = useCallback(async () => {
-		const refreshed = await getConnectionSettings();
-		if (refreshed !== null) {
+		try {
+			const refreshed = await getConnectionSettings();
+			if (refreshed === null) {
+				forgetSignInRights();
+				return;
+			}
 			setSelectedWorkTrackingSystem(refreshed);
+		} catch (error) {
+			console.error("Error reloading connection data:", error);
+			forgetSignInRights();
 		}
-	}, [getConnectionSettings]);
+	}, [getConnectionSettings, forgetSignInRights]);
 
 	useEffect(() => {
 		const authMethodChanged =
