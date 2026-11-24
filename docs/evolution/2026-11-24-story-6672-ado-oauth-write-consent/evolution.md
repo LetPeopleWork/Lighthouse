@@ -52,10 +52,9 @@ OAuth credential, SQLite and Postgres, expand-only, no backfill.
 
 ## Knowingly left open
 
-- One manual Azure DevOps sign-in to confirm the exact `scope` text Microsoft returns (read-only and read-write).
-  The parser fails closed: anything it does not recognise counts as reading only.
-- The docs now say to register `vso.work`, plus `vso.work_write` for write-back. Whether Entra accepts a read-only
-  request against an app with only `vso.work_write` registered is not verified; the same manual check answers it.
+- Checked by the maintainer on 2026-11-24: a read-only sign-in against an app registration with only `vso.work`
+  works and shows *Rights: Read work items*. Not yet checked live: signing in again for write consent with
+  `vso.work_write` registered. The parser fails closed: anything it does not recognise counts as reading only.
 
 ## Finalize checklist
 
