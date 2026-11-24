@@ -87,10 +87,10 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F49",
+"still_passes_if": "F51",
 "test": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.trackerName.test.tsx"
 },
-"expected": "F47",
+"expected": "F50",
 "stimulus": "F12",
 "user_result": "F48"
 }
@@ -98,7 +98,7 @@
 },
 "counters": {
 "E": 8,
-"F": 49,
+"F": 51,
 "P": 4,
 "S": 2
 },
@@ -279,10 +279,10 @@
 "F44": "The change is sent to Jira and the connection list shows no rights and no warning",
 "F45": "Jira API-token connections keep writing back as before",
 "F46": "API-token connections are blocked or flagged for write consent",
-"F47": "The Jira connection's warning reads that Lighthouse can only read from Jira with this sign-in; the Azure DevOps connection's warning names Azure DevOps; both keep the Sign in again button",
 "F48": "A Jira admin is told the sign-in can only read from Jira and can sign in again to give write rights",
-"F49": "Both warnings name the same tracker in a different wording, or the warning is shown only for one tracker type",
 "F5": "After the admin signs in again and Atlassian grants write:jira-work, write-back on the Jira OAuth connection sends the change; Azure DevOps OAuth and API-token connections keep their current behaviour",
+"F50": "The Jira connection's warning reads that Lighthouse can only read from Jira with this sign-in and never carries the Azure DevOps sentence; the Azure DevOps connection's warning names Azure DevOps and never the Jira sentence; both keep the Sign in again button",
+"F51": "The Azure DevOps warning keeps naming Azure DevOps while a Jira warning is shown only for one tracker type",
 "F6": "A Jira OAuth connection with write-back asks Atlassian for write:jira-work, records what Atlassian granted, and write-back on a Jira sign-in that may only read is not sent and is shown as needing a new sign-in",
 "F7": "An admin signs in a Jira OAuth connection with and without write-back mappings, Atlassian answers the token request with a granted scope, and a write-back runs on that connection",
 "F8": "Without write-back the sign-in asks Atlassian for the read scopes and offline_access only; with write-back it also asks for write:jira-work. A grant naming write:jira-work lets write-back send the change to Jira; a grant without it, or a Jira sign-in stored before rights were recorded, sends nothing, logs one warning, and the connection list says Rights Read and needsWriteConsent true. Azure DevOps OAuth and API-token connections behave as before.",

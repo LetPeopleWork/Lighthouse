@@ -195,7 +195,7 @@ The connection settings page shows a Jira OAuth connection and an Azure DevOps O
 ```
 
 ```text
-The Jira connection's warning reads that Lighthouse can only read from Jira with this sign-in; the Azure DevOps connection's warning names Azure DevOps; both keep the Sign in again button
+The Jira connection's warning reads that Lighthouse can only read from Jira with this sign-in and never carries the Azure DevOps sentence; the Azure DevOps connection's warning names Azure DevOps and never the Jira sentence; both keep the Sign in again button
 ```
 
 ```text
@@ -209,7 +209,7 @@ Tested
 Lighthouse\.Frontend\/src\/components\/Common\/Connections\/WriteConsentAlert\.trackerName\.test\.tsx
 
 ```text
-Both warnings name the same tracker in a different wording, or the warning is shown only for one tracker type
+The Azure DevOps warning keeps naming Azure DevOps while a Jira warning is shown only for one tracker type
 ```
 
 ###### Obligations
