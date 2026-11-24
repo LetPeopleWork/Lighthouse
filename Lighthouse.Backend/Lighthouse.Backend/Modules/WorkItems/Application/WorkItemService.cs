@@ -943,8 +943,8 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
             var featuresTheQueryStillReturns = TheFeaturesTheQueryStillReturns(fetch.StillOnTheTracker, downloadedFeatures);
 
             // The whole surviving set, not the downloads: a Feature nobody had to download this cycle is
-            // still one this portfolio holds, and a Feature left with no portfolio claim is deleted
-            // outright by the orphaned-Feature cleanup the updater runs.
+            // still one this portfolio holds. A Feature left in no portfolio is deleted by the
+            // orphaned-Feature cleanup the updater runs, unless a Feature in a portfolio names it as its parent.
             portfolio.UpdateFeatures(featureOrdering.Order(featuresTheQueryStillReturns));
 
             await featureRepository.Save();
@@ -1479,9 +1479,8 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
                 : DeduplicateByReferenceId(await FeatureSourceFor(connector, portfolio).GetParentFeaturesDetails(portfolio, keysToDownload, Stopping), portfolio.Name, feature => feature.ReferenceId);
         }
 
-        // Inverts the Feature half's rule: parents are excluded from the orphaned-Feature cleanup by
-        // !f.IsParentFeature, so a stored key the sweep did not answer for is DOWNLOADED, never read as
-        // departed.
+        // A parent stays stored for as long as a Feature in a portfolio names it, whatever the sweep
+        // reported, so a stored key the sweep did not answer for is DOWNLOADED, never read as departed.
         private static bool TheSweepDidNotVouchForThisParent(string parentFeatureId, List<RemoteRecordStamp> sweptOnce, List<Feature> storedParentFeatures)
         {
             var swept = sweptOnce.Find(record => record.ReferenceId == parentFeatureId);

@@ -13,19 +13,21 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private static readonly Expression<Func<Feature, bool>> IsInAPortfolio = f => f.Portfolios.Any();
 
-        private static Expression<Func<Feature, bool>> ParentsAFeatureIn(IQueryable<Feature> featuresInAPortfolio) =>
-            f => f.IsParentFeature && featuresInAPortfolio.Any(child => child.ParentReferenceId == f.ReferenceId);
+        private static Expression<Func<Feature, bool>> ParentsAPortfolioFeature(IQueryable<Feature> featuresInAPortfolio) =>
+            f => featuresInAPortfolio.Any(child => child.ParentReferenceId == f.ReferenceId);
+
+        private static Expression<Func<Feature, bool>> Not(Expression<Func<Feature, bool>> predicate) =>
+            Expression.Lambda<Func<Feature, bool>>(Expression.Not(predicate.Body), predicate.Parameters);
 
         public async Task<int> CleanupAsync(CancellationToken cancellationToken = default)
         {
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             var featuresInAPortfolio = db.Features.Where(IsInAPortfolio);
-            var parentsOfAPortfolioFeature = db.Features.Where(ParentsAFeatureIn(featuresInAPortfolio));
 
             var deleted = await db.Features
-                .Where(f => !featuresInAPortfolio.Any(kept => kept.Id == f.Id)
-                    && !parentsOfAPortfolioFeature.Any(kept => kept.Id == f.Id))
+                .Where(Not(IsInAPortfolio))
+                .Where(Not(ParentsAPortfolioFeature(featuresInAPortfolio)))
                 .ExecuteDeleteAsync(cancellationToken);
             if (deleted > 0)
             {
