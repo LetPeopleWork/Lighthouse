@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.API.DTO
 
             if (workTrackingSystemConnection.AuthenticationMethodKey == AuthenticationMethodKeys.AzureDevOpsOAuth && oAuthCredential is not null)
             {
-                GrantedRights = oAuthCredential.HasWriteConsent ? WorkItemRights.ReadAndWrite : WorkItemRights.Read;
+                GrantedRights = oAuthCredential.ConsentedRights;
                 NeedsWriteConsent = oAuthCredential.LacksRightsFor(workTrackingSystemConnection.NeededWorkItemRights);
             }
 

@@ -23,8 +23,8 @@ namespace Lighthouse.Backend.Models.OAuth
         /// A sign-in stored before rights were recorded counts as write-consented: until then every Azure DevOps
         /// sign-in asked for write rights, and those connections must keep writing back.
         /// </summary>
-        public bool HasWriteConsent => GrantedRights != WorkItemRights.Read;
+        public WorkItemRights ConsentedRights => GrantedRights ?? WorkItemRights.ReadAndWrite;
 
-        public bool LacksRightsFor(WorkItemRights needed) => needed == WorkItemRights.ReadAndWrite && !HasWriteConsent;
+        public bool LacksRightsFor(WorkItemRights needed) => needed == WorkItemRights.ReadAndWrite && ConsentedRights == WorkItemRights.Read;
     }
 }
