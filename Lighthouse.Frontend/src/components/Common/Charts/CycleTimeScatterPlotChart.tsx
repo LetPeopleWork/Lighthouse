@@ -173,12 +173,25 @@ const ScatterMarker = (
 	);
 };
 
-interface CycleTimeScatterPlotChartProps {
+/** Asks the backend for the Work Items that reached the definition's end state in the date range. */
+type NamedDataFetcher = (definitionId: number) => Promise<IWorkItem[]>;
+
+// A named measure plots its own Work Items, so offering one without a way to fetch them cannot compile.
+type NamedMeasureProps =
+	| {
+			namedCycleTimeDefinitions?: never;
+			onFetchNamedCycleTimeData?: never;
+	  }
+	| {
+			namedCycleTimeDefinitions: INamedCycleTimeDefinition[];
+			onFetchNamedCycleTimeData: NamedDataFetcher;
+	  };
+
+type CycleTimeScatterPlotChartProps = NamedMeasureProps & {
 	percentileValues: IPercentileValue[];
 	cycleTimeDataPoints: IWorkItem[];
 	serviceLevelExpectation?: IPercentileValue | null;
 	blackoutPeriods?: IBlackoutPeriod[];
-	namedCycleTimeDefinitions?: INamedCycleTimeDefinition[];
 	onFetchNamedCycleTimePercentiles?: (
 		definitionId: number,
 	) => Promise<IPercentileValue[]>;
@@ -187,19 +200,13 @@ interface CycleTimeScatterPlotChartProps {
 	onFetchCycleTimeOutliers?: (
 		definitionId: number | null,
 	) => Promise<ICycleTimeOutliers>;
-	/** Asks the backend for the Work Items that reached the definition's end state in the date range. */
-	onFetchNamedCycleTimeData?: (definitionId: number) => Promise<IWorkItem[]>;
 	ownerId?: number;
 	startDate?: Date;
 	endDate?: Date;
-}
+};
 
 type OutlierFetcher = NonNullable<
 	CycleTimeScatterPlotChartProps["onFetchCycleTimeOutliers"]
->;
-
-type NamedDataFetcher = NonNullable<
-	CycleTimeScatterPlotChartProps["onFetchNamedCycleTimeData"]
 >;
 
 // Each fetcher a view hands over stands for one owner and date range, so a new fetcher is a new question.
@@ -297,13 +304,18 @@ interface NamedPopulationState {
 	readonly status: WidgetStatus;
 }
 
+/** The named measure the reader selected, with the fetcher that answers for its Work Items. */
+interface NamedSelection {
+	readonly definitionId: number;
+	readonly fetcher: NamedDataFetcher;
+}
+
 interface NamedPopulationQuestion {
 	readonly ownerKind: WorkItemsDialogOwnerKind;
 	readonly ownerId?: number;
 	readonly startDate?: Date;
 	readonly endDate?: Date;
-	readonly definitionId: number | null;
-	readonly fetcher?: NamedDataFetcher;
+	readonly selection: NamedSelection | null;
 }
 
 // Keyed by owner, range and definition, so an answer for a measure the reader has left lands in its
@@ -313,8 +325,7 @@ function useNamedPopulation({
 	ownerId,
 	startDate,
 	endDate,
-	definitionId,
-	fetcher,
+	selection,
 }: NamedPopulationQuestion): NamedPopulationState {
 	const client = useContext(QueryClientContext) ?? withoutAProvider;
 	const query = useQuery(
@@ -325,34 +336,30 @@ function useNamedPopulation({
 				ownerId ?? null,
 				startDate?.toISOString() ?? null,
 				endDate?.toISOString() ?? null,
-				fetcherIdOf(fetcher),
-				definitionId,
+				fetcherIdOf(selection?.fetcher),
+				selection?.definitionId ?? null,
 			],
-			queryFn:
-				fetcher && definitionId !== null
-					? async (): Promise<NamedPopulation> => ({
-							definitionId,
-							items: await fetcher(definitionId),
-						})
-					: skipToken,
+			queryFn: selection
+				? async (): Promise<NamedPopulation> => ({
+						definitionId: selection.definitionId,
+						items: await selection.fetcher(selection.definitionId),
+					})
+				: skipToken,
 			placeholderData: (previous: NamedPopulation | undefined) => previous,
 		},
 		client,
 	);
 
 	const { data, isError, isPlaceholderData } = query;
-	const hasFetcher = fetcher !== undefined;
+	const isSelected = selection !== null;
 	return useMemo((): NamedPopulationState => {
-		if (definitionId === null) return { answer: null, status: "ready" };
-		if (!hasFetcher) {
-			return { answer: { definitionId, items: [] }, status: "ready" };
-		}
+		if (!isSelected) return { answer: null, status: "ready" };
 		if (isError) return { answer: null, status: "error" };
 		if (data === undefined || isPlaceholderData) {
 			return { answer: data ?? null, status: "loading" };
 		}
 		return { answer: data, status: "ready" };
-	}, [definitionId, hasFetcher, data, isError, isPlaceholderData]);
+	}, [isSelected, data, isError, isPlaceholderData]);
 }
 
 const DEFAULT_MEASURE = new DefaultCycleTimeMeasure();
@@ -462,13 +469,23 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		};
 	}, [selectedDefinitionId, onFetchNamedCycleTimePercentiles]);
 
+	const namedSelection = useMemo(
+		(): NamedSelection | null =>
+			selectedDefinitionId !== null && onFetchNamedCycleTimeData
+				? {
+						definitionId: selectedDefinitionId,
+						fetcher: onFetchNamedCycleTimeData,
+					}
+				: null,
+		[selectedDefinitionId, onFetchNamedCycleTimeData],
+	);
+
 	const namedPopulation = useNamedPopulation({
 		ownerKind,
 		ownerId,
 		startDate,
 		endDate,
-		definitionId: selectedDefinitionId,
-		fetcher: onFetchNamedCycleTimeData,
+		selection: namedSelection,
 	});
 
 	const shown = useMemo(

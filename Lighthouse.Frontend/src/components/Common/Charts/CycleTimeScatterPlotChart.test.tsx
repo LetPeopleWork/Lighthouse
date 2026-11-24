@@ -349,6 +349,8 @@ describe("CycleTimeScatterPlotChart component", () => {
 			endState: "Done",
 		};
 
+		const noNamedData = () => Promise.resolve([]);
+
 		const namedItems: IWorkItem[] = [
 			{
 				...mockWorkItems[0],
@@ -390,6 +392,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[conceptToCash]}
+					onFetchNamedCycleTimeData={noNamedData}
 				/>,
 			);
 
@@ -409,6 +412,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[conceptToCash]}
+					onFetchNamedCycleTimeData={noNamedData}
 				/>,
 			);
 
@@ -433,6 +437,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[conceptToCash]}
+					onFetchNamedCycleTimeData={noNamedData}
 					onFetchNamedCycleTimePercentiles={onFetchNamedCycleTimePercentiles}
 				/>,
 			);
@@ -459,6 +464,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 						{ ...conceptToCash, isValid: true },
 						{ id: 2, name: "Broken", endState: "Done", isValid: false },
 					]}
+					onFetchNamedCycleTimeData={noNamedData}
 				/>,
 			);
 
