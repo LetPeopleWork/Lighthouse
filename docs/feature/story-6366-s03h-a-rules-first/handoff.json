@@ -1,0 +1,744 @@
+{
+"counters": {
+"D": 6,
+"E": 7,
+"F": 127,
+"K": 6,
+"L": 2,
+"P": 4,
+"S": 2,
+"T": 3,
+"Y": 6
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F33",
+"driven_ports": [
+"F32"
+],
+"driving_port": "F31"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F39",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F38"
+},
+{
+"axis": "Inhabitation",
+"basis": "F40",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F38"
+},
+{
+"axis": "PublicReachability",
+"basis": "F41",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F38"
+},
+{
+"axis": "Liveness",
+"basis": "F42",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F38"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F23"
+},
+{
+"id": "K2",
+"text": "F24"
+},
+{
+"id": "K3",
+"text": "F25"
+},
+{
+"id": "K4",
+"text": "F26"
+},
+{
+"id": "K5",
+"text": "F27"
+},
+{
+"id": "K6",
+"text": "F28"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F17"
+},
+{
+"id": "D2",
+"text": "F18"
+},
+{
+"id": "D3",
+"text": "F19"
+},
+{
+"id": "D4",
+"text": "F20"
+},
+{
+"id": "D5",
+"text": "F21"
+},
+{
+"id": "D6",
+"text": "F22"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F29"
+},
+{
+"analysis": "contract_tests",
+"reason": "F30"
+}
+],
+"risks": [
+{
+"allowed": "F45",
+"forbidden": "F46",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "ReportsRulesSeeTheMoveArchUnitTest",
+"preserved": "F44",
+"residue": "F47",
+"source": "F43"
+},
+{
+"allowed": "F50",
+"forbidden": "F51",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "ReportsMembershipArchUnitTest",
+"preserved": "F49",
+"residue": "F52",
+"source": "F48"
+},
+{
+"allowed": "F55",
+"forbidden": "F56",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "ReportsMembershipArchUnitTest",
+"preserved": "F54",
+"residue": "F57",
+"source": "F53"
+},
+{
+"allowed": "F60",
+"forbidden": "F61",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "ReportsMembershipArchUnitTest",
+"preserved": "F59",
+"residue": "F62",
+"source": "F58"
+},
+{
+"allowed": "F65",
+"forbidden": "F66",
+"id": "Y5",
+"kind": "SinglePointOfFailure",
+"owner": "NamespaceMoveLaw",
+"preserved": "F64",
+"residue": "F67",
+"source": "F63"
+},
+{
+"allowed": "F70",
+"forbidden": "F71",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "ReportsRulesSeeTheMoveArchUnitTest",
+"preserved": "F69",
+"residue": "F72",
+"source": "F68"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "ReportsMembershipArchUnitTest",
+"state": "F34"
+},
+{
+"kind": "Excluded",
+"owner": "ReportsRulesSeeTheMoveArchUnitTest",
+"state": "F35"
+},
+{
+"kind": "Excluded",
+"owner": "ReportsRulesSeeTheMoveArchUnitTest",
+"state": "F36"
+},
+{
+"kind": "Unknown",
+"owner": "ReportsRulesSeeTheMoveArchUnitTest",
+"state": "F37"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs",
+"public_oracle": {
+"expected": "F74",
+"falsifier": "F75",
+"promises": [
+"P1",
+"P4"
+],
+"stimulus": "F73"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ReportsMembershipArchUnitTest",
+"id": "T1",
+"obligation": "F93",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "ReportsMembershipArchUnitTest",
+"statement": "F81",
+"treatment": {
+"cases": [
+"F82",
+"F83",
+"F84",
+"F85",
+"F86",
+"F87",
+"F88",
+"F89",
+"F90",
+"F91"
+],
+"kind": "Finite",
+"reason": "F92"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "impact",
+"reason": "F79"
+},
+{
+"analysis": "prefactoring",
+"reason": "F80"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs:18",
+"reason": "F76",
+"symbol": "RefinementMembershipArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:21",
+"reason": "F77",
+"symbol": "ReadModule"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:176",
+"reason": "F78",
+"symbol": "DomainReachesOnlyTheKernelAndTheBaseLibrary"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs"
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ReportsMembershipArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs",
+"public_oracle": {
+"expected": "F99",
+"falsifier": "F100",
+"promises": [
+"P2",
+"P3",
+"P4"
+],
+"stimulus": "F98"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ReportsRulesSeeTheMoveArchUnitTest",
+"id": "T2",
+"obligation": "F126",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~PlatformLaneRulesSeeTheMoveArchUnitTest",
+"id": "T3",
+"obligation": "F127",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25",
+"reason": "F106"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:60",
+"reason": "F107"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:65",
+"reason": "F108"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:65",
+"reason": "F108"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule-reader",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:51",
+"reason": "F109"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule-reader",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:139",
+"reason": "F109"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule-reader",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:169",
+"reason": "F109"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule-reader",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:68",
+"reason": "F109"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs:65",
+"reason": "F110"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:111",
+"reason": "F111"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:47",
+"reason": "F111"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:47",
+"reason": "F111"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-list",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:446",
+"reason": "F111"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105",
+"reason": "F112"
+}
+],
+"laws": [
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "ReportsRulesSeeTheMoveArchUnitTest",
+"statement": "F114",
+"treatment": {
+"cases": [
+"F115",
+"F116",
+"F117",
+"F118",
+"F119",
+"F120",
+"F121",
+"F122",
+"F123",
+"F124"
+],
+"kind": "Finite",
+"reason": "F125"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F113"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:105",
+"reason": "F101",
+"symbol": "NamespaceMoveLaw"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25",
+"reason": "F102",
+"symbol": "ReportsPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:60",
+"reason": "F103",
+"symbol": "RefinementReportsAccessAndLicensing"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:65",
+"reason": "F104",
+"symbol": "RefinementAndReports"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:65",
+"reason": "F104",
+"symbol": "RefinementAndReports"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:68",
+"reason": "F105",
+"symbol": "ReportsModuleArchUnitTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsPatternRoles.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F94"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F95"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F96"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F97"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~ReportsRulesSeeTheMoveArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~PlatformLaneRulesSeeTheMoveArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F10"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F11"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F12"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F13"
+},
+{
+"id": "E5",
+"promises": [
+"P3"
+],
+"text": "F14"
+},
+{
+"id": "E6",
+"promises": [
+"P4"
+],
+"text": "F15"
+},
+{
+"id": "E7",
+"promises": [
+"P4"
+],
+"text": "F16"
+}
+]
+},
+"facts": {
+"F1": "ADO Story #6366 S03h Package Reports, feature A (rules first): the Reports membership is measured from the IL and fixed in a namespace-agnostic test, with each moving type's layer (Domain, Application or Application/Metrics), its old and its new namespace, and every Reports file that stays with its owner and reason (A1); every rule pattern that sees a moving Reports type today gives the same answer for it under Modules.Reports, and no rule string names Reports by its old path outside a fixed rename list (A2). Design: docs/feature/story-6366-s03h-package-reports/feature-delta.md.",
+"F10": "Observing the compiled test assembly through the architecture-rules probe, the Reports module membership list shows each moving Reports type with its layer (Domain, Application or Application/Metrics) and its old and new namespace, and each staying Reports file with an owner and reason; every listed type is found under exactly its old or new namespace, and no listed name is absent.",
+"F100": "Written before the widening, the law fails naming ReportsPattern and RefinementReportsAccessAndLicensing (and any other Context pattern the IL finds, such as RefinementAndReports) as stopping to see the type (RED). A made-up pattern that sees only the old place, an unanchored Modules.Reports alternative reaching a lookalike namespace, a listed literal removed from the sources, or an unlisted literal added each fails and is named. A law that asks a namespace pattern about full names, skips static readonly or nested-class fields, misses the alternation form, or compares the literal list one way only passes those cases and is rejected.",
+"F101": "Shared owner of the preservation law, constructed from a NamespaceMove and a PatternRoleMap; Reports passes its own map; no edit.",
+"F102": "One owner of the Reports module pattern; widening it widens every reader (ReportsModuleArchUnitTest, the Flow metrics, Forecasting and Work Items interpolated readers, the non-empty guard).",
+"F103": "Names Reports inside an alternation; widened by one anchored Modules.Reports alternative.",
+"F104": "Names the old Reports namespaces; widened if the law declares it Context.",
+"F105": "Keys on typeof and ReportsPattern; follows the widening with no edit.",
+"F106": "ReportsPattern old union new.",
+"F107": "RefinementReportsAccessAndLicensing old union new.",
+"F108": "RefinementAndReports old union new, if declared Context.",
+"F109": "Reads ReportsPattern; follows the widening.",
+"F11": "A Domain type in the Reports membership list depends on nothing beyond the kernel and the base library; the probe shows no Domain Reports type referencing any other assembly or namespace, and the membership test fails if a listed type is missing or a listed name does not exist.",
+"F110": "The 31 Reports rows go on the rename list; feature B renames them.",
+"F111": "On the rename list; feature B renames.",
+"F112": "Called with the Reports map; not edited.",
+"F113": "The shared law already takes a map, so no lift or move precedes the oracle; the widening itself is the behaviour-preserving step before feature B.",
+"F114": "For every const or static readonly string field P of the test assembly that parses as a regex and is not the text of a rename-list entry, and every moving Reports type T of ReportsMembership, with s the subject ReportsPatternRoles declares for P: if IsMatch(P, s_old(T)) then P is declared, a Context P requires IsMatch(P, s_new(T)) and a Place or folder-only P requires not IsMatch(P, s_new(T)); an undeclared P matching either subject of any T fails; every Modules.Reports alternative of P matches no production namespace or full name outside Lighthouse.Backend.Modules.Reports; the set of (file, literal) pairs in the test project naming the old Reports path, including an alternation group naming Reports under Services, equals ReportsStringsTheMoveRenames both ways.",
+"F115": "Context pattern seeing only the old place (ReportsPattern)",
+"F116": "Alternation-form Context pattern (RefinementReportsAccessAndLicensing)",
+"F117": "Context pattern widened by an anchored Modules.Reports alternative",
+"F118": "Place pattern that would follow the type into Modules.Reports",
+"F119": "Folder-only match that follows the type",
+"F12": "For each moving Reports type, every architecture rule pattern in the test assembly gives the same match answer under the new Modules.Reports namespace as under the old namespace, as shown by architecture-rules probes run against Reports class fragments.",
+"F120": "Undeclared pattern seeing a moving type",
+"F121": "Interpolated reader composed from ReportsPattern",
+"F122": "Unanchored Modules.Reports alternative reaching a lookalike namespace",
+"F123": "Listed literal that no longer exists",
+"F124": "Unlisted old-path literal",
+"F125": "Exhaustive over the finite domain (moving types x regex fields x two subjects, plus the test project literals); no generator adds coverage.",
+"F126": "Every rule pattern keeps its role for each moving Reports type through the move, no added alternative reaches outside Modules.Reports, and no old-path literal exists outside the fixed rename list.",
+"F127": "The shared law keeps every platform verdict.",
+"F13": "No alternative added to a rule pattern matches any production type outside Modules.Reports; probing the rules with non-Reports production class fragments shows no new match.",
+"F14": "No rule constant or string literal in the test project names Reports by the old Services.Implementation.Reports, Services.Interfaces.Reports or Services/(Implementation|Interfaces)/Reports path, except entries of a fixed rename list; the check fails when a listed literal no longer exists or an unlisted one appears, and the list can only shrink.",
+"F15": "Nothing a user, a tracker or the database sees changes: the ef-model-unchanged probe reports the EF model identical to before, and no production file moves or changes behaviour in feature A.",
+"F16": "Every existing backend test stays green after the change, as seen through the backend-tests and test-selection-show probes.",
+"F17": "Carriers and owners, all test side in Lighthouse.Backend.Tests.Architecture (object_oriented): ReportsMembership (S1 support) holds the moving Reports types, each with its short name, its file, its layer from the closed choice ReportsLayer {Domain, Application, ApplicationMetrics}, its port-file flag, its old namespace and its new namespace Lighthouse.Backend.Modules.Reports.Domain, .Application or .Application.Metrics; the Reports types and files that stay (ReportRepository, the Models/Reports types, the three Reports controllers, ReportsControllerBase, ReportOwnerWriteAccess and the four API/DTO/Reports requests), each with namespace or path, owner and reason; and the targets found naming a moving type, each with file, target and kind (suppression, analyser, CI selection, test budget, host user, Stryker, log override). ReportsPatternRoles and ReportsStringsTheMoveRenames are S2 supports that feed the existing shared NamespaceMoveLaw (NamespaceMove, PatternRoleMap, PatternDeclaration, RoleBreak). No production carrier, effect, error type or per-process state changes; the only effects are reading the compiled production and test assemblies and repository text files; every failure is an NUnit assertion message stating WHAT, WHY and HOW.",
+"F18": "Claim-to-checker: the membership and the preservation law are relations over a finite, closed domain (the compiled types of the production assembly, the const and static readonly string fields of the test assembly, two subjects per type, the string literals of the test project). They are executed exhaustively by native NUnit over the real IL. No Quint, TLA+ or Agda model: no state, transition, ordering, concurrency, time or unbounded input is claimed, so no checker install or waiver is needed. Property-based testing does not apply: closed finite domain, every case enumerated. Layers affected: only the test-side architecture rules (Infrastructure layer of the test project); production Domain, Application and Adapter layers are unchanged.",
+"F19": "Shared law: REUSE. NamespaceMoveLaw already takes a move map and a pattern-role map (lifted by the Refinement packaging), so Reports adds its own map and calls the same law; no second law and no edit to NamespaceMoveLaw. The open renames of RoleBreak.KeepsAPlatformAlternativeAsAnOldLocation and the PlatformLanePatternRoles reason text stay open: this feature does not edit those files. Rejected: a Reports copy of the law (two owners of one rule) and one fixture per pattern (covers only remembered patterns).",
+"F2": "The rules see the Reports move before any file moves, so the move in feature B cannot silently loosen a rule.",
+"F20": "Layer rule, decided per file, never per type (a move never splits a file): a file is Domain if and only if it is not a port file and every top-level type it declares has IL edges only to the kernel (Lighthouse.Backend.Models and its sub-namespaces), the BCL and types of other Reports Domain files. A port file declares an I-prefixed port interface and stays in Application with every record and enum it declares; the flag is a declared fact on the map. A non-Domain file under Services/Implementation/Reports/Metrics is ApplicationMetrics (the grouping is kept); every other non-Domain file is Application. The check runs both ways: a Domain-listed file reaching beyond the kernel fails, and a kernel-only non-port file listed as Application or ApplicationMetrics fails. Expected Domain: ReportWindowPolicy, ReportCapPolicy, ReportSeriesReading; DailySeriesSummary reaches the Flow metrics Domain and stays ApplicationMetrics. If the IL makes a Metrics file kernel-only, the crafter returns it to the architect instead of choosing a layer.",
+"F21": "Same answer (P2) is the role law of NamespaceMoveLaw: every regex field that sees a moving Reports type under its old subject is declared in ReportsPatternRoles with its subject (Namespace or FullName) and role. A Context pattern must give the same answer under the new subject, widened by one anchored alternative ^Lighthouse\\.Backend\\.Modules\\.Reports(\\.|$); a Place or folder-only pattern must not see the type in Modules.Reports; an undeclared pattern that sees a moving type fails; no Modules.Reports alternative matches a production type outside Modules.Reports. Candidates measured by text on HEAD e5bbe3fed (noisy; the IL-backed law names the definitive set): ModuleBoundariesArchUnitTest.ReportsPattern (line 25; read by ReportsModuleArchUnitTest, ModuleBoundariesArchUnitTest line 67 and the interpolated readers FlowMetricsInboundApplicationArchUnitTest 51, ForecastingModuleBoundariesArchUnitTest 139, WorkItemsModuleBoundariesArchUnitTest 169), TrackerIntegrationModuleBoundariesArchUnitTest.RefinementReportsAccessAndLicensing (line 60, alternation form), and, new against the DESIGN text, AccessModuleBoundariesArchUnitTest.RefinementAndReports and LicensingModuleBoundariesArchUnitTest.RefinementAndReports (line 65 each). ReportsModuleArchUnitTest ReportModelsPattern, RepositoryPortPattern, ApiLayerPattern and CompositionRootPattern name staying code and stay unchanged.",
+"F22": "Re-measurement on HEAD e5bbe3fed by text (noisy; the A1 IL measurement decides): the 31 moving files hold as designed (12 in Services/Implementation/Reports, 8 in its Metrics, 11 in Services/Interfaces/Reports) with 36 top-level type declarations (port files IReportCommands, IReportMetricSeries and IReportTemplate declare 2 types, IReportOwnerLookup 3); 18 unit tests under Tests/Services/Implementation/Reports; 7 Models/Reports files; 9 API files. Old-path literals in the test project, all on the S2 rename list: RepositoryLeakRatchetArchUnitTest 47, FlowMetricsInboundDomainAndAdaptersArchUnitTest 47, TrackerIntegrationModuleBoundariesArchUnitTest 446 (DESIGN said 427), and, new against the DESIGN text, LicensingModuleBoundariesArchUnitTest 111 and 112 (ReportCommands, ReportQueries full names) and 31 rows of PlatformLaneUnitTestPlacementTest (lines 65 to 84 and 146 to 156) naming every moving Reports file with owner Reports. The global:: reference at TrackerIntegrationModuleBoundariesArchUnitTest 883 is compile-checked, not a literal. No backend suppression, analyser, build, Stryker, CI-selection, test-budget or log-override target names a Reports type. code-fact was not used; facts come from git grep and reading.",
+"F23": "P4: no production file, migration, Data, Models, frontend or E2E file changes in this feature; the existing backend suite stays green.",
+"F24": "Each slice has its own oracle file; a later slice never edits an earlier slice oracle or support. ReportsMembership.cs is the S1 support and is read, never edited, by S2.",
+"F25": "Membership domain is closed and finite: every top-level type the IL finds in Lighthouse.Backend.Services.Implementation.Reports (and .Metrics), Lighthouse.Backend.Services.Interfaces.Reports and Lighthouse.Backend.Modules.Reports; nested types follow their outermost type (IlDependencies.TypesIn returns Outer+Inner, reduced to the part before +). No count bound is fixed by authority; a measured difference is recorded, not argued with.",
+"F26": "The rename list is fixed at the end of S2 from the pre-move search and only shrinks: feature B removes an entry when it renames or deletes its literal, feature C removes the widened old-namespace alternatives. Feature B and C work (move, renames, narrowing, R-RP1 to R-RP6, placement test, architecture documents) is out of scope; ReportRepository and Models/Reports stay where they are.",
+"F27": "Test-writing guidance in .claude/skills/test-writing/SKILL.md and references/backend.md wins over nWave timing and PBT density rules. No nWave scenario tags in code. Comments are rare, plain, and never cite internal ids. Architecture rules assert by the failure naming the offender, not by counts; made-up offenders live in a fixture namespace such as Lighthouse.Backend.Modules.ReportsFixtures.",
+"F28": "Start condition as measured on HEAD e5bbe3fed (host records S03e and S03f Closed, S03g Resolved and pushed as bd31ac293, started on the maintainer word). The DESIGN git check (git log --grep story <id> on Tests/Architecture) finds no commit for any of the three, because rules commits carry a scope, not the story id; the last rules commits by scope are cc3d7def2 test(access), 7d4883cfe test(platform) and d8391783c test(refinement), each an ancestor of HEAD. Content: RefinementPattern names only Modules.Refinement; no Services/Interfaces/ILighthouseClock.cs; no file left under Services/(Implementation|Interfaces)/(Auth|Authorization|Licensing), but RefinementReportsAccessAndLicensing still carries the Auth, Authorization and Licensing alternatives under Services next to Reports (they match no type). That leftover is not changed by this feature.",
+"F29": "No shared wire, schema or configuration contract changes; only test-side rule code in one test project changes.",
+"F3": "The membership of the Reports module is measured from the compiled code and fixed in a test: each moving Reports type with its layer (Domain, Application or Application/Metrics), its old and its new namespace, and each Reports file that stays (ReportRepository, the Models/Reports types, the API controllers and DTOs) with its owner and reason. The test finds each listed type in its old or its new namespace, and fails when a listed type is missing, a listed name does not exist, or a Domain type reaches beyond the kernel and the base library.",
+"F30": "Single deployable; producer and consumer of every touched constant live in the same test assembly and change in the same commit.",
+"F31": "Compiled production and test assemblies read in process through LighthouseArchitecture.Production (ArchUnitNET) and IlDependencies.ReadModule (Mono.Cecil); nearest argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"F32": "Repository text files read from the repository root: test project .cs sources, GlobalSuppressions.cs, both .editorconfig, any .globalconfig, Directory.Build.props, BannedSymbols files, Scripts/test-selection, Scripts/test-timings/test-time-budget.json, TestHostUseGuardTest.HostUsersStillToMove, backend stryker*.json, appsettings*.json and the E2E perf log overrides",
+"F33": "Architecture tests depend on the production assembly and on repository files; nothing in production depends on them; the S2 oracle and rule files depend on the S1 support ReportsMembership and on NamespaceMoveLaw.",
+"F34": "Each moving Reports type found exactly once, in its old or its new namespace",
+"F35": "A rule pattern that sees a moving Reports type only under its old namespace (rule goes blind after the move)",
+"F36": "An old-path Reports literal in the test project that is not on the rename list, or a listed literal that no longer exists",
+"F37": "Strings built at run time from fragments that never appear whole as a literal or constant",
+"F38": "Reports rules see the move",
+"F39": "A rule that stops seeing a moving type, an undeclared pattern, an alternative reaching outside Modules.Reports, an unlisted old-path literal or a wrong membership entry each fails an exhaustive NUnit check over the IL.",
+"F4": "Every rule pattern in the test assembly gives the same answer for each moving Reports type under its new Modules.Reports namespace as under its old one, and no added alternative matches a production type outside Modules.Reports.",
+"F40": "Today the Reports types exist in the old namespaces, so the map and every Context pattern have at least one type to answer for.",
+"F41": "compiled assembly -> ReportsMembership and NamespaceMoveLaw -> NUnit architecture tests -> dotnet test exit code and assertion message.",
+"F42": "Not applicable: no eventual-progress claim; each check is a terminating finite enumeration with a 1 s regex timeout per match.",
+"F43": "Assumption: a text sweep finds every pattern. Negated: the alternation form (Reports inside (Refinement|Reports|...)) and the interpolated non-const readers",
+"F44": "Every regex field is asked by behaviour (IsMatch on old and new subjects), not by text",
+"F45": "Interpolated readers follow the widened owner with no edit",
+"F46": "A rule silently checking an empty or partial set after the move",
+"F47": "Strings composed only at run time (Unknown state)",
+"F48": "Assumption: the DESIGN text counts still hold after S03e, S03f and S03g. Negated: counts moved",
+"F49": "Membership equals the IL set both ways",
+"F5": "No rule constant or string literal in the test project names Reports by its old Services.Implementation.Reports, Services.Interfaces.Reports or Services/(Implementation|Interfaces)/Reports path, except the entries of a fixed rename list taken from the pre-move search; the check fails when a listed literal no longer exists or an unlisted one appears, and the list only shrinks.",
+"F50": "Recorded difference",
+"F51": "Map copied from the DESIGN text",
+"F52": "None: the IL decides",
+"F53": "Assumption: a suppression, analyser, CI, budget, host-user, Stryker or log-override target follows a move. Negated: it names a type by its old name",
+"F54": "Targets naming a moving type are listed",
+"F55": "Empty list",
+"F56": "An unlisted target naming a moving type",
+"F57": "Files outside the read set (archived docs) are not searched",
+"F58": "Assumption: only using lines move with files. Negated: same-namespace resolution breaks on the Domain split",
+"F59": "Each Application file naming a Domain type is visible as an IL edge in the membership data",
+"F6": "Nothing a user, a tracker or the database sees changes: no production file moves or changes behaviour in feature A, and every existing test stays green.",
+"F60": "Feature B adds using lines",
+"F61": "An edge read from using lines instead of the IL",
+"F62": "IL misses catch-clause, event and attribute-named-argument references",
+"F63": "NamespaceMoveLaw is the one owner of the preservation law for Platform and Reports",
+"F64": "Platform verdicts unchanged",
+"F65": "Shared fixture of made-up patterns",
+"F66": "A defect in the law hiding a break for both maps",
+"F67": "The platform made-up pattern fixtures falsify each break kind; the Reports test adds its own made-up breaks",
+"F68": "Second set, walked over the finished design (walkthrough, not execution): a test class name in the budget or host-user lists; ReportOwnerWriteAccess drifting into the module with its port; ThenAndNowPayload moving and the stored JSON changing; a Reports nested type under the ArchUnit + separator",
+"F69": "Budget and host-user entries name classes that stay; ReportOwnerWriteAccess is pinned to API by an existing rule; Models/Reports stays and System.Text.Json stores no type name; nested types follow their outermost type",
+"F7": "Moving any production file (feature B), narrowing the rules to the new namespace only and the new Reports module rules R-RP1 to R-RP6 (feature C); ReportRepository and Models/Reports stay where they are.",
+"F70": "Empty target list",
+"F71": "A staying type listed as moving",
+"F72": "None found",
+"F73": "The architecture tests run the Reports membership check over the compiled production IL: each type listed in ReportsMembership with its file, its layer, its port-file flag, old namespace and new Lighthouse.Backend.Modules.Reports.<Layer> namespace, compared with the top-level types the IL finds in Services.Implementation.Reports (and .Metrics), Services.Interfaces.Reports and Modules.Reports; each listed staying type or file looked up by namespace or path with its owner and reason; the IL edges of every type of every non-port file; and the suppression, analyser, CI-selection, test-budget, host-user, Stryker and log-override files read for targets naming a moving type.",
+"F74": "On today code the check passes: the listed moving types equal the IL set both ways, each found exactly once in its old or its new namespace; the staying entries exist where listed (ReportRepository, the Models/Reports types, the three controllers, ReportsControllerBase, ReportOwnerWriteAccess, the four DTOs); every type of a Domain-listed file reaches only the kernel, the BCL and types of other Domain files; no kernel-only non-port file is listed as Application or ApplicationMetrics; port files and all their types are Application; the listed targets equal those found. A failure names each missing listed type, each listed name that does not exist, each unlisted type, each Domain edge beyond the kernel, each kernel-only non-port file listed outside Domain and each unlisted target, with WHAT, WHY and HOW.",
+"F75": "Written before the list is filled the check fails naming the unlisted Reports types (RED). One entry removed, a made-up entry added, a staying name that does not exist, DailySeriesSummary listed as Domain (reaches the Flow metrics Domain), ReportCapPolicy listed as Application (kernel-only non-port file), a port file split across layers, a made-up Domain fixture type lookalike or namesake of a Domain type, or a made-up target naming a moving type each fails and is named. A check that compares one way only, judges layers per type, counts entries, reads only the old or only the new namespace, or matches a short name without its namespace passes those cases and is rejected.",
+"F76": "Same shape (map compared both ways with the IL, old-or-new lookup, per-file layers, staying entries with owner, targets naming moving types); copied as a pattern, not shared code, because each module map is its own fact set.",
+"F77": "Existing IL reader for type enumeration and edges; no new reader.",
+"F78": "Existing kernel-only edge rule; the membership check reuses its notion of kernel and base library.",
+"F79": "No crafter target: the acceptance designer authors the oracle and its membership support; no production, rule or configuration file changes.",
+"F8": "A1: the Reports membership is measured from the IL and fixed in a namespace-agnostic test that finds each listed type in its old or new namespace, fails when a listed type is missing or a listed name does not exist or a Domain type reaches beyond the kernel, and records the targets that name moving types.",
+"F80": "No code target; nothing to move.",
+"F81": "The listed Reports membership equals the set of top-level types the IL finds in the old Reports namespaces and in Lighthouse.Backend.Modules.Reports, both ways, each listed name found exactly once in its old or its new namespace; layers are per file: a file is Domain if and only if it is not a declared port file and every top-level type it declares has IL edges only to Lighthouse.Backend.Models, the BCL and types of other Domain files; other Metrics files are ApplicationMetrics and every other file (port files with all their records included) is Application; each staying entry exists at its listed place; the listed targets naming a moving type equal those found.",
+"F82": "Every moving type listed and found in the old namespace",
+"F83": "A listed type missing from the IL",
+"F84": "A listed name that exists in neither namespace",
+"F85": "An IL type in a Reports namespace not listed",
+"F86": "A Domain-listed file with a type reaching beyond the kernel (DailySeriesSummary to the Flow metrics Domain)",
+"F87": "A kernel-only non-port file listed outside Domain (ReportCapPolicy)",
+"F88": "A port file or its records split across layers",
+"F89": "A made-up Domain fixture lookalike or namesake of a Domain type",
+"F9": "A2: every rule pattern gives the same answer for each moving Reports type under its old and its new namespace, no added alternative matches a production type outside Modules.Reports, and no rule string names Reports by its old path outside the fixed rename list.",
+"F90": "A staying entry not found at its listed place",
+"F91": "A target naming a moving type not listed",
+"F92": "Closed finite set of compiled types and files; each case is enumerated, no generator adds coverage.",
+"F93": "The Reports membership is measured from the IL, namespace-agnostic, with layer, old and new namespace, staying entries with owner and reason, the kernel-only Domain rule both ways and the recorded targets.",
+"F94": "ReportsPattern widened by an anchored Modules.Reports alternative; every reader follows.",
+"F95": "RefinementReportsAccessAndLicensing widened by an anchored Modules.Reports alternative.",
+"F96": "RefinementAndReports widened by an anchored Modules.Reports alternative, if the law names it Context.",
+"F97": "RefinementAndReports widened by an anchored Modules.Reports alternative, if the law names it Context; the ReportCommands and ReportQueries literals stay on the rename list for feature B.",
+"F98": "The architecture tests ask NamespaceMoveLaw, built from ReportsMembership and ReportsPatternRoles, about every const and static readonly string field of the test assembly that parses as a regex and names the backend: each is asked on its declared subject (namespace of the outermost type, or full name) under the old and the new name of every moving Reports type; each Modules.Reports alternative is asked about every production namespace and full name outside Modules.Reports; and the test project .cs sources are read as text for string literals matching Services.Implementation.Reports, Services.Interfaces.Reports or Services/(Implementation|Interfaces)/Reports, or an alternation group naming Reports under Services.(Implementation|Interfaces), compared with ReportsStringsTheMoveRenames.",
+"F99": "After the crafter widens the Reports rule constants, no pattern breaks its role (Context patterns answer the same under old and new, Place and folder-only patterns do not see the type in Modules.Reports, no undeclared pattern sees a moving type), no Modules.Reports alternative matches anything outside Modules.Reports, the old-path literals equal the rename list both ways, and the whole Architecture namespace and the backend suite stay green. Made-up patterns and literals in the oracle fixture are each named with their break kind."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+}
+],
+"scope_out": [
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F8",
+"promises": [
+"P1",
+"P4"
+]
+},
+{
+"id": "S2",
+"observation": "F9",
+"promises": [
+"P2",
+"P3",
+"P4"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6366-s03h-a-rules-first",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
