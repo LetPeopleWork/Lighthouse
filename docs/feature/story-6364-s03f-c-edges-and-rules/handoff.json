@@ -1,7 +1,7 @@
 {
 "counters": {
 "D": 7,
-"F": 125,
+"F": 126,
 "K": 3,
 "L": 2,
 "P": 6,
@@ -522,6 +522,7 @@
 "F123": "file that only looks alike: not named",
 "F124": "Finite domain: the files on disk and the list entries, enumerated exhaustively.",
 "F125": "Platform unit tests under Tests/Platform/<Area> and the per-file, per-owner stay list of Services/Interfaces and Services/Implementation, over every file present now or added later, with falsifiers on made-up trees",
+"F126": "R-PL4, read from the compiled IL: the platform lane reaches code still in Services only through one inline list of edges by full type name, measured from the IL in C1 and listed exactly as the IL shows them, compared both ways, never loosened. The design's IL probe measured 19 edges: the repository edges of DemoDataService, UpdateTaskNaming, UsageDataGate, UsageDataMasterSwitch, UsageDataConsentService and UsageDataConsentPruningService; SystemInfoService, InstallTimestampSeeder and UsageDataConsentService to IAppSettingService; and UpdateQueueService (with its nested HeldUpdate) to the write-back types WriteBackCollector, WriteBackRound, WriteBackRoundContext and IWriteBackService. The update pipelines are reached only through DI and are not an edge. A made-up new edge into Services that is not on the list fails, and a listed edge that no longer exists fails, for every list position (the ModuleRulesCatchANewOffender falsifier shape).\n",
 "F13": "The R-PL4 list is measured from the IL in C1 (the DESIGN baseline is a text search only); every list is inline, by full type name, compared both ways and never loosened, and its falsifiers reuse the ModuleRules OutboundEdges and ModuleRulesCatchANewOffender shape with a lane wording instead of a ModuleWording module name. C2 reuses the PromisesUnitTestPlacementTest shape with named exceptions.\n",
 "F14": "Each slice's RED: C1 fails on a made-up offender per rule and per list position; C2 is structural, failing on a made-up file in an old folder. Behaviour is proved by the unchanged tests and EXAMINE through admitted probes (D-13).\n",
 "F15": "One commit per slice; C1 and C2 are pushed together after the whole-candidate review. Rigor thorough for feature C: product owner, architect, acceptance designer and crafter opus, reviewers and EXAMINE sonnet (open question 8 AFK default).\n",
@@ -562,7 +563,6 @@
 "F47": "Production unchanged; every map type in its Platform area; the lane reaches no API type and no module adapter; its Services edges equal the measured list; every platform unit test under Tests/Platform; every file left in Services/Interfaces and Services/Implementation listed with its owner.",
 "F48": "An unlisted lane edge into Services, API or a module adapter; a listed edge or file that no longer exists; a map type outside its area or left under Services; a platform unit test outside Tests/Platform; an unlisted file in Services/Interfaces or Services/Implementation; a loosened list or rule; a lane pattern that examines nothing.",
 "F49": "The exact R-PL4 list and the per-file owners until the acceptance designers re-measure them at RED; lane reach the IL does not carry (DI-only resolution, reflection, catch clauses, events, attribute named arguments).",
-"F5": "R-PL4, read from the compiled IL: the platform lane reaches code still in Services (update pipelines, write-back, Organisation set-up files, repositories, Reports, Refinement) only through one inline list of edges by full type name, measured in C1 and compared both ways, never loosened; the design expects at least the repository edges of UsageDataGate, UsageDataMasterSwitch, UsageDataConsentService, UsageDataConsentPruningService, DemoDataService and UpdateTaskNaming, and UpdateQueueService to the update pipelines and IAppSettingService. A made-up new edge into Services that is not on the list fails, and a listed edge that no longer exists fails, for every list position (the ModuleRulesCatchANewOffender falsifier shape).\n",
 "F50": "Platform lane rules and placement",
 "F51": "Each excluded state is named by a rule run: unlisted or gone edge, misplaced type, misplaced test, unlisted or gone stay file, lane pattern examining nothing; every list compared both ways with a falsifier per position.",
 "F52": "Today's code passes with the measured lists: the DESIGN IL probe found 19 Services edges and no API or adapter edge, and the file tree holds the staying files named in the S2 constraint.",
@@ -665,7 +665,7 @@
 {
 "id": "P3",
 "kind": "Outcome",
-"text": "F5"
+"text": "F126"
 },
 {
 "id": "P4",
