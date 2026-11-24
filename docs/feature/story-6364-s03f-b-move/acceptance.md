@@ -396,6 +396,131 @@ Behaviour preservation is observed by the existing suite and the platform-answer
 
 crafter\-and\-examine
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+Look up every usage data, logging and releases type the platform map lists in its new platform area and in the place it lived before
+```
+
+```text
+Each type is found exactly once in its platform area (usage data, logging or releases) and none is left in its old place; a listed name that matches no type fails naming it
+```
+
+```text
+Usage data, logging and release code is found under its platform area and nowhere else
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformUsageLoggingReleasesLayoutArchUnitTest\.cs
+
+```text
+A type is copied into the new area but also left in the old namespace, or a listed type is placed in another area
+```
+
+###### Obligations
+
+
+
+
+
+
+##### Covers
+
+P6
+
+```text
+Look up each unit test class of the moved types in the platform tests area and in the place the tests lived before
+```
+
+```text
+Every moved test class lives in its platform tests area and none is left in its old test namespace
+```
+
+```text
+Tests of the moved code sit beside the area they test
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformUsageLoggingReleasesLayoutArchUnitTest\.cs
+
+```text
+A test class is copied rather than moved, so both namespaces hold it
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P6
+
+```text
+Read each rule and list file the platform map says the move renames
+```
+
+```text
+Each file names the moved type in its new place and no longer in the old place
+```
+
+```text
+Architecture rules still watch the moved types
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformUsageLoggingReleasesLayoutArchUnitTest\.cs
+
+```text
+A rule string is deleted or widened instead of renamed
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+P7
+
+```text
+Ask the CI test selection which changed files under the platform releases area select the live GitHub suite
+```
+
+```text
+The GitHub service, the release service, their interfaces and their tests select it; the assembly service, usage data and logging files do not
+```
+
+```text
+A release code change still runs the suite that talks to GitHub
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformUsageLoggingReleasesLayoutArchUnitTest\.cs
+
+```text
+The selection pattern is widened to the whole platform or still names only the old service folders
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

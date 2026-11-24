@@ -493,6 +493,115 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>crafter-and-examine</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Look up every usage data, logging and releases type the platform map lists in its new platform area and in the place it lived before
+</code></pre>
+
+<pre><code>Each type is found exactly once in its platform area (usage data, logging or releases) and none is left in its old place; a listed name that matches no type fails naming it
+</code></pre>
+
+<pre><code>Usage data, logging and release code is found under its platform area and nowhere else
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs</p>
+
+<pre><code>A type is copied into the new area but also left in the old namespace, or a listed type is placed in another area
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Look up each unit test class of the moved types in the platform tests area and in the place the tests lived before
+</code></pre>
+
+<pre><code>Every moved test class lives in its platform tests area and none is left in its old test namespace
+</code></pre>
+
+<pre><code>Tests of the moved code sit beside the area they test
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs</p>
+
+<pre><code>A test class is copied rather than moved, so both namespaces hold it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Read each rule and list file the platform map says the move renames
+</code></pre>
+
+<pre><code>Each file names the moved type in its new place and no longer in the old place
+</code></pre>
+
+<pre><code>Architecture rules still watch the moved types
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs</p>
+
+<pre><code>A rule string is deleted or widened instead of renamed
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P7</p>
+
+<pre><code>Ask the CI test selection which changed files under the platform releases area select the live GitHub suite
+</code></pre>
+
+<pre><code>The GitHub service, the release service, their interfaces and their tests select it; the assembly service, usage data and logging files do not
+</code></pre>
+
+<pre><code>A release code change still runs the suite that talks to GitHub
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs</p>
+
+<pre><code>The selection pattern is widened to the whole platform or still names only the old service folders
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

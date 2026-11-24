@@ -208,12 +208,84 @@
 "stimulus": "F610",
 "user_result": "F612"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F232",
+"L3/F233",
+"L3/F234",
+"T3"
+],
+"still_passes_if": "F617",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs"
+},
+"expected": "F615",
+"stimulus": "F614",
+"user_result": "F616"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F235"
+],
+"still_passes_if": "F621",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs"
+},
+"expected": "F619",
+"stimulus": "F618",
+"user_result": "F620"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F625",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs"
+},
+"expected": "F623",
+"stimulus": "F622",
+"user_result": "F624"
+},
+{
+"covers": [
+"P3",
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F629",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUsageLoggingReleasesLayoutArchUnitTest.cs"
+},
+"expected": "F627",
+"stimulus": "F626",
+"user_result": "F628"
+}
 ]
 },
 "counters": {
 "D": 9,
 "E": 7,
-"F": 613,
+"F": 629,
 "K": 3,
 "L": 5,
 "P": 7,
@@ -10133,7 +10205,23 @@
 "F611": "Behaviour, API answers, EF model and registrations are unchanged and every existing test stays green",
 "F612": "Nothing a user or API client sees changes",
 "F613": "Behaviour preservation is observed by the existing suite and the platform-answers-compare probe at craft and EXAMINE, not by a new layout oracle",
+"F614": "Look up every usage data, logging and releases type the platform map lists in its new platform area and in the place it lived before",
+"F615": "Each type is found exactly once in its platform area (usage data, logging or releases) and none is left in its old place; a listed name that matches no type fails naming it",
+"F616": "Usage data, logging and release code is found under its platform area and nowhere else",
+"F617": "A type is copied into the new area but also left in the old namespace, or a listed type is placed in another area",
+"F618": "Look up each unit test class of the moved types in the platform tests area and in the place the tests lived before",
+"F619": "Every moved test class lives in its platform tests area and none is left in its old test namespace",
 "F62": "every rule keeps its verdict for every moved type",
+"F620": "Tests of the moved code sit beside the area they test",
+"F621": "A test class is copied rather than moved, so both namespaces hold it",
+"F622": "Read each rule and list file the platform map says the move renames",
+"F623": "Each file names the moved type in its new place and no longer in the old place",
+"F624": "Architecture rules still watch the moved types",
+"F625": "A rule string is deleted or widened instead of renamed",
+"F626": "Ask the CI test selection which changed files under the platform releases area select the live GitHub suite",
+"F627": "The GitHub service, the release service, their interfaces and their tests select it; the assembly service, usage data and logging files do not",
+"F628": "A release code change still runs the suite that talks to GitHub",
+"F629": "The selection pattern is widened to the whole platform or still names only the old service folders",
 "F63": "a rule pattern gains a Platform alternative only through feature A's roles",
 "F64": "a rule goes blind or sees a type outside Platform",
 "F65": "a pattern built at run time from pieces is outside the reflection scan; both-way list comparisons fail loudly on rename",
