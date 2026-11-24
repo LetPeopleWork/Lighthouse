@@ -184,6 +184,38 @@ API-token connections are blocked or flagged for write consent
 
 None.
 
+### S2
+
+##### Covers
+
+P4
+
+```text
+The connection settings page shows a Jira OAuth connection and an Azure DevOps OAuth connection whose sign-in may only read while write-back is set up
+```
+
+```text
+The Jira connection's warning reads that Lighthouse can only read from Jira with this sign-in; the Azure DevOps connection's warning names Azure DevOps; both keep the Sign in again button
+```
+
+```text
+A Jira admin is told the sign-in can only read from Jira and can sign in again to give write rights
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Connections\/WriteConsentAlert\.trackerName\.test\.tsx
+
+```text
+Both warnings name the same tracker in a different wording, or the warning is shown only for one tracker type
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows
