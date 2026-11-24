@@ -380,12 +380,95 @@
 "stimulus": "F652",
 "user_result": "F654"
 }
+],
+"S5": [
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F232",
+"L5/F233",
+"L5/F234",
+"T5"
+],
+"still_passes_if": "F662",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUpdateQueueLayoutArchUnitTest.cs::EveryUpdateQueueType_LivesInPlatformUpdateQueue_AndNoneIsLeftInItsOldNamespace"
+},
+"expected": "F660",
+"stimulus": "F659",
+"user_result": "F661"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T5"
+],
+"still_passes_if": "F666",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUpdateQueueLayoutArchUnitTest.cs::TheUpdatePipelines_StayWhereTheyAre_AndNoneMovesIntoThePlatform"
+},
+"expected": "F664",
+"stimulus": "F663",
+"user_result": "F665"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F235",
+"T5"
+],
+"still_passes_if": "F670",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUpdateQueueLayoutArchUnitTest.cs::TheUnitTestsOfTheMovedTypes_LiveInTestsPlatformUpdateQueue_AndNoneIsLeftInItsOldNamespace"
+},
+"expected": "F668",
+"stimulus": "F667",
+"user_result": "F669"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T5"
+],
+"still_passes_if": "F674",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUpdateQueueLayoutArchUnitTest.cs::TheRuleAndListStringsThatNameAMovedType_NameItsNewPlaceOnly"
+},
+"expected": "F672",
+"stimulus": "F671",
+"user_result": "F673"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "examiner",
+"reason": "F678"
+},
+"expected": "F676",
+"stimulus": "F675",
+"user_result": "F677"
+}
 ]
 },
 "counters": {
 "D": 10,
 "E": 7,
-"F": 658,
+"F": 678,
 "K": 3,
 "L": 5,
 "P": 7,
@@ -10370,8 +10453,28 @@
 "F655": "A host-user row for a class that stays on a host and is kept under the old name is refused; a string deleted outside the host-user list is refused",
 "F656": "Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision, and honouring F4's per-type exception), PlatformLaneMembershipArchUnitTest (F2) and PlatformLanePatternRoles (F4's per-type exception for PromisesAndTheUpdateCode and KeyRingFileWatcher), made by the S1 acceptance designer before craft; and the S3 support amendment of PlatformLaneMembershipArchUnitTest (F3-S3: where a listed string's file has moved, the check reads the one file of that name under Tests/Platform), made by the S3 acceptance designer before craft; and the S4 support amendments of PlatformLaneMembershipArchUnitTest and PlatformLaneRulesSeeTheMoveArchUnitTest (F5-S4: only the choice of example in two tests, so each builds the failure it asserts before and after every move), made by the S4 acceptance designer before the re-craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest), F3 (2 listed ICryptoService Application edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) and F4 (no Platform.Encryption alternative in PromisesAndTheUpdateCode or its composites there) are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths, made by the S1 crafter. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.",
 "F658": "F5-S4 (engineering choice taken in AFK mode, open to the maintainer; the same kind of exception as F2): two feature A support tests take a type that moves in S4 as their example, so they hold before the move and fail after it. PlatformLaneMembershipArchUnitTest.AListedTargetRewrittenToTheNewNamespace_IsStillFound_AndOneTakenOutOfItsFileIsNamed takes SuppressionTargets[0], which S4 rewrites (the RandomNumberService suppression); its removed variant replaces the type's old full name, which the file no longer holds. PlatformLaneRulesSeeTheMoveArchUnitTest.ThePlatformAlternativeCheck_NamesAMadeUpAlternativeThatReachesOutsidePlatform_AndPassesAnAnchoredOne builds its unanchored Platform alternative to match the platform service's full name, which after S4 sits in Platform.Host and no longer matches outside Platform. The S4 acceptance designer amends both supports before the re-craft, changing only the choice of example; every assertion and test stays. For the first, the removed variant replaces whichever full name of the type the file holds, old or new, as F2 did. For the second, no production example exists after S4 (no name outside Platform contains the text Platform), so the test keeps every assertion and changes only its input: WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform takes the outside names it asks about as a parameter; the real-rules test passes the production names unchanged; the made-up-key self-test passes the production names plus one made-up full name and namespace outside Platform that contains the text (for example Lighthouse.Backend.Services.PlatformLookalike), so its made-up unanchored key is named before and after every move, and its message says it uses a made-up outside name. The made-up name is not held in a class-level const or static readonly string, which feature A's preservation law scans. PlatformLaneMembership.cs stays unedited. Owner: maintainer. Rejected: editing the map (edits feature A's map and breaks the check before the move); a craft-time exemption or an exemption for the move (loosens the rule); dropping the tests (loses the law they hold); a character-class trick in the made-up key.\r\n",
+"F659": "Look up every update-queue mechanics type of the membership map in the platform update-queue area and where it lived before",
 "F66": "Assumption negated: renamed rule constants keep their old value. The map renames CryptoServiceFullName and EncryptionNamespacePrefix in B1",
+"F660": "Each one sits once in the platform update-queue area and none is left where it lived before; a name with no type fails naming itself",
+"F661": "The update queue's mechanics are ruled by their own namespace",
+"F662": "a moved type that also kept a second copy under another platform area",
+"F663": "Look up the Team and Portfolio updaters, their shared base and their three interfaces where they are today and in the platform",
+"F664": "All six are where they are today and none sits anywhere in the platform",
+"F665": "The refresh pipelines stay with their contexts",
+"F666": "a pipeline copied into another folder outside the platform while the original stays",
+"F667": "Look up the twelve unit-test classes of the moved types in the platform update-queue test area and where they were before",
+"F668": "Each test class lives in the platform update-queue test area and none is left behind",
+"F669": "The tests sit next to what they test",
 "F67": "the preservation law stays green after B1",
+"F670": "a pipeline test moved along with them",
+"F671": "Read each rule, list and path string the map gives the update-queue move, in its file or in its one moved copy under the platform tests",
+"F672": "Each file holds the new text and not the old one; a missing file is named",
+"F673": "Every rule keeps looking at the moved types",
+"F674": "a rule string the map does not list that still names the old place",
+"F675": "Use the product before and after the move",
+"F676": "Same answers, same reactions, same EF model, every suite green",
+"F677": "Nothing a user sees changes",
+"F678": "Observed by the existing suite and the EXAMINE probes, not by the layout oracle",
 "F68": "the S1 support amendment of feature A's test",
 "F69": "the law reports NotDeclared or the example test fails after a correct rename",
 "F7": "Every update-queue mechanics type the membership map tags B5 lives under Platform/UpdateQueue, namespace equal to folder, none left in its old namespace; TeamUpdater, PortfolioUpdater, UpdateServiceBase<T> and their three interfaces did not move.",

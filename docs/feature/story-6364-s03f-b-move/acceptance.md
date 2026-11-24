@@ -700,6 +700,154 @@ A host-user row for a class that stays on a host and is kept under the old name 
 ###### Obligations
 
 
+### S5
+
+##### Covers
+
+P5
+
+```text
+Look up every update-queue mechanics type of the membership map in the platform update-queue area and where it lived before
+```
+
+```text
+Each one sits once in the platform update-queue area and none is left where it lived before; a name with no type fails naming itself
+```
+
+```text
+The update queue's mechanics are ruled by their own namespace
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformUpdateQueueLayoutArchUnitTest\.cs\:\:EveryUpdateQueueType\_LivesInPlatformUpdateQueue\_AndNoneIsLeftInItsOldNamespace
+
+```text
+a moved type that also kept a second copy under another platform area
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P5
+
+```text
+Look up the Team and Portfolio updaters, their shared base and their three interfaces where they are today and in the platform
+```
+
+```text
+All six are where they are today and none sits anywhere in the platform
+```
+
+```text
+The refresh pipelines stay with their contexts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformUpdateQueueLayoutArchUnitTest\.cs\:\:TheUpdatePipelines\_StayWhereTheyAre\_AndNoneMovesIntoThePlatform
+
+```text
+a pipeline copied into another folder outside the platform while the original stays
+```
+
+###### Obligations
+
+
+##### Covers
+
+P6
+
+```text
+Look up the twelve unit-test classes of the moved types in the platform update-queue test area and where they were before
+```
+
+```text
+Each test class lives in the platform update-queue test area and none is left behind
+```
+
+```text
+The tests sit next to what they test
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformUpdateQueueLayoutArchUnitTest\.cs\:\:TheUnitTestsOfTheMovedTypes\_LiveInTestsPlatformUpdateQueue\_AndNoneIsLeftInItsOldNamespace
+
+```text
+a pipeline test moved along with them
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P6
+
+```text
+Read each rule, list and path string the map gives the update-queue move, in its file or in its one moved copy under the platform tests
+```
+
+```text
+Each file holds the new text and not the old one; a missing file is named
+```
+
+```text
+Every rule keeps looking at the moved types
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformUpdateQueueLayoutArchUnitTest\.cs\:\:TheRuleAndListStringsThatNameAMovedType\_NameItsNewPlaceOnly
+
+```text
+a rule string the map does not list that still names the old place
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+Use the product before and after the move
+```
+
+```text
+Same answers, same reactions, same EF model, every suite green
+```
+
+```text
+Nothing a user sees changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Observed by the existing suite and the EXAMINE probes, not by the layout oracle
+```
+
+examiner
+
 ## Expectations
 
 ### Rows
