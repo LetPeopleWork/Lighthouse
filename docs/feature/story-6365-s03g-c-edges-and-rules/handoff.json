@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 5,
-"F": 81,
+"E": 6,
+"F": 87,
 "K": 1,
 "P": 3,
 "S": 2,
@@ -428,6 +429,52 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F82"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F83"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F84"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F85"
+},
+{
+"id": "E5",
+"promises": [
+"P3"
+],
+"text": "F86"
+},
+{
+"id": "E6",
+"promises": [
+"P3"
+],
+"text": "F87"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6365 S03g Package Refinement, feature C (edges and rules): every Refinement rule names Refinement by Modules.Refinement only, and no rule constant or string literal in the test project still matches the old Services.Implementation.Refinement or Services.Interfaces.Refinement namespaces or paths (C1); Refinement gets its own module rule set on ModuleRules, read from the IL with baselines measured there and lists inline by full type name, compared both ways and never loosened: R-R1 each listed type in its layer and none under Services, R-R2 Domain reaches only the kernel and the BCL, R-R3 outside reaches Domain only from API, the composition root and Refinement Application, R-R4 outside reaches Application only from API and the composition root, R-R5 Application reaches no EF Core, Data, API, module Adapters, Tracker integration or update code, R-R6 Application reaches Access, Organisation set-up, the Platform lane and repositories only along a measured list (C2). Test side only. DESIGN: docs/feature/story-6365-s03g-package-refinement/feature-delta.md; features A and B: docs/feature/story-6365-s03g-a-rules-first/ and docs/feature/story-6365-s03g-b-move/.",
 "F10": "Each slice's RED: C1 fails while any rule constant or literal still matches the old Refinement namespaces or paths (the old-namespace alternatives features A and B left in place); C2 fails on a made-up offender per rule and per list position. Behaviour is proved by the unchanged tests and EXAMINE through admitted probes (architecture-rules Refinement and all, backend-tests, ef-model-unchanged). Behaviour-free: no review window, UI and usage-data N/A, Quint N/A.",
@@ -509,6 +556,12 @@
 "F8": "Rigor standard for feature C: architect, acceptance designer and crafter on sonnet; reviewers and EXAMINE on haiku (DESIGN open question 1, AFK default taken 2026-11-24).",
 "F80": "No production code moves; the existing rules are narrowed in place and the existing Architecture suite is the preserved verdict",
 "F81": "Every Refinement rule names Refinement by Modules.Refinement only and no rule constant or literal outside declared measurement files names an old Refinement namespace or path",
+"F82": "Searching the test project for the Refinement path fragments Services.Implementation.Refinement, Services.Interfaces.Refinement, Services/Implementation/Refinement and Services/Interfaces/Refinement finds no rule constant or string literal that names Refinement that way; Refinement is named only as Modules.Refinement.",
+"F83": "architecture-rules run on the candidate reports every existing architecture rule (RefinementPattern, Tracker integration, Access and Licensing lists, per-type patterns of RefinementModuleArchUnitTest) with the same verdict as on today code, with no rule newly failing and none removed.",
+"F84": "architecture-rules Refinement reports a Refinement rule set R-R1 to R-R6 whose listed types sit in their stated layers, Domain reaches only the kernel and BCL, outside code reaches Domain only from API, the composition root and Refinement Application, and Application reaches no EF Core, Data, API, module Adapters, Tracker integration or update code, with the Access, Organisation set-up, Platform lane and repository reach limited to the measured list.",
+"F85": "backend-tests Refinement shows that each made-up offender for each R-R rule and each list position fails the rule, and the failure message names the offending edge in the Refinement wording.",
+"F86": "ef-model-unchanged reports the database model identical to the model before feature C, so nothing the database sees changes.",
+"F87": "The whole filtered backend-tests run finishes with zero failures, and the candidate loosens no rule or list relative to the prior rule files.",
 "F9": "The Refinement unit-test placement test the DESIGN record names for S3 is not written again: feature B's RefinementUnitTestsBesideTheModuleArchUnitTest already pins the 11 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders."
 },
 "product": {
