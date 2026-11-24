@@ -5187,19 +5187,33 @@ describe("BaseMetricsView component", () => {
 				...mockCycleTimeData[0],
 				id: 101,
 				cycleTime: 9,
-				namedCycleTimes: [{ definitionId: namedDefinition.id, days: 4 }],
+				namedCycleTimes: [
+					{
+						definitionId: namedDefinition.id,
+						days: 4,
+						endDate: new Date(2026, 0, 1),
+					},
+				],
 			},
 			{
 				...mockCycleTimeData[1],
 				id: 102,
 				cycleTime: 10,
-				namedCycleTimes: [{ definitionId: namedDefinition.id, days: 7 }],
+				namedCycleTimes: [
+					{
+						definitionId: namedDefinition.id,
+						days: 7,
+						endDate: new Date(2026, 0, 1),
+					},
+				],
 			},
 			{
 				...mockCycleTimeData[0],
 				id: 103,
 				cycleTime: 11,
-				namedCycleTimes: [{ definitionId: 999, days: 3 }],
+				namedCycleTimes: [
+					{ definitionId: 999, days: 3, endDate: new Date(2026, 0, 1) },
+				],
 			},
 		];
 
@@ -5480,8 +5494,16 @@ describe("BaseMetricsView component", () => {
 					id: 201,
 					cycleTime: 9,
 					namedCycleTimes: [
-						{ definitionId: namedDefinition.id, days: 4 },
-						{ definitionId: secondDefinition.id, days: 8 },
+						{
+							definitionId: namedDefinition.id,
+							days: 4,
+							endDate: new Date(2026, 0, 1),
+						},
+						{
+							definitionId: secondDefinition.id,
+							days: 8,
+							endDate: new Date(2026, 0, 1),
+						},
 					],
 				},
 			];

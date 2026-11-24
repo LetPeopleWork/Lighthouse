@@ -9,6 +9,7 @@ const getMockDefinition = (
 ): INamedCycleTimeDefinition => ({
 	id: 1,
 	name: "Lead Time",
+	endState: "Done",
 	isValid: true,
 	...overrides,
 });

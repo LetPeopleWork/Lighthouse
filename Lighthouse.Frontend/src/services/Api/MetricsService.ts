@@ -63,7 +63,13 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 
 	getInProgressItems(id: number, asOfDate: Date): Promise<IWorkItem[]>;
 
-	getCycleTimeData(id: number, startDate: Date, endDate: Date): Promise<T[]>;
+	/** Without a definition, the items closed in the range; with one, those that reached its end state in the range. */
+	getCycleTimeData(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+		definitionId?: number,
+	): Promise<T[]>;
 
 	getCycleTimePercentiles(
 		id: number,
@@ -555,10 +561,17 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	getCycleTimeData(id: number, startDate: Date, endDate: Date): Promise<T[]> {
+	getCycleTimeData(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+		definitionId?: number,
+	): Promise<T[]> {
 		return this.withErrorHandling(async () => {
+			const definitionSuffix =
+				definitionId === undefined ? "" : `&definitionId=${definitionId}`;
 			const response = await this.apiService.get<T[]>(
-				`/${this.api}/${id}/metrics/cycleTimeData?${this.getDateFormatString(startDate, endDate)}`,
+				`/${this.api}/${id}/metrics/cycleTimeData?${this.getDateFormatString(startDate, endDate)}${definitionSuffix}`,
 			);
 
 			const items = BaseApiService.asArray(

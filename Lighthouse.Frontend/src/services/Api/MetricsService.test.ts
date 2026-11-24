@@ -527,18 +527,28 @@ describe("MetricsService getCycleTimeData named cycle times", () => {
 		namedCycleTimes,
 	});
 
-	it("keeps the validated named cycle times from the response", async () => {
+	it("asks for a named Cycle Time's own Work Items and keeps each one's value with the date it reached the end", async () => {
 		mockedAxios.get.mockResolvedValueOnce({
-			data: [rawItem([{ definitionId: 1, days: 47 }])],
+			data: [
+				rawItem([
+					{ definitionId: 1, days: 47, endDate: "2023-01-20T10:00:00Z" },
+				]),
+			],
 		});
 
 		const result = await metricsService.getCycleTimeData(
 			7,
-			new Date("2023-01-01"),
-			new Date("2023-01-31"),
+			new Date(2023, 0, 1),
+			new Date(2023, 0, 31),
+			1,
 		);
 
-		expect(result[0].namedCycleTimes).toEqual([{ definitionId: 1, days: 47 }]);
+		expect(mockedAxios.get).toHaveBeenLastCalledWith(
+			"/teams/7/metrics/cycleTimeData?startDate=2023-01-01&endDate=2023-01-31&definitionId=1",
+		);
+		expect(result[0].namedCycleTimes).toEqual([
+			{ definitionId: 1, days: 47, endDate: new Date("2023-01-20T10:00:00Z") },
+		]);
 	});
 
 	it("falls back to an empty list when the named cycle times are malformed", async () => {

@@ -215,6 +215,7 @@ export const BaseMetricsView = <
 				? cycleTimeDefinitions.map((definition) => ({
 						id: definition.id,
 						name: definition.name,
+						endState: definition.endState,
 						isValid: definition.isValid,
 					}))
 				: [],
@@ -229,6 +230,17 @@ export const BaseMetricsView = <
 				endDate,
 				definitionId,
 			),
+		[metricsService, entity.id, startDate, endDate],
+	);
+
+	const onFetchNamedCycleTimeData = useCallback(
+		async (definitionId: number): Promise<IWorkItem[]> =>
+			(await metricsService.getCycleTimeData(
+				entity.id,
+				startDate,
+				endDate,
+				definitionId,
+			)) as unknown as IWorkItem[],
 		[metricsService, entity.id, startDate, endDate],
 	);
 
@@ -390,6 +402,7 @@ export const BaseMetricsView = <
 		namedCycleTimeDefinitions,
 		onFetchNamedCycleTimePercentiles,
 		onFetchCycleTimeOutliers,
+		onFetchNamedCycleTimeData,
 		cycleTimePercentileValues: displayedPercentileValues,
 		percentilesScopeDefinitionId,
 		onPercentilesScopeChange: handlePercentilesScopeChange,

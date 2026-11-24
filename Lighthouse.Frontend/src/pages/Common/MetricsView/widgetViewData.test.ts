@@ -508,17 +508,21 @@ describe("which lists carry the risk column", () => {
 		) => aWorkItem(id, { namedCycleTimes });
 
 		const closed = [
-			closedIn(1, [{ definitionId: 5, days: 3 }]),
+			closedIn(1, [
+				{ definitionId: 5, days: 3, endDate: new Date(2026, 0, 1) },
+			]),
 			closedIn(2),
-			closedIn(3, [{ definitionId: 6, days: 4 }]),
+			closedIn(3, [
+				{ definitionId: 6, days: 4, endDate: new Date(2026, 0, 1) },
+			]),
 			closedIn(4, [
-				{ definitionId: 6, days: 4 },
-				{ definitionId: 5, days: 0 },
+				{ definitionId: 6, days: 4, endDate: new Date(2026, 0, 1) },
+				{ definitionId: 5, days: 0, endDate: new Date(2026, 0, 1) },
 			]),
 		];
 		const definitions = [
-			{ id: 5, name: "Development" },
-			{ id: 7, name: "Review" },
+			{ id: 5, name: "Development", endState: "Done" },
+			{ id: 7, name: "Review", endState: "Done" },
 		];
 
 		it("lists only the items that have a value for it, and names the scope", () => {
@@ -537,7 +541,11 @@ describe("which lists carry the risk column", () => {
 
 		it("finds the scope among several definitions", () => {
 			const percentiles = viewDataWith([], "team", {
-				cycleTimeData: [closedIn(8, [{ definitionId: 7, days: 2 }])],
+				cycleTimeData: [
+					closedIn(8, [
+						{ definitionId: 7, days: 2, endDate: new Date(2026, 0, 1) },
+					]),
+				],
 				percentilesScopeDefinitionId: 7,
 				namedCycleTimeDefinitions: definitions,
 			}).percentiles;

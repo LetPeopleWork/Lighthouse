@@ -346,13 +346,16 @@ describe("CycleTimeScatterPlotChart component", () => {
 		const conceptToCash: INamedCycleTimeDefinition = {
 			id: 1,
 			name: "Concept to Cash",
+			endState: "Done",
 		};
 
 		const namedItems: IWorkItem[] = [
 			{
 				...mockWorkItems[0],
 				cycleTime: 5,
-				namedCycleTimes: [{ definitionId: 1, days: 20 }],
+				namedCycleTimes: [
+					{ definitionId: 1, days: 20, endDate: new Date(2023, 0, 12) },
+				],
 			},
 			{
 				...mockWorkItems[1],
@@ -416,28 +419,6 @@ describe("CycleTimeScatterPlotChart component", () => {
 			).toEqual([5, 10]);
 		});
 
-		it("switches the dots to the named durations client-side and drops items without an entry", async () => {
-			render(
-				<CycleTimeScatterPlotChart
-					ownerKind="team"
-					percentileValues={mockPercentileValues}
-					cycleTimeDataPoints={namedItems}
-					namedCycleTimeDefinitions={[conceptToCash]}
-				/>,
-			);
-
-			await userEvent.click(
-				screen.getByRole("combobox", { name: /cycle time/i }),
-			);
-			await userEvent.click(
-				within(screen.getByRole("listbox")).getByText("Concept to Cash"),
-			);
-
-			await waitFor(() => {
-				expect(seriesData().map((point) => point.y)).toEqual([20]);
-			});
-		});
-
 		it("re-fetches percentiles for the selected definition", async () => {
 			const onFetchNamedCycleTimePercentiles = vi
 				.fn<(definitionId: number) => Promise<IPercentileValue[]>>()
@@ -476,7 +457,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[
 						{ ...conceptToCash, isValid: true },
-						{ id: 2, name: "Broken", isValid: false },
+						{ id: 2, name: "Broken", endState: "Done", isValid: false },
 					]}
 				/>,
 			);
@@ -495,12 +476,14 @@ describe("CycleTimeScatterPlotChart component", () => {
 		});
 
 		it("falls back to Default when the selected definition becomes invalid", async () => {
+			const fetchNamedData = () => Promise.resolve([namedItems[0]]);
 			const { rerender } = render(
 				<CycleTimeScatterPlotChart
 					ownerKind="team"
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[{ ...conceptToCash, isValid: true }]}
+					onFetchNamedCycleTimeData={fetchNamedData}
 				/>,
 			);
 
@@ -520,6 +503,7 @@ describe("CycleTimeScatterPlotChart component", () => {
 					percentileValues={mockPercentileValues}
 					cycleTimeDataPoints={namedItems}
 					namedCycleTimeDefinitions={[{ ...conceptToCash, isValid: false }]}
+					onFetchNamedCycleTimeData={fetchNamedData}
 				/>,
 			);
 

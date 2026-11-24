@@ -120,8 +120,8 @@ const theVerdictHasLanded = async () => {
 const DEV_TIME = 1;
 const REVIEW_TIME = 2;
 const definitions: INamedCycleTimeDefinition[] = [
-	{ id: DEV_TIME, name: "Development time" },
-	{ id: REVIEW_TIME, name: "Review time" },
+	{ id: DEV_TIME, name: "Development time", endState: "Done" },
+	{ id: REVIEW_TIME, name: "Review time", endState: "Done" },
 ];
 
 const closedItem = (
@@ -166,10 +166,33 @@ const measuredAs = (items: IWorkItem[], days: number[]): IWorkItem[] =>
 	items.map((item, index) => ({
 		...item,
 		namedCycleTimes: [
-			{ definitionId: DEV_TIME, days: days[index] },
-			{ definitionId: REVIEW_TIME, days: days[index] },
+			{
+				definitionId: DEV_TIME,
+				days: days[index],
+				endDate: item.closedDate,
+			},
+			{
+				definitionId: REVIEW_TIME,
+				days: days[index],
+				endDate: item.closedDate,
+			},
 		],
 	}));
+
+// The backend answers a named Cycle Time with its own Work Items; here they are the closed ones, and
+// one fetcher per list stands for one owner and range, as the page hands it over.
+const populationFetchers = new WeakMap<
+	IWorkItem[],
+	(definitionId: number) => Promise<IWorkItem[]>
+>();
+const populationOf = (items: IWorkItem[]) => {
+	let fetcher = populationFetchers.get(items);
+	if (!fetcher) {
+		fetcher = () => Promise.resolve(items);
+		populationFetchers.set(items, fetcher);
+	}
+	return fetcher;
+};
 
 const answer = (p95: number): IPercentileValue[] => [
 	{ percentile: 50, value: 4 },
@@ -199,6 +222,7 @@ const chartOf = (
 				namedCycleTimeDefinitions={definitions}
 				onFetchNamedCycleTimePercentiles={fetcher}
 				onFetchCycleTimeOutliers={judge}
+				onFetchNamedCycleTimeData={populationOf(items)}
 			/>
 		</WidgetShell>
 	</QueryClientProvider>

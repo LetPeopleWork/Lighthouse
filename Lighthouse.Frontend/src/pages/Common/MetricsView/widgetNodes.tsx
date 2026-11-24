@@ -248,6 +248,7 @@ export function buildWidgetNodes(ctx: {
 	onFetchCycleTimeOutliers?: (
 		definitionId: number | null,
 	) => Promise<ICycleTimeOutliers>;
+	onFetchNamedCycleTimeData: (definitionId: number) => Promise<IWorkItem[]>;
 	cycleTimePercentileValues: IPercentileValue[];
 	percentilesScopeDefinitionId: number | null;
 	onPercentilesScopeChange: (definitionId: number | null) => void;
@@ -373,6 +374,7 @@ export function buildWidgetNodes(ctx: {
 				onFetchNamedCycleTimePercentiles={ctx.onFetchNamedCycleTimePercentiles}
 				ownerKind={ctx.ownerType}
 				onFetchCycleTimeOutliers={ctx.onFetchCycleTimeOutliers}
+				onFetchNamedCycleTimeData={ctx.onFetchNamedCycleTimeData}
 				ownerId={ctx.entity.id}
 				startDate={ctx.startDate}
 				endDate={ctx.endDate}
