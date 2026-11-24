@@ -483,11 +483,32 @@ namespace Lighthouse.Backend.Tests.Architecture
             return [.. strings
                 .Where(entry =>
                 {
-                    var path = Path.Combine(root, entry.File);
-                    var text = File.Exists(path) ? File.ReadAllText(path) : string.Empty;
+                    var text = TextOfTheRenamingFile(root, entry.File);
                     return !text.Contains(entry.OldText, StringComparison.Ordinal) && !text.Contains(entry.NewText, StringComparison.Ordinal);
                 })
                 .Select(entry => $"{entry.File}: {entry.OldText}")];
+        }
+
+        private static string TextOfTheRenamingFile(string root, string listedFile)
+        {
+            var listedPath = Path.Combine(root, listedFile);
+            if (File.Exists(listedPath))
+            {
+                return File.ReadAllText(listedPath);
+            }
+
+            var movedUnderThePlatformTests = Path.Combine(root, "Lighthouse.Backend", "Lighthouse.Backend.Tests", "Platform");
+            if (!Directory.Exists(movedUnderThePlatformTests))
+            {
+                return string.Empty;
+            }
+
+            var sameNamed = Directory.GetDirectories(movedUnderThePlatformTests)
+                .Select(area => Path.Combine(area, Path.GetFileName(listedFile)))
+                .Where(File.Exists)
+                .ToList();
+
+            return sameNamed.Count == 1 ? File.ReadAllText(sameNamed[0]) : string.Empty;
         }
 
         private static void ThenNoneIsMissing(List<string> missing)
