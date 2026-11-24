@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 6,
-"F": 147,
+"E": 12,
+"F": 159,
 "K": 6,
 "L": 2,
 "P": 4,
@@ -580,6 +581,94 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F148"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F149"
+},
+{
+"id": "E3",
+"promises": [
+"P1"
+],
+"text": "F150"
+},
+{
+"id": "E4",
+"promises": [
+"P1"
+],
+"text": "F151"
+},
+{
+"id": "E5",
+"promises": [
+"P2"
+],
+"text": "F152"
+},
+{
+"id": "E6",
+"promises": [
+"P2"
+],
+"text": "F153"
+},
+{
+"id": "E7",
+"promises": [
+"P2"
+],
+"text": "F154"
+},
+{
+"id": "E8",
+"promises": [
+"P3"
+],
+"text": "F155"
+},
+{
+"id": "E9",
+"promises": [
+"P3"
+],
+"text": "F156"
+},
+{
+"id": "E10",
+"promises": [
+"P4"
+],
+"text": "F157"
+},
+{
+"id": "E11",
+"promises": [
+"P4"
+],
+"text": "F158"
+},
+{
+"id": "E12",
+"promises": [
+"P4"
+],
+"text": "F159"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6365 S03g Package Refinement, feature A (rules first): the Refinement membership is measured from the IL and fixed in a namespace-agnostic test, with each type's layer (Domain or Application), its old and its new namespace, and every Refinement file that stays with its owner and reason (A1); every rule pattern that sees a moving Refinement type today gives the same answer for it under Modules.Refinement, and no rule string or literal names Refinement by its old Services path except a fixed rename list that only shrinks (A2). Rules and tests only: production behaviour unchanged. DESIGN and DEVOPS: docs/feature/story-6365-s03g-package-refinement/feature-delta.md.",
 "F10": "DESIGN's one nwdes feature with three slices is delivered as three nwdes features (A rules first, B move, C edges and rules), as S03d, S03e and S03f were. Approval covers an oracle's bytes, and the move and the narrowing both edit what the rules-first slice fixed (its rename list, its old-or-new membership lookup), so in one feature they would make the earlier approvals stale. The Story stays one ADO Story; the size stays S, about 2.5 days.",
@@ -635,7 +724,19 @@
 "F145": "Exhaustive over the finite domain (moving types x regex fields x two subjects, plus the test project literals); no generator adds coverage.",
 "F146": "Every rule pattern keeps its role for each moving Refinement type through the move, no added alternative reaches outside Modules.Refinement, and no old-path literal exists outside the fixed rename list.",
 "F147": "The lifted law keeps every platform verdict.",
+"F148": "A single membership test for the Refinement module exists and passes when run through backend-tests (fragment naming it): it lists every moving Refinement type with layer, old and new namespace, and every staying Refinement file with owner and reason.",
+"F149": "Negative control: when a listed type name does not exist, or a listed type is found in neither its old nor its new namespace, the membership test fails; with the real code it does not.",
 "F15": "A1: the Refinement membership is measured from the IL and fixed in a namespace-agnostic test that finds each listed type in its old or new namespace, fails when a listed type is missing or a listed name does not exist or a Domain type reaches beyond the kernel, and records the targets that name moving types.",
+"F150": "Layer rule: a type listed as Domain reaches nothing beyond the kernel, the BCL and other Refinement Domain types; architecture-rules with a Refinement fragment shows this rule present and passing, and a Domain type that reaches an outside type would fail it.",
+"F151": "The membership test also records, in a readable form, every suppression, analyser, CI-selection, test-budget, host-user and Stryker target that names a moving type; test-selection-show lists the CI selection entries and each moving type named there appears in that record.",
+"F152": "For each moving Refinement type, each architecture rule pattern in the test assembly gives the same verdict under the new Modules.Refinement namespace as under the old one; architecture-rules over the whole rule set passes, and a probe type in the new namespace is matched exactly where its old-namespace twin was.",
+"F153": "No added namespace alternative in a rule matches a production type outside Modules.Refinement: a type outside the module (for example another module's type) keeps the verdict it had before the rules were changed.",
+"F154": "The rules that used the exact old namespace (equality, DoNotResideInNamespace, the exact-namespace assertion) now read from the membership map and keep their verdict through the move; architecture-rules for those fragments passes, and removing a type from the map makes the dependent rule fail rather than pass silently.",
+"F155": "A check exists that fails when an unlisted rule constant or string literal in the test project names Refinement by Services.Implementation.Refinement, Services.Interfaces.Refinement or Services/Implementation/Refinement; with the real tree it passes through backend-tests.",
+"F156": "The fixed rename list is checked both ways: a listed literal that no longer exists fails the check, an unlisted new one fails it, and the list may only shrink compared with the pre-move search.",
+"F157": "ef-model-unchanged reports the EF model identical to before feature A, for every supported database provider (no migration, no schema or mapping change).",
+"F158": "No production file is moved, renamed or behaviourally changed by feature A: the only differences are in the test project; a Refinement type keeps its old namespace and the API (routes, DTOs, responses) is unchanged.",
+"F159": "Every existing backend test stays green (whole-suite run excluding live-connector categories), and test-selection-show still selects the same tests as before for the CI selection.",
 "F16": "The move in feature B has a fixed, measured list of what moves, to which layer, and what stays with which owner",
 "F17": "A2: every rule pattern gives the same answer for each moving Refinement type under its old and its new namespace, no added alternative matches a production type outside Modules.Refinement, and no rule string names Refinement by its old path outside the fixed rename list.",
 "F18": "No rule silently stops seeing a Refinement type when it moves",

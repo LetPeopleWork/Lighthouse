@@ -155,7 +155,115 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A single membership test for the Refinement module exists and passes when run through backend-tests (fragment naming it): it lists every moving Refinement type with layer, old and new namespace, and every staying Refinement file with owner and reason.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Negative control: when a listed type name does not exist, or a listed type is found in neither its old nor its new namespace, the membership test fails; with the real code it does not.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Layer rule: a type listed as Domain reaches nothing beyond the kernel, the BCL and other Refinement Domain types; architecture-rules with a Refinement fragment shows this rule present and passing, and a Domain type that reaches an outside type would fail it.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>The membership test also records, in a readable form, every suppression, analyser, CI-selection, test-budget, host-user and Stryker target that names a moving type; test-selection-show lists the CI selection entries and each moving type named there appears in that record.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>For each moving Refinement type, each architecture rule pattern in the test assembly gives the same verdict under the new Modules.Refinement namespace as under the old one; architecture-rules over the whole rule set passes, and a probe type in the new namespace is matched exactly where its old-namespace twin was.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>No added namespace alternative in a rule matches a production type outside Modules.Refinement: a type outside the module (for example another module&#x27;s type) keeps the verdict it had before the rules were changed.
+</code></pre>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>The rules that used the exact old namespace (equality, DoNotResideInNamespace, the exact-namespace assertion) now read from the membership map and keep their verdict through the move; architecture-rules for those fragments passes, and removing a type from the map makes the dependent rule fail rather than pass silently.
+</code></pre>
+
+<h4>E8</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>A check exists that fails when an unlisted rule constant or string literal in the test project names Refinement by Services.Implementation.Refinement, Services.Interfaces.Refinement or Services/Implementation/Refinement; with the real tree it passes through backend-tests.
+</code></pre>
+
+<h4>E9</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>The fixed rename list is checked both ways: a listed literal that no longer exists fails the check, an unlisted new one fails it, and the list may only shrink compared with the pre-move search.
+</code></pre>
+
+<h4>E10</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>ef-model-unchanged reports the EF model identical to before feature A, for every supported database provider (no migration, no schema or mapping change).
+</code></pre>
+
+<h4>E11</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>No production file is moved, renamed or behaviourally changed by feature A: the only differences are in the test project; a Refinement type keeps its old namespace and the API (routes, DTOs, responses) is unchanged.
+</code></pre>
+
+<h4>E12</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>Every existing backend test stays green (whole-suite run excluding live-connector categories), and test-selection-show still selects the same tests as before for the CI selection.
+</code></pre>
 
 <h2>Charter</h2>
 
