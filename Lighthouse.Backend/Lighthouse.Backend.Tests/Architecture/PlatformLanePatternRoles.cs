@@ -1,38 +1,5 @@
 namespace Lighthouse.Backend.Tests.Architecture
 {
-    /// <summary>What a rule pattern is matched against by the rule that uses it.</summary>
-    internal enum PatternSubject
-    {
-        /// <summary>The namespace of the outermost type, as the IL and ArchUnit namespace selections read it.</summary>
-        Namespace,
-
-        /// <summary>The full name of the type.</summary>
-        FullName,
-    }
-
-    /// <summary>What a rule pattern stands for, which decides whether it must follow a platform type when the type moves.</summary>
-    internal enum PatternRole
-    {
-        /// <summary>A part of the code (a context, the platform, the update code): it must keep seeing the type after the move.</summary>
-        Context,
-
-        /// <summary>An old location (the Services folder): it must not see the type in its new place.</summary>
-        Place,
-    }
-
-    /// <summary>
-    /// How one rule pattern is read: on which subject, in which role, and why. A pattern built from another one by
-    /// concatenation names that component and is read the way the component is read.
-    /// </summary>
-    internal sealed record PatternDeclaration(PatternSubject? Subject, PatternRole? Role, string? CompositeOf, string Reason)
-    {
-        public static PatternDeclaration Context(PatternSubject subject, string reason) => new(subject, PatternRole.Context, null, reason);
-
-        public static PatternDeclaration Place(PatternSubject subject, string reason) => new(subject, PatternRole.Place, null, reason);
-
-        public static PatternDeclaration Composite(string component, string reason) => new(null, null, component, reason);
-    }
-
     /// <summary>
     /// Every rule pattern of the test assembly that sees a moving platform type, under its old or its new name, with the
     /// subject its rule matches it against and the role it plays. A pattern is keyed by its class (nested classes joined
