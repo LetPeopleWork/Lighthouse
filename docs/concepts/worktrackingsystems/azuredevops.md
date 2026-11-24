@@ -53,7 +53,7 @@ You need an Entra ID app registration in the same tenant that owns the Azure Dev
 ### Add the API permission
 
 1. **API permissions** → **Add a permission** → **APIs my organization uses** → search for **Azure DevOps** → select it.
-2. Pick **Delegated permissions** and tick `vso.work_write` (read-and-write to work items, queries, boards, and area/iteration paths). Lighthouse handles the Microsoft v2.0 resource-prefixing transparently — you do not need to add the GUID prefix manually.
+2. Pick **Delegated permissions** and tick `vso.work` (read work items, queries, boards, and area/iteration paths). If you plan to use [write-back](#write-back-rights), also tick `vso.work_write` (read and write). Lighthouse handles the Microsoft v2.0 resource-prefixing transparently — you do not need to add the GUID prefix manually.
 3. `offline_access` is requested as an OIDC protocol scope; do not add it under **API permissions**.
 4. Click **Grant admin consent for `<tenant>`**. Tenant-wide admin consent is required so the connector-admin (who may not be a tenant admin) does not get blocked with `AADSTS65001`.
 
@@ -72,6 +72,14 @@ You need an Entra ID app registration in the same tenant that owns the Azure Dev
 4. Verify the read-only **Callback URL** matches exactly what you registered in the Entra app. If it shows a warning, set `Lighthouse:BaseUrl` on the server to the public `https://` URL first and reload the page — Entra rejects non-HTTPS redirect URIs for every host except `localhost`.
 5. Click **Connect**. A browser popup opens against `login.microsoftonline.com`; sign in, **Accept**, and the popup closes when consent succeeds.
 
+Lighthouse asks Microsoft only for the rights the connection needs. A connection without write-back mappings asks to read work items; once it has a write-back mapping, a sign-in asks to read and write them. After you sign in, the **Authentication** section of the connection shows what the sign-in allows: *Rights: Read work items* or *Rights: Read and write work items*.
+
+### Write-back rights
+
+When you add the first write-back mapping to a connection whose sign-in may only read, the connection saves as usual and a yellow warning appears above the write-back mappings and on the connection's card in the connections list: *Write-back needs more rights.* Click **Sign in again** and accept in the Microsoft popup to give Lighthouse the right to write. Until then, Lighthouse writes nothing to Azure DevOps for that connection and notes in the log, once per write-back run, that it skipped the write.
+
+Connections signed in before Lighthouse recorded rights keep working as before: they are treated as allowed to read and write. Removing the last write-back mapping does not take rights away; the next sign-in asks for reading only.
+
 ### Silent refresh and reconnect
 
 Microsoft access tokens expire after roughly an hour. Lighthouse refreshes them silently before they expire; the admin sees nothing. If a refresh fails (revoked grant, expired client secret, scope tightened, network timeout) the connection's `Status` transitions to `RefreshFailed`, a yellow *Reconnect required* banner appears on the connection card, background syncs against that connection stop, and you have to click **Reconnect** and complete the Microsoft consent flow again — or, if the client secret has expired, mint a new one in **Certificates & secrets** and paste the new value into the connection.
@@ -87,6 +95,7 @@ When at least one OAuth connection exists, system admins see a cloud icon in the
 | `AADSTS650053: scope … doesn't exist on the resource '00000003-…'` | `vso.work_write` is missing from the app's API permissions. The `00000003-…` resource in the error is Microsoft Graph — the v2.0 endpoints default to Graph when no resource prefix is supplied, which fires when no Azure DevOps permission is granted yet. | Add the **Azure DevOps → Delegated → `vso.work_write`** permission, grant admin consent, retry. |
 | `unauthorized_client: client does not exist or is not enabled for consumers` | The Entra app is single-tenant but Lighthouse hit `/common/` because the **Directory (Tenant) ID** field is empty. | Paste the tenant ID from the app's Overview page into Lighthouse, save, retry — or switch the app to multi-tenant. |
 | Popup blocked when clicking **Connect** | The browser blocked the popup against `login.microsoftonline.com`. | Allow popups for the Lighthouse origin and retry. |
+| Yellow *"Write-back needs more rights"* warning | The connection has write-back mappings, but its sign-in may only read work items. | Click **Sign in again** and accept. If Microsoft refuses, add the **Azure DevOps → Delegated → `vso.work_write`** permission to the app and grant admin consent first. |
 | Yellow *"Reconnect required"* banner on a previously-syncing connection | Silent refresh failed — expired client secret, revoked grant, scope tightened. | If the secret expired, mint a new one in **Certificates & secrets** and paste it into the connection. Otherwise click **Reconnect** and complete consent again. |
 | `VssServiceException: Identity {guid} has not been materialized, please use interactive login over the browser first.` on the first API call after connecting | The Entra account you OAuth'd with has never signed into the target Azure DevOps organisation interactively. Azure DevOps maintains its own user table separate from Entra and refuses to recognise Entra identities until a browser sign-in materialises them. OAuth itself worked; the token is valid; ADO just doesn't know the principal yet. | Open `https://dev.azure.com/{your-org}` in a fresh browser tab, sign in with the same Microsoft account, accept any "request access" prompt, wait for the ADO home page to load. That one interactive sign-in materialises the identity. Then retry the failing Lighthouse operation. No need to re-do OAuth consent. |
 

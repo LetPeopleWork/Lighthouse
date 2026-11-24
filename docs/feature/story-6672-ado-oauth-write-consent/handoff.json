@@ -1,0 +1,1900 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F196"
+],
+"still_passes_if": "F228",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::A_connection_without_write_back_asks_Microsoft_only_to_read_work_items"
+},
+"expected": "F226",
+"stimulus": "F225",
+"user_result": "F227"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F197"
+],
+"still_passes_if": "F232",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::A_connection_with_write_back_asks_Microsoft_to_read_and_write_work_items"
+},
+"expected": "F230",
+"stimulus": "F229",
+"user_result": "F231"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F200",
+"L4/F206",
+"L5/F212"
+],
+"still_passes_if": "F236",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::Write_back_on_a_connection_signed_in_only_to_read_sends_nothing_and_logs_one_warning"
+},
+"expected": "F234",
+"stimulus": "F233",
+"user_result": "F235"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F199",
+"L4/F207",
+"L5/F213"
+],
+"still_passes_if": "F240",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::After_the_admin_signs_in_again_with_write_consent_write_back_sends_the_change"
+},
+"expected": "F238",
+"stimulus": "F237",
+"user_result": "F239"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F201"
+],
+"still_passes_if": "F244",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::A_grant_naming_write_rights_without_the_resource_prefix_lets_write_back_send_the_change"
+},
+"expected": "F242",
+"stimulus": "F241",
+"user_result": "F243"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F202",
+"L3/F203"
+],
+"still_passes_if": "F248",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::A_grant_that_does_not_name_write_rights_sends_nothing"
+},
+"expected": "F246",
+"stimulus": "F245",
+"user_result": "F247"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F208"
+],
+"still_passes_if": "F251",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::A_read_only_sign_in_does_not_block_a_write_while_the_connection_has_no_write_back_mapping"
+},
+"expected": "F242",
+"stimulus": "F249",
+"user_result": "F250"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F205",
+"L5/F211"
+],
+"still_passes_if": "F255",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::A_connection_signed_in_before_rights_were_recorded_keeps_writing_back"
+},
+"expected": "F253",
+"stimulus": "F252",
+"user_result": "F254"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F210"
+],
+"still_passes_if": "F258",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::A_connection_signed_in_with_a_personal_access_token_keeps_writing_back"
+},
+"expected": "F253",
+"stimulus": "F256",
+"user_result": "F257"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F215"
+],
+"still_passes_if": "F262",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::A_token_refresh_does_not_give_a_read_only_sign_in_write_consent"
+},
+"expected": "F260",
+"stimulus": "F259",
+"user_result": "F261"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F216"
+],
+"still_passes_if": "F265",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs::A_token_refresh_keeps_a_connection_signed_in_before_rights_were_recorded_writing_back"
+},
+"expected": "F242",
+"stimulus": "F263",
+"user_result": "F264"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F269",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackSinglePathArchUnitTest.cs::Only_the_write_back_service_sends_a_write_back_to_the_tracker"
+},
+"expected": "F267",
+"stimulus": "F266",
+"user_result": "F268"
+}
+],
+"S2": [
+{
+"covers": [
+"P4",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F278",
+"test": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.test.tsx::the connection page shows the read-only rights and a warning above the write-back mappings, and signing in again reloads the connection"
+},
+"expected": "F303",
+"stimulus": "F275",
+"user_result": "F277"
+},
+{
+"covers": [
+"P5",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F282",
+"test": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.test.tsx::the connection page shows read and write rights and no warning once write consent is given"
+},
+"expected": "F304",
+"stimulus": "F279",
+"user_result": "F281"
+},
+{
+"covers": [
+"P4",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F286",
+"test": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.test.tsx::while the connection loads, neither the rights nor the warning show"
+},
+"expected": "F284",
+"stimulus": "F283",
+"user_result": "F285"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F308",
+"test": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.test.tsx::the connections list shows the warning only beside the connection that needs write consent, and signing in again reloads the list"
+},
+"expected": "F306",
+"stimulus": "F305",
+"user_result": "F307"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F312",
+"test": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.test.tsx::when the connections list cannot be loaded again after signing in, the earlier warning is not shown as current"
+},
+"expected": "F310",
+"stimulus": "F309",
+"user_result": "F311"
+},
+{
+"covers": [
+"P4",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L1/F152",
+"L1/F153",
+"L1/F154",
+"L1/F155",
+"L1/F156"
+],
+"still_passes_if": "F298",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs::TheConnectionListSaysWhichRightsTheSignInHoldsAndWhetherWriteBackNeedsMore"
+},
+"expected": "F296",
+"stimulus": "F295",
+"user_result": "F297"
+},
+{
+"covers": [
+"P4",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F302",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs::ASavedConnectionCannotClaimRightsItsSignInWasNotGranted"
+},
+"expected": "F300",
+"stimulus": "F299",
+"user_result": "F301"
+},
+{
+"covers": [
+"P4",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F316",
+"test": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.test.tsx::when the connection page cannot load the connection again after signing in, the earlier rights and warning are not shown as current"
+},
+"expected": "F314",
+"stimulus": "F313",
+"user_result": "F315"
+}
+]
+},
+"counters": {
+"B": 4,
+"C": 1,
+"D": 15,
+"E": 5,
+"F": 319,
+"K": 6,
+"L": 6,
+"N": 5,
+"P": 5,
+"S": 2,
+"T": 1,
+"Y": 7
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F42",
+"driven_ports": [
+"F39",
+"F40",
+"F41"
+],
+"driving_port": "F38",
+"failures": [
+{
+"condition": "F43",
+"id": "B1",
+"observation": "F44",
+"outcome": "Refusal"
+},
+{
+"condition": "F45",
+"id": "B2",
+"observation": "F46",
+"outcome": "Refusal"
+},
+{
+"condition": "F47",
+"id": "B3",
+"observation": "F48",
+"outcome": "Retry"
+},
+{
+"condition": "F49",
+"id": "B4",
+"observation": "F50",
+"outcome": "Refusal"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F60",
+"bypass": "F62",
+"constructor": "AdoOAuthProvider granted-rights parse -> OAuthTokens.GrantedRights",
+"consumer": "OAuthCredential.HasWriteConsent, WriteBackService guard, WorkTrackingSystemConnectionDto",
+"harm": "F59",
+"id": "C1",
+"owner": "OAuthService.UpsertValidCredential",
+"proposition": "F58",
+"public_observation": "F61"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F84",
+"design": "Pass",
+"evidence": [
+"docs/feature/story-6672-ado-oauth-write-consent/design/write-consent.qnt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F83"
+},
+{
+"axis": "Inhabitation",
+"basis": "F86",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F85"
+},
+{
+"axis": "PublicReachability",
+"basis": "F88",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F87"
+},
+{
+"axis": "Liveness",
+"basis": "F90",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F89"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F32"
+},
+{
+"id": "K2",
+"text": "F33"
+},
+{
+"id": "K3",
+"text": "F34"
+},
+{
+"id": "K4",
+"text": "F35"
+},
+{
+"id": "K5",
+"text": "F36"
+},
+{
+"id": "K6",
+"text": "F37"
+}
+],
+"constructors": [
+{
+"name": "WorkItemRights",
+"signature": "enum WorkItemRights { Read, ReadAndWrite }"
+},
+{
+"name": "AdoOAuthProvider.ScopesFor",
+"signature": "IReadOnlyList<string> ScopesFor(WorkItemRights needed)"
+},
+{
+"name": "AdoOAuthProvider granted-rights parse",
+"signature": "WorkItemRights FromGrantedScope(string? scope) (private, inside PostTokenRequestAsync)"
+},
+{
+"name": "OAuthCredential.LacksRightsFor",
+"signature": "bool LacksRightsFor(WorkItemRights needed)"
+},
+{
+"name": "WorkTrackingSystemConnection.NeededWorkItemRights",
+"signature": "WorkItemRights NeededWorkItemRights { get; }"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F17"
+},
+{
+"id": "D2",
+"text": "F18"
+},
+{
+"id": "D3",
+"text": "F19"
+},
+{
+"id": "D4",
+"text": "F20"
+},
+{
+"id": "D5",
+"text": "F21"
+},
+{
+"id": "D6",
+"text": "F22"
+},
+{
+"id": "D7",
+"text": "F23"
+},
+{
+"id": "D8",
+"text": "F24"
+},
+{
+"id": "D9",
+"text": "F25"
+},
+{
+"id": "D10",
+"text": "F26"
+},
+{
+"id": "D11",
+"text": "F27"
+},
+{
+"id": "D12",
+"text": "F28"
+},
+{
+"id": "D13",
+"text": "F29"
+},
+{
+"id": "D14",
+"text": "F30"
+},
+{
+"id": "D15",
+"text": "F218"
+}
+],
+"equality": [
+{
+"definition": "F57",
+"under": "stored rights"
+}
+],
+"models": [
+{
+"assumptions": [
+"F75",
+"F76",
+"F77"
+],
+"atoms": [
+{
+"kind": "State",
+"name": "mappings",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs",
+"symbol": "WorkTrackingSystemConnection.WriteBackMappingDefinitions"
+},
+{
+"kind": "State",
+"name": "rights",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCredential.cs",
+"symbol": "OAuthCredential.GrantedRights"
+},
+{
+"atomicity": "F74",
+"kind": "Action",
+"name": "signIn",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs",
+"symbol": "OAuthService.InitiateAsync + CompleteAsync"
+},
+{
+"kind": "Action",
+"name": "refresh",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs",
+"symbol": "OAuthService.PerformRefreshAsync"
+},
+{
+"kind": "Action",
+"name": "writeBack",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs",
+"symbol": "WriteBackService.WriteFieldsToWorkItems"
+},
+{
+"kind": "Action",
+"name": "addMapping",
+"site": "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
+"symbol": "connection save with WriteBackMappingDefinitions"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F78",
+"id": "N1",
+"kills": [
+"noWriteWithoutConsent"
+]
+},
+{
+"description": "F79",
+"id": "N2",
+"kills": [
+"notRecordedNeverSkipped"
+]
+},
+{
+"description": "F80",
+"id": "N3",
+"kills": [
+"signInLeastPrivilege"
+]
+},
+{
+"description": "F81",
+"id": "N4",
+"kills": [
+"skipShowsWarning"
+]
+},
+{
+"description": "F82",
+"id": "N5",
+"kills": [
+"grantedSignInClearsWarning"
+]
+}
+],
+"path": "docs/feature/story-6672-ado-oauth-write-consent/design/write-consent.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "noWriteWithoutConsent",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs",
+"statement": "F69",
+"symbol": "WriteBackService.WriteUpdates guard"
+},
+{
+"kind": "Invariant",
+"name": "signInLeastPrivilege",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProvider.cs",
+"statement": "F70",
+"symbol": "AdoOAuthProvider.ScopesFor"
+},
+{
+"kind": "Invariant",
+"name": "notRecordedNeverSkipped",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCredential.cs",
+"statement": "F71",
+"symbol": "OAuthCredential.HasWriteConsent"
+},
+{
+"kind": "Invariant",
+"name": "skipShowsWarning",
+"site": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
+"statement": "F72",
+"symbol": "WorkTrackingSystemConnectionDto.NeedsWriteConsent"
+},
+{
+"kind": "Invariant",
+"name": "grantedSignInClearsWarning",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCredential.cs",
+"statement": "F73",
+"symbol": "OAuthCredential.LacksRightsFor"
+}
+]
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F52",
+"description": "F51",
+"result_type": "space-separated scope list"
+},
+{
+"cannot_distinguish": "F54",
+"description": "F53",
+"result_type": "call count and log entry"
+},
+{
+"cannot_distinguish": "F56",
+"description": "F55",
+"result_type": "Read | ReadAndWrite | absent, and bool"
+}
+],
+"risks": [
+{
+"allowed": "F93",
+"forbidden": "F94",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "maintainer",
+"preserved": "F92",
+"residue": "F95",
+"source": "F91"
+},
+{
+"allowed": "F98",
+"forbidden": "F99",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "maintainer",
+"preserved": "F97",
+"residue": "F100",
+"source": "F96"
+},
+{
+"allowed": "F103",
+"forbidden": "F104",
+"id": "Y3",
+"kind": "Bypass",
+"owner": "maintainer",
+"preserved": "F102",
+"residue": "F105",
+"source": "F101"
+},
+{
+"allowed": "F108",
+"forbidden": "F109",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "nw-solution-architect",
+"preserved": "F107",
+"residue": "F110",
+"source": "F106"
+},
+{
+"allowed": "F113",
+"forbidden": "F114",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "nw-solution-architect",
+"preserved": "F112",
+"residue": "F115",
+"source": "F111"
+},
+{
+"allowed": "F118",
+"forbidden": "F119",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "maintainer",
+"preserved": "F117",
+"residue": "F120",
+"source": "F116"
+},
+{
+"allowed": "F123",
+"forbidden": "F124",
+"id": "Y7",
+"kind": "Stressor",
+"owner": "nw-solution-architect",
+"preserved": "F122",
+"residue": "F125",
+"source": "F121"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "maintainer",
+"state": "F63"
+},
+{
+"kind": "Admitted",
+"owner": "nw-solution-architect",
+"state": "F64"
+},
+{
+"kind": "Admitted",
+"owner": "maintainer",
+"state": "F65"
+},
+{
+"kind": "Excluded",
+"owner": "nw-solution-architect",
+"state": "F66"
+},
+{
+"kind": "Excluded",
+"owner": "nw-solution-architect",
+"state": "F67"
+},
+{
+"kind": "Unknown",
+"owner": "nw-solution-architect",
+"state": "F68"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs",
+"public_oracle": {
+"expected": "F163",
+"falsifier": "F164",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F162"
+},
+"records": {
+"agreement": [
+{
+"contract": "IOAuthProvider scopes contract",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs:345",
+"party": "Consumer",
+"reason": "F190"
+},
+{
+"contract": "IOAuthProvider scopes contract",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProvider.cs:46",
+"party": "Producer",
+"reason": "F191"
+},
+{
+"contract": "IOAuthProvider scopes contract",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProvider.cs:49",
+"party": "Producer",
+"reason": "F192"
+},
+{
+"contract": "IOAuthProvider scopes contract",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/StubOAuthProvider.cs:46",
+"party": "Producer",
+"reason": "F192"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackSinglePathArchUnitTest",
+"id": "T1",
+"obligation": "F217",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackSinglePathArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "domain type",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/WorkItemRights.cs:1",
+"reason": "F178"
+},
+{
+"decision": "Changed",
+"kind": "entity",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCredential.cs:3",
+"reason": "F179"
+},
+{
+"decision": "Changed",
+"kind": "entity",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs:6",
+"reason": "F180"
+},
+{
+"decision": "Changed",
+"kind": "port interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthProvider.cs:4",
+"reason": "F181"
+},
+{
+"decision": "Changed",
+"kind": "value type",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthTokens.cs:3",
+"reason": "F182"
+},
+{
+"decision": "Changed",
+"kind": "application service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs:13",
+"reason": "F183"
+},
+{
+"decision": "Changed",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProvider.cs:10",
+"reason": "F184"
+},
+{
+"decision": "Migrated",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProvider.cs:10",
+"reason": "F185"
+},
+{
+"decision": "Migrated",
+"kind": "adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/StubOAuthProvider.cs:14",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "application service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:10",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "persisted schema",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs:898",
+"reason": "F187"
+},
+{
+"decision": "Changed",
+"kind": "persisted schema",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs:948",
+"reason": "F187"
+},
+{
+"decision": "Changed",
+"kind": "documentation",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:63",
+"reason": "F188"
+},
+{
+"decision": "Changed",
+"kind": "documentation",
+"locator": "ARCHITECTURE.md:98",
+"reason": "F189"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/story-6672-ado-oauth-write-consent/design/write-consent.qnt"
+],
+"id": "L2",
+"kind": "Algebraic",
+"layer": "Adapter",
+"owner": "AdoOAuthProvider.ScopesFor",
+"statement": "F195",
+"treatment": {
+"cases": [
+"F196",
+"F197"
+],
+"kind": "Finite",
+"reason": "F157"
+}
+},
+{
+"id": "L3",
+"kind": "Algebraic",
+"layer": "Adapter",
+"owner": "AdoOAuthProvider",
+"statement": "F198",
+"treatment": {
+"cases": [
+"F199",
+"F200",
+"F201",
+"F202",
+"F203"
+],
+"kind": "Finite",
+"reason": "F157"
+}
+},
+{
+"evidence": [
+"docs/feature/story-6672-ado-oauth-write-consent/design/write-consent.qnt"
+],
+"id": "L4",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "OAuthCredential",
+"statement": "F204",
+"treatment": {
+"cases": [
+"F205",
+"F206",
+"F207",
+"F208"
+],
+"kind": "Finite",
+"reason": "F157"
+}
+},
+{
+"evidence": [
+"docs/feature/story-6672-ado-oauth-write-consent/design/write-consent.qnt"
+],
+"id": "L5",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "WriteBackService",
+"statement": "F209",
+"treatment": {
+"cases": [
+"F210",
+"F211",
+"F212",
+"F213"
+],
+"kind": "Finite",
+"reason": "F157"
+}
+},
+{
+"evidence": [
+"docs/feature/story-6672-ado-oauth-write-consent/design/write-consent.qnt"
+],
+"id": "L6",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "OAuthService.PerformRefreshAsync",
+"statement": "F214",
+"treatment": {
+"cases": [
+"F215",
+"F216"
+],
+"kind": "Finite",
+"reason": "F157"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F193"
+},
+{
+"analysis": "prefactoring",
+"reason": "F194"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/WorkItemRights.cs:1",
+"reason": "F165",
+"symbol": "WorkItemRights"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs:898",
+"reason": "F166",
+"symbol": "OAuthCredential"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs:948",
+"reason": "F166",
+"symbol": "OAuthCredential"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCredential.cs:3",
+"reason": "F167",
+"symbol": "OAuthCredential"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs:22",
+"reason": "F168",
+"symbol": "WriteBackMappingDefinitions"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthProvider.cs:8",
+"reason": "F169",
+"symbol": "DefaultScopes"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthTokens.cs:3",
+"reason": "F170",
+"symbol": "OAuthTokens"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs:121",
+"reason": "F171",
+"symbol": "UpsertValidCredential"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProvider.cs:10",
+"reason": "F172",
+"symbol": "AdoOAuthProvider"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProvider.cs:10",
+"reason": "F173",
+"symbol": "JiraOAuthProvider"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/StubOAuthProvider.cs:14",
+"reason": "F174",
+"symbol": "StubOAuthProvider"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:145",
+"reason": "F175",
+"symbol": "WriteUpdates"
+},
+{
+"decision": "Extend",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:63",
+"reason": "F176",
+"symbol": "Tracker"
+},
+{
+"decision": "Extend",
+"locator": "ARCHITECTURE.md:98",
+"reason": "F177",
+"symbol": "Tracker"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/WorkItemRights.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCredential.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/IOAuthProvider.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthTokens.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProvider.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProvider.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/StubOAuthProvider.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs",
+"reason": "F158"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs",
+"reason": "F159"
+},
+{
+"change": "Extend",
+"path": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "ARCHITECTURE.md",
+"reason": "F161"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~AdoOAuthWriteConsentTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackSinglePathArchUnitTest"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.test.tsx",
+"move": "F129",
+"preserved": "F130",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Connections/ReconnectBanner.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F221",
+"falsifier": "F222",
+"promises": [
+"P4",
+"P5"
+],
+"stimulus": "F220"
+},
+"records": {
+"agreement": [
+{
+"contract": "connection list DTO grantedRights/needsWriteConsent",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs:51",
+"party": "Producer",
+"reason": "F146"
+},
+{
+"contract": "connection list DTO grantedRights/needsWriteConsent",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts:140",
+"party": "Consumer",
+"reason": "F147"
+},
+{
+"contract": "connection list DTO grantedRights/needsWriteConsent",
+"decision": "UnchangedCompatible",
+"locator": "/storage/repos/lighthouse-clients/packages/client/src/housekeepingWording.ts:130",
+"party": "Consumer",
+"reason": "F148"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "wire DTO",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs:10",
+"reason": "F139"
+},
+{
+"decision": "Changed",
+"kind": "frontend model",
+"locator": "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts:140",
+"reason": "F140"
+},
+{
+"decision": "Changed",
+"kind": "frontend rule",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/connectionFormRules.ts:1",
+"reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ConnectionAuthSection.tsx:19",
+"reason": "F142"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:70",
+"reason": "F143"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx:27",
+"reason": "F144"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.tsx:1",
+"reason": "F145"
+},
+{
+"decision": "Changed",
+"kind": "hook",
+"locator": "Lighthouse.Frontend/src/hooks/useOAuthSignIn.ts:1",
+"reason": "F145"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:216",
+"reason": "F224"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/story-6672-ado-oauth-write-consent/design/write-consent.qnt"
+],
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "WorkTrackingSystemConnectionDto",
+"statement": "F151",
+"treatment": {
+"cases": [
+"F152",
+"F153",
+"F154",
+"F155",
+"F156"
+],
+"kind": "Finite",
+"reason": "F157"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F149"
+},
+{
+"analysis": "contract_tests",
+"reason": "F150"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs:51",
+"reason": "F131",
+"symbol": "RequiresReconnect"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts:140",
+"reason": "F132",
+"symbol": "requiresReconnect"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/connectionFormRules.ts:1",
+"reason": "F133",
+"symbol": "resolveAuthOptionHelperText"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ConnectionAuthSection.tsx:19",
+"reason": "F134",
+"symbol": "ConnectionAuthSection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:585",
+"reason": "F135",
+"symbol": "WriteBackMappingsEditor"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx:27",
+"reason": "F136",
+"symbol": "ReconnectBanner"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.tsx:1",
+"reason": "F137",
+"symbol": "WriteConsentAlert"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/useOAuthSignIn.ts:1",
+"reason": "F138",
+"symbol": "useOAuthSignIn"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:216",
+"reason": "F223",
+"symbol": "ReconnectBanner"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/connectionFormRules.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/ConnectionAuthSection.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.tsx"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/hooks/useOAuthSignIn.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx",
+"reason": "F219"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Connections/WriteConsentAlert.test.tsx",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WorkTrackingSystemConnectionDtoTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/Connections/ConnectionsSettings.test.tsx"
+]
+}
+}
+},
+"examination": {
+"E1": {
+"observations": [
+"F317"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F317"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F318",
+"F317"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F319",
+"F317"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F319",
+"F318"
+],
+"verdict": "met"
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F270"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F271"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F272"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F273"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F274"
+}
+]
+},
+"facts": {
+"F1": "Story 6672: Azure DevOps OAuth: ask for write rights only when write-back is set up. The Azure DevOps OAuth connection always asks for vso.work_write, also when the connection is only used to read; a security review sees a read-only connection that holds a token with write rights. Ask only for read rights (vso.work) by default; ask for write rights (vso.work_write) only when write-back (Data Sync Mappings) is set up on that connection; the admin then signs in again to give the extra consent. AC: a new ADO OAuth connection without write-back asks only for read rights on work items; setting up write-back asks the admin to give write consent, and write-back works after that; a connection without write consent never tries to write; existing connections keep working.",
+"F10": "Work Item Age or any metric; PAT connections, whose rights the admin sets on the token",
+"F100": "None beyond today's behaviour; the next sign-in records the truth",
+"F101": "Direct database edit or backup restore of OAuthCredentials.GrantedRights",
+"F102": "Guard reads whatever is stored",
+"F103": "Operator sets any value",
+"F104": "None reachable through the app",
+"F105": "Operator-owned, outside the app's trust boundary",
+"F106": "WriteBackService is the only guard; a new caller of IWriteBackTarget would bypass it",
+"F107": "Single write path",
+"F108": "None",
+"F109": "A write path that does not pass the guard",
+"F11": "Existing ADO OAuth connections count as write-consented; the next sign-in asks only for the rights the connection needs and stores what was granted.",
+"F110": "Architectural test pins WriteBackService as the sole caller",
+"F111": "Second set, walkthrough: Jira OAuth credential (rights null) with mappings",
+"F112": "Jira write-back unchanged",
+"F113": "Same failure as today (Bug 6686)",
+"F114": "Jira write-back skipped or Jira shown a Rights line",
+"F115": "None; null counts as consented and the DTO restricts GrantedRights to ado.oauth",
+"F116": "Second set, walkthrough: credential Disconnected or RefreshFailed with mappings and Read",
+"F117": "ReconnectBanner still shows",
+"F118": "Both the reconnect banner and the write-consent warning show; either sign-in fixes both",
+"F119": "A write attempt",
+"F12": "Adding the first write-back mapping to a read-only connection saves the mapping; the connection then shows a warning with Sign in again; no write is tried until write consent; each skipped write-back is logged.",
+"F120": "Two alerts at once on that rare state; accepted",
+"F121": "Second set, walkthrough: admin cancels the write-consent popup",
+"F122": "Reads keep working",
+"F123": "Warning stays",
+"F124": "Credential disconnected by the attempt",
+"F125": "None; the write-consent sign-in does not call disconnect",
+"F129": "Extract the popup sign-in flow (initiateConnect, openOAuthPopup, inline messages for blocked, cancelled, failed) from ReconnectBanner into hook useOAuthSignIn; ReconnectBanner keeps disconnect-first and then calls it. Makes WriteConsentAlert reuse the flow without disconnecting.",
+"F13": "Removing the last write-back mapping changes nothing at once; the next sign-in asks for read rights only.",
+"F130": "ReconnectBanner behaviour and copy",
+"F131": "Same pattern: a server-derived credential fact on the list DTO",
+"F132": "Optional server-derived fields beside requiresReconnect",
+"F133": "Home of the connection form's wording rules",
+"F134": "The sketch places the Rights line in the Authentication section",
+"F135": "Renders the alert directly above the existing editor",
+"F136": "Its popup flow moves into useOAuthSignIn; the banner keeps disconnect-first",
+"F137": "No component warns about missing write consent; it reuses the Alert style and the sign-in hook",
+"F138": "Extracted from ReconnectBanner so two alerts share one sign-in flow; useOAuthPopup stays the popup primitive",
+"F139": "Two additive read-only fields; lighthouse-clients ignores them",
+"F14": "UI: one 'Rights: Read work items / Read and write work items' line in the connection's Authentication section; a warning Alert with a 'Sign in again' button (ReconnectBanner popup flow) above the write-back mappings when mappings exist without write consent. Sketch in feature-delta.md.",
+"F140": "Two optional fields",
+"F141": "Rights wording function",
+"F142": "Rights line; new optional prop",
+"F143": "Passes rights and renders the alert",
+"F144": "Behaviour and copy preserved through the extracted hook; ReconnectBanner.test.tsx unchanged",
+"F145": "New",
+"F146": "Adds the fields",
+"F147": "Reads them, optional",
+"F148": "Ignores unknown fields",
+"F149": "No dependency or owner law the UI change can violate beyond the existing useRbac and ApiServiceContext rules",
+"F15": "Sign-in asks only for the rights the connection needs, the granted rights are stored, existing connections count as write-consented, and write-back without write consent is skipped and logged",
+"F150": "Backend DTO and frontend consumer ship in one deployable and one commit",
+"F151": "DTO: GrantedRights set only for ado.oauth with a credential (HasWriteConsent ? ReadAndWrite : Read); NeedsWriteConsent = credential lacks rights for the connection's need",
+"F152": "ado.oauth, null rights -> ReadAndWrite, false",
+"F153": "ado.oauth, Read, mapping -> Read, true",
+"F154": "ado.oauth, Read, no mapping -> Read, false",
+"F155": "jira.oauth -> absent, false",
+"F156": "PAT -> absent, false",
+"F157": "Closed set of cases; each case is one branch of the decision",
+"F158": "Create-Migration.ps1 adds a migration and updates this snapshot: nullable GrantedRights column",
+"F159": "Same for Postgres",
+"F16": "The connection settings show the Rights line, and a warning with Sign in again above the write-back mappings when mappings exist without write consent",
+"F160": "Glossary term write consent",
+"F161": "Section 4 row 1: write-back runs only with write consent",
+"F162": "At the port: InitiateAsync for an ado.oauth connection without mappings; CompleteAsync with a stubbed Microsoft token response whose scope names vso.work; WriteFieldsToWorkItems with one changed update on that connection after a mapping is added; the same write for a credential whose GrantedRights is null",
+"F163": "Authorization URL scope is .../vso.work offline_access (no vso.work_write); the read-only credential's write reaches no IWriteBackTarget and logs one Warning naming the connection; the null-rights credential's write reaches the target once; with mappings, InitiateAsync asks for .../vso.work_write offline_access and after a vso.work_write grant the write reaches the target",
+"F164": "Today's code: the URL always contains vso.work_write, and the read-only connection's write reaches the target",
+"F165": "No type names work-item rights; OAuthCredentialStatus is token health, a different question",
+"F166": "Generated by Create-Migration.ps1, never by hand",
+"F167": "Owns the token of one connection, so it owns which rights that token holds",
+"F168": "The connection owns its mappings, so it owns the derived need",
+"F169": "A fixed list cannot express the need; ScopesFor(needed) replaces it",
+"F17": "Requested scopes follow the connection's need. IOAuthProvider.DefaultScopes is replaced by ScopesFor(WorkItemRights needed). AdoOAuthProvider answers Read -> [499b84ac-1321-427f-aa17-267ca6975798/vso.work, offline_access] and ReadAndWrite -> [499b84ac-1321-427f-aa17-267ca6975798/vso.work_write, offline_access]; JiraOAuthProvider and StubOAuthProvider ignore the argument and keep their fixed scopes. OAuthService.BuildFlowContext passes connection.NeededWorkItemRights, so InitiateAsync and CompleteAsync both ask for what the saved connection needs; the completion log names the requested scopes instead of DefaultScopes.",
+"F170": "Carries what a token exchange returned; granted rights belong beside the tokens",
+"F171": "Single writer of a signed-in credential",
+"F172": "Already reads and logs the token response scope; it parses it instead of only logging",
+"F173": "Follows the port change only; scopes unchanged, reports no rights",
+"F174": "Follows the port change only",
+"F175": "Sole caller of IWriteBackTarget; connectors may not reach repositories",
+"F176": "Tracker integration glossary gains write consent",
+"F177": "Section 4 row 1 gains one clause",
+"F178": "New enum",
+"F179": "GrantedRights, HasWriteConsent, LacksRightsFor",
+"F18": "The need is owned by the connection: WorkTrackingSystemConnection.NeededWorkItemRights is ReadAndWrite when WriteBackMappingDefinitions is not empty, else Read. Removing the last mapping changes nothing stored; the next sign-in asks for Read only.",
+"F180": "NeededWorkItemRights",
+"F181": "DefaultScopes replaced by ScopesFor; three providers, OAuthService and test stubs migrate",
+"F182": "Optional GrantedRights with default null keeps existing constructions compiling",
+"F183": "Requests by need, stores granted rights at sign-in; OAuthServiceTest migrates its DefaultScopes mocks",
+"F184": "ScopesFor and scope parse",
+"F185": "Port rename only",
+"F186": "Guard plus IRepository<OAuthCredential>; WriteBackServiceTest constructions add it; DI resolves it already",
+"F187": "Additive nullable column; ExpandOnlyMigrationGuard holds",
+"F188": "Glossary term",
+"F189": "One clause",
+"F19": "Granted rights are what the identity platform answered, never what was asked. OAuthTokens gains WorkItemRights? GrantedRights. AdoOAuthProvider reads the token response scope: any space-separated entry equal to vso.work_write or ending in /vso.work_write gives ReadAndWrite; anything else, including an absent or empty scope, gives Read. Jira and Stub providers report null (they do not record rights; Jira is Bug 6686).",
+"F190": "Reads ScopesFor(connection.NeededWorkItemRights)",
+"F191": "Answers per need",
+"F192": "Same fixed list for any need",
+"F193": "Producer and consumer of the changed contracts ship in one deployable and one commit; the Microsoft token endpoint is external and is covered by the port scenario's recorded response shape, not a contract test",
+"F194": "Each change extends one owner in place; no move makes the behaviour change easier",
+"F195": "Requested scopes are vso.work + offline_access without mappings and vso.work_write + offline_access with mappings",
+"F196": "no mappings -> vso.work",
+"F197": "one mapping -> vso.work_write",
+"F198": "Granted rights parse: ReadAndWrite iff a whitespace-separated scope entry equals vso.work_write or ends with /vso.work_write",
+"F199": "resource/vso.work_write offline_access -> ReadAndWrite",
+"F2": "An Azure DevOps OAuth connection holds write rights only when it has write-back set up and the admin consented to write; the admin can see which rights it holds and is asked to sign in again when write-back needs more.",
+"F20": "Granted rights are stored at sign-in only. OAuthService.UpsertValidCredential writes tokens.GrantedRights onto OAuthCredential.GrantedRights on both the insert and the update path. PerformRefreshAsync leaves GrantedRights unchanged: a refresh cannot widen consent, and the maintainer decision says the next sign-in stores what was granted.",
+"F200": "resource/vso.work offline_access -> Read",
+"F201": "vso.work_write -> ReadAndWrite",
+"F202": "resource/vso.work_write_x -> Read",
+"F203": "empty or absent -> Read",
+"F204": "HasWriteConsent is false only for Read; LacksRightsFor(needed) is needed == ReadAndWrite and not HasWriteConsent",
+"F205": "null -> consent",
+"F206": "Read -> no consent",
+"F207": "ReadAndWrite -> consent",
+"F208": "needed Read never lacks",
+"F209": "Write-back reaches IWriteBackTarget only when the credential is absent or has write consent; otherwise one Warning and nothing persisted",
+"F21": "Carriers: new enum WorkItemRights { Read, ReadAndWrite } in Models/OAuth beside OAuthCredential (kernel, like OAuthCredentialStatus). OAuthCredential owns the write-consent decision: GrantedRights (WorkItemRights?, null = signed in before rights were recorded), HasWriteConsent (GrantedRights is not Read, so null counts as write-consented per the maintainer decision) and LacksRightsFor(WorkItemRights needed) (needed is ReadAndWrite and not HasWriteConsent). No flag about the credential is computed elsewhere.",
+"F210": "no credential (PAT) -> written",
+"F211": "null rights -> written",
+"F212": "Read -> skipped and logged",
+"F213": "ReadAndWrite -> written",
+"F214": "A refresh leaves GrantedRights unchanged",
+"F215": "Read stays Read",
+"F216": "null stays null",
+"F217": "Only WriteBackService calls IWriteBackTarget.WriteFieldsToWorkItems (implementers excluded), so the write-consent guard cannot be bypassed by a new caller",
+"F218": "Confirmed (maintainer, option B): WriteConsentAlert renders in two places with the same component and copy: on the connection page directly above WriteBackMappingsEditor, and on the connections list (ConnectionsSettings) next to the existing ReconnectBanner for each connection whose needsWriteConsent is true, where the admin lands after saving. Sign in again on the list reloads the connection list on success.",
+"F219": "Second render site of WriteConsentAlert beside ReconnectBanner",
+"F22": "Persistence: one nullable int column GrantedRights on the OAuthCredentials table, mapped by EF convention (LighthouseAppContext unchanged), generated with Lighthouse.Backend/Create-Migration.ps1 for Sqlite and Postgres. Expand-only: no default, no backfill; existing rows stay null and so count as write-consented. The column is not a secret and is not encrypted by EncryptOAuthTokens.",
+"F220": "Connection DTO for an ado.oauth connection with one mapping and a Read credential, then one with ReadAndWrite; render WriteConsentAlert for the first and click Sign in again; render the connection page and the connections list with that connection",
+"F221": "DTO: grantedRights Read and needsWriteConsent true, then ReadAndWrite and false; Rights wording 'Read work items' / 'Read and write work items'; the alert shows the sketch copy, the click calls initiateConnect without disconnect and opens the popup, success calls the reload; the alert appears above the write-back mappings on the connection page and next to the connection on the connections list; nothing renders in either place when needsWriteConsent is false",
+"F222": "Today's code: the DTO has no rights fields and no alert exists on either page",
+"F223": "The list already renders ReconnectBanner per connection; the alert sits beside it",
+"F224": "Renders WriteConsentAlert per connection that needs write consent",
+"F225": "The admin starts the sign-in of an Azure DevOps OAuth connection that has no write-back mappings",
+"F226": "Microsoft is asked for read rights on work items and offline access only, never write rights",
+"F227": "A new read-only connection holds a token that can only read work items",
+"F228": "Read rights are asked for even after a write-back mapping is saved",
+"F229": "The admin starts the sign-in of an Azure DevOps OAuth connection that has a write-back mapping",
+"F23": "Write guard lives in WriteBackService.WriteUpdates, the sole caller of IWriteBackTarget: after the changed fields are computed and before the connector is resolved, it loads the connection's OAuthCredential through IRepository<OAuthCredential>. When a credential exists and LacksRightsFor(connection.NeededWorkItemRights), it calls no connector, persists nothing, returns an empty WriteBackResult and logs one Warning per flush naming the connection id and name, the number of updates not written and the remedy (sign in again on the connection's settings to allow writing). Connectors may not reach a repository (ADR-270 R-T8), so the guard cannot sit in AzureDevOpsWorkTrackingConnector. PAT connections have no credential and are untouched.",
+"F230": "Microsoft is asked for read and write rights on work items and offline access",
+"F231": "Setting up write-back asks the admin for write consent at the next sign-in",
+"F232": "Write rights are asked for on every connection",
+"F233": "A connection signed in with read rights only gets a write-back mapping, then a changed value is written back",
+"F234": "Nothing is sent to Azure DevOps, nothing is reported or stored as written, and one warning names the connection and tells the admin to sign in again",
+"F235": "A connection without write consent never tries to write, and support can see why",
+"F236": "The warning is logged once per update instead of once per run when several updates are skipped",
+"F237": "A connection with a write-back mapping is signed in for read only, then signed in again and Microsoft grants write rights; a changed value is written back",
+"F238": "The change is sent to Azure DevOps once and no warning is logged",
+"F239": "Write-back works after the admin gives write consent",
+"F24": "Wire field: WorkTrackingSystemConnectionDto gains GrantedRights (WorkItemRights?, serialised as the string Read or ReadAndWrite) and NeedsWriteConsent (bool), both with private setters so a saved body cannot claim them. GrantedRights is set only for a connection whose AuthenticationMethodKey is AuthenticationMethodKeys.AzureDevOpsOAuth and that has a credential: ReadAndWrite when credential.HasWriteConsent, else Read. NeedsWriteConsent = credential?.LacksRightsFor(connection.NeededWorkItemRights) ?? false. Only the list endpoint passes the credential, and the edit page reads that list (EditConnection connectionQuery), so no endpoint changes.",
+"F240": "Rights are stored from what was requested rather than what Microsoft granted",
+"F241": "A connection with a write-back mapping signs in and Microsoft grants the bare scope vso.work_write",
+"F242": "The change is sent to Azure DevOps once",
+"F243": "Write consent is recognised however Microsoft names the write scope",
+"F244": "Write consent is recognised by a substring match on vso.work_write",
+"F245": "A connection with a write-back mapping signs in and Microsoft grants a scope that only starts like write rights, an empty scope, or no scope",
+"F246": "Nothing is sent to Azure DevOps and nothing is stored as written",
+"F247": "Lighthouse writes only when Microsoft really granted write rights",
+"F248": "A scope entry ending in /vso.work_write but under another resource counts as write consent",
+"F249": "A connection without write-back mappings signs in with read rights only and a changed value is written back",
+"F25": "UI: IWorkTrackingSystemConnection gains grantedRights?: Read | ReadAndWrite and needsWriteConsent?: boolean. ConnectionAuthSection shows one line 'Rights: Read work items' or 'Rights: Read and write work items' when grantedRights is set; the wording is a pure function in connectionFormRules.ts. A new WriteConsentAlert (MUI warning Alert, sketch copy, 'Sign in again' button) renders in ModifyConnectionSettings directly above WriteBackMappingsEditor when isEditMode and needsWriteConsent is true. Its sign-in starts the OAuth popup without disconnecting first, so reads keep working if the admin cancels; on success it reloads the connection (reloadConnection).",
+"F250": "A read-only sign-in blocks nothing while the connection only needs to read",
+"F251": "The guard asks whether the connection has any mapping instead of whether the sign-in lacks the needed rights",
+"F252": "A connection with a write-back mapping whose sign-in was stored before Lighthouse recorded rights writes back a changed value",
+"F253": "The change is sent to Azure DevOps once with no warning",
+"F254": "Existing Azure DevOps OAuth connections keep writing back after the update",
+"F255": "Unrecorded rights count as write consent only for Azure DevOps and not for other providers",
+"F256": "An Azure DevOps connection with a personal access token and a write-back mapping writes back a changed value",
+"F257": "Personal access token connections are not affected",
+"F258": "The guard skips connections by authentication method key rather than by a missing credential",
+"F259": "A read-only sign-in whose token is about to expire is refreshed and Microsoft answers with write rights; then a changed value is written back",
+"F26": "Loading and failure looks: no new fetch. The Rights line and the warning read the connection the edit page already loads through its keyed TanStack query; while it loads, ModifyConnectionSettings' LoadingAnimation covers the whole page, and when it cannot be loaded the page's existing failure handling applies and neither the line nor the warning renders, so no stale or guessed rights are shown. A sign-in in progress disables the button; a blocked, cancelled or failed popup shows the existing inline messages.",
+"F260": "Nothing is sent to Azure DevOps",
+"F261": "A token refresh never gives a connection write rights the admin did not consent to at sign-in",
+"F262": "A refresh overwrites stored rights with Read whatever was stored",
+"F263": "A sign-in stored before rights were recorded, with an expired token, is refreshed and Microsoft answers with read rights; then a changed value is written back",
+"F264": "A token refresh keeps existing connections writing back",
+"F265": "A refresh replaces stored rights with what Microsoft answered, but only when the answer names write rights",
+"F266": "The compiled backend is read for every call of the tracker's write-back",
+"F267": "Only the write-back service calls it",
+"F268": "No new code path can write to Azure DevOps past the write-consent check",
+"F269": "A caller reaches the write through reflection or a delegate, which the call scan of the compiled code does not see",
+"F27": "Context map: Tracker integration only. New glossary term 'write consent' (the connection's OAuth sign-in was granted the right to write work items) goes into ADR-270's Tracker integration glossary, and ARCHITECTURE.md section 4 row 1 gains one clause that write-back runs only with write consent; both ship with S1. No domain event: the need is derived on read from the connection's mappings and the credential's rights, nothing else reacts, and an event that marks a credential when mappings change would add state that can drift from the mappings. Rejected for that reason.",
+"F270": "When an admin connects a new Azure DevOps account via OAuth without turning on write-back, the Microsoft consent screen asks only for read access to work items, not write access.",
+"F271": "With a read-only connection, changes in Lighthouse never reach Azure DevOps, and each skipped write-back is visible in the log as skipped.",
+"F272": "Azure DevOps OAuth connections made before this change keep syncing and writing back without re-signing in, and are shown as having write consent.",
+"F273": "When an admin enables write-back on a read-only connection, Lighthouse tells them more rights are needed and offers a sign-in again; after they consent, write-back works.",
+"F274": "A connection's settings page states whether its sign-in holds read rights or read and write rights, matching what was consented.",
+"F275": "An admin opens an Azure DevOps OAuth connection with one write-back mapping whose sign-in may only read, then clicks Sign in again and the sign-in succeeds",
+"F277": "The admin sees the connection may only read and can give write consent from the connection page while reads keep working",
+"F278": "The reload happens but the page keeps showing the old rights because it does not use the reloaded connection",
+"F279": "An admin opens an Azure DevOps OAuth connection with write-back whose sign-in may read and write",
+"F28": "Lighthouse-Clients CLI/MCP: N/A. lighthouse-clients reads the connection list only for name, type, authentication method labels and options (packages/client/src/housekeepingWording.ts readConnectionListItem, declaredOptionsOf) and shows no authentication state; the new fields have private setters, so its PUT round-trip cannot bind them.",
+"F281": "The admin sees the connection holds write rights and is not asked to sign in again",
+"F282": "A connection without any recorded rights also shows a Rights line",
+"F283": "An admin opens the connection page while the connection is still loading",
+"F284": "Neither a Rights line nor the write-consent warning shows",
+"F285": "The admin never sees guessed rights or a stale warning",
+"F286": "The page shows guessed rights after a failed load of the connection",
+"F29": "Formal verification: Quint (0.33.1, Apalache 0.62.4 backend) for the write-consent state machine of one connection (mappings, stored rights, sign-in, refresh, write-back), safety invariants only. TLA+/TLC not selected: no temporal or fairness claim; 'write-back works after sign-in' is a one-step property of the write-back action under granted ReadAndWrite. Agda not selected: no proof obligation beyond the finite state machine. Liveness not applicable: the only progress step, the admin signing in, is an external human action Lighthouse cannot be fair about.",
+"F295": "The connection list is sent for an Azure DevOps OAuth connection signed in before rights were recorded with a mapping, one signed in for read with a mapping, one signed in for read without a mapping, one signed in for read and write with a mapping, a Jira OAuth connection with a mapping and a personal access token connection with a mapping",
+"F296": "grantedRights ReadAndWrite and needsWriteConsent false; Read and true; Read and false; ReadAndWrite and false; no rights and false; no rights and false",
+"F297": "The settings show rights only for an Azure DevOps sign-in and ask for write consent only when write-back is set up on a read-only sign-in",
+"F298": "A Jira credential stored with read rights would be flagged as needing write consent",
+"F299": "A body sent to save a connection claims read and write rights and that write consent is needed",
+"F3": "A new Azure DevOps OAuth connection without write-back asks only for read rights on work items",
+"F30": "Rejected alternatives: carrying the requested rights in the signed state token (closes a seconds-wide race between Initiate and Complete whose outcome is a loud invalid_scope failure the admin retries; not worth widening the state-token contract); a non-null column with default ReadAndWrite (would claim write consent for Jira credentials that never asked for it); guarding inside the ADO connector (connectors may not reach repositories); computing the warning in the frontend from unsaved editor mappings (Initiate reads the saved connection, so the warning must follow the saved state, and the rule would have two owners).",
+"F300": "The connection read back carries no rights and needsWriteConsent false",
+"F301": "The rights shown are only ever what the sign-in was granted",
+"F302": "The fields are ignored on save but another endpoint echoes a claimed value",
+"F303": "The Rights line says Rights: Read work items and sits in the Authentication section, below its heading and before the Additional Fields section; a warning with the approved copy and a Sign in again button sits below Authentication and directly above Sync with Source; the click starts the sign-in for that connection and opens the popup without disconnecting; on success the connection is loaded again",
+"F304": "The Rights line says Rights: Read and write work items and sits in the Authentication section, below its heading and before the Additional Fields section; no write-consent warning shows",
+"F305": "An admin opens the connections list with a connection that needs reconnecting, then the read-only connection that has write-back, then another connection that needs reconnecting, and clicks Sign in again and the sign-in succeeds",
+"F306": "Exactly one warning with the approved copy shows, after the Reconnect banner of the connection listed before it and before the Reconnect banner of the connection listed after it; the click starts the sign-in for the read-only connection without disconnecting and opens the popup; on success the list is loaded again",
+"F307": "Right after saving a mapping the admin sees on the list, in the order of the connections, that a connection needs write consent and can give it there",
+"F308": "With only one connection needing attention, the warning sits above the whole list and its copy does not name the connection it concerns",
+"F309": "An admin on the connections list signs in again on the read-only connection, the sign-in succeeds, and the list then cannot be loaded again",
+"F310": "While the list loads again the earlier warning is gone and the list's loading look shows; once the load fails, the could-not-load message shows and no write-consent warning",
+"F311": "A warning from before the sign-in never looks current, and a failed load never looks like a connection that needs more rights",
+"F312": "A failed first load of the list, before any sign-in, shows a warning from data cached by another page",
+"F313": "The admin opens the settings of an Azure DevOps OAuth connection with write-back whose sign-in may only read, clicks Sign in again, the sign-in succeeds, and loading the connection again fails",
+"F314": "The connection is requested again; afterwards the write-consent warning and the Rights line from before the sign-in are gone, and the failed load does not surface as an unhandled failure",
+"F315": "The admin never sees the old read-only rights or the old warning as if they were still true after the connection could not be loaded again",
+"F316": "A reload that returns no connection, instead of failing, still leaves the old rights and warning; this scenario does not stimulate that case",
+"F317": "Probe backend-tests WriteConsent: 13/13 passed. Scenario names: connection without write-back asks Microsoft only to read work items; with write-back asks read and write; write-back on a read-only sign-in sends nothing and logs one warning; sign-in before rights recorded and PAT connections keep writing back; token refresh neither grants write consent nor removes it; after sign-in again with write consent write-back sends the change; scope lookalike/empty/missing sends nothing. Names only; URL and log text not printed.",
+"F318": "Probe backend-tests Rights: connection DTO scenarios passed: ADO sign-in from before rights were recorded reads and writes and needs no more consent; read-only sign-in needs write consent once write-back is set up; read-only needs nothing without write-back; write-granted needs nothing; Jira and PAT show no rights; a saved connection cannot claim rights its sign-in was not granted. Scenario names only, DTO values not printed.",
+"F319": "Probe frontend-tests WriteConsentAlert (name fragment sign): connection page test name states rights, warning above write-back mappings, 'and signin...' (name truncated by cut); connections list test 'warning only beside the connection that needs write consent, and signin...'. 7 passed. Click behaviour and copy not printed, inferred from test names only.",
+"F32": "EF migrations are expand-only (ExpandOnlyMigrationGuard) and generated only with Lighthouse.Backend/Create-Migration.ps1 for every provider; never dotnet ef migrations add.",
+"F33": "Out of scope and unchanged: Jira OAuth scopes and Jira OAuth write-back (Bug 6686), PAT connections, Work Item Age and every metric.",
+"F34": "Input bounds: WorkItemRights is the closed set {Read, ReadAndWrite}; the stored column additionally admits null. The token response scope is unbounded provider text; no length bound is added (none in the authority), it is only split on whitespace and compared.",
+"F35": "No access token, refresh token, client secret or raw token-response body in any log; the granted scope string may be logged as today. GrantedRights is written only from the token response on the server.",
+"F36": "Backend scenarios drive the application-service port under Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/ with ServicePortHarness, never a web host; the Microsoft token endpoint is the only stub (HttpMessageHandler behind IHttpClientFactory). Time through a fake TimeProvider. No nWave scenario tags. The feature's Stryker config names Tests.Acceptance.AdoOAuthWriteConsent. No test filter selects a live tracker category.",
+"F37": "RBAC unchanged: connection settings and write-back mappings are already SystemAdmin-gated; no new action or endpoint.",
+"F38": "IOAuthService (InitiateAsync, CompleteAsync) and IWriteBackService.WriteFieldsToWorkItems; the connection list endpoint GET api/latest/worktrackingsystemconnections for the UI",
+"F39": "IOAuthProvider (AdoOAuthProvider -> Microsoft identity platform authorize and token endpoints; no new external call)",
+"F4": "A connection without write consent never tries to write; a skipped write-back is logged",
+"F40": "IRepository<OAuthCredential> (EF, OAuthCredentials table)",
+"F41": "IWriteBackTarget (AzureDevOpsWorkTrackingConnector -> Azure DevOps work item PATCH)",
+"F42": "API and the update round call Application; Application (OAuthService, WriteBackService) depends on the kernel Models (WorkItemRights, OAuthCredential, WorkTrackingSystemConnection) and on ports; adapters implement IOAuthProvider and IWriteBackTarget and never reach a repository",
+"F43": "Write-back with a credential that lacks write consent",
+"F44": "No connector call, empty WriteBackResult, one Warning naming connection and remedy",
+"F45": "Identity platform grants less than requested (admin or tenant declines vso.work_write)",
+"F46": "GrantedRights stored as Read; NeedsWriteConsent stays true; warning stays",
+"F47": "Mappings added between InitiateAsync and CompleteAsync",
+"F48": "Code redemption asks for more than authorized and Microsoft answers invalid_scope; existing OAuth error path, admin signs in again",
+"F49": "Token response without a scope field",
+"F5": "Existing Azure DevOps OAuth connections keep working, with write-back, and count as write-consented",
+"F50": "Stored as Read (least privilege); with mappings the warning shows and write-back is skipped",
+"F51": "Scope query parameter of the authorization URL returned by InitiateAsync",
+"F52": "what the identity platform finally granted; consent screen contents",
+"F53": "Whether WriteFieldsToWorkItems reached IWriteBackTarget for the connection, and the Warning it logged when it did not",
+"F54": "whether Azure DevOps would have accepted the write",
+"F55": "GrantedRights and NeedsWriteConsent on the connection list DTO",
+"F56": "a credential signed in before rights were recorded from one recorded as ReadAndWrite (both show ReadAndWrite)",
+"F57": "Two credentials are equal for write consent when HasWriteConsent agrees; null and ReadAndWrite are equal under it, Read differs",
+"F58": "A stored GrantedRights value is what the identity platform granted at the last sign-in, or null when no sign-in since the Story recorded it",
+"F59": "A spoofed or guessed ReadAndWrite would let Lighthouse write with a token that cannot, or show the admin rights the token lacks",
+"F6": "Setting up write-back on a read-only connection shows the admin that it needs more rights and lets them sign in again to give write consent; write-back works after that",
+"F60": "Microsoft token response scope string",
+"F61": "Connection list DTO GrantedRights; write-back reaches or skips the connector",
+"F62": "Direct database edits and backup restore can write any value (admitted, operator-owned); the DTO cannot because its setters are private; C# has no compile-time proof of the parse, only the port scenarios",
+"F63": "GrantedRights null with or without mappings: counts as write-consented (existing connections)",
+"F64": "GrantedRights Read with mappings: write-back skipped and logged, warning shown",
+"F65": "GrantedRights ReadAndWrite without mappings: token keeps write rights until the next sign-in; no write happens because nothing is staged",
+"F66": "A write reaching Azure DevOps while GrantedRights is Read",
+"F67": "A sign-in without mappings asking for vso.work_write",
+"F68": "What the identity platform returns in scope on a refresh without a scope parameter; not relied on, refresh does not touch GrantedRights",
+"F69": "A write reaches the tracker only when the stored rights give write consent",
+"F7": "The connection's settings show which rights its sign-in holds: read, or read and write",
+"F70": "A sign-in asks for ReadAndWrite only when the connection has write-back mappings",
+"F71": "A credential whose rights were not recorded is never skipped",
+"F72": "Every skipped write-back coincides with NeedsWriteConsent shown on the connection",
+"F73": "A sign-in granted what it asked for leaves no write-consent warning",
+"F74": "one CompleteAsync save",
+"F75": "One connection; mappings collapsed to present or absent",
+"F76": "The identity platform grants what was requested or less, never more",
+"F77": "Refresh never changes the stored rights",
+"F78": "Guard removed: write-back writes whenever mappings exist",
+"F79": "Not-recorded rights treated as Read",
+"F8": "Azure DevOps OAuth connections: requested scopes, stored granted rights, write-back gating, connection settings UI",
+"F80": "Sign-in always requests ReadAndWrite",
+"F81": "Warning never computed",
+"F82": "Warning ignores stored rights",
+"F83": "write-consent state machine",
+"F84": "Quint verify of allInvariants, max-steps 6, no violation; five behavioural mutants each violate their property in quint run",
+"F85": "read-only sign-in for a connection without mappings",
+"F86": "Admitted connection without mappings -> NeededWorkItemRights Read -> ScopesFor(Read) -> InitiateAsync URL; buildable from existing symbols plus the declared targets",
+"F87": "write consent reaching the UI and the write path",
+"F88": "Token response -> CompleteAsync -> OAuthCredential.GrantedRights -> list endpoint DTO -> ConnectionAuthSection and WriteConsentAlert; and -> WriteBackService guard -> IWriteBackTarget; acyclic, seeded by the token response",
+"F89": "write-back works after a granted sign-in",
+"F9": "Jira OAuth scopes and Jira OAuth write-back (Bug 6686)",
+"F90": "Not applicable: the progress step is the admin's sign-in, an external human action; once granted, the next write-back writes in one step (safety model property grantedSignInClearsWarning plus noWriteWithoutConsent)",
+"F91": "Negates: the token response scope names vso.work_write when write was granted",
+"F92": "No write without recorded consent",
+"F93": "A granted write shown as Read; write-back skipped and logged until fixed",
+"F94": "A write with a token Lighthouse recorded as Read",
+"F95": "If Microsoft names the scope differently, write-back stays skipped; the port scenario pins the documented shape; a live check belongs to the maintainer's manual sign-in at finalize",
+"F96": "Negates: existing credentials all hold vso.work_write",
+"F97": "Existing connections keep writing",
+"F98": "A legacy credential that somehow lacks write fails at Azure DevOps as today",
+"F99": "Legacy connections skipped or shown as read-only"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F11"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F12"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F13"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F14"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+},
+{
+"id": "P5",
+"kind": "Outcome",
+"text": "F7"
+}
+],
+"scope_in": [
+"F8"
+],
+"scope_out": [
+"F9",
+"F10"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F15",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+},
+{
+"id": "S2",
+"observation": "F16",
+"promises": [
+"P4",
+"P5"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6672-ado-oauth-write-consent",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

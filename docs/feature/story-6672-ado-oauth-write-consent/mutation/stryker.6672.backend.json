@@ -1,0 +1,37 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/DTO/WorkTrackingSystemConnectionDto.cs",
+      "**/Models/OAuth/OAuthCredential.cs",
+      "**/Models/OAuth/WorkItemRights.cs",
+      "**/Models/WorkTrackingSystemConnection.cs",
+      "**/Modules/TrackerIntegration/Adapters/OAuth/AdoOAuthProvider.cs",
+      "**/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProvider.cs",
+      "**/Modules/TrackerIntegration/Adapters/OAuth/StubOAuthProvider.cs",
+      "**/Modules/TrackerIntegration/Application/OAuth/IOAuthProvider.cs",
+      "**/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs",
+      "**/Modules/TrackerIntegration/Application/OAuth/OAuthTokens.cs",
+      "**/Services/Implementation/WriteBackService.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~OAuthServiceTest|FullyQualifiedName~AdoOAuthProviderTest|FullyQualifiedName~JiraOAuthProviderTest|FullyQualifiedName~OAuthProviderRegistryTest|FullyQualifiedName~WriteBackServiceTest|FullyQualifiedName~WriteBackSuppressionWarningTest|FullyQualifiedName~WorkTrackingSystemConnectionDtoTest|FullyQualifiedName~OAuthCredentialTest|FullyQualifiedName~Models.WorkTrackingSystemConnectionTest|FullyQualifiedName~Tests.Acceptance.AdoOAuthWriteConsent)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Contracts",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
