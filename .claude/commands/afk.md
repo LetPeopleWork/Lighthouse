@@ -101,7 +101,8 @@ are reviewed is complete.
       2. `git fetch` and check `origin/main`. If it moved and the push would need a rebase or merge,
          that is a stop ("Trunk moved"): never rebase or merge on your own.
       3. Push, move the slice's Story to Resolved (`/ado-sync`), and start watching the CI run in the
-         background with `/clean-ci`'s Step 3 poll loop (Bash `run_in_background`). **Never use
+         background with `/clean-ci`'s Step 3 poll loop (Bash `run_in_background`, or a `ctx_shell`
+         background job plus a one-shot `CronCreate` check, see "Timers"). **Never use
          `gh run watch`**: on `main` the Standalone packaging jobs park at the release-approval gate
          (`waiting`), so the watch never exits and the Story stays Resolved for hours. Carry on with
          the next slice meanwhile; do not wait for CI.
@@ -111,9 +112,10 @@ are reviewed is complete.
          its gates green. A CI failure still red after one fix is a stop.
    5. **Review window — 5 minutes.** Post a slice summary (what the slice delivered, its commits, the
       refactor and review outcome, anything worth a look) ending with: *"Review window open for 5 min:
-      say **hold** to pause before the next slice; otherwise I carry on at HH:MM."* Start a background
-      timer (`sleep 300` via Bash `run_in_background`) and end the turn. Dispatch nothing while the
-      window is open.
+      say **hold** to pause before the next slice; otherwise I carry on at HH:MM."* Schedule the
+      wake-up with a **one-shot `CronCreate`** (`recurring: false`, pinned to that HH:MM, prompt
+      "AFK review window closed: continue with <next step> unless the maintainer said hold") and end
+      the turn. Dispatch nothing while the window is open. See "Timers" below for why not `sleep`.
       - If the timer fires with no reply, continue with the next slice.
       - If the maintainer says **hold** (or "wait", "pause"), set `status: "paused"` in the marker and
         wait, still in AFK mode, until they say "go on" / "continue" / "resume". Any other reply in the
@@ -152,12 +154,28 @@ on these. Raise them first:
 
 1. Post a short message with the choice, the options, the time each one costs, and your recommendation.
    End it with: *"Going with <recommendation> at HH:MM unless you say otherwise."*
-2. Start a 15-minute background timer (`sleep 900` via Bash `run_in_background`). Keep working on anything
+2. Schedule a one-shot `CronCreate` 15 minutes ahead (see "Timers" below). Keep working on anything
    that does not depend on the answer.
 3. If a reply arrives, follow it. If the timer fires with no reply, go with the recommendation and log it.
 
 This is not a stop: the marker stays `running`, and no push notification is needed beyond the status
 update.
+
+## Timers — every wait must be able to wake you
+
+A wait only works if something wakes the session when it ends. Use a **one-shot `CronCreate`**
+(`recurring: false`, minute/hour/day/month pinned) for every timed wait: the review window, the
+15-minute default, and a follow-up check on any long job. When it fires, its prompt arrives as a new
+turn. Do not use `sleep N` for a wait:
+
+- A Bash `run_in_background` sleep is killed when the shell sandbox has a time limit (lean-ctx kills any
+  shell after about 120 s), so the 5- and 15-minute timers die early or never fire.
+- A `ctx_shell` background job outlives that limit but sends **no** notification when it ends, so a
+  timer run there silently expires and the run stalls until someone asks.
+
+Long jobs (gates, CI polls, Stryker) may still run as `ctx_shell` background jobs, but schedule a
+one-shot `CronCreate` a little after their expected end to check them, and check every running job on
+each heartbeat. When a cron fires for a window or job that is already settled, ignore it.
 
 ## When to stop — and then really stop
 
