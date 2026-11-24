@@ -1,8 +1,240 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F88"
+],
+"still_passes_if": "F136",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::EveryTypeTheMapListsForThePlatformLane_LivesInItsPlatformArea_AndNoneIsLeftUnderServices"
+},
+"expected": "F134",
+"stimulus": "F133",
+"user_result": "F135"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F88"
+],
+"still_passes_if": "F140",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::ThePlatformLane_ReachesNoApiType"
+},
+"expected": "F138",
+"stimulus": "F137",
+"user_result": "F139"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F88"
+],
+"still_passes_if": "F144",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::ThePlatformLane_ReachesNoContextsAdapters"
+},
+"expected": "F142",
+"stimulus": "F141",
+"user_result": "F143"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F89"
+],
+"still_passes_if": "F148",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::AMadeUpListedTypeLeftUnderServices_FailsTheLayoutRule_NamingItsExpectedArea"
+},
+"expected": "F146",
+"stimulus": "F145",
+"user_result": "F147"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F90"
+],
+"still_passes_if": "F152",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::AMadeUpListedTypeInAnotherArea_FailsTheLayoutRule_NamingItMissingFromItsExpectedArea"
+},
+"expected": "F150",
+"stimulus": "F149",
+"user_result": "F151"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F91"
+],
+"still_passes_if": "F156",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::AMadeUpLaneTypeReachingAnApiType_FailsTheNoApiRule_NamingTheEdge"
+},
+"expected": "F154",
+"stimulus": "F153",
+"user_result": "F155"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F92"
+],
+"still_passes_if": "F160",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::AMadeUpLaneTypeReachingAContextsAdapter_FailsTheNoAdaptersRule_NamingTheEdge"
+},
+"expected": "F158",
+"stimulus": "F157",
+"user_result": "F159"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F93"
+],
+"still_passes_if": "F164",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::AMadeUpLaneTypeReachingAnUnlistedServicesType_FailsTheServicesRule_NamingItNotOnTheList"
+},
+"expected": "F162",
+"stimulus": "F161",
+"user_result": "F163"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F94"
+],
+"still_passes_if": "F168",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::EachListedEdgeOfTheLane_LeftOffTheList_FailsTheServicesRule_NamingItNotOnTheList"
+},
+"expected": "F166",
+"stimulus": "F165",
+"user_result": "F167"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F95"
+],
+"still_passes_if": "F172",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::EachListedEdgeOfTheLane_WithAGoneEdgeOfItsDependentAdded_FailsTheServicesRule_NamingItNoLongerOffending"
+},
+"expected": "F170",
+"stimulus": "F169",
+"user_result": "F171"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F96"
+],
+"still_passes_if": "F176",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::ALaneRuleHandedALaneHoldingNoType_FailsAsHavingCheckedNothing"
+},
+"expected": "F174",
+"stimulus": "F173",
+"user_result": "F175"
+},
+{
+"covers": [
+"P3",
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F88",
+"T1"
+],
+"still_passes_if": "F180",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::ThePlatformLane_ReachesCodeStillInServices_OnlyThroughTheListedEdges"
+},
+"expected": "F178",
+"stimulus": "F177",
+"user_result": "F179"
+},
+{
+"covers": [
+"P1",
+"P2",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F88"
+],
+"still_passes_if": "F184",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs::AMadeUpLaneThatOnlyDoesWhatIsAllowed_PassesEveryLaneRule"
+},
+"expected": "F182",
+"stimulus": "F181",
+"user_result": "F183"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F88"
+],
+"still_passes_if": "F188",
+"test": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Layout|FullyQualifiedName~PlatformLane|FullyQualifiedName~ModuleRulesCatchANewOffender"
+},
+"expected": "F186",
+"stimulus": "F185",
+"user_result": "F187"
+}
+]
+},
 "counters": {
 "D": 7,
 "E": 6,
-"F": 132,
+"F": 188,
 "K": 3,
 "L": 2,
 "P": 6,
@@ -577,11 +809,67 @@
 "F130": "A future contributor who puts a unit test of a platform type in an old Tests/Services folder is stopped by the placement rule, whose message names the test and the Tests/Platform/<Area> folder it belongs in. The tests that stay by design (update pipelines, context gold tests, seeders, repositories, zip host fixtures) are not flagged, and today's suite passes the rule.",
 "F131": "A maintainer sees that every production file left in Services/Interfaces and Services/Implementation is named per file with its owner, and that none is a platform file. A made-up new file there fails the rule, and a listed file that no longer exists fails too.",
 "F132": "Nothing a user, API client, tracker or the database sees changes: the platform-answers and refresh-reactions comparisons report IDENTICAL, the EF model is unchanged, feature A's preservation law and B's five layout rules and every existing architecture rule keep their verdicts with nothing loosened, the lane's module edges are not listed a second time, the filtered backend suite is green and the build has zero warnings. The test-selection show confirms the two new oracles are part of the selection.",
+"F133": "The layout rule reads the compiled code for every type the platform membership map lists, area by area",
+"F134": "Each listed type is found in its Platform area and no type of that name is left under Services",
+"F135": "A maintainer sees the platform lane's layout check pass on today's code, and fail naming the type and its Platform area once one is put back under Services",
+"F136": "A listed type also present as an identical copy outside both Services and Platform; the rule reads only the expected Platform name and the Services namespace",
+"F137": "The no-API rule reads every type of the platform lane in the compiled code",
+"F138": "No platform lane type reaches an API type; the empty list matches",
+"F139": "A maintainer sees that platform code reaching a controller or API contract cannot go in unseen",
 "F14": "Each slice's RED: C1 fails on a made-up offender per rule and per list position; C2 is structural, failing on a made-up file in an old folder. Behaviour is proved by the unchanged tests and EXAMINE through admitted probes (D-13).\n",
+"F140": "A lane reach into the API made only through reflection or dependency injection, which the compiled references do not carry",
+"F141": "The no-adapters rule reads every type of the platform lane in the compiled code",
+"F142": "No platform lane type reaches any context's Adapters; the empty list matches",
+"F143": "A maintainer sees that platform code reaching a context's storage or background adapters cannot go in unseen",
+"F144": "A lane reach into an adapter made only through reflection or dependency injection",
+"F145": "The layout rule is handed a made-up listed type that sits only under the made-up Services namespace",
+"F146": "It fails in the platform lane's wording and names the type as left behind instead of moving to its expected Platform area",
+"F147": "A maintainer who leaves a listed type under Services is told which type and which Platform area it belongs in",
+"F148": "A rule that also named an unrelated same-named type outside Services as left behind",
+"F149": "The layout rule is handed a made-up listed type that sits in another Platform area than the one it expects",
 "F15": "One commit per slice; C1 and C2 are pushed together after the whole-candidate review. Rigor thorough for feature C: product owner, architect, acceptance designer and crafter opus, reviewers and EXAMINE sonnet (open question 8 AFK default).\n",
+"F150": "It fails in the platform lane's wording, naming the expected full name in its Platform area as missing, and names nothing as left behind",
+"F151": "A maintainer who files a listed type in the wrong Platform area is told where it is expected",
+"F152": "A rule that would also accept the type in a nested namespace below its expected area",
+"F153": "The no-API rule runs over a made-up lane type that reaches a made-up API type",
+"F154": "It fails in the platform lane's wording, naming no module, and names the edge from the lane type to the API type as not on the list",
+"F155": "A maintainer whose platform code reaches the API is told the exact edge to undo",
+"F156": "A reach into the API only inside an async method, which this made-up case does not exercise but the shared rule's own falsifiers do",
+"F157": "The no-adapters rule runs over a made-up lane type that reaches a made-up context's adapter",
+"F158": "It fails in the platform lane's wording, naming no module, and names the edge to the adapter as not on the list",
+"F159": "A maintainer whose platform code reaches a context's adapter is told the exact edge to undo",
 "F16": "C1: the platform lane has its own rules, measured from the IL: R-PL1 (each listed type in its Platform/<Area>, none under Services), R-PL2 (no API), R-PL3 (no module Adapters) and R-PL4 (edges into code still in Services only through a measured list), each caught failing on a made-up offender per rule and per list position.",
+"F160": "A pattern that matched only one named context's Adapters, since the made-up case has a single context",
+"F161": "The Services rule runs over a made-up lane type whose listed edge stays and whose nested type adds an unlisted Services edge",
+"F162": "It fails in the platform lane's wording and names only the nested type's new edge as not on the list, asking to delete nothing",
+"F163": "A maintainer whose platform code takes a new dependency on Services code is told the exact new edge",
+"F164": "A rule that reported the nested newcomer under its outer type's name",
+"F165": "For each of the 19 positions of the measured list, the Services rule runs over the real code with that one entry removed",
+"F166": "Each run fails naming exactly the removed edge as not on the list, and nothing as no longer offending",
+"F167": "A maintainer can see that every listed edge is real and still guarded",
+"F168": "A list entry duplicated at two positions, since the comparison is by set",
+"F169": "For each of the 19 positions of the measured list, the Services rule runs over the real code with a made-up gone edge of that position's dependent added",
 "F17": "The platform lane's direction below the contexts is written down and checked, so new platform code cannot reach the API, a module adapter or unlisted Services code unseen\n",
+"F170": "Each run fails naming exactly the made-up gone edge as no longer offending, with a request to delete it, and names no newcomer",
+"F171": "A maintainer who keeps an edge on the list after it disappears is told to delete it, so the list only shrinks",
+"F172": "A gone edge whose dependent is also gone, which this falsifier does not construct",
+"F173": "The Services rule is handed a lane namespace that holds no type",
+"F174": "It fails saying the rule checked nothing",
+"F175": "A maintainer who renames or empties the lane namespace sees the rule fail rather than pass while guarding nothing",
+"F176": "The no-API and no-adapters rules handed an empty lane, which share the same verdict check but are not run empty here",
+"F177": "The Services rule reads every edge from the platform lane into Services in the compiled code and compares it with the 19 listed edges",
+"F178": "The edges found equal the list both ways: the repository edges of the demo data, update naming and usage data types, three edges to the app settings service, and the update queue's four write-back edges with its held update's one",
+"F179": "A maintainer sees exactly which Services code the platform lane still leans on, and that the update pipelines are not among it",
 "F18": "C2: every platform unit test sits under Tests/Platform/<Area>, no platform file is left in Services/Interfaces or Services/Implementation, and the production files that stay there are named per file with their owner; a made-up file in an old folder is caught.\n",
+"F180": "A new edge into Services that exists only through dependency injection or reflection, as the update pipelines do",
+"F181": "Every lane rule runs over a made-up lane that reaches only a listed Services helper (also from a nested type), a context's Application, and a same-named helper outside Services",
+"F182": "The Services rule finds exactly the two listed edges, nested one included; every rule passes",
+"F183": "A maintainer can trust that the rules do not fail compliant code, read nested types and match by namespace, not short name",
+"F184": "A rule that also ignored a reach into an Adapters namespace one level deeper than the context, which the made-up lane does not exercise",
+"F185": "The existing layout, platform lane membership and preservation, and shared module rule tests run beside the new rules",
+"F186": "They keep their verdicts; only test-side rule files were added, no production file changed and no list was loosened",
+"F187": "Nothing a user, an API client, a tracker or the database sees changes",
+"F188": "A behaviour change in production code that no architecture rule reads; the full filtered backend suite and EXAMINE carry that",
 "F19": "Nothing platform-like can be left in, or later added to, the old Services folders unseen, and every file that stays has a named owner\n",
 "F2": "The platform lane is ruled like a module: its direction below the contexts is written down and checked, and nothing platform-like is left in the old Services folders",
 "F20": "Confirmed (F11, D-8 option a): the platform lane is infrastructure below the contexts, not a module. It stays under every rule it is under today (ApplicationCoreRules.ApplicationCore and the kernel rules widened in feature A) and gets one direction rule set of its own, R-PL1 to R-PL4, in Architecture/PlatformLaneBoundariesArchUnitTest. The lane subject is every type whose namespace is under Lighthouse.Backend.Platform. R-PL1: each PlatformLaneMembership.MovingTypes row lives in Lighthouse.Backend.Platform.<its Area> and no type of that name is left under Lighthouse.Backend.Services. R-PL2: the lane reaches no type under Lighthouse.Backend.API, empty list. R-PL3: the lane reaches no type under any Lighthouse.Backend.Modules.<Module>.Adapters, empty list. R-PL4: the lane reaches types under Lighthouse.Backend.Services only through one inline list of \"Dependent -> Target\" full names. Rejected: a composition-root exemption (loosens rules that see these types today); no rule of its own (new platform code could reach the API, an adapter or Services unseen).",
