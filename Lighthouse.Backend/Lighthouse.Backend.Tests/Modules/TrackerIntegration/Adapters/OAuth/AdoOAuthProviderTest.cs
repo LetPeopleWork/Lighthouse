@@ -288,6 +288,40 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.OAuth
             }
         }
 
+        [TestCase("499b84ac-1321-427f-aa17-267ca6975798/vso.work_write offline_access", WorkItemRights.ReadAndWrite, TestName = "Write rights named with their resource grant reading and writing")]
+        [TestCase("offline_access vso.work_write", WorkItemRights.ReadAndWrite, TestName = "Write rights named without their resource grant reading and writing")]
+        [TestCase("499b84ac-1321-427f-aa17-267ca6975798/vso.work offline_access", WorkItemRights.Read, TestName = "Read rights alone grant reading only")]
+        [TestCase("499b84ac-1321-427f-aa17-267ca6975798vso.work_write", WorkItemRights.Read, TestName = "A scope that only ends like write rights grants reading only")]
+        [TestCase(null, WorkItemRights.Read, TestName = "A token answer without any scope grants reading only")]
+        public async Task ExchangeCodeAsync_ReadsTheGrantedRightsFromTheScopeMicrosoftReturns(string? grantedScope, WorkItemRights expected)
+        {
+            var provider = CreateProvider(CreateHandler((_, _) => Task.FromResult(TokenResponseGranting(grantedScope))));
+
+            var tokens = await provider.ExchangeCodeAsync("ado-auth-code", CreateFlowContext(), CancellationToken.None);
+
+            Assert.That(tokens.GrantedRights, Is.EqualTo(expected));
+        }
+
+        private static HttpResponseMessage TokenResponseGranting(string? grantedScope)
+        {
+            var body = new Dictionary<string, object>
+            {
+                ["access_token"] = "access",
+                ["refresh_token"] = "refresh",
+                ["expires_in"] = 3600,
+                ["token_type"] = "Bearer",
+            };
+            if (grantedScope is not null)
+            {
+                body["scope"] = grantedScope;
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(body), Encoding.UTF8, "application/json"),
+            };
+        }
+
         private static AdoOAuthProvider CreateProvider(HttpMessageHandler handler)
         {
             var httpClientFactory = new Mock<IHttpClientFactory>();
