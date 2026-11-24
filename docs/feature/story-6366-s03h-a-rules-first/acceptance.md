@@ -219,6 +219,255 @@ A production change outside what the architecture rules read passes here; the ho
 
 None.
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Every constant and static read-only rule pattern in the test assembly is asked, on the subject its rule reads, whether it sees each moving Reports type under the type's old namespace and under its new Modules.Reports namespace.
+```
+
+```text
+No pattern breaks its role: a pattern for the Reports context sees each moving type in both places, an old location or a pattern that saw Reports only by its folder does not follow it, and no undeclared pattern sees a moving type. Before the Reports rule constants are widened this names ReportsPattern, RefinementReportsAccessAndLicensing, both RefinementAndReports constants and the readers built from them as stopping to see the type.
+```
+
+```text
+Once the Reports files move, every architecture rule that guards or forbids Reports still judges them, so no rule quietly stops checking.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesSeeTheMoveArchUnitTest\.cs\:\:EveryRulePatternThatSeesAMovingReportsType\_IsDeclared\_AndKeepsItsRoleOnTheSubjectItsRuleReads
+
+```text
+A rule that names Reports only by a string built at run time from fragments that never appear as one constant, or a pattern declared folder-only by mistake so it may lose Reports
+```
+
+###### Obligations
+
+
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+The same role check is run over made-up rule constants, each declared with a subject and a role: a context that sees only the old place, one that names Reports as one choice of a group, ones widened by type names or only to the Application namespace, an old location widened into the new place, a part of the code that never saw Reports given Modules.Reports, a folder-only match that follows the types, undeclared constants in a nested class, and an interpolated reader built from a blind context.
+```
+
+```text
+The check names exactly those made-up constants with their break kind, passes the ones that keep their role (both places named, an anchored module alternative on a group, a full-name pattern widened by type names, an old location left in place), and the selection widened only to Application loses exactly the Domain and Metrics types.
+```
+
+```text
+The check cannot be fooled into passing a rule that would go blind or wrong at the move.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesSeeTheMoveArchUnitTest\.cs\:\:TheRoleCheck\_NamesEachMadeUpPatternThatBreaksItsRole\_AndPassesTheOnesThatKeepIt
+
+```text
+A break kind the made-up set does not stage, such as a composite whose component is declared as an old location
+```
+
+###### Obligations
+
+
+
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Made-up patterns over all of Modules, one on the whole-parent list, one listed but narrower than Modules, one not listed, are put through the role check.
+```
+
+```text
+Only the listed pattern over all of Modules may see the moved Reports types for the first time; the narrower listed one and the unlisted one are named.
+```
+
+```text
+A pattern over every module may take Reports in once it becomes a module, and no other pattern may start judging the moved types unnoticed.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesSeeTheMoveArchUnitTest\.cs\:\:TheWholeParentList\_AdmitsTheNewSightOfAListedPatternOverAllOfModules\_AndNoOther
+
+```text
+A whole-parent pattern that takes in all of Modules but is not meant to see Reports
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Every Modules.Reports alternative of a rule pattern in the test assembly is asked about every production namespace and full name outside Modules.Reports, on the subject the pattern is declared with.
+```
+
+```text
+No alternative matches anything outside Modules.Reports.
+```
+
+```text
+A rule widened for the move takes in only the moved Reports types and nothing it was never about.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesSeeTheMoveArchUnitTest\.cs\:\:NoModulesReportsAlternativeOfARulePattern\_MatchesAProductionNamespaceOrTypeOutsideModulesReports
+
+```text
+An unanchored alternative that today matches nothing outside but would match a namespace added later
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+The alternative check is asked over made-up keys about the production names plus a lookalike namespace that only starts like Modules.Reports.
+```
+
+```text
+Only the made-up key with an unanchored Modules.Reports alternative is named; the anchored keys pass.
+```
+
+```text
+The check catches an alternative that would reach past the Reports module.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesSeeTheMoveArchUnitTest\.cs\:\:TheModulesReportsAlternativeCheck\_NamesAMadeUpAlternativeThatReachesALookalike\_AndPassesTheAnchoredOnes
+
+```text
+An alternative anchored at the start but open at the end on a full-name subject
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+The test project's source files are read as text for string literals that name Reports by its old Services path: plain dotted, as a folder path, as a regular expression, below Reports, or as one choice of a group under Services; literals that are a governed rule pattern or a piece of one are left to the role check.
+```
+
+```text
+The old-path literals are exactly the entries of the fixed rename list: none outside it, and every entry still found in its file.
+```
+
+```text
+No test keeps pointing at the old Reports place by a string the move would leave behind.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesSeeTheMoveArchUnitTest\.cs\:\:NoRuleStringNamesReportsByItsOldPath\_OutsideTheRenameList
+
+```text
+A string assembled at run time from fragments none of which names the old path alone
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+The same comparison is run over a made-up rule file and a made-up rename list with one entry still in the file and one gone.
+```
+
+```text
+It names the four unlisted old-path forms (old namespace, old port-file path, old Metrics namespace, a group naming Reports) and the entry that is gone, and not the listed string, a lookalike namespace, a test namespace, a governed pattern or a piece of one.
+```
+
+```text
+The rename list is checked both ways, so it can only shrink as the move proceeds.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesSeeTheMoveArchUnitTest\.cs\:\:TheRenameListCheck\_NamesEachUnlistedOldPathString\_AndAListedStringThatNoLongerExists
+
+```text
+A literal that is a piece of a governed pattern but names a second old path the pattern does not
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P4
+
+```text
+The shared preservation law, now also used with the Reports map, is asked again with the platform map over the whole test assembly, and every architecture test runs beside the new Reports check.
+```
+
+```text
+Every platform verdict is unchanged and every existing architecture test stays green; no production file changes.
+```
+
+```text
+Nothing a user, a tracker or the database sees changes, and the rules that already held still hold.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs\:\:EveryRulePatternThatSeesAMovingPlatformType\_IsDeclared\_AndKeepsItsRoleOnTheSubjectItsRuleReads
+
+```text
+A behaviour change in production code that no architecture rule observes; the backend suite run by the host covers it
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
