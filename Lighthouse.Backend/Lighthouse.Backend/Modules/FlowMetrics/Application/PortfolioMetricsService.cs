@@ -71,11 +71,14 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         public OutlierVerdict GetCycleTimeOutliers(Portfolio portfolio, DateTime startDate, DateTime endDate, int? definitionId)
         {
-            return GetFromCacheIfExists(portfolio, $"CycleTimeOutliers_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{CycleTimeOutliersCacheKeyPart(definitionId)}{AsOfCacheKeyPart(null)}", () =>
-                BuildCycleTimeOutliers(portfolio, startDate, endDate, definitionId, cycleTimeOutlierDefinition,
-                    (s, e) => GetFeaturesClosedInDateRange(portfolio, s, e).ToList(),
-                    AssociateSyncedTransitions), logger);
+            return GetFromCacheIfExists(portfolio, $"CycleTimeOutliers_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{CycleTimeMeasureCacheKeyPart(definitionId)}{AsOfCacheKeyPart(null)}", () =>
+                BuildCycleTimeOutliers(portfolio, startDate, endDate, definitionId, cycleTimeOutlierDefinition, CycleTimeItemsOf(portfolio)), logger);
         }
+
+        private CycleTimeItemSource<Feature> CycleTimeItemsOf(Portfolio portfolio) => new(
+            (startDate, endDate) => GetFeaturesClosedInDateRange(portfolio, startDate, endDate).ToList(),
+            () => featureRepository.DoingOrDoneFeaturesOfPortfolio(portfolio.Id),
+            AssociateSyncedTransitions);
 
         public ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
@@ -346,9 +349,16 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             return ScopedCumulativeStateOrder(displayStatesInOrder, startState, endState);
         }
 
-        public IReadOnlyList<CycleTimeFeature> GetNamedCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        public IReadOnlyList<CycleTimeFeature> GetNamedCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, int? definitionId = null)
         {
             logger.LogDebug("Getting Named Cycle Time Data for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            if (definitionId.HasValue)
+            {
+                return NamedCycleTimePopulation(portfolio, definitionId.Value, startDate, endDate, CycleTimeItemsOf(portfolio))
+                    .Select(entry => new CycleTimeFeature(entry.Item, [entry.Value]))
+                    .ToList();
+            }
 
             var displayStatesInOrder = DisplayStatesInOrder(portfolio);
             var resolvedDefinitions = ResolveValidNamedDefinitions(portfolio, displayStatesInOrder);
@@ -371,29 +381,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             logger.LogDebug("Getting Named Cycle Time Percentiles for Portfolio {PortfolioName} definition {DefinitionId} between {StartDate} and {EndDate}", portfolio.Name, definitionId, startDate.Date, endDate.Date);
 
             return GetFromCacheIfExists(portfolio, $"NamedCycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
-                BuildPercentiles(ComputeNamedDurations(portfolio, startDate, endDate, definitionId)), logger);
-        }
-
-        private List<int> ComputeNamedDurations(Portfolio portfolio, DateTime startDate, DateTime endDate, int definitionId)
-        {
-            var definition = portfolio.CycleTimeDefinitions.FirstOrDefault(candidate => candidate.Id == definitionId);
-            if (definition == null || !portfolio.IsCycleTimeDefinitionValid(definition))
-            {
-                return [];
-            }
-
-            var displayStatesInOrder = DisplayStatesInOrder(portfolio);
-            var startState = ResolveBoundaryState(portfolio, displayStatesInOrder, definition.StartState);
-            var endState = ResolveBoundaryState(portfolio, displayStatesInOrder, definition.EndState);
-
-            var closedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate).ToList();
-            var itemsWithTransitions = AssociateSyncedTransitions(closedFeatures);
-
-            return itemsWithTransitions
-                .Select(item => NamedCycleTimeDays(item, displayStatesInOrder, startState, endState))
-                .Where(days => days.HasValue)
-                .Select(days => days!.Value)
-                .ToList();
+                BuildPercentiles(NamedCycleTimesIn(portfolio, definitionId, startDate, endDate, CycleTimeItemsOf(portfolio))), logger);
         }
 
         public CumulativeStateTimeItemsDto GetCumulativeStateTimeItemsForPortfolio(Portfolio portfolio, string state, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null)
@@ -489,14 +477,14 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             return portfolio.DisplayStatesFor(StateCategories.Doing);
         }
 
-        private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<Feature> completedFeatures)
+        private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<Feature> features)
         {
-            var completedFeatureIds = completedFeatures.Select(feature => feature.Id).ToHashSet();
+            var featureIds = features.Select(feature => feature.Id).ToHashSet();
             var transitionsByFeature = GroupTransitionsByItem(featureStateTransitionRepository
-                .TransitionsOfFeatures(completedFeatureIds)
+                .TransitionsOfFeatures(featureIds)
                 .Select(transition => (transition.FeatureId, ToWorkItemStateTransition(transition))));
 
-            return completedFeatures
+            return features
                 .Select(feature => new WorkItem
                 {
                     Id = feature.Id,
@@ -706,7 +694,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 return GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate);
             }
 
-            var namedDurations = ComputeNamedDurations(portfolio, startDate, endDate, definitionId!.Value);
+            var namedDurations = NamedCycleTimesIn(portfolio, definitionId!.Value, startDate, endDate, CycleTimeItemsOf(portfolio));
             if (namedDurations.Count == 0)
             {
                 return [];

@@ -438,10 +438,10 @@ namespace Lighthouse.Backend.Tests.API
             var data = new List<CycleTimeFeature>
             {
                 new CycleTimeFeature(new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-2), ClosedDate = TestToday.AmbientAsUtcMidnight }, []),
-                new CycleTimeFeature(new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-5), ClosedDate = TestToday.AmbientAsUtcMidnight }, [new NamedCycleTimeValue(7, 5)])
+                new CycleTimeFeature(new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-5), ClosedDate = TestToday.AmbientAsUtcMidnight }, [new NamedCycleTimeValue(7, 5, TestToday.AmbientAsUtcMidnight)])
             };
 
-            projectMetricsService.Setup(x => x.GetNamedCycleTimeDataForPortfolio(project, startDate, endDate))
+            projectMetricsService.Setup(x => x.GetNamedCycleTimeDataForPortfolio(project, startDate, endDate, null))
                 .Returns(data);
 
             var result = subject.GetCycleTimeData(1, startDate, endDate);

@@ -688,7 +688,7 @@ namespace Lighthouse.Backend.Tests.API
                 new(item1, []),
                 new(item2, []),
             };
-            teamMetricsServiceMock.Setup(service => service.GetCycleTimeDataForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedItems);
+            teamMetricsServiceMock.Setup(service => service.GetCycleTimeDataForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>(), null)).Returns(expectedItems);
 
             var subject = CreateSubject();
 

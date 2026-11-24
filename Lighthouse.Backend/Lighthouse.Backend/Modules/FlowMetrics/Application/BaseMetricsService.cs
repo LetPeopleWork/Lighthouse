@@ -374,11 +374,69 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             IReadOnlyList<(int Id, string StartState, string EndState)> definitions)
         {
             return definitions
-                .Select(definition => (definition.Id, days: NamedCycleTimeDays(item, statesInOrder, definition.StartState, definition.EndState)))
-                .Where(entry => entry.days.HasValue)
-                .Select(entry => new NamedCycleTimeValue(entry.Id, entry.days!.Value))
+                .Select(definition => (definition.Id, window: NamedCycleTimeWindow(item, statesInOrder, definition.StartState, definition.EndState)))
+                .Where(entry => entry.window.HasValue)
+                .Select(entry => new NamedCycleTimeValue(entry.Id, InclusiveDays(entry.window!.Value), entry.window.Value.End))
                 .ToList();
         }
+
+        /// <summary>
+        /// The items a named Cycle Time is answered from: every candidate whose last forward crossing into the
+        /// definition's end state falls on a day in the range, whether it was closed afterwards or not, each with its
+        /// named value and ordered by the day it reached the end state. An unknown or invalid definition has no items.
+        /// </summary>
+        protected IReadOnlyList<NamedCycleTimeItem<TItem>> NamedCycleTimePopulation<TItem>(
+            WorkTrackingSystemOptionsOwner owner,
+            int definitionId,
+            DateTime startDate,
+            DateTime endDate,
+            CycleTimeItemSource<TItem> source) where TItem : WorkItemBase
+        {
+            var statesInOrder = DisplayStatesInOrder(owner);
+            var requestedDefinition = ResolveValidNamedDefinitions(owner, statesInOrder)
+                .Where(candidate => candidate.Id == definitionId)
+                .ToList();
+            if (requestedDefinition.Count == 0)
+            {
+                return [];
+            }
+
+            var firstDay = DateOnly.FromDateTime(startDate);
+            var lastDay = DateOnly.FromDateTime(endDate);
+            var candidates = source.Candidates();
+            var reachedInRange = source.WithTransitions(candidates)
+                .SelectMany(item => NamedValuesForItem(item, statesInOrder, requestedDefinition).Select(value => (item.Id, Value: value)))
+                .Where(entry => FallsOnDayBetween(entry.Value.EndDate, firstDay, lastDay))
+                .ToDictionary(entry => entry.Id, entry => entry.Value);
+
+            return candidates
+                .Where(item => reachedInRange.ContainsKey(item.Id))
+                .Select(item => new NamedCycleTimeItem<TItem>(item, reachedInRange[item.Id]))
+                .OrderBy(entry => entry.Value.EndDate)
+                .ThenBy(entry => entry.Item.Id)
+                .ToList();
+        }
+
+        protected List<int> NamedCycleTimesIn<TItem>(
+            WorkTrackingSystemOptionsOwner owner,
+            int definitionId,
+            DateTime startDate,
+            DateTime endDate,
+            CycleTimeItemSource<TItem> source) where TItem : WorkItemBase
+            => NamedCycleTimePopulation(owner, definitionId, startDate, endDate, source)
+                .Select(entry => entry.Value.Days)
+                .ToList();
+
+        protected sealed record NamedCycleTimeItem<TItem>(TItem Item, NamedCycleTimeValue Value) where TItem : WorkItemBase;
+
+        /// <summary>
+        /// Where a service finds its items for a Cycle Time: the items closed between two dates, every item that may
+        /// have reached a named end state, and how to attach the state transitions a named Cycle Time is measured on.
+        /// </summary>
+        protected sealed record CycleTimeItemSource<TItem>(
+            Func<DateTime, DateTime, IReadOnlyCollection<TItem>> ClosedBetween,
+            Func<IReadOnlyCollection<TItem>> Candidates,
+            Func<IReadOnlyCollection<TItem>, IReadOnlyList<WorkItem>> WithTransitions) where TItem : WorkItemBase;
 
         protected static List<string> DisplayStatesInOrder(WorkTrackingSystemOptionsOwner owner)
             => owner.CategoryLists().DisplayStatesInWorkflowOrder();
@@ -394,8 +452,11 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 return null;
             }
 
-            return (int)(window.Value.End.Date - window.Value.Start.Date).TotalDays + 1;
+            return InclusiveDays(window.Value);
         }
+
+        private static int InclusiveDays((DateTime Start, DateTime End) window)
+            => (int)(window.End.Date - window.Start.Date).TotalDays + 1;
 
         protected static (DateTime Start, DateTime End)? NamedCycleTimeWindow(WorkItem item, IReadOnlyList<string> statesInOrder, string startState, string endState)
         {
@@ -731,8 +792,9 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         }
 
         /// <summary>
-        /// Judges the shown closed items against the same baseline, items and order the Cycle Time process behaviour
-        /// chart uses, measured with the default Cycle Time or the named one. An unknown or invalid named Cycle Time
+        /// Judges the shown items against the same baseline the Cycle Time process behaviour chart uses. The default
+        /// Cycle Time judges the items closed in each period, in closing order; a named one judges the items that
+        /// reached its end state in each period, in the order they reached it. An unknown or invalid named Cycle Time
         /// has no limits.
         /// </summary>
         protected OutlierVerdict BuildCycleTimeOutliers<TItem>(
@@ -741,64 +803,46 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             DateTime displayEnd,
             int? definitionId,
             ICycleTimeOutlierDefinition outlierDefinition,
-            Func<DateTime, DateTime, IReadOnlyCollection<TItem>> getClosedItems,
-            Func<IReadOnlyCollection<TItem>, IReadOnlyList<WorkItem>> associateTransitions) where TItem : WorkItemBase
+            CycleTimeItemSource<TItem> source) where TItem : WorkItemBase
         {
             var baseline = ResolveBaseline(owner, displayStart, displayEnd, null);
-            var measure = CycleTimeMeasure(owner, definitionId, associateTransitions);
-            if (!baseline.Validation.IsValid || measure == null)
+            if (!baseline.Validation.IsValid || !IsMeasurable(owner, definitionId))
             {
                 return new OutlierVerdict.NoLimits();
             }
 
-            var baselineCycleTimes = CycleTimeObservations(getClosedItems(baseline.Start!.Value, baseline.End!.Value), measure)
+            var baselineCycleTimes = CycleTimeObservations(owner, definitionId, baseline.Start!.Value, baseline.End!.Value, source)
                 .Select(observation => observation.Days)
                 .ToList();
-            var shown = CycleTimeObservations(getClosedItems(displayStart, displayEnd), measure);
+            var shown = CycleTimeObservations(owner, definitionId, displayStart, displayEnd, source);
 
             return outlierDefinition.Judge(baselineCycleTimes, shown);
         }
 
-        protected static string CycleTimeOutliersCacheKeyPart(int? definitionId) => definitionId.HasValue ? $"_Def_{definitionId.Value}" : "_Default";
+        protected static string CycleTimeMeasureCacheKeyPart(int? definitionId) => definitionId.HasValue ? $"_Def_{definitionId.Value}" : "_Default";
 
-        private Func<IReadOnlyCollection<TItem>, Func<TItem, int?>>? CycleTimeMeasure<TItem>(
+        private static bool IsMeasurable(WorkTrackingSystemOptionsOwner owner, int? definitionId)
+            => !definitionId.HasValue
+               || owner.CycleTimeDefinitions.Any(candidate => candidate.Id == definitionId.Value && owner.IsCycleTimeDefinitionValid(candidate));
+
+        private List<CycleTimeObservation> CycleTimeObservations<TItem>(
             WorkTrackingSystemOptionsOwner owner,
             int? definitionId,
-            Func<IReadOnlyCollection<TItem>, IReadOnlyList<WorkItem>> associateTransitions) where TItem : WorkItemBase
+            DateTime startDate,
+            DateTime endDate,
+            CycleTimeItemSource<TItem> source) where TItem : WorkItemBase
         {
-            if (!definitionId.HasValue)
+            if (definitionId.HasValue)
             {
-                return _ => item => item.CycleTime(Clock.Zone);
+                return NamedCycleTimePopulation(owner, definitionId.Value, startDate, endDate, source)
+                    .Select(entry => new CycleTimeObservation(entry.Item.Id, entry.Value.Days))
+                    .ToList();
             }
 
-            var definition = owner.CycleTimeDefinitions.FirstOrDefault(candidate => candidate.Id == definitionId.Value);
-            if (definition == null || !owner.IsCycleTimeDefinitionValid(definition))
-            {
-                return null;
-            }
-
-            var statesInOrder = DisplayStatesInOrder(owner);
-            var startState = ResolveBoundaryState(owner, statesInOrder, definition.StartState);
-            var endState = ResolveBoundaryState(owner, statesInOrder, definition.EndState);
-
-            return items =>
-            {
-                var namedDaysById = associateTransitions(items)
-                    .ToDictionary(item => item.Id, item => NamedCycleTimeDays(item, statesInOrder, startState, endState));
-                return item => namedDaysById.GetValueOrDefault(item.Id);
-            };
-        }
-
-        private static List<CycleTimeObservation> CycleTimeObservations<TItem>(
-            IReadOnlyCollection<TItem> closedItems,
-            Func<IReadOnlyCollection<TItem>, Func<TItem, int?>> measure) where TItem : WorkItemBase
-        {
-            var cycleTimeOf = measure(closedItems);
-
-            return InClosingOrder(closedItems)
-                .Select(item => (item.Id, Days: cycleTimeOf(item)))
+            return InClosingOrder(source.ClosedBetween(startDate, endDate))
+                .Select(item => (item.Id, Days: item.CycleTime(Clock.Zone)))
                 .Where(entry => entry.Days > 0)
-                .Select(entry => new CycleTimeObservation(entry.Id, entry.Days!.Value))
+                .Select(entry => new CycleTimeObservation(entry.Id, entry.Days))
                 .ToList();
         }
 
@@ -934,15 +978,13 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         // The stored close instant is reduced to a day once, in the instance's time zone, and compared
         // against day bounds the caller already reduced, so a late-evening close lands on its local day.
         private bool WasClosedBetween(WorkItemBase item, DateOnly firstDay, DateOnly lastDay)
+            => item.ClosedDate.HasValue && FallsOnDayBetween(item.ClosedDate.Value, firstDay, lastDay);
+
+        private bool FallsOnDayBetween(DateTime instant, DateOnly firstDay, DateOnly lastDay)
         {
-            if (!item.ClosedDate.HasValue)
-            {
-                return false;
-            }
+            var day = Clock.ToInstanceDay(instant);
 
-            var closedDay = Clock.ToInstanceDay(item.ClosedDate.Value);
-
-            return closedDay >= firstDay && closedDay <= lastDay;
+            return day >= firstDay && day <= lastDay;
         }
 
         private int GetClosedIndexForItem(DateTime startDate, WorkItemBase item)

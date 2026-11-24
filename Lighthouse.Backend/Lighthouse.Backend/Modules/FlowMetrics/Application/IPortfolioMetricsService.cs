@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         CumulativeStateTimeDto GetCumulativeStateTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null, int? definitionId = null);
 
-        IReadOnlyList<CycleTimeFeature> GetNamedCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
+        IReadOnlyList<CycleTimeFeature> GetNamedCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, int? definitionId = null);
 
         IEnumerable<PercentileValue> GetNamedCycleTimePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, int definitionId);
 
