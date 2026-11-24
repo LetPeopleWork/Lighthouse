@@ -1,9 +1,9 @@
-import { Alert, Button } from "@mui/material";
 import {
 	type OAuthSignInCopy,
 	useOAuthSignIn,
 } from "../../../hooks/useOAuthSignIn";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import SignInAlert from "./SignInAlert";
 
 interface WriteConsentAlertProps {
 	connection: IWorkTrackingSystemConnection;
@@ -43,31 +43,14 @@ const WriteConsentAlert = ({
 	};
 
 	return (
-		<>
-			<Alert
-				severity="warning"
-				action={
-					<Button
-						color="inherit"
-						size="small"
-						onClick={() => signIn(target)}
-						disabled={isSigningIn}
-					>
-						Sign in again
-					</Button>
-				}
-			>
-				{WRITE_CONSENT_COPY}
-			</Alert>
-			{inlineMessage !== null && (
-				<Alert
-					severity={inlineMessage.severity}
-					data-testid="write-consent-alert-inline-message"
-				>
-					{inlineMessage.text}
-				</Alert>
-			)}
-		</>
+		<SignInAlert
+			message={WRITE_CONSENT_COPY}
+			actionLabel="Sign in again"
+			onAction={() => signIn(target)}
+			isSigningIn={isSigningIn}
+			inlineMessage={inlineMessage}
+			inlineMessageTestId="write-consent-alert-inline-message"
+		/>
 	);
 };
 

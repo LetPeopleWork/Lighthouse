@@ -1,4 +1,3 @@
-import { Alert, Button } from "@mui/material";
 import { useContext } from "react";
 import {
 	type OAuthSignInCopy,
@@ -6,6 +5,7 @@ import {
 } from "../../../hooks/useOAuthSignIn";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import SignInAlert from "./SignInAlert";
 
 interface ReconnectBannerProps {
 	connection: IWorkTrackingSystemConnection;
@@ -51,31 +51,14 @@ const ReconnectBanner = ({
 		);
 
 	return (
-		<>
-			<Alert
-				severity="warning"
-				action={
-					<Button
-						color="inherit"
-						size="small"
-						onClick={handleReconnect}
-						disabled={isSigningIn}
-					>
-						Reconnect
-					</Button>
-				}
-			>
-				{RECONNECT_COPY}
-			</Alert>
-			{inlineMessage !== null && (
-				<Alert
-					severity={inlineMessage.severity}
-					data-testid="reconnect-banner-inline-message"
-				>
-					{inlineMessage.text}
-				</Alert>
-			)}
-		</>
+		<SignInAlert
+			message={RECONNECT_COPY}
+			actionLabel="Reconnect"
+			onAction={handleReconnect}
+			isSigningIn={isSigningIn}
+			inlineMessage={inlineMessage}
+			inlineMessageTestId="reconnect-banner-inline-message"
+		/>
 	);
 };
 
