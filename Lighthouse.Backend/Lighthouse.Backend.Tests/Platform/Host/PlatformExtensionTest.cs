@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Platform.Host;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Platform.Host
 {
     public class PlatformExtensionTest
     {

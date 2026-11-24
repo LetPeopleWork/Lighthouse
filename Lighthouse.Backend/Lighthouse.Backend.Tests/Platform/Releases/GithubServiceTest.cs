@@ -1,8 +1,7 @@
 ﻿using Lighthouse.Backend.Platform.Releases;
-using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Tests.TestHelpers;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Platform.Releases
 {
     [Category("GithubIntegration")]
     public class GithubServiceTest : IntegrationFixture
