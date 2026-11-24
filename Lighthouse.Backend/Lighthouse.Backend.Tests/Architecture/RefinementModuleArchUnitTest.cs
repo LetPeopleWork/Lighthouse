@@ -22,21 +22,20 @@ namespace Lighthouse.Backend.Tests.Architecture
     public class RefinementModuleArchUnitTest
     {
         private const string ServicesImplementationPattern = @"^Lighthouse\.Backend\.Services\.Implementation($|\..*)"
-            + @"|^Lighthouse\.Backend\.Platform\.(Encryption|DatabaseManagement|DemoData|Seeding|Persistence|UsageData|Logging|Releases|DomainEvents|Host|UpdateQueue)(\.|$)";
+            + @"|^Lighthouse\.Backend\.Platform\.(Encryption|DatabaseManagement|DemoData|Seeding|Persistence|UsageData|Logging|Releases|DomainEvents|Host|UpdateQueue)(\.|$)"
+            + @"|^Lighthouse\.Backend\.Modules\.Refinement\.(Domain|Application)(\.|$)";
 
         private const string ApiLayerPattern = @"^Lighthouse\.Backend\.API($|\..*)";
 
         private const string CompositionRootPattern = @"^Lighthouse\.Backend\.Program($|\+.*)";
 
-        private const string RefinementImplementationNamespace = "Lighthouse.Backend.Services.Implementation.Refinement";
-
-        private const string RefinementResolutionAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementResolution($|\+.*)";
+        private const string RefinementResolutionAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementResolution($|\+.*)|^Lighthouse\.Backend\.Modules\.Refinement\.Application\.RefinementResolution($|\+.*)";
 
         private const string WeeklyRecurrenceAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.WeeklyRecurrence($|\+.*)";
 
-        private const string RefinementCadenceCalendarAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementCadenceCalendar($|\+.*)";
+        private const string RefinementCadenceCalendarAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementCadenceCalendar($|\+.*)|^Lighthouse\.Backend\.Modules\.Refinement\.Application\.RefinementCadenceCalendar($|\+.*)";
 
-        private const string NeedBandAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.NeedBand($|\+.*)";
+        private const string NeedBandAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.NeedBand($|\+.*)|^Lighthouse\.Backend\.Modules\.Refinement\.Domain\.NeedBand($|\+.*)";
 
         private const string BackgroundUpdatesPattern =
             ModuleBoundariesArchUnitTest.PortfolioDeliveryPattern + @"|^Lighthouse\.Backend\.Modules\.Forecasting\.Adapters(\.|$)";
@@ -51,6 +50,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // Everything in the module serves the tab's read except what adds to the sizing log.
         private static readonly string[] WritePath = [nameof(SizingLogCommands)];
+
+        // Read from the membership map rather than written out, so the selection follows the types when they move.
+        private static readonly HashSet<string> RefinementNamespaces =
+            [.. RefinementMembership.MovingTypes.SelectMany(type => new[] { type.OldNamespace, type.NewNamespace })];
 
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
@@ -152,7 +155,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void The_need_calculator_lives_in_the_Refinement_module()
         {
-            Assert.That(typeof(RefinementNeedCalculator).Namespace, Is.EqualTo(RefinementImplementationNamespace));
+            var calculator = RefinementMembership.MovingTypes.Single(type => type.Name == nameof(RefinementNeedCalculator));
+
+            Assert.That(typeof(RefinementNeedCalculator).Namespace, Is.AnyOf(calculator.OldNamespace, calculator.NewNamespace));
         }
 
         // Stages come from the same rule engine every other Work Item rule uses, reached through its port, so a
@@ -162,7 +167,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Types().That().HaveFullName(typeof(StageRuleMatcher).FullName!)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
-                    .And().DoNotResideInNamespace(RefinementImplementationNamespace))
+                    .And().DoNotResideInNamespaceMatching(ModuleBoundariesArchUnitTest.RefinementPattern))
                 .AndShould().NotDependOnAny(Types().That().HaveFullNameMatching(RepositoryRecognition.RepositoryContracts))
                 .Because("matching rules is the rule engine's job; the matcher only hands it the Work Items already in refinement.")
                 .Check(Architecture);
@@ -301,7 +306,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static List<IType> ReadPath()
             => [.. Architecture.Types
-                .Where(type => type.Namespace.FullName == RefinementImplementationNamespace)
+                .Where(type => RefinementNamespaces.Contains(type.Namespace.FullName))
                 .Where(type => !WritePath.Contains(type.Name))];
 
         private static bool CarriesTeamContribute(MemberInfo member)

@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string TheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices\.Update|Interfaces\.Update)(\.|$)"
             + @"|^Lighthouse\.Backend\.Platform\.UpdateQueue(\.|$)";
 
-        private const string RefinementAndReports = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Refinement|Reports)(\.|$)";
+        private const string RefinementAndReports = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Refinement|Reports)(\.|$)|^Lighthouse\.Backend\.Modules\.Refinement(\.|$)";
 
         private const string WorkItemsEdgeList = "EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue";
 

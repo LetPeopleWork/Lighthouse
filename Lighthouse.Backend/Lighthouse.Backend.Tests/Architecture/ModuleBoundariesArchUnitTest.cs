@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         internal const string PromisesPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.DeliverySources(\.|$)|^Lighthouse\.Backend\.Modules\.Promises(\.|$)";
         internal const string RefinementPattern =
-            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Refinement($|\..*)";
+            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Refinement($|\..*)|^Lighthouse\.Backend\.Modules\.Refinement(\.|$)";
         internal const string ReportsPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Reports($|\..*)";
         private static readonly string[] FlowMetricsNamespaces =
