@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var failure = FailureOf(() => ThenTheyMatchTheMap(RefinementTypesInTheCode.Value, [.. RefinementMembership.MovingTypes.Where(type => type != leftOff)]));
 
-            ThenOnlyTheseAreNamed(failure, notOnTheMap: [leftOff.OldFullName], notInTheCode: [], foundTwice: []);
+            ThenOnlyTheseAreNamed(failure, notOnTheMap: [leftOff.NewFullName], notInTheCode: [], foundTwice: []);
         }
 
         [Test]
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var failure = FailureOf(() => ThenTheyMatchTheMap(RefinementTypesInTheCode.Value, [.. RefinementMembership.MovingTypes.Select(type => type == swapped ? madeUp : type)]));
 
-            ThenOnlyTheseAreNamed(failure, notOnTheMap: [swapped.OldFullName], notInTheCode: ["AMadeUpSizingClock"], foundTwice: []);
+            ThenOnlyTheseAreNamed(failure, notOnTheMap: [swapped.NewFullName], notInTheCode: ["AMadeUpSizingClock"], foundTwice: []);
         }
 
         [Test]
@@ -132,7 +132,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice()
         {
             var moved = MovingTypeNamed("RefinementNeedCalculator");
-            var found = RefinementTypesInTheCode.Value.Append(moved.NewFullName).ToList();
+            var found = RefinementTypesInTheCode.Value.Append(moved.OldFullName).ToList();
 
             var failure = FailureOf(() => ThenTheyMatchTheMap(found, RefinementMembership.MovingTypes));
 
@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var moved = MovingTypeNamed("RefinementNeedCalculator");
             var otherLayer = moved with { Layer = moved.Layer == RefinementLayer.Domain ? RefinementLayer.Application : RefinementLayer.Domain };
-            var found = RefinementTypesInTheCode.Value.Select(name => name == moved.OldFullName ? otherLayer.NewFullName : name).ToList();
+            var found = RefinementTypesInTheCode.Value.Select(name => name == moved.NewFullName ? otherLayer.NewFullName : name).ToList();
 
             var failure = FailureOf(() => ThenTheyMatchTheMap(found, RefinementMembership.MovingTypes));
 
@@ -219,8 +219,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches()
         {
             var moving = WithLayer(RefinementMembership.MovingTypes, "SizingRefusal.cs", RefinementLayer.Domain);
+            var inTheCode = MovingTypeNamed("SizingRefusal").NewFullName;
+            var asListed = moving.Single(type => type.Name == "SizingRefusal").NewFullName;
+            var found = RefinementTypesInTheCode.Value.Select(name => name == inTheCode ? asListed : name).ToList();
+            var reach = ReachInTheCode.Value.ToDictionary(entry => entry.Key == inTheCode ? asListed : entry.Key, entry => entry.Value);
 
-            var failure = FailureOf(() => ThenTheLayersFollowTheFiles(ReachInTheCode.Value, RefinementTypesInTheCode.Value, InterfacesInTheCode.Value, moving));
+            var failure = FailureOf(() => ThenTheLayersFollowTheFiles(reach, found, InterfacesInTheCode.Value, moving));
             var line = LineStartingWith(failure, DomainReachingBeyond);
 
             Assert.That(line, Does.Contain("SizingRefusal.cs: SizingRefusal reaches").And.Contain("Microsoft.Extensions.Logging.ILogger").And.Not.Contain("NeedBand"),
