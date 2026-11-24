@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Platform.DomainEvents;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Platform.DomainEvents
