@@ -1,0 +1,29 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProvider.cs",
+      "**/Models/OAuth/OAuthCredential.cs",
+      "**/API/DTO/WorkTrackingSystemConnectionDto.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~JiraOAuthProviderTest|FullyQualifiedName~OAuthCredentialTest|FullyQualifiedName~WorkTrackingSystemConnectionDtoTest|FullyQualifiedName~OAuthServiceTest|FullyQualifiedName~WriteBackServiceTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Contracts&FullyQualifiedName!~Tests.Acceptance",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

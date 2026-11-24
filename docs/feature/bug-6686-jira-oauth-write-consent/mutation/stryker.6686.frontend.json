@@ -1,0 +1,42 @@
+{
+	"$schema": "../../../../Lighthouse.Frontend/node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+	"packageManager": "pnpm",
+	"testRunner": "vitest",
+	"plugins": [
+		"@stryker-mutator/vitest-runner"
+	],
+	"vitest": {
+		"configFile": "vitest.stryker.6686.mutation.ts",
+		"related": false
+	},
+	"reporters": [
+		"clear-text",
+		"progress",
+		"json"
+	],
+	"coverageAnalysis": "perTest",
+	"incremental": true,
+	"incrementalFile": "reports/mutation/stryker-incremental-6686.json",
+	"concurrency": 4,
+	"timeoutMS": 60000,
+	"inPlace": true,
+	"disableTypeChecks": false,
+	"ignorePatterns": [
+		"/dist",
+		"/coverage",
+		"/playwright-report",
+		"/reports"
+	],
+	"mutate": [
+		"src/components/Common/Connections/WriteConsentAlert.tsx:14-15"
+	],
+	"thresholds": {
+		"high": 90,
+		"low": 80,
+		"break": 0
+	},
+	"jsonReporter": {
+		"fileName": "../docs/feature/bug-6686-jira-oauth-write-consent/mutation/stryker-6686-frontend.json"
+	},
+	"tempDirName": ".stryker-tmp-6686"
+}
