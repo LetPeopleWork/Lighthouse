@@ -7,8 +7,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// The Refinement types listed as moving on RefinementMembership live in Lighthouse.Backend.Modules.Refinement: each in the
     /// namespace of its layer and in no other, each declared by a file in the folder of that namespace, with no file of the moving
-    /// set left under the two old Services folders. The types listed as staying are where the map says. The list of strings the
-    /// move renames is empty, because the move renames or removes them all. The map is the only owner of what moves where; this
+    /// set left under the two old Services folders. The types listed as staying are where the map says. The map is the only owner of what moves where; this
     /// test adds no list of its own.
     /// </summary>
     [TestFixture]
@@ -70,16 +69,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ThenThereAreNoProblems(problems, "a Refinement type that stays has moved or is gone",
                 "The sizing-log repository pair, the shared models, the controllers, the validator, the DTOs and WeeklyRecurrence keep their place so the stored model and the wire stay as they are.",
                 "Put the type back in the namespace the map lists, or change the map if its owner agreed to move it.");
-        }
-
-        [Test]
-        public void TheRenameList_HoldsNoEntry_BecauseTheMoveRenamesThemAll()
-        {
-            var problems = WhenTheRenameListIsChecked(RefinementStringsTheMoveRenames.Entries);
-
-            ThenThereAreNoProblems(problems, "the rename list still holds entries",
-                "Each entry is a string in a test file that still names the old Services path; it is renamed or removed in the commit that moves the type.",
-                "Rename the string in its file to the new place, or delete the row, and take the entry off the list.");
         }
 
         [Test]
@@ -164,18 +153,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void ALeftoverRenameEntry_IsNamedByItsFile_AndAnEmptyListPasses()
-        {
-            var moved = MovingType("NeedBand");
-            var leftover = new RefinementRename("SomeTest.cs", $"{OldFolderOf(moved)}/{moved.File}", $"Modules/Refinement/{moved.Layer}/{moved.File}");
-
-            var problems = WhenTheRenameListIsChecked([leftover]);
-
-            ThenTheProblemsNameOnly(problems, "SomeTest.cs");
-            ThenThereAreNoProblems(WhenTheRenameListIsChecked([]), "an empty rename list is reported as holding entries", "It is the finished state.", "Keep it empty.");
-        }
-
-        [Test]
         public void TheCodeAfterTheMove_HasNoProblemInAnyCheck()
         {
             var files = FilesAfterTheMove();
@@ -248,9 +225,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(type => found.Count(candidate => candidate.Namespace == type.Namespace && candidate.Name == type.Name) != 1)
                 .Select(type => $"{type.Name}: expected once in {type.Namespace}")];
         }
-
-        private static List<string> WhenTheRenameListIsChecked(IEnumerable<RefinementRename> entries)
-            => [.. entries.Select(entry => $"{entry.File}: still holds '{entry.OldText}'")];
 
         private static void ThenThereAreNoProblems(List<string> problems, string what, string why, string how)
             => Assert.That(problems, Is.Empty, $"WHAT: {what}: {string.Join("; ", problems)}. WHY: {why} HOW: {how}");

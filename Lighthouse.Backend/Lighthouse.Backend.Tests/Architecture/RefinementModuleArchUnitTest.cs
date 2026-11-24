@@ -29,13 +29,13 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string CompositionRootPattern = @"^Lighthouse\.Backend\.Program($|\+.*)";
 
-        private const string RefinementResolutionAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementResolution($|\+.*)|^Lighthouse\.Backend\.Modules\.Refinement\.Application\.RefinementResolution($|\+.*)";
+        private const string RefinementResolutionAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Modules\.Refinement\.Application\.RefinementResolution($|\+.*)";
 
         private const string WeeklyRecurrenceAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.WeeklyRecurrence($|\+.*)";
 
-        private const string RefinementCadenceCalendarAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.RefinementCadenceCalendar($|\+.*)|^Lighthouse\.Backend\.Modules\.Refinement\.Application\.RefinementCadenceCalendar($|\+.*)";
+        private const string RefinementCadenceCalendarAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Modules\.Refinement\.Application\.RefinementCadenceCalendar($|\+.*)";
 
-        private const string NeedBandAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.NeedBand($|\+.*)|^Lighthouse\.Backend\.Modules\.Refinement\.Domain\.NeedBand($|\+.*)";
+        private const string NeedBandAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Modules\.Refinement\.Domain\.NeedBand($|\+.*)";
 
         private const string BackgroundUpdatesPattern =
             ModuleBoundariesArchUnitTest.PortfolioDeliveryPattern + @"|^Lighthouse\.Backend\.Modules\.Forecasting\.Adapters(\.|$)";
