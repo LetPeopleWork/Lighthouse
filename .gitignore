@@ -21,6 +21,8 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+# The platform's release code is source, not build output.
+!Lighthouse.Backend/**/Platform/Releases/
 x64/
 x86/
 [Ww][Ii][Nn]32/
