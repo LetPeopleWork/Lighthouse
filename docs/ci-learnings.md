@@ -317,7 +317,11 @@ carries a `// biome-ignore lint/plugin: <reason>`.
 - **Blocking waits park the thread pool**: a `Barrier`, latch, `.Wait()` or `.Result` on `Task.Run`
   threads slows unrelated tests to 40–60 s. Fix: give each participant its own thread
   (`LongRunning`/`new Thread`) and bound the wait. Check by running beside another class with
-  `DOTNET_PROCESSOR_COUNT=4`. Not automated because: the effect only shows under load.
+  `DOTNET_PROCESSOR_COUNT=4`. Synchronous StackExchange.Redis calls are blocking waits too: 3.x reads
+  every reply on the thread pool, so many blocked callers starve the replies and fail with
+  `RedisTimeoutException` (`WORKER Busy` above `Min`, reply bytes already buffered). Start every Redis
+  container through `RedisContainerFixture`, which raises the pool floor. Not automated because: the
+  effect only shows under load.
 - **A polling watcher re-checks the forbidden condition in the same iteration** as the observation,
   not only in the loop guard. Two reads with a scheduling point between them see two different moments.
   Not automated because: this is about the race semantics of the test.
