@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     /// <summary>The Work Items a Team holds in its refinement states, in the tracker's backlog order.</summary>
     public sealed class RefinementList(IWorkItemRepository workItemRepository)

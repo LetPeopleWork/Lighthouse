@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Access.Domain;
 using Lighthouse.Backend.Platform.Encryption;
-using Lighthouse.Backend.Services.Implementation.Refinement;
+using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Http;

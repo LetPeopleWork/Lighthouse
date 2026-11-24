@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Refinement;
 
-namespace Lighthouse.Backend.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Domain
 {
     public static class NeedBand
     {

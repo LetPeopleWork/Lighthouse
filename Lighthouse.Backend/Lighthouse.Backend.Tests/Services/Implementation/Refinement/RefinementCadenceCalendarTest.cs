@@ -1,7 +1,6 @@
 using System.Globalization;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Implementation.Refinement;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
+using Lighthouse.Backend.Modules.Refinement.Application;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
 {

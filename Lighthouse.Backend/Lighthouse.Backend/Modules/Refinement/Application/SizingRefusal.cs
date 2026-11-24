@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Refinement;
 
-namespace Lighthouse.Backend.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     /// <summary>
     /// Why a sizing entry was refused. Each reason is written to the log and, where the caller can act on it,

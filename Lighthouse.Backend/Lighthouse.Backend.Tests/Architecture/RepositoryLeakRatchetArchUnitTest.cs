@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Modules/WorkItems/Application/RefreshLogService.cs",
             "Modules/WorkItems/Application/WorkItemService.cs",
             "Services/Implementation/Connections/ConnectionSaveService.cs",
-            "Services/Implementation/Refinement/RefinementList.cs",
+            "Modules/Refinement/Application/RefinementList.cs",
             "Services/Implementation/Reports/ReportOwnerLookup.cs",
             "Services/Implementation/WorkTrackingSystemConnectionUsage.cs",
             "Services/Implementation/WriteBackTriggerService.cs",

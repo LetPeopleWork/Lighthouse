@@ -4,7 +4,7 @@ using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 
-namespace Lighthouse.Backend.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     /// <summary>Which of the given Work Items each of a Team's stage rules matches, judged by the rule engine every other rule uses.</summary>
     public sealed class StageRuleMatcher(

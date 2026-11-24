@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 
-namespace Lighthouse.Backend.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     public static class StageRuleHealing
     {

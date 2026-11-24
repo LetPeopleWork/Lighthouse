@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
 
-namespace Lighthouse.Backend.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     /// <summary>
     /// Resolves what a Work Item's sizing log currently says, from its entries alone: each voter counts once,

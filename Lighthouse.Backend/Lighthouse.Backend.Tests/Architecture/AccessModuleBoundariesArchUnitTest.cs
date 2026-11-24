@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering",
             "Lighthouse.Backend.Services.Implementation.FeatureListActiveWork",
             "Lighthouse.Backend.Services.Implementation.FeatureListService",
-            "Lighthouse.Backend.Services.Implementation.Refinement.VoterIdentityResolver",
+            "Lighthouse.Backend.Modules.Refinement.Application.VoterIdentityResolver",
             "Lighthouse.Backend.Platform.UsageData.UsageDataInstanceProperties",
         ];
 

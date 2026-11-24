@@ -1,8 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Implementation.Refinement;
+using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
 

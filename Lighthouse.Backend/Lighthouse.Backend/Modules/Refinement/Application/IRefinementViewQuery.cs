@@ -1,8 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Implementation.Refinement;
 
-namespace Lighthouse.Backend.Services.Interfaces.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     public interface IRefinementViewQuery
     {

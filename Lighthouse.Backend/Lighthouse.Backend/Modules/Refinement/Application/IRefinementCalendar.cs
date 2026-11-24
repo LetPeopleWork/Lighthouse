@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Refinement;
 
-namespace Lighthouse.Backend.Services.Interfaces.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     /// <summary>What a Team's Refinement cadence says about the instance's today.</summary>
     public interface IRefinementCalendar

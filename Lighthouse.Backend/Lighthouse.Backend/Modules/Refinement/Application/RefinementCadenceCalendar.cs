@@ -1,8 +1,8 @@
+using Lighthouse.Backend.Services.Implementation;
 using System.Diagnostics.CodeAnalysis;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
 
-namespace Lighthouse.Backend.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     /// <summary>
     /// Which days a Team's Refinement cadence falls on. The next Refinement is strictly after today: on a

@@ -5,9 +5,8 @@ using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Implementation.Refinement;
+using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Modules.Access.Application;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 

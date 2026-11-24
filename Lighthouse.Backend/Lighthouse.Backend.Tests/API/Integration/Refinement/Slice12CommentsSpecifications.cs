@@ -1,6 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
+using Lighthouse.Backend.Modules.Refinement.Application;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement

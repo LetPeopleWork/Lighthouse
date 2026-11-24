@@ -1,10 +1,9 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Lighthouse.Backend.Platform.Host;
 
-namespace Lighthouse.Backend.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     public sealed class SleYardstickResolver(ITeamMetricsService teamMetricsService, ILighthouseClock clock)
     {

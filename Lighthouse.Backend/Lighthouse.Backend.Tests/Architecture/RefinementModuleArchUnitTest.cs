@@ -7,10 +7,10 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.Refinement;
+using Lighthouse.Backend.Modules.Refinement.Application;
+using Lighthouse.Backend.Modules.Refinement.Domain;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Modules.Access.Application;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
@@ -55,6 +55,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly HashSet<string> RefinementNamespaces =
             [.. RefinementMembership.MovingTypes.SelectMany(type => new[] { type.OldNamespace, type.NewNamespace })];
 
+        // The records, enums and ports a port file declares are the module's own vocabulary, not a service.
+        private static readonly Type[] PortFileTypes =
+        [
+            .. RefinementMembership.MovingTypes.Where(type => type.InAPortFile)
+                .Select(type => typeof(RefinementList).Assembly.GetType(type.NewFullName, throwOnError: true))
+        ];
+
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         // The rules that decide what a Team may save as its refinement setup are plain functions of the values
@@ -95,7 +102,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Types().That().HaveFullName(typeof(RefinementResolution).FullName!)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
-                    .And().DoNotHaveFullNameMatching(RefinementResolutionAndItsNestedTypesPattern))
+                    .And().DoNotHaveFullNameMatching(RefinementResolutionAndItsNestedTypesPattern)
+                    .And().AreNot(PortFileTypes))
                 .Because("a resolution that reaches into a service can no longer be tested by handing it entries.")
                 .Check(Architecture);
         }
@@ -126,7 +134,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().HaveFullName(typeof(RefinementCadenceCalendar).FullName!)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
                     .And().DoNotHaveFullNameMatching(WeeklyRecurrenceAndItsNestedTypesPattern)
-                    .And().DoNotHaveFullNameMatching(RefinementCadenceCalendarAndItsNestedTypesPattern))
+                    .And().DoNotHaveFullNameMatching(RefinementCadenceCalendarAndItsNestedTypesPattern)
+                    .And().AreNot(PortFileTypes))
                 .Because("a calendar that reaches into a service can no longer be tested by handing it a cadence and a day.")
                 .Check(Architecture);
         }

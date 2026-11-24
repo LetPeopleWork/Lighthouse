@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Refinement;
 
-namespace Lighthouse.Backend.Services.Interfaces.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     /// <summary>Everything a reader adds to a Team's sizing log. Each call appends; nothing is ever changed.</summary>
     public interface ISizingLogCommands

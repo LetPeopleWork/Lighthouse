@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             "Models/WorkTrackingSystemOptionsOwner.cs",
             "Models/IWorkItemQueryOwner.cs",
-            "Services/Implementation/Refinement/RefinementList.cs",
+            "Modules/Refinement/Application/RefinementList.cs",
             "Modules/FlowMetrics/Application/BaseMetricsService.cs",
         ];
 

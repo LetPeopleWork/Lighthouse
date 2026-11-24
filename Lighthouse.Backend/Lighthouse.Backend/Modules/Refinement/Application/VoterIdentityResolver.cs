@@ -2,9 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Modules.Access.Application;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
 
-namespace Lighthouse.Backend.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Modules.Refinement.Application
 {
     /// <summary>
     /// Who is voting. Without sign-in a voter is the name they declare plus a random key their browser
