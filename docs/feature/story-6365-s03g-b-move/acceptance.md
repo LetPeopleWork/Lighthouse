@@ -285,42 +285,14 @@ met
 #### Observations
 
 ```text
-architecture-rules Refinement (public native runner, filter Lighthouse.Backend.Tests.Architecture + Refinement) exit 0: Test Run Successful, Total 106, Passed 106. Includes EveryMovingRefinementType_IsFoundInItsNewModuleNamespaceOnly, EveryMovingRefinementFile_SitsInTheFolderOfItsNewNamespace, NoFileOfTheMovingRefinementSet_IsLeftUnderTheOldServicesFolders, EveryRefinementTypeThatStays_IsStillWhereTheMapListsIt, TheRenameList_HoldsNoEntry, TheCodeAfterTheMove_HasNoProblemInAnyCheck, and the preservation-law tests; all green. Program.cs registration pair-preservation is not separately named in these rows.
+backend-tests Refinement (public native runner, Refinement fragment) exit 0: Test Run Successful, Total 1618, Passed 1618, no failures. Sample passing acceptance rows include The_tab_counts_only_the_Work_Items_the_votes_made_Ready; the run covers Refinement acceptance and wire-contract tests (tab, need, votes, comments, take-back, settings were not individually enumerated in my capture). Routes, DTO shapes and headers are not separately observed in this capture.
 ```
 
 ```text
-architecture-rules Refinement (same run, 106/106 passed) includes ARefinementUnitTest_SitsOnlyInItsModuleLayerFolder_AndKeepsItsClassInThatLayer passing for 11 cases (NeedBandTest, RefinementCadenceCalendarTest, RefinementCalendarTest, RefinementListTest, RefinementNeedCalculatorTest, RefinementResolutionTest, RefinementViewQueryTest, SizingLogCommandsTest, SleYardstickResolverTest, StageRuleMatcherTest, VoterIdentityResolverTest), EveryClassOfTheRefinementModuleTests_HasTheNamespaceOfItsFolder passing, and the staying-test rule (every staying test where it is) passing. This is a rule pass over the source tree, not a listing of file paths; the per-file location is inferred from the rule's pass.
+test-selection-show on Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementList.cs reports backend: true and jira, ado, linear, servicenow, github, shared all false. CI selection for a Modules/Refinement path selects the backend suite (E5 CI-selection part).
 ```
 
 ### E3
-
-met
-
-#### Observations
-
-```text
-architecture-rules Refinement (same run, 106/106 passed) includes ARefinementUnitTest_SitsOnlyInItsModuleLayerFolder_AndKeepsItsClassInThatLayer passing for 11 cases (NeedBandTest, RefinementCadenceCalendarTest, RefinementCalendarTest, RefinementListTest, RefinementNeedCalculatorTest, RefinementResolutionTest, RefinementViewQueryTest, SizingLogCommandsTest, SleYardstickResolverTest, StageRuleMatcherTest, VoterIdentityResolverTest), EveryClassOfTheRefinementModuleTests_HasTheNamespaceOfItsFolder passing, and the staying-test rule (every staying test where it is) passing. This is a rule pass over the source tree, not a listing of file paths; the per-file location is inferred from the rule's pass.
-```
-
-```text
-backend-tests Refinement (public native runner, Refinement fragment) exit 0: Test Run Successful, Total 1618, Passed 1618, no failures. Sample passing acceptance rows include The_tab_counts_only_the_Work_Items_the_votes_made_Ready; the run covers Refinement acceptance and wire-contract tests (tab, need, votes, comments, take-back, settings were not individually enumerated in my capture). Routes, DTO shapes and headers are not separately observed in this capture.
-```
-
-### E4
-
-met
-
-#### Observations
-
-```text
-backend-tests Refinement (public native runner, Refinement fragment) exit 0: Test Run Successful, Total 1618, Passed 1618, no failures. Sample passing acceptance rows include The_tab_counts_only_the_Work_Items_the_votes_made_Ready; the run covers Refinement acceptance and wire-contract tests (tab, need, votes, comments, take-back, settings were not individually enumerated in my capture). Routes, DTO shapes and headers are not separately observed in this capture.
-```
-
-```text
-backend-tests (whole filtered backend suite, public native runner) finished exit 0: Test Run Successful, Total tests 14650, Passed 14638, Skipped 12, no failures. Covers the whole filtered suite (E4 suite-green part).
-```
-
-### E5
 
 met
 
@@ -334,6 +306,44 @@ test-selection-show on Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/
 ef-model-unchanged (public native runner) exit 0: Sqlite and Postgres both report 'No changes have been made to the model since the last migration.' No EF model difference, so no migration needed (E5 EF-model part).
 ```
 
+### E4
+
+met
+
+#### Observations
+
 ```text
-backend-tests Refinement (public native runner, Refinement fragment) exit 0: Test Run Successful, Total 1618, Passed 1618, no failures. Sample passing acceptance rows include The_tab_counts_only_the_Work_Items_the_votes_made_Ready; the run covers Refinement acceptance and wire-contract tests (tab, need, votes, comments, take-back, settings were not individually enumerated in my capture). Routes, DTO shapes and headers are not separately observed in this capture.
+ef-model-unchanged (public native runner) exit 0: Sqlite and Postgres both report 'No changes have been made to the model since the last migration.' No EF model difference, so no migration needed (E5 EF-model part).
+```
+
+```text
+architecture-rules Refinement (same run, 106/106 passed) includes ARefinementUnitTest_SitsOnlyInItsModuleLayerFolder_AndKeepsItsClassInThatLayer passing for 11 cases (NeedBandTest, RefinementCadenceCalendarTest, RefinementCalendarTest, RefinementListTest, RefinementNeedCalculatorTest, RefinementResolutionTest, RefinementViewQueryTest, SizingLogCommandsTest, SleYardstickResolverTest, StageRuleMatcherTest, VoterIdentityResolverTest), EveryClassOfTheRefinementModuleTests_HasTheNamespaceOfItsFolder passing, and the staying-test rule (every staying test where it is) passing. This is a rule pass over the source tree, not a listing of file paths; the per-file location is inferred from the rule's pass.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+architecture-rules Refinement (public native runner, filter Lighthouse.Backend.Tests.Architecture + Refinement) exit 0: Test Run Successful, Total 106, Passed 106. Includes EveryMovingRefinementType_IsFoundInItsNewModuleNamespaceOnly, EveryMovingRefinementFile_SitsInTheFolderOfItsNewNamespace, NoFileOfTheMovingRefinementSet_IsLeftUnderTheOldServicesFolders, EveryRefinementTypeThatStays_IsStillWhereTheMapListsIt, TheRenameList_HoldsNoEntry, TheCodeAfterTheMove_HasNoProblemInAnyCheck, and the preservation-law tests; all green. Program.cs registration pair-preservation is not separately named in these rows.
+```
+
+```text
+backend-tests (whole filtered backend suite, public native runner) finished exit 0: Test Run Successful, Total tests 14650, Passed 14638, Skipped 12, no failures. Covers the whole filtered suite (E4 suite-green part).
+```
+
+```text
+ef-model-unchanged (public native runner) exit 0: Sqlite and Postgres both report 'No changes have been made to the model since the last migration.' No EF model difference, so no migration needed (E5 EF-model part).
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+architecture-rules Refinement re-run today in workspace w5j9pi2o: Test Run Successful, Total 106, Passed 106, including TheRenameList_HoldsNoEntry_BecauseTheMoveRenamesThemAll, TheRenameListCheck_NamesAnUnlistedOldPathString_AndAListedStringThatNoLongerExists and TheStringsInTheTestProjectThatNameRefinementByItsOldPath_AreExactlyTheFixedRenameList passing, plus every move and preservation-law rule green.
 ```

@@ -128,7 +128,7 @@
 "C": 1,
 "D": 6,
 "E": 6,
-"F": 168,
+"F": 169,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1788,30 +1788,36 @@
 "examination": {
 "E1": {
 "observations": [
-"F162",
-"F163"
+"F164",
+"F166"
 ],
 "verdict": "met"
 },
 "E3": {
 "observations": [
-"F163",
-"F164"
+"F166",
+"F167"
 ],
 "verdict": "met"
 },
 "E4": {
 "observations": [
-"F164",
-"F165"
+"F167",
+"F163"
 ],
 "verdict": "met"
 },
 "E5": {
 "observations": [
-"F166",
-"F167",
-"F164"
+"F162",
+"F165",
+"F167"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F169"
 ],
 "verdict": "met"
 }
@@ -1932,6 +1938,7 @@
 "F166": "test-selection-show on Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementList.cs reports backend: true and jira, ado, linear, servicenow, github, shared all false. CI selection for a Modules/Refinement path selects the backend suite (E5 CI-selection part).",
 "F167": "ef-model-unchanged (public native runner) exit 0: Sqlite and Postgres both report 'No changes have been made to the model since the last migration.' No EF model difference, so no migration needed (E5 EF-model part).",
 "F168": "Every architecture rule and the preservation law stay green after the move, and the rename list holds no entry for a moved type. Observable as: architecture-rules reports no violation, including the moved-type rules under architecture-rules Refinement. The Program.cs Refinement registrations keeping the same order, lifetimes and service-to-implementation pairs, with only full type names changed, is not observable by any public probe: no user, API client, tracker or database sees it. It is not an examiner expectation; it is owned by the whole-candidate review.",
+"F169": "architecture-rules Refinement re-run today in workspace w5j9pi2o: Test Run Successful, Total 106, Passed 106, including TheRenameList_HoldsNoEntry_BecauseTheMoveRenamesThemAll, TheRenameListCheck_NamesAnUnlistedOldPathString_AndAListedStringThatNoLongerExists and TheStringsInTheTestProjectThatNameRefinementByItsOldPath_AreExactlyTheFixedRenameList passing, plus every move and preservation-law rule green.",
 "F17": "Layer per file: NeedBand.cs goes to Modules/Refinement/Domain (namespace Lighthouse.Backend.Modules.Refinement.Domain); the other 15 files, with the three port files whole, go to Modules/Refinement/Application. The membership map RefinementMembership is the single owner of which type moves where; the new oracles read it and add no second list.",
 "F18": "Carriers: decisions stay in the existing owners (NeedBand value, RefinementList, StageRuleMatcher, VoterIdentityResolver and the others keep their data and behaviour); only the namespace and folder change. Errors stay the existing SizingRefusal, VoterRefusal and NeedUnavailableReason; effects stay behind the unchanged ports and Program.cs registrations. No per-process state is added.",
 "F19": "Log categories: ILogger<T> categories of moved types change with the namespace. No appsettings, analyser, suppression, CI, budget, host-user or Stryker target keys on a moving type (feature A measured this), so no log override is affected.",
