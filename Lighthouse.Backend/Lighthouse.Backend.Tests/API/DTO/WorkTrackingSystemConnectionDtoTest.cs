@@ -139,6 +139,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 .SetName("A Jira sign-in that may only read needs nothing more without write-back");
             yield return new TestCaseData(AuthenticationMethodKeys.JiraOAuth, true, WorkItemRights.ReadAndWrite, WriteBack.Mapped, "ReadAndWrite", false)
                 .SetName("A Jira sign-in granted write rights needs nothing more with write-back");
+            yield return new TestCaseData(AuthenticationMethodKeys.JiraOAuth, false, null, WriteBack.Mapped, null, false)
+                .SetName("A Jira OAuth connection not signed in yet shows no rights and needs no write consent");
             yield return new TestCaseData(AuthenticationMethodKeys.AzureDevOpsPat, false, null, WriteBack.Mapped, null, false)
                 .SetName("A personal access token connection shows no rights and needs no write consent");
         }
