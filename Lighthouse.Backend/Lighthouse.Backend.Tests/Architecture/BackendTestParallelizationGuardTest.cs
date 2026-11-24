@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Lighthouse.Backend.Platform.Releases;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
