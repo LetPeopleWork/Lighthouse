@@ -4,7 +4,9 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
@@ -903,6 +905,43 @@ namespace Lighthouse.Backend.Tests.API
 
             Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
             portfolioRepoMock.Verify(x => x.FeatureCountOf(It.IsAny<int>()), Times.Never);
+        }
+
+        [Test]
+        public async Task DeletePortfolio_PublishesPortfolioDeletedForThatPortfolioAfterTheSave()
+        {
+            const int portfolioId = 12;
+            var whatHappened = new List<string>();
+            var portfolios = new Mock<IRepository<Portfolio>>();
+            portfolios.Setup(x => x.Remove(It.IsAny<int>())).Callback((int id) => whatHappened.Add($"removed {id}"));
+            portfolios.Setup(x => x.Save()).Callback(() => whatHappened.Add("saved")).Returns(Task.CompletedTask);
+            var queuedDelete = new Mock<IServiceProvider>();
+            queuedDelete.Setup(x => x.GetService(typeof(IRepository<Portfolio>))).Returns(portfolios.Object);
+            queuedDelete.Setup(x => x.GetService(typeof(IRefreshLogService))).Returns(Mock.Of<IRefreshLogService>());
+            queuedDelete.Setup(x => x.GetService(typeof(IDomainEventDispatcher))).Returns(new RecordingDispatcher(whatHappened));
+            portfolioRepoMock.Setup(x => x.Exists(portfolioId)).Returns(true);
+            updateQueueServiceMock
+                .Setup(x => x.EnqueueAndAwaitAsync(It.IsAny<UpdateType>(), It.IsAny<int>(), It.IsAny<Func<IServiceProvider, Task>>(), It.IsAny<CancellationToken>()))
+                .Returns((UpdateType _, int _, Func<IServiceProvider, Task> queued, CancellationToken _) => queued(queuedDelete.Object));
+
+            await CreateSubject().DeletePortfolio(portfolioId);
+
+            Assert.That(whatHappened, Is.EqualTo(new[] { $"removed {portfolioId}", "saved", $"published PortfolioDeleted {portfolioId}" }),
+                "Deleting a Portfolio did not remove it, save, and then publish PortfolioDeleted for that Portfolio, in that order. " +
+                "Work Items cleans up the Features the deletion leaves in no Portfolio only when it hears of the deletion, and only after the save does the store show the Portfolio gone; " +
+                "without the event those Features stay on the Team's Features tab until the next refresh or start. " +
+                "Publish PortfolioDeleted with the Portfolio's id through the domain event dispatcher in the queued delete, after the save.");
+        }
+
+        // Records every published event by its type name, so this class builds while PortfolioDeleted does not exist yet.
+        private sealed class RecordingDispatcher(List<string> whatHappened) : IDomainEventDispatcher
+        {
+            public Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default) where TEvent : IDomainEvent
+            {
+                var portfolioId = domainEvent.GetType().GetProperty("PortfolioId")?.GetValue(domainEvent);
+                whatHappened.Add($"published {domainEvent.GetType().Name} {portfolioId}".TrimEnd());
+                return Task.CompletedTask;
+            }
         }
 
         private PortfolioController CreateSubject()

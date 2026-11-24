@@ -143,7 +143,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         // Organisation set-up has no namespace of its own yet: Feature ordering sits in the top-level Services namespaces with the
-        // settings and the clock, so their edges are listed here too. The list only shrinks.
+        // settings and the clock, so their edges are listed here too. The list names every edge into these services; an entry
+        // goes when its target moves into a module.
         private static readonly string[] EdgesOfTheApplicationIntoAccessLicensingOrganisationSetUpAndTheUpdateQueue =
         [
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
