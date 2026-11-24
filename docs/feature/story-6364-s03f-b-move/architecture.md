@@ -90,7 +90,7 @@ Governed slices: S1, S2, S3, S4, S5
 #### K2
 
 ```text
-Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision, and honouring F4's per-type exception), PlatformLaneMembershipArchUnitTest (F2) and PlatformLanePatternRoles (F4's per-type exception for PromisesAndTheUpdateCode and KeyRingFileWatcher), made by the S1 acceptance designer before craft; and the S3 support amendment of PlatformLaneMembershipArchUnitTest (F3-S3: where a listed string's file has moved, the check reads the one file of that name under Tests/Platform), made by the S3 acceptance designer before craft; and the S4 support amendments of PlatformLaneMembershipArchUnitTest and PlatformLaneRulesSeeTheMoveArchUnitTest (F5-S4: only the choice of example in two tests, so each builds the failure it asserts before and after every move), made by the S4 acceptance designer before the re-craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest), F3 (2 listed ICryptoService Application edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) and F4 (no Platform.Encryption alternative in PromisesAndTheUpdateCode or its composites there) are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths, made by the S1 crafter. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.
+Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision, and honouring F4's per-type exception), PlatformLaneMembershipArchUnitTest (F2) and PlatformLanePatternRoles (F4's per-type exception for PromisesAndTheUpdateCode and KeyRingFileWatcher), made by the S1 acceptance designer before craft; and the S3 support amendment of PlatformLaneMembershipArchUnitTest (F3-S3: where a listed string's file has moved, the check reads the one file of that name under Tests/Platform), made by the S3 acceptance designer before craft; and the S4 support amendments of PlatformLaneMembershipArchUnitTest and PlatformLaneRulesSeeTheMoveArchUnitTest (F5-S4: only the choice of example in two tests, so each builds the failure it asserts before and after every move), made by the S4 acceptance designer before the re-craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest), F3 (2 listed ICryptoService Application edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) and F4 (no Platform.Encryption alternative in PromisesAndTheUpdateCode or its composites there), made by the S1 crafter, and the S5 decision F6-S5 (2 listed ForecastUpdater edges into Platform.UpdateQueue interfaces in ForecastingModuleBoundariesArchUnitTest), made by the S5 crafter, are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.
 ```
 Governed slices: S1, S2, S3, S4, S5
 
@@ -13573,7 +13573,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingModule
 Extend
 
 ```text
-rewrite the UpdateQueue rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs
+rewrite the UpdateQueue rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F6-S5: list the 2 ForecastUpdater edges to Lighthouse.Backend.Platform.UpdateQueue.IUpdateQueueService and Lighthouse.Backend.Platform.UpdateQueue.IUpdateStatusStore in EdgesOfTheAdaptersIntoTheSharedUpdateCode with the reason "existed before the move: the update queue's interfaces sat in Services.Interfaces.Update, which the rule did not see", and adjust the list's comment so it says the list only shrinks apart from edges a move makes visible; no other entry, pattern or message changes
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesModuleBoundariesArchUnitTest\.cs
@@ -14238,7 +14238,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+F6-S5 (engineering choice taken in AFK mode, open to the maintainer; the same kind of exception as F3): KernelRules.TheUpdateQueue already sees Lighthouse.Backend.Platform.UpdateQueue, so after the move it also sees the update queue's interfaces that sit in Services.Interfaces.Update today, and RefreshRoundSummary and RefreshRoundSummaryLine. ForecastUpdater depends on IUpdateQueueService and IUpdateStatusStore, so ForecastingModuleBoundariesArchUnitTest's Adapters outbound rule names two edges that existed before the move. The S5 crafter lists exactly these two in EdgesOfTheAdaptersIntoTheSharedUpdateCode: Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.IUpdateQueueService and Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.IUpdateStatusStore, with the reason "existed before the move: the update queue's interfaces sat in Services.Interfaces.Update, which the rule did not see". The list's comment is adjusted so it stays true: the list only shrinks, apart from edges a move makes visible. No other entry changes; the rule's pattern and message are unchanged, so no rule is loosened. Owner: maintainer. Rejected: narrowing KernelRules.TheUpdateQueue so it excludes the interfaces (changes a shared rule every context uses); a craft-time exemption (loosens the rule).
+```
 
 ##### Constraints
 
@@ -14677,7 +14679,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ForecastingModule
 Changed
 
 ```text
-the strings the map lists for the UpdateQueue move name the new place; no rule loosened
+the strings the map lists for the UpdateQueue move name the new place; F6-S5 lists the 2 pre-existing ForecastUpdater edges the move makes visible to the Adapters outbound rule; no rule loosened
 ```
 
 rule\, list\, budget or suppression string

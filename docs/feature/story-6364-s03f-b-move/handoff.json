@@ -468,7 +468,7 @@
 "counters": {
 "D": 10,
 "E": 7,
-"F": 678,
+"F": 682,
 "K": 3,
 "L": 5,
 "P": 7,
@@ -537,7 +537,7 @@
 "S4",
 "S5"
 ],
-"text": "F656"
+"text": "F679"
 },
 {
 "id": "K3",
@@ -8422,6 +8422,9 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformUpdateQueueLayoutArchUnitTest.cs"
 }
 ],
+"decisions": [
+"F681"
+],
 "impact": [
 {
 "decision": "Migrated",
@@ -8679,7 +8682,7 @@
 "decision": "Changed",
 "kind": "rule, list, budget or suppression string",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:1",
-"reason": "F541"
+"reason": "F682"
 },
 {
 "decision": "Changed",
@@ -9388,7 +9391,7 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
-"reason": "F496"
+"reason": "F680"
 },
 {
 "change": "Extend",
@@ -10451,7 +10454,6 @@
 "F653": "Each names the new text and not the old; a host-user row may instead be gone",
 "F654": "No architecture rule is loosened by the move",
 "F655": "A host-user row for a class that stays on a host and is kept under the old name is refused; a string deleted outside the host-user list is refused",
-"F656": "Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision, and honouring F4's per-type exception), PlatformLaneMembershipArchUnitTest (F2) and PlatformLanePatternRoles (F4's per-type exception for PromisesAndTheUpdateCode and KeyRingFileWatcher), made by the S1 acceptance designer before craft; and the S3 support amendment of PlatformLaneMembershipArchUnitTest (F3-S3: where a listed string's file has moved, the check reads the one file of that name under Tests/Platform), made by the S3 acceptance designer before craft; and the S4 support amendments of PlatformLaneMembershipArchUnitTest and PlatformLaneRulesSeeTheMoveArchUnitTest (F5-S4: only the choice of example in two tests, so each builds the failure it asserts before and after every move), made by the S4 acceptance designer before the re-craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest), F3 (2 listed ICryptoService Application edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) and F4 (no Platform.Encryption alternative in PromisesAndTheUpdateCode or its composites there) are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths, made by the S1 crafter. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.",
 "F658": "F5-S4 (engineering choice taken in AFK mode, open to the maintainer; the same kind of exception as F2): two feature A support tests take a type that moves in S4 as their example, so they hold before the move and fail after it. PlatformLaneMembershipArchUnitTest.AListedTargetRewrittenToTheNewNamespace_IsStillFound_AndOneTakenOutOfItsFileIsNamed takes SuppressionTargets[0], which S4 rewrites (the RandomNumberService suppression); its removed variant replaces the type's old full name, which the file no longer holds. PlatformLaneRulesSeeTheMoveArchUnitTest.ThePlatformAlternativeCheck_NamesAMadeUpAlternativeThatReachesOutsidePlatform_AndPassesAnAnchoredOne builds its unanchored Platform alternative to match the platform service's full name, which after S4 sits in Platform.Host and no longer matches outside Platform. The S4 acceptance designer amends both supports before the re-craft, changing only the choice of example; every assertion and test stays. For the first, the removed variant replaces whichever full name of the type the file holds, old or new, as F2 did. For the second, no production example exists after S4 (no name outside Platform contains the text Platform), so the test keeps every assertion and changes only its input: WhenThePlatformAlternativesAreAskedAboutEverythingOutsidePlatform takes the outside names it asks about as a parameter; the real-rules test passes the production names unchanged; the made-up-key self-test passes the production names plus one made-up full name and namespace outside Platform that contains the text (for example Lighthouse.Backend.Services.PlatformLookalike), so its made-up unanchored key is named before and after every move, and its message says it uses a made-up outside name. The made-up name is not held in a class-level const or static readonly string, which feature A's preservation law scans. PlatformLaneMembership.cs stays unedited. Owner: maintainer. Rejected: editing the map (edits feature A's map and breaks the check before the move); a craft-time exemption or an exemption for the move (loosens the rule); dropping the tests (loses the law they hold); a character-class trick in the made-up key.\r\n",
 "F659": "Look up every update-queue mechanics type of the membership map in the platform update-queue area and where it lived before",
 "F66": "Assumption negated: renamed rule constants keep their old value. The map renames CryptoServiceFullName and EncryptionNamespacePrefix in B1",
@@ -10475,7 +10477,11 @@
 "F676": "Same answers, same reactions, same EF model, every suite green",
 "F677": "Nothing a user sees changes",
 "F678": "Observed by the existing suite and the EXAMINE probes, not by the layout oracle",
+"F679": "Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision, and honouring F4's per-type exception), PlatformLaneMembershipArchUnitTest (F2) and PlatformLanePatternRoles (F4's per-type exception for PromisesAndTheUpdateCode and KeyRingFileWatcher), made by the S1 acceptance designer before craft; and the S3 support amendment of PlatformLaneMembershipArchUnitTest (F3-S3: where a listed string's file has moved, the check reads the one file of that name under Tests/Platform), made by the S3 acceptance designer before craft; and the S4 support amendments of PlatformLaneMembershipArchUnitTest and PlatformLaneRulesSeeTheMoveArchUnitTest (F5-S4: only the choice of example in two tests, so each builds the failure it asserts before and after every move), made by the S4 acceptance designer before the re-craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest), F3 (2 listed ICryptoService Application edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) and F4 (no Platform.Encryption alternative in PromisesAndTheUpdateCode or its composites there), made by the S1 crafter, and the S5 decision F6-S5 (2 listed ForecastUpdater edges into Platform.UpdateQueue interfaces in ForecastingModuleBoundariesArchUnitTest), made by the S5 crafter, are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.\n",
 "F68": "the S1 support amendment of feature A's test",
+"F680": "rewrite the UpdateQueue rows of PlatformLaneMembership.StringsTheMoveRenames and SuppressionTargets for this file from old text to new text, plus usings the build needs; F6-S5: list the 2 ForecastUpdater edges to Lighthouse.Backend.Platform.UpdateQueue.IUpdateQueueService and Lighthouse.Backend.Platform.UpdateQueue.IUpdateStatusStore in EdgesOfTheAdaptersIntoTheSharedUpdateCode with the reason \"existed before the move: the update queue's interfaces sat in Services.Interfaces.Update, which the rule did not see\", and adjust the list's comment so it says the list only shrinks apart from edges a move makes visible; no other entry, pattern or message changes\n",
+"F681": "F6-S5 (engineering choice taken in AFK mode, open to the maintainer; the same kind of exception as F3): KernelRules.TheUpdateQueue already sees Lighthouse.Backend.Platform.UpdateQueue, so after the move it also sees the update queue's interfaces that sit in Services.Interfaces.Update today, and RefreshRoundSummary and RefreshRoundSummaryLine. ForecastUpdater depends on IUpdateQueueService and IUpdateStatusStore, so ForecastingModuleBoundariesArchUnitTest's Adapters outbound rule names two edges that existed before the move. The S5 crafter lists exactly these two in EdgesOfTheAdaptersIntoTheSharedUpdateCode: Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.IUpdateQueueService and Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.IUpdateStatusStore, with the reason \"existed before the move: the update queue's interfaces sat in Services.Interfaces.Update, which the rule did not see\". The list's comment is adjusted so it stays true: the list only shrinks, apart from edges a move makes visible. No other entry changes; the rule's pattern and message are unchanged, so no rule is loosened. Owner: maintainer. Rejected: narrowing KernelRules.TheUpdateQueue so it excludes the interfaces (changes a shared rule every context uses); a craft-time exemption (loosens the rule).\n",
+"F682": "the strings the map lists for the UpdateQueue move name the new place; F6-S5 lists the 2 pre-existing ForecastUpdater edges the move makes visible to the Adapters outbound rule; no rule loosened\n",
 "F69": "the law reports NotDeclared or the example test fails after a correct rename",
 "F7": "Every update-queue mechanics type the membership map tags B5 lives under Platform/UpdateQueue, namespace equal to folder, none left in its old namespace; TeamUpdater, PortfolioUpdater, UpdateServiceBase<T> and their three interfaces did not move.",
 "F70": "another renamed constant outside StringsTheMoveRenames: the law names it and the slice's acceptance designer takes it to the architect",
