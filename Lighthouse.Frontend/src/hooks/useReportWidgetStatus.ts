@@ -11,6 +11,15 @@ export type ChartReport = {
 /** How a chart that fetches for itself tells its frame where its own request stands. */
 type ReportWidgetStatus = (report: ChartReport | undefined) => void;
 
+/** The worst of several statuses: any failure fails the whole, otherwise any wait keeps it loading. */
+export function combineWidgetStatuses(
+	statuses: readonly WidgetStatus[],
+): WidgetStatus {
+	if (statuses.includes("error")) return "error";
+	if (statuses.includes("loading")) return "loading";
+	return "ready";
+}
+
 export const WidgetStatusReporterContext =
 	createContext<ReportWidgetStatus | null>(null);
 

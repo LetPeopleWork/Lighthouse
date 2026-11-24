@@ -640,19 +640,21 @@ describe("Work Item Age and Cycle Time", () => {
 
 	it("Cycle Time reads the named cycle time it is scoped to, and each named column reads its own", () => {
 		const namedCycleTimeDefinitions = [
-			{ id: 7, name: "Dev Cycle" },
-			{ id: 9, name: "Review Cycle" },
+			{ id: 7, name: "Dev Cycle", endState: "Done" },
+			{ id: 9, name: "Review Cycle", endState: "Done" },
 		];
 		const throughBoth = aWorkItem({
 			referenceId: "ST-A",
 			namedCycleTimes: [
-				{ definitionId: 7, days: 2 },
-				{ definitionId: 9, days: 5 },
+				{ definitionId: 7, days: 2, endDate: new Date(2026, 0, 1) },
+				{ definitionId: 9, days: 5, endDate: new Date(2026, 0, 1) },
 			],
 		});
 		const throughDevOnly = aWorkItem({
 			referenceId: "ST-B",
-			namedCycleTimes: [{ definitionId: 7, days: 4 }],
+			namedCycleTimes: [
+				{ definitionId: 7, days: 4, endDate: new Date(2026, 0, 1) },
+			],
 		});
 		const throughNeither = aWorkItem({ referenceId: "ST-C" });
 		const rows = [throughBoth, throughDevOnly, throughNeither];
@@ -678,15 +680,19 @@ describe("Work Item Age and Cycle Time", () => {
 		const withNamedCycleTimes = finishedStories.map((story, index) => ({
 			...story,
 			namedCycleTimes: [
-				{ definitionId: 7, days: [2, 15, 6][index] },
-				{ definitionId: 9, days: 1 },
+				{
+					definitionId: 7,
+					days: [2, 15, 6][index],
+					endDate: new Date(2026, 0, 1),
+				},
+				{ definitionId: 9, days: 1, endDate: new Date(2026, 0, 1) },
 			],
 		}));
 
 		const layout = layoutOf("closedItems", withNamedCycleTimes, {
 			namedCycleTimeDefinitions: [
-				{ id: 7, name: "Dev Cycle" },
-				{ id: 9, name: "Review Cycle" },
+				{ id: 7, name: "Dev Cycle", endState: "Done" },
+				{ id: 9, name: "Review Cycle", endState: "Done" },
 			],
 			cycleTimeScope: 7,
 		});
@@ -743,8 +749,8 @@ describe("what each catalogue column says", () => {
 		});
 		const named = layoutOf("closedItems", finishedStories, {
 			namedCycleTimeDefinitions: [
-				{ id: 7, name: "Dev Cycle" },
-				{ id: 9, name: "Review Cycle" },
+				{ id: 7, name: "Dev Cycle", endState: "Done" },
+				{ id: 9, name: "Review Cycle", endState: "Done" },
 			],
 		});
 

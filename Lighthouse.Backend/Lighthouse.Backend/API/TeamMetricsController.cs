@@ -290,7 +290,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("cycleTimeData")]
-        public ActionResult<IEnumerable<WorkItemDto>> GetCycleTimeDataForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<IEnumerable<WorkItemDto>> GetCycleTimeDataForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? definitionId = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -299,7 +299,7 @@ namespace Lighthouse.Backend.API
 
             LogDateBoundaries("cycleTimeData", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                teamMetricsService.GetCycleTimeDataForTeam(team, startDate, endDate)
+                teamMetricsService.GetCycleTimeDataForTeam(team, startDate, endDate, IsNamedRequest(definitionId) ? definitionId : null)
                     .Select(entry => new WorkItemDto(entry.WorkItem, clock, blockedItemService.IsBlocked(entry.WorkItem, team), entry.NamedCycleTimes) { Estimate = WorkItemEstimateDto.For(team, entry.WorkItem) }));
         }
 

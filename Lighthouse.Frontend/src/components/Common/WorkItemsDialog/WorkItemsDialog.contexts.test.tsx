@@ -533,14 +533,18 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		async () => {
 			const user = userEvent.setup();
 			const namedCycleTimeDefinitions = [
-				{ id: 7, name: "Dev Cycle" },
-				{ id: 9, name: "Review Cycle" },
+				{ id: 7, name: "Dev Cycle", endState: "Done" },
+				{ id: 9, name: "Review Cycle", endState: "Done" },
 			];
 			const withNamedCycleTimes = finishedStories.map((story, index) => ({
 				...story,
 				namedCycleTimes: [
-					{ definitionId: 7, days: [2, 15, 6][index] },
-					{ definitionId: 9, days: 1 },
+					{
+						definitionId: 7,
+						days: [2, 15, 6][index],
+						endDate: new Date(2026, 0, 1),
+					},
+					{ definitionId: 9, days: 1, endDate: new Date(2026, 0, 1) },
 				],
 			}));
 			openTheDialog({

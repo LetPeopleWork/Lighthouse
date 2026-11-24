@@ -221,11 +221,14 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         public OutlierVerdict GetCycleTimeOutliers(Team team, DateTime startDate, DateTime endDate, int? definitionId)
         {
-            return GetFromCacheIfExists(team, $"CycleTimeOutliers_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{CycleTimeOutliersCacheKeyPart(definitionId)}{AsOfCacheKeyPart(null)}", () =>
-                BuildCycleTimeOutliers(team, startDate, endDate, definitionId, cycleTimeOutlierDefinition,
-                    (s, e) => GetWorkItemsClosedInDateRange(team, s, e).ToList(),
-                    AssociateSyncedTransitions), logger);
+            return GetFromCacheIfExists(team, $"CycleTimeOutliers_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{CycleTimeMeasureCacheKeyPart(definitionId)}{AsOfCacheKeyPart(null)}", () =>
+                BuildCycleTimeOutliers(team, startDate, endDate, definitionId, cycleTimeOutlierDefinition, CycleTimeItemsOf(team)), logger);
         }
+
+        private CycleTimeItemSource<WorkItem> CycleTimeItemsOf(Team team) => new(
+            (startDate, endDate) => GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList(),
+            () => workItemRepository.DoingOrDoneItemsOfTeam(team.Id),
+            AssociateSyncedTransitions);
 
         public RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate)
         {
@@ -407,9 +410,17 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             }, logger);
         }
 
-        public IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate)
+        public IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate, int? definitionId = null)
         {
             logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            if (definitionId.HasValue)
+            {
+                return GetFromCacheIfExists(team, $"CycleTimeData_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{CycleTimeMeasureCacheKeyPart(definitionId)}", () =>
+                    NamedCycleTimePopulation(team, definitionId.Value, startDate, endDate, CycleTimeItemsOf(team))
+                        .Select(entry => new CycleTimeWorkItem(entry.Item, [entry.Value]))
+                        .ToList(), logger);
+            }
 
             return GetFromCacheIfExists(team, $"CycleTimeData_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
                 ComputeCycleTimeData(team, startDate, endDate), logger);
@@ -421,7 +432,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             logger.LogDebug("Getting Named Cycle Time Percentiles for Team {TeamName} definition {DefinitionId} between {StartDate} and {EndDate}", team.Name, definitionId, startDate.Date, endDate.Date);
 
             return GetFromCacheIfExists(team, $"NamedCycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
-                BuildPercentiles(ComputeNamedDurations(team, startDate, endDate, definitionId)), logger);
+                BuildPercentiles(NamedCycleTimesBetween(team, definitionId, CycleTimeItemsOf(team))(startDate, endDate)), logger);
         }
 
         private List<CycleTimeWorkItem> ComputeCycleTimeData(Team team, DateTime startDate, DateTime endDate)
@@ -434,28 +445,6 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return itemsWithTransitions
                 .Select(item => new CycleTimeWorkItem(item, NamedValuesForItem(item, displayStatesInOrder, resolvedDefinitions)))
-                .ToList();
-        }
-
-        private List<int> ComputeNamedDurations(Team team, DateTime startDate, DateTime endDate, int definitionId)
-        {
-            var definition = team.CycleTimeDefinitions.FirstOrDefault(candidate => candidate.Id == definitionId);
-            if (definition == null || !team.IsCycleTimeDefinitionValid(definition))
-            {
-                return [];
-            }
-
-            var displayStatesInOrder = DisplayStatesInOrder(team);
-            var startState = ResolveBoundaryState(team, displayStatesInOrder, definition.StartState);
-            var endState = ResolveBoundaryState(team, displayStatesInOrder, definition.EndState);
-
-            var closedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList();
-            var itemsWithTransitions = AssociateSyncedTransitions(closedItems);
-
-            return itemsWithTransitions
-                .Select(item => NamedCycleTimeDays(item, displayStatesInOrder, startState, endState))
-                .Where(days => days.HasValue)
-                .Select(days => days!.Value)
                 .ToList();
         }
 
@@ -604,14 +593,14 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             return ScopedCumulativeStateOrder(displayStatesInOrder, startState, endState);
         }
 
-        private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<WorkItem> completedItems)
+        private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<WorkItem> items)
         {
-            var completedItemIds = completedItems.Select(item => item.Id).ToHashSet();
+            var itemIds = items.Select(item => item.Id).ToHashSet();
             var transitionsByItem = GroupTransitionsByItem(workItemStateTransitionRepository
-                .TransitionsOfWorkItems(completedItemIds)
+                .TransitionsOfWorkItems(itemIds)
                 .Select(transition => (transition.WorkItemId, transition)));
 
-            return completedItems
+            return items
                 .Select(item => new WorkItem(item, item.Team)
                 {
                     Id = item.Id,
@@ -849,26 +838,23 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 var periodDays = (endDate.Date - startDate.Date).Days + 1;
                 var previousEnd = startDate.AddDays(-1);
                 var previousStart = startDate.AddDays(-periodDays);
-                var currentPercentiles = PercentilesForInfo(team, startDate, endDate, isNamed, definitionId).ToList();
-                var previousPercentiles = PercentilesForInfo(team, previousStart, previousEnd, isNamed, definitionId).ToList();
+                var percentilesBetween = PercentilesForInfo(team, isNamed, definitionId);
+                var currentPercentiles = percentilesBetween(startDate, endDate).ToList();
+                var previousPercentiles = percentilesBetween(previousStart, previousEnd).ToList();
                 return BuildCycleTimePercentilesInfoDto(currentPercentiles, previousPercentiles, startDate, endDate, previousStart, previousEnd);
             }, logger);
         }
 
-        private IEnumerable<PercentileValue> PercentilesForInfo(Team team, DateTime startDate, DateTime endDate, bool isNamed, int? definitionId)
+        private Func<DateTime, DateTime, IEnumerable<PercentileValue>> PercentilesForInfo(Team team, bool isNamed, int? definitionId)
         {
             if (!isNamed)
             {
-                return GetCycleTimePercentilesForTeam(team, startDate, endDate);
+                return (startDate, endDate) => GetCycleTimePercentilesForTeam(team, startDate, endDate);
             }
 
-            var namedDurations = ComputeNamedDurations(team, startDate, endDate, definitionId!.Value);
-            if (namedDurations.Count == 0)
-            {
-                return [];
-            }
+            var namedCycleTimesBetween = NamedCycleTimesBetween(team, definitionId!.Value, CycleTimeItemsOf(team));
 
-            return BuildPercentiles(namedDurations);
+            return (startDate, endDate) => PercentilesOrNone(namedCycleTimesBetween(startDate, endDate));
         }
 
         public void InvalidateTeamMetrics(Team team)

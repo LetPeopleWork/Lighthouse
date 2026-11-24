@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
     public interface ITeamMetricsService
     {
-        IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate);
+        IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate, int? definitionId = null);
 
         IEnumerable<PercentileValue> GetNamedCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId);
 

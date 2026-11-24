@@ -431,29 +431,46 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetCycleTimeData_WithValidInput_ReturnsOk()
+        public void GetCycleTimeData_NamedDefinition_ReturnsTheDefinitionsFeaturesWithTheirEndDates()
+        {
+            var startDate = new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(2026, 11, 30, 0, 0, 0, DateTimeKind.Utc);
+            var reachedReadyForRelease = new DateTime(2026, 11, 12, 0, 0, 0, DateTimeKind.Utc);
+            var data = new List<CycleTimeFeature>
+            {
+                new(new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = startDate }, [new NamedCycleTimeValue(7, 5, reachedReadyForRelease)]),
+            };
+            projectMetricsService.Setup(x => x.GetNamedCycleTimeDataForPortfolio(project, startDate, endDate, It.IsAny<int?>())).Returns([]);
+            projectMetricsService.Setup(x => x.GetNamedCycleTimeDataForPortfolio(project, startDate, endDate, 7)).Returns(data);
+
+            var result = subject.GetCycleTimeData(1, startDate, endDate, 7);
+
+            var features = ((IEnumerable<FeatureDto>)((OkObjectResult)result.Result!).Value!).ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features.Select(feature => feature.Id), Is.EqualTo([2]), "The named Cycle Time must list the Features the service answers for definition 7; the controller has to pass the definition id on.");
+                Assert.That(features.SelectMany(feature => feature.NamedCycleTimes), Is.EqualTo(new[] { new NamedCycleTimeValue(7, 5, reachedReadyForRelease) }), "Each Feature must carry its named value with the day it reached the end state, so the chart can place it.");
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase(0)]
+        public void GetCycleTimeData_NoNamedDefinition_AsksForTheDefaultCycleTime(int? definitionId)
         {
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
             var data = new List<CycleTimeFeature>
             {
-                new CycleTimeFeature(new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-2), ClosedDate = TestToday.AmbientAsUtcMidnight }, []),
-                new CycleTimeFeature(new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-5), ClosedDate = TestToday.AmbientAsUtcMidnight }, [new NamedCycleTimeValue(7, 5)])
+                new(new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StartedDate = startDate.AddDays(2), ClosedDate = startDate.AddDays(4) }, []),
+                new(new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = startDate.AddDays(1), ClosedDate = startDate.AddDays(6) }, []),
             };
+            projectMetricsService.Setup(x => x.GetNamedCycleTimeDataForPortfolio(project, startDate, endDate, It.IsAny<int?>())).Returns([]);
+            projectMetricsService.Setup(x => x.GetNamedCycleTimeDataForPortfolio(project, startDate, endDate, null)).Returns(data);
 
-            projectMetricsService.Setup(x => x.GetNamedCycleTimeDataForPortfolio(project, startDate, endDate))
-                .Returns(data);
+            var result = subject.GetCycleTimeData(1, startDate, endDate, definitionId);
 
-            var result = subject.GetCycleTimeData(1, startDate, endDate);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-                var okResult = result.Result as OkObjectResult;
-                var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
-                Assert.That(featureDtos?.Count(), Is.EqualTo(2));
-                Assert.That(featureDtos!.Single(dto => dto.Id == 2).NamedCycleTimes, Has.Count.EqualTo(1));
-            }
+            var features = (IEnumerable<FeatureDto>)((OkObjectResult)result.Result!).Value!;
+            Assert.That(features.Select(feature => feature.Id), Is.EqualTo([1, 2]), "Without a definition (or with 0) the default Cycle Time must be asked for, so the service has to be called without a definition id.");
         }
 
         [Test]

@@ -262,7 +262,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("cycleTimeData")]
-        public ActionResult<IEnumerable<FeatureDto>> GetCycleTimeData(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<IEnumerable<FeatureDto>> GetCycleTimeData(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? definitionId = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -272,7 +272,7 @@ namespace Lighthouse.Backend.API
             LogDateBoundaries("cycleTimeData", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
-                var data = portfolioMetricsService.GetNamedCycleTimeDataForPortfolio(portfolio, startDate, endDate);
+                var data = portfolioMetricsService.GetNamedCycleTimeDataForPortfolio(portfolio, startDate, endDate, IsNamedRequest(definitionId) ? definitionId : null);
                 var features = data.Select(entry => entry.Feature).ToList();
                 var forecastWindowStart = clock.TodayAsUtcMidnight;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(

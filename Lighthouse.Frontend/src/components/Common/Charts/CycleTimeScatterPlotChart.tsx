@@ -20,16 +20,14 @@ import {
 	type ScatterMarkerProps,
 	ScatterPlot,
 } from "@mui/x-charts";
-import {
-	QueryClient,
-	QueryClientContext,
-	skipToken,
-	useQuery,
-} from "@tanstack/react-query";
+import { QueryClientContext, skipToken, useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
-import { useReportWidgetStatus } from "../../../hooks/useReportWidgetStatus";
+import {
+	combineWidgetStatuses,
+	useReportWidgetStatus,
+} from "../../../hooks/useReportWidgetStatus";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { ICycleTimeOutliers } from "../../../models/Metrics/CycleTimeOutliers";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
@@ -61,6 +59,8 @@ import { getColorMapForKeys } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
+import { fetcherIdOf, withoutAProvider } from "./chartQueryClient";
+import type { PlottedWorkItem } from "./cycleTimeMeasure";
 import LegendChip from "./LegendChip";
 import OffScaleLineMarkers, { MARKER_ROW_HEIGHT } from "./OffScaleLineMarkers";
 import { outlierHeaderChip } from "./outlierHeaderChip";
@@ -74,26 +74,32 @@ import {
 } from "./outlierPlot";
 import PercentileLegend from "./PercentileLegend";
 import TimeBlackoutOverlay from "./TimeBlackoutOverlay";
+import {
+	type NamedMeasureProps,
+	type NamedSelection,
+	shownPopulation,
+	useNamedPopulation,
+} from "./useNamedCycleTimePopulation";
 import { useFrameIsReady, useHeaderSlotContent } from "./widgetHeaderSlot";
 
 interface IGroupedWorkItem {
-	closedDateTimestamp: number;
+	plottedDateTimestamp: number;
 	cycleTime: number;
-	items: IWorkItem[];
+	items: PlottedWorkItem[];
 	type: string;
 	hasBlockedItems: boolean;
 }
 
-const groupWorkItems = (items: IWorkItem[]): IGroupedWorkItem[] => {
+const groupWorkItems = (items: PlottedWorkItem[]): IGroupedWorkItem[] => {
 	const groups: Record<string, IGroupedWorkItem> = {};
 
 	for (const item of items) {
-		const closedDateTimestamp = getDateOnlyTimestamp(item.closedDate);
-		const key = `${closedDateTimestamp}-${item.cycleTime}`;
+		const plottedDateTimestamp = getDateOnlyTimestamp(item.plottedDate);
+		const key = `${plottedDateTimestamp}-${item.cycleTime}`;
 
 		if (!groups[key]) {
 			groups[key] = {
-				closedDateTimestamp,
+				plottedDateTimestamp,
 				cycleTime: item.cycleTime,
 				items: [],
 				type: item.type || "Unknown",
@@ -121,7 +127,7 @@ const ScatterMarker = (
 	workItemsTerm: string,
 	blockedTerm: string,
 	colorMap: Record<string, string>,
-	onShowItems: (items: IWorkItem[]) => void,
+	onShowItems: (items: PlottedWorkItem[]) => void,
 ) => {
 	const dataIndex = props.dataIndex || 0;
 	const group = groupedDataPoints[dataIndex];
@@ -163,12 +169,11 @@ const ScatterMarker = (
 	);
 };
 
-interface CycleTimeScatterPlotChartProps {
+type CycleTimeScatterPlotChartProps = NamedMeasureProps & {
 	percentileValues: IPercentileValue[];
 	cycleTimeDataPoints: IWorkItem[];
 	serviceLevelExpectation?: IPercentileValue | null;
 	blackoutPeriods?: IBlackoutPeriod[];
-	namedCycleTimeDefinitions?: INamedCycleTimeDefinition[];
 	onFetchNamedCycleTimePercentiles?: (
 		definitionId: number,
 	) => Promise<IPercentileValue[]>;
@@ -180,25 +185,11 @@ interface CycleTimeScatterPlotChartProps {
 	ownerId?: number;
 	startDate?: Date;
 	endDate?: Date;
-}
+};
 
 type OutlierFetcher = NonNullable<
 	CycleTimeScatterPlotChartProps["onFetchCycleTimeOutliers"]
 >;
-
-// Each fetcher a view hands over stands for one owner and date range, so a new fetcher is a new question.
-const fetcherIds = new WeakMap<OutlierFetcher, number>();
-let lastFetcherId = 0;
-const fetcherIdOf = (fetcher: OutlierFetcher | undefined): number | null => {
-	if (!fetcher) return null;
-	let id = fetcherIds.get(fetcher);
-	if (id === undefined) {
-		lastFetcherId += 1;
-		id = lastFetcherId;
-		fetcherIds.set(fetcher, id);
-	}
-	return id;
-};
 
 interface OutlierHandling {
 	readonly hideOutliers: boolean;
@@ -219,9 +210,6 @@ function outlierHeaderSlot(
 	}
 	return outlierHeaderChip(chip);
 }
-
-// A chart without a fetcher asks nothing, and may be drawn outside a query provider.
-const withoutAProvider = new QueryClient();
 
 interface OutlierVerdictState {
 	/** The outlier ids and limit of the current question, or null while there is no answer for it. */
@@ -286,6 +274,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	onFetchNamedCycleTimePercentiles,
 	ownerKind,
 	onFetchCycleTimeOutliers,
+	onFetchNamedCycleTimeData,
 	ownerId,
 	startDate,
 	endDate,
@@ -344,18 +333,39 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		};
 	}, [selectedDefinitionId, onFetchNamedCycleTimePercentiles]);
 
-	const effectiveDataPoints = useMemo(() => {
-		if (selectedDefinitionId === null) {
-			return cycleTimeDataPoints;
-		}
+	const namedSelection = useMemo(
+		(): NamedSelection | null =>
+			selectedDefinitionId !== null && onFetchNamedCycleTimeData
+				? {
+						definitionId: selectedDefinitionId,
+						fetcher: onFetchNamedCycleTimeData,
+					}
+				: null,
+		[selectedDefinitionId, onFetchNamedCycleTimeData],
+	);
 
-		return cycleTimeDataPoints.flatMap((item) => {
-			const named = item.namedCycleTimes?.find(
-				(value) => value.definitionId === selectedDefinitionId,
-			);
-			return named ? [{ ...item, cycleTime: named.days }] : [];
-		});
-	}, [cycleTimeDataPoints, selectedDefinitionId]);
+	const namedPopulation = useNamedPopulation({
+		ownerKind,
+		ownerId,
+		startDate,
+		endDate,
+		selection: namedSelection,
+	});
+
+	const shown = useMemo(
+		() =>
+			shownPopulation(
+				cycleTimeDataPoints,
+				namedCycleTimeDefinitions,
+				namedPopulation,
+			),
+		[cycleTimeDataPoints, namedCycleTimeDefinitions, namedPopulation],
+	);
+
+	const effectiveDataPoints = useMemo(
+		() => shown.measure.plot(shown.items),
+		[shown],
+	);
 
 	// An answer fetched for another definition, or by an older callback, is not the current one.
 	const namedPercentiles = currentNamedPercentiles(
@@ -365,15 +375,15 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	);
 
 	const effectivePercentiles =
-		selectedDefinitionId === null ? percentileValues : namedPercentiles;
+		shown.measure.definitionId === null ? percentileValues : namedPercentiles;
 
 	const types = useMemo(() => {
 		const typeSet = new Set<string>();
-		for (const item of cycleTimeDataPoints) {
+		for (const item of shown.items) {
 			if (item.type) typeSet.add(item.type);
 		}
 		return Array.from(typeSet).sort((a, b) => a.localeCompare(b));
-	}, [cycleTimeDataPoints]);
+	}, [shown]);
 
 	const colorMap = useMemo(() => getColorMapForKeys(types), [types]);
 
@@ -396,6 +406,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	const [dialogContent, setDialogContent] = useState<{
 		title: string;
 		items: IWorkItem[];
+		scope?: {
+			cycleTimeScope: number;
+			namedCycleTimeDefinitions: INamedCycleTimeDefinition[];
+		};
 	}>({ title: "", items: [] });
 
 	// Never stored: every time the chart opens, outliers are hidden again.
@@ -409,7 +423,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		definitionId: selectedDefinitionId,
 		fetcher: onFetchCycleTimeOutliers,
 	});
-	useReportWidgetStatus(outlierVerdict.status, true);
+	useReportWidgetStatus(
+		combineWidgetStatuses([outlierVerdict.status, namedPopulation.status]),
+		true,
+	);
 	const verdictPending = hideOutliers && outlierVerdict.status === "loading";
 
 	// While the verdict is on its way or has failed, no item is set apart. The limit and the axis come
@@ -433,7 +450,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	const fixedXAxisDomain = useMemo((): [number, number] | null => {
 		if (effectiveDataPoints.length === 0) return null;
 		const timestamps = effectiveDataPoints.map((item) =>
-			getDateOnlyTimestamp(item.closedDate),
+			getDateOnlyTimestamp(item.plottedDate),
 		);
 		return [Math.min(...timestamps), Math.max(...timestamps)];
 	}, [effectiveDataPoints]);
@@ -492,10 +509,23 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		analysis.outliers.length > 0,
 	);
 
-	const handleShowItems = (items: IWorkItem[]) => {
+	const handleShowItems = (items: PlottedWorkItem[]) => {
+		const [first] = items;
+		if (!first) return;
 		setDialogContent({
-			title: `${workItemsTerm} closed on ${items[0]?.closedDate.toLocaleDateString()} with ${cycleTimeTerm} of ${items[0]?.cycleTime} days`,
+			title: shown.measure.dotListTitle(
+				{ workItems: workItemsTerm, cycleTime: cycleTimeTerm },
+				first,
+			),
 			items,
+			// The list's Cycle Time column reads the measure the dots were plotted with.
+			scope:
+				shown.measure.definitionId === null
+					? undefined
+					: {
+							cycleTimeScope: shown.measure.definitionId,
+							namedCycleTimeDefinitions,
+						},
 		});
 		setDialogOpen(true);
 	};
@@ -660,7 +690,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 										{
 											id: "timeAxis",
 											scaleType: "time",
-											label: "Date",
+											label: shown.measure.dateAxisLabel,
 											height: 56,
 											min: fixedXAxisDomain?.[0],
 											max: fixedXAxisDomain?.[1],
@@ -681,7 +711,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 										{
 											type: "scatter",
 											data: groupedDataPoints.map((group, index) => ({
-												x: group.closedDateTimestamp,
+												x: group.plottedDateTimestamp,
 												y: group.cycleTime,
 												id: index,
 												itemCount: group.items.length,
@@ -701,14 +731,14 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 												const group = groupedDataPoints[item.id as number];
 												if (!group) return "";
 
-												const numberOfClosedItems = group.items.length ?? 0;
+												const numberOfItems = group.items.length;
 
-												if (numberOfClosedItems === 1) {
+												if (numberOfItems === 1) {
 													const workItem = group.items[0];
 													return `${getWorkItemName(workItem.name, workItem.referenceId)} (Click for details)`;
 												}
 
-												return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
+												return `${shown.measure.groupLabel(numberOfItems, workItemsTerm)} (Click for details)`;
 											},
 										},
 									]}
@@ -829,6 +859,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				}}
 				context="closedItems"
 				ownerKind={ownerKind}
+				{...dialogContent.scope}
 			/>
 		</>
 	);

@@ -215,6 +215,7 @@ export const BaseMetricsView = <
 				? cycleTimeDefinitions.map((definition) => ({
 						id: definition.id,
 						name: definition.name,
+						endState: definition.endState,
 						isValid: definition.isValid,
 					}))
 				: [],
@@ -232,6 +233,17 @@ export const BaseMetricsView = <
 		[metricsService, entity.id, startDate, endDate],
 	);
 
+	const onFetchNamedCycleTimeData = useCallback(
+		async (definitionId: number): Promise<IWorkItem[]> =>
+			(await metricsService.getCycleTimeData(
+				entity.id,
+				startDate,
+				endDate,
+				definitionId,
+			)) as unknown as IWorkItem[],
+		[metricsService, entity.id, startDate, endDate],
+	);
+
 	const onFetchCycleTimeOutliers = useMemo(() => {
 		const getCycleTimeOutliers =
 			metricsService.getCycleTimeOutliers?.bind(metricsService);
@@ -244,6 +256,7 @@ export const BaseMetricsView = <
 		percentilesScopeDefinitionId,
 		scopedPercentileValues,
 		scopedPercentilesInfo,
+		scopedPercentileItems,
 		handlePercentilesScopeChange,
 	} = useNamedPercentilesScope({
 		metricsService,
@@ -390,6 +403,7 @@ export const BaseMetricsView = <
 		namedCycleTimeDefinitions,
 		onFetchNamedCycleTimePercentiles,
 		onFetchCycleTimeOutliers,
+		onFetchNamedCycleTimeData,
 		cycleTimePercentileValues: displayedPercentileValues,
 		percentilesScopeDefinitionId,
 		onPercentilesScopeChange: handlePercentilesScopeChange,
@@ -562,6 +576,9 @@ export const BaseMetricsView = <
 		serviceLevelExpectation,
 		sleRangeInDays,
 		percentilesScopeDefinitionId,
+		scopedPercentileItems: scopedPercentileItems as unknown as
+			| IWorkItem[]
+			| null,
 		namedCycleTimeDefinitions,
 		estimationVsCycleTimeData,
 		arrivalsData,

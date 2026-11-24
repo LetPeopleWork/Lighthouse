@@ -94,8 +94,8 @@ describe("CycleTimePercentiles named cycle time selection", () => {
 	];
 
 	const definitions: INamedCycleTimeDefinition[] = [
-		{ id: 10, name: "Concept to Cash", isValid: true },
-		{ id: 11, name: "Idea to Live", isValid: true },
+		{ id: 10, name: "Concept to Cash", endState: "Done", isValid: true },
+		{ id: 11, name: "Idea to Live", endState: "Done", isValid: true },
 	];
 
 	const NEUTRAL_TIP =
@@ -210,7 +210,7 @@ describe("CycleTimePercentiles named cycle time selection", () => {
 			<CycleTimePercentiles
 				percentileValues={mockPercentiles}
 				namedCycleTimeDefinitions={[
-					{ id: 10, name: "Concept to Cash", isValid: false },
+					{ id: 10, name: "Concept to Cash", endState: "Done", isValid: false },
 				]}
 				scopeDefinitionId={10}
 				onScopeChange={onScopeChange}
@@ -226,7 +226,7 @@ describe("CycleTimePercentiles named cycle time selection", () => {
 			<CycleTimePercentiles
 				percentileValues={mockPercentiles}
 				namedCycleTimeDefinitions={[
-					{ id: 11, name: "Idea to Live", isValid: true },
+					{ id: 11, name: "Idea to Live", endState: "Done", isValid: true },
 				]}
 				scopeDefinitionId={10}
 				onScopeChange={onScopeChange}

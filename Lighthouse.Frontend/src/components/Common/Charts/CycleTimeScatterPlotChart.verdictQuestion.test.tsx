@@ -122,10 +122,11 @@ const chartFor = (client: QueryClient, question: Question) => (
 				}
 				serviceLevelExpectation={null}
 				namedCycleTimeDefinitions={[
-					{ id: 11, name: "Review time" },
-					{ id: 12, name: "Test time" },
+					{ id: 11, name: "Review time", endState: "Done" },
+					{ id: 12, name: "Test time", endState: "Done" },
 				]}
 				onFetchNamedCycleTimePercentiles={() => Promise.resolve([])}
+				onFetchNamedCycleTimeData={() => Promise.resolve([])}
 				onFetchCycleTimeOutliers={question.judge}
 				ownerId={question.ownerId}
 				startDate={question.startDate}

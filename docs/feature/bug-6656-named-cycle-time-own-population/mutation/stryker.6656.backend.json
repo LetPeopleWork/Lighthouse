@@ -1,0 +1,32 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Modules/FlowMetrics/Application/BaseMetricsService.cs",
+      "**/Modules/FlowMetrics/Application/TeamMetricsService.cs",
+      "**/Modules/FlowMetrics/Application/PortfolioMetricsService.cs",
+      "**/Models/Metrics/NamedCycleTimeValue.cs",
+      "**/API/TeamMetricsController.cs",
+      "**/API/PortfolioMetricsController.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Modules.FlowMetrics|FullyQualifiedName~MetricsService|FullyQualifiedName~MetricsController|FullyQualifiedName~CycleTimeDefinition|FullyQualifiedName~CycleTimeOutliers|FullyQualifiedName~Tests.Acceptance.NamedCycleTime)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Contracts",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

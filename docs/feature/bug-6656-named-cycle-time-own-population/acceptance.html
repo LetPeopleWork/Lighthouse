@@ -1,0 +1,721 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Acceptance brief: bug-6656-named-cycle-time-own-population</h1>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A Team and a Portfolio with the workflow Analysis, In Progress, Ready for Release, In Production, Done and the named Cycle Time Analysis to Ready for Release. A reached Ready for Release on 5 Nov and was Done on 20 Nov; B reached it on 12 Nov and is still there; C reached it on 28 Oct and was Done on 3 Nov; D is In Progress. The named Cycle Time data is asked for 1 to 30 Nov.
+</code></pre>
+
+<pre><code>Exactly A and B are shown. A has 10 days and the end date 5 Nov; B has 6 days and the end date 12 Nov. C and D are not shown.
+</code></pre>
+
+<pre><code>The scatterplot of a named Cycle Time can show every Work Item that reached its end state in the dates, closed or not, on the day it reached it.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_named_Cycle_Time_shows_every_item_that_reached_the_end_state_in_the_dates_closed_or_not</p>
+
+<pre><code>The end date carries the day of the first move into the end state rather than the last, for an item that left the end state and came back; no item in this fixture moves back.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The same Team and Portfolio and items A, B, C, D. The named Cycle Time percentiles are asked for 1 to 30 Nov.
+</code></pre>
+
+<pre><code>P50, P70, P85 and P95 are all 6 days, from A (10 days) and B (6 days) only; 10 would mean B is left out or C is counted.
+</code></pre>
+
+<pre><code>The percentile lines of a named Cycle Time match the items the scatterplot shows for it.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_named_Cycle_Time_percentiles_count_only_the_items_that_reached_the_end_state_in_the_dates</p>
+
+<pre><code>An item that reached the end state on the last day of the dates is left out by an exclusive end bound; no fixture item sits on a range edge.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The same Team and Portfolio and items A, B, C, D. The Cycle Time percentiles widget is asked for 1 to 30 Nov with the named Cycle Time.
+</code></pre>
+
+<pre><code>The widget&#x27;s current P50, P70, P85 and P95 are all 6 days, from A and B only.
+</code></pre>
+
+<pre><code>The Cycle Time percentiles widget of a named Cycle Time agrees with its scatterplot.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_named_Cycle_Time_percentiles_widget_counts_only_the_items_that_reached_the_end_state_in_the_dates</p>
+
+<pre><code>The widget&#x27;s comparison with the previous period still uses the items closed in that period; only the current percentiles are checked.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A Team and a Portfolio with the same named Cycle Time. Eight items reached Ready for Release in November after 3 days each and were Done; B has waited in Ready for Release since 12 Nov after 43 days; C took 200 days, reached Ready for Release on 28 Oct and was Done on 3 Nov. The named Cycle Time outliers are asked for 1 to 30 Nov.
+</code></pre>
+
+<pre><code>The named Cycle Time has a limit and B is the only outlier. C is neither an outlier nor part of the limit; with C in the limit B would not stand out.
+</code></pre>
+
+<pre><code>The outliers marked on a named Cycle Time scatterplot are the dots it shows that stand out, including items not yet closed.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_named_Cycle_Time_outliers_are_judged_among_the_items_that_reached_the_end_state_in_the_dates</p>
+
+<pre><code>A configured baseline period keeps using the items closed in it; this fixture uses the shown dates as the baseline.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The same Team and Portfolio and items A, B, C, D. The Cycle Time data is asked for 1 to 30 Nov without a named Cycle Time.
+</code></pre>
+
+<pre><code>Exactly A and C are shown, the items closed in the dates, as before.
+</code></pre>
+
+<pre><code>The default Cycle Time scatterplot and the widgets that read the same list do not change.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_default_Cycle_Time_still_shows_the_items_closed_in_the_dates</p>
+
+<pre><code>The default answer drops or changes the named values each closed item carried; only which items are shown is checked.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A team user opens the scatterplot for a named Cycle Time (definition 7) and the service answers one item that reached Ready for Release on 5 Nov
+</code></pre>
+
+<pre><code>The team&#x27;s cycle time data asks the service for definition 7 and returns that item with its named value of 5 days ending 5 Nov
+</code></pre>
+
+<pre><code>The team scatterplot for a named Cycle Time shows that measure&#x27;s own items, each placed at the day it reached the end state
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs::GetCycleTimeDataForTeam_NamedDefinition_ReturnsTheDefinitionsItemsWithTheirEndDates</p>
+
+<pre><code>the controller forwarded any positive id other than the one asked for while the service answered the same items for it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A team user opens the scatterplot without a named Cycle Time, or with definition 0
+</code></pre>
+
+<pre><code>The team&#x27;s cycle time data asks the service for the default Cycle Time (no definition) and returns its closed items unchanged
+</code></pre>
+
+<pre><code>The default team scatterplot still shows the items closed in the range
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs::GetCycleTimeDataForTeam_NoNamedDefinition_AsksForTheDefaultCycleTime</p>
+
+<pre><code>a negative definition id were forwarded to the service instead of being treated as no definition
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A portfolio user opens the scatterplot for a named Cycle Time (definition 7) and the service answers one Feature that reached Ready for Release on 12 Nov
+</code></pre>
+
+<pre><code>The portfolio&#x27;s cycle time data asks the service for definition 7 and returns that Feature with its named value of 5 days ending 12 Nov
+</code></pre>
+
+<pre><code>The portfolio scatterplot for a named Cycle Time shows that measure&#x27;s own Features, each placed at the day it reached the end state
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs::GetCycleTimeData_NamedDefinition_ReturnsTheDefinitionsFeaturesWithTheirEndDates</p>
+
+<pre><code>the controller forwarded any positive id other than the one asked for while the service answered the same Features for it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A portfolio user opens the scatterplot without a named Cycle Time, or with definition 0
+</code></pre>
+
+<pre><code>The portfolio&#x27;s cycle time data asks the service for the default Cycle Time (no definition) and returns its closed Features unchanged
+</code></pre>
+
+<pre><code>The default portfolio scatterplot still shows the Features closed in the range
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs::GetCycleTimeData_NoNamedDefinition_AsksForTheDefaultCycleTime</p>
+
+<pre><code>a negative definition id were forwarded to the service instead of being treated as no definition
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Show the Cycle Time scatterplot with the default Cycle Time; Work Item A closed 20 Nov and C closed 3 Nov; open the dot of A.
+</code></pre>
+
+<pre><code>Dots sit on the closed dates (3 Nov, 20 Nov) at the default days; the x-axis says Date; nothing is fetched for a named measure; the list title reads Work Items closed on &lt;20 Nov&gt; with Cycle Time of 15 days.
+</code></pre>
+
+<pre><code>A reader who keeps the default Cycle Time sees the same chart as before the fix.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx &gt; keeps the default Cycle Time on the closed dates, without asking for a named measure&#x27;s items</p>
+
+<pre><code>the default view fetches named data lazily after the first paint
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Select the named measure Analysis to Ready for Release, whose fetch returns A (reached it 5 Nov, 6 days) and B (not closed, reached it 12 Nov, 4 days); C reached it 28 Oct; open the dot on 5 Nov.
+</code></pre>
+
+<pre><code>The fetch is asked for that measure; dots for A on 5 Nov and B on 12 Nov at the named days, none for C; the x-axis says Date reached Ready for Release; the list title reads Work Items that reached Ready for Release on &lt;5 Nov&gt; with Cycle Time of 6 days and lists A.
+</code></pre>
+
+<pre><code>A reader sees every Work Item that reached the measure&#x27;s end state in the range, closed or not, on the day it got there.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx &gt; shows the measure&#x27;s own Work Items on the day each reached its end state</p>
+
+<pre><code>a dot groups items by end date but the tooltip still says closed
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Select the named measure while its Work Items are still on their way.
+</code></pre>
+
+<pre><code>The frame is loading; the chart body is dimmed to 0.4 under a spinner; the previous default dots stay visible beneath.
+</code></pre>
+
+<pre><code>A reader sees the old dots are not the current answer while the new one loads.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx &gt; dims the previous dots under a spinner while the measure&#x27;s Work Items are on their way</p>
+
+<pre><code>the x-axis label already switches to the named end state while the old dots are dimmed
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Select the named measure and the fetch of its Work Items fails.
+</code></pre>
+
+<pre><code>The frame shows its could-not-load message and no dot is visible as the answer.
+</code></pre>
+
+<pre><code>A reader is told the chart could not be loaded instead of seeing the previous dots as if current.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx &gt; says the chart could not be loaded, and shows no dots as current, when the measure&#x27;s Work Items cannot be fetched</p>
+
+<pre><code>the chart retries the failed fetch silently in the background
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Select Analysis to Ready for Release (slow answer), then Analysis to In Production (answer: D reached In Production 18 Nov, 12 days); then the slow answer arrives.
+</code></pre>
+
+<pre><code>Only D&#x27;s dot on 18 Nov stays; the x-axis says Date reached In Production.
+</code></pre>
+
+<pre><code>A reader who switches measures never sees an older measure&#x27;s answer replace the one they chose.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx &gt; never lets a late answer for an earlier measure replace the selected one&#x27;s</p>
+
+<pre><code>the late answer is shown briefly while switching back to the earlier measure
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>With the named measure Analysis to Ready for Release selected on the Cycle Time scatterplot, open the dot of B, which reached Ready for Release 4 days after entering Analysis and is not closed
+</code></pre>
+
+<pre><code>The list that opens heads its Cycle Time column with the measure&#x27;s name and shows 4 days for B
+</code></pre>
+
+<pre><code>The reader sees the Cycle Time the dot stands for in the list, also for a Work Item that is not closed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx::the list a named Cycle Time&#x27;s dot opens &gt; shows each listed Work Item&#x27;s Cycle Time for the selected measure, also for one that is not closed</p>
+
+<pre><code>the Closed column of a not-closed Work Item stays empty beside the named days; no promise covers that column
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Select the named measure Analysis to Ready for Release for the Cycle Time percentiles, then go back to Default
+</code></pre>
+
+<pre><code>The measure&#x27;s own Work Items for the same team and range are fetched with the measure&#x27;s id, A and B (not closed) are offered as its list, and none are offered on Default
+</code></pre>
+
+<pre><code>The percentiles widget knows which Work Items its named numbers count
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/namedPercentilesViewData.test.tsx::View Data of the Cycle Time percentiles with a named Cycle Time &gt; fetches the named measure&#x27;s own Work Items for the range when the measure is selected, and drops them on Default</p>
+
+<pre><code>a late answer for an earlier measure, or a failed fetch, leaves a stale list in place; no case covers either
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Open View Data of the Cycle Time percentiles with the named measure Analysis to Ready for Release selected, the measure&#x27;s own Work Items being A (closed) and B (not closed), and the default closed list A and C; then open it on Default
+</code></pre>
+
+<pre><code>The named list holds A and B, not C, carries the measure as its Cycle Time scope and is titled Work Items that reached Ready for Release; on Default it holds A and C and keeps the title Closed Work Items
+</code></pre>
+
+<pre><code>View Data lists the same Work Items the named percentiles count, including one that has reached the end state but is not closed, under a title that does not call them closed
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/namedPercentilesViewData.test.tsx::View Data of the Cycle Time percentiles with a named Cycle Time &gt; lists and titles the named measure&#x27;s own Work Items, also one that is not closed, and none that only the default closed list holds</p>
+
+<pre><code>the title takes the end state but ignores a renamed Work Items term; the test uses the seeded default terms only
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h2>Expectations</h2>
+
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Selecting a named Cycle Time shows figures computed only from the items whose crossing into that measure&#x27;s end state falls inside the chosen date range, whether or not those items are closed, and each such item carries its own end date.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>An item that is closed but never crossed the named measure&#x27;s end state in the range does not appear in that named Cycle Time, and an open item that did cross it in the range does appear.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>With the default Cycle Time selected, the figures and items shown are the same as before this change.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>With a named Cycle Time selected, the scatterplot plots that measure&#x27;s own items, each placed on the date it reached the end state.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>While the named Cycle Time scatterplot data is loading, the chart shows a visible loading state and not stale or empty-looking data.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>If the named Cycle Time scatterplot data cannot be loaded, the chart shows a visible failure message instead of an empty chart or the previous measure&#x27;s points.
+</code></pre>
+
+<h2>Charter</h2>
+
+<p>None.</p>
+
+<h2>Examination</h2>
+
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe backend-tests NamedCycleTime: 84/84 passed incl. &#x27;The_named_Cycle_Time_shows_every_item_that_reached_the_end_state_in_the_dates_closed_or_not&#x27; (Team and Portfolio), NamedCycleTimeDays end-state-entry tests, Info_DefinitionIdAbsent_ReturnsTheDefaultTrend_Unchanged. Limit: only tail of output seen; A/B/C/D scenario values and default cycleTimeData unchanged not directly observed; no live API call possible (metrics-answers-compare probe refused for missing revision arg).
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe backend-tests NamedCycleTime: 84/84 passed incl. &#x27;The_named_Cycle_Time_shows_every_item_that_reached_the_end_state_in_the_dates_closed_or_not&#x27; (Team and Portfolio), NamedCycleTimeDays end-state-entry tests, Info_DefinitionIdAbsent_ReturnsTheDefaultTrend_Unchanged. Limit: only tail of output seen; A/B/C/D scenario values and default cycleTimeData unchanged not directly observed; no live API call possible (metrics-answers-compare probe refused for missing revision arg).
+</code></pre>
+
+<h3>E3</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe backend-tests NamedCycleTime: 84/84 passed incl. &#x27;The_named_Cycle_Time_shows_every_item_that_reached_the_end_state_in_the_dates_closed_or_not&#x27; (Team and Portfolio), NamedCycleTimeDays end-state-entry tests, Info_DefinitionIdAbsent_ReturnsTheDefaultTrend_Unchanged. Limit: only tail of output seen; A/B/C/D scenario values and default cycleTimeData unchanged not directly observed; no live API call possible (metrics-answers-compare probe refused for missing revision arg).
+</code></pre>
+
+<pre><code>Probe frontend-tests CycleTimeScatterPlot: 51/51 passed incl. namedMeasure rows: default stays on closed dates without asking named items; named shows own items on day each reached end state; dims previous dots under spinner while pending; could-not-load message and no dots as current on failure; late answer for earlier measure ignored; dot list shows Cycle Time also for non-closed item. Limit: test runner output, no live UI; x-axis label and dialog title text not separately seen.
+</code></pre>
+
+<h3>E4</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests CycleTimeScatterPlot: 51/51 passed incl. namedMeasure rows: default stays on closed dates without asking named items; named shows own items on day each reached end state; dims previous dots under spinner while pending; could-not-load message and no dots as current on failure; late answer for earlier measure ignored; dot list shows Cycle Time also for non-closed item. Limit: test runner output, no live UI; x-axis label and dialog title text not separately seen.
+</code></pre>
+
+<h3>E5</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests CycleTimeScatterPlot: 51/51 passed incl. namedMeasure rows: default stays on closed dates without asking named items; named shows own items on day each reached end state; dims previous dots under spinner while pending; could-not-load message and no dots as current on failure; late answer for earlier measure ignored; dot list shows Cycle Time also for non-closed item. Limit: test runner output, no live UI; x-axis label and dialog title text not separately seen.
+</code></pre>
+
+<h3>E6</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe frontend-tests CycleTimeScatterPlot: 51/51 passed incl. namedMeasure rows: default stays on closed dates without asking named items; named shows own items on day each reached end state; dims previous dots under spinner while pending; could-not-load message and no dots as current on failure; late answer for earlier measure ignored; dot list shows Cycle Time also for non-closed item. Limit: test runner output, no live UI; x-axis label and dialog title text not separately seen.
+</code></pre>
+
+</body></html>

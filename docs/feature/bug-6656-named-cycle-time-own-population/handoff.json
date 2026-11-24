@@ -1,0 +1,558 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F42",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_named_Cycle_Time_shows_every_item_that_reached_the_end_state_in_the_dates_closed_or_not"
+},
+"expected": "F40",
+"stimulus": "F39",
+"user_result": "F41"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F46",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_named_Cycle_Time_percentiles_count_only_the_items_that_reached_the_end_state_in_the_dates"
+},
+"expected": "F44",
+"stimulus": "F43",
+"user_result": "F45"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F50",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_named_Cycle_Time_percentiles_widget_counts_only_the_items_that_reached_the_end_state_in_the_dates"
+},
+"expected": "F48",
+"stimulus": "F47",
+"user_result": "F49"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F54",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_named_Cycle_Time_outliers_are_judged_among_the_items_that_reached_the_end_state_in_the_dates"
+},
+"expected": "F52",
+"stimulus": "F51",
+"user_result": "F53"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F58",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs::The_default_Cycle_Time_still_shows_the_items_closed_in_the_dates"
+},
+"expected": "F56",
+"stimulus": "F55",
+"user_result": "F57"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F98",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs::GetCycleTimeDataForTeam_NamedDefinition_ReturnsTheDefinitionsItemsWithTheirEndDates"
+},
+"expected": "F96",
+"stimulus": "F95",
+"user_result": "F97"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F102",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs::GetCycleTimeDataForTeam_NoNamedDefinition_AsksForTheDefaultCycleTime"
+},
+"expected": "F100",
+"stimulus": "F99",
+"user_result": "F101"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F106",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs::GetCycleTimeData_NamedDefinition_ReturnsTheDefinitionsFeaturesWithTheirEndDates"
+},
+"expected": "F104",
+"stimulus": "F103",
+"user_result": "F105"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F102",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs::GetCycleTimeData_NoNamedDefinition_AsksForTheDefaultCycleTime"
+},
+"expected": "F108",
+"stimulus": "F107",
+"user_result": "F109"
+}
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F62",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx > keeps the default Cycle Time on the closed dates, without asking for a named measure's items"
+},
+"expected": "F60",
+"stimulus": "F59",
+"user_result": "F61"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F66",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx > shows the measure's own Work Items on the day each reached its end state"
+},
+"expected": "F64",
+"stimulus": "F63",
+"user_result": "F65"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F70",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx > dims the previous dots under a spinner while the measure's Work Items are on their way"
+},
+"expected": "F68",
+"stimulus": "F67",
+"user_result": "F69"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F74",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx > says the chart could not be loaded, and shows no dots as current, when the measure's Work Items cannot be fetched"
+},
+"expected": "F72",
+"stimulus": "F71",
+"user_result": "F73"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F78",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx > never lets a late answer for an earlier measure replace the selected one's"
+},
+"expected": "F76",
+"stimulus": "F75",
+"user_result": "F77"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F82",
+"test": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx::the list a named Cycle Time's dot opens > shows each listed Work Item's Cycle Time for the selected measure, also for one that is not closed"
+},
+"expected": "F80",
+"stimulus": "F79",
+"user_result": "F81"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F86",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/namedPercentilesViewData.test.tsx::View Data of the Cycle Time percentiles with a named Cycle Time > fetches the named measure's own Work Items for the range when the measure is selected, and drops them on Default"
+},
+"expected": "F84",
+"stimulus": "F83",
+"user_result": "F85"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F94",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/namedPercentilesViewData.test.tsx::View Data of the Cycle Time percentiles with a named Cycle Time > lists and titles the named measure's own Work Items, also one that is not closed, and none that only the default closed list holds"
+},
+"expected": "F92",
+"stimulus": "F91",
+"user_result": "F93"
+}
+]
+},
+"counters": {
+"E": 6,
+"F": 111,
+"P": 2,
+"S": 2
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/NamedCycleTime/NamedCycleTimePopulationTest.cs",
+"public_oracle": {
+"expected": "F6",
+"falsifier": "F7",
+"promises": [
+"P1"
+],
+"stimulus": "F5"
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ITeamMetricsService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPortfolioMetricsService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Metrics/NamedCycleTimeValue.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~NamedCycleTimePopulationTest|FullyQualifiedName~TeamMetricsControllerTest|FullyQualifiedName~PortfolioMetricsControllerTests"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx",
+"public_oracle": {
+"expected": "F11",
+"falsifier": "F12",
+"promises": [
+"P2"
+],
+"stimulus": "F10"
+},
+"supports": [
+"Lighthouse.Frontend/src/pages/Common/MetricsView/namedPercentilesViewData.test.tsx"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/MetricsService.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Metrics/NamedCycleTime.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/WorkItem.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/useNamedPercentilesScope.ts"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.ts"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.namedMeasure.test.tsx src/pages/Common/MetricsView/namedPercentilesViewData.test.tsx"
+]
+}
+}
+},
+"examination": {
+"E1": {
+"observations": [
+"F110"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F110"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F110",
+"F111"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F111"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F111"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F111"
+],
+"verdict": "met"
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F13"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F14"
+},
+{
+"id": "E3",
+"promises": [
+"P1"
+],
+"text": "F15"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F16"
+},
+{
+"id": "E5",
+"promises": [
+"P2"
+],
+"text": "F17"
+},
+{
+"id": "E6",
+"promises": [
+"P2"
+],
+"text": "F18"
+}
+]
+},
+"facts": {
+"F1": "Bug 6656: Custom Cycle Time measure not filtering items in scatterplot. With a custom Cycle Time measure (end state Ready for Release), the scatterplot shows exactly the same items as the default Cycle Time (including items Done, In Production, Complete, Cancelled); only the values are recalculated. Expected (reporter): the scatterplot shows all items that have reached Ready for Release, each measured from entering Analysis to reaching Ready for Release, including items that later moved to In Production or Done; items that have not yet reached Ready for Release do not appear as data points.",
+"F10": "Render the Cycle Time scatterplot with default data (items A closed 20 Nov, C closed 3 Nov) and select the named measure Analysis -> Ready for Release whose fetch returns A (end 5 Nov) and B (not closed, end 12 Nov); also a fetch still pending, and a fetch that fails; click a dot.",
+"F100": "The team's cycle time data asks the service for the default Cycle Time (no definition) and returns its closed items unchanged",
+"F101": "The default team scatterplot still shows the items closed in the range",
+"F102": "a negative definition id were forwarded to the service instead of being treated as no definition",
+"F103": "A portfolio user opens the scatterplot for a named Cycle Time (definition 7) and the service answers one Feature that reached Ready for Release on 12 Nov",
+"F104": "The portfolio's cycle time data asks the service for definition 7 and returns that Feature with its named value of 5 days ending 12 Nov",
+"F105": "The portfolio scatterplot for a named Cycle Time shows that measure's own Features, each placed at the day it reached the end state",
+"F106": "the controller forwarded any positive id other than the one asked for while the service answered the same Features for it",
+"F107": "A portfolio user opens the scatterplot without a named Cycle Time, or with definition 0",
+"F108": "The portfolio's cycle time data asks the service for the default Cycle Time (no definition) and returns its closed Features unchanged",
+"F109": "The default portfolio scatterplot still shows the Features closed in the range",
+"F11": "Named: dots for A at 5 Nov and B at 12 Nov, none for C; x-axis label 'Date reached Ready for Release'; pending fetch shows the dimmed-with-spinner look, failed fetch shows the could-not-load message and no stale dots as current; dialog title names the end state and the end date. Default measure unchanged.",
+"F110": "Probe backend-tests NamedCycleTime: 84/84 passed incl. 'The_named_Cycle_Time_shows_every_item_that_reached_the_end_state_in_the_dates_closed_or_not' (Team and Portfolio), NamedCycleTimeDays end-state-entry tests, Info_DefinitionIdAbsent_ReturnsTheDefaultTrend_Unchanged. Limit: only tail of output seen; A/B/C/D scenario values and default cycleTimeData unchanged not directly observed; no live API call possible (metrics-answers-compare probe refused for missing revision arg).",
+"F111": "Probe frontend-tests CycleTimeScatterPlot: 51/51 passed incl. namedMeasure rows: default stays on closed dates without asking named items; named shows own items on day each reached end state; dims previous dots under spinner while pending; could-not-load message and no dots as current on failure; late answer for earlier measure ignored; dot list shows Cycle Time also for non-closed item. Limit: test runner output, no live UI; x-axis label and dialog title text not separately seen.",
+"F12": "Named view plots dots on the closed date, still shows C, omits B, shows the previous answer as current while loading or after a failure, or changes the default view",
+"F13": "Selecting a named Cycle Time shows figures computed only from the items whose crossing into that measure's end state falls inside the chosen date range, whether or not those items are closed, and each such item carries its own end date.",
+"F14": "An item that is closed but never crossed the named measure's end state in the range does not appear in that named Cycle Time, and an open item that did cross it in the range does appear.",
+"F15": "With the default Cycle Time selected, the figures and items shown are the same as before this change.",
+"F16": "With a named Cycle Time selected, the scatterplot plots that measure's own items, each placed on the date it reached the end state.",
+"F17": "While the named Cycle Time scatterplot data is loading, the chart shows a visible loading state and not stale or empty-looking data.",
+"F18": "If the named Cycle Time scatterplot data cannot be loaded, the chart shows a visible failure message instead of an empty chart or the previous measure's points.",
+"F2": "A named Cycle Time shows its own population: every item whose last move into the measure's end state falls in the date range, closed or not, placed on the date it reached the end state; its percentiles use the same population. Applies to team and portfolio.",
+"F3": "A named Cycle Time is answered from its own population: items whose end-state crossing falls in the range, closed or not, each with its end date; the default Cycle Time is unchanged",
+"F39": "A Team and a Portfolio with the workflow Analysis, In Progress, Ready for Release, In Production, Done and the named Cycle Time Analysis to Ready for Release. A reached Ready for Release on 5 Nov and was Done on 20 Nov; B reached it on 12 Nov and is still there; C reached it on 28 Oct and was Done on 3 Nov; D is In Progress. The named Cycle Time data is asked for 1 to 30 Nov.\n",
+"F4": "With a named Cycle Time definition, the team and portfolio metrics service answers cycleTimeData, the named percentiles (and percentiles info) and the named outliers from the items whose last forward crossing into the definition's end state falls in the date range, closed or not; each named value carries the end date",
+"F40": "Exactly A and B are shown. A has 10 days and the end date 5 Nov; B has 6 days and the end date 12 Nov. C and D are not shown.\n",
+"F41": "The scatterplot of a named Cycle Time can show every Work Item that reached its end state in the dates, closed or not, on the day it reached it.\n",
+"F42": "The end date carries the day of the first move into the end state rather than the last, for an item that left the end state and came back; no item in this fixture moves back.\n",
+"F43": "The same Team and Portfolio and items A, B, C, D. The named Cycle Time percentiles are asked for 1 to 30 Nov.\n",
+"F44": "P50, P70, P85 and P95 are all 6 days, from A (10 days) and B (6 days) only; 10 would mean B is left out or C is counted.\n",
+"F45": "The percentile lines of a named Cycle Time match the items the scatterplot shows for it.\n",
+"F46": "An item that reached the end state on the last day of the dates is left out by an exclusive end bound; no fixture item sits on a range edge.\n",
+"F47": "The same Team and Portfolio and items A, B, C, D. The Cycle Time percentiles widget is asked for 1 to 30 Nov with the named Cycle Time.\n",
+"F48": "The widget's current P50, P70, P85 and P95 are all 6 days, from A and B only.\n",
+"F49": "The Cycle Time percentiles widget of a named Cycle Time agrees with its scatterplot.\n",
+"F5": "Team (and portfolio) with workflow Analysis, In Progress, Ready for Release, In Production, Done and a named definition Analysis -> Ready for Release; range 1-30 Nov. Item A reached Ready for Release 5 Nov and Done 20 Nov; item B reached Ready for Release 12 Nov and is still there; item C reached Ready for Release 28 Oct and Done 3 Nov; item D is In Progress. Ask the service for the named cycle time data, percentiles and outliers for that definition and range.",
+"F50": "The widget's comparison with the previous period still uses the items closed in that period; only the current percentiles are checked.\n",
+"F51": "A Team and a Portfolio with the same named Cycle Time. Eight items reached Ready for Release in November after 3 days each and were Done; B has waited in Ready for Release since 12 Nov after 43 days; C took 200 days, reached Ready for Release on 28 Oct and was Done on 3 Nov. The named Cycle Time outliers are asked for 1 to 30 Nov.\n",
+"F52": "The named Cycle Time has a limit and B is the only outlier. C is neither an outlier nor part of the limit; with C in the limit B would not stand out.\n",
+"F53": "The outliers marked on a named Cycle Time scatterplot are the dots it shows that stand out, including items not yet closed.\n",
+"F54": "A configured baseline period keeps using the items closed in it; this fixture uses the shown dates as the baseline.\n",
+"F55": "The same Team and Portfolio and items A, B, C, D. The Cycle Time data is asked for 1 to 30 Nov without a named Cycle Time.\n",
+"F56": "Exactly A and C are shown, the items closed in the dates, as before.\n",
+"F57": "The default Cycle Time scatterplot and the widgets that read the same list do not change.\n",
+"F58": "The default answer drops or changes the named values each closed item carried; only which items are shown is checked.\n",
+"F59": "Show the Cycle Time scatterplot with the default Cycle Time; Work Item A closed 20 Nov and C closed 3 Nov; open the dot of A.",
+"F6": "A and B are returned with named days measured Analysis->Ready for Release and end dates 5 Nov and 12 Nov; C and D are not returned; percentiles are computed over A and B only. Without a definition, cycleTimeData still returns the items closed in range (A and C) unchanged.",
+"F60": "Dots sit on the closed dates (3 Nov, 20 Nov) at the default days; the x-axis says Date; nothing is fetched for a named measure; the list title reads Work Items closed on <20 Nov> with Cycle Time of 15 days.",
+"F61": "A reader who keeps the default Cycle Time sees the same chart as before the fix.",
+"F62": "the default view fetches named data lazily after the first paint",
+"F63": "Select the named measure Analysis to Ready for Release, whose fetch returns A (reached it 5 Nov, 6 days) and B (not closed, reached it 12 Nov, 4 days); C reached it 28 Oct; open the dot on 5 Nov.",
+"F64": "The fetch is asked for that measure; dots for A on 5 Nov and B on 12 Nov at the named days, none for C; the x-axis says Date reached Ready for Release; the list title reads Work Items that reached Ready for Release on <5 Nov> with Cycle Time of 6 days and lists A.",
+"F65": "A reader sees every Work Item that reached the measure's end state in the range, closed or not, on the day it got there.",
+"F66": "a dot groups items by end date but the tooltip still says closed",
+"F67": "Select the named measure while its Work Items are still on their way.",
+"F68": "The frame is loading; the chart body is dimmed to 0.4 under a spinner; the previous default dots stay visible beneath.",
+"F69": "A reader sees the old dots are not the current answer while the new one loads.",
+"F7": "C (closed in range but crossed the end before it) is returned, B (not closed) is missing, a value has no end date, the percentiles include C, or the default cycleTimeData changes",
+"F70": "the x-axis label already switches to the named end state while the old dots are dimmed",
+"F71": "Select the named measure and the fetch of its Work Items fails.",
+"F72": "The frame shows its could-not-load message and no dot is visible as the answer.",
+"F73": "A reader is told the chart could not be loaded instead of seeing the previous dots as if current.",
+"F74": "the chart retries the failed fetch silently in the background",
+"F75": "Select Analysis to Ready for Release (slow answer), then Analysis to In Production (answer: D reached In Production 18 Nov, 12 days); then the slow answer arrives.",
+"F76": "Only D's dot on 18 Nov stays; the x-axis says Date reached In Production.",
+"F77": "A reader who switches measures never sees an older measure's answer replace the one they chose.",
+"F78": "the late answer is shown briefly while switching back to the earlier measure",
+"F79": "With the named measure Analysis to Ready for Release selected on the Cycle Time scatterplot, open the dot of B, which reached Ready for Release 4 days after entering Analysis and is not closed",
+"F8": "With a named Cycle Time selected, the scatterplot shows that measure's own items on the date each reached the end state, with a loading and a failure look",
+"F80": "The list that opens heads its Cycle Time column with the measure's name and shows 4 days for B",
+"F81": "The reader sees the Cycle Time the dot stands for in the list, also for a Work Item that is not closed",
+"F82": "the Closed column of a not-closed Work Item stays empty beside the named days; no promise covers that column",
+"F83": "Select the named measure Analysis to Ready for Release for the Cycle Time percentiles, then go back to Default",
+"F84": "The measure's own Work Items for the same team and range are fetched with the measure's id, A and B (not closed) are offered as its list, and none are offered on Default",
+"F85": "The percentiles widget knows which Work Items its named numbers count",
+"F86": "a late answer for an earlier measure, or a failed fetch, leaves a stale list in place; no case covers either",
+"F9": "With a named Cycle Time selected, the Cycle Time scatterplot shows the population the API returns for that definition, places each dot on the date the item reached the end state, labels the x-axis 'Date reached <end state>', shows a loading look (previous dots dimmed under a small spinner) and a could-not-load look, and titles the dot dialog 'Work Items that reached <end state> on <date> with Cycle Time of N days'",
+"F91": "Open View Data of the Cycle Time percentiles with the named measure Analysis to Ready for Release selected, the measure's own Work Items being A (closed) and B (not closed), and the default closed list A and C; then open it on Default",
+"F92": "The named list holds A and B, not C, carries the measure as its Cycle Time scope and is titled Work Items that reached Ready for Release; on Default it holds A and C and keeps the title Closed Work Items",
+"F93": "View Data lists the same Work Items the named percentiles count, including one that has reached the end state but is not closed, under a title that does not call them closed",
+"F94": "the title takes the end state but ignores a renamed Work Items term; the test uses the seeded default terms only",
+"F95": "A team user opens the scatterplot for a named Cycle Time (definition 7) and the service answers one item that reached Ready for Release on 5 Nov",
+"F96": "The team's cycle time data asks the service for definition 7 and returns that item with its named value of 5 days ending 5 Nov",
+"F97": "The team scatterplot for a named Cycle Time shows that measure's own items, each placed at the day it reached the end state",
+"F98": "the controller forwarded any positive id other than the one asked for while the service answered the same items for it",
+"F99": "A team user opens the scatterplot without a named Cycle Time, or with definition 0"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F8"
+}
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F4",
+"promises": [
+"P1"
+]
+},
+{
+"id": "S2",
+"observation": "F9",
+"promises": [
+"P2"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "bug-6656-named-cycle-time-own-population",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}

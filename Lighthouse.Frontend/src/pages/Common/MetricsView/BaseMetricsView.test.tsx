@@ -56,6 +56,7 @@ import { cellText } from "../../../tests/WorkItemsDialogTestKit";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import { formatLocalDate } from "../../../utils/date/localDate";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import { BaseMetricsView } from "./BaseMetricsView";
 import { type CategoryKey, getWidgetsForCategory } from "./categoryMetadata";
 
@@ -93,12 +94,26 @@ vi.mock("../../../components/Common/Charts/CycleTimeScatterPlotChart", () => ({
 		cycleTimeDataPoints,
 		percentileValues,
 		serviceLevelExpectation,
+		namedCycleTimeDefinitions,
+		onFetchNamedCycleTimeData,
 	}: {
 		cycleTimeDataPoints: IWorkItem[];
 		percentileValues: IPercentileValue[];
 		serviceLevelExpectation: IPercentileValue | null;
+		namedCycleTimeDefinitions?: { id: number }[];
+		onFetchNamedCycleTimeData?: (definitionId: number) => Promise<IWorkItem[]>;
 	}) => (
 		<div data-testid="cycle-time-scatter-plot">
+			<button
+				type="button"
+				data-testid="scatter-fetch-named-data"
+				onClick={() => {
+					const first = namedCycleTimeDefinitions?.[0];
+					if (first) fireAndForget(onFetchNamedCycleTimeData?.(first.id));
+				}}
+			>
+				fetch named data
+			</button>
 			<div data-testid="cycle-time-data-points-count">
 				{cycleTimeDataPoints.length}
 			</div>
@@ -5187,19 +5202,33 @@ describe("BaseMetricsView component", () => {
 				...mockCycleTimeData[0],
 				id: 101,
 				cycleTime: 9,
-				namedCycleTimes: [{ definitionId: namedDefinition.id, days: 4 }],
+				namedCycleTimes: [
+					{
+						definitionId: namedDefinition.id,
+						days: 4,
+						endDate: new Date(2026, 0, 1),
+					},
+				],
 			},
 			{
 				...mockCycleTimeData[1],
 				id: 102,
 				cycleTime: 10,
-				namedCycleTimes: [{ definitionId: namedDefinition.id, days: 7 }],
+				namedCycleTimes: [
+					{
+						definitionId: namedDefinition.id,
+						days: 7,
+						endDate: new Date(2026, 0, 1),
+					},
+				],
 			},
 			{
 				...mockCycleTimeData[0],
 				id: 103,
 				cycleTime: 11,
-				namedCycleTimes: [{ definitionId: 999, days: 3 }],
+				namedCycleTimes: [
+					{ definitionId: 999, days: 3, endDate: new Date(2026, 0, 1) },
+				],
 			},
 		];
 
@@ -5234,6 +5263,42 @@ describe("BaseMetricsView component", () => {
 
 			return { service, team };
 		}
+
+		it("the scatterplot fetches a named Cycle Time's own Work Items for this owner and date range", async () => {
+			const service = {
+				...createMockMetricsService<IWorkItem>(),
+				getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+				getCycleTimeData: vi.fn().mockResolvedValue(namedItems),
+			};
+			const team = new Team();
+			team.id = 7;
+			team.lastUpdated = new Date();
+			localStorage.setItem(
+				`lighthouse:metrics:team:${team.id}:category`,
+				"flow-metrics",
+			);
+			renderWithRouter(
+				<BaseMetricsView
+					entity={team}
+					metricsService={service}
+					title="Work Items"
+					doingStates={["To Do", "In Progress", "Review"]}
+					cycleTimeDefinitions={[namedDefinition]}
+				/>,
+			);
+			await userEvent.click(
+				await screen.findByTestId("scatter-fetch-named-data"),
+			);
+
+			await waitFor(() =>
+				expect(service.getCycleTimeData).toHaveBeenLastCalledWith(
+					7,
+					expect.any(Date),
+					expect.any(Date),
+					namedDefinition.id,
+				),
+			);
+		});
 
 		it("View Data Default selection: the closed items list reads the default cycle time for all closed items", async () => {
 			renderWithNamedItems();
@@ -5270,19 +5335,6 @@ describe("BaseMetricsView component", () => {
 			expect(
 				screen.getByTestId("widget-view-data-context-percentiles"),
 			).toHaveTextContent("closedItems");
-		});
-
-		it("View Data Named selection: rows filtered to the named population equal to the percentile population", async () => {
-			renderWithNamedItems();
-
-			await screen.findByTestId("percentile-select-named");
-			await userEvent.click(screen.getByTestId("percentile-select-named"));
-
-			await waitFor(() => {
-				expect(
-					screen.getByTestId("widget-view-data-count-percentiles"),
-				).toHaveTextContent("2");
-			});
 		});
 
 		it("View Data Named selection: no SLE line is drawn in the dialog", async () => {
@@ -5480,8 +5532,16 @@ describe("BaseMetricsView component", () => {
 					id: 201,
 					cycleTime: 9,
 					namedCycleTimes: [
-						{ definitionId: namedDefinition.id, days: 4 },
-						{ definitionId: secondDefinition.id, days: 8 },
+						{
+							definitionId: namedDefinition.id,
+							days: 4,
+							endDate: new Date(2026, 0, 1),
+						},
+						{
+							definitionId: secondDefinition.id,
+							days: 8,
+							endDate: new Date(2026, 0, 1),
+						},
 					],
 				},
 			];
