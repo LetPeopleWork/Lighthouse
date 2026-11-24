@@ -1,0 +1,18 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Modules/Refinement/Domain/**/*.cs",
+      "**/Modules/Refinement/Application/**/*.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Lighthouse.Backend.Tests.Modules.Refinement|FullyQualifiedName~Lighthouse.Backend.Tests.API.Integration.Refinement|FullyQualifiedName~Tests.API.RefinementVotesControllerTest|FullyQualifiedName~Tests.API.RefinementControllerTest|FullyQualifiedName~SizingLogRepositoryTest)&FullyQualifiedName!~Slice11CastAVoteScenarios&FullyQualifiedName!~RefinementAcceptanceTest&FullyQualifiedName!~SizingVotesAcceptanceTest&FullyQualifiedName!~Dogfood&FullyQualifiedName!~WriteBack&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 6,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
