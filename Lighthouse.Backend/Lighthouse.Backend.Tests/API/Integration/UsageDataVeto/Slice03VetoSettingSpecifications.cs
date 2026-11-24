@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using Lighthouse.Backend.Services.Implementation.UsageData;
+using Lighthouse.Backend.Platform.UsageData;
 using Lighthouse.Backend.Tests.API.Integration.BehaviourSettings;
 using NUnit.Framework;
 

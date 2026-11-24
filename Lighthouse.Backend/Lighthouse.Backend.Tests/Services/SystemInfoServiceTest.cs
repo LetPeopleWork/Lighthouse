@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Platform.Encryption;
+using Lighthouse.Backend.Platform.Logging;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Configuration;

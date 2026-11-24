@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Platform.Logging;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.Encryption;
 using Microsoft.Data.Sqlite;

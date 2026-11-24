@@ -1,7 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.UsageData;
-using Lighthouse.Backend.Services.Interfaces.UsageData;
+using Lighthouse.Backend.Platform.UsageData;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;

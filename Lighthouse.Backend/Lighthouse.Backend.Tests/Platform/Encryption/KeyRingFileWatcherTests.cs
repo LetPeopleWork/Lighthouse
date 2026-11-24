@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models.Encryption;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Platform.Encryption;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;

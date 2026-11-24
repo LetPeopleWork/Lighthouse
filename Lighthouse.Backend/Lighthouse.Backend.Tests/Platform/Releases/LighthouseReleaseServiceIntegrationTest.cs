@@ -1,0 +1,181 @@
+using Lighthouse.Backend.Platform.Releases;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.Logging;
+using Moq;
+using System.Diagnostics;
+using System.IO.Compression;
+using System.Net;
+using Moq.Protected;
+
+namespace Lighthouse.Backend.Tests.Platform.Releases
+{
+    [Category("GithubIntegration")]
+    [NonParallelizable]
+    public class LighthouseReleaseServiceIntegrationTest : IntegrationFixture
+    {
+        // Use static service to work around rate limits
+        private static readonly IGitHubService GitHubService = new GitHubService();
+        
+        private Mock<IPlatformService> platformServiceMock;
+        private Mock<IAssemblyService> assemblyServiceMock;
+        private Mock<IProcessService> processServiceMock;
+        private TaskCompletionSource<ProcessStartInfo> processStarted;
+        private TaskCompletionSource<int> processExited;
+
+        [SetUp]
+        public void Setup()
+        {
+            platformServiceMock = new Mock<IPlatformService>();
+            assemblyServiceMock = new Mock<IAssemblyService>();
+            processServiceMock = new Mock<IProcessService>();
+
+            // Default: not standalone, not dev, update-capable platform
+            platformServiceMock.SetupGet(x => x.IsDevEnvironment).Returns(false);
+            platformServiceMock.SetupGet(x => x.IsStandalone).Returns(false);
+
+            processStarted = new TaskCompletionSource<ProcessStartInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+            processExited = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            processServiceMock.Setup(x => x.Start(It.IsAny<ProcessStartInfo>()))
+                .Callback<ProcessStartInfo>(startInfo => processStarted.TrySetResult(startInfo));
+            processServiceMock.Setup(x => x.Exit(It.IsAny<int>()))
+                .Callback<int>(exitCode => processExited.TrySetResult(exitCode));
+        }
+
+        [Test]
+        [TestCase(SupportedPlatform.Windows, "win")]
+        [TestCase(SupportedPlatform.Linux, "linux")]
+        public async Task InstallUpdate_SupportedPlatform_ReturnsTrue(SupportedPlatform platform, string operatingSystemIdentifier)
+        {
+            platformServiceMock.SetupGet(x => x.Platform).Returns(platform);
+
+            var subject = CreateSubject();
+
+            var result = await subject.InstallUpdate();
+
+            Assert.That(result, Is.True,
+                $"InstallUpdate should return true for platform '{platform}'. " +
+                $"If this fails, check that a release asset containing '{operatingSystemIdentifier}' exists on the latest GitHub release.");
+        }
+
+        [Test]
+        [TestCase(SupportedPlatform.Windows)]
+        [TestCase(SupportedPlatform.Linux)]
+        public async Task InstallUpdate_SupportedPlatform_StartsUpdateProcess(SupportedPlatform platform)
+        {
+            platformServiceMock.SetupGet(x => x.Platform).Returns(platform);
+
+            var subject = CreateSubject();
+
+            await subject.InstallUpdate();
+
+            await Signalled(processStarted, "start");
+
+            processServiceMock.Verify(x => x.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+        }
+
+        [Test]
+        [TestCase(SupportedPlatform.Windows)]
+        [TestCase(SupportedPlatform.Linux)]
+        public async Task InstallUpdate_SupportedPlatform_ExitsCurrentProcess(SupportedPlatform platform)
+        {
+            platformServiceMock.SetupGet(x => x.Platform).Returns(platform);
+
+            var subject = CreateSubject();
+
+            await subject.InstallUpdate();
+            
+            await Signalled(processExited, "exit");
+
+            processServiceMock.Verify(x => x.Exit(0), Times.Once);
+        }
+
+        [Test]
+        [TestCase(SupportedPlatform.Windows, ".bat")]
+        [TestCase(SupportedPlatform.Linux, ".sh")]
+        public async Task InstallUpdate_SupportedPlatform_StartsUpdateScriptWithCorrectExtension(SupportedPlatform platform, string expectedScriptExtension)
+        {
+            platformServiceMock.SetupGet(x => x.Platform).Returns(platform);
+
+            var subject = CreateSubject();
+
+            await subject.InstallUpdate();
+            
+            var capturedStartInfo = await Signalled(processStarted, "start");
+
+            var scriptFile = platform == SupportedPlatform.Windows
+                ? capturedStartInfo.FileName
+                : capturedStartInfo.Arguments.Trim('"');
+
+            Assert.That(scriptFile, Does.EndWith(expectedScriptExtension),
+                $"Expected update script to have extension '{expectedScriptExtension}' on {platform}");
+        }
+
+        // InstallUpdate runs the update script on a fire-and-forget Task, so asserting straight after
+        // it awaits races the thread pool rather than the code under test.
+        private static async Task<T> Signalled<T>(TaskCompletionSource<T> signal, string what)
+        {
+            var finished = await Task.WhenAny(signal.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+
+            Assert.That(finished, Is.SameAs(signal.Task), $"The update process never reached {what} within 10 s.");
+
+            return await signal.Task;
+        }
+
+        private LighthouseReleaseService CreateSubject()
+        {
+            return new LighthouseReleaseService(
+                GitHubService,
+                assemblyServiceMock.Object,
+                platformServiceMock.Object,
+                processServiceMock.Object,
+                Mock.Of<ILogger<LighthouseReleaseService>>(),
+                TimeSpan.Zero,
+                CreateMockHttpClient());
+        }
+        
+        private static HttpClient CreateMockHttpClient()
+        {
+            var handlerMock = new Mock<HttpMessageHandler>();
+
+            handlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync((HttpRequestMessage request, CancellationToken _) =>
+                {
+                    // Extract the "filename" from the end of the URL
+                    // e.g., https://example.com/Lighthouse-v1.zip -> Lighthouse-v1.zip
+                    var fileNameFromUrl = Path.GetFileName(request.RequestUri?.LocalPath) ?? "default.zip";
+            
+                    // Create a valid ZIP containing a dummy file named after the URL
+                    var zipBytes = CreateMockZipBytes($"{fileNameFromUrl}.txt", "Mocked content");
+
+                    return new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new ByteArrayContent(zipBytes)
+                    };
+                });
+
+            return new HttpClient(handlerMock.Object);
+        }
+        
+        private static byte[] CreateMockZipBytes(string fileName, string content)
+        {
+            using var ms = new MemoryStream();
+            using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
+            {
+                var entry = archive.CreateEntry(fileName);
+                using var entryStream = entry.Open();
+                using var writer = new StreamWriter(entryStream);
+                writer.Write(content);
+            }
+            return ms.ToArray();
+        }
+    }
+}

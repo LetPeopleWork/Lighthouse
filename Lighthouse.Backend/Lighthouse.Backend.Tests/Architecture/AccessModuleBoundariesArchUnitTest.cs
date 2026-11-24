@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Services.Implementation.FeatureListActiveWork",
             "Lighthouse.Backend.Services.Implementation.FeatureListService",
             "Lighthouse.Backend.Services.Implementation.Refinement.VoterIdentityResolver",
-            "Lighthouse.Backend.Services.Implementation.UsageData.UsageDataInstanceProperties",
+            "Lighthouse.Backend.Platform.UsageData.UsageDataInstanceProperties",
         ];
 
         // The outside types, besides the API, that reach Access's Http adapters: the composition root registers the

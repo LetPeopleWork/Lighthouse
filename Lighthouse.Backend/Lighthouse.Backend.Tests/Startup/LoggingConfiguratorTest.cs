@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Lighthouse.Backend.Configuration;
-using Lighthouse.Backend.Services.Implementation.Logging;
+using Lighthouse.Backend.Platform.Logging;
 using Lighthouse.Backend.Startup;
 using Microsoft.Extensions.Configuration;
 using Serilog.Core;

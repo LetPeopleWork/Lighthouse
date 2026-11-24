@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Lighthouse.Backend.Services.Interfaces.UsageData;
+using Lighthouse.Backend.Platform.UsageData;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 
 namespace Lighthouse.Backend.Tests.Architecture

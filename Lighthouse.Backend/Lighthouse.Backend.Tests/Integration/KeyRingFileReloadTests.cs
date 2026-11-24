@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Platform.Encryption;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text;

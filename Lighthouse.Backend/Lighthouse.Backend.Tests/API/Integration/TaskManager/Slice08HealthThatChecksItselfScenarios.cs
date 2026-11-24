@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using Lighthouse.Backend.Platform.UsageData;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {

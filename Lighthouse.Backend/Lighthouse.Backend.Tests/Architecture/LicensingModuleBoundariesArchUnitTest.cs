@@ -107,11 +107,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater",
-            "Lighthouse.Backend.Services.Implementation.BackgroundServices.UsageDataConsentPruningService",
+            "Lighthouse.Backend.Platform.UsageData.UsageDataConsentPruningService",
             "Lighthouse.Backend.Services.Implementation.Reports.ReportCommands",
             "Lighthouse.Backend.Services.Implementation.Reports.ReportQueries",
-            "Lighthouse.Backend.Services.Implementation.UsageData.UsageDataConsentService",
-            "Lighthouse.Backend.Services.Implementation.UsageData.UsageDataInstanceProperties",
+            "Lighthouse.Backend.Platform.UsageData.UsageDataConsentService",
+            "Lighthouse.Backend.Platform.UsageData.UsageDataInstanceProperties",
             "Lighthouse.Backend.Services.Implementation.WriteBackTriggerService",
         ];
 

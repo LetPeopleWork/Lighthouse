@@ -3,6 +3,7 @@ using System.Net;
 using System.Reflection;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Platform.Releases;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Authorization;

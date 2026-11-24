@@ -6,7 +6,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.UsageData;
-using Lighthouse.Backend.Services.Implementation.UsageData;
+using Lighthouse.Backend.Platform.UsageData;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
