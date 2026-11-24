@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Platform.DatabaseManagement;
 using Lighthouse.Backend.Platform.UpdateQueue;
-using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Platform.DatabaseManagement
 {

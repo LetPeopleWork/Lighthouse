@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Platform.UpdateQueue;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 
 namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
 {

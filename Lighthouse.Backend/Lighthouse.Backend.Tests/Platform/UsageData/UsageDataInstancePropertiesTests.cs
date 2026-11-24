@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Platform.Releases;
 using Lighthouse.Backend.Platform.UsageData;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Microsoft.Extensions.DependencyInjection;

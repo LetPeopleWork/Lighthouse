@@ -2,7 +2,6 @@
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Models.Logging;
 using Lighthouse.Backend.Platform.Logging;
-using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.Text;

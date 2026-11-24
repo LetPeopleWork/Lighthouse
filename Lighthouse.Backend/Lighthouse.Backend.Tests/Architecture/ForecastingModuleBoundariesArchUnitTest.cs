@@ -20,7 +20,6 @@ using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.On
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.ReachingAModuleAdapter.Application;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.SecondLicensingType.Application;
 using Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutbound.SecondUpdateType.Adapters;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Mono.Cecil;
 

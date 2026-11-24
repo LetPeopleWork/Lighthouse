@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.TestDoubles

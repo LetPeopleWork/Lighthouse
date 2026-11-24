@@ -1,6 +1,4 @@
 using Lighthouse.Backend.Platform.Releases;
-using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;

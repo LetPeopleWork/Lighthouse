@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.API;
-using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Tests.API.Integration.Refinement;
 using NUnit.Framework;

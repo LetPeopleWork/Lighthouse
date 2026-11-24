@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Platform.UpdateQueue;
-using Lighthouse.Backend.Services.Interfaces.Update;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Health

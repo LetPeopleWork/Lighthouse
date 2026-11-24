@@ -5,7 +5,6 @@ using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Platform.Releases;
 using Lighthouse.Backend.Platform.UsageData;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;

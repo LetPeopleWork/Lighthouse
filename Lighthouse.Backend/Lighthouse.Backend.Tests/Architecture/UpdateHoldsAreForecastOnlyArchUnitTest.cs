@@ -2,8 +2,6 @@ using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Modules.Forecasting.Adapters.Background;
 using ArchUnitNET.NUnit;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Services.Interfaces.Update;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

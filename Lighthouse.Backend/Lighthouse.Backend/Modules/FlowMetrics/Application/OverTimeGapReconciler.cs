@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application

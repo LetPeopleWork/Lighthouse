@@ -3,8 +3,6 @@ using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Platform.DatabaseManagement;
 using Lighthouse.Backend.Platform.UpdateQueue;
-using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;

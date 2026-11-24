@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Platform.UpdateQueue;
 using Microsoft.Extensions.Logging.Abstractions;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using NUnit.Framework;
 using StackExchange.Redis;
 using Lighthouse.Backend.Tests.TestDoubles;

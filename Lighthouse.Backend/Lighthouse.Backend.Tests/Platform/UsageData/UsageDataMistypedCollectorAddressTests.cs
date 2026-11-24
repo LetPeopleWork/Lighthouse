@@ -2,7 +2,6 @@ using System.Net;
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.UsageData;
 using Lighthouse.Backend.Platform.UsageData;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Options;
 using Moq;

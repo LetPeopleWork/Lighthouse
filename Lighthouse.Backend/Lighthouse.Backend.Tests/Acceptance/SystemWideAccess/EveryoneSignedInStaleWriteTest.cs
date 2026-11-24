@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Platform.Encryption;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Tests.Acceptance.SystemWideAccess;
 using Lighthouse.Backend.Tests.TestDoubles;

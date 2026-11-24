@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Platform.Persistence;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Application

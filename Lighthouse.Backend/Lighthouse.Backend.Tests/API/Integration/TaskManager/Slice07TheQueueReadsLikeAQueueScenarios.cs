@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Platform.UpdateQueue;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager

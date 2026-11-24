@@ -3,7 +3,6 @@ using System.Net;
 using System.Reflection;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.Contracts;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;

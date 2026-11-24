@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// failed refresh as "Completed" is worse than no task list, so this slice ships on its own and first.
     ///
     /// AC-01.4 (work held behind a failed refresh is still let go) lives in
-    /// <c>Services/Implementation/BackgroundServices/Update/UpdateQueueServiceTests</c>. A hold only parks
+    /// <c>Platform/UpdateQueue/UpdateQueueServiceTests</c>. A hold only parks
     /// while the key it waits on is Queued rather than running, and the window between a refresh being
     /// admitted and the queue picking it up is not something a test can stand in deterministically from
     /// outside. That class owns the status dictionary, so there it is exact.

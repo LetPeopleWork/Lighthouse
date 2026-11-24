@@ -3,8 +3,6 @@ using Lighthouse.Backend.Platform.UpdateQueue;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Collections.Concurrent;
 using System.Globalization;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Services.Interfaces.Update;
 using StackExchange.Redis;
 using Lighthouse.Backend.Tests.TestHelpers;
 

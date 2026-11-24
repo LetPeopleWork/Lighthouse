@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Platform.UpdateQueue;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Npgsql;
 using StackExchange.Redis;

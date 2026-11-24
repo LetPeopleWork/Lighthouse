@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Platform.UpdateQueue;
-using Lighthouse.Backend.Services.Interfaces;
 ﻿using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;

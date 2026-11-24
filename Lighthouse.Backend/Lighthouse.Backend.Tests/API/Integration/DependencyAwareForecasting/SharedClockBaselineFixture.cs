@@ -2,7 +2,6 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;

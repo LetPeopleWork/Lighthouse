@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Platform.UsageData;
-using Lighthouse.Backend.Services.Interfaces;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
 

@@ -1,6 +1,4 @@
 ﻿using Lighthouse.Backend.Platform.Logging;
-using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Interfaces;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
 

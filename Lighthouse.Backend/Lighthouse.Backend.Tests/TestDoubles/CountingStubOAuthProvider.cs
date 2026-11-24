@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Tests.TestDoubles

@@ -1,8 +1,6 @@
 using Lighthouse.Backend.Platform.UpdateQueue;
-using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

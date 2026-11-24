@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Logging;
 using Lighthouse.Backend.Platform.Logging;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;

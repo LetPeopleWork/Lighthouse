@@ -1,6 +1,5 @@
 using System.Globalization;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.OAuth;
-using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
