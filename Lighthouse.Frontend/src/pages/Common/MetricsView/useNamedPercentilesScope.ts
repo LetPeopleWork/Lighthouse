@@ -51,6 +51,10 @@ export function useNamedPercentilesScope<T extends IWorkItem | IFeature>({
 				return;
 			}
 
+			// The previous measure's Work Items must not stay listed under the new
+			// measure's title while its own are on their way.
+			setScopedPercentileItems(null);
+
 			// A failed named fetch must never leave the Default numbers on screen under
 			// a named selection - the widget would be presenting the default window's
 			// percentiles as if they were the named one's. Snap back to Default instead,
