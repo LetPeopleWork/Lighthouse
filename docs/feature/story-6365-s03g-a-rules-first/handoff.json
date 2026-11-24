@@ -1,8 +1,115 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F83",
+"T1"
+],
+"still_passes_if": "F174",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::TheRefinementTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove_EachFoundOnce"
+},
+"expected": "F172",
+"stimulus": "F171",
+"user_result": "F173"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F84",
+"L1/F85",
+"L1/F86"
+],
+"still_passes_if": "F178",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::AMapWithOneTypeLeftOff_NamesThatTypeAsNotOnTheMap"
+},
+"expected": "F176",
+"stimulus": "F175",
+"user_result": "F177"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F86"
+],
+"still_passes_if": "F182",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::TheCollection_TakesEveryTopLevelTypeInTheOldAndTheNewNamespaces_AndNothingElse"
+},
+"expected": "F180",
+"stimulus": "F179",
+"user_result": "F181"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F167",
+"L1/F168",
+"L1/F169",
+"L1/F170"
+],
+"still_passes_if": "F186",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::EachFileIsDomain_ExactlyWhenItIsNoPortFile_AndEveryTypeItDeclaresReachesOnlyTheSharedModelsTheBaseLibraryAndTheDomain"
+},
+"expected": "F184",
+"stimulus": "F183",
+"user_result": "F185"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F89"
+],
+"still_passes_if": "F190",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::EachTypeThatStays_IsInTheCompiledCodeWhereListed_OutsideTheRefinementNamespaces"
+},
+"expected": "F188",
+"stimulus": "F187",
+"user_result": "F189"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F90"
+],
+"still_passes_if": "F194",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::TheTargetsNamingAMovingType_AreExactlyTheOnesListed"
+},
+"expected": "F192",
+"stimulus": "F191",
+"user_result": "F193"
+}
+]
+},
 "counters": {
 "D": 7,
 "E": 12,
-"F": 170,
+"F": 194,
 "K": 6,
 "L": 2,
 "P": 4,
@@ -756,8 +863,32 @@
 "F169": "A port file or its records split across layers",
 "F17": "A2: every rule pattern gives the same answer for each moving Refinement type under its old and its new namespace, no added alternative matches a production type outside Modules.Refinement, and no rule string names Refinement by its old path outside the fixed rename list.",
 "F170": "A made-up Domain fixture lookalike or namesake of a Domain type",
+"F171": "The architecture check compares the Refinement membership list with the types the compiled code holds in the old Refinement namespaces and under Modules.Refinement",
+"F172": "On today's code all 41 listed moving types are found, each exactly once, in their old namespace, and the code holds no Refinement type the list leaves out; written before the list was filled, the check failed naming all 41",
+"F173": "The maintainer has a fixed, measured list of what moves into the Refinement module and to which layer, and nothing a user sees changes",
+"F174": "A list entry names the right type with the wrong layer, as long as the type has not moved yet; the layer check below catches that",
+"F175": "The membership comparison is run on altered lists: one type left off, a made-up name added, a listed type taken out of the code, one type swapped for a made-up one, a type found in its new namespace, a type left behind beside its moved copy, a type moved into the other layer, a namesake in the other old namespace, and one type listed twice",
+"F176": "Each altered list fails and names exactly the type concerned, except the type found in its new namespace, which still matches",
+"F177": "A wrong or out-of-date membership list cannot pass unnoticed, and the move itself keeps the check green",
+"F178": "A made-up type in a Refinement namespace that the compiled code never holds; only the names the code actually holds are compared",
+"F179": "The collection is run on a made-up set of type names under the old and new Refinement namespaces, with nested, compiler-made and lookalike names among them",
 "F18": "No rule silently stops seeing a Refinement type when it moves",
+"F180": "Exactly the top-level types of the old namespaces and of every namespace under Modules.Refinement are collected",
+"F181": "A type added during the move joins the list check, and a lookalike namespace does not",
+"F182": "A type the compiler makes under a name not starting with an angle bracket",
+"F183": "The layer check reads, per source file, what every type it declares reaches in the compiled code, and whether the file declares a port interface",
+"F184": "Only NeedBand.cs is Domain; every port file stays Application with all its records and enums; no file of the Domain reaches beyond the shared Models, the base library and the Domain; altered lists fail: SizingRefusal.cs as Domain is named with the logger it reaches, NeedBand.cs as Application is named, a port record listed as Domain or a wrong port-file mark is named, and a made-up Domain type reaching a lookalike of Models or System or a namesake of a Domain type is named while its kernel and Domain edges are not",
+"F185": "The move puts each file into the layer its dependencies allow, and the Domain stays free of services, ports and logging",
+"F186": "A port file whose interface name does not start with I is taken for an ordinary file",
+"F187": "Each of the 31 Refinement types that stay is looked up in the compiled code at its listed namespace; altered entries put one in the wrong namespace, give one a made-up name and list a moving type as staying",
+"F188": "All 31 are found where listed; each altered entry is named, and correct entries are not",
+"F189": "The maintainer sees who owns every Refinement type that stays and why",
 "F19": "Carriers and owners, all test side in Lighthouse.Backend.Tests.Architecture (object_oriented): RefinementMembership (S1 support) holds the moving Refinement types, each with its short name, its layer from the closed choice RefinementLayer {Domain, Application}, its old namespace and its new namespace Lighthouse.Backend.Modules.Refinement.<Layer>; the Refinement types and files that stay, each with namespace or path, owner and reason; and the targets found naming a moving type, each with file, target and kind (suppression, analyser, CI selection, test budget, host user, Stryker). NamespaceMoveLaw (S2 target, created by the S2 prefactoring) owns the preservation law over any move map and pattern-role map, and owns PatternSubject, PatternRole and PatternDeclaration. RefinementPatternRoles and RefinementStringsTheMoveRenames are S2 supports. No production carrier, effect, error type or per-process state changes; the only effects are reading the compiled production and test assemblies and repository text files; every failure is an NUnit assertion message stating WHAT, WHY and HOW.",
+"F190": "A staying type with an inaccurate owner or reason text; those are read by review, not checked",
+"F191": "The suppression, analyser, CI-selection, test-budget, host-user and Stryker files are read for targets that name a moving type by its namespace or folder, old or new",
+"F192": "No target names a moving type today; a made-up target naming one by old name, new name, old path or its test's old name is named, one naming a staying type or a lookalike namespace is not, a listed target its file no longer holds is named, a listed target rewritten to the new namespace still matches, and a missing file the scan must read is named",
+"F193": "No warning suppression, test selection, budget or mutation run silently stops covering Refinement code when it moves",
+"F194": "A target in a file outside the scanned set, such as an archived document",
 "F2": "The Refinement types can move to Modules/Refinement without any rule silently changing its answer",
 "F20": "Claim-to-checker: the membership and the preservation law are relations over a finite, closed domain (the compiled types of the production assembly, the const and static readonly string fields of the test assembly, two subjects per type, the string literals of the test project). They are executed exhaustively by native NUnit over the real IL, which is stronger than a model of them. No Quint, TLA+ or Agda model: no state, transition, ordering, concurrency, time or unbounded input is claimed. Property-based testing does not apply: closed finite domain, every case enumerated. Layers affected: only the test-side architecture rules (Infrastructure layer of the test project); Domain, Application and Adapter layers of production are unchanged.",
 "F21": "Shared law: LIFT. PlatformLaneRulesSeeTheMoveArchUnitTest is platform-specific: it reads PlatformLaneMembership.MovingTypes and StringsTheMoveRenames directly and hard-codes ThePlatformNamespace, the Platform alternative token and MovingAreasOfServices, so no map can be passed in. S2 therefore starts with a refactor(architecture) commit that lifts the law into NamespaceMoveLaw, a class constructed from a move map (moving types with area, old and new namespace and full name; the strings the move renames; the new root namespace and its alternative token) and a pattern-role map; PatternSubject, PatternRole and PatternDeclaration move from PlatformLanePatternRoles into it (one owner). The platform test keeps its test methods, made-up fixtures and verdicts and calls NamespaceMoveLaw with the platform map; the Refinement test calls it with the Refinement map. Rejected: a Refinement copy of the law (two owners deciding the same rule) and one fixture type per pattern (covers only the patterns someone remembered).",

@@ -151,7 +151,165 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>The architecture check compares the Refinement membership list with the types the compiled code holds in the old Refinement namespaces and under Modules.Refinement
+</code></pre>
+
+<pre><code>On today&#x27;s code all 41 listed moving types are found, each exactly once, in their old namespace, and the code holds no Refinement type the list leaves out; written before the list was filled, the check failed naming all 41
+</code></pre>
+
+<pre><code>The maintainer has a fixed, measured list of what moves into the Refinement module and to which layer, and nothing a user sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::TheRefinementTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove_EachFoundOnce</p>
+
+<pre><code>A list entry names the right type with the wrong layer, as long as the type has not moved yet; the layer check below catches that
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The membership comparison is run on altered lists: one type left off, a made-up name added, a listed type taken out of the code, one type swapped for a made-up one, a type found in its new namespace, a type left behind beside its moved copy, a type moved into the other layer, a namesake in the other old namespace, and one type listed twice
+</code></pre>
+
+<pre><code>Each altered list fails and names exactly the type concerned, except the type found in its new namespace, which still matches
+</code></pre>
+
+<pre><code>A wrong or out-of-date membership list cannot pass unnoticed, and the move itself keeps the check green
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::AMapWithOneTypeLeftOff_NamesThatTypeAsNotOnTheMap</p>
+
+<pre><code>A made-up type in a Refinement namespace that the compiled code never holds; only the names the code actually holds are compared
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The collection is run on a made-up set of type names under the old and new Refinement namespaces, with nested, compiler-made and lookalike names among them
+</code></pre>
+
+<pre><code>Exactly the top-level types of the old namespaces and of every namespace under Modules.Refinement are collected
+</code></pre>
+
+<pre><code>A type added during the move joins the list check, and a lookalike namespace does not
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::TheCollection_TakesEveryTopLevelTypeInTheOldAndTheNewNamespaces_AndNothingElse</p>
+
+<pre><code>A type the compiler makes under a name not starting with an angle bracket
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The layer check reads, per source file, what every type it declares reaches in the compiled code, and whether the file declares a port interface
+</code></pre>
+
+<pre><code>Only NeedBand.cs is Domain; every port file stays Application with all its records and enums; no file of the Domain reaches beyond the shared Models, the base library and the Domain; altered lists fail: SizingRefusal.cs as Domain is named with the logger it reaches, NeedBand.cs as Application is named, a port record listed as Domain or a wrong port-file mark is named, and a made-up Domain type reaching a lookalike of Models or System or a namesake of a Domain type is named while its kernel and Domain edges are not
+</code></pre>
+
+<pre><code>The move puts each file into the layer its dependencies allow, and the Domain stays free of services, ports and logging
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::EachFileIsDomain_ExactlyWhenItIsNoPortFile_AndEveryTypeItDeclaresReachesOnlyTheSharedModelsTheBaseLibraryAndTheDomain</p>
+
+<pre><code>A port file whose interface name does not start with I is taken for an ordinary file
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Each of the 31 Refinement types that stay is looked up in the compiled code at its listed namespace; altered entries put one in the wrong namespace, give one a made-up name and list a moving type as staying
+</code></pre>
+
+<pre><code>All 31 are found where listed; each altered entry is named, and correct entries are not
+</code></pre>
+
+<pre><code>The maintainer sees who owns every Refinement type that stays and why
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::EachTypeThatStays_IsInTheCompiledCodeWhereListed_OutsideTheRefinementNamespaces</p>
+
+<pre><code>A staying type with an inaccurate owner or reason text; those are read by review, not checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The suppression, analyser, CI-selection, test-budget, host-user and Stryker files are read for targets that name a moving type by its namespace or folder, old or new
+</code></pre>
+
+<pre><code>No target names a moving type today; a made-up target naming one by old name, new name, old path or its test&#x27;s old name is named, one naming a staying type or a lookalike namespace is not, a listed target its file no longer holds is named, a listed target rewritten to the new namespace still matches, and a missing file the scan must read is named
+</code></pre>
+
+<pre><code>No warning suppression, test selection, budget or mutation run silently stops covering Refinement code when it moves
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs::TheTargetsNamingAMovingType_AreExactlyTheOnesListed</p>
+
+<pre><code>A target in a file outside the scanned set, such as an archived document
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 
