@@ -232,16 +232,6 @@ P1
 Each type in the Refinement membership map is found only in its new Refinement Domain or Application namespace and folder; none remains in the old Refinement service folders, and the staying Refinement files stay where they were. Observable as: architecture-rules reports no violation for the moved set and the staying set.
 ```
 
-#### E2
-
-##### Promises
-
-P2
-
-```text
-The Refinement registrations in Program.cs keep the same order, lifetimes and service-to-implementation pairs, changing only full type names; every architecture rule and the preservation law stay green after the move.
-```
-
 #### E3
 
 ##### Promises
@@ -272,6 +262,16 @@ P4
 The EF model is unchanged with no migration, routes, DTOs and headers are unchanged, and CI selects the backend suite for a change under Modules/Refinement. Observable as: ef-model-unchanged reports no model difference and test-selection-show for a Modules/Refinement path selects the backend suite.
 ```
 
+#### E6
+
+##### Promises
+
+P2
+
+```text
+Every architecture rule and the preservation law stay green after the move, and the rename list holds no entry for a moved type. Observable as: architecture-rules reports no violation, including the moved-type rules under architecture-rules Refinement. The Program.cs Refinement registrations keeping the same order, lifetimes and service-to-implementation pairs, with only full type names changed, is not observable by any public probe: no user, API client, tracker or database sees it. It is not an examiner expectation; it is owned by the whole-candidate review.
+```
+
 ## Charter
 
 None.
@@ -291,18 +291,6 @@ architecture-rules Refinement (public native runner, filter Lighthouse.Backend.T
 ```text
 architecture-rules Refinement (same run, 106/106 passed) includes ARefinementUnitTest_SitsOnlyInItsModuleLayerFolder_AndKeepsItsClassInThatLayer passing for 11 cases (NeedBandTest, RefinementCadenceCalendarTest, RefinementCalendarTest, RefinementListTest, RefinementNeedCalculatorTest, RefinementResolutionTest, RefinementViewQueryTest, SizingLogCommandsTest, SleYardstickResolverTest, StageRuleMatcherTest, VoterIdentityResolverTest), EveryClassOfTheRefinementModuleTests_HasTheNamespaceOfItsFolder passing, and the staying-test rule (every staying test where it is) passing. This is a rule pass over the source tree, not a listing of file paths; the per-file location is inferred from the rule's pass.
 ```
-
-### E2
-
-unmet
-
-#### Observations
-
-```text
-architecture-rules Refinement (public native runner, filter Lighthouse.Backend.Tests.Architecture + Refinement) exit 0: Test Run Successful, Total 106, Passed 106. Includes EveryMovingRefinementType_IsFoundInItsNewModuleNamespaceOnly, EveryMovingRefinementFile_SitsInTheFolderOfItsNewNamespace, NoFileOfTheMovingRefinementSet_IsLeftUnderTheOldServicesFolders, EveryRefinementTypeThatStays_IsStillWhereTheMapListsIt, TheRenameList_HoldsNoEntry, TheCodeAfterTheMove_HasNoProblemInAnyCheck, and the preservation-law tests; all green. Program.cs registration pair-preservation is not separately named in these rows.
-```
-
-observation_gap
 
 ### E3
 
