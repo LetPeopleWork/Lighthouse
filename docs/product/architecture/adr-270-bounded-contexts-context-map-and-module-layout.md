@@ -16,6 +16,7 @@
 >
 > **Moved so far (2026-11-22):** Flow metrics, by the pilot Story 6358, Forecasting, by Story 6361, Work Items,
 > by Story 6360, Tracker integration, by Story 6359, Promises, by Story 6362, and Access and Licensing, by Story 6363.
+> The platform lane, which is not a context, was packaged on 2026-11-24 by Story 6364 (see the row *(Platform lane)*).
 > For these seven contexts this ADR describes today's code, apart from what is still marked target only (per-level granularity, forecasts composed over
 > more than one level above the leaf, the leaf unit's capacity inputs in Forecasting's own extension, the Team and
 > Portfolio refresh pipelines that still sit in the update code, and the entities, events and DTOs that stay in `Models`
@@ -70,7 +71,7 @@ set-up, the Deliveries go to Promises. RBAC/Identity splits into Access and Lice
 | **Reports** | supporting | Turns live numbers into a frozen record for others. Then & Now is the first report type; more follow (metric charts, signals). It conforms to Flow metrics for numbers and is the outbound channel to people outside Lighthouse (PDF export today; scheduled delivery in future). | Reports and their frozen windows (Then), templates, the metric catalog | Reports | **Packaged**; scheduled delivery and further report types are target |
 | **Access** | generic | Who may do what: organisation-wide roles (System Admin, broad readers, Admin on all) plus membership per unit. It follows the units that exist and has no story of its own beyond that. *Not allowed* is Access; *not relevant* (which level a person sees by default) is not. | Users, roles, unit memberships, IdP group mappings, API keys, embed sessions | RBAC / Identity (minus licensing) | **Packaged** in `Modules/Access` by Story 6363 (2026-11-22): RBAC administration, the current user's profile, API keys, embed sessions, the OIDC group snapshot writer, the auth mode resolver and configuration validator, Feature move authorization, and the ASP.NET guards, markers and authentication handlers in `Adapters/Http`. Its entities, the types the controllers read or return, the six repositories, the two seeders and the controllers still sit in `Models`, `Services`, `Seeding` and `API`; only four small value types of `Models` moved. Membership per unit on any level is target |
 | **Licensing** | generic | Whether Premium is available and how many units the free tier allows, published as facts the others react to: licence loaded, licence in its last 30 days, licence expired. | The licence, its verification, the free-tier limits | RBAC / Identity (`Services.*.Licensing`, the premium gate), as ARCHITECTURE.md §4 and the `Services.Implementation.Licensing` namespace show. The board's "inside Platform" was a slip | **Packaged** (small) in `Modules/Licensing` by Story 6363 (2026-11-22): the licence service and verifier with their ports, the public key beside the verifier, and the licence guard attribute in `Adapters/Http`. The licence entity and its DTOs stay in `Models` and `API/DTO`. The three licence events are **target**; today all three facts are derived on read |
-| *(Platform lane)* | **not a context** | Composition-root infrastructure below the domain: the encryption key ring, backups and restore, demo data, version update, log level, usage-data consent and forwarding, start-up housekeeping, the `DbContext` and database management, the domain-event dispatcher, the update queue's mechanics, health and graceful shutdown. No user names any of it as part of the story. | The infrastructure the contexts run on | Platform / Persistence, and the host band | Stays in the composition root |
+| *(Platform lane)* | **not a context** | Composition-root infrastructure below the domain: the encryption key ring, backups and restore, demo data, version update, log level, usage-data consent and forwarding, start-up housekeeping, the `DbContext` and database management, the domain-event dispatcher, the update queue's mechanics, health and graceful shutdown. No user names any of it as part of the story. | The infrastructure the contexts run on | Platform / Persistence, and the host band | **Packaged** in `Lighthouse.Backend.Platform.<Area>` by Story 6364 (2026-11-24), still part of the composition root and not a context. Eleven areas, no layers: `Encryption`, `DatabaseManagement`, `DemoData`, `Seeding`, `Persistence` (the race-tolerant save), `UsageData`, `Logging`, `Releases`, `DomainEvents`, `Host` (the host facilities) and `UpdateQueue` (the queue's mechanics only). The lane has its own direction rules R-PL1 to R-PL4 and a placement rule (see "Edges measured by packaging the platform lane"). Still outside it, each with a named owner: `Data` and its migrations, every repository, the Team and Portfolio update pipelines (`TeamUpdater`, `PortfolioUpdater`, `UpdateServiceBase<T>`), the context seeders and the Organisation set-up files such as `AppSettingService` |
 
 Nine modules therefore become **eleven contexts** (ten packaged from today's code, Signals target only), with Platform
 taken out of the domain. The packaging catalogue of the Epic (one Story per module, S03a to S03h) was written for the
@@ -188,7 +189,7 @@ them from the code or the walk, and the maintainer accepted them with the ADR.
 | Flow metrics → Work Items (Work Items calls Flow metrics, beyond the event) | none designed; a direct call | `WorkItemService` queries `IPortfolioMetricsService` and the Domain's `PercentileCalculator` for the default-size guess. The command is gone: since Story 6360 (2026-11-16) `TeamDataService` no longer calls `ITeamMetricsService.UpdateTeamMetrics`; it publishes `TeamDataRefreshed` and Flow metrics reacts (row above, ratchet candidate 1) | **Not legal** (WorkItems/Sync may not depend on Metrics). Measured 2026-11-09. The two query edges stay ratcheted, by name, in Flow metrics' R3 and R4 lists and in Work Items' own Application outbound list, until Flow metrics answers the default-size guess itself (Epic 6474 slice 10) or `WorkItemService` is split (S07a) | **Derived** (from code, Story 6358) |
 | Forecasting → Flow metrics (Flow metrics calls Forecasting) | none | **Removed by Story 6361 (2026-11-15).** Flow metrics asks three ports of its own, in its Application: `IThroughputFilter`, `IForecastDataSufficiency` and `IHowManyForecaster`. Forecasting implements them (`ForecastFilterRuleService`, `ForecastingAnswersToFlowMetrics`), so Flow metrics names no Forecasting type | **Not legal** (Metrics may not depend on Forecasting). The R5 list is empty and stays, compared both ways, so a new edge fails | **Derived** (from code, Story 6358) |
 | Flow metrics → Forecasting (Forecasting calls Flow metrics) | customer/supplier | Forecasting reads throughput and `ForecastThroughputStatus` through Flow metrics' Application (`ITeamMetricsService`), and implements Flow metrics' three ports (row above) | **Yes**, decided by Story 6361 (2026-11-15): a forecast is made from throughput, and throughput is a flow metric. Forecasting is a legal caller of Flow metrics' Application by namespace, so it left the R4 list | **Derived** (from code, Story 6358; made legal by Story 6361) |
-| Flow metrics → Platform lane | none designed | `DatabaseMaintenanceGate` reaches the module's Application | Platform is the composition root's infrastructure, not a context; ratcheted in the R4 list until S03f decides | **Derived** (from code, Story 6358) |
+| Flow metrics → Platform lane | none designed | `DatabaseMaintenanceGate` reaches the module's Application | Platform is the composition root's infrastructure, not a context. **Decided by Story 6364 (2026-11-24):** the edge stays listed in Flow metrics' R4 list, now naming `Platform.DatabaseManagement.DatabaseMaintenanceGate`, so Flow metrics' inbound rule governs it and the platform lane's rules do not list it a second time. Turning it round (Flow metrics owns a port that the gate implements) is a catalogue note only, not scheduled | **Derived** (from code, Story 6358) |
 | Work Items → Forecasting | customer/supplier, by events | Reacts to the refresh events; reads Features through Work Items' contract | Yes (Forecasting depends on WorkItems/Sync) | |
 | Work Items → Refinement | customer/supplier | Reads Work Items in refinement | Yes (Refinement depends on WorkItems/Sync) | **Derived** |
 | Forecasting → Refinement (today) | customer/supplier | Refinement reads the Team's manual How Many forecast | Yes (Refinement depends on Forecasting) | |
@@ -224,7 +225,7 @@ Release builds identical) and fixed each list as an inline baseline that fails o
 | R2 | The module's Domain depends only on the kernel (`Models`) and the .NET base library | empty |
 | R3, Domain inbound | Outside types reach `Domain` only from the list | 6: `API.PortfolioController`, `API.PortfoliosController`, `API.TeamController`, `API.TeamsController` (they use `BaselineValidationService`), `Reports.Metrics.DailySeriesSummary`, `WorkItems.WorkItemService` |
 | R3, Adapters inbound | Only the composition root reaches `Adapters` | `Program` only, no list |
-| R4, Application inbound | `API`, the composition root, Reports and Refinement by namespace (legal), plus the list | 10 (the design expected 8): Forecasting `ForecastService`, `ForecastService+GatheredInputs`, `ForecastInputs`, `ForecastInputFingerprint`, `ForecastRealityCheckService`; Work Items `TeamData.TeamDataService`, `WorkItems.WorkItemService`; `WriteBackTriggerService` (write-back, see "Left open"); `FeatureListActiveWork`; Platform `DatabaseManagement.DatabaseMaintenanceGate` |
+| R4, Application inbound | `API`, the composition root, Reports and Refinement by namespace (legal), plus the list | 10 (the design expected 8): Forecasting `ForecastService`, `ForecastService+GatheredInputs`, `ForecastInputs`, `ForecastInputFingerprint`, `ForecastRealityCheckService`; Work Items `TeamData.TeamDataService`, `WorkItems.WorkItemService`; `WriteBackTriggerService` (write-back, see "Left open"); `FeatureListActiveWork`; Platform `Platform.DatabaseManagement.DatabaseMaintenanceGate` |
 | R5, Application outbound | No EF Core, `Data`, module `Adapters` or `API` type; Forecasting only through the list | below the Application: empty. Forecasting: 3 edges (see the Forecasting → Flow metrics row) |
 
 The legal R4 callers seen on 2026-11-09: the controllers `ForecastController`, `ForecastRealityCheckController`,
@@ -250,7 +251,7 @@ module it checked and the callers that module allows; Flow metrics' wording is t
 | Adapters inbound | Only the composition root reaches `Adapters` | `Program` only, no list |
 | Application inbound | `API`, the composition root and Refinement by namespace (legal), plus the list | 1: `BackgroundServices.Update.PortfolioUpdater` (ratchet candidate 4) |
 | Application outbound | No EF Core, `Data`, `API` or module `Adapters` type; the licence only through the list. Flow metrics' Application is a legal target | 1: `ForecastFilterRuleService` → `ILicenseService` (ratchet candidate 2) |
-| Adapters into the shared update code | `Adapters` reach `Services.Implementation.BackgroundServices.Update`, which the Team and Portfolio updaters use too, only through the list | 3: `ForecastUpdater` → `UpdateCancellationContext`, `UpdateKey`, `UpdateServiceBase<T>`. It stays until the update code is split by module; a candidate for the context-contracts Story (S09a) |
+| Adapters into the shared update code | `Adapters` reach `Services.Implementation.BackgroundServices.Update`, which the Team and Portfolio updaters use too, only through the list | 5: `ForecastUpdater` → `UpdateServiceBase<T>` (still in `Services`) and, since Story 6364 (2026-11-24), `Platform.UpdateQueue.UpdateCancellationContext`, `UpdateKey`, `IUpdateQueueService` and `IUpdateStatusStore` (the last two existed before the move and became visible with it). It stays until the update code is split by module; a candidate for the context-contracts Story (S09a) |
 | Flow metrics R4, Application inbound | Forecasting is now a legal caller by namespace | 10 → 12 → **5**: the port change first added `ForecastFilterRuleService` and `ForecastingAnswersToFlowMetrics`, then all seven Forecasting entries left. Left: `TeamDataService`, `WorkItemService`, `WriteBackTriggerService`, `FeatureListActiveWork`, `DatabaseMaintenanceGate` |
 | Flow metrics R5, Application outbound to Forecasting | Forecasting only through the list | 3 → **0**. The list stays, empty and compared both ways |
 
@@ -458,6 +459,45 @@ Placement decisions the measurement settled:
   voter identity resolver (Refinement, S03g), and the three Access services that use the database context directly.
 - The licence test data (`TestLicenseData`, the three licence files and `LicensingIntegrationTest`) moved with the
   Licensing tests to `Tests/Modules/Licensing`, at the maintainer's request, so the test tree mirrors the module tree.
+
+### Edges measured by packaging the platform lane (2026-11-24)
+
+Story 6364 moved every platform type out of `Services/{Interfaces,Implementation}` into `Lighthouse.Backend.Platform.<Area>`
+and measured the lane's edges from the compiled IL, in the same way as the Stories before it. The lane is not a context, so
+its rules say "the platform lane", not a module name. They sit in two oracle classes in
+`Lighthouse.Backend.Tests/Architecture`: `PlatformLaneBoundariesArchUnitTest.cs` (R-PL1 to R-PL4, with a falsifier per rule and
+per list position) and `PlatformLaneUnitTestPlacementTest.cs` (the placement rule). The lane keeps every rule it was under
+before the move: the rule patterns that protect a context were widened first, by whole platform area (feature A), and the lane
+stays under `ApplicationCore` and the kernel rules.
+
+| Rule | What it allows | Baseline (outside types, or edges) |
+|---|---|---|
+| R-PL1, layout | Every type that the platform membership map (`PlatformLaneMembership.MovingTypes`) lists lives in its `Platform.<Area>` namespace, namespace equal to folder, and none is left under `Lighthouse.Backend.Services` | the 11 areas of the map |
+| R-PL2, no API | No type under `Lighthouse.Backend.Platform` reaches an `API` type | empty |
+| R-PL3, no module Adapters | No type under `Lighthouse.Backend.Platform` reaches a module's `Adapters` | empty |
+| R-PL4, edges into `Services` | The lane reaches code still in `Services` only through one inline list, by full type name, compared both ways | 19 edges, listed in `PlatformLaneBoundariesArchUnitTest.cs` (`TheLanesEdgesIntoServices`): the repository ports of `DemoDataService`, `UpdateTaskNaming`, `UsageDataGate`, `UsageDataMasterSwitch`, `UsageDataConsentService` and `UsageDataConsentPruningService`; `IAppSettingService` from `SystemInfoService`, `InstallTimestampSeeder` and `UsageDataConsentService`; and the write-back types (`WriteBackCollector`, `WriteBackRound`, `WriteBackRoundContext`, `IWriteBackService`) from `UpdateQueueService` and its nested `HeldUpdate`. The update pipelines are reached only through dependency injection, which the IL does not show, so they are not edges |
+| Placement | Every unit test of a platform type sits under `Tests/Platform/<Area>`, namespace equal to folder; no platform file is left in `Services/Interfaces` or `Services/Implementation`; each production file that stays there is named in the rule, with its owner | 151 staying production files, each with an owner (the repositories and their base types, the update pipelines and their interfaces, the context seeders, the Organisation set-up services). No platform test stays outside `Tests/Platform` |
+
+What the Story changed in the neighbours' rules:
+
+- The lane's edges into modules stay governed by those modules' inbound rules and are not listed twice:
+  `DatabaseMaintenanceGate` to Flow metrics (R4), `UpdateNotificationHub` to Work Items, and the usage-data types to Access and
+  Licensing (R-A4 and R-L3).
+- Edges that existed before the move became visible once the moved types sat under a namespace the rules read, and were listed
+  with that reason, without loosening any rule: Tracker integration's `ConnectionHealthService` and `OAuthService` to
+  `Platform.Encryption.ICryptoService`, and Forecasting's `ForecastUpdater` to `Platform.UpdateQueue.IUpdateQueueService` and
+  `IUpdateStatusStore`.
+- Tracker integration's `PromisesAndTheUpdateCode` pattern did **not** widen to `Platform.Encryption`: the key-ring file watcher
+  had matched it only through its old folder, and the maintainer decided that the pattern does not widen.
+
+Placement decisions the measurement settled:
+
+- Eleven areas and no layers: `Domain`, `Application` and `Adapters` have no meaning for infrastructure that has no domain.
+- The update queue's mechanics (the queue, its status store and the round summary) are platform. The Team and Portfolio
+  pipelines stay in the update code until Epic 6474 slice 12 replaces them.
+- Stay outside, each with an owner: `Data` and the migrations, every repository with `IRepository<T>` and `RepositoryBase<T>`
+  (the repositories-by-role work), the seven context seeders, the host band (`Program`, start-up, health) and the
+  domain-event handlers (each context's own).
 
 ### Ratchet candidates
 
@@ -745,6 +785,7 @@ Other precise names that already say their role (`SyncModeResolver`, `StageRuleM
   `Modules/TrackerIntegration`, `Modules/OrganisationSetup`, `Modules/Forecasting`, `Modules/Promises`,
   `Modules/Refinement`, `Modules/Reports`, `Modules/Access`, `Modules/Licensing`. No folder for Signals (target only)
   or Platform (composition root). Existing identifiers keep their spelling (`License*`).
+  The platform lane has a root of its own, `Lighthouse.Backend.Platform.<Area>` (Story 6364, 2026-11-24), with no layers.
 - Namespace = folder: `Lighthouse.Backend.Modules.<Context>.<Layer>[.<Sub>]`.
 - Sub-folders the pilot used, and the next contexts reuse: `Application/Policies` for domain-event handlers;
   `Adapters/Background` for hosted services; `Adapters/Persistence` for repositories. A repository's port sits in
@@ -863,7 +904,7 @@ ownership is logical only (no database per module).
 - **Is Platform/Persistence a module or composition-root infrastructure?** Composition-root infrastructure. Keys,
   backups, updates, consent and start-up housekeeping sit below the domain timeline: no user tells the story of
   Lighthouse through them. Each context owns its persistence adapters; the `DbContext`, database management and the
-  dispatcher stay in the platform lane.
+  dispatcher stay in the platform lane. Since Story 6364 (2026-11-24) the lane lives in `Lighthouse.Backend.Platform.<Area>`; the `DbContext` and the repositories stay in `Data` and the repository folders.
 - **Domain/Application/Adapters, sub-folders, or vertical slices?** Domain/Application/Adapters, with `Api`,
   `Persistence` and `Connectors` as sub-folders of `Adapters`. Reasons in Decision 6.
 - **Should the persistence-port and connector-capability Stories run before packaging?** Left to S02, the Story that
@@ -939,6 +980,7 @@ These were not decided on the board; the packaging Story of the named context de
   Work Items' and a forecast round is Forecasting's.
   *Story 6362 (2026-11-17):* not Promises. The queue and the Team and Portfolio updaters stay in the update code; the
   queue mechanics go with the platform lane (S03f) and Epic 6474 slice 12 replaces the updaters.
+  *Story 6364 (2026-11-24):* the queue mechanics moved to `Platform.UpdateQueue`; the pipelines stay in the update code.
 - **Mapping and the ACL.** The cycle is broken in Decision 2 (set-up is a customer of the ACL's query port; the
   mapping travels as data with each fetch). Decided: it is keyed by connection and level. Left open: the exact shape
   handed over.
