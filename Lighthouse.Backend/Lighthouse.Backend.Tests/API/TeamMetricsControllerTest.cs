@@ -666,46 +666,46 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetCycleTimeDataForTeam_TeamExists_GetsDataFromTeamMetricsService()
+        public void GetCycleTimeDataForTeam_NamedDefinition_ReturnsTheDefinitionsItemsWithTheirEndDates()
         {
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
-
-            var item1 = new WorkItem
+            var reachedReadyForRelease = new DateTime(2026, 11, 5, 0, 0, 0, DateTimeKind.Utc);
+            var namedItems = new List<CycleTimeWorkItem>
             {
-                Name = "Vfl",
-                Team = team,
+                new(new WorkItem { Name = "Vfl", Team = team }, [new NamedCycleTimeValue(7, 5, reachedReadyForRelease)]),
             };
+            teamMetricsServiceMock.Setup(service => service.GetCycleTimeDataForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<int?>())).Returns([]);
+            teamMetricsServiceMock.Setup(service => service.GetCycleTimeDataForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>(), 7)).Returns(namedItems);
 
-            var item2 = new WorkItem
-            {
-                Name = "GCZ",
-                Team = team,
-            };
+            var response = CreateSubject().GetCycleTimeDataForTeam(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight, 7);
 
-            var expectedItems = new List<CycleTimeWorkItem>
-            {
-                new(item1, []),
-                new(item2, []),
-            };
-            teamMetricsServiceMock.Setup(service => service.GetCycleTimeDataForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>(), null)).Returns(expectedItems);
-
-            var subject = CreateSubject();
-
-            var response = subject.GetCycleTimeDataForTeam(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
-
+            var items = ((IEnumerable<WorkItemDto>)((OkObjectResult)response.Result!).Value!).ToList();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
-
-                var result = response.Result as OkObjectResult;
-                Assert.That(result.StatusCode, Is.EqualTo(200));
-
-                var actualItems = (IEnumerable<WorkItemDto>)result.Value;
-                Assert.That(actualItems?.Count(), Is.EqualTo(2));
-                Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
-                Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
+                Assert.That(items.Select(item => item.Name), Is.EqualTo(["Vfl"]), "The named Cycle Time must list the items the service answers for definition 7; the controller has to pass the definition id on.");
+                Assert.That(items.SelectMany(item => item.NamedCycleTimes), Is.EqualTo(new[] { new NamedCycleTimeValue(7, 5, reachedReadyForRelease) }), "Each item must carry its named value with the day it reached the end state, so the chart can place it.");
             }
+        }
+
+        [TestCase(null)]
+        [TestCase(0)]
+        public void GetCycleTimeDataForTeam_NoNamedDefinition_AsksForTheDefaultCycleTime(int? definitionId)
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+            var closedItems = new List<CycleTimeWorkItem>
+            {
+                new(new WorkItem { Name = "Vfl", Team = team }, []),
+                new(new WorkItem { Name = "GCZ", Team = team }, []),
+            };
+            teamMetricsServiceMock.Setup(service => service.GetCycleTimeDataForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<int?>())).Returns([]);
+            teamMetricsServiceMock.Setup(service => service.GetCycleTimeDataForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>(), null)).Returns(closedItems);
+
+            var response = CreateSubject().GetCycleTimeDataForTeam(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight, definitionId);
+
+            var items = (IEnumerable<WorkItemDto>)((OkObjectResult)response.Result!).Value!;
+            Assert.That(items.Select(item => item.Name), Is.EqualTo(["Vfl", "GCZ"]), "Without a definition (or with 0) the default Cycle Time must be asked for, so the service has to be called without a definition id.");
         }
 
         [Test]
