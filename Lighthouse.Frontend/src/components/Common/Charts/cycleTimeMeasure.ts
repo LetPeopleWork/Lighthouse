@@ -69,10 +69,14 @@ export class NamedCycleTimeMeasure implements CycleTimeMeasure {
 	}
 
 	dotListTitle(terms: CycleTimeTerms, dot: PlottedWorkItem): string {
-		return `${terms.workItems} that reached ${this.definition.endState} on ${dot.plottedDate.toLocaleDateString()} with ${terms.cycleTime} of ${dot.cycleTime} days`;
+		return `${this.reachedEndState(terms.workItems)} on ${dot.plottedDate.toLocaleDateString()} with ${terms.cycleTime} of ${dot.cycleTime} days`;
 	}
 
 	groupLabel(count: number, workItemsTerm: string): string {
-		return `${count} ${workItemsTerm} that reached ${this.definition.endState}`;
+		return `${count} ${this.reachedEndState(workItemsTerm)}`;
+	}
+
+	private reachedEndState(workItemsTerm: string): string {
+		return `${workItemsTerm} that reached ${this.definition.endState}`;
 	}
 }

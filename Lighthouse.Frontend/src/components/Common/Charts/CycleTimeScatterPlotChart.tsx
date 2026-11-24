@@ -850,7 +850,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 												const group = groupedDataPoints[item.id as number];
 												if (!group) return "";
 
-												const numberOfItems = group.items.length ?? 0;
+												const numberOfItems = group.items.length;
 
 												if (numberOfItems === 1) {
 													const workItem = group.items[0];
