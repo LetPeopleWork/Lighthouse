@@ -383,7 +383,7 @@
 "counters": {
 "D": 7,
 "E": 6,
-"F": 220,
+"F": 232,
 "K": 3,
 "L": 2,
 "P": 6,
@@ -578,6 +578,36 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:1",
 "reason": "F36",
 "symbol": "ModuleWording"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:17",
+"reason": "F106",
+"symbol": "PromisesUnitTestPlacementTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:262",
+"reason": "F107",
+"symbol": "TypesThatStay"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProductionSource.cs:19",
+"reason": "F108",
+"symbol": "Files"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs:1",
+"reason": "F109",
+"symbol": "PlatformLaneUnitTestPlacementTest"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/PlacementFixtures/Platform/PlatformPlacementFixtures.cs:1",
+"reason": "F110",
+"symbol": "PlatformPlacementFixtures"
 }
 ],
 "risks": [
@@ -779,6 +809,9 @@
 "constraints": [
 "F105"
 ],
+"decisions": [
+"F223"
+],
 "impact": [
 {
 "decision": "Changed",
@@ -791,6 +824,36 @@
 "kind": "test-support",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/PlacementFixtures/Platform/PlatformPlacementFixtures.cs:1",
 "reason": "F112"
+},
+{
+"decision": "Migrated",
+"kind": "test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/GithubServiceTest.cs:1",
+"reason": "F224"
+},
+{
+"decision": "Migrated",
+"kind": "test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PlatformExtensionTest.cs:1",
+"reason": "F225"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-selection-script",
+"locator": "Scripts/test-selection/path-classifier.sh:17",
+"reason": "F226"
+},
+{
+"decision": "Changed",
+"kind": "test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/GithubServiceTest.cs:1",
+"reason": "F227"
+},
+{
+"decision": "Changed",
+"kind": "test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/PlatformExtensionTest.cs:1",
+"reason": "F228"
 }
 ],
 "laws": [
@@ -819,6 +882,10 @@
 {
 "analysis": "prefactoring",
 "reason": "F113"
+},
+{
+"analysis": "reuse",
+"reason": "F229"
 }
 ],
 "observations": [
@@ -828,41 +895,28 @@
 "result_type": "NUnit outcome with Assert.Fail message"
 }
 ],
-"reuse": [
+"refuted": [
 {
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:17",
-"reason": "F106",
-"symbol": "PromisesUnitTestPlacementTest"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:262",
-"reason": "F107",
-"symbol": "TypesThatStay"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProductionSource.cs:19",
-"reason": "F108",
-"symbol": "Files"
-},
-{
-"decision": "CreateNew",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs:1",
-"reason": "F109",
-"symbol": "PlatformLaneUnitTestPlacementTest"
-},
-{
-"decision": "CreateNew",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/PlacementFixtures/Platform/PlatformPlacementFixtures.cs:1",
-"reason": "F110",
-"symbol": "PlatformPlacementFixtures"
+"cause": "F231",
+"counterexample": "F232",
+"statement": "F230"
 }
 ]
 },
 "supports": [
 "Lighthouse.Backend/Lighthouse.Backend.Tests/PlacementFixtures/Platform/PlatformPlacementFixtures.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Releases/GithubServiceTest.cs",
+"reason": "F221"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/PlatformExtensionTest.cs",
+"reason": "F222"
+}
 ],
 "verification": [
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~PlatformLaneUnitTestPlacementTest\"",
@@ -1056,7 +1110,19 @@
 "F219": "Nothing a user, an API client, a tracker or the database sees changes.",
 "F22": "Confirmed (F13): every list is inline in its oracle, by full type name or by repository path, compared both ways through InlineBaseline.AssertMatches (an unlisted offender fails as not on the list, a listed entry no longer found fails as no longer offending) and never loosened. R-PL2, R-PL3 and R-PL4 call ModuleRules.OutboundEdges(module, lane, target, listed, rule) with the lane wording passed as its rule text: the text says \"the platform lane\", names no module and is not a ModuleWording. R-PL1 calls ModuleRules.TypesLiveInTheirLayer once per area of PlatformLaneMembership.MovingTypes with formerHome = the Services pattern ^Lighthouse\\.Backend\\.Services(\\.|$); a missing expected full name names the type and its expected Platform.<Area>, and a type left under Services names its expected place. The R-PL4 list is measured from the IL by C1's acceptance designer at RED; the DESIGN probe (the IlDependencies.DependentsIn algorithm, generic parameters excluded as ModuleRules.IsATypeIn does) found 19 edges, recorded in the S1 constraint as the expected list. The probe refutes part of the product expectation (S1 refuted record); the oracle lists what the IL shows, never the expectation.",
 "F220": "A behaviour change no existing test observes; the slice edits no production file, so none can arise from it.",
+"F221": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/GithubServiceTest.cs; namespace Lighthouse.Backend.Tests.Platform.Releases, only the usings the compiler needs; body, Category GithubIntegration and IntegrationFixture base unchanged (F7-S2).\n",
+"F222": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PlatformExtensionTest.cs; namespace Lighthouse.Backend.Tests.Platform.Host, only the usings the compiler needs; body unchanged (F7-S2).\n",
+"F223": "F7-S2 (AFK engineering choice, open to the maintainer): the two unit tests of platform types that feature B left in Tests/Services/Implementation move into the lane's test tree, as the same kind of pure test move feature B made. GithubServiceTest (subject GitHubService, Platform/Releases; the live GitHub suite, Category GithubIntegration) moves with git mv to Lighthouse.Backend.Tests/Platform/Releases/GithubServiceTest.cs; PlatformExtensionTest (subject PlatformExtensions, Platform/Host) moves with git mv to Lighthouse.Backend.Tests/Platform/Host/PlatformExtensionTest.cs. Each file's namespace becomes its folder (Lighthouse.Backend.Tests.Platform.Releases, Lighthouse.Backend.Tests.Platform.Host) and its usings are only those the compiler needs; test bodies, class names, categories and fixtures are unchanged. The C2 oracle's staying-test list stays empty for them. No production file changes. Test selection needs no script change: Scripts/test-selection/path-classifier.sh GITHUB_REGEX matches both the old Services path and Platform/Releases, and test-path-classifier-platform.sh already expects Tests/Platform/Releases/GithubServiceTest.cs; the crafter renames only a time-budget or list entry that names either test by full name, and the DESIGN search found none. Rejected: listing both as staying tests (neither has a reason to stay; their subjects moved in feature B), and a craft-time exemption in the oracle (loosens the rule).\n",
+"F224": "Moved with git mv to Tests/Platform/Releases/GithubServiceTest.cs, namespace Lighthouse.Backend.Tests.Platform.Releases; still selected by Category GithubIntegration and excluded by the filtered suite as before.",
+"F225": "Moved with git mv to Tests/Platform/Host/PlatformExtensionTest.cs, namespace Lighthouse.Backend.Tests.Platform.Host; same tests run in the filtered suite.",
+"F226": "GITHUB_REGEX matches GithubServiceTest under both Services/Implementation and Platform/Releases; test-path-classifier-platform.sh:52 already expects the Platform/Releases path and test-path-classifier.sh:94 keeps the old path as a classifier input. No change.",
+"F227": "New location of the moved live GitHub suite; C2's real-tree rule finds it under Tests/Platform/Releases with namespace equal to folder. Feature B's Releases layout oracle pins named classes only and is unaffected.",
+"F228": "New location of the moved PlatformExtensions test; C2's real-tree rule finds it under Tests/Platform/Host with namespace equal to folder. Feature B's Host layout oracle pins named classes only and is unaffected.",
+"F229": "S2's two targets (Tests/Platform/Releases/GithubServiceTest.cs and Tests/Platform/Host/PlatformExtensionTest.cs) are existing test files moved by git mv with only their namespace and usings changed (F7-S2); no responsibility is created, so each reuses its own current class (GithubServiceTest, PlatformExtensionTest, today under Tests/Services/Implementation) unchanged. The other S2 reuse rows cover the oracle and its support, which are not crafter targets.",
 "F23": "Pattern placement against feature A's preservation law (PlatformLaneRulesSeeTheMoveArchUnitTest scans every class-level const and static readonly string of the test assembly that names the backend and parses as a regex): PlatformLanePatternRoles does not change in C1 or C2. The lane pattern ^Lighthouse\\.Backend\\.Platform(\\.|$) names only the new place, which no role of the law can carry (as Context every moving type breaks as SeesAnAreaItNeverSaw; as Place it breaks as KeepsAPlatformAlternativeAsAnOldLocation), and the Services pattern ^Lighthouse\\.Backend\\.Services(\\.|$) is used only by these rules. Both are written as method-local constants or inline arguments where the rules are called, not as class-level fields, the same choice as feature B's F5-S4 made-up name. Their own guard: R-PL1 over the real IL names every moved type as left behind if the Services pattern saw Platform, and OutboundVerdict.Check fails when the lane pattern examines no type. C2 holds no class-level string matching a moving type's namespace or full name: the production project folder is read through ProductionSource or held method-local; test namespaces start with Lighthouse.Backend.Tests and match no moving type. Every made-up path or name in C1 and C2 names a made-up type, never a moving type or a moving Services area by its old path, so feature A's old-path literal check stays green. Rejected: declaring the Services pattern as a Place in PlatformLanePatternRoles (edits feature A's support for a pattern the R-PL1 run already guards).",
+"F230": "On the tree before S2's craft, C2's rule passes with the measured stay lists.\n",
+"F231": "Feature B moved GitHubService to Platform/Releases and PlatformExtensions to Platform/Host but left their unit tests in Tests/Services/Implementation; the DESIGN staying-test inventory listed Services test folders by kind, not by the subject of each test, so it missed them.\n",
+"F232": "HEAD 7d4883cfe: Lighthouse.Backend.Tests/Services/Implementation/GithubServiceTest.cs (subject GitHubService) and Lighthouse.Backend.Tests/Services/Implementation/PlatformExtensionTest.cs (subject PlatformExtensions) are named by the real-tree placement rule as platform tests outside Tests/Platform/<Area>. Resolved by F7-S2's move, not by a stay-list entry.\n",
 "F24": "Confirmed (F14, F15, D-13, D-14): C1's RED is assertion-level, observed with the oracle written before its R-PL4 list is filled (the real-IL R-PL4 test fails naming every unlisted edge) and with each falsifier asserting that the verdict names its made-up offender; C2's RED is structural, observed with the stay lists written empty (the real-tree rule names the unlisted staying files) and the made-up file in an old folder named. Behaviour is proved by the unchanged suites and EXAMINE through the admitted probes (architecture-rules, backend-tests); feature C changes no production code. The mutation bar (D-14) applies once after feature C to the moved production code; feature C adds none. One commit per slice; C1 and C2 are pushed together after the whole-candidate review. Rigor thorough: architect, acceptance designer and crafter opus; reviewers and EXAMINE sonnet. Usage-data event, UI sketch, loading and failure looks: not applicable.",
 "F25": "Carriers and owners: the rules and their inline lists live in their oracle classes (Architecture/PlatformLaneBoundariesArchUnitTest for R-PL1 to R-PL4; Architecture/PlatformLaneUnitTestPlacementTest for the placement rule and the per-file, per-owner list of production files that stay in Services/Interfaces and Services/Implementation, as (Path, Owner) tuples in the PromisesUnitTestPlacementTest shape). The IL is read through IlDependencies over Mono.Cecil, reached via ModuleRules.OutboundEdges and ModuleRules.TypesLiveInTheirLayer; verdicts are OutboundVerdict and KernelRuleVerdict compared through InlineBaseline. The type list is PlatformLaneMembership.MovingTypes, read only. Made-up offenders live in support fixture files in namespaces that do not start with Lighthouse.Backend.Platform, Lighthouse.Backend.Services or Lighthouse.Backend.Tests.Platform, so no real rule sees them. No production carrier, effect, error type or per-process state exists or changes. Paradigm object_oriented is kept; the targets are test-side rules outside the OO domain core, so no domain owner, value object or Object Calisthenics rule is in play.",
 "F26": "Formal verification not applicable (quint --version 0.33.1 and java -version OpenJDK 21.0.13.1 probed; no checker selected): feature C has no state, ordering, concurrency, recovery or liveness claim. Each claim is a set comparison over a finite domain decided exhaustively by the compiled IL or the file tree: R-PL1 (map rows against types found), R-PL2 and R-PL3 (edge set empty), R-PL4 (edge set equals the inline list both ways), placement (files found against the stay lists both ways). A Quint, TLA+ or Agda model would restate the list and could not fail. Property tests not applicable: every domain is finite and enumerated, and each list position has its own falsifier case. Cross-layer algebra: only the test-side rule layer is affected; states are the edge or file sets found, operations are the rule runs, observations are the verdict messages; no production layer changes.",

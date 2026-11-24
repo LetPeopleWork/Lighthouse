@@ -147,6 +147,56 @@ Reuse
 Deliberately not used by the lane rules: the lane is not a module, so a ModuleWording module name would mislabel its failures; the lane wording is the rule text passed to OutboundEdges.
 ```
 
+PromisesUnitTestPlacementTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesUnitTestPlacementTest\.cs\:17
+
+Reuse
+
+```text
+Shape of C2: files on disk plus the compiled test assembly and its symbols, roots not judged, a (Path, Owner) stay list compared both ways, rules also run on made-up trees. Copied as a shape; the Promises class is not edited.
+```
+
+TypesThatStay
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneMembership\.cs\:262
+
+Reuse
+
+```text
+PlatformLaneMembership.TypesThatStay: the types that stay with their owner seed C2's per-file owner list where a file holds a listed type; C2 names every other staying file and its owner itself.
+```
+
+Files
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ProductionSource\.cs\:19
+
+Reuse
+
+```text
+ProductionSource.Files: reads the production source tree without a class-level project-folder string the preservation law would have to declare.
+```
+
+PlatformLaneUnitTestPlacementTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneUnitTestPlacementTest\.cs\:1
+
+CreateNew
+
+```text
+Each placement test owns one module; feature B's layout oracles pin the named moved test classes, not every future platform test; no rule owns the per-file stay list of Services/Interfaces and Services/Implementation.
+```
+
+PlatformPlacementFixtures
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/PlacementFixtures\/Platform\/PlatformPlacementFixtures\.cs\:1
+
+CreateNew
+
+```text
+A made-up platform type and its made-up test class, compiled so the subject lookup by compiled class and symbols runs on made-up trees, as PlacementFixtures/Modules/Promises does for Promises.
+```
+
 ### Impact
 
 test\-rule
@@ -752,7 +802,21 @@ None.
 
 #### Targets
 
-None.
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Releases\/GithubServiceTest\.cs
+
+Create
+
+```text
+git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/GithubServiceTest.cs; namespace Lighthouse.Backend.Tests.Platform.Releases, only the usings the compiler needs; body, Category GithubIntegration and IntegrationFixture base unchanged (F7-S2).
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Host\/PlatformExtensionTest\.cs
+
+Create
+
+```text
+git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PlatformExtensionTest.cs; namespace Lighthouse.Backend.Tests.Platform.Host, only the usings the compiler needs; body unchanged (F7-S2).
+```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneUnitTestPlacementTest\.cs
 
@@ -799,7 +863,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+F7-S2 (AFK engineering choice, open to the maintainer): the two unit tests of platform types that feature B left in Tests/Services/Implementation move into the lane's test tree, as the same kind of pure test move feature B made. GithubServiceTest (subject GitHubService, Platform/Releases; the live GitHub suite, Category GithubIntegration) moves with git mv to Lighthouse.Backend.Tests/Platform/Releases/GithubServiceTest.cs; PlatformExtensionTest (subject PlatformExtensions, Platform/Host) moves with git mv to Lighthouse.Backend.Tests/Platform/Host/PlatformExtensionTest.cs. Each file's namespace becomes its folder (Lighthouse.Backend.Tests.Platform.Releases, Lighthouse.Backend.Tests.Platform.Host) and its usings are only those the compiler needs; test bodies, class names, categories and fixtures are unchanged. The C2 oracle's staying-test list stays empty for them. No production file changes. Test selection needs no script change: Scripts/test-selection/path-classifier.sh GITHUB_REGEX matches both the old Services path and Platform/Releases, and test-path-classifier-platform.sh already expects Tests/Platform/Releases/GithubServiceTest.cs; the crafter renames only a time-budget or list entry that names either test by full name, and the DESIGN search found none. Rejected: listing both as staying tests (neither has a reason to stay; their subjects moved in feature B), and a craft-time exemption in the oracle (loosens the rule).
+```
 
 ##### Constraints
 
@@ -809,55 +875,7 @@ Placement facts measured at DESIGN (file tree of HEAD): 151 production .cs files
 
 ##### Reuse
 
-PromisesUnitTestPlacementTest
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PromisesUnitTestPlacementTest\.cs\:17
-
-Reuse
-
-```text
-Shape of C2: files on disk plus the compiled test assembly and its symbols, roots not judged, a (Path, Owner) stay list compared both ways, rules also run on made-up trees. Copied as a shape; the Promises class is not edited.
-```
-
-TypesThatStay
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneMembership\.cs\:262
-
-Reuse
-
-```text
-PlatformLaneMembership.TypesThatStay: the types that stay with their owner seed C2's per-file owner list where a file holds a listed type; C2 names every other staying file and its owner itself.
-```
-
-Files
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ProductionSource\.cs\:19
-
-Reuse
-
-```text
-ProductionSource.Files: reads the production source tree without a class-level project-folder string the preservation law would have to declare.
-```
-
-PlatformLaneUnitTestPlacementTest
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneUnitTestPlacementTest\.cs\:1
-
-CreateNew
-
-```text
-Each placement test owns one module; feature B's layout oracles pin the named moved test classes, not every future platform test; no rule owns the per-file stay list of Services/Interfaces and Services/Implementation.
-```
-
-PlatformPlacementFixtures
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/PlacementFixtures\/Platform\/PlatformPlacementFixtures\.cs\:1
-
-CreateNew
-
-```text
-A made-up platform type and its made-up test class, compiled so the subject lookup by compiled class and symbols runs on made-up trees, as PlacementFixtures/Modules/Promises does for Promises.
-```
+None.
 
 ##### Impact
 
@@ -881,6 +899,56 @@ Changed
 New made-up platform type and test class; namespace Lighthouse.Backend.Tests.PlacementFixtures.Platform, outside Tests.Platform, so B's layout oracles and C2's real-tree rule do not judge it.
 ```
 
+test\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/GithubServiceTest\.cs\:1
+
+Migrated
+
+```text
+Moved with git mv to Tests/Platform/Releases/GithubServiceTest.cs, namespace Lighthouse.Backend.Tests.Platform.Releases; still selected by Category GithubIntegration and excluded by the filtered suite as before.
+```
+
+test\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Services\/Implementation\/PlatformExtensionTest\.cs\:1
+
+Migrated
+
+```text
+Moved with git mv to Tests/Platform/Host/PlatformExtensionTest.cs, namespace Lighthouse.Backend.Tests.Platform.Host; same tests run in the filtered suite.
+```
+
+test\-selection\-script
+
+Scripts\/test\-selection\/path\-classifier\.sh\:17
+
+UnchangedCompatible
+
+```text
+GITHUB_REGEX matches GithubServiceTest under both Services/Implementation and Platform/Releases; test-path-classifier-platform.sh:52 already expects the Platform/Releases path and test-path-classifier.sh:94 keeps the old path as a classifier input. No change.
+```
+
+test\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Releases\/GithubServiceTest\.cs\:1
+
+Changed
+
+```text
+New location of the moved live GitHub suite; C2's real-tree rule finds it under Tests/Platform/Releases with namespace equal to folder. Feature B's Releases layout oracle pins named classes only and is unaffected.
+```
+
+test\-file
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Platform\/Host\/PlatformExtensionTest\.cs\:1
+
+Changed
+
+```text
+New location of the moved PlatformExtensions test; C2's real-tree rule finds it under Tests/Platform/Host with namespace equal to folder. Feature B's Host layout oracle pins named classes only and is unaffected.
+```
+
 ##### Agreement
 
 None.
@@ -891,6 +959,12 @@ prefactoring
 
 ```text
 No move eases the change: the placement test is a new file in the PromisesUnitTestPlacementTest shape and edits no existing test; extracting a shared placement helper would edit approved module oracles for no verdict change.
+```
+
+reuse
+
+```text
+S2's two targets (Tests/Platform/Releases/GithubServiceTest.cs and Tests/Platform/Host/PlatformExtensionTest.cs) are existing test files moved by git mv with only their namespace and usings changed (F7-S2); no responsibility is created, so each reuses its own current class (GithubServiceTest, PlatformExtensionTest, today under Tests/Services/Implementation) unchanged. The other S2 reuse rows cover the oracle and its support, which are not crafter targets.
 ```
 
 ##### Boundaries
@@ -975,7 +1049,17 @@ None.
 
 ##### Refuted
 
-None.
+```text
+On the tree before S2's craft, C2's rule passes with the measured stay lists.
+```
+
+```text
+Feature B moved GitHubService to Platform/Releases and PlatformExtensions to Platform/Host but left their unit tests in Tests/Services/Implementation; the DESIGN staying-test inventory listed Services test folders by kind, not by the subject of each test, so it missed them.
+```
+
+```text
+HEAD 7d4883cfe: Lighthouse.Backend.Tests/Services/Implementation/GithubServiceTest.cs (subject GitHubService) and Lighthouse.Backend.Tests/Services/Implementation/PlatformExtensionTest.cs (subject PlatformExtensions) are named by the real-tree placement rule as platform tests outside Tests/Platform/<Area>. Resolved by F7-S2's move, not by a stay-list entry.
+```
 
 ##### Claims
 
