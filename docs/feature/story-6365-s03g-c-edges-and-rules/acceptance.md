@@ -2,7 +2,96 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Sweep every rule constant of the test assembly and every string literal of the test project sources for the four former Refinement forms: plain name, regex alternative, group member, old folder path
+```
+
+```text
+No constant and no literal outside the declared measurement files names Refinement by a former Services namespace or path
+```
+
+```text
+No architecture rule still points at where Refinement used to live, so none keeps a dead alternative
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesNameOnlyTheModuleArchUnitTest\.cs\#NoRuleConstantNamesRefinementByItsFormerPlace\;NoStringLiteralOutsideTheMeasurementFilesNamesRefinementByItsFormerPlace
+
+```text
+A rule narrowed in its constant but still spelled as a former form in a literal or in a composite built from another constant; a form written with unescaped dots or a forward-slash path
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Compare the declared measurement files with the files that keep a former form, and run the sweep over made-up offenders in each of the four forms plus a clean Modules-only rule
+```
+
+```text
+Listed files and files with a former form are the same set both ways; each made-up former form is named and the clean rule is not; a listed file with no hit is named stale
+```
+
+```text
+An exemption cannot linger after its need is gone, and a new former form cannot hide in a listed file or pass unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesNameOnlyTheModuleArchUnitTest\.cs\#TheListedMeasurementFilesAreExactlyTheFilesThatKeepAFormerForm\;MadeUpRuleConstantsInEachFormerFormAreNamedAndAModulesOnlyConstantIsNot\;AMadeUpLiteralInAFormerFormOutsideTheMeasurementFilesIsNamed\;AListedMeasurementFileWithNoFormerFormLeftIsNamedAsStale
+
+```text
+A sweep that reads only escaped regex text and misses the plain name or the folder path; a sweep that exempts a measurement file whether or not it still has a former form
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+P3
+
+```text
+Match every Modules.Refinement alternative of the Refinement rule constants against the types of the Refinement module, over a made-up alternative anchored to no type
+```
+
+```text
+Each narrowed alternative still matches a Refinement type of the module, the seven named rule constants and their five owners are all present, and a dead alternative is named
+```
+
+```text
+Narrowing keeps every rule's verdict: a rule cannot pass by looking at nothing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesNameOnlyTheModuleArchUnitTest\.cs\#EveryNarrowedRefinementPatternStillMatchesATypeOfTheModule\;AMadeUpPatternAnchoredToNoRefinementTypeIsNamedDead
+
+```text
+A pattern narrowed so far that it matches no Refinement type; a rule constant dropped altogether with its Refinement part
+```
+
+###### Obligations
+
 
 ## Expectations
 

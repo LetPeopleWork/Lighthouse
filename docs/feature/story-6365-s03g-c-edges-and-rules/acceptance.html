@@ -151,7 +151,84 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Sweep every rule constant of the test assembly and every string literal of the test project sources for the four former Refinement forms: plain name, regex alternative, group member, old folder path
+</code></pre>
+
+<pre><code>No constant and no literal outside the declared measurement files names Refinement by a former Services namespace or path
+</code></pre>
+
+<pre><code>No architecture rule still points at where Refinement used to live, so none keeps a dead alternative
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs#NoRuleConstantNamesRefinementByItsFormerPlace;NoStringLiteralOutsideTheMeasurementFilesNamesRefinementByItsFormerPlace</p>
+
+<pre><code>A rule narrowed in its constant but still spelled as a former form in a literal or in a composite built from another constant; a form written with unescaped dots or a forward-slash path
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Compare the declared measurement files with the files that keep a former form, and run the sweep over made-up offenders in each of the four forms plus a clean Modules-only rule
+</code></pre>
+
+<pre><code>Listed files and files with a former form are the same set both ways; each made-up former form is named and the clean rule is not; a listed file with no hit is named stale
+</code></pre>
+
+<pre><code>An exemption cannot linger after its need is gone, and a new former form cannot hide in a listed file or pass unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs#TheListedMeasurementFilesAreExactlyTheFilesThatKeepAFormerForm;MadeUpRuleConstantsInEachFormerFormAreNamedAndAModulesOnlyConstantIsNot;AMadeUpLiteralInAFormerFormOutsideTheMeasurementFilesIsNamed;AListedMeasurementFileWithNoFormerFormLeftIsNamedAsStale</p>
+
+<pre><code>A sweep that reads only escaped regex text and misses the plain name or the folder path; a sweep that exempts a measurement file whether or not it still has a former form
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P3</p>
+
+<pre><code>Match every Modules.Refinement alternative of the Refinement rule constants against the types of the Refinement module, over a made-up alternative anchored to no type
+</code></pre>
+
+<pre><code>Each narrowed alternative still matches a Refinement type of the module, the seven named rule constants and their five owners are all present, and a dead alternative is named
+</code></pre>
+
+<pre><code>Narrowing keeps every rule&#x27;s verdict: a rule cannot pass by looking at nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs#EveryNarrowedRefinementPatternStillMatchesATypeOfTheModule;AMadeUpPatternAnchoredToNoRefinementTypeIsNamedDead</p>
+
+<pre><code>A pattern narrowed so far that it matches no Refinement type; a rule constant dropped altogether with its Refinement part
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

@@ -1,8 +1,61 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F91",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs#NoRuleConstantNamesRefinementByItsFormerPlace;NoStringLiteralOutsideTheMeasurementFilesNamesRefinementByItsFormerPlace"
+},
+"expected": "F89",
+"stimulus": "F88",
+"user_result": "F90"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F95",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs#TheListedMeasurementFilesAreExactlyTheFilesThatKeepAFormerForm;MadeUpRuleConstantsInEachFormerFormAreNamedAndAModulesOnlyConstantIsNot;AMadeUpLiteralInAFormerFormOutsideTheMeasurementFilesIsNamed;AListedMeasurementFileWithNoFormerFormLeftIsNamedAsStale"
+},
+"expected": "F93",
+"stimulus": "F92",
+"user_result": "F94"
+},
+{
+"covers": [
+"P1",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F99",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs#EveryNarrowedRefinementPatternStillMatchesATypeOfTheModule;AMadeUpPatternAnchoredToNoRefinementTypeIsNamedDead"
+},
+"expected": "F97",
+"stimulus": "F96",
+"user_result": "F98"
+}
+]
+},
 "counters": {
 "D": 5,
 "E": 6,
-"F": 87,
+"F": 99,
 "K": 1,
 "P": 3,
 "S": 2,
@@ -562,7 +615,19 @@
 "F85": "backend-tests Refinement shows that each made-up offender for each R-R rule and each list position fails the rule, and the failure message names the offending edge in the Refinement wording.",
 "F86": "ef-model-unchanged reports the database model identical to the model before feature C, so nothing the database sees changes.",
 "F87": "The whole filtered backend-tests run finishes with zero failures, and the candidate loosens no rule or list relative to the prior rule files.",
-"F9": "The Refinement unit-test placement test the DESIGN record names for S3 is not written again: feature B's RefinementUnitTestsBesideTheModuleArchUnitTest already pins the 11 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders."
+"F88": "Sweep every rule constant of the test assembly and every string literal of the test project sources for the four former Refinement forms: plain name, regex alternative, group member, old folder path",
+"F89": "No constant and no literal outside the declared measurement files names Refinement by a former Services namespace or path",
+"F9": "The Refinement unit-test placement test the DESIGN record names for S3 is not written again: feature B's RefinementUnitTestsBesideTheModuleArchUnitTest already pins the 11 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders.",
+"F90": "No architecture rule still points at where Refinement used to live, so none keeps a dead alternative",
+"F91": "A rule narrowed in its constant but still spelled as a former form in a literal or in a composite built from another constant; a form written with unescaped dots or a forward-slash path",
+"F92": "Compare the declared measurement files with the files that keep a former form, and run the sweep over made-up offenders in each of the four forms plus a clean Modules-only rule",
+"F93": "Listed files and files with a former form are the same set both ways; each made-up former form is named and the clean rule is not; a listed file with no hit is named stale",
+"F94": "An exemption cannot linger after its need is gone, and a new former form cannot hide in a listed file or pass unseen",
+"F95": "A sweep that reads only escaped regex text and misses the plain name or the folder path; a sweep that exempts a measurement file whether or not it still has a former form",
+"F96": "Match every Modules.Refinement alternative of the Refinement rule constants against the types of the Refinement module, over a made-up alternative anchored to no type",
+"F97": "Each narrowed alternative still matches a Refinement type of the module, the seven named rule constants and their five owners are all present, and a dead alternative is named",
+"F98": "Narrowing keeps every rule's verdict: a rule cannot pass by looking at nothing",
+"F99": "A pattern narrowed so far that it matches no Refinement type; a rule constant dropped altogether with its Refinement part"
 },
 "product": {
 "decisions": [
