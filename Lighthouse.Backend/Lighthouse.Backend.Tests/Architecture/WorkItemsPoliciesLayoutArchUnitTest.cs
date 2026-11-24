@@ -7,8 +7,9 @@ using Mono.Cecil;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// The six Work Items reactions to domain events (blocked-transition capture and close for Work Items and Features, the
-    /// refresh-log clean-up on a deleted Team, and the update trigger on a changed fetch shape) live in the module's
+    /// The Work Items reactions to domain events (blocked-transition capture and close for Work Items and Features, the
+    /// refresh-log clean-up on a deleted Team, the update trigger on a changed fetch shape, and the orphaned-Feature clean-up
+    /// on a deleted Portfolio) live in the module's
     /// Application policies, none is left under Services, and the policies hold nothing but domain-event handlers. The types are
     /// named as strings and read from the compiled production assembly, so this class compiles before and after the move, and a
     /// handler that has not moved yet is a failure that names it. The order the handlers run in is pinned by
@@ -48,6 +49,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "FeatureBlockedTransitionCloseHandler",
             "TeamDeletedRefreshLogCleanupHandler",
             "ConnectionFetchShapeChangedUpdateTriggerHandler",
+            "PortfolioDeletedOrphanedFeatureCleanupHandler",
         ];
 
         private static readonly Regex AnOldFullName = new(
@@ -74,13 +76,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheSixWorkItemsReactions_LiveInTheModulePolicies_AndNoneIsLeftUnderServices()
+        public void TheWorkItemsReactions_LiveInTheModulePolicies_AndNoneIsLeftUnderServices()
         {
             ModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, PoliciesNamespace, Policies, WhereTheHandlersLivedBefore).Check();
         }
 
         [Test]
-        public void TheSixWorkItemsReactionFiles_SitInTheModulePoliciesFolder_AndNowhereElse()
+        public void TheWorkItemsReactionFiles_SitInTheModulePoliciesFolder_AndNowhereElse()
         {
             ThenEachFileSitsOnlyIn(PoliciesFolder, [.. Policies.Select(name => $"{name}.cs")]);
         }

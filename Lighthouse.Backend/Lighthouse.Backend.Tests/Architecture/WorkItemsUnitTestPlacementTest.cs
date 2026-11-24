@@ -72,6 +72,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ("FeatureBlockedTransitionHandlerTests", "Application/Policies"),
             ("TeamDeletedRefreshLogCleanupHandlerTest", "Application/Policies"),
             ("ConnectionFetchShapeChangedUpdateTriggerHandlerTest", "Application/Policies"),
+            ("PortfolioDeletedOrphanedFeatureCleanupHandlerTest", "Application/Policies"),
         ];
 
         private static readonly Lazy<List<string>> TestSourcePaths = new(ReadTestSourcePaths);
