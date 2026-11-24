@@ -1,8 +1,8 @@
 {
 "counters": {
-"D": 6,
+"D": 7,
 "E": 12,
-"F": 159,
+"F": 170,
 "K": 6,
 "L": 2,
 "P": 4,
@@ -61,11 +61,11 @@
 },
 {
 "id": "K3",
-"text": "F27"
+"text": "F161"
 },
 {
 "id": "K4",
-"text": "F28"
+"text": "F162"
 },
 {
 "id": "K5",
@@ -100,6 +100,10 @@
 {
 "id": "D6",
 "text": "F24"
+},
+{
+"id": "D7",
+"text": "F160"
 }
 ],
 "not_applicable": [
@@ -201,13 +205,13 @@
 "S1": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs",
 "public_oracle": {
-"expected": "F76",
-"falsifier": "F77",
+"expected": "F164",
+"falsifier": "F165",
 "promises": [
 "P1",
 "P4"
 ],
-"stimulus": "F75"
+"stimulus": "F163"
 },
 "records": {
 "architectural_tests": [
@@ -224,15 +228,17 @@
 "kind": "Invariant",
 "layer": "Infrastructure",
 "owner": "RefinementMembershipArchUnitTest",
-"statement": "F82",
+"statement": "F166",
 "treatment": {
 "cases": [
 "F83",
 "F84",
 "F85",
 "F86",
-"F87",
-"F88",
+"F167",
+"F168",
+"F169",
+"F170",
 "F89",
 "F90"
 ],
@@ -738,7 +744,18 @@
 "F158": "No production file is moved, renamed or behaviourally changed by feature A: the only differences are in the test project; a Refinement type keeps its old namespace and the API (routes, DTOs, responses) is unchanged.",
 "F159": "Every existing backend test stays green (whole-suite run excluding live-connector categories), and test-selection-show still selects the same tests as before for the CI selection.",
 "F16": "The move in feature B has a fixed, measured list of what moves, to which layer, and what stays with which owner",
+"F160": "Per-file layer rule (constraint K4) replaces the per-type reading of D-1. Rejected: a per-type rule, which would put the 3 ports, their 21 records and enums, RefinementResolution, StageMatches and the Voter* types in Domain and split port files and other files in feature B; and a one-way-only rule, which lets a kernel-only pure type sit in Application unnoticed. If only one Domain file results, the lookalike-or-namesake falsifier uses a made-up Domain fixture instead of a second real Domain type.",
+"F161": "Membership domain is closed and finite: every top-level type the IL finds in Lighthouse.Backend.Services.Implementation.Refinement, Lighthouse.Backend.Services.Interfaces.Refinement and Lighthouse.Backend.Modules.Refinement (nested types follow their outermost type). Measured from the IL at 93fddc5c9: 41 moving top-level types, 17 in Services.Implementation.Refinement (13 files, plus StageMatches, VoterResolution, VoterKeyResolution and VoterRefusal) and 24 in Services.Interfaces.Refinement (3 ports plus 21 records and enums); 31 staying types, 16 of them in Models/Refinement across 9 files (8 in RefinementSettings.cs); no suppression, analyser, CI, budget, host-user or Stryker target names a moving type. No count bound is fixed by authority; a later difference is recorded, not argued with.",
+"F162": "Layer rule, decided per file (Confirmed, AFK recommended option in line with D-1): a move never splits a file. A file is Domain if and only if it is not a port file and every top-level type it declares has IL edges only to the kernel (Lighthouse.Backend.Models), the BCL and types of other Domain files. A port file declares an I-prefixed port interface; it stays in Application with every record and enum it declares, recorded as a declared fact on the membership map, not inferred. Every other file is Application. The Domain rule is one-way (R-R2): a Domain type reaches only the kernel, the BCL and other Domain types. The oracle also checks the reverse per non-port file: a kernel-only non-port file listed as Application fails. Whatever the IL gives as Domain is the answer (open question 4); SizingRefusal reaches Microsoft.Extensions.Logging, so it is Application; NeedBand is expected Domain, with any other kernel-only non-port file.",
+"F163": "The architecture tests run the Refinement membership check over the compiled production IL: each type listed in RefinementMembership with its file, its layer, its port-file flag, old namespace and new Lighthouse.Backend.Modules.Refinement.<Layer> namespace, compared with the top-level types the IL finds in Services.Implementation.Refinement, Services.Interfaces.Refinement and Modules.Refinement; each listed staying type or file looked up by namespace or path with its owner and reason; the IL edges of every type of every non-port file; and the suppression, analyser, CI-selection, test-budget, host-user and Stryker files read for targets naming a moving type.",
+"F164": "On today code the check passes: the 41 listed moving types equal the IL set both ways, each found exactly once in its old or its new namespace; the 31 staying entries exist where listed (sizing-log repository pair, the Models/Refinement types, the API controllers, validator and DTOs, WeeklyRecurrence); every type of a Domain-listed file reaches only the kernel, the BCL and types of other Domain files; no kernel-only non-port file is listed as Application; port files and all their types are Application; the listed targets equal those found (none). A failure names each missing listed type, each listed name that does not exist, each unlisted type, each Domain edge beyond the kernel, each kernel-only non-port file listed as Application and each unlisted target, with WHAT, WHY and HOW.",
+"F165": "Written before the list is filled the check fails naming the unlisted Refinement types (RED). One entry removed, a made-up entry added, a staying name that does not exist, SizingRefusal listed as Domain (reaches Microsoft.Extensions.Logging), NeedBand listed as Application (kernel-only non-port file), a port file split across layers, a made-up Domain fixture type lookalike or namesake of a Domain type, or a made-up target naming a moving type each fails and is named. A check that compares one way only, judges layers per type, counts entries, reads only the old or only the new namespace, or matches a short name without its namespace passes those cases and is rejected.",
+"F166": "The listed Refinement membership equals the set of top-level types the IL finds in the old Refinement namespaces and in Lighthouse.Backend.Modules.Refinement, both ways, each listed name found exactly once in its old or its new namespace; layers are per file: a file is Domain if and only if it is not a declared port file and every top-level type it declares has IL edges only to Lighthouse.Backend.Models, the BCL and types of other Domain files, every other file (port files with all their records and enums included) is Application; each staying entry exists at its listed place; the listed targets naming a moving type equal those found.",
+"F167": "A Domain-listed file with a type reaching beyond the kernel (SizingRefusal to Microsoft.Extensions.Logging)",
+"F168": "A kernel-only non-port file listed as Application (NeedBand)",
+"F169": "A port file or its records split across layers",
 "F17": "A2: every rule pattern gives the same answer for each moving Refinement type under its old and its new namespace, no added alternative matches a production type outside Modules.Refinement, and no rule string names Refinement by its old path outside the fixed rename list.",
+"F170": "A made-up Domain fixture lookalike or namesake of a Domain type",
 "F18": "No rule silently stops seeing a Refinement type when it moves",
 "F19": "Carriers and owners, all test side in Lighthouse.Backend.Tests.Architecture (object_oriented): RefinementMembership (S1 support) holds the moving Refinement types, each with its short name, its layer from the closed choice RefinementLayer {Domain, Application}, its old namespace and its new namespace Lighthouse.Backend.Modules.Refinement.<Layer>; the Refinement types and files that stay, each with namespace or path, owner and reason; and the targets found naming a moving type, each with file, target and kind (suppression, analyser, CI selection, test budget, host user, Stryker). NamespaceMoveLaw (S2 target, created by the S2 prefactoring) owns the preservation law over any move map and pattern-role map, and owns PatternSubject, PatternRole and PatternDeclaration. RefinementPatternRoles and RefinementStringsTheMoveRenames are S2 supports. No production carrier, effect, error type or per-process state changes; the only effects are reading the compiled production and test assemblies and repository text files; every failure is an NUnit assertion message stating WHAT, WHY and HOW.",
 "F2": "The Refinement types can move to Modules/Refinement without any rule silently changing its answer",
@@ -749,8 +766,6 @@
 "F24": "Re-measurement on the worktree HEAD d35488500 by text (noisy): the old-path literals in the test project are AccessModuleBoundariesArchUnitTest line 107 (VoterIdentityResolver full name), CategoryListOwnershipGuardTest line 20 and RepositoryLeakRatchetArchUnitTest line 46 (RefinementList.cs path), TrackerIntegrationModuleBoundariesArchUnitTest line 445 (IRefinementViewQuery full name), RefinementModuleArchUnitTest lines 31, 33, 37, 39, and, new against the DESIGN record, 16 rows of PlatformLaneUnitTestPlacementTest.ProductionFilesThatStay (lines 65-77 and 159-161) naming every moving Refinement file with owner Refinement. Those 16 rows go on the rename list as removed by feature B. The global:: reference at TrackerIntegrationModuleBoundariesArchUnitTest line 870 is compile-checked, not a literal. code-fact answered through textsearch at noisy confidence with no C# atoms; facts here come from git grep and reading; the IL measurement of A1 decides.",
 "F25": "P4: no production file, migration, Data, Models, frontend or E2E file changes in this feature; the existing backend suite stays green.",
 "F26": "Each slice has its own oracle file; a later slice never edits an earlier slice oracle or support. RefinementMembership.cs is the S1 support and is read, never edited, by S2.",
-"F27": "Membership domain is closed and finite: every top-level type the IL finds in Lighthouse.Backend.Services.Implementation.Refinement, Lighthouse.Backend.Services.Interfaces.Refinement and Lighthouse.Backend.Modules.Refinement (nested types follow their outermost type). No bound on the count is fixed by authority; the DESIGN text counts (13 implementation files, 3 port files with their records) are re-measured from the IL and a difference is recorded, not argued with.",
-"F28": "Domain layer rule: a moving type is Domain if and only if its IL edges reach only the kernel (Lighthouse.Backend.Models), the BCL and other Refinement Domain types; expected NeedBand and SizingRefusal. If none qualifies, the map has no Domain layer.",
 "F29": "The rename list is fixed at the end of S2 from the pre-move search and only shrinks: feature B removes an entry when it renames or deletes its literal, feature C removes the widened old-namespace alternatives. Feature B and C work (move, renames, narrowing, R-R1 to R-R6, placement test, architecture documents) is out of scope.",
 "F3": "The membership of the Refinement module is measured from the compiled code and fixed in a test: each moving Refinement type with its layer (Domain or Application), its old and its new namespace, and each Refinement file that stays (the sizing-log repository pair, the Models/Refinement types, the API controllers, validator and DTOs, WeeklyRecurrence) with its owner and reason. The test finds each listed type in its old or its new namespace, fails when a listed type is missing or a listed name does not exist, fails when a type listed as Domain reaches anything beyond the kernel, the BCL and other Refinement Domain types, and records every suppression, analyser, CI-selection, test-budget, host-user and Stryker target that names a moving type.",
 "F30": "Test-writing guidance in .claude/skills/test-writing/SKILL.md and references/backend.md wins over nWave timing and PBT density rules. No nWave scenario tags in code. Comments are rare, plain, and never cite internal ids as the explanation.",
@@ -802,21 +817,15 @@
 "F72": "Empty target list",
 "F73": "A composite read on a different subject than its component",
 "F74": "None found",
-"F75": "The architecture tests run the Refinement membership check over the compiled production IL: each type listed in RefinementMembership with its layer, old namespace and new Lighthouse.Backend.Modules.Refinement.<Layer> namespace, compared with the top-level types the IL finds in Services.Implementation.Refinement, Services.Interfaces.Refinement and Modules.Refinement; each listed staying type or file looked up by namespace or path with its owner and reason; the IL edges of each type listed as Domain; and the suppression, analyser, CI-selection, test-budget, host-user and Stryker files read for targets naming a moving type.",
-"F76": "On today code the check passes: every listed type is found exactly once in its old or its new namespace, the listed set equals the IL set both ways, every staying entry exists where listed (sizing-log repository pair in Services/*/Repositories, the Models/Refinement types, the API controllers, validator and DTOs, WeeklyRecurrence), every Domain type reaches only the kernel, the BCL and other Refinement Domain types, and the listed targets equal those found (expected none). A failure names each missing listed type, each listed name that does not exist, each unlisted type, each Domain edge beyond the kernel and each unlisted target, with WHAT, WHY and HOW.",
-"F77": "Written before the list is filled the check fails naming the unlisted Refinement types (RED). One entry removed, a made-up entry added, a staying name that does not exist, a Domain entry for a type that reaches a service (for example RefinementNeedCalculator), or a made-up target naming a moving type each fails and is named. A check that compares one way only, counts entries, reads only the old or only the new namespace, or matches a short name without its namespace passes those cases and is rejected.",
 "F78": "Same shape (map compared both ways with the IL, old-or-new lookup, staying entries with owner, targets naming moving types); copied as a pattern, not shared code, because each module map is its own fact set.",
 "F79": "Existing IL reader for type enumeration and edges; no new reader.",
 "F8": "Moving any Refinement file or test and renaming the literals on the rename list (feature B); narrowing the rules to Modules.Refinement only, the new Refinement boundary rules R-R1 to R-R6, the unit-test placement test and the architecture documents (feature C); the sizing-log repository pair, which stays in Services/*/Repositories (D-4); Models/Refinement, which stays in the kernel (D-3); an AddRefinement extension (S09a); a refinement-answers-compare command (not created, D-10).",
 "F80": "No crafter target: the acceptance designer authors the oracle and its membership support; no production, rule or configuration file changes.",
 "F81": "No code target; nothing to move.",
-"F82": "The listed Refinement membership equals the set of top-level types the IL finds in the old Refinement namespaces and in Lighthouse.Backend.Modules.Refinement, both ways, each listed name found exactly once in its old or its new namespace; each type listed as Domain has IL edges only to Lighthouse.Backend.Models, the BCL and other listed Domain types, and each type whose edges qualify is listed as Domain; each staying entry exists at its listed place; the listed targets naming a moving type equal those found.",
 "F83": "Every moving type listed and found in the old namespace",
 "F84": "A listed type missing from the IL",
 "F85": "A listed name that exists in neither namespace",
 "F86": "An IL type in a Refinement namespace not listed",
-"F87": "A Domain entry whose IL edges reach a service or a port record",
-"F88": "A kernel-only type listed as Application",
 "F89": "A staying entry not found at its listed place",
 "F9": "Rigor: feature A (design slice S1) thorough, so architect, acceptance designer and crafter on opus and reviewers and EXAMINE on sonnet; features B and C standard, so sonnet for producers and haiku for reviewers. DESIGN open question 1, default taken in AFK on 2026-11-24 after a 15-minute window with no reply.",
 "F90": "A target naming a moving type not listed",

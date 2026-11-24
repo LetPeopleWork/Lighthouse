@@ -44,6 +44,12 @@ Exact-namespace uses rewritten over the membership map in RefinementModuleArchUn
 Re-measurement on the worktree HEAD d35488500 by text (noisy): the old-path literals in the test project are AccessModuleBoundariesArchUnitTest line 107 (VoterIdentityResolver full name), CategoryListOwnershipGuardTest line 20 and RepositoryLeakRatchetArchUnitTest line 46 (RefinementList.cs path), TrackerIntegrationModuleBoundariesArchUnitTest line 445 (IRefinementViewQuery full name), RefinementModuleArchUnitTest lines 31, 33, 37, 39, and, new against the DESIGN record, 16 rows of PlatformLaneUnitTestPlacementTest.ProductionFilesThatStay (lines 65-77 and 159-161) naming every moving Refinement file with owner Refinement. Those 16 rows go on the rename list as removed by feature B. The global:: reference at TrackerIntegrationModuleBoundariesArchUnitTest line 870 is compile-checked, not a literal. code-fact answered through textsearch at noisy confidence with no C# atoms; facts here come from git grep and reading; the IL measurement of A1 decides.
 ```
 
+#### D7
+
+```text
+Per-file layer rule (constraint K4) replaces the per-type reading of D-1. Rejected: a per-type rule, which would put the 3 ports, their 21 records and enums, RefinementResolution, StageMatches and the Voter* types in Domain and split port files and other files in feature B; and a one-way-only rule, which lets a kernel-only pure type sit in Application unnoticed. If only one Domain file results, the lookalike-or-namesake falsifier uses a made-up Domain fixture instead of a second real Domain type.
+```
+
 ### Constraints
 
 #### K1
@@ -61,13 +67,13 @@ Each slice has its own oracle file; a later slice never edits an earlier slice o
 #### K3
 
 ```text
-Membership domain is closed and finite: every top-level type the IL finds in Lighthouse.Backend.Services.Implementation.Refinement, Lighthouse.Backend.Services.Interfaces.Refinement and Lighthouse.Backend.Modules.Refinement (nested types follow their outermost type). No bound on the count is fixed by authority; the DESIGN text counts (13 implementation files, 3 port files with their records) are re-measured from the IL and a difference is recorded, not argued with.
+Membership domain is closed and finite: every top-level type the IL finds in Lighthouse.Backend.Services.Implementation.Refinement, Lighthouse.Backend.Services.Interfaces.Refinement and Lighthouse.Backend.Modules.Refinement (nested types follow their outermost type). Measured from the IL at 93fddc5c9: 41 moving top-level types, 17 in Services.Implementation.Refinement (13 files, plus StageMatches, VoterResolution, VoterKeyResolution and VoterRefusal) and 24 in Services.Interfaces.Refinement (3 ports plus 21 records and enums); 31 staying types, 16 of them in Models/Refinement across 9 files (8 in RefinementSettings.cs); no suppression, analyser, CI, budget, host-user or Stryker target names a moving type. No count bound is fixed by authority; a later difference is recorded, not argued with.
 ```
 
 #### K4
 
 ```text
-Domain layer rule: a moving type is Domain if and only if its IL edges reach only the kernel (Lighthouse.Backend.Models), the BCL and other Refinement Domain types; expected NeedBand and SizingRefusal. If none qualifies, the map has no Domain layer.
+Layer rule, decided per file (Confirmed, AFK recommended option in line with D-1): a move never splits a file. A file is Domain if and only if it is not a port file and every top-level type it declares has IL edges only to the kernel (Lighthouse.Backend.Models), the BCL and types of other Domain files. A port file declares an I-prefixed port interface; it stays in Application with every record and enum it declares, recorded as a declared fact on the membership map, not inferred. Every other file is Application. The Domain rule is one-way (R-R2): a Domain type reaches only the kernel, the BCL and other Domain types. The oracle also checks the reverse per non-port file: a kernel-only non-port file listed as Application fails. Whatever the IL gives as Domain is the answer (open question 4); SizingRefusal reaches Microsoft.Extensions.Logging, so it is Application; NeedBand is expected Domain, with any other kernel-only non-port file.
 ```
 
 #### K5
@@ -455,15 +461,15 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementMembers
 #### Public oracle
 
 ```text
-The architecture tests run the Refinement membership check over the compiled production IL: each type listed in RefinementMembership with its layer, old namespace and new Lighthouse.Backend.Modules.Refinement.<Layer> namespace, compared with the top-level types the IL finds in Services.Implementation.Refinement, Services.Interfaces.Refinement and Modules.Refinement; each listed staying type or file looked up by namespace or path with its owner and reason; the IL edges of each type listed as Domain; and the suppression, analyser, CI-selection, test-budget, host-user and Stryker files read for targets naming a moving type.
+The architecture tests run the Refinement membership check over the compiled production IL: each type listed in RefinementMembership with its file, its layer, its port-file flag, old namespace and new Lighthouse.Backend.Modules.Refinement.<Layer> namespace, compared with the top-level types the IL finds in Services.Implementation.Refinement, Services.Interfaces.Refinement and Modules.Refinement; each listed staying type or file looked up by namespace or path with its owner and reason; the IL edges of every type of every non-port file; and the suppression, analyser, CI-selection, test-budget, host-user and Stryker files read for targets naming a moving type.
 ```
 
 ```text
-On today code the check passes: every listed type is found exactly once in its old or its new namespace, the listed set equals the IL set both ways, every staying entry exists where listed (sizing-log repository pair in Services/*/Repositories, the Models/Refinement types, the API controllers, validator and DTOs, WeeklyRecurrence), every Domain type reaches only the kernel, the BCL and other Refinement Domain types, and the listed targets equal those found (expected none). A failure names each missing listed type, each listed name that does not exist, each unlisted type, each Domain edge beyond the kernel and each unlisted target, with WHAT, WHY and HOW.
+On today code the check passes: the 41 listed moving types equal the IL set both ways, each found exactly once in its old or its new namespace; the 31 staying entries exist where listed (sizing-log repository pair, the Models/Refinement types, the API controllers, validator and DTOs, WeeklyRecurrence); every type of a Domain-listed file reaches only the kernel, the BCL and types of other Domain files; no kernel-only non-port file is listed as Application; port files and all their types are Application; the listed targets equal those found (none). A failure names each missing listed type, each listed name that does not exist, each unlisted type, each Domain edge beyond the kernel, each kernel-only non-port file listed as Application and each unlisted target, with WHAT, WHY and HOW.
 ```
 
 ```text
-Written before the list is filled the check fails naming the unlisted Refinement types (RED). One entry removed, a made-up entry added, a staying name that does not exist, a Domain entry for a type that reaches a service (for example RefinementNeedCalculator), or a made-up target naming a moving type each fails and is named. A check that compares one way only, counts entries, reads only the old or only the new namespace, or matches a short name without its namespace passes those cases and is rejected.
+Written before the list is filled the check fails naming the unlisted Refinement types (RED). One entry removed, a made-up entry added, a staying name that does not exist, SizingRefusal listed as Domain (reaches Microsoft.Extensions.Logging), NeedBand listed as Application (kernel-only non-port file), a port file split across layers, a made-up Domain fixture type lookalike or namesake of a Domain type, or a made-up target naming a moving type each fails and is named. A check that compares one way only, judges layers per type, counts entries, reads only the old or only the new namespace, or matches a short name without its namespace passes those cases and is rejected.
 ```
 
 ##### Promises
@@ -551,7 +557,7 @@ None.
 ###### L1
 
 ```text
-The listed Refinement membership equals the set of top-level types the IL finds in the old Refinement namespaces and in Lighthouse.Backend.Modules.Refinement, both ways, each listed name found exactly once in its old or its new namespace; each type listed as Domain has IL edges only to Lighthouse.Backend.Models, the BCL and other listed Domain types, and each type whose edges qualify is listed as Domain; each staying entry exists at its listed place; the listed targets naming a moving type equal those found.
+The listed Refinement membership equals the set of top-level types the IL finds in the old Refinement namespaces and in Lighthouse.Backend.Modules.Refinement, both ways, each listed name found exactly once in its old or its new namespace; layers are per file: a file is Domain if and only if it is not a declared port file and every top-level type it declares has IL edges only to Lighthouse.Backend.Models, the BCL and types of other Domain files, every other file (port files with all their records and enums included) is Application; each staying entry exists at its listed place; the listed targets naming a moving type equal those found.
 ```
 
 Invariant
@@ -583,11 +589,19 @@ An IL type in a Refinement namespace not listed
 ```
 
 ```text
-A Domain entry whose IL edges reach a service or a port record
+A Domain-listed file with a type reaching beyond the kernel (SizingRefusal to Microsoft.Extensions.Logging)
 ```
 
 ```text
-A kernel-only type listed as Application
+A kernel-only non-port file listed as Application (NeedBand)
+```
+
+```text
+A port file or its records split across layers
+```
+
+```text
+A made-up Domain fixture lookalike or namesake of a Domain type
 ```
 
 ```text
