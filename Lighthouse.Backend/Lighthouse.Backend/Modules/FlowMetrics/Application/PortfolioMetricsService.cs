@@ -381,7 +381,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             logger.LogDebug("Getting Named Cycle Time Percentiles for Portfolio {PortfolioName} definition {DefinitionId} between {StartDate} and {EndDate}", portfolio.Name, definitionId, startDate.Date, endDate.Date);
 
             return GetFromCacheIfExists(portfolio, $"NamedCycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
-                BuildPercentiles(NamedCycleTimesIn(portfolio, definitionId, startDate, endDate, CycleTimeItemsOf(portfolio))), logger);
+                BuildPercentiles(NamedCycleTimesBetween(portfolio, definitionId, CycleTimeItemsOf(portfolio))(startDate, endDate)), logger);
         }
 
         public CumulativeStateTimeItemsDto GetCumulativeStateTimeItemsForPortfolio(Portfolio portfolio, string state, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null)
@@ -681,26 +681,23 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 var periodDays = (endDate.Date - startDate.Date).Days + 1;
                 var previousEnd = startDate.AddDays(-1);
                 var previousStart = startDate.AddDays(-periodDays);
-                var currentPercentiles = PercentilesForInfo(portfolio, startDate, endDate, isNamed, definitionId).ToList();
-                var previousPercentiles = PercentilesForInfo(portfolio, previousStart, previousEnd, isNamed, definitionId).ToList();
+                var percentilesBetween = PercentilesForInfo(portfolio, isNamed, definitionId);
+                var currentPercentiles = percentilesBetween(startDate, endDate).ToList();
+                var previousPercentiles = percentilesBetween(previousStart, previousEnd).ToList();
                 return BuildCycleTimePercentilesInfoDto(currentPercentiles, previousPercentiles, startDate, endDate, previousStart, previousEnd);
             }, logger);
         }
 
-        private IEnumerable<PercentileValue> PercentilesForInfo(Portfolio portfolio, DateTime startDate, DateTime endDate, bool isNamed, int? definitionId)
+        private Func<DateTime, DateTime, IEnumerable<PercentileValue>> PercentilesForInfo(Portfolio portfolio, bool isNamed, int? definitionId)
         {
             if (!isNamed)
             {
-                return GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate);
+                return (startDate, endDate) => GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate);
             }
 
-            var namedDurations = NamedCycleTimesIn(portfolio, definitionId!.Value, startDate, endDate, CycleTimeItemsOf(portfolio));
-            if (namedDurations.Count == 0)
-            {
-                return [];
-            }
+            var namedCycleTimesBetween = NamedCycleTimesBetween(portfolio, definitionId!.Value, CycleTimeItemsOf(portfolio));
 
-            return BuildPercentiles(namedDurations);
+            return (startDate, endDate) => PercentilesOrNone(namedCycleTimesBetween(startDate, endDate));
         }
 
         public FlowEfficiencyInfoDto GetFlowEfficiencyInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)

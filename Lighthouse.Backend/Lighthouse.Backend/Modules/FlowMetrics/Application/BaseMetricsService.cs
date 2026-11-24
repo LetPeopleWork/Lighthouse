@@ -391,6 +391,30 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             DateTime startDate,
             DateTime endDate,
             CycleTimeItemSource<TItem> source) where TItem : WorkItemBase
+            => ReachedBetween(EveryItemThatReachedTheEndState(owner, definitionId, source), startDate, endDate);
+
+        /// <summary>
+        /// Loads the candidates and their transitions once, so that several periods can be answered from one load.
+        /// </summary>
+        protected Func<DateTime, DateTime, List<int>> NamedCycleTimesBetween<TItem>(
+            WorkTrackingSystemOptionsOwner owner,
+            int definitionId,
+            CycleTimeItemSource<TItem> source) where TItem : WorkItemBase
+        {
+            var reached = EveryItemThatReachedTheEndState(owner, definitionId, source);
+
+            return (startDate, endDate) => ReachedBetween(reached, startDate, endDate)
+                .Select(entry => entry.Value.Days)
+                .ToList();
+        }
+
+        protected static IEnumerable<PercentileValue> PercentilesOrNone(List<int> values)
+            => values.Count == 0 ? [] : BuildPercentiles(values);
+
+        private static List<NamedCycleTimeItem<TItem>> EveryItemThatReachedTheEndState<TItem>(
+            WorkTrackingSystemOptionsOwner owner,
+            int definitionId,
+            CycleTimeItemSource<TItem> source) where TItem : WorkItemBase
         {
             var statesInOrder = DisplayStatesInOrder(owner);
             var requestedDefinition = ResolveValidNamedDefinitions(owner, statesInOrder)
@@ -401,31 +425,31 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 return [];
             }
 
-            var firstDay = DateOnly.FromDateTime(startDate);
-            var lastDay = DateOnly.FromDateTime(endDate);
             var candidates = source.Candidates();
-            var reachedInRange = source.WithTransitions(candidates)
+            var namedValueById = source.WithTransitions(candidates)
                 .SelectMany(item => NamedValuesForItem(item, statesInOrder, requestedDefinition).Select(value => (item.Id, Value: value)))
-                .Where(entry => FallsOnDayBetween(entry.Value.EndDate, firstDay, lastDay))
                 .ToDictionary(entry => entry.Id, entry => entry.Value);
 
             return candidates
-                .Where(item => reachedInRange.ContainsKey(item.Id))
-                .Select(item => new NamedCycleTimeItem<TItem>(item, reachedInRange[item.Id]))
+                .Where(item => namedValueById.ContainsKey(item.Id))
+                .Select(item => new NamedCycleTimeItem<TItem>(item, namedValueById[item.Id]))
                 .OrderBy(entry => entry.Value.EndDate)
                 .ThenBy(entry => entry.Item.Id)
                 .ToList();
         }
 
-        protected List<int> NamedCycleTimesIn<TItem>(
-            WorkTrackingSystemOptionsOwner owner,
-            int definitionId,
+        private List<NamedCycleTimeItem<TItem>> ReachedBetween<TItem>(
+            IReadOnlyList<NamedCycleTimeItem<TItem>> reached,
             DateTime startDate,
-            DateTime endDate,
-            CycleTimeItemSource<TItem> source) where TItem : WorkItemBase
-            => NamedCycleTimePopulation(owner, definitionId, startDate, endDate, source)
-                .Select(entry => entry.Value.Days)
+            DateTime endDate) where TItem : WorkItemBase
+        {
+            var firstDay = DateOnly.FromDateTime(startDate);
+            var lastDay = DateOnly.FromDateTime(endDate);
+
+            return reached
+                .Where(entry => FallsOnDayBetween(entry.Value.EndDate, firstDay, lastDay))
                 .ToList();
+        }
 
         protected sealed record NamedCycleTimeItem<TItem>(TItem Item, NamedCycleTimeValue Value) where TItem : WorkItemBase;
 
@@ -811,10 +835,11 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 return new OutlierVerdict.NoLimits();
             }
 
-            var baselineCycleTimes = CycleTimeObservations(owner, definitionId, baseline.Start!.Value, baseline.End!.Value, source)
+            var observationsBetween = CycleTimeObservationsBetween(owner, definitionId, source);
+            var baselineCycleTimes = observationsBetween(baseline.Start!.Value, baseline.End!.Value)
                 .Select(observation => observation.Days)
                 .ToList();
-            var shown = CycleTimeObservations(owner, definitionId, displayStart, displayEnd, source);
+            var shown = observationsBetween(displayStart, displayEnd);
 
             return outlierDefinition.Judge(baselineCycleTimes, shown);
         }
@@ -825,21 +850,21 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             => !definitionId.HasValue
                || owner.CycleTimeDefinitions.Any(candidate => candidate.Id == definitionId.Value && owner.IsCycleTimeDefinitionValid(candidate));
 
-        private List<CycleTimeObservation> CycleTimeObservations<TItem>(
+        private Func<DateTime, DateTime, List<CycleTimeObservation>> CycleTimeObservationsBetween<TItem>(
             WorkTrackingSystemOptionsOwner owner,
             int? definitionId,
-            DateTime startDate,
-            DateTime endDate,
             CycleTimeItemSource<TItem> source) where TItem : WorkItemBase
         {
             if (definitionId.HasValue)
             {
-                return NamedCycleTimePopulation(owner, definitionId.Value, startDate, endDate, source)
+                var reached = EveryItemThatReachedTheEndState(owner, definitionId.Value, source);
+
+                return (startDate, endDate) => ReachedBetween(reached, startDate, endDate)
                     .Select(entry => new CycleTimeObservation(entry.Item.Id, entry.Value.Days))
                     .ToList();
             }
 
-            return InClosingOrder(source.ClosedBetween(startDate, endDate))
+            return (startDate, endDate) => InClosingOrder(source.ClosedBetween(startDate, endDate))
                 .Select(item => (item.Id, Days: item.CycleTime(Clock.Zone)))
                 .Where(entry => entry.Days > 0)
                 .Select(entry => new CycleTimeObservation(entry.Id, entry.Days))

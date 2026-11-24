@@ -431,7 +431,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             logger.LogDebug("Getting Named Cycle Time Percentiles for Team {TeamName} definition {DefinitionId} between {StartDate} and {EndDate}", team.Name, definitionId, startDate.Date, endDate.Date);
 
             return GetFromCacheIfExists(team, $"NamedCycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
-                BuildPercentiles(NamedCycleTimesIn(team, definitionId, startDate, endDate, CycleTimeItemsOf(team))), logger);
+                BuildPercentiles(NamedCycleTimesBetween(team, definitionId, CycleTimeItemsOf(team))(startDate, endDate)), logger);
         }
 
         private List<CycleTimeWorkItem> ComputeCycleTimeData(Team team, DateTime startDate, DateTime endDate)
@@ -837,26 +837,23 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                 var periodDays = (endDate.Date - startDate.Date).Days + 1;
                 var previousEnd = startDate.AddDays(-1);
                 var previousStart = startDate.AddDays(-periodDays);
-                var currentPercentiles = PercentilesForInfo(team, startDate, endDate, isNamed, definitionId).ToList();
-                var previousPercentiles = PercentilesForInfo(team, previousStart, previousEnd, isNamed, definitionId).ToList();
+                var percentilesBetween = PercentilesForInfo(team, isNamed, definitionId);
+                var currentPercentiles = percentilesBetween(startDate, endDate).ToList();
+                var previousPercentiles = percentilesBetween(previousStart, previousEnd).ToList();
                 return BuildCycleTimePercentilesInfoDto(currentPercentiles, previousPercentiles, startDate, endDate, previousStart, previousEnd);
             }, logger);
         }
 
-        private IEnumerable<PercentileValue> PercentilesForInfo(Team team, DateTime startDate, DateTime endDate, bool isNamed, int? definitionId)
+        private Func<DateTime, DateTime, IEnumerable<PercentileValue>> PercentilesForInfo(Team team, bool isNamed, int? definitionId)
         {
             if (!isNamed)
             {
-                return GetCycleTimePercentilesForTeam(team, startDate, endDate);
+                return (startDate, endDate) => GetCycleTimePercentilesForTeam(team, startDate, endDate);
             }
 
-            var namedDurations = NamedCycleTimesIn(team, definitionId!.Value, startDate, endDate, CycleTimeItemsOf(team));
-            if (namedDurations.Count == 0)
-            {
-                return [];
-            }
+            var namedCycleTimesBetween = NamedCycleTimesBetween(team, definitionId!.Value, CycleTimeItemsOf(team));
 
-            return BuildPercentiles(namedDurations);
+            return (startDate, endDate) => PercentilesOrNone(namedCycleTimesBetween(startDate, endDate));
         }
 
         public void InvalidateTeamMetrics(Team team)
