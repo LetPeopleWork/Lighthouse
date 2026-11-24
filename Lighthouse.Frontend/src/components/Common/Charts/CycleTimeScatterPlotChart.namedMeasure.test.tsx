@@ -199,10 +199,23 @@ const theMeasuresOwnItems: NamedDataFetch = (definitionId) =>
 			: [releasedItemD],
 	);
 
-const theChart = (fetchNamedData: NamedDataFetch) => {
-	const client = new QueryClient({
+const aQueryClient = () =>
+	new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
+
+interface ChartSetting {
+	ownerId?: number;
+	startDate?: Date;
+	endDate?: Date;
+	definitions?: INamedCycleTimeDefinition[];
+}
+
+const theChart = (
+	fetchNamedData: NamedDataFetch,
+	client = aQueryClient(),
+	setting: ChartSetting = {},
+) => {
 	return (
 		<QueryClientProvider client={client}>
 			<WidgetShell
@@ -216,9 +229,14 @@ const theChart = (fetchNamedData: NamedDataFetch) => {
 					percentileValues={[]}
 					cycleTimeDataPoints={[closedItemA, closedItemC]}
 					serviceLevelExpectation={null}
-					namedCycleTimeDefinitions={[readyForRelease, inProduction]}
+					namedCycleTimeDefinitions={
+						setting.definitions ?? [readyForRelease, inProduction]
+					}
 					onFetchNamedCycleTimePercentiles={() => Promise.resolve([])}
 					onFetchNamedCycleTimeData={fetchNamedData}
+					ownerId={setting.ownerId}
+					startDate={setting.startDate}
+					endDate={setting.endDate}
 				/>
 			</WidgetShell>
 		</QueryClientProvider>
@@ -377,6 +395,10 @@ describe("Cycle Time scatterplot with a named Cycle Time", () => {
 				"After a failed fetch no dot may be shown as if it were the named measure's answer.",
 			).not.toBeVisible();
 		}
+		expect(
+			plottedDots(),
+			"After a failed fetch the chart may not keep the default closed Work Items plotted behind the message either.",
+		).toEqual([]);
 	});
 
 	it("never lets a late answer for an earlier measure replace the selected one's", async () => {
@@ -407,6 +429,110 @@ describe("Cycle Time scatterplot with a named Cycle Time", () => {
 			"An answer for a measure the reader has left must never land on the chart.",
 		).toEqual(["2026-11-18: 12"]);
 		expect(xAxisLabel()).toBe("Date reached In Production");
+	});
+});
+
+describe("Cycle Time scatterplot moving between named Cycle Times", () => {
+	it("keeps the previous measure's dots, dimmed, while the next measure's Work Items are on their way", async () => {
+		showTheChart((definitionId) =>
+			definitionId === readyForRelease.id
+				? theMeasuresOwnItems(definitionId)
+				: new Promise<IWorkItem[]>(() => undefined),
+		);
+		await chooseMeasure("Analysis to Ready for Release");
+		await expectDots(
+			["2026-11-05: 6", "2026-11-12: 4"],
+			"The first measure's own Work Items must be plotted before the reader moves on.",
+		);
+
+		await chooseMeasure("Analysis to In Production");
+		await settle();
+
+		expect(frame()).toHaveAttribute("data-widget-status", "loading");
+		expect(
+			plottedDots(),
+			"While the next measure loads, the dots on screen must be the previous measure's, dimmed; never the default closed Work Items.",
+		).toEqual(["2026-11-05: 6", "2026-11-12: 4"]);
+	});
+
+	it("names in its legend the types of the measure's own Work Items", async () => {
+		const releasedBug = { ...releasedItemD, type: "Bug" };
+		showTheChart((definitionId) =>
+			Promise.resolve(
+				definitionId === inProduction.id ? [releasedBug] : [closedItemA],
+			),
+		);
+		await settle();
+		expect(screen.getByText("Story")).toBeInTheDocument();
+
+		await chooseMeasure("Analysis to In Production");
+		await expectDots(["2026-11-18: 12"], "D must be plotted for its measure.");
+
+		expect(
+			screen.getByText("Bug"),
+			"The legend must list the types of the dots now plotted.",
+		).toBeInTheDocument();
+		expect(screen.queryByText("Story")).not.toBeInTheDocument();
+	});
+
+	it("asks again for the measure's Work Items when the owner or the date range changes", async () => {
+		const fetchNamedData = vi.fn(theMeasuresOwnItems);
+		const client = aQueryClient();
+		const setting = {
+			ownerId: 1,
+			startDate: november(1, 0),
+			endDate: november(30, 0),
+		};
+		const { rerender } = render(theChart(fetchNamedData, client, setting));
+		await chooseMeasure("Analysis to Ready for Release");
+		await expectDots(
+			["2026-11-05: 6", "2026-11-12: 4"],
+			"A and B are plotted.",
+		);
+		expect(fetchNamedData).toHaveBeenCalledTimes(1);
+
+		const askedAgainAfter = async (
+			what: string,
+			changed: ChartSetting,
+			calls: number,
+		) => {
+			rerender(theChart(fetchNamedData, client, changed));
+			await vi.waitFor(() => {
+				expect(
+					fetchNamedData,
+					`A new ${what} is a new question; the answer cached for the old one may not be reused.`,
+				).toHaveBeenCalledTimes(calls);
+			});
+		};
+		const otherOwner = { ...setting, ownerId: 2 };
+		await askedAgainAfter("owner", otherOwner, 2);
+		const laterStart = { ...otherOwner, startDate: november(2, 0) };
+		await askedAgainAfter("start of the range", laterStart, 3);
+		await askedAgainAfter(
+			"end of the range",
+			{ ...laterStart, endDate: november(29, 0) },
+			4,
+		);
+	});
+
+	it("goes back to the default Cycle Time when the selected measure is no longer offered", async () => {
+		const client = aQueryClient();
+		const { rerender } = render(theChart(theMeasuresOwnItems, client));
+		await chooseMeasure("Analysis to Ready for Release");
+		await expectDots(
+			["2026-11-05: 6", "2026-11-12: 4"],
+			"A and B are plotted.",
+		);
+
+		rerender(
+			theChart(theMeasuresOwnItems, client, { definitions: [inProduction] }),
+		);
+
+		await expectDots(
+			["2026-11-03: 9", "2026-11-20: 15"],
+			"A measure that was removed cannot be drawn; the chart must fall back to the default closed Work Items.",
+		);
+		expect(xAxisLabel()).toBe("Date");
 	});
 });
 

@@ -541,6 +541,18 @@ describe("which lists carry the risk column", () => {
 			expect(percentiles?.context).toBe("closedItems");
 		});
 
+		it("lists nothing under the measure's name while its own Work Items are on their way", () => {
+			const percentiles = viewDataWith([], "team", {
+				cycleTimeData: closed,
+				percentilesScopeDefinitionId: 5,
+				scopedPercentileItems: null,
+				namedCycleTimeDefinitions: definitions,
+			}).percentiles;
+
+			expect(percentiles?.cycleTimeScope).toBe(5);
+			expect(percentiles?.items).toEqual([]);
+		});
+
 		it("finds the scope among several definitions", () => {
 			const percentiles = viewDataWith([], "team", {
 				cycleTimeData: closed,

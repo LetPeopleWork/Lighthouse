@@ -27,6 +27,8 @@ const valuesFor = (percentile: number): IPercentileValue[] => [
 ];
 const infoFor = (marker: number) =>
 	({ marker }) as unknown as ICycleTimePercentilesInfo;
+const itemsFor = (definitionId: number) =>
+	[{ id: definitionId * 100 }] as unknown as IWorkItem[];
 
 const startDate = new Date(2026, 0, 1);
 const endDate = new Date(2026, 0, 31);
@@ -34,6 +36,8 @@ const endDate = new Date(2026, 0, 31);
 function serviceAnswering(
 	values: (id: number) => Promise<IPercentileValue[]>,
 	info: (id: number) => Promise<ICycleTimePercentilesInfo>,
+	items: (id: number) => Promise<IWorkItem[]> = (id) =>
+		Promise.resolve(itemsFor(id)),
 ) {
 	const getCycleTimePercentiles = vi.fn(
 		(
@@ -51,14 +55,19 @@ function serviceAnswering(
 			definitionId?: number | null,
 		) => info(definitionId as number),
 	);
+	const getCycleTimeData = vi.fn(
+		(_entityId: number, _start: Date, _end: Date, definitionId?: number) =>
+			items(definitionId as number),
+	);
 	return {
 		service: {
 			getCycleTimePercentiles,
 			getCycleTimePercentilesInfo,
-			getCycleTimeData: vi.fn().mockResolvedValue([]),
+			getCycleTimeData,
 		} as unknown as IMetricsService<IWorkItem>,
 		getCycleTimePercentiles,
 		getCycleTimePercentilesInfo,
+		getCycleTimeData,
 	};
 }
 
@@ -95,8 +104,12 @@ describe("useNamedPercentilesScope", () => {
 	});
 
 	it("asks for the named definition on this owner and window and shows its numbers", async () => {
-		const { service, getCycleTimePercentiles, getCycleTimePercentilesInfo } =
-			answerAtOnce();
+		const {
+			service,
+			getCycleTimePercentiles,
+			getCycleTimePercentilesInfo,
+			getCycleTimeData,
+		} = answerAtOnce();
 		const { result } = renderScope(service);
 
 		act(() => result.current.handlePercentilesScopeChange(3));
@@ -106,6 +119,15 @@ describe("useNamedPercentilesScope", () => {
 		);
 		expect(result.current.percentilesScopeDefinitionId).toBe(3);
 		expect(result.current.scopedPercentilesInfo).toEqual(infoFor(3));
+		await waitFor(() =>
+			expect(result.current.scopedPercentileItems).toEqual(itemsFor(3)),
+		);
+		expect(getCycleTimeData).toHaveBeenCalledExactlyOnceWith(
+			5,
+			startDate,
+			endDate,
+			3,
+		);
 		expect(getCycleTimePercentiles).toHaveBeenCalledExactlyOnceWith(
 			5,
 			startDate,
@@ -140,9 +162,11 @@ describe("useNamedPercentilesScope", () => {
 	it("ignores a slow answer for an earlier definition that lands after the current one", async () => {
 		const slowValues = deferred<IPercentileValue[]>();
 		const slowInfo = deferred<ICycleTimePercentilesInfo>();
+		const slowItems = deferred<IWorkItem[]>();
 		const { service } = serviceAnswering(
 			(id) => (id === 1 ? slowValues.promise : Promise.resolve(valuesFor(id))),
 			(id) => (id === 1 ? slowInfo.promise : Promise.resolve(infoFor(id))),
+			(id) => (id === 1 ? slowItems.promise : Promise.resolve(itemsFor(id))),
 		);
 		const { result } = renderScope(service);
 
@@ -154,11 +178,13 @@ describe("useNamedPercentilesScope", () => {
 		await act(async () => {
 			slowValues.resolve(valuesFor(1));
 			slowInfo.resolve(infoFor(1));
+			slowItems.resolve(itemsFor(1));
 			await Promise.resolve();
 		});
 
 		expect(result.current.scopedPercentileValues).toEqual(valuesFor(2));
 		expect(result.current.scopedPercentilesInfo).toEqual(infoFor(2));
+		expect(result.current.scopedPercentileItems).toEqual(itemsFor(2));
 		expect(result.current.percentilesScopeDefinitionId).toBe(2);
 	});
 
@@ -196,6 +222,27 @@ describe("useNamedPercentilesScope", () => {
 		expect(result.current.scopedPercentileValues).toBeNull();
 	});
 
+	it("snaps back to Default and drops the Work Items that did arrive when the named numbers fail later", async () => {
+		const failingInfo = deferred<ICycleTimePercentilesInfo>();
+		const { service } = serviceAnswering(
+			(id) => Promise.resolve(valuesFor(id)),
+			() => failingInfo.promise,
+		);
+		const { result } = renderScope(service);
+		act(() => result.current.handlePercentilesScopeChange(4));
+		await waitFor(() =>
+			expect(result.current.scopedPercentileItems).toEqual(itemsFor(4)),
+		);
+
+		await act(async () => {
+			failingInfo.reject(new Error("no info"));
+			await Promise.resolve();
+		});
+
+		expect(result.current.percentilesScopeDefinitionId).toBeNull();
+		expect(result.current.scopedPercentileItems).toBeNull();
+	});
+
 	it("does not snap back because an earlier, superseded request failed", async () => {
 		const failingValues = deferred<IPercentileValue[]>();
 		const failingInfo = deferred<ICycleTimePercentilesInfo>();
@@ -229,11 +276,16 @@ describe("useNamedPercentilesScope", () => {
 			expect(result.current.scopedPercentilesInfo).toEqual(infoFor(3)),
 		);
 
+		await waitFor(() =>
+			expect(result.current.scopedPercentileItems).toEqual(itemsFor(3)),
+		);
+
 		rerender({ entityId: 6, startDate, endDate });
 
 		expect(result.current.percentilesScopeDefinitionId).toBeNull();
 		expect(result.current.scopedPercentileValues).toBeNull();
 		expect(result.current.scopedPercentilesInfo).toBeNull();
+		expect(result.current.scopedPercentileItems).toBeNull();
 		act(() => result.current.handlePercentilesScopeChange(3));
 		await waitFor(() =>
 			expect(result.current.scopedPercentileValues).toEqual(valuesFor(3)),
