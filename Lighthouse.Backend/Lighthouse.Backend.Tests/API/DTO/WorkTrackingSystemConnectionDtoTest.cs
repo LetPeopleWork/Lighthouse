@@ -1,5 +1,10 @@
-﻿using Lighthouse.Backend.API.DTO;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.OAuth;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 
 namespace Lighthouse.Backend.Tests.API.DTO
@@ -109,5 +114,94 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             Assert.That(subject.RequiresReconnect, Is.False);
         }
+
+        private static readonly JsonSerializerOptions AsTheWireSendsIt = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
+
+        public enum WriteBack { None, Mapped }
+
+        // Every way a connection can stand towards write consent: which sign-in it uses, what that sign-in
+        // was granted (null = signed in before rights were recorded, or no sign-in at all), and whether
+        // write-back is set up. Rights are shown only for an Azure DevOps OAuth sign-in, and a warning only
+        // when write-back is set up on a sign-in that may only read.
+        private static IEnumerable<TestCaseData> WriteConsentCases()
+        {
+            yield return new TestCaseData(AuthenticationMethodKeys.AzureDevOpsOAuth, true, null, WriteBack.Mapped, "ReadAndWrite", false)
+                .SetName("An Azure DevOps sign-in from before rights were recorded reads and writes and needs no more consent");
+            yield return new TestCaseData(AuthenticationMethodKeys.AzureDevOpsOAuth, true, WorkItemRights.Read, WriteBack.Mapped, "Read", true)
+                .SetName("An Azure DevOps sign-in that may only read needs write consent once write-back is set up");
+            yield return new TestCaseData(AuthenticationMethodKeys.AzureDevOpsOAuth, true, WorkItemRights.Read, WriteBack.None, "Read", false)
+                .SetName("An Azure DevOps sign-in that may only read needs nothing more without write-back");
+            yield return new TestCaseData(AuthenticationMethodKeys.AzureDevOpsOAuth, true, WorkItemRights.ReadAndWrite, WriteBack.Mapped, "ReadAndWrite", false)
+                .SetName("An Azure DevOps sign-in granted write rights needs nothing more with write-back");
+            yield return new TestCaseData(AuthenticationMethodKeys.JiraOAuth, true, null, WriteBack.Mapped, null, false)
+                .SetName("A Jira sign-in shows no rights and needs no write consent");
+            yield return new TestCaseData(AuthenticationMethodKeys.AzureDevOpsPat, false, null, WriteBack.Mapped, null, false)
+                .SetName("A personal access token connection shows no rights and needs no write consent");
+        }
+
+        [TestCaseSource(nameof(WriteConsentCases))]
+        public void TheConnectionListSaysWhichRightsTheSignInHoldsAndWhetherWriteBackNeedsMore(
+            string authenticationMethodKey,
+            bool hasSignedIn,
+            WorkItemRights? grantedAtSignIn,
+            WriteBack writeBack,
+            string? expectedRights,
+            bool expectedNeedsWriteConsent)
+        {
+            var connection = AConnection(authenticationMethodKey, writeBack);
+            var credential = hasSignedIn ? new OAuthCredential { WorkTrackingSystemConnectionId = 7, GrantedRights = grantedAtSignIn } : null;
+
+            var wire = WhatTheListSends(connection, credential);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(wire["grantedRights"]?.GetValue<string>(), Is.EqualTo(expectedRights),
+                    "The connection list must name the rights the sign-in holds as Read or ReadAndWrite for an Azure DevOps OAuth sign-in, and nothing for any other connection, " +
+                    "because the settings page shows a Rights line from it. Set grantedRights from the stored credential's write consent.");
+                Assert.That(wire["needsWriteConsent"]?.GetValue<bool>(), Is.EqualTo(expectedNeedsWriteConsent),
+                    "The connection list must say needsWriteConsent (true or false, never missing) because the warning with Sign in again shows from it. " +
+                    "Set it to whether the credential lacks the rights the connection's write-back needs.");
+            }
+        }
+
+        [Test]
+        public void ASavedConnectionCannotClaimRightsItsSignInWasNotGranted()
+        {
+            const string savedBody = """
+                {"id":7,"name":"Fabrikam","workTrackingSystem":"AzureDevOps","authenticationMethodKey":"ado.oauth","grantedRights":"ReadAndWrite","needsWriteConsent":true}
+                """;
+
+            var saved = JsonSerializer.Deserialize<WorkTrackingSystemConnectionDto>(savedBody, AsTheWireSendsIt)!;
+            var wire = JsonNode.Parse(JsonSerializer.Serialize(saved, AsTheWireSendsIt))!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(wire["grantedRights"]?.GetValue<string>(), Is.Null,
+                    "A body sent to save a connection must not set the rights its sign-in holds, because only the server knows what was granted. Keep the grantedRights setter private.");
+                Assert.That(wire["needsWriteConsent"]?.GetValue<bool>(), Is.False,
+                    "A body sent to save a connection must not set needsWriteConsent, because the server works it out. Keep its setter private so it stays false and is still sent.");
+            }
+        }
+
+        private static WorkTrackingSystemConnection AConnection(string authenticationMethodKey, WriteBack writeBack)
+        {
+            var connection = new WorkTrackingSystemConnection
+            {
+                Id = 7,
+                Name = "Fabrikam",
+                WorkTrackingSystem = authenticationMethodKey == AuthenticationMethodKeys.JiraOAuth ? WorkTrackingSystems.Jira : WorkTrackingSystems.AzureDevOps,
+                AuthenticationMethodKey = authenticationMethodKey,
+            };
+
+            if (writeBack == WriteBack.Mapped)
+            {
+                connection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition());
+            }
+
+            return connection;
+        }
+
+        private static JsonNode WhatTheListSends(WorkTrackingSystemConnection connection, OAuthCredential? credential)
+            => JsonNode.Parse(JsonSerializer.Serialize(new WorkTrackingSystemConnectionDto(connection, credential), AsTheWireSendsIt))!;
     }
 }
