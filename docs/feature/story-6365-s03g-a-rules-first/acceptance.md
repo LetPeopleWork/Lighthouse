@@ -186,6 +186,256 @@ A target in a file outside the scanned set, such as an archived document
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+The architecture check asks every rule pattern of the test project, on the subject its rule reads, about the old and the new name of every Refinement type that moves
+```
+
+```text
+Every pattern that sees a moving Refinement type is declared with its role; a part of the code keeps seeing the type under Modules.Refinement, an old location and a folder-only match do not follow it. On today's rules the check fails naming the Refinement module pattern, the Refinement contexts of Access, Licensing and Tracker integration, the Refinement guards' per-type and services patterns, the patterns built from them, and the exact Refinement namespace constant
+```
+
+```text
+The maintainer knows no architecture rule goes blind or starts judging the wrong code when Refinement moves into its module
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesSeeTheMoveArchUnitTest\.cs\:\:EveryRulePatternThatSeesAMovingRefinementType\_IsDeclared\_AndKeepsItsRoleOnTheSubjectItsRuleReads
+
+```text
+A pattern is declared with the wrong role or subject in the roles list, or a Modules.Refinement alternative is written in a form the alternative marker does not recognise, such as (Services|Modules)\.Refinement; review of the roles list carries those
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+The same check is run over made-up rule patterns, each declared with a subject and a role
+```
+
+```text
+It names exactly the made-up patterns that break their role, each with its break: a part of the code that sees only the old place, a namespace rule widened by type names, a read path widened only to the Application layer (losing exactly the Domain types), an old location widened into the new place, a part of the code widened into Refinement without ever seeing it, a folder-only match that follows the type, two undeclared patterns (one a static read-only field in a nested class), and a composite built from a blind part of the code; it passes the patterns that keep their role, including a part of the code widened by an anchored Modules.Refinement alternative
+```
+
+```text
+The maintainer can trust that the check above would name a rule that breaks at the move, not pass it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesSeeTheMoveArchUnitTest\.cs\:\:TheRoleCheck\_NamesEachMadeUpPatternThatBreaksItsRole\_AndPassesTheOnesThatKeepIt
+
+```text
+A law that names the right breaks for these shapes but misreads a shape none of the made-up keys has, such as a pattern with a lookbehind
+```
+
+###### Obligations
+
+
+
+
+
+
+
+
+
+##### Covers
+
+P2
+
+```text
+Each Modules.Refinement alternative of a rule pattern is asked about every production namespace and full name outside Modules.Refinement, on the subject the pattern is declared with
+```
+
+```text
+No Modules.Refinement alternative matches anything outside Modules.Refinement; today no rule has one, so the check passes, and it keeps passing once the crafter adds anchored alternatives
+```
+
+```text
+Widening a rule for the move puts no unrelated code under that rule
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesSeeTheMoveArchUnitTest\.cs\:\:NoModulesRefinementAlternativeOfARulePattern\_MatchesAProductionNamespaceOrTypeOutsideModulesRefinement
+
+```text
+An alternative too wide only for a namespace that does not exist yet in the production code, or written without the Modules marker the check looks for
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+The alternative check is run over the made-up rule patterns, with a made-up lookalike namespace added to the production names
+```
+
+```text
+It names only the made-up pattern whose Modules.Refinement alternative is unanchored and so matches the lookalike, and none of the anchored ones
+```
+
+```text
+The maintainer can trust that a too-wide alternative would be named, and a correct one would not
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesSeeTheMoveArchUnitTest\.cs\:\:TheModulesRefinementAlternativeCheck\_NamesAMadeUpAlternativeThatReachesALookalike\_AndPassesTheAnchoredOnes
+
+```text
+A check that asks every alternative about both namespaces and full names regardless of the declared subject, since the lookalike is given in both forms
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+The test project's source files are read as text, and every string that names Refinement or a moving Refinement type by its old Services path is compared with the fixed rename list, both ways
+```
+
+```text
+The old-path strings are exactly the 20 listed ones: none unlisted, none listed but gone. On today's rules the check fails naming the exact old implementation namespace constant of the Refinement guards as unlisted
+```
+
+```text
+The maintainer has one fixed list of what the move still has to rename, and no string quietly keeps pointing at the old place
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesSeeTheMoveArchUnitTest\.cs\:\:TheStringsInTheTestProjectThatNameRefinementByItsOldPath\_AreExactlyTheFixedRenameList
+
+```text
+A string built at run time from fragments that never name the old path whole, or a selection by an exact new namespace written inline; a new-namespace string kept in a constant is named by the role check instead
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P3
+
+```text
+The rename-list comparison is run over a made-up rule file and a made-up two-entry list
+```
+
+```text
+It names the three unlisted old-path strings (the old namespace, a port file path, a port type's full name) and the listed string the file no longer holds; it passes the listed string that is still there, a lookalike namespace, a test class namespace and a governed rule pattern
+```
+
+```text
+The maintainer can trust the list check catches a new old-path string and a stale entry, so the list only shrinks
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesSeeTheMoveArchUnitTest\.cs\:\:TheRenameListCheck\_NamesAnUnlistedOldPathString\_AndAListedStringThatNoLongerExists
+
+```text
+A listed string that survives only inside a comment or as part of a longer string, since an entry counts as present when its file holds it as a whole quoted string anywhere
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P4
+
+```text
+After the crafter widens the Refinement rule patterns and rewrites the exact-namespace uses, the whole architecture test namespace and the backend suite are run
+```
+
+```text
+Every existing test stays green, including the platform preservation law with all its verdicts; no production file has moved or changed
+```
+
+```text
+Nothing a user, a tracker or the database sees changes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture \(FullyQualifiedName\~Lighthouse\.Backend\.Tests\.Architecture\, including PlatformLaneRulesSeeTheMoveArchUnitTest\) and the filtered backend suite
+
+```text
+A widened rule pattern that keeps every verdict today but would answer differently once the types move; the preservation law above carries that, not this run
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The role check is run over made-up patterns with a made-up whole-parent list: one listed pattern over all of Modules, one listed pattern over every named module but not Modules itself, and one unlisted pattern over all of Modules
+```
+
+```text
+The listed pattern over all of Modules may see the moved types for the first time and is not named; the listed narrower pattern is named both as seeing Refinement it never saw and as narrower than Modules; the unlisted pattern over all of Modules is named as seeing Refinement it never saw. On the real rules only the platform membership's module pattern is on the list, it takes in all of Modules, and it is no longer named
+```
+
+```text
+A rule over every module rightly starts seeing Refinement once it becomes a module, and no other rule may quietly start judging the moved types
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementRulesSeeTheMoveArchUnitTest\.cs\:\:TheWholeParentList\_AdmitsTheNewSightOfAListedPatternOverAllOfModules\_AndNoOther
+
+```text
+A listed pattern that takes in all of Modules and also something outside it, such as the whole backend; the list is short and declared, so review carries that
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
