@@ -255,7 +255,7 @@
 "counters": {
 "D": 7,
 "E": 12,
-"F": 227,
+"F": 239,
 "K": 6,
 "L": 2,
 "P": 4,
@@ -843,6 +843,82 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F228",
+"F229"
+],
+"verdict": "met"
+},
+"E10": {
+"observations": [
+"F236"
+],
+"verdict": "met"
+},
+"E11": {
+"observations": [
+"F237"
+],
+"verdict": "met"
+},
+"E12": {
+"observations": [
+"F238",
+"F239"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F229"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F230"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F231"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F232"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F233"
+],
+"verdict": "met"
+},
+"E7": {
+"observations": [
+"F234"
+],
+"verdict": "met"
+},
+"E8": {
+"observations": [
+"F235"
+],
+"verdict": "met"
+},
+"E9": {
+"observations": [
+"F235"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1075,7 +1151,19 @@
 "F225": "The listed pattern over all of Modules may see the moved types for the first time and is not named; the listed narrower pattern is named both as seeing Refinement it never saw and as narrower than Modules; the unlisted pattern over all of Modules is named as seeing Refinement it never saw. On the real rules only the platform membership's module pattern is on the list, it takes in all of Modules, and it is no longer named",
 "F226": "A rule over every module rightly starts seeing Refinement once it becomes a module, and no other rule may quietly start judging the moved types",
 "F227": "A listed pattern that takes in all of Modules and also something outside it, such as the whole backend; the list is short and declared, so review carries that",
+"F228": "architecture-rules whole rule set: 1746/1746 passed. Membership tests pass: TheRefinementTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove_EachFoundOnce, EachTypeThatStays_IsInTheCompiledCodeWhereListed, TheTargetsNamingAMovingType_AreExactlyTheOnesListed.",
+"F229": "Negative controls pass with named failures: AMadeUpNameOnTheMap_IsNamedAsNotInTheCode, AListedTypeTheCodeNoLongerHolds_IsNamedAsNotInTheCode, AMapWithOneTypeLeftOff, ATypeFoundInItsNewNamespaceInsteadOfItsOld_IsStillOnTheMap, ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice, namesake and duplicate cases.",
 "F23": "Exact-namespace uses rewritten over the membership map in RefinementModuleArchUnitTest: ReadPath selects every type whose namespace is a Refinement Domain or Application namespace of the map (old or new) minus the write path; the stage-rule-matcher rule excludes Refinement types by RefinementPattern instead of DoNotResideInNamespace(RefinementImplementationNamespace); the need-calculator assertion accepts the old or new namespace the map gives RefinementNeedCalculator; reaches-no-service is ServicesImplementationPattern union the Refinement Domain and Application namespaces minus the type itself. RefinementImplementationNamespace is then removed, not renamed. BackgroundUpdatesPattern keeps its name and value (read by member name through reflection).",
+"F230": "Layer rule passes: EachFileIsDomain_ExactlyWhenItIsNoPortFile_AndEveryTypeItDeclaresReachesOnlyTheSharedModels...; controls AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches, AKernelOnlyFileListedAsApplication_IsNamed, port-file split, made-up Domain lookalike all pass.",
+"F231": "Targets record: TheTargetsNamingAMovingType_AreExactlyTheOnesListed passes; controls AnUnlistedTargetNamingAMovingType_IsNamed, AListedTargetNoLongerInItsFile_IsNamed, AFileTheTargetScanMustRead_IsNamedWhenMissing pass. test-selection-show on the membership test file prints backend: true, others false. Target list is empty on real code; not diffed against a pre-move selection.",
+"F232": "Rule patterns: EveryRulePatternThatSeesAMovingRefinementType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads passes; TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole passes; whole rule set passed. I ran no own probe type in the new namespace.",
+"F233": "Outside-module alternatives: NoModulesRefinementAlternativeOfARulePattern_MatchesAProductionNamespaceOrTypeOutsideModulesRefinement and TheModulesRefinementAlternativeCheck_NamesAMadeUpAlternativeThatReachesALookalike_AndPassesTheAnchoredOnes pass.",
+"F234": "Exact-namespace rules in RefinementModuleArchUnitTest (The_need_calculator_lives_in_the_Refinement_module, The_Refinement_module_reaches_neither_the_trackers_nor_the_background_updates, Nothing_but_the_API_and_the_composition_root_depends_on_the_Refinement_module) pass in the full run. I removed no map entry myself; the membership test names a map missing a type.",
+"F235": "String sweep: TheStringsInTheTestProjectThatNameRefinementByItsOldPath_AreExactlyTheFixedRenameList passes on real tree; TheRenameListCheck_NamesAnUnlistedOldPathString_AndAListedStringThatNoLongerExists passes (both ways). Shrink-only over time not observable in one run.",
+"F236": "ef-model-unchanged: Sqlite and Postgres both report No changes have been made to the model since the last migration.",
+"F237": "git diff --name-only main...HEAD excluding docs/ and Backend.Tests is empty: only test-project files and docs changed; no production file changed.",
+"F238": "backend-tests whole suite: Test Run Successful, 14618 total, 14606 passed, 0 failed, 12 skipped.",
+"F239": "Whole backend suite green (14606 passed, 0 failed). test-selection-show runs and selects; no pre-move baseline to compare selections.",
 "F24": "Re-measurement on the worktree HEAD d35488500 by text (noisy): the old-path literals in the test project are AccessModuleBoundariesArchUnitTest line 107 (VoterIdentityResolver full name), CategoryListOwnershipGuardTest line 20 and RepositoryLeakRatchetArchUnitTest line 46 (RefinementList.cs path), TrackerIntegrationModuleBoundariesArchUnitTest line 445 (IRefinementViewQuery full name), RefinementModuleArchUnitTest lines 31, 33, 37, 39, and, new against the DESIGN record, 16 rows of PlatformLaneUnitTestPlacementTest.ProductionFilesThatStay (lines 65-77 and 159-161) naming every moving Refinement file with owner Refinement. Those 16 rows go on the rename list as removed by feature B. The global:: reference at TrackerIntegrationModuleBoundariesArchUnitTest line 870 is compile-checked, not a literal. code-fact answered through textsearch at noisy confidence with no C# atoms; facts here come from git grep and reading; the IL measurement of A1 decides.",
 "F25": "P4: no production file, migration, Data, Models, frontend or E2E file changes in this feature; the existing backend suite stays green.",
 "F26": "Each slice has its own oracle file; a later slice never edits an earlier slice oracle or support. RefinementMembership.cs is the S1 support and is read, never edited, by S2.",

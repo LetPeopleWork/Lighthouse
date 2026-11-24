@@ -647,6 +647,118 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>architecture-rules whole rule set: 1746/1746 passed. Membership tests pass: TheRefinementTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove_EachFoundOnce, EachTypeThatStays_IsInTheCompiledCodeWhereListed, TheTargetsNamingAMovingType_AreExactlyTheOnesListed.
+</code></pre>
+
+<pre><code>Negative controls pass with named failures: AMadeUpNameOnTheMap_IsNamedAsNotInTheCode, AListedTypeTheCodeNoLongerHolds_IsNamedAsNotInTheCode, AMapWithOneTypeLeftOff, ATypeFoundInItsNewNamespaceInsteadOfItsOld_IsStillOnTheMap, ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice, namesake and duplicate cases.
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Negative controls pass with named failures: AMadeUpNameOnTheMap_IsNamedAsNotInTheCode, AListedTypeTheCodeNoLongerHolds_IsNamedAsNotInTheCode, AMapWithOneTypeLeftOff, ATypeFoundInItsNewNamespaceInsteadOfItsOld_IsStillOnTheMap, ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice, namesake and duplicate cases.
+</code></pre>
+
+<h3>E3</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Layer rule passes: EachFileIsDomain_ExactlyWhenItIsNoPortFile_AndEveryTypeItDeclaresReachesOnlyTheSharedModels...; controls AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches, AKernelOnlyFileListedAsApplication_IsNamed, port-file split, made-up Domain lookalike all pass.
+</code></pre>
+
+<h3>E4</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Targets record: TheTargetsNamingAMovingType_AreExactlyTheOnesListed passes; controls AnUnlistedTargetNamingAMovingType_IsNamed, AListedTargetNoLongerInItsFile_IsNamed, AFileTheTargetScanMustRead_IsNamedWhenMissing pass. test-selection-show on the membership test file prints backend: true, others false. Target list is empty on real code; not diffed against a pre-move selection.
+</code></pre>
+
+<h3>E5</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Rule patterns: EveryRulePatternThatSeesAMovingRefinementType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads passes; TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole passes; whole rule set passed. I ran no own probe type in the new namespace.
+</code></pre>
+
+<h3>E6</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Outside-module alternatives: NoModulesRefinementAlternativeOfARulePattern_MatchesAProductionNamespaceOrTypeOutsideModulesRefinement and TheModulesRefinementAlternativeCheck_NamesAMadeUpAlternativeThatReachesALookalike_AndPassesTheAnchoredOnes pass.
+</code></pre>
+
+<h3>E7</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Exact-namespace rules in RefinementModuleArchUnitTest (The_need_calculator_lives_in_the_Refinement_module, The_Refinement_module_reaches_neither_the_trackers_nor_the_background_updates, Nothing_but_the_API_and_the_composition_root_depends_on_the_Refinement_module) pass in the full run. I removed no map entry myself; the membership test names a map missing a type.
+</code></pre>
+
+<h3>E8</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>String sweep: TheStringsInTheTestProjectThatNameRefinementByItsOldPath_AreExactlyTheFixedRenameList passes on real tree; TheRenameListCheck_NamesAnUnlistedOldPathString_AndAListedStringThatNoLongerExists passes (both ways). Shrink-only over time not observable in one run.
+</code></pre>
+
+<h3>E9</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>String sweep: TheStringsInTheTestProjectThatNameRefinementByItsOldPath_AreExactlyTheFixedRenameList passes on real tree; TheRenameListCheck_NamesAnUnlistedOldPathString_AndAListedStringThatNoLongerExists passes (both ways). Shrink-only over time not observable in one run.
+</code></pre>
+
+<h3>E10</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>ef-model-unchanged: Sqlite and Postgres both report No changes have been made to the model since the last migration.
+</code></pre>
+
+<h3>E11</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>git diff --name-only main...HEAD excluding docs/ and Backend.Tests is empty: only test-project files and docs changed; no production file changed.
+</code></pre>
+
+<h3>E12</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>backend-tests whole suite: Test Run Successful, 14618 total, 14606 passed, 0 failed, 12 skipped.
+</code></pre>
+
+<pre><code>Whole backend suite green (14606 passed, 0 failed). test-selection-show runs and selects; no pre-move baseline to compare selections.
+</code></pre>
 
 </body></html>

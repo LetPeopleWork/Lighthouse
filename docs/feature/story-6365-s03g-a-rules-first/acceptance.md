@@ -566,4 +566,130 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules whole rule set: 1746/1746 passed. Membership tests pass: TheRefinementTypesInTheCompiledCode_AreExactlyTheTypesTheMapListsToMove_EachFoundOnce, EachTypeThatStays_IsInTheCompiledCodeWhereListed, TheTargetsNamingAMovingType_AreExactlyTheOnesListed.
+```
+
+```text
+Negative controls pass with named failures: AMadeUpNameOnTheMap_IsNamedAsNotInTheCode, AListedTypeTheCodeNoLongerHolds_IsNamedAsNotInTheCode, AMapWithOneTypeLeftOff, ATypeFoundInItsNewNamespaceInsteadOfItsOld_IsStillOnTheMap, ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice, namesake and duplicate cases.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Negative controls pass with named failures: AMadeUpNameOnTheMap_IsNamedAsNotInTheCode, AListedTypeTheCodeNoLongerHolds_IsNamedAsNotInTheCode, AMapWithOneTypeLeftOff, ATypeFoundInItsNewNamespaceInsteadOfItsOld_IsStillOnTheMap, ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice, namesake and duplicate cases.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Layer rule passes: EachFileIsDomain_ExactlyWhenItIsNoPortFile_AndEveryTypeItDeclaresReachesOnlyTheSharedModels...; controls AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches, AKernelOnlyFileListedAsApplication_IsNamed, port-file split, made-up Domain lookalike all pass.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Targets record: TheTargetsNamingAMovingType_AreExactlyTheOnesListed passes; controls AnUnlistedTargetNamingAMovingType_IsNamed, AListedTargetNoLongerInItsFile_IsNamed, AFileTheTargetScanMustRead_IsNamedWhenMissing pass. test-selection-show on the membership test file prints backend: true, others false. Target list is empty on real code; not diffed against a pre-move selection.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Rule patterns: EveryRulePatternThatSeesAMovingRefinementType_IsDeclared_AndKeepsItsRoleOnTheSubjectItsRuleReads passes; TheRoleCheck_NamesEachMadeUpPatternThatBreaksItsRole passes; whole rule set passed. I ran no own probe type in the new namespace.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Outside-module alternatives: NoModulesRefinementAlternativeOfARulePattern_MatchesAProductionNamespaceOrTypeOutsideModulesRefinement and TheModulesRefinementAlternativeCheck_NamesAMadeUpAlternativeThatReachesALookalike_AndPassesTheAnchoredOnes pass.
+```
+
+### E7
+
+met
+
+#### Observations
+
+```text
+Exact-namespace rules in RefinementModuleArchUnitTest (The_need_calculator_lives_in_the_Refinement_module, The_Refinement_module_reaches_neither_the_trackers_nor_the_background_updates, Nothing_but_the_API_and_the_composition_root_depends_on_the_Refinement_module) pass in the full run. I removed no map entry myself; the membership test names a map missing a type.
+```
+
+### E8
+
+met
+
+#### Observations
+
+```text
+String sweep: TheStringsInTheTestProjectThatNameRefinementByItsOldPath_AreExactlyTheFixedRenameList passes on real tree; TheRenameListCheck_NamesAnUnlistedOldPathString_AndAListedStringThatNoLongerExists passes (both ways). Shrink-only over time not observable in one run.
+```
+
+### E9
+
+met
+
+#### Observations
+
+```text
+String sweep: TheStringsInTheTestProjectThatNameRefinementByItsOldPath_AreExactlyTheFixedRenameList passes on real tree; TheRenameListCheck_NamesAnUnlistedOldPathString_AndAListedStringThatNoLongerExists passes (both ways). Shrink-only over time not observable in one run.
+```
+
+### E10
+
+met
+
+#### Observations
+
+```text
+ef-model-unchanged: Sqlite and Postgres both report No changes have been made to the model since the last migration.
+```
+
+### E11
+
+met
+
+#### Observations
+
+```text
+git diff --name-only main...HEAD excluding docs/ and Backend.Tests is empty: only test-project files and docs changed; no production file changed.
+```
+
+### E12
+
+met
+
+#### Observations
+
+```text
+backend-tests whole suite: Test Run Successful, 14618 total, 14606 passed, 0 failed, 12 skipped.
+```
+
+```text
+Whole backend suite green (14606 passed, 0 failed). test-selection-show runs and selects; no pre-move baseline to compare selections.
+```
