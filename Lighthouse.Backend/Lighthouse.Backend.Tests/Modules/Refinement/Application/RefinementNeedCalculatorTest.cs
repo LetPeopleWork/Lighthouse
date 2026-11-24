@@ -8,7 +8,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {
     [TestFixture]
     public class RefinementNeedCalculatorTest

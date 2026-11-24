@@ -5,7 +5,7 @@ using Lighthouse.Backend.Modules.Access.Application;
 using Microsoft.AspNetCore.Http;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {
     public class VoterIdentityResolverTest
     {

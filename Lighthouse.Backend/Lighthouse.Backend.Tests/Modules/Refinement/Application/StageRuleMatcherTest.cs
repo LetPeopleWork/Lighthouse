@@ -6,7 +6,7 @@ using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {
     [TestFixture]
     public class StageRuleMatcherTest

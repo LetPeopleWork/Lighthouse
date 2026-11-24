@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Modules.Refinement.Application;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {
     [TestFixture]
     public class RefinementResolutionTest

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {
     public class SizingLogCommandsTest
     {

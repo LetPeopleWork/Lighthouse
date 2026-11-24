@@ -6,7 +6,7 @@ using Lighthouse.Backend.Modules.Refinement.Application;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {
     [TestFixture]
     public class SleYardstickResolverTest

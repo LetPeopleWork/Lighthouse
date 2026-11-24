@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {
     // October 2026: Friday 2, Saturday 3, Sunday 4, Monday 5, Tuesday 6, Wednesday 7, Thursday 8.
     [TestFixture]

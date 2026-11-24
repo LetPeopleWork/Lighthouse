@@ -5,7 +5,7 @@ using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
+namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {
     [TestFixture]
     public class RefinementListTest
