@@ -670,4 +670,52 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules Access (127 tests) and Licen (112 tests) ran green via probe, including offender-in-Modules fixture cases, membership 'AreExactlyTheTypesListed', 'NoTypeIsOnTwoLists', layer and Models-admission tests. Fixture-level negatives not individually inspected.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules Access (127 tests) and Licen (112 tests) ran green via probe, including offender-in-Modules fixture cases, membership 'AreExactlyTheTypesListed', 'NoTypeIsOnTwoLists', layer and Models-admission tests. Fixture-level negatives not individually inspected.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+access-answers-compare --compare-captures on my own fixtures (run directly; probe wrapper refused absolute paths): identical pair -> IDENTICAL exit 0; one answer (licence-after) differing -> DIFFERENT naming file/diff, exit 1; empty folders -> FAILED nothing compared, exit 1. access-answers-selftest 23 checks passed incl usage naming all answers. Real revision-pair capture not run (needs backend/dotnet, over 120s).
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+ci-auth-suites-show: only the repo recorded-gh-fixture script test-ci-auth-suites-show.sh run (18 checks ok): failed RBAC step shown failure, job failure, missing proxy step shown missing, in-progress run skipped, newest finished run chosen. Not my own fixture; real gh not contacted.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+ef-model-unchanged probe: Sqlite and Postgres no model changes. Recent history of Lighthouse.Backend shows only test/fixture files in sampled commits. Full existing-suite pass not run (exceeds 120s); not a probe failure.
+```

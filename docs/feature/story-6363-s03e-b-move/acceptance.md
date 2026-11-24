@@ -688,4 +688,82 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests LayoutArchUnit: 187 passed (layout and placement arch tests incl Licensing and Access layout rules).
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests LayoutArchUnit: 187 passed (layout and placement arch tests incl Licensing and Access layout rules).
+```
+
+```text
+Probe architecture-rules Access: 127 passed incl TheAccessDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary and both-way list rules.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests LayoutArchUnit: 187 passed (layout and placement arch tests incl Licensing and Access layout rules).
+```
+
+```text
+Probe backend-tests AccessAdaptersHttp: 232 passed; backend-tests Licens ran narrow ok. Not run: full suite, real two-revision access-answers-compare, live HTTP answers.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests LicensingTestDataPlacement: 16 passed (TestLicenseData and LicensingIntegrationTest namespace; fixture path rule both directions).
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules Access: 127 passed incl TheAccessDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary and both-way list rules.
+```
+
+```text
+Probe backend-tests AccessAdaptersHttp: 232 passed; backend-tests Licens ran narrow ok. Not run: full suite, real two-revision access-answers-compare, live HTTP answers.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Probe ef-model-unchanged: Sqlite and Postgres report no model changes since last migration.
+```
+
+```text
+Probe backend-tests AccessAdaptersHttp: 232 passed; backend-tests Licens ran narrow ok. Not run: full suite, real two-revision access-answers-compare, live HTTP answers.
+```
+
+```text
+Probe ci-auth-suites-show: CI run 45394454475 on commit 8e0b2fe4e: Verify Authentication, Auth, RBAC, proxied-auth Playwright all success. That commit is the pre-candidate HEAD so it may not include the candidate; limitation.
+```

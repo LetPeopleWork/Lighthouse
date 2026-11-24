@@ -311,7 +311,7 @@
 "counters": {
 "D": 9,
 "E": 7,
-"F": 227,
+"F": 230,
 "K": 3,
 "L": 4,
 "P": 4,
@@ -836,6 +836,50 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F228"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F228"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F228"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F228"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F229"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F229"
+],
+"verdict": "met"
+},
+"E7": {
+"observations": [
+"F230"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1022,7 +1066,10 @@
 "F225": "Every existing test stays green apart from the two module-map tests retired with the old key; no production file changes",
 "F226": "Users, trackers, the database and the licence check see no change",
 "F227": "a production edit that no existing test observes; review of the diff catches it",
+"F228": "architecture-rules ModuleBoundaries: 186/186 passed, incl. Access/Licensing rule lists, every-entry-deleted named-offender tests per list (OutsideTypesReachingTheHttpAdapters, Application edges), TheAccessDomain reach, LayerPlacement none left in old Services, neighbour WorkItems/Forecasting lists keep entries under Modules.",
+"F229": "backend-tests AccessAndLicensingUnitTestPlacementTest: 15/15 passed: unit tests in layer folder, no file left in old folders prod or tests, made-up misplaced test/old-folder file/old-name map key reported with twins not. grep finds no RbacIdentityPattern in backend.",
 "F23": "Confirmed (DESIGN record, RbacIdentityPattern retired in C3): ModuleBoundariesArchUnitTest.cs loses RbacIdentityPattern (lines 22-23), RbacIdentityModule (lines 64-65) and its one assertion, the not-empty check at line 124; no other member of that file changes. The not-empty claim is carried by the new module rules: TypesLiveInTheirLayer fails on a listed Access or Licensing type that is absent (MissingSubjects) and DomainReachesOnlyTheKernelAndTheBaseLibrary fails on an empty Access Domain. The key is also read by name in feature A's oracle AccessAndLicensingRulesSeeTheModulesArchUnitTest: the two tests that read it (AServiceUnderTheModuleReachingARepository_IsNamedByTheModuleMapsAccessAndLicensingNamespaces_AsItsTwinInTheOldPlaceIs, lines 63-81, and AnAccessServiceAskingTheLicenceUnderTheModules_StaysInsideOneModuleOnTheModuleMap_AsItsTwinInTheOldPlaceDoes, lines 155-175) and the private helpers and fixtures only they use are removed in the same slice, because the module map they guard no longer exists; its Access-asks-Licensing legality is carried by R-A7 (Licensing not forbidden) and R-L3 (Access Application a legal caller). Every other test of that file, and the old-place alternatives in the Work Items, Tracker integration, Promises and Forecasting keys, stay unchanged.",
+"F230": "architecture-rules EveryActionDeclaresItsAccess 21/21, AccessTablesSingleReader 1/1, LicenseGateSingleSource 1/1, Guard fragment 227/227 passed. Wider full-suite and route/answer unchanged not run (120s limit); access-answers-compare two-revision capture not run.",
 "F24": "Confirmed (D-9, maintainer answer 2026-11-17): Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessAndLicensingUnitTestPlacementTest.cs, modelled on PromisesUnitTestPlacementTest, checks that every unit test of an Access or Licensing type (the AccessAndLicensingMembership types) lives under Tests/Modules/Access or Tests/Modules/Licensing in the folder of its subject's layer (Domain, Application, Adapters/Http), and that no file is left in Services/Implementation or Services/Interfaces under Auth, Authorization or Licensing, in production or tests, with no per-file exception (B4 moved the licence data; LicensingTestDataPlacementTest stays as it is). Integration, acceptance, controller, contract and architecture test roots are not judged; tests of other contexts that mock an Access or Licensing port are not Access unit tests. Each rule also runs on a made-up tree (PlacementFixtures/Modules/Access, PlacementFixtures/Modules/Licensing and a made-up file in an old folder), which must be reported. Measured: those old folders hold 0 files today.",
 "F26": "Claim-to-checker: every claim of feature C is a finite fact of the compiled IL or of the file tree: namespace placement, the exact set of edges per rule, the location of each test file, and the absence of a key that sees the old namespaces. Each is decided exactly by its NUnit architecture oracle (Finite laws) with a made-up offender per rule as falsifier. No Quint, TLA+ or Agda model is selected: no state machine, ordering, concurrency, recovery or progress claim exists (no production code changes), and a model would restate the namespace map and could not fail. Liveness is not applicable: nothing waits for progress. Types: the rule lists are string sets compared both ways by InlineBaseline; the C# compiler checks the new rule's signature; property tests add nothing over a finite edge set. Paradigm object_oriented (repository authority); the work is test-side rule code; nw-code-design-oo smells applied: duplicated knowledge (one shared rule, not a copy per module) and a false reason in a rule text; namespace patterns stay strings, as in every existing rule file.",
 "F29": "Rule lists only shrink and are never loosened: inline full-name lists compared both ways against the IL (IlDependencies, which sees base types, interfaces, members, signatures, method bodies, applied attributes and their constructor arguments, and misses catch-clause, event and attribute-named-argument references); exemptions are exact per type and its nested types, never a namespace or layer; holdings compare top-level types. A legal caller namespace is the API (Lighthouse.Backend.API) or a named module layer; the composition root is Lighthouse.Backend.Program.",

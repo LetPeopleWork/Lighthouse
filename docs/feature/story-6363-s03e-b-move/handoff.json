@@ -357,7 +357,7 @@
 "C": 1,
 "D": 8,
 "E": 6,
-"F": 346,
+"F": 352,
 "K": 3,
 "L": 4,
 "P": 6,
@@ -6030,6 +6030,49 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F347"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F347",
+"F348"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F347",
+"F349"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F350"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F348",
+"F349"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F351",
+"F349",
+"F352"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -6352,7 +6395,13 @@
 "F344": "Same answers as before",
 "F345": "Nothing a user sees changes",
 "F346": "This oracle observes placement only; behaviour is preserved by the existing licence unit and controller tests and the live authentication probes",
+"F347": "Probe backend-tests LayoutArchUnit: 187 passed (layout and placement arch tests incl Licensing and Access layout rules).",
+"F348": "Probe architecture-rules Access: 127 passed incl TheAccessDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary and both-way list rules.",
+"F349": "Probe backend-tests AccessAdaptersHttp: 232 passed; backend-tests Licens ran narrow ok. Not run: full suite, real two-revision access-answers-compare, live HTTP answers.",
 "F35": "Producer and consumer ship in one deployable and change in the same commit; the move changes no wire or persisted shape, so the unchanged existing tests, access-answers-compare and the layout oracles cover it",
+"F350": "Probe backend-tests LicensingTestDataPlacement: 16 passed (TestLicenseData and LicensingIntegrationTest namespace; fixture path rule both directions).",
+"F351": "Probe ef-model-unchanged: Sqlite and Postgres report no model changes since last migration.",
+"F352": "Probe ci-auth-suites-show: CI run 45394454475 on commit 8e0b2fe4e: Verify Authentication, Auth, RBAC, proxied-auth Playwright all success. That commit is the pre-candidate HEAD so it may not include the candidate; limitation.",
 "F36": "ArchUnit layout oracles reading the compiled Lighthouse.Backend assembly (IlDependencies and ModuleRules), the test assembly and its output folder; existing HTTP ports, ASP.NET authentication schemes and the application-service ports IRbacAdministrationService and ILicenseService unchanged",
 "F37": "none changed (repositories, LighthouseAppContext and the embedded licence key stay behind their existing access paths)",
 "F38": "Access Domain reaches only the shared kernel and the base library; Access Application reaches what it reaches today (Domain, kernel, Models entities, repositories, LighthouseAppContext, EmbedConfiguration, Licensing Application); Access and Licensing Adapters/Http are reached from API and the composition root; Licensing reaches no Access type; no edge is added or removed, only namespaces change",

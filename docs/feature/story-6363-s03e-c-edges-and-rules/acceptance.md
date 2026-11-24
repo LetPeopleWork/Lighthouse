@@ -610,4 +610,72 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules ModuleBoundaries: 186/186 passed, incl. Access/Licensing rule lists, every-entry-deleted named-offender tests per list (OutsideTypesReachingTheHttpAdapters, Application edges), TheAccessDomain reach, LayerPlacement none left in old Services, neighbour WorkItems/Forecasting lists keep entries under Modules.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules ModuleBoundaries: 186/186 passed, incl. Access/Licensing rule lists, every-entry-deleted named-offender tests per list (OutsideTypesReachingTheHttpAdapters, Application edges), TheAccessDomain reach, LayerPlacement none left in old Services, neighbour WorkItems/Forecasting lists keep entries under Modules.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+architecture-rules ModuleBoundaries: 186/186 passed, incl. Access/Licensing rule lists, every-entry-deleted named-offender tests per list (OutsideTypesReachingTheHttpAdapters, Application edges), TheAccessDomain reach, LayerPlacement none left in old Services, neighbour WorkItems/Forecasting lists keep entries under Modules.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+architecture-rules ModuleBoundaries: 186/186 passed, incl. Access/Licensing rule lists, every-entry-deleted named-offender tests per list (OutsideTypesReachingTheHttpAdapters, Application edges), TheAccessDomain reach, LayerPlacement none left in old Services, neighbour WorkItems/Forecasting lists keep entries under Modules.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+backend-tests AccessAndLicensingUnitTestPlacementTest: 15/15 passed: unit tests in layer folder, no file left in old folders prod or tests, made-up misplaced test/old-folder file/old-name map key reported with twins not. grep finds no RbacIdentityPattern in backend.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+backend-tests AccessAndLicensingUnitTestPlacementTest: 15/15 passed: unit tests in layer folder, no file left in old folders prod or tests, made-up misplaced test/old-folder file/old-name map key reported with twins not. grep finds no RbacIdentityPattern in backend.
+```
+
+### E7
+
+met
+
+#### Observations
+
+```text
+architecture-rules EveryActionDeclaresItsAccess 21/21, AccessTablesSingleReader 1/1, LicenseGateSingleSource 1/1, Guard fragment 227/227 passed. Wider full-suite and route/answer unchanged not run (120s limit); access-answers-compare two-revision capture not run.
+```
