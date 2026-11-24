@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Threading.Channels;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
-using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
+using Lighthouse.Backend.Platform.DatabaseManagement;
 
 namespace Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background
 {

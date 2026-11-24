@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The backup archive is unlocked with a password the operator types, not with a key from the ring,
         // so nothing on the secret read path passes through here and this catch cannot absorb an unreadable
         // secret. It is named rather than pattern-matched so that a second one has to be argued for.
-        private const string BackupArchiveReader = "Services/Implementation/DatabaseManagement/DatabaseManagementService.cs";
+        private const string BackupArchiveReader = "Platform/DatabaseManagement/DatabaseManagementService.cs";
 
         private static readonly string[] DirectoriesThatAreNotSource = ["/obj/", "/bin/"];
 

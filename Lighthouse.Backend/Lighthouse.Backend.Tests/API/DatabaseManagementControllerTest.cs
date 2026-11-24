@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
+using Lighthouse.Backend.Platform.DatabaseManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;

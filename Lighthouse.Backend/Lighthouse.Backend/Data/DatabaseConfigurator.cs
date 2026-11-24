@@ -1,8 +1,7 @@
 using System.Data;
 using System.Data.Common;
-using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
-using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
-using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Platform.DatabaseManagement;
+using Lighthouse.Backend.Platform.Seeding;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;

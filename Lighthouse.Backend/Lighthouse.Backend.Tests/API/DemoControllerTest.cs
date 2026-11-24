@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Platform.DemoData;
 using Lighthouse.Backend.Models.DemoData;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Interfaces;

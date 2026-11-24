@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             // Match production startup seeding (and the TimeInState metrics-read precedent): the metrics
             // read ports resolve TeamMetricsService, whose constructor reads the TeamDataRefresh AppSettings.
             // EnsureCreated does not run the runtime seeders, so seed them explicitly here.
-            foreach (var seeder in setupScope.ServiceProvider.GetServices<Lighthouse.Backend.Services.Interfaces.Seeding.ISeeder>())
+            foreach (var seeder in setupScope.ServiceProvider.GetServices<Lighthouse.Backend.Platform.Seeding.ISeeder>())
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }

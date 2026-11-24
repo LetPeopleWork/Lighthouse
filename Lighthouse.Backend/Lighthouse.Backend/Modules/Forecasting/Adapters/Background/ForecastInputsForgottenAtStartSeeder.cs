@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Platform.Seeding;
 
 namespace Lighthouse.Backend.Modules.Forecasting.Adapters.Background
 {

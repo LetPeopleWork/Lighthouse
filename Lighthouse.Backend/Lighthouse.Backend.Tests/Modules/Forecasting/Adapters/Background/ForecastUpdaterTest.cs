@@ -3,7 +3,7 @@ using Lighthouse.Backend.Modules.Forecasting.Adapters.Background;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
+using Lighthouse.Backend.Platform.DatabaseManagement;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;

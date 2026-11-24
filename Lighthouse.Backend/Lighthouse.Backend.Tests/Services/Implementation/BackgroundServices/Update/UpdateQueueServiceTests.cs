@@ -1,8 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
-using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
+using Lighthouse.Backend.Platform.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;

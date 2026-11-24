@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] OtherOutsideTypesReachingTheApplication =
         [
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService",
-            "Lighthouse.Backend.Services.Implementation.DatabaseManagement.DatabaseMaintenanceGate",
+            "Lighthouse.Backend.Platform.DatabaseManagement.DatabaseMaintenanceGate",
             "Lighthouse.Backend.Services.Implementation.FeatureListActiveWork",
             "Lighthouse.Backend.Services.Implementation.WriteBackTriggerService",
         ];

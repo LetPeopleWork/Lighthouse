@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
-using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Platform.Seeding;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Seeding

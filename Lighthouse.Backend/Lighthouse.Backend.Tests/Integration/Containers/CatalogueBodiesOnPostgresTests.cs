@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Platform.Seeding;
 using Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;

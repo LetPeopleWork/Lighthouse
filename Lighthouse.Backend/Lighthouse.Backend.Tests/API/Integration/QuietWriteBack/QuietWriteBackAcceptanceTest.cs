@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             // The refresh reads app settings on its way to write-back, and an unseeded settings table
             // makes it throw before it ever gets there - which looks exactly like "write-back did not
             // fire" and would have made half of these scenarios pass for the wrong reason.
-            foreach (var seeder in setupScope.ServiceProvider.GetServices<Lighthouse.Backend.Services.Interfaces.Seeding.ISeeder>())
+            foreach (var seeder in setupScope.ServiceProvider.GetServices<Lighthouse.Backend.Platform.Seeding.ISeeder>())
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }

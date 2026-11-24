@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
-using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
+using Lighthouse.Backend.Platform.DatabaseManagement;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API

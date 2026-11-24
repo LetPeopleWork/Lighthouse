@@ -4,7 +4,7 @@ using System.Text.Json;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
-using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Platform.Seeding;
 using Lighthouse.Backend.Tests.Acceptance.PercentilesOverTime;
 using Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck;
 using Lighthouse.Backend.Tests.API.Integration.Refinement;

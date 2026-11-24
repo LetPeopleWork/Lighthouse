@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             dbContext.Database.EnsureDeleted();
             dbContext.Database.EnsureCreated();
 
-            foreach (var seeder in setupScope.ServiceProvider.GetServices<Lighthouse.Backend.Services.Interfaces.Seeding.ISeeder>())
+            foreach (var seeder in setupScope.ServiceProvider.GetServices<Lighthouse.Backend.Platform.Seeding.ISeeder>())
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }

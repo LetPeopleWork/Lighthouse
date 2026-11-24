@@ -3,7 +3,7 @@ using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Platform.Seeding;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.Contracts

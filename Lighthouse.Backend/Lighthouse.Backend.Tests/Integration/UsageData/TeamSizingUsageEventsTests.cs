@@ -7,7 +7,7 @@ using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Platform.Seeding;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;

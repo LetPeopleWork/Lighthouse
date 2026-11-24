@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
+using Lighthouse.Backend.Platform.DatabaseManagement;
 using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.SignalR;
