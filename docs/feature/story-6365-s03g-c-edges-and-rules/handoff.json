@@ -1,0 +1,599 @@
+{
+"counters": {
+"D": 5,
+"F": 81,
+"K": 1,
+"P": 3,
+"S": 2,
+"T": 2,
+"Y": 2
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F22",
+"driving_port": "F21"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F24",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F23"
+},
+{
+"axis": "Inhabitation",
+"basis": "F25",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F23"
+},
+{
+"axis": "PublicReachability",
+"basis": "F26",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F23"
+},
+{
+"axis": "Liveness",
+"basis": "F27",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F23"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F20"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F15"
+},
+{
+"id": "D2",
+"text": "F16"
+},
+{
+"id": "D3",
+"text": "F17"
+},
+{
+"id": "D4",
+"text": "F18"
+},
+{
+"id": "D5",
+"text": "F19"
+}
+],
+"risks": [
+{
+"allowed": "F30",
+"forbidden": "F31",
+"id": "Y1",
+"kind": "Bypass",
+"owner": "Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs",
+"preserved": "F29",
+"residue": "F32",
+"source": "F28"
+},
+{
+"allowed": "F35",
+"forbidden": "F36",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs",
+"preserved": "F34",
+"residue": "F37",
+"source": "F33"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F55",
+"falsifier": "F56",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F54"
+},
+"records": {
+"agreement": [
+{
+"contract": "Refinement context pattern shared by rule files",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:23",
+"party": "Producer",
+"reason": "F77"
+},
+{
+"contract": "Refinement context pattern shared by rule files",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:1",
+"party": "Consumer",
+"reason": "F78"
+},
+{
+"contract": "Refinement context pattern shared by rule files",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:1",
+"party": "Consumer",
+"reason": "F78"
+},
+{
+"contract": "Refinement context pattern shared by rule files",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:1",
+"party": "Consumer",
+"reason": "F79"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefinementRulesNameOnlyTheModuleArchUnitTest",
+"id": "T2",
+"obligation": "F81",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule-pattern",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:23",
+"reason": "F67"
+},
+{
+"decision": "Changed",
+"kind": "test-rule-pattern",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:60",
+"reason": "F68"
+},
+{
+"decision": "Changed",
+"kind": "test-rule-pattern",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:65",
+"reason": "F69"
+},
+{
+"decision": "Changed",
+"kind": "test-rule-pattern",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:65",
+"reason": "F69"
+},
+{
+"decision": "Changed",
+"kind": "test-rule-pattern",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:32",
+"reason": "F70"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs:1",
+"reason": "F71"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesSeeTheMoveArchUnitTest.cs:25",
+"reason": "F72"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-measurement",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembership.cs:57",
+"reason": "F73"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule-pattern",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs:20",
+"reason": "F74"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementPatternRoles.cs:12",
+"reason": "F75"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementStringsTheMoveRenames.cs:15",
+"reason": "F76"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F49"
+},
+{
+"analysis": "prefactoring",
+"reason": "F80"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:23",
+"reason": "F57",
+"symbol": "RefinementPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:32",
+"reason": "F58",
+"symbol": "RefinementModuleArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:1",
+"reason": "F59",
+"symbol": "NamespaceMoveLaw"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesSeeTheMoveArchUnitTest.cs:81",
+"reason": "F60",
+"symbol": "RefinementRulesNameOnlyTheModuleArchUnitTest"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementPatternRoles.cs:12",
+"reason": "F61",
+"symbol": "RefinementPatternRoles"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementStringsTheMoveRenames.cs:15",
+"reason": "F62",
+"symbol": "RefinementStringsTheMoveRenames"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:60",
+"reason": "F63",
+"symbol": "RefinementReportsAccessAndLicensing"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:65",
+"reason": "F64",
+"symbol": "RefinementAndReports"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:65",
+"reason": "F65",
+"symbol": "RefinementAndReports"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs:1",
+"reason": "F66",
+"symbol": "RefinementStringsTheMoveRenames"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F52"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F52"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F52"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F52"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs",
+"reason": "F52"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs",
+"reason": "F52"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesSeeTheMoveArchUnitTest.cs",
+"reason": "F53"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementPatternRoles.cs",
+"reason": "F53"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementStringsTheMoveRenames.cs",
+"reason": "F53"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefinementRulesNameOnlyTheModuleArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs",
+"public_oracle": {
+"expected": "F39",
+"falsifier": "F40",
+"promises": [
+"P2",
+"P3"
+],
+"stimulus": "F38"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefinementModuleBoundariesArchUnitTest",
+"id": "T1",
+"obligation": "F51",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:1",
+"reason": "F45"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs:1",
+"reason": "F46"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-rule-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleArchUnitTest.cs:185",
+"reason": "F47"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F48"
+},
+{
+"analysis": "contract_tests",
+"reason": "F49"
+},
+{
+"analysis": "prefactoring",
+"reason": "F50"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:45",
+"reason": "F41",
+"symbol": "ModuleRules"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleWording.cs:1",
+"reason": "F42",
+"symbol": "ModuleWording"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1",
+"reason": "F43",
+"symbol": "PromisesModuleBoundariesArchUnitTest"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1",
+"reason": "F44",
+"symbol": "RefinementModuleBoundariesArchUnitTest"
+}
+]
+},
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RefinementModuleBoundariesArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+}
+}
+},
+"facts": {
+"F1": "ADO Story #6365 S03g Package Refinement, feature C (edges and rules): every Refinement rule names Refinement by Modules.Refinement only, and no rule constant or string literal in the test project still matches the old Services.Implementation.Refinement or Services.Interfaces.Refinement namespaces or paths (C1); Refinement gets its own module rule set on ModuleRules, read from the IL with baselines measured there and lists inline by full type name, compared both ways and never loosened: R-R1 each listed type in its layer and none under Services, R-R2 Domain reaches only the kernel and the BCL, R-R3 outside reaches Domain only from API, the composition root and Refinement Application, R-R4 outside reaches Application only from API and the composition root, R-R5 Application reaches no EF Core, Data, API, module Adapters, Tracker integration or update code, R-R6 Application reaches Access, Organisation set-up, the Platform lane and repositories only along a measured list (C2). Test side only. DESIGN: docs/feature/story-6365-s03g-package-refinement/feature-delta.md; features A and B: docs/feature/story-6365-s03g-a-rules-first/ and docs/feature/story-6365-s03g-b-move/.",
+"F10": "Each slice's RED: C1 fails while any rule constant or literal still matches the old Refinement namespaces or paths (the old-namespace alternatives features A and B left in place); C2 fails on a made-up offender per rule and per list position. Behaviour is proved by the unchanged tests and EXAMINE through admitted probes (architecture-rules Refinement and all, backend-tests, ef-model-unchanged). Behaviour-free: no review window, UI and usage-data N/A, Quint N/A.",
+"F11": "C1: no rule constant or string literal in the test project matches the old Refinement namespaces or paths any more; every Refinement rule names Modules.Refinement only and keeps its verdict.",
+"F12": "No rule still points at where Refinement used to live",
+"F13": "C2: Refinement has its own module rules R-R1 to R-R6 on ModuleRules, read from the IL with measured inline lists, and each catches a made-up offender in Refinement's own wording.",
+"F14": "A new edge into or out of Refinement is caught by its own rules",
+"F15": "Question 1 (preservation law): retire feature A's Refinement call of the move law. Delete RefinementRulesSeeTheMoveArchUnitTest, RefinementPatternRoles and RefinementStringsTheMoveRenames, and drop the rename-list use in RefinementLivesInItsModuleArchUnitTest. Reason: the move is complete and feature B pins every type to its new namespace, so a law that compares old and new sight has no old side left, and a Refinement call kept as a move-complete check would be a second owner next to the C1 oracle. NamespaceMoveLaw, PatternDeclaration and PatternRoleMap stay: PlatformLaneRulesSeeTheMoveArchUnitTest still uses them.",
+"F16": "Question 2 (C1 oracle): one new file RefinementRulesNameOnlyTheModuleArchUnitTest owns the whole check. It reads every rule constant of the test assembly by reflection and sweeps every string literal of the test project sources for the four old forms (the old Implementation and Interfaces Refinement namespaces, as a plain name, a regex alternative or a group member, and the two old folder paths). A hit is allowed only in a declared measurement file (RefinementMembership, RefinementMembershipArchUnitTest, RefinementLivesInItsModuleArchUnitTest, RefinementUnitTestsBesideTheModuleArchUnitTest, NamespaceMoveLaw and the oracle itself); that list is compared both ways, so a listed file with no hit fails until it is removed. It also asserts that each Refinement rule pattern still matches a Refinement type in its new namespace, so narrowing cannot make a rule blind. Made-up offenders are fixtures declared to the oracle.",
+"F17": "Question 3 (C2): RefinementModuleBoundariesArchUnitTest on ModuleRules, modelled on PromisesModuleBoundariesArchUnitTest and LicensingModuleBoundariesArchUnitTest, with ModuleWording Refinement and the API. R-R1 TypesLiveInTheirLayer per layer (Domain, Application) with the former home set to the whole Services pattern; R-R2 DomainReachesOnlyTheKernelAndTheBaseLibrary; R-R3 DomainIsReachedFromOutsideOnlyBy with an empty list and legal callers by namespace (API, composition root, Refinement Application); R-R4 ApplicationIsReachedFromOutsideOnlyBy with an empty list and legal callers API and the composition root; R-R5 Application outbound forbidden targets (EF Core, Data, API, module Adapters, Tracker integration, update code) with an empty list; R-R6 OutboundEdges into Access, Organisation set-up, the Platform lane and repositories along an inline list measured from the IL by the acceptance designer. Expected list from the design record: VoterIdentityResolver to Access, RefinementCalendar to the blackout service and the clock, SleYardstickResolver to the clock, RefinementCadenceCalendar to WeeklyRecurrence, RefinementList to IWorkItemRepository, RefinementViewQuery and SizingLogCommands to ISizingLogRepository; the IL measurement wins over this expectation. Every list holds full type names, is compared both ways and only shrinks. Falsifiers: per rule and per list position a made-up type in a fixture namespace, in the style of ModuleRulesCatchANewOffenderArchUnitTest; each failure names the edge in Refinement wording.",
+"F18": "Question 4 (RefinementModuleArchUnitTest): it stays, with its PortFileTypes exclusion. The new set covers layers and edges only. It does not hold the static-ness of the settings validator, resolution, cadence arithmetic and need band, their Services-Implementation reach, the read path calling no writing repository member, the append-only sizing log, the votes controller or the migration cascades. C1 narrows only its three per-type patterns (resolution, cadence calendar, need band) to Modules.Refinement. The exclusion stays because the types under test and the port types share one Application namespace.",
+"F19": "Claim to checker: every claim is a finite set comparison over compiled IL or test sources, checked by native NUnit architecture tests through the real ModuleRules port. No state machine, temporal, fairness or proof claim exists, so Quint, TLA+/TLC and Agda are not applicable and no model file is delivered. Liveness is not applicable: the checks are synchronous and terminate. Carriers: the existing InboundVerdict, OutboundVerdict, KernelRuleVerdict and IlDependent records; no new carrier. Paradigm object_oriented with the repository's static rule classes; no domain object is added. Property testing: the lists are finite, so native table cases are used, not generators. code-fact was not used; callers were found by text search and the impact is closed by reading the test project.",
+"F2": "Refinement's boundaries are guarded by its own module rules and no rule still points at where it used to live",
+"F20": "Test side only: no production file, no Program.cs, no configuration key changes. No rule or list is loosened; every rule keeps its verdict on today's code. Lists are inline full type names, measured from the compiled IL, compared both ways. New files carry no constant or literal spelling the old Refinement paths, and no rule-pattern constant over Refinement types that the C1 oracle does not declare. Comments cite no internal ids. Default test budgets apply, no derogation is requested; the filtered full backend suite runs as a background job.",
+"F21": "NUnit architecture tests in Lighthouse.Backend.Tests/Architecture that call ModuleRules and IlDependencies over the compiled Lighthouse.Backend assembly and read the test project sources",
+"F22": "Test code reads production IL only; production never references the test project; the new rule file depends on ModuleRules, ModuleWording and IlDependencies",
+"F23": "Refinement rule set and narrowed rule constants",
+"F24": "A made-up offender per rule and list position is refused by the same ModuleRules verdicts the real code passes; baselines come from the IL",
+"F25": "Today's Refinement code passes every rule: Domain holds NeedBand, Application holds the 15 files, and the only outside caller of Domain is the votes controller in API",
+"F26": "dotnet test over the Architecture namespace reaches both oracles through NUnit discovery; the rules read the compiled assembly through ModuleRules",
+"F27": "Not applicable: the checks are synchronous finite comparisons with no progress or fairness claim",
+"F28": "A type is added to Refinement under a layer folder the rules do not name, or a new edge is hidden behind a lookalike namespace",
+"F29": "Every Refinement type is listed in a layer and every edge is on a measured list",
+"F3": "No rule constant and no string literal in the test project matches Services.Implementation.Refinement, Services.Interfaces.Refinement, Services/Implementation/Refinement or Services/Interfaces/Refinement any more: RefinementPattern, the Tracker integration, Access and Licensing lists and the per-type patterns of RefinementModuleArchUnitTest name Refinement by Modules.Refinement only, and every rule keeps its verdict on today's code.",
+"F30": "A list entry deleted when its edge disappears",
+"F31": "A rule or list loosened; a Refinement rule that matches nothing",
+"F32": "A type outside the listed layers is caught by the membership check of feature B, not by C; reflection and runtime-loaded types are invisible to IL reading",
+"F33": "Assumption: narrowing a pattern to Modules.Refinement keeps it seeing every Refinement type. Negated: a narrowed pattern is anchored wrong and matches nothing",
+"F34": "Each rule keeps its verdict on today's code",
+"F35": "none",
+"F36": "A rule that passes because its pattern matches no type",
+"F37": "The C1 oracle asserts every narrowed Refinement pattern still matches a Refinement type in its new namespace",
+"F38": "Run the Refinement boundaries oracle through dotnet test: ModuleRules reads the compiled Lighthouse.Backend assembly for R-R1 to R-R6",
+"F39": "Each rule passes on today's code with its inline list equal to the IL measurement in both directions; a made-up offender per rule and per list position fails the same rule and the failure names the edge in Refinement wording",
+"F4": "Refinement has its own module rule set on ModuleRules, read from the compiled IL, with every list inline by full type name, compared both ways and never loosened: each listed type sits in its layer and none under Services (R-R1); Domain reaches only the kernel and the BCL (R-R2); code outside Refinement reaches Domain only from API, the composition root and Refinement Application (R-R3) and Application only from API and the composition root (R-R4); Application reaches no EF Core, Data, API, module Adapters, Tracker integration or update code (R-R5), and reaches Access, Organisation set-up, the Platform lane and repositories only along a list measured from the IL (R-R6). A made-up offender for each rule and each list position makes the rule fail and the failure names the edge in Refinement's own wording.",
+"F40": "Fixture types in a made-up namespace: a Domain type reaching a service, an outside type reaching Domain or Application, an Application type reaching EF Core, Data, API, an Adapter, Tracker integration or update code, an unlisted Access, set-up, Platform or repository edge, each list entry deleted, and a listed entry with no edge; a rule that lets any of them through fails the oracle",
+"F41": "Owns the inbound, outbound, layer and kernel verdicts with their namespaces as parameters; Refinement passes its own, so no rule is written twice",
+"F42": "Gives the failure text its Refinement and the API wording",
+"F43": "Closest precedent, a context module with Domain and Application; copied in shape, not shared in code, because lists and made-up fixtures are per module",
+"F44": "No Refinement rule on ModuleRules exists; RefinementModuleArchUnitTest holds other guards and keeps them",
+"F45": "New oracle file; ModuleRules, ModuleWording and IlDependencies are not edited",
+"F46": "Covers the shared rules; Refinement lists and fixtures live in the new file",
+"F47": "Its only-API-and-composition-root rule stays beside the new R-R3 and R-R4; both agree on today's code",
+"F48": "The new file shares no contract; ModuleRules is read, not changed",
+"F49": "Test-side change in one deployable and one commit; no producer or consumer outlives the other",
+"F5": "Nothing a user, an API client, a tracker or the database sees changes: feature C edits only test-side rule files (no production file, no Program.cs, no configuration key), no rule or list is loosened, and the whole filtered backend suite stays green.",
+"F50": "No production code or existing rule is moved; the slice adds one new oracle file",
+"F51": "R-R1 to R-R6: each listed type in its layer and none under Services; Domain reaches only the kernel and the BCL; outside reaches Domain and Application only from the legal callers; Application reaches no forbidden code and reaches Access, set-up, Platform and repositories only along the measured list",
+"F52": "Narrow its Refinement pattern or literal to Modules.Refinement only",
+"F53": "Retire: the file is deleted, its law has no old side left",
+"F54": "Run the C1 oracle through dotnet test: it reads every rule constant of the test assembly and every string literal of the test project sources",
+"F55": "No rule constant or literal outside the declared measurement files matches an old Refinement namespace or folder path; every Refinement rule pattern still matches a Refinement type in Modules.Refinement; the Architecture namespace stays green",
+"F56": "Made-up fixtures in the oracle: a rule constant with an old-namespace alternative, a literal with an old folder path, a pattern anchored so it matches no Refinement type, and a listed measurement file with no hit are each named; the old alternatives in today's rule files fail it before the crafter narrows them",
+"F57": "The one Refinement context pattern; Flow metrics, Forecasting and Work Items callers are built from it, so narrowing it once reaches them",
+"F58": "Owns the three per-type patterns and the static-ness and read-path guards; no other owner decides them",
+"F59": "Stays for the Platform lane law; the Refinement law is retired, not rewritten",
+"F6": "Narrowing every Refinement rule constant and the per-type patterns to Modules.Refinement only, and settling feature A's preservation law and old-path sweep for Refinement now that the move is done; the RefinementModuleBoundariesArchUnitTest rule set R-R1 to R-R6 on ModuleRules with IL-measured baselines and made-up offenders.",
+"F60": "Feature A's law compares old and new sight and cannot hold once the old side is gone; the sweep over constants and literals is a different question with one owner",
+"F61": "Declares roles for the old and new sight of each pattern; with the old side gone it has no reader, so it is deleted",
+"F62": "Its rename list is empty and only the retired law and one placement test read it; deleted",
+"F63": "Owns the contexts Tracker integration must not reach; the Refinement part is narrowed in place",
+"F64": "Owns the contexts Access must not reach; the Refinement part is narrowed in place",
+"F65": "Owns the contexts Licensing must not reach; the Refinement part is narrowed in place",
+"F66": "Its placement test reads the retired rename list; it drops that read and keeps its membership checks",
+"F67": "RefinementPattern drops its old Services alternative",
+"F68": "The Refinement part leaves the Services group; Reports, Auth, Authorization and Licensing keep theirs",
+"F69": "The Refinement part leaves the Services group; Reports keeps its alternative",
+"F7": "Any production file or Program.cs change; a separate Refinement unit-test placement test (feature B's RefinementUnitTestsBesideTheModuleArchUnitTest already pins it); the architecture documents ARCHITECTURE.md section 4, ADR-270 and the Epic catalogue row, which the finalize checklist updates before the push; the sizing-log repository pair and Models/Refinement (stay).",
+"F70": "Three per-type patterns drop the old Implementation namespace",
+"F71": "Stops reading the retired empty rename list",
+"F72": "Deleted with RefinementPatternRoles and RefinementStringsTheMoveRenames; only RefinementLivesInItsModuleArchUnitTest read the rename list",
+"F73": "Measurement record of the move keeps the old namespaces on purpose; the C1 oracle lists it as a declared measurement file",
+"F74": "Measures the moving types in old and new namespaces; a declared measurement file",
+"F75": "Deleted with the retired law; no other file reads it",
+"F76": "Deleted; RefinementLivesInItsModuleArchUnitTest stops reading it in the same change",
+"F77": "RefinementPattern narrows to Modules.Refinement",
+"F78": "Builds its legal callers from RefinementPattern and follows it",
+"F79": "Builds its legal caller namespaces from RefinementPattern and follows it",
+"F8": "Rigor standard for feature C: architect, acceptance designer and crafter on sonnet; reviewers and EXAMINE on haiku (DESIGN open question 1, AFK default taken 2026-11-24).",
+"F80": "No production code moves; the existing rules are narrowed in place and the existing Architecture suite is the preserved verdict",
+"F81": "Every Refinement rule names Refinement by Modules.Refinement only and no rule constant or literal outside declared measurement files names an old Refinement namespace or path",
+"F9": "The Refinement unit-test placement test the DESIGN record names for S3 is not written again: feature B's RefinementUnitTestsBesideTheModuleArchUnitTest already pins the 11 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders."
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F8"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F9"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F10"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_in": [
+"F6"
+],
+"scope_out": [
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F11",
+"promises": [
+"P1",
+"P3"
+],
+"work": {
+"size": "S",
+"value": "F12"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F13",
+"promises": [
+"P2",
+"P3"
+],
+"work": {
+"size": "S",
+"value": "F14"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6365-s03g-c-edges-and-rules",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
