@@ -93,6 +93,153 @@ A pattern narrowed so far that it matches no Refinement type; a rule constant dr
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+A maintainer adds a Refinement type outside its layer, leaves one under Services, or lets Refinement Domain reach a service
+```
+
+```text
+Each listed Refinement type sits in its layer with none left under Services, the layers hold exactly their lists, and the Domain reaches only the kernel and the base library; a made-up misplaced type, an unlisted layer type and a Domain type reaching a service are each named while compliant twins pass
+```
+
+```text
+Refinement keeps its layers and a stray type is caught and named in Refinement wording
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs
+
+```text
+A layer check that only compares counts, or a Domain rule that allows any Services type, would still pass; the made-up offenders and the exact two-way layer lists refuse both
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+An outside type starts calling Refinement Domain or Application, or a listed caller stops doing so
+```
+
+```text
+Only the API, the composition root and Refinement Application reach the Domain, only the API and the composition root reach the Application, both lists are empty on today's code; a made-up newcomer is named while the API, root and a listed caller are not, a deleted listed caller is named as offending, and a gone entry is named for deletion; the failure speaks of Refinement and the API
+```
+
+```text
+A new caller of Refinement is caught and the failure names it in Refinement wording
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs
+
+```text
+A rule that treats all of Lighthouse.Backend.API or the whole root namespace as legal, or one that ignores calls written only inside an async method, would still pass; the newcomer fixtures include an async-only caller and unlisted namespaces
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A Refinement Application type starts holding an EF Core set, the data context, an API type, a module adapter, Tracker integration or update code
+```
+
+```text
+Today's Application reaches none of them with an empty list; a made-up type for each of the six is named with its edge in Refinement wording and a compliant twin that reaches a clock and legal neighbour Applications passes
+```
+
+```text
+Refinement cannot start depending on storage, the API, adapters, trackers or the update queue unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs
+
+```text
+A forbidden-code pattern missing one target (for example update code) would still pass; one fixture per target refuses that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A Refinement Application type starts reaching Access, Organisation set-up, the Platform lane or a repository along an edge not on the list, or a listed edge disappears
+```
+
+```text
+The 14 edges measured from the compiled code (Access identity, blackout service, clock, recurrence, Work Item and sizing-log repositories and the generic repository) equal the inline list both ways; deleting any entry is named as offending, a listed edge with no code is named for deletion, and a made-up unlisted Access, set-up, Platform lane or repository edge is named
+```
+
+```text
+A new edge from Refinement into those contexts is caught, and a removed edge forces the list to shrink
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs
+
+```text
+A list copied from the design expectation (missing the blackout edge of the need calculator and the generic repository edges) would still pass if only one direction were compared; the two-way comparison against the IL refuses it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The Refinement rule set runs through dotnet test on today's code with no production file edited
+```
+
+```text
+Every Refinement rule and list passes on the real compiled code with nothing loosened, so nothing a user, API client, tracker or database sees changes
+```
+
+```text
+No visible change; only test-side rules were added
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementModuleBoundariesArchUnitTest\.cs
+
+```text
+A rule set that passes because its patterns match nothing would still pass on real code; the C1 pattern check and the non-empty examined-type checks in the shared rules refuse blind patterns
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
