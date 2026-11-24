@@ -313,6 +313,59 @@ describe("useNamedPercentilesScope", () => {
 		expect(result.current.scopedPercentilesInfo).toBeNull();
 	});
 
+	it("lists no Work Items for the new named measure while its Work Items load, never the previous measure's", async () => {
+		const pendingItemsForB = deferred<IWorkItem[]>();
+		const { service } = serviceAnswering(
+			(id) => Promise.resolve(valuesFor(id)),
+			(id) => Promise.resolve(infoFor(id)),
+			(id) =>
+				id === 2 ? pendingItemsForB.promise : Promise.resolve(itemsFor(id)),
+		);
+		const { result } = renderScope(service);
+		act(() => result.current.handlePercentilesScopeChange(1));
+		await waitFor(() =>
+			expect(result.current.scopedPercentileItems).toEqual(itemsFor(1)),
+		);
+
+		act(() => result.current.handlePercentilesScopeChange(2));
+		await act(async () => {
+			await Promise.resolve();
+		});
+
+		expect(
+			result.current.scopedPercentileItems,
+			"WHAT: while measure 2's Work Items are still loading, the hook still returns measure 1's Work Items. " +
+				"WHY: View Data would list measure 1's Work Items under measure 2's title, showing the previous answer as if it were current. " +
+				"HOW: clear scopedPercentileItems to null when a new named measure is chosen, before its fetch answers.",
+		).toBeNull();
+		expect(result.current.percentilesScopeDefinitionId).toBe(2);
+	});
+
+	it("never lands a late Work Items answer for a measure the reader has left for the Default", async () => {
+		const lateItemsForA = deferred<IWorkItem[]>();
+		const { service } = serviceAnswering(
+			(id) => Promise.resolve(valuesFor(id)),
+			(id) => Promise.resolve(infoFor(id)),
+			() => lateItemsForA.promise,
+		);
+		const { result } = renderScope(service);
+		act(() => result.current.handlePercentilesScopeChange(1));
+
+		act(() => result.current.handlePercentilesScopeChange(null));
+		await act(async () => {
+			lateItemsForA.resolve(itemsFor(1));
+			await Promise.resolve();
+		});
+
+		expect(
+			result.current.scopedPercentileItems,
+			"WHAT: measure 1's Work Items arrived after the reader went back to the Default and were kept. " +
+				"WHY: View Data would list a named measure's Work Items under the Default window. " +
+				"HOW: discard any named answer whose selection is no longer the current one.",
+		).toBeNull();
+		expect(result.current.percentilesScopeDefinitionId).toBeNull();
+	});
+
 	it("discards an answer still on its way when the owner changes", async () => {
 		const lateValues = deferred<IPercentileValue[]>();
 		const lateInfo = deferred<ICycleTimePercentilesInfo>();
