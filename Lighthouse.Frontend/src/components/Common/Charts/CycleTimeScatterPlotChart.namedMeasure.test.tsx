@@ -1,12 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { IWorkItem } from "../../../models/WorkItem";
 import WidgetShell from "../../../pages/Common/MetricsView/WidgetShell";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { testTheme } from "../../../tests/testTheme";
+import { cellText, headerText } from "../../../tests/WorkItemsDialogTestKit";
 import { formatLocalDate } from "../../../utils/date/localDate";
+import type { WorkItemsDialogProps } from "../WorkItemsDialog/WorkItemsDialog";
 import CycleTimeScatterPlotChart from "./CycleTimeScatterPlotChart";
 
 vi.mock("@mui/material", async () => {
@@ -21,28 +25,32 @@ vi.mock("../../../services/UsageData/usageDataReporter", async (original) => ({
 	useUsageDataReporter: () => vi.fn(),
 }));
 
-// The list a dot opens shows its title and the Work Items it was handed.
-vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
-	default: ({
-		title,
-		items,
-		open,
-	}: {
-		title: string;
-		items: IWorkItem[];
-		open: boolean;
-	}) =>
-		open ? (
-			<section aria-label="Opened Work Items">
-				<h2>{title}</h2>
-				<ul>
-					{items.map((item) => (
-						<li key={item.id}>{item.name}</li>
-					))}
-				</ul>
-			</section>
-		) : null,
-}));
+const theList = vi.hoisted(() => ({ isReal: false }));
+
+// The list a dot opens shows its title and the Work Items it was handed, unless a test asks for the
+// real list to read its columns.
+vi.mock("../WorkItemsDialog/WorkItemsDialog", async (original) => {
+	const RealList = (
+		await original<typeof import("../WorkItemsDialog/WorkItemsDialog")>()
+	).default;
+	return {
+		default: (props: WorkItemsDialogProps) => {
+			if (theList.isReal) {
+				return <RealList {...props} />;
+			}
+			return props.open ? (
+				<section aria-label="Opened Work Items">
+					<h2>{props.title}</h2>
+					<ul>
+						{props.items.map((item) => (
+							<li key={item.id}>{item.name}</li>
+						))}
+					</ul>
+				</section>
+			) : null;
+		},
+	};
+});
 
 vi.mock("./TimeBlackoutOverlay", () => ({ default: () => null }));
 
@@ -191,11 +199,11 @@ const theMeasuresOwnItems: NamedDataFetch = (definitionId) =>
 			: [releasedItemD],
 	);
 
-const showTheChart = (fetchNamedData: NamedDataFetch) => {
+const theChart = (fetchNamedData: NamedDataFetch) => {
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
-	render(
+	return (
 		<QueryClientProvider client={client}>
 			<WidgetShell
 				widgetKey={WIDGET_KEY}
@@ -213,7 +221,20 @@ const showTheChart = (fetchNamedData: NamedDataFetch) => {
 					onFetchNamedCycleTimeData={fetchNamedData}
 				/>
 			</WidgetShell>
-		</QueryClientProvider>,
+		</QueryClientProvider>
+	);
+};
+
+const showTheChart = (fetchNamedData: NamedDataFetch) => {
+	render(theChart(fetchNamedData));
+};
+
+const showTheChartWithItsRealList = (fetchNamedData: NamedDataFetch) => {
+	theList.isReal = true;
+	render(
+		<ApiServiceContext.Provider value={createMockApiServiceContext({})}>
+			{theChart(fetchNamedData)}
+		</ApiServiceContext.Provider>,
 	);
 };
 
@@ -386,5 +407,36 @@ describe("Cycle Time scatterplot with a named Cycle Time", () => {
 			"An answer for a measure the reader has left must never land on the chart.",
 		).toEqual(["2026-11-18: 12"]);
 		expect(xAxisLabel()).toBe("Date reached In Production");
+	});
+});
+
+describe("the list a named Cycle Time's dot opens", () => {
+	beforeEach(() => {
+		theList.isReal = false;
+	});
+	afterEach(() => {
+		theList.isReal = false;
+	});
+
+	it("shows each listed Work Item's Cycle Time for the selected measure, also for one that is not closed", async () => {
+		showTheChartWithItsRealList(theMeasuresOwnItems);
+
+		await chooseMeasure("Analysis to Ready for Release");
+		await expectDots(
+			["2026-11-05: 6", "2026-11-12: 4"],
+			"The measure's own Work Items must be plotted before a dot can be opened.",
+		);
+		openTheDotOn("2026-11-12");
+
+		await vi.waitFor(() => {
+			expect(
+				headerText("cycleTime"),
+				"The list a named measure's dot opens must head its Cycle Time column with the measure, so the reader knows which Cycle Time the numbers are. Hand the list the selected measure as its Cycle Time scope.",
+			).toBe("Analysis to Ready for Release");
+		});
+		expect(
+			cellText("cycleTime", "B"),
+			"B reached Ready for Release 4 days after entering Analysis and is not closed; the list under a title of 'Cycle Time of 4 days' must show those 4 days, not the empty default Cycle Time of an open Work Item.",
+		).toBe("4");
 	});
 });
