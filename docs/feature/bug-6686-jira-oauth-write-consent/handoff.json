@@ -1,7 +1,89 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F26",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::A_connection_without_write_back_asks_Atlassian_only_to_read"
+},
+"expected": "F24",
+"stimulus": "F23",
+"user_result": "F25"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F30",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::A_connection_with_write_back_asks_Atlassian_to_read_and_write_work_items"
+},
+"expected": "F28",
+"stimulus": "F27",
+"user_result": "F29"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F34",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::Write_back_on_a_connection_signed_in_only_to_read_sends_nothing_and_logs_one_warning"
+},
+"expected": "F32",
+"stimulus": "F31",
+"user_result": "F33"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F38",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::A_connection_signed_in_before_rights_were_recorded_counts_as_read_only"
+},
+"expected": "F36",
+"stimulus": "F35",
+"user_result": "F37"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F42",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::After_the_admin_signs_in_again_with_write_consent_write_back_sends_the_change"
+},
+"expected": "F40",
+"stimulus": "F39",
+"user_result": "F41"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F46",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::A_connection_signed_in_with_an_API_token_keeps_writing_back"
+},
+"expected": "F44",
+"stimulus": "F43",
+"user_result": "F45"
+}
+]
+},
 "counters": {
 "E": 8,
-"F": 22,
+"F": 46,
 "P": 4,
 "S": 2
 },
@@ -156,8 +238,32 @@
 "F20": "Write-back on Azure DevOps OAuth connections and API-token connections keeps working as it did before this change.",
 "F21": "The write-consent warning names the connection's own tracker, Jira or Azure DevOps, and never the other one.",
 "F22": "The write-consent warning offers a Sign in again action on the connection it describes.",
+"F23": "An admin starts the Jira OAuth sign-in on a connection without write-back mappings",
+"F24": "The sign-in asks Atlassian for the read scopes and offline_access only",
+"F25": "The admin is not asked for write permission in Jira when write-back is not set up",
+"F26": "The write scope is requested for every Jira connection, or a read scope is dropped",
+"F27": "An admin starts the Jira OAuth sign-in on a connection with a write-back mapping",
+"F28": "The sign-in asks for the read scopes plus write:jira-work",
+"F29": "The consent screen in Atlassian names the write right once write-back is saved",
 "F3": "A Jira OAuth connection asks Atlassian for write:jira-work only when write-back mappings are saved on it; otherwise it asks for the read scopes only",
+"F30": "The sign-in still asks only for read scopes",
+"F31": "Atlassian grants only read rights, or an empty, absent or lookalike write scope, or a refresh answers with write scope on a read-only sign-in; a write-back then runs; the connection list is read",
+"F32": "Nothing is sent to Jira, one warning naming the connection and telling the admin to sign in again is logged, the stored value is unchanged, and the connection list says Rights Read and needsWriteConsent true",
+"F33": "The admin sees the Sign in again warning and no write is attempted on Jira",
+"F34": "Write-back is still sent on a read-only Jira grant, logs no or several warnings, or the list shows no rights",
+"F35": "A Jira sign-in stored before rights were recorded is used for a write-back",
+"F36": "Nothing is sent to Jira; the sign-in counts as Rights Read with needsWriteConsent true and one warning is logged",
+"F37": "A Jira sign-in made before this fix asks to be signed in again once write-back is used",
+"F38": "A missing record of rights is treated as write allowed, as for Azure DevOps",
+"F39": "After a read-only grant the admin signs in again and Atlassian grants write:jira-work; a write-back runs",
 "F4": "Lighthouse records what Atlassian granted; write-back on a Jira OAuth sign-in without write rights, including a sign-in made before rights were recorded, sends nothing to Jira and logs one warning, and the connection shows Rights Read with the Sign in again warning",
+"F40": "The change is sent to Jira once, the list says Rights ReadAndWrite with no warning",
+"F41": "After signing in again, write-back reaches Jira and the warning disappears",
+"F42": "The old read-only record stays after a new sign-in",
+"F43": "A Jira API-token connection with write-back runs a write-back",
+"F44": "The change is sent to Jira and the connection list shows no rights and no warning",
+"F45": "Jira API-token connections keep writing back as before",
+"F46": "API-token connections are blocked or flagged for write consent",
 "F5": "After the admin signs in again and Atlassian grants write:jira-work, write-back on the Jira OAuth connection sends the change; Azure DevOps OAuth and API-token connections keep their current behaviour",
 "F6": "A Jira OAuth connection with write-back asks Atlassian for write:jira-work, records what Atlassian granted, and write-back on a Jira sign-in that may only read is not sent and is shown as needing a new sign-in",
 "F7": "An admin signs in a Jira OAuth connection with and without write-back mappings, Atlassian answers the token request with a granted scope, and a write-back runs on that connection",

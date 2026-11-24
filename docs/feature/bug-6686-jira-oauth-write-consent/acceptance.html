@@ -151,6 +151,162 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>An admin starts the Jira OAuth sign-in on a connection without write-back mappings
+</code></pre>
+
+<pre><code>The sign-in asks Atlassian for the read scopes and offline_access only
+</code></pre>
+
+<pre><code>The admin is not asked for write permission in Jira when write-back is not set up
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::A_connection_without_write_back_asks_Atlassian_only_to_read</p>
+
+<pre><code>The write scope is requested for every Jira connection, or a read scope is dropped
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>An admin starts the Jira OAuth sign-in on a connection with a write-back mapping
+</code></pre>
+
+<pre><code>The sign-in asks for the read scopes plus write:jira-work
+</code></pre>
+
+<pre><code>The consent screen in Atlassian names the write right once write-back is saved
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::A_connection_with_write_back_asks_Atlassian_to_read_and_write_work_items</p>
+
+<pre><code>The sign-in still asks only for read scopes
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Atlassian grants only read rights, or an empty, absent or lookalike write scope, or a refresh answers with write scope on a read-only sign-in; a write-back then runs; the connection list is read
+</code></pre>
+
+<pre><code>Nothing is sent to Jira, one warning naming the connection and telling the admin to sign in again is logged, the stored value is unchanged, and the connection list says Rights Read and needsWriteConsent true
+</code></pre>
+
+<pre><code>The admin sees the Sign in again warning and no write is attempted on Jira
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::Write_back_on_a_connection_signed_in_only_to_read_sends_nothing_and_logs_one_warning</p>
+
+<pre><code>Write-back is still sent on a read-only Jira grant, logs no or several warnings, or the list shows no rights
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A Jira sign-in stored before rights were recorded is used for a write-back
+</code></pre>
+
+<pre><code>Nothing is sent to Jira; the sign-in counts as Rights Read with needsWriteConsent true and one warning is logged
+</code></pre>
+
+<pre><code>A Jira sign-in made before this fix asks to be signed in again once write-back is used
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::A_connection_signed_in_before_rights_were_recorded_counts_as_read_only</p>
+
+<pre><code>A missing record of rights is treated as write allowed, as for Azure DevOps
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>After a read-only grant the admin signs in again and Atlassian grants write:jira-work; a write-back runs
+</code></pre>
+
+<pre><code>The change is sent to Jira once, the list says Rights ReadAndWrite with no warning
+</code></pre>
+
+<pre><code>After signing in again, write-back reaches Jira and the warning disappears
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::After_the_admin_signs_in_again_with_write_consent_write_back_sends_the_change</p>
+
+<pre><code>The old read-only record stays after a new sign-in
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A Jira API-token connection with write-back runs a write-back
+</code></pre>
+
+<pre><code>The change is sent to Jira and the connection list shows no rights and no warning
+</code></pre>
+
+<pre><code>Jira API-token connections keep writing back as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs::A_connection_signed_in_with_an_API_token_keeps_writing_back</p>
+
+<pre><code>API-token connections are blocked or flagged for write consent
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>
