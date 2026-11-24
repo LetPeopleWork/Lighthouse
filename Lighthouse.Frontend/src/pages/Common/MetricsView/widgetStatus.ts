@@ -1,10 +1,14 @@
 import type { MetricsFetchKey } from "../../../hooks/metricsFetchKeys";
 import type { QueryProgress } from "../../../hooks/useMetricsQuery";
-import type { WidgetStatus } from "../../../hooks/useReportWidgetStatus";
+import {
+	combineWidgetStatuses,
+	type WidgetStatus,
+} from "../../../hooks/useReportWidgetStatus";
 import { getFetchRequirementsForWidget } from "./categoryMetadata";
 
 export {
 	type ChartReport,
+	combineWidgetStatuses,
 	useReportWidgetStatus,
 	type WidgetStatus,
 	WidgetStatusReporterContext,
@@ -19,14 +23,6 @@ export type FetchKeyState = {
 export type FetchKeyStates = Partial<Record<MetricsFetchKey, FetchKeyState>>;
 
 const notAskedFor: FetchKeyState = { status: "ready", hasData: true };
-
-export function combineWidgetStatuses(
-	statuses: readonly WidgetStatus[],
-): WidgetStatus {
-	if (statuses.includes("error")) return "error";
-	if (statuses.includes("loading")) return "loading";
-	return "ready";
-}
 
 /** Where a view's one query stands; a refetch reads as loading even after an earlier failure. */
 export function queryStatusOf(
