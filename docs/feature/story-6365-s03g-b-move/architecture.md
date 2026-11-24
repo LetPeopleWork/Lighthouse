@@ -450,28 +450,12 @@ Create
 new home of the Domain file, namespace Lighthouse.Backend.Modules.Refinement.Domain
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/NeedBand\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/RefinementCadenceCalendar\.cs
 
 Create
 
 ```text
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementCadenceCalendar\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/RefinementCalendar\.cs
@@ -482,28 +466,12 @@ Create
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementCalendar\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/RefinementList\.cs
 
 Create
 
 ```text
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementList\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/RefinementNeedCalculator\.cs
@@ -514,28 +482,12 @@ Create
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementNeedCalculator\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/RefinementResolution\.cs
 
 Create
 
 ```text
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementResolution\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/RefinementViewQuery\.cs
@@ -546,28 +498,12 @@ Create
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementViewQuery\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/SizingLogCommands\.cs
 
 Create
 
 ```text
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/SizingLogCommands\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/SizingRefusal\.cs
@@ -578,28 +514,12 @@ Create
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/SizingRefusal\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/SleYardstickResolver\.cs
 
 Create
 
 ```text
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/SleYardstickResolver\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/StageRuleHealing\.cs
@@ -610,28 +530,12 @@ Create
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/StageRuleHealing\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/StageRuleMatcher\.cs
 
 Create
 
 ```text
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/StageRuleMatcher\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/VoterIdentityResolver\.cs
@@ -642,28 +546,12 @@ Create
 new home, namespace Lighthouse.Backend.Modules.Refinement.Application
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/VoterIdentityResolver\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/IRefinementCalendar\.cs
 
 Create
 
 ```text
 new home of the port file, whole, namespace Lighthouse.Backend.Modules.Refinement.Application
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Interfaces\/Refinement\/IRefinementCalendar\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/IRefinementViewQuery\.cs
@@ -674,28 +562,12 @@ Create
 new home of the port file, whole, namespace Lighthouse.Backend.Modules.Refinement.Application
 ```
 
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Interfaces\/Refinement\/IRefinementViewQuery\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
-```
-
 Lighthouse\.Backend\/Lighthouse\.Backend\/Modules\/Refinement\/Application\/ISizingLogCommands\.cs
 
 Create
 
 ```text
 new home of the port file, whole, namespace Lighthouse.Backend.Modules.Refinement.Application
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Interfaces\/Refinement\/ISizingLogCommands\.cs
-
-Extend
-
-```text
-file moves away: deleted from the old folder
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Program\.cs
@@ -938,6 +810,14 @@ Extend
 using lines follow the moved types so the build stays green until the unit tests move
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementMembershipArchUnitTest\.cs
+
+Extend
+
+```text
+five made-up-case tests are reshaped to build from the namespace the map gives each type today, no assertion weakened
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementLivesInItsModuleArchUnitTest\.cs
 
 #### Verification
@@ -1001,7 +881,9 @@ dotnet test Lighthouse.Backend --filter FullyQualifiedName~Lighthouse.Backend.Te
 
 ##### Decisions
 
-None.
+```text
+RefinementMembershipArchUnitTest is a B1 target: the five made-up-case tests (AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches, AMapWithOneTypeLeftOff_NamesThatTypeAsNotOnTheMap, AMapWithOneTypeSwappedForAMadeUpOne_NamesBoth_ThoughItListsAsManyTypesAsTheCodeHolds, ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice, ATypeMovedIntoTheOtherLayer_IsNamedAsNotInTheCode_AndAsNotOnTheMap) build their cases from the namespace the map gives each type today (new once moved, old before). Each keeps its name, intent and subject; no assertion is weakened. RefinementMembership.cs stays unchanged.
+```
 
 ##### Constraints
 
@@ -1027,16 +909,6 @@ Extend
 
 ```text
 The owner of the strings the move renames; it shrinks to empty as the strings are renamed or removed.
-```
-
-NeedBand
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/NeedBand\.cs\:1
-
-Reuse
-
-```text
-Old location, deleted by the move.
 ```
 
 Architecture\/PlatformLaneUnitTestPlacementTest\.cs
@@ -1157,156 +1029,6 @@ Extend
 
 ```text
 Existing unit test; only using lines change here, it moves in the next slice.
-```
-
-RefinementCadenceCalendar
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementCadenceCalendar\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-RefinementCalendar
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementCalendar\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-RefinementList
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementList\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-RefinementNeedCalculator
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementNeedCalculator\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-RefinementResolution
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementResolution\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-RefinementViewQuery
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/RefinementViewQuery\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-SizingLogCommands
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/SizingLogCommands\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-SizingRefusal
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/SizingRefusal\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-SleYardstickResolver
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/SleYardstickResolver\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-StageRuleHealing
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/StageRuleHealing\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-StageRuleMatcher
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/StageRuleMatcher\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-VoterIdentityResolver
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Refinement\/VoterIdentityResolver\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved file, deleted by the move.
-```
-
-IRefinementCalendar
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Interfaces\/Refinement\/IRefinementCalendar\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved port file, deleted by the move.
-```
-
-IRefinementViewQuery
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Interfaces\/Refinement\/IRefinementViewQuery\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved port file, deleted by the move.
-```
-
-ISizingLogCommands
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Interfaces\/Refinement\/ISizingLogCommands\.cs\:1
-
-Reuse
-
-```text
-Old location of the moved port file, deleted by the move.
 ```
 
 NeedBand
@@ -1637,6 +1359,16 @@ Extend
 
 ```text
 Existing test or guard; only a using line or rename-list literal changes.
+```
+
+RefinementMembershipArchUnitTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementMembershipArchUnitTest\.cs\:1
+
+Extend
+
+```text
+Existing test of the map; only its made-up cases change.
 ```
 
 ##### Impact
@@ -2319,6 +2051,16 @@ Changed
 
 ```text
 Using lines follow the moved types until the test moves in the next slice.
+```
+
+test\-consumer
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementMembershipArchUnitTest\.cs\:1
+
+Changed
+
+```text
+Five cases name the old namespaces and cannot hold after the move.
 ```
 
 ##### Agreement

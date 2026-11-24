@@ -93,7 +93,7 @@
 "C": 1,
 "D": 6,
 "E": 5,
-"F": 150,
+"F": 154,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -353,6 +353,9 @@
 "obligation": "F112",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs"
 }
+],
+"decisions": [
+"F152"
 ],
 "impact": [
 {
@@ -762,6 +765,12 @@
 "kind": "test-consumer",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Refinement/VoterIdentityResolverTest.cs:1",
 "reason": "F111"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs:1",
+"reason": "F154"
 }
 ],
 "reuse": [
@@ -776,12 +785,6 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementStringsTheMoveRenames.cs:1",
 "reason": "F89",
 "symbol": "RefinementStringsTheMoveRenames"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/NeedBand.cs:1",
-"reason": "F90",
-"symbol": "NeedBand"
 },
 {
 "decision": "Extend",
@@ -854,96 +857,6 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Refinement/VoterIdentityResolverTest.cs:1",
 "reason": "F92",
 "symbol": "VoterIdentityResolverTest"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementCadenceCalendar.cs:1",
-"reason": "F93",
-"symbol": "RefinementCadenceCalendar"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementCalendar.cs:1",
-"reason": "F93",
-"symbol": "RefinementCalendar"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementList.cs:1",
-"reason": "F93",
-"symbol": "RefinementList"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementNeedCalculator.cs:1",
-"reason": "F93",
-"symbol": "RefinementNeedCalculator"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementResolution.cs:1",
-"reason": "F93",
-"symbol": "RefinementResolution"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementViewQuery.cs:1",
-"reason": "F93",
-"symbol": "RefinementViewQuery"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/SizingLogCommands.cs:1",
-"reason": "F93",
-"symbol": "SizingLogCommands"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/SizingRefusal.cs:1",
-"reason": "F93",
-"symbol": "SizingRefusal"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/SleYardstickResolver.cs:1",
-"reason": "F93",
-"symbol": "SleYardstickResolver"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/StageRuleHealing.cs:1",
-"reason": "F93",
-"symbol": "StageRuleHealing"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/StageRuleMatcher.cs:1",
-"reason": "F93",
-"symbol": "StageRuleMatcher"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/VoterIdentityResolver.cs:1",
-"reason": "F93",
-"symbol": "VoterIdentityResolver"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Refinement/IRefinementCalendar.cs:1",
-"reason": "F94",
-"symbol": "IRefinementCalendar"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Refinement/IRefinementViewQuery.cs:1",
-"reason": "F94",
-"symbol": "IRefinementViewQuery"
-},
-{
-"decision": "Reuse",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Refinement/ISizingLogCommands.cs:1",
-"reason": "F94",
-"symbol": "ISizingLogCommands"
 },
 {
 "decision": "CreateNew",
@@ -1142,6 +1055,12 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:1",
 "reason": "F91",
 "symbol": "RepositoryLeakRatchetArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs:1",
+"reason": "F153",
+"symbol": "RefinementMembershipArchUnitTest"
 }
 ]
 },
@@ -1157,19 +1076,9 @@
 "reason": "F72"
 },
 {
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/NeedBand.cs",
-"reason": "F73"
-},
-{
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementCadenceCalendar.cs",
 "reason": "F74"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementCadenceCalendar.cs",
-"reason": "F73"
 },
 {
 "change": "Create",
@@ -1177,19 +1086,9 @@
 "reason": "F74"
 },
 {
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementCalendar.cs",
-"reason": "F73"
-},
-{
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementList.cs",
 "reason": "F74"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementList.cs",
-"reason": "F73"
 },
 {
 "change": "Create",
@@ -1197,19 +1096,9 @@
 "reason": "F74"
 },
 {
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementNeedCalculator.cs",
-"reason": "F73"
-},
-{
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/RefinementResolution.cs",
 "reason": "F74"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementResolution.cs",
-"reason": "F73"
 },
 {
 "change": "Create",
@@ -1217,19 +1106,9 @@
 "reason": "F74"
 },
 {
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementViewQuery.cs",
-"reason": "F73"
-},
-{
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/SizingLogCommands.cs",
 "reason": "F74"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/SizingLogCommands.cs",
-"reason": "F73"
 },
 {
 "change": "Create",
@@ -1237,19 +1116,9 @@
 "reason": "F74"
 },
 {
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/SizingRefusal.cs",
-"reason": "F73"
-},
-{
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/SleYardstickResolver.cs",
 "reason": "F74"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/SleYardstickResolver.cs",
-"reason": "F73"
 },
 {
 "change": "Create",
@@ -1257,19 +1126,9 @@
 "reason": "F74"
 },
 {
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/StageRuleHealing.cs",
-"reason": "F73"
-},
-{
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/StageRuleMatcher.cs",
 "reason": "F74"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/StageRuleMatcher.cs",
-"reason": "F73"
 },
 {
 "change": "Create",
@@ -1277,19 +1136,9 @@
 "reason": "F74"
 },
 {
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/VoterIdentityResolver.cs",
-"reason": "F73"
-},
-{
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/IRefinementCalendar.cs",
 "reason": "F75"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Refinement/IRefinementCalendar.cs",
-"reason": "F73"
 },
 {
 "change": "Create",
@@ -1297,19 +1146,9 @@
 "reason": "F75"
 },
 {
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Refinement/IRefinementViewQuery.cs",
-"reason": "F73"
-},
-{
 "change": "Create",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Refinement/Application/ISizingLogCommands.cs",
 "reason": "F75"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Refinement/ISizingLogCommands.cs",
-"reason": "F73"
 },
 {
 "change": "Extend",
@@ -1460,6 +1299,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Refinement/VoterIdentityResolverTest.cs",
 "reason": "F82"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembershipArchUnitTest.cs",
+"reason": "F151"
 }
 ],
 "verification": [
@@ -2004,6 +1848,10 @@
 "F149": "The checks fail on a half-done move and pass a finished one",
 "F15": "B2: the 11 Refinement unit tests live in Tests/Modules/Refinement/Domain and /Application, namespace equal to folder, and the acceptance, wire-contract, model and usage-data tests stay.",
 "F150": "A check that always passes or always fails is caught by the pairing of the finished case with the broken cases",
+"F151": "five made-up-case tests are reshaped to build from the namespace the map gives each type today, no assertion weakened",
+"F152": "RefinementMembershipArchUnitTest is a B1 target: the five made-up-case tests (AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches, AMapWithOneTypeLeftOff_NamesThatTypeAsNotOnTheMap, AMapWithOneTypeSwappedForAMadeUpOne_NamesBoth_ThoughItListsAsManyTypesAsTheCodeHolds, ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice, ATypeMovedIntoTheOtherLayer_IsNamedAsNotInTheCode_AndAsNotOnTheMap) build their cases from the namespace the map gives each type today (new once moved, old before). Each keeps its name, intent and subject; no assertion is weakened. RefinementMembership.cs stays unchanged.",
+"F153": "Existing test of the map; only its made-up cases change.",
+"F154": "Five cases name the old namespaces and cannot hold after the move.",
 "F16": "The Refinement unit tests sit beside the module they test",
 "F17": "Layer per file: NeedBand.cs goes to Modules/Refinement/Domain (namespace Lighthouse.Backend.Modules.Refinement.Domain); the other 15 files, with the three port files whole, go to Modules/Refinement/Application. The membership map RefinementMembership is the single owner of which type moves where; the new oracles read it and add no second list.",
 "F18": "Carriers: decisions stay in the existing owners (NeedBand value, RefinementList, StageRuleMatcher, VoterIdentityResolver and the others keep their data and behaviour); only the namespace and folder change. Errors stay the existing SizingRefusal, VoterRefusal and NeedUnavailableReason; effects stay behind the unchanged ports and Program.cs registrations. No per-process state is added.",
@@ -2089,8 +1937,6 @@
 "F90": "Old location, deleted by the move.",
 "F91": "Existing test or guard; only a using line or rename-list literal changes.",
 "F92": "Existing unit test; only using lines change here, it moves in the next slice.",
-"F93": "Old location of the moved file, deleted by the move.",
-"F94": "Old location of the moved port file, deleted by the move.",
 "F95": "New path of the moved file; the type is the same value object moved whole, the old file is deleted.",
 "F96": "Existing composition root; only the full names of the Refinement registrations change.",
 "F97": "New path of the moved file; the type is the same one moved whole, the old file is deleted.",
