@@ -521,6 +521,185 @@ The selection pattern is widened to the whole platform or still names only the o
 ###### Obligations
 
 
+### S4
+
+##### Covers
+
+P4
+
+```text
+Look up each domain-event dispatcher, contract, clock and host facility type from the platform map in its new area and in its old namespace
+```
+
+```text
+Each type is found in its Platform area and none is left in its old namespace; a listed name with no type fails naming it
+```
+
+```text
+The dispatcher, the clock and the host facilities are ruled by namespace like the rest of the platform
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDomainEventsAndHostLayoutArchUnitTest\.cs\#EveryDomainEventAndHostType\_LivesInItsPlatformArea\_AndNoneIsLeftInItsOldNamespace
+
+```text
+A type copied into the new area while its old one stays is caught only through the old namespace; a type moved to the other area is caught by name
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P4
+
+```text
+List every domain-event handler class of the product and the ones in the platform dispatcher area
+```
+
+```text
+No handler sits in the platform dispatcher area
+```
+
+```text
+Each context keeps its own reactions to events
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDomainEventsAndHostLayoutArchUnitTest\.cs\#TheDomainEventHandlers\_StayWithTheirContexts\_AndNoneMovesIntoThePlatformDispatcherArea
+
+```text
+A handler moved to another platform area, since only the dispatcher area is checked
+```
+
+###### Obligations
+
+
+##### Covers
+
+P6
+
+```text
+Look up the four moved unit-test classes in Tests/Platform for their area and in their old namespace
+```
+
+```text
+Each lives in its Tests.Platform area and none is left in its old namespace
+```
+
+```text
+The tests of platform code sit next to the platform area they test
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDomainEventsAndHostLayoutArchUnitTest\.cs\#TheUnitTestsOfTheMovedTypes\_LiveInTestsPlatformTheirArea\_AndNoneIsLeftInItsOldNamespace
+
+```text
+A further test class of a moved type that the list does not name stays behind
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P4
+
+```text
+Read the global suppression file for the random-number member
+```
+
+```text
+It names the member under its new full name and not the old one
+```
+
+```text
+The build keeps excusing the same finding after the move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDomainEventsAndHostLayoutArchUnitTest\.cs\#TheSuppressionOnTheRandomNumberService\_NamesItsNewFullName
+
+```text
+A suppression naming both the old and the new member is refused; one naming neither is refused too
+```
+
+###### Obligations
+
+
+##### Covers
+
+P7
+
+```text
+Compare platform answers and domain-event reaction order before and after the move
+```
+
+```text
+Same answers and same order; EF model unchanged
+```
+
+```text
+Nothing a user or tracker sees changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Behaviour equality needs the running application; the layout oracle observes namespaces only. The existing suites and the platform-answers, refresh-reactions and ef-model probes cover it
+```
+
+EXAMINE
+
+##### Covers
+
+P4
+
+P6
+
+```text
+Read each rule, list and source check the map says the move renames (host-user list, calendar-day source path, per-fixture guard, module outbound lists)
+```
+
+```text
+Each names the new text and not the old; a host-user row may instead be gone
+```
+
+```text
+No architecture rule is loosened by the move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformDomainEventsAndHostLayoutArchUnitTest\.cs\#TheRuleAndListStringsThatNameAMovedType\_NameItsNewPlaceOnly
+
+```text
+A host-user row for a class that stays on a host and is kept under the old name is refused; a string deleted outside the host-user list is refused
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

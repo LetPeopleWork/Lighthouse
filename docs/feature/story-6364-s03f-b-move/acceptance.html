@@ -602,6 +602,161 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Look up each domain-event dispatcher, contract, clock and host facility type from the platform map in its new area and in its old namespace
+</code></pre>
+
+<pre><code>Each type is found in its Platform area and none is left in its old namespace; a listed name with no type fails naming it
+</code></pre>
+
+<pre><code>The dispatcher, the clock and the host facilities are ruled by namespace like the rest of the platform
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDomainEventsAndHostLayoutArchUnitTest.cs#EveryDomainEventAndHostType_LivesInItsPlatformArea_AndNoneIsLeftInItsOldNamespace</p>
+
+<pre><code>A type copied into the new area while its old one stays is caught only through the old namespace; a type moved to the other area is caught by name
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>List every domain-event handler class of the product and the ones in the platform dispatcher area
+</code></pre>
+
+<pre><code>No handler sits in the platform dispatcher area
+</code></pre>
+
+<pre><code>Each context keeps its own reactions to events
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDomainEventsAndHostLayoutArchUnitTest.cs#TheDomainEventHandlers_StayWithTheirContexts_AndNoneMovesIntoThePlatformDispatcherArea</p>
+
+<pre><code>A handler moved to another platform area, since only the dispatcher area is checked
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Look up the four moved unit-test classes in Tests/Platform for their area and in their old namespace
+</code></pre>
+
+<pre><code>Each lives in its Tests.Platform area and none is left in its old namespace
+</code></pre>
+
+<pre><code>The tests of platform code sit next to the platform area they test
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDomainEventsAndHostLayoutArchUnitTest.cs#TheUnitTestsOfTheMovedTypes_LiveInTestsPlatformTheirArea_AndNoneIsLeftInItsOldNamespace</p>
+
+<pre><code>A further test class of a moved type that the list does not name stays behind
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the global suppression file for the random-number member
+</code></pre>
+
+<pre><code>It names the member under its new full name and not the old one
+</code></pre>
+
+<pre><code>The build keeps excusing the same finding after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDomainEventsAndHostLayoutArchUnitTest.cs#TheSuppressionOnTheRandomNumberService_NamesItsNewFullName</p>
+
+<pre><code>A suppression naming both the old and the new member is refused; one naming neither is refused too
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>Compare platform answers and domain-event reaction order before and after the move
+</code></pre>
+
+<pre><code>Same answers and same order; EF model unchanged
+</code></pre>
+
+<pre><code>Nothing a user or tracker sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Behaviour equality needs the running application; the layout oracle observes namespaces only. The existing suites and the platform-answers, refresh-reactions and ef-model probes cover it
+</code></pre>
+
+<p>EXAMINE</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<p>P6</p>
+
+<pre><code>Read each rule, list and source check the map says the move renames (host-user list, calendar-day source path, per-fixture guard, module outbound lists)
+</code></pre>
+
+<pre><code>Each names the new text and not the old; a host-user row may instead be gone
+</code></pre>
+
+<pre><code>No architecture rule is loosened by the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformDomainEventsAndHostLayoutArchUnitTest.cs#TheRuleAndListStringsThatNameAMovedType_NameItsNewPlaceOnly</p>
+
+<pre><code>A host-user row for a class that stays on a host and is kept under the old name is refused; a string deleted outside the host-user list is refused
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
