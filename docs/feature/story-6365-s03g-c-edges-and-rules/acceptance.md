@@ -273,16 +273,6 @@ A constant ending in the bare module name, which also matches a neighbouring nam
 
 ### Rows
 
-#### E1
-
-##### Promises
-
-P1
-
-```text
-Searching the test project for the Refinement path fragments Services.Implementation.Refinement, Services.Interfaces.Refinement, Services/Implementation/Refinement and Services/Interfaces/Refinement finds no rule constant or string literal that names Refinement that way; Refinement is named only as Modules.Refinement.
-```
-
 #### E2
 
 ##### Promises
@@ -303,16 +293,6 @@ P2
 architecture-rules Refinement reports a Refinement rule set R-R1 to R-R6 whose listed types sit in their stated layers, Domain reaches only the kernel and BCL, outside code reaches Domain only from API, the composition root and Refinement Application, and Application reaches no EF Core, Data, API, module Adapters, Tracker integration or update code, with the Access, Organisation set-up, Platform lane and repository reach limited to the measured list.
 ```
 
-#### E4
-
-##### Promises
-
-P2
-
-```text
-backend-tests Refinement shows that each made-up offender for each R-R rule and each list position fails the rule, and the failure message names the offending edge in the Refinement wording.
-```
-
 #### E5
 
 ##### Promises
@@ -323,14 +303,34 @@ P3
 ef-model-unchanged reports the database model identical to the model before feature C, so nothing the database sees changes.
 ```
 
-#### E6
+#### E7
+
+##### Promises
+
+P1
+
+```text
+backend-tests RefinementRulesNameOnly and architecture-rules Refinement report every narrowing check passing, including the checks that no rule constant and no string literal names Refinement by Services.Implementation.Refinement, Services.Interfaces.Refinement, Services/Implementation/Refinement or Services/Interfaces/Refinement; Refinement is named only as Modules.Refinement. That the source text holds no old form is owned by the whole-candidate review, not by a public probe.
+```
+
+#### E8
+
+##### Promises
+
+P2
+
+```text
+backend-tests RefinementModuleBoundaries reports every made-up-offender case passing, one per rule R-R1 to R-R6 and per list position: each made-up offender makes its rule fail. That the failure message speaks Refinement's own wording is owned by the oracle approval and the whole-candidate review, not by a public probe.
+```
+
+#### E9
 
 ##### Promises
 
 P3
 
 ```text
-The whole filtered backend-tests run finishes with zero failures, and the candidate loosens no rule or list relative to the prior rule files.
+The whole filtered backend-tests run finishes with zero failures. That no rule or list was loosened against the earlier rule files is owned by the whole-candidate review, not by a public probe.
 ```
 
 ## Charter

@@ -152,8 +152,8 @@
 },
 "counters": {
 "D": 5,
-"E": 6,
-"F": 127,
+"E": 9,
+"F": 130,
 "K": 1,
 "P": 3,
 "S": 2,
@@ -586,13 +586,6 @@
 "expectations": {
 "rows": [
 {
-"id": "E1",
-"promises": [
-"P1"
-],
-"text": "F82"
-},
-{
 "id": "E2",
 "promises": [
 "P1"
@@ -607,13 +600,6 @@
 "text": "F84"
 },
 {
-"id": "E4",
-"promises": [
-"P2"
-],
-"text": "F85"
-},
-{
 "id": "E5",
 "promises": [
 "P3"
@@ -621,11 +607,25 @@
 "text": "F86"
 },
 {
-"id": "E6",
+"id": "E7",
+"promises": [
+"P1"
+],
+"text": "F128"
+},
+{
+"id": "E8",
+"promises": [
+"P2"
+],
+"text": "F129"
+},
+{
+"id": "E9",
 "promises": [
 "P3"
 ],
-"text": "F87"
+"text": "F130"
 }
 ]
 },
@@ -658,7 +658,10 @@
 "F125": "Every Modules.Refinement alternative of the Refinement rule constants (the shared pattern, the Tracker integration, Access and Licensing composites, the per-type patterns and this file's own patterns) fails to match a namespace that only starts like the module's; a made-up constant with an open end is named and its anchored twin is not. This is where the lookalike check that the retired move law carried now lives",
 "F126": "A rule written for Refinement never silently constrains or excuses a neighbouring namespace",
 "F127": "A constant ending in the bare module name, which also matches a neighbouring namespace, would still pass any rule that only checks that each alternative matches a Refinement type; matching a lookalike namespace refuses it",
+"F128": "backend-tests RefinementRulesNameOnly and architecture-rules Refinement report every narrowing check passing, including the checks that no rule constant and no string literal names Refinement by Services.Implementation.Refinement, Services.Interfaces.Refinement, Services/Implementation/Refinement or Services/Interfaces/Refinement; Refinement is named only as Modules.Refinement. That the source text holds no old form is owned by the whole-candidate review, not by a public probe.",
+"F129": "backend-tests RefinementModuleBoundaries reports every made-up-offender case passing, one per rule R-R1 to R-R6 and per list position: each made-up offender makes its rule fail. That the failure message speaks Refinement's own wording is owned by the oracle approval and the whole-candidate review, not by a public probe.",
 "F13": "C2: Refinement has its own module rules R-R1 to R-R6 on ModuleRules, read from the IL with measured inline lists, and each catches a made-up offender in Refinement's own wording.",
+"F130": "The whole filtered backend-tests run finishes with zero failures. That no rule or list was loosened against the earlier rule files is owned by the whole-candidate review, not by a public probe.",
 "F14": "A new edge into or out of Refinement is caught by its own rules",
 "F15": "Question 1 (preservation law): retire feature A's Refinement call of the move law. Delete RefinementRulesSeeTheMoveArchUnitTest, RefinementPatternRoles and RefinementStringsTheMoveRenames, and drop the rename-list use in RefinementLivesInItsModuleArchUnitTest. Reason: the move is complete and feature B pins every type to its new namespace, so a law that compares old and new sight has no old side left, and a Refinement call kept as a move-complete check would be a second owner next to the C1 oracle. NamespaceMoveLaw, PatternDeclaration and PatternRoleMap stay: PlatformLaneRulesSeeTheMoveArchUnitTest still uses them.",
 "F16": "Question 2 (C1 oracle): one new file RefinementRulesNameOnlyTheModuleArchUnitTest owns the whole check. It reads every rule constant of the test assembly by reflection and sweeps every string literal of the test project sources for the four old forms (the old Implementation and Interfaces Refinement namespaces, as a plain name, a regex alternative or a group member, and the two old folder paths). A hit is allowed only in a declared measurement file (RefinementMembership, RefinementMembershipArchUnitTest, RefinementLivesInItsModuleArchUnitTest, RefinementUnitTestsBesideTheModuleArchUnitTest, NamespaceMoveLaw and the oracle itself); that list is compared both ways, so a listed file with no hit fails until it is removed. It also asserts that each Refinement rule pattern still matches a Refinement type in its new namespace, so narrowing cannot make a rule blind. Made-up offenders are fixtures declared to the oracle.",
@@ -734,12 +737,9 @@
 "F8": "Rigor standard for feature C: architect, acceptance designer and crafter on sonnet; reviewers and EXAMINE on haiku (DESIGN open question 1, AFK default taken 2026-11-24).",
 "F80": "No production code moves; the existing rules are narrowed in place and the existing Architecture suite is the preserved verdict",
 "F81": "Every Refinement rule names Refinement by Modules.Refinement only and no rule constant or literal outside declared measurement files names an old Refinement namespace or path",
-"F82": "Searching the test project for the Refinement path fragments Services.Implementation.Refinement, Services.Interfaces.Refinement, Services/Implementation/Refinement and Services/Interfaces/Refinement finds no rule constant or string literal that names Refinement that way; Refinement is named only as Modules.Refinement.",
 "F83": "architecture-rules run on the candidate reports every existing architecture rule (RefinementPattern, Tracker integration, Access and Licensing lists, per-type patterns of RefinementModuleArchUnitTest) with the same verdict as on today code, with no rule newly failing and none removed.",
 "F84": "architecture-rules Refinement reports a Refinement rule set R-R1 to R-R6 whose listed types sit in their stated layers, Domain reaches only the kernel and BCL, outside code reaches Domain only from API, the composition root and Refinement Application, and Application reaches no EF Core, Data, API, module Adapters, Tracker integration or update code, with the Access, Organisation set-up, Platform lane and repository reach limited to the measured list.",
-"F85": "backend-tests Refinement shows that each made-up offender for each R-R rule and each list position fails the rule, and the failure message names the offending edge in the Refinement wording.",
 "F86": "ef-model-unchanged reports the database model identical to the model before feature C, so nothing the database sees changes.",
-"F87": "The whole filtered backend-tests run finishes with zero failures, and the candidate loosens no rule or list relative to the prior rule files.",
 "F88": "Sweep every rule constant of the test assembly and every string literal of the test project sources for the four former Refinement forms: plain name, regex alternative, group member, old folder path",
 "F89": "No constant and no literal outside the declared measurement files names Refinement by a former Services namespace or path",
 "F9": "The Refinement unit-test placement test the DESIGN record names for S3 is not written again: feature B's RefinementUnitTestsBesideTheModuleArchUnitTest already pins the 11 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders.",
