@@ -87,13 +87,48 @@
 "stimulus": "F147",
 "user_result": "F149"
 }
+],
+"S2": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F157",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs"
+},
+"expected": "F156",
+"stimulus": "F155",
+"user_result": "F16"
+},
+{
+"covers": [
+"P3",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F161",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs"
+},
+"expected": "F159",
+"stimulus": "F158",
+"user_result": "F160"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 6,
 "E": 5,
-"F": 154,
+"F": 161,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1852,7 +1887,14 @@
 "F152": "RefinementMembershipArchUnitTest is a B1 target: the five made-up-case tests (AFileReachingBeyondTheKernelListedAsDomain_IsNamedWithWhatItReaches, AMapWithOneTypeLeftOff_NamesThatTypeAsNotOnTheMap, AMapWithOneTypeSwappedForAMadeUpOne_NamesBoth_ThoughItListsAsManyTypesAsTheCodeHolds, ATypeLeftInItsOldNamespaceBesideItsMovedCopy_IsNamedAsFoundTwice, ATypeMovedIntoTheOtherLayer_IsNamedAsNotInTheCode_AndAsNotOnTheMap) build their cases from the namespace the map gives each type today (new once moved, old before). Each keeps its name, intent and subject; no assertion is weakened. RefinementMembership.cs stays unchanged.",
 "F153": "Existing test of the map; only its made-up cases change.",
 "F154": "Five cases name the old namespaces and cannot hold after the move.",
+"F155": "Check where the 11 Refinement unit tests and their classes sit",
+"F156": "NeedBandTest is in the Domain test folder and namespace, the other 10 in the Application ones, namespace equal to folder, no copy elsewhere; the old Refinement test folders hold no file",
+"F157": "A test moved to the right folder but left in the old namespace, or a copy left in the old folder, would be accepted only if not checked; the rule names both",
+"F158": "Check the acceptance, wire-contract, model, usage-data and sizing-log repository tests after the move",
+"F159": "They stay in their folders and namespaces and none appears under the module test folder, which holds only the 11 unit tests",
 "F16": "The Refinement unit tests sit beside the module they test",
+"F160": "Nothing but the unit tests moved; behaviour tests keep their place",
+"F161": "A staying test moved into the module folder as well as the 11 unit tests would pass a check of the 11 alone; the module-folder-holds-only-11 rule and the staying rule reject it",
 "F17": "Layer per file: NeedBand.cs goes to Modules/Refinement/Domain (namespace Lighthouse.Backend.Modules.Refinement.Domain); the other 15 files, with the three port files whole, go to Modules/Refinement/Application. The membership map RefinementMembership is the single owner of which type moves where; the new oracles read it and add no second list.",
 "F18": "Carriers: decisions stay in the existing owners (NeedBand value, RefinementList, StageRuleMatcher, VoterIdentityResolver and the others keep their data and behaviour); only the namespace and folder change. Errors stay the existing SizingRefusal, VoterRefusal and NeedUnavailableReason; effects stay behind the unchanged ports and Program.cs registrations. No per-process state is added.",
 "F19": "Log categories: ILogger<T> categories of moved types change with the namespace. No appsettings, analyser, suppression, CI, budget, host-user or Stryker target keys on a moving type (feature A measured this), so no log override is affected.",

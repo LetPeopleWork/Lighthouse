@@ -285,6 +285,60 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Check where the 11 Refinement unit tests and their classes sit
+</code></pre>
+
+<pre><code>NeedBandTest is in the Domain test folder and namespace, the other 10 in the Application ones, namespace equal to folder, no copy elsewhere; the old Refinement test folders hold no file
+</code></pre>
+
+<pre><code>The Refinement unit tests sit beside the module they test
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs</p>
+
+<pre><code>A test moved to the right folder but left in the old namespace, or a copy left in the old folder, would be accepted only if not checked; the rule names both
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<pre><code>Check the acceptance, wire-contract, model, usage-data and sizing-log repository tests after the move
+</code></pre>
+
+<pre><code>They stay in their folders and namespaces and none appears under the module test folder, which holds only the 11 unit tests
+</code></pre>
+
+<pre><code>Nothing but the unit tests moved; behaviour tests keep their place
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementUnitTestsBesideTheModuleArchUnitTest.cs</p>
+
+<pre><code>A staying test moved into the module folder as well as the 11 unit tests would pass a check of the 11 alone; the module-folder-holds-only-11 rule and the staying rule reject it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

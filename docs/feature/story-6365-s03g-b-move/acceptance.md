@@ -156,6 +156,68 @@ A check that always passes or always fails is caught by the pairing of the finis
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P3
+
+```text
+Check where the 11 Refinement unit tests and their classes sit
+```
+
+```text
+NeedBandTest is in the Domain test folder and namespace, the other 10 in the Application ones, namespace equal to folder, no copy elsewhere; the old Refinement test folders hold no file
+```
+
+```text
+The Refinement unit tests sit beside the module they test
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementUnitTestsBesideTheModuleArchUnitTest\.cs
+
+```text
+A test moved to the right folder but left in the old namespace, or a copy left in the old folder, would be accepted only if not checked; the rule names both
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+P4
+
+```text
+Check the acceptance, wire-contract, model, usage-data and sizing-log repository tests after the move
+```
+
+```text
+They stay in their folders and namespaces and none appears under the module test folder, which holds only the 11 unit tests
+```
+
+```text
+Nothing but the unit tests moved; behaviour tests keep their place
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RefinementUnitTestsBesideTheModuleArchUnitTest\.cs
+
+```text
+A staying test moved into the module folder as well as the 11 unit tests would pass a check of the 11 alone; the module-folder-holds-only-11 rule and the staying rule reject it
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
