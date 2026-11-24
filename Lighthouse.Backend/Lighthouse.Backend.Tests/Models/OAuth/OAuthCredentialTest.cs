@@ -15,6 +15,17 @@ namespace Lighthouse.Backend.Tests.Models.OAuth
             Assert.That((int)status, Is.EqualTo(expected));
         }
 
+        [TestCase(WorkTrackingSystems.AzureDevOps, null, WorkItemRights.ReadAndWrite)]
+        [TestCase(WorkTrackingSystems.Jira, null, WorkItemRights.Read)]
+        [TestCase(WorkTrackingSystems.AzureDevOps, WorkItemRights.Read, WorkItemRights.Read)]
+        [TestCase(WorkTrackingSystems.Jira, WorkItemRights.ReadAndWrite, WorkItemRights.ReadAndWrite)]
+        public void ConsentedRightsOn_FallsBackToWhatTheTrackersSignInAlwaysAskedFor(WorkTrackingSystems system, WorkItemRights? granted, WorkItemRights expected)
+        {
+            var credential = new OAuthCredential { GrantedRights = granted };
+
+            Assert.That(credential.ConsentedRightsOn(new WorkTrackingSystemConnection { WorkTrackingSystem = system }), Is.EqualTo(expected));
+        }
+
         [Test]
         public async Task RoundTrip_PersistsAllPropertiesAndLinksToConnection()
         {

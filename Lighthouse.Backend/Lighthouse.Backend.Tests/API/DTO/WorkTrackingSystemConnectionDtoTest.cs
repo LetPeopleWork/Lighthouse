@@ -121,7 +121,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
         // Every way a connection can stand towards write consent: which sign-in it uses, what that sign-in
         // was granted (null = signed in before rights were recorded, or no sign-in at all), and whether
-        // write-back is set up. Rights are shown only for an Azure DevOps OAuth sign-in, and a warning only
+        // write-back is set up. Rights are shown only for an Azure DevOps or Jira OAuth sign-in, and a warning only
         // when write-back is set up on a sign-in that may only read.
         private static IEnumerable<TestCaseData> WriteConsentCases()
         {
@@ -133,8 +133,12 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 .SetName("An Azure DevOps sign-in that may only read needs nothing more without write-back");
             yield return new TestCaseData(AuthenticationMethodKeys.AzureDevOpsOAuth, true, WorkItemRights.ReadAndWrite, WriteBack.Mapped, "ReadAndWrite", false)
                 .SetName("An Azure DevOps sign-in granted write rights needs nothing more with write-back");
-            yield return new TestCaseData(AuthenticationMethodKeys.JiraOAuth, true, null, WriteBack.Mapped, null, false)
-                .SetName("A Jira sign-in shows no rights and needs no write consent");
+            yield return new TestCaseData(AuthenticationMethodKeys.JiraOAuth, true, null, WriteBack.Mapped, "Read", true)
+                .SetName("A Jira sign-in from before rights were recorded counts as read only and needs write consent once write-back is set up");
+            yield return new TestCaseData(AuthenticationMethodKeys.JiraOAuth, true, WorkItemRights.Read, WriteBack.None, "Read", false)
+                .SetName("A Jira sign-in that may only read needs nothing more without write-back");
+            yield return new TestCaseData(AuthenticationMethodKeys.JiraOAuth, true, WorkItemRights.ReadAndWrite, WriteBack.Mapped, "ReadAndWrite", false)
+                .SetName("A Jira sign-in granted write rights needs nothing more with write-back");
             yield return new TestCaseData(AuthenticationMethodKeys.AzureDevOpsPat, false, null, WriteBack.Mapped, null, false)
                 .SetName("A personal access token connection shows no rights and needs no write consent");
         }
@@ -156,7 +160,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(wire["grantedRights"]?.GetValue<string>(), Is.EqualTo(expectedRights),
-                    "The connection list must name the rights the sign-in holds as Read or ReadAndWrite for an Azure DevOps OAuth sign-in, and nothing for any other connection, " +
+                    "The connection list must name the rights the sign-in holds as Read or ReadAndWrite for an Azure DevOps or Jira OAuth sign-in, and nothing for any other connection, " +
                     "because the settings page shows a Rights line from it. Set grantedRights from the stored credential's write consent.");
                 Assert.That(wire["needsWriteConsent"]?.GetValue<bool>(), Is.EqualTo(expectedNeedsWriteConsent),
                     "The connection list must say needsWriteConsent (true or false, never missing) because the warning with Sign in again shows from it. " +

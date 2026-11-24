@@ -20,11 +20,13 @@ namespace Lighthouse.Backend.Models.OAuth
         public WorkItemRights? GrantedRights { get; set; }
 
         /// <summary>
-        /// A sign-in stored before rights were recorded counts as write-consented: until then every Azure DevOps
-        /// sign-in asked for write rights, and those connections must keep writing back.
+        /// A sign-in stored before rights were recorded counts by what it asked for: an Azure DevOps sign-in always
+        /// asked to write, so it keeps writing back; a Jira sign-in asked only to read.
         /// </summary>
-        public WorkItemRights ConsentedRights => GrantedRights ?? WorkItemRights.ReadAndWrite;
+        public WorkItemRights ConsentedRightsOn(WorkTrackingSystemConnection connection)
+            => GrantedRights ?? (connection.WorkTrackingSystem == WorkTrackingSystems.Jira ? WorkItemRights.Read : WorkItemRights.ReadAndWrite);
 
-        public bool LacksRightsFor(WorkItemRights needed) => needed == WorkItemRights.ReadAndWrite && ConsentedRights == WorkItemRights.Read;
+        public bool LacksRightsFor(WorkTrackingSystemConnection connection)
+            => connection.NeededWorkItemRights == WorkItemRights.ReadAndWrite && ConsentedRightsOn(connection) == WorkItemRights.Read;
     }
 }

@@ -41,11 +41,39 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.OAuth
         ];
 
         [Test]
-        public void ScopesFor_AnyNeed_ContainsRequiredAtlassianScopesIncludingJiraSoftwareGranularScopes()
+        public void ScopesFor_Read_AsksOnlyForReadScopesIncludingJiraSoftwareGranularScopes()
         {
             var provider = CreateProvider(CreateHandler((_, _) => Task.FromResult(EmptyResponse())));
 
-            Assert.That(provider.ScopesFor(WorkItemRights.ReadAndWrite), Is.EquivalentTo(ExpectedDefaultScopes));
+            Assert.That(provider.ScopesFor(WorkItemRights.Read), Is.EquivalentTo(ExpectedDefaultScopes));
+        }
+
+        [Test]
+        public void ScopesFor_ReadAndWrite_AddsTheWriteScopeToTheReadScopes()
+        {
+            var provider = CreateProvider(CreateHandler((_, _) => Task.FromResult(EmptyResponse())));
+
+            Assert.That(provider.ScopesFor(WorkItemRights.ReadAndWrite), Is.EquivalentTo([.. ExpectedDefaultScopes, "write:jira-work"]));
+        }
+
+        [TestCase("read:jira-work write:jira-work offline_access", WorkItemRights.ReadAndWrite)]
+        [TestCase("read:jira-work write:jira-work-x offline_access", WorkItemRights.Read)]
+        [TestCase("read:jira-work offline_access", WorkItemRights.Read)]
+        [TestCase("", WorkItemRights.Read)]
+        public async Task ExchangeCodeAsync_ReadsTheGrantedRightsFromTheScopeAtlassianReturns(string grantedScope, WorkItemRights expected)
+        {
+            var handler = CreateHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    "{\"access_token\":\"at\",\"refresh_token\":\"rt\",\"expires_in\":3600,\"token_type\":\"Bearer\",\"scope\":\"" + grantedScope + "\"}",
+                    Encoding.UTF8,
+                    "application/json"),
+            }));
+            var provider = CreateProvider(handler);
+
+            var tokens = await provider.ExchangeCodeAsync("code", CreateFlowContext(), CancellationToken.None);
+
+            Assert.That(tokens.GrantedRights, Is.EqualTo(expected));
         }
 
         [Test]

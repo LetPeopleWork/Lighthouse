@@ -18,7 +18,9 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
         private const string ResponseTypeCode = "code";
         private const string PromptConsent = "consent";
 
-        private static readonly IReadOnlyList<string> AtlassianDefaultScopes =
+        private const string WriteScope = "write:jira-work";
+
+        private static readonly IReadOnlyList<string> AtlassianReadScopes =
         [
             "read:jira-work",
             "read:jira-user",
@@ -28,6 +30,8 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
             "read:project:jira",
             "offline_access",
         ];
+
+        private static readonly IReadOnlyList<string> AtlassianReadAndWriteScopes = [.. AtlassianReadScopes, WriteScope];
 
         private static readonly JsonSerializerOptions TokenResponseJsonOptions = new()
         {
@@ -47,7 +51,8 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
 
         public string ProviderKey => AuthenticationMethodKeys.JiraOAuth;
 
-        public IReadOnlyList<string> ScopesFor(WorkItemRights needed) => AtlassianDefaultScopes;
+        public IReadOnlyList<string> ScopesFor(WorkItemRights needed)
+            => needed == WorkItemRights.ReadAndWrite ? AtlassianReadAndWriteScopes : AtlassianReadScopes;
 
         public Uri BuildAuthorizationUrl(OAuthFlowContext context)
         {
@@ -120,7 +125,14 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
                 tokenResponse.Scope);
 
             var expiresAt = timeProvider.GetUtcNow().AddSeconds(tokenResponse.ExpiresIn);
-            return new OAuthTokens(tokenResponse.AccessToken, tokenResponse.RefreshToken, expiresAt);
+            return new OAuthTokens(tokenResponse.AccessToken, tokenResponse.RefreshToken, expiresAt, FromGrantedScope(tokenResponse.Scope));
+        }
+
+        // Anything but the exact write scope, a missing scope included, grants no more than reading.
+        private static WorkItemRights FromGrantedScope(string? scope)
+        {
+            var entries = (scope ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            return entries.Contains(WriteScope) ? WorkItemRights.ReadAndWrite : WorkItemRights.Read;
         }
 
         private OAuthProviderResponseException BuildErrorException(int httpStatus, string responseBody)
@@ -153,7 +165,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegration.Adapters.OAuth
             [property: JsonPropertyName("refresh_token")] string RefreshToken,
             [property: JsonPropertyName("expires_in")] int ExpiresIn,
             [property: JsonPropertyName("token_type")] string TokenType,
-            [property: JsonPropertyName("scope")] string Scope);
+            [property: JsonPropertyName("scope")] string? Scope);
 
         private sealed record AtlassianErrorResponse(
             [property: JsonPropertyName("error")] string? Error,

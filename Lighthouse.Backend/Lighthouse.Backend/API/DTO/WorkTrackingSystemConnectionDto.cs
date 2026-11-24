@@ -54,10 +54,11 @@ namespace Lighthouse.Backend.API.DTO
                 Status: OAuthCredentialStatus.RefreshFailed or OAuthCredentialStatus.Disconnected
             };
 
-            if (workTrackingSystemConnection.AuthenticationMethodKey == AuthenticationMethodKeys.AzureDevOpsOAuth && oAuthCredential is not null)
+            if (workTrackingSystemConnection.AuthenticationMethodKey is AuthenticationMethodKeys.AzureDevOpsOAuth or AuthenticationMethodKeys.JiraOAuth
+                && oAuthCredential is not null)
             {
-                GrantedRights = oAuthCredential.ConsentedRights;
-                NeedsWriteConsent = oAuthCredential.LacksRightsFor(workTrackingSystemConnection.NeededWorkItemRights);
+                GrantedRights = oAuthCredential.ConsentedRightsOn(workTrackingSystemConnection);
+                NeedsWriteConsent = oAuthCredential.LacksRightsFor(workTrackingSystemConnection);
             }
 
             ConcurrencyToken = workTrackingSystemConnection.ConcurrencyToken;
@@ -88,7 +89,7 @@ namespace Lighthouse.Backend.API.DTO
 
         public bool? RequiresReconnect { get; set; }
 
-        // Only an Azure DevOps sign-in records its rights. The setters are private so a saved body cannot
+        // Only an Azure DevOps or Jira OAuth sign-in records its rights. The setters are private so a saved body cannot
         // claim rights its sign-in was not granted.
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public WorkItemRights? GrantedRights { get; private set; }

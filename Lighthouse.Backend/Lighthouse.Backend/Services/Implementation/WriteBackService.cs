@@ -180,7 +180,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private bool SignInLacksTheRightsToWrite(WorkTrackingSystemConnection connection)
         {
             var credential = credentialRepository.GetByPredicate(c => c.WorkTrackingSystemConnectionId == connection.Id);
-            return credential?.LacksRightsFor(connection.NeededWorkItemRights) ?? false;
+            return credential?.LacksRightsFor(connection) ?? false;
         }
 
         /// <summary>
