@@ -510,6 +510,227 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The placement rule reads today&#x27;s test project: every compiled test class with the file it was compiled from, judged against every platform type of the lane&#x27;s map and of the Platform namespace.
+</code></pre>
+
+<pre><code>No unit test of a platform type sits outside its Platform area folder unless it is named as staying with its reason. Today it names exactly two left-behind tests: the GitHub release service test, which belongs in the Releases area, and the platform-extension test, which belongs in the Host area.
+</code></pre>
+
+<pre><code>A maintainer sees each platform unit test outside its area named with the folder and namespace it belongs in; the rule turns green once those two test files are moved there.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformLaneUnitTestPlacementTest.NoUnitTestOfAPlatformType_SitsOutsideItsPlatformFolder_ApartFromTheNamedStayingTests</p>
+
+<pre><code>A platform test whose class name differs from its subject&#x27;s name by more than case, a trailing s or added words after the type name (a test named after a feature, not a type) is not seen.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The placement rule runs on made-up test trees for a made-up platform type: a test in an old Services folder, in its Platform area folder, in another area&#x27;s folder, in a folder that only looks like Platform, at the test root, with a namespace that disagrees with its file, under the integration root, on the staying list, and classes whose names only look like a test of the type.
+</code></pre>
+
+<pre><code>The tests in an old folder, another area, a look-alike folder, at the root or with a disagreeing namespace are each named with the Platform area folder they belong in; the test in its folder, the integration test, the staying test and the look-alike names are not named.
+</code></pre>
+
+<pre><code>A platform test written into or left in a wrong place is caught and its right folder is named, while correctly placed and exempt tests are left alone.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformLaneUnitTestPlacementTest.AMadeUpTestOfAPlatformTypeOutsideItsFolder_IsNamedWithItsFolder_AndOneInItsFolderIsNot</p>
+
+<pre><code>A test in a deeper sub-folder of its area folder is accepted; deeper folders inside the area are allowed on purpose.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The placement rule is handed a made-up platform type and reads the made-up test class that is really compiled into the test assembly from a fixture file outside the Platform folders.
+</code></pre>
+
+<pre><code>The fixture file is named once, with the made-up type&#x27;s Platform area folder, found through the compiled assembly&#x27;s symbols.
+</code></pre>
+
+<pre><code>The rule finds a test by the file it was really compiled from, so a class cannot hide its place behind its name or namespace.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformLaneUnitTestPlacementTest.TheMadeUpTestCompiledFromTheFixtureFile_IsNamedWithItsPlatformFolder</p>
+
+<pre><code>A class whose methods carry no sequence points (an empty class) is not seen; such a class holds no test to place.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>The list of test files that stay outside the Platform folders is checked against the files on disk and against what the placement rule would name, and each entry is dropped in turn.
+</code></pre>
+
+<pre><code>Every staying entry has a reason, its file exists, and it holds a unit test of a platform type; dropping an entry makes the rule name that file. Today the list is empty: the update-pipeline, gold, seeder, repository and encryption tests that stay test no platform type and are not named, and no platform test outside the Platform folders has a reason to stay.
+</code></pre>
+
+<pre><code>No exception to the placement rule exists without a reason or outlives the test it excused, and the tests that stay by design are not flagged.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformLaneUnitTestPlacementTest.EveryNamedStayingTestFile_ExistsAndTestsAPlatformType; Lighthouse.Backend.Tests.Architecture.PlatformLaneUnitTestPlacementTest.AStayingTestFileDroppedFromTheList_IsNamed</p>
+
+<pre><code>An empty staying list passes trivially; the per-entry drop check gains cases only once an entry is added.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The rule reads every production source file in the Services Interfaces and Services Implementation folders and compares them with the named staying list of 151 files, each with its owner.
+</code></pre>
+
+<pre><code>The files found equal the list both ways, every entry has an owner, and no entry holds a platform type. Written with the list empty, the rule named all 151 files.
+</code></pre>
+
+<pre><code>Nothing is left in the old Services folders without a named owner, and no platform file stays there.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformLaneUnitTestPlacementTest.TheProductionFilesInServicesInterfacesAndImplementation_AreExactlyTheNamedStayingFiles</p>
+
+<pre><code>A wrong owner on a correct path; whether an owner is right is judged by review, not by the rule.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Each of the 151 entries of the production staying list is dropped in turn, and separately a made-up path whose file does not exist is added to the list.
+</code></pre>
+
+<pre><code>Every dropped entry&#x27;s file is named as not on the list, and the added gone path is named as no longer found.
+</code></pre>
+
+<pre><code>Every entry on the list is load-bearing: removing one, or keeping one whose file is gone, is caught.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformLaneUnitTestPlacementTest.AListedProductionFileDroppedFromTheList_IsNamed; Lighthouse.Backend.Tests.Architecture.PlatformLaneUnitTestPlacementTest.AGoneFileAddedToTheProductionList_IsNamed</p>
+
+<pre><code>A reordered list is accepted on purpose, since order carries no meaning.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The production rule runs on made-up trees: every file listed, an unlisted newcomer among the interfaces, an unlisted newcomer deeper among the implementations, a listed file that is gone, an entry without an owner, a made-up platform type listed as staying, and files in folders that only look like the two old folders.
+</code></pre>
+
+<pre><code>Each newcomer, the gone file, the ownerless entry and the listed platform type are named; the fully listed tree and the look-alike folders pass.
+</code></pre>
+
+<pre><code>A new file added to either old folder, a stale entry, an ownerless entry or a platform type kept there is caught; files elsewhere are not.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.PlatformLaneUnitTestPlacementTest.AMadeUpProductionTree_NamesEveryUnlistedGoneOwnerlessOrPlatformFile_AndNothingElse</p>
+
+<pre><code>A platform type kept in a file whose name differs from the type&#x27;s name; the platform check reads the file name.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The slice adds only two test-side files, the placement rule and its made-up fixture, and the existing architecture, placement, layout and platform suites and the backend build run unchanged.
+</code></pre>
+
+<pre><code>Every existing rule keeps its verdict (1807 tests of the placement, platform-lane, layout and platform filter pass, apart from the known environmental path-classifier failure), and the backend builds with zero warnings and zero errors.
+</code></pre>
+
+<pre><code>Nothing a user, an API client, a tracker or the database sees changes.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>dotnet test Lighthouse.Backend --filter TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration; dotnet build Lighthouse.Backend</p>
+
+<pre><code>A behaviour change no existing test observes; the slice edits no production file, so none can arise from it.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
