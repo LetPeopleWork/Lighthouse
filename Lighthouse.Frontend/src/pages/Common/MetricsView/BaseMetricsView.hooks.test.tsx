@@ -67,6 +67,7 @@ describe("the percentiles the reader scopes to a named cycle time definition", (
 		const metricsService = {
 			getCycleTimePercentiles,
 			getCycleTimePercentilesInfo,
+			getCycleTimeData: vi.fn().mockResolvedValue([]),
 		} as unknown as AnyMetricsService;
 		return renderHook(
 			({ entityId, startDate, endDate }: ScopeProps) =>

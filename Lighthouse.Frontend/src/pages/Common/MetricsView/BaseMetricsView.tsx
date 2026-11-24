@@ -256,6 +256,7 @@ export const BaseMetricsView = <
 		percentilesScopeDefinitionId,
 		scopedPercentileValues,
 		scopedPercentilesInfo,
+		scopedPercentileItems,
 		handlePercentilesScopeChange,
 	} = useNamedPercentilesScope({
 		metricsService,
@@ -575,6 +576,9 @@ export const BaseMetricsView = <
 		serviceLevelExpectation,
 		sleRangeInDays,
 		percentilesScopeDefinitionId,
+		scopedPercentileItems: scopedPercentileItems as unknown as
+			| IWorkItem[]
+			| null,
 		namedCycleTimeDefinitions,
 		estimationVsCycleTimeData,
 		arrivalsData,

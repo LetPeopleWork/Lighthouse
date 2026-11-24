@@ -55,6 +55,7 @@ function serviceAnswering(
 		service: {
 			getCycleTimePercentiles,
 			getCycleTimePercentilesInfo,
+			getCycleTimeData: vi.fn().mockResolvedValue([]),
 		} as unknown as IMetricsService<IWorkItem>,
 		getCycleTimePercentiles,
 		getCycleTimePercentilesInfo,

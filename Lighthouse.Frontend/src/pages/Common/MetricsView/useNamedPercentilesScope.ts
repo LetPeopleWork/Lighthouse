@@ -27,6 +27,9 @@ export function useNamedPercentilesScope<T extends IWorkItem | IFeature>({
 	>(null);
 	const [scopedPercentilesInfo, setScopedPercentilesInfo] =
 		useState<ICycleTimePercentilesInfo | null>(null);
+	const [scopedPercentileItems, setScopedPercentileItems] = useState<
+		T[] | null
+	>(null);
 
 	const namedPercentilesFetchGeneration = useRef(0);
 
@@ -44,6 +47,7 @@ export function useNamedPercentilesScope<T extends IWorkItem | IFeature>({
 			if (definitionId === null) {
 				setScopedPercentileValues(null);
 				setScopedPercentilesInfo(null);
+				setScopedPercentileItems(null);
 				return;
 			}
 
@@ -58,6 +62,7 @@ export function useNamedPercentilesScope<T extends IWorkItem | IFeature>({
 				setPercentilesScopeDefinitionId(null);
 				setScopedPercentileValues(null);
 				setScopedPercentilesInfo(null);
+				setScopedPercentileItems(null);
 			};
 
 			fireAndForget(
@@ -85,6 +90,16 @@ export function useNamedPercentilesScope<T extends IWorkItem | IFeature>({
 					})
 					.catch(revertToDefault),
 			);
+			fireAndForget(
+				metricsService
+					.getCycleTimeData(entityId, startDate, endDate, definitionId)
+					.then((items) => {
+						if (isCurrent()) {
+							setScopedPercentileItems(items);
+						}
+					})
+					.catch(revertToDefault),
+			);
 		},
 		[metricsService, entityId, startDate, endDate],
 	);
@@ -98,12 +113,14 @@ export function useNamedPercentilesScope<T extends IWorkItem | IFeature>({
 		setPercentilesScopeDefinitionId(null);
 		setScopedPercentileValues(null);
 		setScopedPercentilesInfo(null);
+		setScopedPercentileItems(null);
 	}, [entityId, startDate, endDate]);
 
 	return {
 		percentilesScopeDefinitionId,
 		scopedPercentileValues,
 		scopedPercentilesInfo,
+		scopedPercentileItems,
 		handlePercentilesScopeChange,
 	};
 }

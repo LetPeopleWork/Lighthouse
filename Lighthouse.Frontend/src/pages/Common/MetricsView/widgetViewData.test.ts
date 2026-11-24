@@ -89,6 +89,7 @@ describe("which lists carry the risk column", () => {
 			serviceLevelExpectation: { percentile: 85, value: 10 },
 			sleRangeInDays: 10,
 			percentilesScopeDefinitionId: null,
+			scopedPercentileItems: null,
 			namedCycleTimeDefinitions: [],
 			estimationVsCycleTimeData: null,
 			arrivalsData: null,
@@ -525,10 +526,11 @@ describe("which lists carry the risk column", () => {
 			{ id: 7, name: "Review", endState: "Done" },
 		];
 
-		it("lists only the items that have a value for it, and names the scope", () => {
+		it("lists the measure's own items rather than the closed ones, and names the scope", () => {
 			const percentiles = viewDataWith([], "team", {
 				cycleTimeData: closed,
 				percentilesScopeDefinitionId: 5,
+				scopedPercentileItems: [closed[0], closed[3]],
 				namedCycleTimeDefinitions: definitions,
 			}).percentiles;
 
@@ -541,7 +543,8 @@ describe("which lists carry the risk column", () => {
 
 		it("finds the scope among several definitions", () => {
 			const percentiles = viewDataWith([], "team", {
-				cycleTimeData: [
+				cycleTimeData: closed,
+				scopedPercentileItems: [
 					closedIn(8, [
 						{ definitionId: 7, days: 2, endDate: new Date(2026, 0, 1) },
 					]),

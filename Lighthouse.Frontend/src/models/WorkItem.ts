@@ -47,3 +47,10 @@ export interface IWorkItemEstimate {
 	displayValue: string | null;
 	unit: string | null;
 }
+
+/** The Work Item's value for a named Cycle Time; none when it has not passed through both of its states. */
+export const namedCycleTimeValueOf = (
+	item: Pick<IWorkItem, "namedCycleTimes">,
+	definitionId: number,
+): INamedCycleTimeValue | undefined =>
+	item.namedCycleTimes?.find((value) => value.definitionId === definitionId);

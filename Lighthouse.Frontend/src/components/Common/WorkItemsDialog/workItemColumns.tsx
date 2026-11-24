@@ -11,7 +11,10 @@ import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import type { IWorkItem } from "../../../models/WorkItem";
+import {
+	type IWorkItem,
+	namedCycleTimeValueOf,
+} from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
 	type AgeBandColumnDescriptor,
@@ -236,9 +239,7 @@ const cycleTimeOf = (row: IWorkItem): number | null =>
 const namedCycleTimeOf = (
 	row: IWorkItem,
 	definitionId: number,
-): number | null =>
-	row.namedCycleTimes?.find((value) => value.definitionId === definitionId)
-		?.days ?? null;
+): number | null => namedCycleTimeValueOf(row, definitionId)?.days ?? null;
 
 const cycleTimeColumn = (
 	settings: CatalogueColumnSettings,

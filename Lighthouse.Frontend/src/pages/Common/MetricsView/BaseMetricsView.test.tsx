@@ -5286,19 +5286,6 @@ describe("BaseMetricsView component", () => {
 			).toHaveTextContent("closedItems");
 		});
 
-		it("View Data Named selection: rows filtered to the named population equal to the percentile population", async () => {
-			renderWithNamedItems();
-
-			await screen.findByTestId("percentile-select-named");
-			await userEvent.click(screen.getByTestId("percentile-select-named"));
-
-			await waitFor(() => {
-				expect(
-					screen.getByTestId("widget-view-data-count-percentiles"),
-				).toHaveTextContent("2");
-			});
-		});
-
 		it("View Data Named selection: no SLE line is drawn in the dialog", async () => {
 			renderWithNamedItems();
 

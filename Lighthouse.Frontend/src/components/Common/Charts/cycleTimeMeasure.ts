@@ -1,5 +1,8 @@
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
-import type { IWorkItem } from "../../../models/WorkItem";
+import {
+	type IWorkItem,
+	namedCycleTimeValueOf,
+} from "../../../models/WorkItem";
 
 /** A Work Item as one Cycle Time plots it: its cycle time is that measure's days, on the date it sits on. */
 export type PlottedWorkItem = IWorkItem & { readonly plottedDate: Date };
@@ -58,9 +61,7 @@ export class NamedCycleTimeMeasure implements CycleTimeMeasure {
 
 	plot(population: readonly IWorkItem[]): PlottedWorkItem[] {
 		return population.flatMap((item) => {
-			const value = item.namedCycleTimes?.find(
-				(named) => named.definitionId === this.definition.id,
-			);
+			const value = namedCycleTimeValueOf(item, this.definition.id);
 			return value
 				? [{ ...item, cycleTime: value.days, plottedDate: value.endDate }]
 				: [];

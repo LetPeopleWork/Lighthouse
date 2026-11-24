@@ -525,6 +525,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	const [dialogContent, setDialogContent] = useState<{
 		title: string;
 		items: IWorkItem[];
+		scope?: {
+			cycleTimeScope: number;
+			namedCycleTimeDefinitions: INamedCycleTimeDefinition[];
+		};
 	}>({ title: "", items: [] });
 
 	// Never stored: every time the chart opens, outliers are hidden again.
@@ -633,6 +637,14 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				first,
 			),
 			items,
+			// The list's Cycle Time column reads the measure the dots were plotted with.
+			scope:
+				shown.measure.definitionId === null
+					? undefined
+					: {
+							cycleTimeScope: shown.measure.definitionId,
+							namedCycleTimeDefinitions,
+						},
 		});
 		setDialogOpen(true);
 	};
@@ -966,6 +978,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				}}
 				context="closedItems"
 				ownerKind={ownerKind}
+				{...dialogContent.scope}
 			/>
 		</>
 	);

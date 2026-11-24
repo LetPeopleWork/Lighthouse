@@ -4,7 +4,7 @@ export const NamedCycleTimeValueSchema = z.object({
 	definitionId: z.number(),
 	days: z.number(),
 	/** When the Work Item reached the definition's end state; the wire sends it as an ISO string. */
-	endDate: z.coerce.date(),
+	endDate: z.string().pipe(z.coerce.date()),
 });
 
 export type INamedCycleTimeValue = z.infer<typeof NamedCycleTimeValueSchema>;

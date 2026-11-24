@@ -45,6 +45,8 @@ type ViewDataInputs = {
 	 */
 	readonly sleRangeInDays: number | undefined;
 	readonly percentilesScopeDefinitionId: number | null;
+	/** The named Cycle Time's own Work Items, fetched for it; null on Default or while they are on their way. */
+	readonly scopedPercentileItems: IWorkItem[] | null;
 	readonly namedCycleTimeDefinitions: INamedCycleTimeDefinition[];
 	readonly estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
 	readonly arrivalsData: RunChartData | null;
@@ -133,11 +135,9 @@ export function buildViewData(
 		if (definition === undefined) {
 			return null;
 		}
-		return {
-			id,
-			valueFor: (item: IWorkItem) =>
-				item.namedCycleTimes?.find((value) => value.definitionId === id)?.days,
-		};
+		// Until the measure's own Work Items arrive, listing the default closed ones under its name
+		// would present a different population as the one the percentiles count.
+		return { id, items: inputs.scopedPercentileItems ?? [] };
 	})();
 
 	const opens = (context: WorkItemsDialogContextId) => ({
@@ -190,9 +190,7 @@ export function buildViewData(
 		percentiles: namedPercentilesScope
 			? {
 					title: `Closed ${terms.workItems}`,
-					items: inputs.cycleTimeData.filter(
-						(item) => namedPercentilesScope.valueFor(item) !== undefined,
-					),
+					items: namedPercentilesScope.items,
 					...closedItems,
 					cycleTimeScope: namedPercentilesScope.id,
 					namedCycleTimeDefinitions: inputs.namedCycleTimeDefinitions,
