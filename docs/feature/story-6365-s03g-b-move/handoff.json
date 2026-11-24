@@ -2,7 +2,8 @@
 "counters": {
 "C": 1,
 "D": 6,
-"F": 125,
+"E": 5,
+"F": 130,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1815,6 +1816,45 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F126"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F127"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F128"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F129"
+},
+{
+"id": "E5",
+"promises": [
+"P4"
+],
+"text": "F130"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6365 S03g Package Refinement, feature B (move): the 16 Refinement files that feature A's membership map lists move into Modules/Refinement/Domain (NeedBand.cs) and Modules/Refinement/Application (the other 15, the three port files with all their records), namespace equal to folder, with their using lines, the Program.cs registrations' full names and every literal on feature A's rename list renamed (B1); the 11 Refinement unit tests move to Tests/Modules/Refinement/Domain and /Application, namespace equal to folder, while the acceptance, wire-contract, model and usage-data tests stay (B2). Behaviour-free. DESIGN and DEVOPS: docs/feature/story-6365-s03g-package-refinement/feature-delta.md; feature A: docs/feature/story-6365-s03g-a-rules-first/.",
 "F10": "Feature B starts after feature A is accepted (whole-candidate review and EXAMINE, 2026-11-24). The move goes in refactor(refinement): move commits; the narrowing and the new rules wait for feature C. Behaviour-free: no review window, UI sketch and loading or failure looks N/A, usage-data event N/A.",
@@ -1846,7 +1886,12 @@
 "F123": "New home, namespace equal to folder.",
 "F124": "Moving the unit tests is the whole slice; no separate preservation move precedes it, and the moved tests are the existing GREEN oracle for the production move.",
 "F125": "The 11 Refinement unit tests live in Tests/Modules/Refinement/Domain and /Application with namespace equal to folder; the staying Refinement tests are untouched",
+"F126": "Each type in the Refinement membership map is found only in its new Refinement Domain or Application namespace and folder; none remains in the old Refinement service folders, and the staying Refinement files stay where they were. Observable as: architecture-rules reports no violation for the moved set and the staying set.",
+"F127": "The Refinement registrations in Program.cs keep the same order, lifetimes and service-to-implementation pairs, changing only full type names; every architecture rule and the preservation law stay green after the move.",
+"F128": "The 11 Refinement unit tests sit under Modules/Refinement/Domain (NeedBand) and Modules/Refinement/Application (the other 10), each with namespace equal to folder; acceptance, wire-contract, model, usage-data and SizingLogRepository tests stay in place with only using lines changed. Observable as: backend-tests runs them under the expected fragments and test-selection-show places them correctly.",
+"F129": "Refinement acceptance and wire-contract tests pass with unchanged assertions for tab, need, votes, comments, take-back and settings, and the whole filtered backend suite stays green. Observable as: backend-tests on the Refinement fragment and on the filtered suite is green.",
 "F13": "B1: the 16 Refinement production files live in Modules/Refinement/Domain and /Application, namespace equal to folder, nothing of the moving set is left under Services, the rename-list strings and Program.cs full names follow, and every rule stays green.",
+"F130": "The EF model is unchanged with no migration, routes, DTOs and headers are unchanged, and CI selects the backend suite for a change under Modules/Refinement. Observable as: ef-model-unchanged reports no model difference and test-selection-show for a Modules/Refinement path selects the backend suite.",
 "F14": "Refinement is packaged in its module and every rule and registration follows it",
 "F15": "B2: the 11 Refinement unit tests live in Tests/Modules/Refinement/Domain and /Application, namespace equal to folder, and the acceptance, wire-contract, model and usage-data tests stay.",
 "F16": "The Refinement unit tests sit beside the module they test",
