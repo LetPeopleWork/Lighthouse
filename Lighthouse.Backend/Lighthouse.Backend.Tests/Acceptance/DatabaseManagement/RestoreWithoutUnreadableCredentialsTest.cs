@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Data.Common;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;

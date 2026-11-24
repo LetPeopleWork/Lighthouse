@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Collections.Concurrent;
 using System.Net;
 using Lighthouse.Backend.Models;

@@ -23,10 +23,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string ContextTypeName = "UpdateCancellationContext";
 
         /// <summary>The one component allowed to write it: it is the only one that knows whose execution this is.</summary>
-        private const string QueueRelativePath = "Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs";
+        private const string QueueRelativePath = "Platform/UpdateQueue/UpdateQueueService.cs";
 
         /// <summary>The declaration itself assigns the backing field, which is not the rule's target.</summary>
-        private const string ContextRelativePath = "Services/Implementation/BackgroundServices/Update/UpdateCancellationContext.cs";
+        private const string ContextRelativePath = "Platform/UpdateQueue/UpdateCancellationContext.cs";
 
         [Test]
         public void OnlyTheUpdateQueue_WritesTheCancellationContext()

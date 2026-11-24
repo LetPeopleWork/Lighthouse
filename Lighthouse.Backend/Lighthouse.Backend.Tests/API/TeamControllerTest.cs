@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Platform.DomainEvents;

@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.Modules.Forecasting.Adapters.Background;
 using ArchUnitNET.NUnit;

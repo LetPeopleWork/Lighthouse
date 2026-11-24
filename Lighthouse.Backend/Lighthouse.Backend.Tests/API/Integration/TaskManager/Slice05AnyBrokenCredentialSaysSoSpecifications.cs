@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;

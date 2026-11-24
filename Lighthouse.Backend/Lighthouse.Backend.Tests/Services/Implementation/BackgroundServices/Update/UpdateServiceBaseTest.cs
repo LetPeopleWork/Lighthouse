@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Platform.Encryption;
 using Lighthouse.Backend.Services.Interfaces;

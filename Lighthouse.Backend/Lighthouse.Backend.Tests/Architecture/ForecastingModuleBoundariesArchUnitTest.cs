@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
@@ -113,11 +114,16 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         // The edges from Forecasting's Adapters into the update code the Team and Portfolio updaters use too. It stays
-        // where it is until the update code is split by module; the list only shrinks.
+        // where it is until the update code is split by module; the list only shrinks, apart from an edge that already
+        // existed and that moving a type into a namespace the rule watches makes visible.
         private static readonly string[] EdgesOfTheAdaptersIntoTheSharedUpdateCode =
         [
-            "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateCancellationContext",
-            "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey",
+            // These two existed before the move: the update queue's interfaces sat in Services.Interfaces.Update, which
+            // the rule did not see.
+            "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.IUpdateQueueService",
+            "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.IUpdateStatusStore",
+            "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.UpdateCancellationContext",
+            "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Platform.UpdateQueue.UpdateKey",
             "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase`1",
         ];
 
@@ -865,7 +871,7 @@ namespace Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutboun
 {
     internal static class ACompliantForecastJob
     {
-        public static string KeyName() => nameof(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey) + typeof(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey).Name;
+        public static string KeyName() => nameof(global::Lighthouse.Backend.Platform.UpdateQueue.UpdateKey) + typeof(global::Lighthouse.Backend.Platform.UpdateQueue.UpdateKey).Name;
     }
 }
 
@@ -874,8 +880,8 @@ namespace Lighthouse.Backend.Modules.ForecastingFixtures.ModuleBoundariesOutboun
     internal static class AForecastJobReachingMoreUpdateCode
     {
         public static string Names() =>
-            typeof(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey).Name +
-            typeof(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateCancellationContext).Name;
+            typeof(global::Lighthouse.Backend.Platform.UpdateQueue.UpdateKey).Name +
+            typeof(global::Lighthouse.Backend.Platform.UpdateQueue.UpdateCancellationContext).Name;
     }
 }
 

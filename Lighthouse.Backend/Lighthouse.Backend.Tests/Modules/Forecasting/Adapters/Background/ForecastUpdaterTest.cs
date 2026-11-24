@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.Forecasting.Adapters.Background;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;

@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Platform.DatabaseManagement;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Tests.TestHelpers;

@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Globalization;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Data;

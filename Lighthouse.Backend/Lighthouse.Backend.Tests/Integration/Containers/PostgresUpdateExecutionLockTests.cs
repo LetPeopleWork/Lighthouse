@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Options;

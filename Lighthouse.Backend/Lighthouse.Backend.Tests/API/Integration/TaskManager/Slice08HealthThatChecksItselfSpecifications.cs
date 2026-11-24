@@ -8,6 +8,7 @@ using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Modules.TrackerIntegration.Adapters.Background;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth;
 using Lighthouse.Backend.Platform.Encryption;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Platform.UsageData;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;

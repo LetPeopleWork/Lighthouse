@@ -360,7 +360,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("AnAccessApplicationTypeReachingAModuleAdapter_IsNamedByTheBelowRule");
             yield return new TestCaseData(typeof(AnAccessServiceAskingWorkItems), OutboundTarget.AnotherContext, "Lighthouse.Backend.Modules.WorkItems.Application.IWorkItemService")
                 .SetName("AnAccessTypeReachingAnotherModule_IsNamed");
-            yield return new TestCaseData(typeof(AnAccessServiceTouchingTheUpdateCode), OutboundTarget.AnotherContext, "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey")
+            yield return new TestCaseData(typeof(AnAccessServiceTouchingTheUpdateCode), OutboundTarget.AnotherContext, "Lighthouse.Backend.Platform.UpdateQueue.UpdateKey")
                 .SetName("AnAccessTypeReachingTheUpdateCode_IsNamed");
             yield return new TestCaseData(typeof(AnAccessServiceRunningTheWriteBackRound), OutboundTarget.AnotherContext, "Lighthouse.Backend.Services.Interfaces.IWriteBackTriggerService")
                 .SetName("AnAccessTypeReachingTheWriteBackRound_IsNamed");
@@ -585,7 +585,7 @@ namespace Lighthouse.Backend.Modules.AccessFixtures.BoundariesOutbound.TouchingT
 {
     internal static class AnAccessServiceTouchingTheUpdateCode
     {
-        public static string Describe() => typeof(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey).Name;
+        public static string Describe() => typeof(global::Lighthouse.Backend.Platform.UpdateQueue.UpdateKey).Name;
     }
 }
 

@@ -206,7 +206,7 @@ namespace Lighthouse.Backend.Modules.Promises.Application.PromisesFixtures
 
     internal static class ADeliveryServiceReachingTheUpdateCode
     {
-        public static bool Reaches(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey key) => key is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Platform.UpdateQueue.UpdateKey key) => key is not null;
     }
 
     internal static class ADeliveryServiceReadingValuesOnly
@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources.PromisesFix
 
     internal static class ADeliveryServiceReachingTheUpdateCode
     {
-        public static bool Reaches(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey key) => key is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Platform.UpdateQueue.UpdateKey key) => key is not null;
     }
 
     internal static class ADeliveryServiceReadingValuesOnly
@@ -252,7 +252,7 @@ namespace Lighthouse.Backend.Modules.PromisesFixtures.RulesSeeTheModule
 
     internal static class ADeliveryServiceReachingTheUpdateCode
     {
-        public static bool Reaches(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey key) => key is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Platform.UpdateQueue.UpdateKey key) => key is not null;
     }
 
     internal static class ADeliveryServiceNamesake

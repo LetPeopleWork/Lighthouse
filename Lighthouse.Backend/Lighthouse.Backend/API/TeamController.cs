@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Modules.Licensing.Adapters.Http;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;

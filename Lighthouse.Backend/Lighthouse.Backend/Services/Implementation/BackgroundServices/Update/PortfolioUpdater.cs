@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Platform.Encryption;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Modules.Forecasting.Application;

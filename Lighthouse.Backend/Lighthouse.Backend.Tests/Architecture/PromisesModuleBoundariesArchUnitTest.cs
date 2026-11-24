@@ -415,7 +415,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("APromisesTypeReachingAnotherModulesAdapter_IsNamedByTheUpstreamRule");
             yield return new TestCaseData(typeof(ADeliveryServiceRunningTheWriteBackRound), OutboundTarget.Upstream, "Lighthouse.Backend.Services.Interfaces.IWriteBackTriggerService")
                 .SetName("APromisesTypeReachingTheWriteBackRound_IsNamed");
-            yield return new TestCaseData(typeof(ADeliveryServiceTouchingTheUpdateCode), OutboundTarget.Upstream, "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey")
+            yield return new TestCaseData(typeof(ADeliveryServiceTouchingTheUpdateCode), OutboundTarget.Upstream, "Lighthouse.Backend.Platform.UpdateQueue.UpdateKey")
                 .SetName("APromisesTypeReachingTheUpdateCode_IsNamed");
             yield return new TestCaseData(typeof(ADeliveryServiceAskingTheLicence), OutboundTarget.Upstream, "Lighthouse.Backend.Modules.Licensing.Application.ILicenseService")
                 .SetName("APromisesTypeReachingLicensing_IsNamed");
@@ -778,7 +778,7 @@ namespace Lighthouse.Backend.Modules.PromisesFixtures.BoundariesOutbound.Touchin
 {
     internal static class ADeliveryServiceTouchingTheUpdateCode
     {
-        public static string Describe() => typeof(global::Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateKey).Name;
+        public static string Describe() => typeof(global::Lighthouse.Backend.Platform.UpdateQueue.UpdateKey).Name;
     }
 }
 

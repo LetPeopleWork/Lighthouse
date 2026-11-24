@@ -18,6 +18,7 @@ using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Platform.Logging;
 using Lighthouse.Backend.Platform.Releases;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Platform.UsageData;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Platform.DomainEvents;

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Modules.TrackerIntegration.Domain;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;

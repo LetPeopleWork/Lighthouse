@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;

@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.OAuth;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Platform.DatabaseManagement;

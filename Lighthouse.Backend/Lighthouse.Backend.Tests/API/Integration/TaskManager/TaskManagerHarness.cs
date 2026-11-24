@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;

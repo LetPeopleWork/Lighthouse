@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Platform.Logging
         private const string SourceContextProperty = "SourceContext";
 
         private const string TheQueueThatRefreshes =
-            "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateQueueService";
+            "Lighthouse.Backend.Platform.UpdateQueue.UpdateQueueService";
 
         private const string AComplaint = "Error processing update task for Team with ID 7";
 

@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.PortfolioUpdater",
             "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.TeamUpdater",
-            "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateNotificationHub",
+            "Lighthouse.Backend.Platform.UpdateQueue.UpdateNotificationHub",
             "Lighthouse.Backend.Services.Implementation.FeatureListService",
             "Lighthouse.Backend.Services.Implementation.Seeding.RefreshLogSeeder",
             "Lighthouse.Backend.Services.Interfaces.FeatureListRead",
@@ -148,7 +148,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService",
             "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Services.Interfaces.IAppSettingService",
-            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateCancellationContext",
+            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.UpdateQueue.UpdateCancellationContext",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Interfaces.IFeatureOrdering",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
         ];

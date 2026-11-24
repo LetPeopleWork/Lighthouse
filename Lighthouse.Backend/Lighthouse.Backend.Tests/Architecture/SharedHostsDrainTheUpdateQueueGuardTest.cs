@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Mono.Cecil;

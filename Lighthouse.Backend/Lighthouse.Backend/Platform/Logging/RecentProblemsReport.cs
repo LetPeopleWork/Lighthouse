@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Logging;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;

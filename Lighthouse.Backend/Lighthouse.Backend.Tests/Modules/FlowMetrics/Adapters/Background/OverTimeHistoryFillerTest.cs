@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Platform.UpdateQueue;
 using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;

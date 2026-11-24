@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Services.Implementation;

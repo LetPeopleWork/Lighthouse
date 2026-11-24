@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Platform.UpdateQueue;
 using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
