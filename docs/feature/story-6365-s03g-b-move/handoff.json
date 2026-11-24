@@ -1,9 +1,99 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1/F34",
+"L1/F35",
+"L1/F36",
+"L2/F39",
+"L2/F40"
+],
+"still_passes_if": "F134",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::EveryMovingRefinementType_IsFoundInItsNewModuleNamespaceOnly"
+},
+"expected": "F132",
+"stimulus": "F131",
+"user_result": "F133"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F138",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::EveryMovingRefinementFile_SitsInTheFolderOfItsNewNamespace_WithTheTypesTheMapListsForIt"
+},
+"expected": "F136",
+"stimulus": "F135",
+"user_result": "F137"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F142",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::EveryRefinementTypeThatStays_IsStillWhereTheMapListsIt"
+},
+"expected": "F140",
+"stimulus": "F139",
+"user_result": "F141"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F146",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::TheRenameList_HoldsNoEntry_BecauseTheMoveRenamesThemAll"
+},
+"expected": "F144",
+"stimulus": "F143",
+"user_result": "F145"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F150",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::TheCodeAfterTheMove_HasNoProblemInAnyCheck"
+},
+"expected": "F148",
+"stimulus": "F147",
+"user_result": "F149"
+}
+]
+},
 "counters": {
 "C": 1,
 "D": 6,
 "E": 5,
-"F": 130,
+"F": 150,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1892,8 +1982,28 @@
 "F129": "Refinement acceptance and wire-contract tests pass with unchanged assertions for tab, need, votes, comments, take-back and settings, and the whole filtered backend suite stays green. Observable as: backend-tests on the Refinement fragment and on the filtered suite is green.",
 "F13": "B1: the 16 Refinement production files live in Modules/Refinement/Domain and /Application, namespace equal to folder, nothing of the moving set is left under Services, the rename-list strings and Program.cs full names follow, and every rule stays green.",
 "F130": "The EF model is unchanged with no migration, routes, DTOs and headers are unchanged, and CI selects the backend suite for a change under Modules/Refinement. Observable as: ef-model-unchanged reports no model difference and test-selection-show for a Modules/Refinement path selects the backend suite.",
+"F131": "Read the compiled backend and the source tree against the membership map of the Refinement module",
+"F132": "Each moving type exists once, only in the Domain (NeedBand) or Application namespace of Modules.Refinement, its file sits in the folder of that namespace declaring it, and no moving file remains under the old Services folders",
+"F133": "Refinement is packaged in its module: nothing of it is left half moved in Services",
+"F134": "A type copied into the module but kept in the old namespace, an Application type declared in Domain, a file in the wrong module folder or declaring the old namespace, or a file left under Services would still pass this one test; the sibling file and old-folder tests and the made-up cases fail on each",
+"F135": "Read the source tree for the files of the moving set",
+"F136": "Each file sits in Modules/Refinement/Domain or /Application declaring that namespace and its listed types, and none remains under Services/Implementation/Refinement or Services/Interfaces/Refinement",
+"F137": "No half-moved Refinement file is left in Services",
+"F138": "A type declared in the right namespace by a file in the wrong folder passes the namespace test but fails here; a leftover old file fails the old-folder test",
+"F139": "Read the compiled backend for the Refinement types the map lists as staying",
 "F14": "Refinement is packaged in its module and every rule and registration follows it",
+"F140": "Sizing-log repository pair, shared models, controllers, validator, DTOs and WeeklyRecurrence are each found once in the namespace the map lists",
+"F141": "The stored model and the API wire are untouched by the move",
+"F142": "A staying type moved while a copy remains in its old place would pass; the move owner removes the old file, and a type moved away fails by name, shown by the made-up case",
+"F143": "Read the list of strings the move renames",
+"F144": "The list holds no entry, because every string was renamed to the new place or removed",
+"F145": "No guard test still names the old Services path of a moved Refinement type",
+"F146": "A string left unrenamed in a test file while its entry was deleted from the list would still pass; the guard tests that read those strings fail on it instead",
+"F147": "Feed the checks a made-up finished move and made-up broken ones",
+"F148": "The finished move has no problem; each broken one (left, copied, wrong layer, wrong folder, stale namespace, old file, moved staying type, leftover entry) is named by its type or file and nothing else",
+"F149": "The checks fail on a half-done move and pass a finished one",
 "F15": "B2: the 11 Refinement unit tests live in Tests/Modules/Refinement/Domain and /Application, namespace equal to folder, and the acceptance, wire-contract, model and usage-data tests stay.",
+"F150": "A check that always passes or always fails is caught by the pairing of the finished case with the broken cases",
 "F16": "The Refinement unit tests sit beside the module they test",
 "F17": "Layer per file: NeedBand.cs goes to Modules/Refinement/Domain (namespace Lighthouse.Backend.Modules.Refinement.Domain); the other 15 files, with the three port files whole, go to Modules/Refinement/Application. The membership map RefinementMembership is the single owner of which type moves where; the new oracles read it and add no second list.",
 "F18": "Carriers: decisions stay in the existing owners (NeedBand value, RefinementList, StageRuleMatcher, VoterIdentityResolver and the others keep their data and behaviour); only the namespace and folder change. Errors stay the existing SizingRefusal, VoterRefusal and NeedUnavailableReason; effects stay behind the unchanged ports and Program.cs registrations. No per-process state is added.",

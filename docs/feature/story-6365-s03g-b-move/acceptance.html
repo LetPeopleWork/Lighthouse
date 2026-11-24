@@ -151,7 +151,139 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled backend and the source tree against the membership map of the Refinement module
+</code></pre>
+
+<pre><code>Each moving type exists once, only in the Domain (NeedBand) or Application namespace of Modules.Refinement, its file sits in the folder of that namespace declaring it, and no moving file remains under the old Services folders
+</code></pre>
+
+<pre><code>Refinement is packaged in its module: nothing of it is left half moved in Services
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::EveryMovingRefinementType_IsFoundInItsNewModuleNamespaceOnly</p>
+
+<pre><code>A type copied into the module but kept in the old namespace, an Application type declared in Domain, a file in the wrong module folder or declaring the old namespace, or a file left under Services would still pass this one test; the sibling file and old-folder tests and the made-up cases fail on each
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the source tree for the files of the moving set
+</code></pre>
+
+<pre><code>Each file sits in Modules/Refinement/Domain or /Application declaring that namespace and its listed types, and none remains under Services/Implementation/Refinement or Services/Interfaces/Refinement
+</code></pre>
+
+<pre><code>No half-moved Refinement file is left in Services
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::EveryMovingRefinementFile_SitsInTheFolderOfItsNewNamespace_WithTheTypesTheMapListsForIt</p>
+
+<pre><code>A type declared in the right namespace by a file in the wrong folder passes the namespace test but fails here; a leftover old file fails the old-folder test
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled backend for the Refinement types the map lists as staying
+</code></pre>
+
+<pre><code>Sizing-log repository pair, shared models, controllers, validator, DTOs and WeeklyRecurrence are each found once in the namespace the map lists
+</code></pre>
+
+<pre><code>The stored model and the API wire are untouched by the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::EveryRefinementTypeThatStays_IsStillWhereTheMapListsIt</p>
+
+<pre><code>A staying type moved while a copy remains in its old place would pass; the move owner removes the old file, and a type moved away fails by name, shown by the made-up case
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read the list of strings the move renames
+</code></pre>
+
+<pre><code>The list holds no entry, because every string was renamed to the new place or removed
+</code></pre>
+
+<pre><code>No guard test still names the old Services path of a moved Refinement type
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::TheRenameList_HoldsNoEntry_BecauseTheMoveRenamesThemAll</p>
+
+<pre><code>A string left unrenamed in a test file while its entry was deleted from the list would still pass; the guard tests that read those strings fail on it instead
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>Feed the checks a made-up finished move and made-up broken ones
+</code></pre>
+
+<pre><code>The finished move has no problem; each broken one (left, copied, wrong layer, wrong folder, stale namespace, old file, moved staying type, leftover entry) is named by its type or file and nothing else
+</code></pre>
+
+<pre><code>The checks fail on a half-done move and pass a finished one
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementLivesInItsModuleArchUnitTest.cs::TheCodeAfterTheMove_HasNoProblemInAnyCheck</p>
+
+<pre><code>A check that always passes or always fails is caught by the pairing of the finished case with the broken cases
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 
