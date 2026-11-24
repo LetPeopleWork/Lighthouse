@@ -3,6 +3,7 @@ import {
 	useOAuthSignIn,
 } from "../../../hooks/useOAuthSignIn";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { nameOfTracker } from "../ConnectionDefault/parentSources";
 import SignInAlert from "./SignInAlert";
 
 interface WriteConsentAlertProps {
@@ -10,8 +11,8 @@ interface WriteConsentAlertProps {
 	onSignedIn?: () => void;
 }
 
-const WRITE_CONSENT_COPY =
-	"Write-back needs more rights. Lighthouse can only read from Azure DevOps with this sign-in. Sign in again to allow Lighthouse to write the mapped fields.";
+const writeConsentCopy = (connection: IWorkTrackingSystemConnection) =>
+	`Write-back needs more rights. Lighthouse can only read from ${nameOfTracker(connection.workTrackingSystem)} with this sign-in. Sign in again to allow Lighthouse to write the mapped fields.`;
 
 const SIGN_IN_AGAIN_COPY: OAuthSignInCopy = {
 	popupBlocked:
@@ -44,7 +45,7 @@ const WriteConsentAlert = ({
 
 	return (
 		<SignInAlert
-			message={WRITE_CONSENT_COPY}
+			message={writeConsentCopy(connection)}
 			actionLabel="Sign in again"
 			onAction={() => signIn(target)}
 			isSigningIn={isSigningIn}
