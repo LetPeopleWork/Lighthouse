@@ -933,13 +933,11 @@ namespace Lighthouse.Backend.Tests.API
                 "Publish PortfolioDeleted with the Portfolio's id through the domain event dispatcher in the queued delete, after the save.");
         }
 
-        // Records every published event by its type name, so this class builds while PortfolioDeleted does not exist yet.
         private sealed class RecordingDispatcher(List<string> whatHappened) : IDomainEventDispatcher
         {
             public Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default) where TEvent : IDomainEvent
             {
-                var portfolioId = domainEvent.GetType().GetProperty("PortfolioId")?.GetValue(domainEvent);
-                whatHappened.Add($"published {domainEvent.GetType().Name} {portfolioId}".TrimEnd());
+                whatHappened.Add(domainEvent is PortfolioDeleted deleted ? $"published PortfolioDeleted {deleted.PortfolioId}" : $"published {typeof(TEvent).Name}");
                 return Task.CompletedTask;
             }
         }

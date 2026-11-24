@@ -1,10 +1,8 @@
-using System.Reflection;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Platform.DomainEvents;
+using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.WorkItems.Application.Policies;
 using Lighthouse.Backend.Services.Implementation.Repositories;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.Services.Implementation;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -18,10 +16,6 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application.Policies
     [TestFixture]
     public class PortfolioDeletedOrphanedFeatureCleanupHandlerTest
     {
-        private const string TheDeletionEvent = "Lighthouse.Backend.Models.Events.PortfolioDeleted";
-
-        private const string TheWorkItemsReaction = "Lighthouse.Backend.Modules.WorkItems.Application.Policies.PortfolioDeletedOrphanedFeatureCleanupHandler";
-
         private FeatureStore store = null!;
 
         [SetUp]
@@ -75,45 +69,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application.Policies
                 await portfolios.Save();
             }
 
-            await TheWorkItemsReactionHandles(TheEventOfDeleting(portfolio));
-        }
-
-        private async Task TheWorkItemsReactionHandles(object portfolioDeleted)
-        {
-            var reaction = TheProductionType(TheWorkItemsReaction,
-                "Without a Work Items reaction to a Portfolio deletion, the Features the deletion leaves in no Portfolio stay on the Team's Features tab until the next refresh or start.",
-                "Add the reaction under Modules/WorkItems/Application/Policies; it runs the orphaned-Feature clean-up.");
-            var handlerPort = typeof(IDomainEventHandler<>).MakeGenericType(portfolioDeleted.GetType());
-            Assert.That(handlerPort.IsAssignableFrom(reaction), Is.True,
-                $"{reaction.Name} does not handle {portfolioDeleted.GetType().Name}. " +
-                "The dispatcher only hands an event to the handlers of that event, so the clean-up would never run on a Portfolio deletion. " +
-                $"Make it implement IDomainEventHandler<{portfolioDeleted.GetType().Name}>.");
-
-            var services = new ServiceCollection();
-            services.AddLogging();
-            services.AddSingleton(store.TheCleanup());
-            using var provider = services.BuildServiceProvider();
-            var handler = ActivatorUtilities.CreateInstance(provider, reaction);
-
-            var handling = (Task)handlerPort.GetMethod("HandleAsync")!.Invoke(handler, [portfolioDeleted, CancellationToken.None])!;
-            await handling;
-        }
-
-        private static object TheEventOfDeleting(Portfolio portfolio)
-        {
-            var portfolioDeleted = TheProductionType(TheDeletionEvent,
-                "Without an event that says a Portfolio was deleted, Work Items cannot clean up the Features the deletion leaves in no Portfolio until the next refresh or start.",
-                "Add the domain event record PortfolioDeleted(int PortfolioId) beside TeamDeleted.");
-            return Activator.CreateInstance(portfolioDeleted, portfolio.Id)!;
-        }
-
-        // Found by name so that, until they exist, this class still builds and fails here with a reason instead of
-        // stopping the whole test project from compiling.
-        private static Type TheProductionType(string fullName, string why, string how)
-        {
-            var type = typeof(Portfolio).Assembly.GetType(fullName);
-            Assert.That(type, Is.Not.Null, $"The production code holds no {fullName}. {why} {how}");
-            return type!;
+            await new PortfolioDeletedOrphanedFeatureCleanupHandler(store.TheCleanup()).HandleAsync(new PortfolioDeleted(portfolio.Id), CancellationToken.None);
         }
 
         private async Task TheStoredFeaturesAre(params string[] references)

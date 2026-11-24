@@ -61,9 +61,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "PortfolioDeletedOrphanedFeatureCleanupHandler",
         ];
 
-        // Found by name so that this class builds, and fails on this pin alone, while the event does not exist.
-        private static readonly Type? PortfolioDeleted = typeof(TeamDeleted).Assembly.GetType("Lighthouse.Backend.Models.Events.PortfolioDeleted");
-
         private static readonly string[] PortfolioForecastsUpdatedOrder =
         [
             "DeliveryMetricSnapshotRecordingHandler",
@@ -75,16 +72,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         [OneTimeSetUp]
         public void ReadTheStartUpRegistrations()
         {
-            Type[] events =
-            [
+            handlers = StartUpDomainEventHandlers.Read(
                 typeof(TeamDataRefreshed),
                 typeof(PortfolioFeaturesRefreshed),
                 typeof(FeatureOrderingPolicyChanged),
                 typeof(FeatureRankChanged),
                 typeof(TeamDeleted),
                 typeof(PortfolioForecastsUpdated),
-            ];
-            handlers = StartUpDomainEventHandlers.Read(PortfolioDeleted is null ? events : [.. events, PortfolioDeleted]);
+                typeof(PortfolioDeleted));
         }
 
         [Test]
@@ -158,12 +153,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void HandlersOfAPortfolioDeletion_AreTheOrphanedFeatureCleanupAlone()
         {
-            Assert.That(PortfolioDeleted, Is.Not.Null,
-                "The production code holds no PortfolioDeleted event, so nothing tells Work Items that a Portfolio was deleted. " +
-                "The Features the deletion leaves in no Portfolio then stay on the Team's Features tab until the next refresh or start. " +
-                "Add the domain event record PortfolioDeleted(int PortfolioId) beside TeamDeleted.");
-
-            var handedOut = handlers.Of(PortfolioDeleted!).Select(handler => handler.Name).ToList();
+            var handedOut = HandlersInTheOrderTheContainerHandsThemOut<PortfolioDeleted>();
 
             Assert.That(handedOut, Is.EqualTo(PortfolioDeletedOrder),
                 "The handlers of a Portfolio deletion are not the orphaned-Feature clean-up alone. " +
@@ -192,12 +182,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         public IReadOnlyList<Type> Of<TEvent>() where TEvent : IDomainEvent
-            => Of(typeof(TEvent));
-
-        public IReadOnlyList<Type> Of(Type domainEvent)
-            => handlersByEvent.TryGetValue(domainEvent, out var handlers)
+            => handlersByEvent.TryGetValue(typeof(TEvent), out var handlers)
                 ? handlers
-                : throw new InvalidOperationException($"The handlers of {domainEvent.Name} were not read. Name the event when reading the start-up registrations.");
+                : throw new InvalidOperationException($"The handlers of {typeof(TEvent).Name} were not read. Name the event when reading the start-up registrations.");
 
         public static StartUpDomainEventHandlers Read(params Type[] events)
         {
