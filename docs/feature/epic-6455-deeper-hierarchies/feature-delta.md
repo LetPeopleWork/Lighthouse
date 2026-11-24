@@ -788,3 +788,14 @@ the right) is "not specifically well done" and should be looked at too, not only
 ADR-271 so far only plans the unit pages, the per-level Overview and a possible Deliveries entry (Decision 6); it says
 nothing about the top bar as a whole. When #6476 reaches DISCUSS, take the top bar into its scope or split it into its
 own item, and ask the maintainer what in it does not work for them.
+
+## Maintainer decision, 2026-11-24: an item belongs to exactly one unit of the level above
+
+Today a Feature can be in several Portfolios (many-to-many; `LighthouseAppContext.cs`, `Feature.Portfolios`). Going
+forward, with levels, an item is mapped to **exactly one** owning unit of its level (one Portfolio, or whatever the
+level above is called): appearing in several does not make sense. Not changed now; the levels work (#6474 /
+#6455) designs it, including what happens when two units' queries return the same item and how today's
+installations with shared Features are migrated.
+
+Found while fixing Bug #6665 (former parent Features left on Team pages). That fix keeps today's many-to-many and
+acts when a Feature leaves its **last** Portfolio; with one unit per item that rule becomes "leaves its unit".
