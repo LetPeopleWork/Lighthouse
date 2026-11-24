@@ -1,0 +1,220 @@
+{
+"counters": {
+"E": 8,
+"F": 22,
+"P": 4,
+"S": 2
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs",
+"public_oracle": {
+"expected": "F8",
+"falsifier": "F9",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F7"
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProvider.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/OAuth/OAuthCredential.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/TrackerIntegration/Application/OAuth/OAuthService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/TrackerIntegration/Adapters/OAuth/JiraOAuthProviderTest.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WorkTrackingSystemConnectionDtoTest.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/OAuth/OAuthCredentialTest.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~JiraOAuthWriteConsent"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.trackerName.test.tsx",
+"public_oracle": {
+"expected": "F13",
+"falsifier": "F14",
+"promises": [
+"P4"
+],
+"stimulus": "F12"
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connections/WriteConsentAlert.tsx"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Connections/WriteConsentAlert.trackerName.test.tsx"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F15"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F16"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F17"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F18"
+},
+{
+"id": "E5",
+"promises": [
+"P3"
+],
+"text": "F19"
+},
+{
+"id": "E6",
+"promises": [
+"P3"
+],
+"text": "F20"
+},
+{
+"id": "E7",
+"promises": [
+"P4"
+],
+"text": "F21"
+},
+{
+"id": "E8",
+"promises": [
+"P4"
+],
+"text": "F22"
+}
+]
+},
+"facts": {
+"F1": "Bug 6686 — Jira OAuth: write-back cannot write with read-only scopes. The Jira OAuth connection asks only for read scopes (read:jira-work, read:jira-user, board/sprint/issue/project read scopes, offline_access) in JiraOAuthProvider.cs. Write-back (Data Sync Mappings) on a Jira OAuth connection therefore cannot write: Jira refuses the update for lack of write:jira-work. Jira API-token connections are not affected. To check: confirm the failure on a Jira OAuth connection with a write-back mapping; then decide whether Jira OAuth should ask for write:jira-work only when write-back is set up, the same way as the Azure DevOps change in Story 6672. Found while preparing Story 6672. Maintainer decisions 2026-11-24: mirror the Azure DevOps change (ask write:jira-work only when write-back mappings are saved, record what Atlassian granted, show the Rights line and the Sign in again warning for Jira too); a Jira OAuth sign-in stored before rights were recorded counts as read-only; the write-consent warning names the connection's tracker (Jira or Azure DevOps).",
+"F10": "The write-consent warning names the connection's own tracker (Jira or Azure DevOps) and keeps its Sign in again action",
+"F11": "The write-consent warning names the connection's tracker, so a Jira OAuth connection is told it can only read from Jira",
+"F12": "The connection settings page shows a Jira OAuth connection and an Azure DevOps OAuth connection whose sign-in may only read while write-back is set up",
+"F13": "The Jira connection's warning reads: Write-back needs more rights. Lighthouse can only read from Jira with this sign-in. Sign in again to allow Lighthouse to write the mapped fields. The Azure DevOps connection's warning names Azure DevOps. Both keep the Sign in again button.",
+"F14": "A Jira connection's warning names Azure DevOps, or names no tracker, or the Sign in again button is gone",
+"F15": "Connecting a Jira OAuth connection asks Atlassian for write:jira-work only when write-back mappings are saved on that connection; a connection with no write-back mappings asks for the read scopes only.",
+"F16": "Write-back on a Jira OAuth connection that was signed in without write rights sends nothing to Jira, including a connection signed in before rights were recorded.",
+"F17": "That refused write-back attempt on a Jira OAuth connection without write rights writes exactly one warning to the log.",
+"F18": "A Jira OAuth connection without write rights shows the rights as Rights Read, together with a Sign in again warning.",
+"F19": "After the admin signs in again and Atlassian grants write:jira-work, write-back on that Jira OAuth connection sends the change to Jira.",
+"F2": "Write-back works on a Jira OAuth connection: Lighthouse asks Atlassian for write rights only when write-back is set up, and shows when a Jira sign-in may only read.",
+"F20": "Write-back on Azure DevOps OAuth connections and API-token connections keeps working as it did before this change.",
+"F21": "The write-consent warning names the connection's own tracker, Jira or Azure DevOps, and never the other one.",
+"F22": "The write-consent warning offers a Sign in again action on the connection it describes.",
+"F3": "A Jira OAuth connection asks Atlassian for write:jira-work only when write-back mappings are saved on it; otherwise it asks for the read scopes only",
+"F4": "Lighthouse records what Atlassian granted; write-back on a Jira OAuth sign-in without write rights, including a sign-in made before rights were recorded, sends nothing to Jira and logs one warning, and the connection shows Rights Read with the Sign in again warning",
+"F5": "After the admin signs in again and Atlassian grants write:jira-work, write-back on the Jira OAuth connection sends the change; Azure DevOps OAuth and API-token connections keep their current behaviour",
+"F6": "A Jira OAuth connection with write-back asks Atlassian for write:jira-work, records what Atlassian granted, and write-back on a Jira sign-in that may only read is not sent and is shown as needing a new sign-in",
+"F7": "An admin signs in a Jira OAuth connection with and without write-back mappings, Atlassian answers the token request with a granted scope, and a write-back runs on that connection",
+"F8": "Without write-back the sign-in asks Atlassian for the read scopes and offline_access only; with write-back it also asks for write:jira-work. A grant naming write:jira-work lets write-back send the change to Jira; a grant without it, or a Jira sign-in stored before rights were recorded, sends nothing, logs one warning, and the connection list says Rights Read and needsWriteConsent true. Azure DevOps OAuth and API-token connections behave as before.",
+"F9": "The sign-in URL for a Jira connection with write-back lacks write:jira-work, or a read-only Jira grant (or an old Jira sign-in with no recorded rights) still sends a write-back to Jira, or the connection list shows no rights for a Jira OAuth connection"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F10"
+}
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F6",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+},
+{
+"id": "S2",
+"observation": "F11",
+"promises": [
+"P4"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "bug-6686-jira-oauth-write-consent",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
