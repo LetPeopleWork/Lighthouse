@@ -71,6 +71,13 @@ Push, cost and rigor (D-12, D-14; confirms the Proposed AFK defaults, maintainer
 ```
 Governed slices: S1, S2, S3, S4, S5
 
+#### D10
+
+```text
+F3-S3 (engineering choice taken in AFK mode, open to the maintainer; the same kind of exception as F2): PlatformLaneMembership.cs stays unedited. A map row of a later move (S4, S5) names a test file at its old path, and an earlier move of this feature (S3) moves that file under Tests/Platform/<Area>, so feature A's EachStringTheMoveRenames_IsFoundInItsFile_UnderItsOldOrItsNewText fails between the two moves. The S3 acceptance designer amends the support PlatformLaneMembershipArchUnitTest before craft, changing only the file lookup in WhenTheStringsTheMoveRenamesAreLookedFor: it reads the row's file at its listed path; when that path does not exist it reads the single file of the same name under Tests/Platform/<Area> (any area); it names the row as missing when there is no such file or more than one, and it never reads any other file. Every assertion and test stays, so the row holds before and after its file moves, and the made-up string row still fails. Rejected: editing the map row's path (breaks the check before the move and edits feature A's map); a craft-time exemption (loosens the rule). Applies to S3, S4 and S5.
+```
+Governed slices: S3, S4, S5
+
 ### Constraints
 
 #### K1
@@ -83,9 +90,8 @@ Governed slices: S1, S2, S3, S4, S5
 #### K2
 
 ```text
-Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision, and honouring F4's per-type exception), PlatformLaneMembershipArchUnitTest (F2) and PlatformLanePatternRoles (F4's per-type exception for PromisesAndTheUpdateCode and KeyRingFileWatcher), made by the S1 acceptance designer before craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest), F3 (2 listed ICryptoService Application edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) and F4 (no Platform.Encryption alternative in PromisesAndTheUpdateCode or its composites there) are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths, made by the S1 crafter. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.
+Namespace equals folder for every moved file. Approved oracles of this feature are never edited, not even a using line; feature A's oracles and supports are never edited, with the S1 exceptions only: the S1 support amendments of PlatformLaneRulesSeeTheMoveArchUnitTest (CryptoServiceFullName decision, and honouring F4's per-type exception), PlatformLaneMembershipArchUnitTest (F2) and PlatformLanePatternRoles (F4's per-type exception for PromisesAndTheUpdateCode and KeyRingFileWatcher), made by the S1 acceptance designer before craft; and the S3 support amendment of PlatformLaneMembershipArchUnitTest (F3-S3: where a listed string's file has moved, the check reads the one file of that name under Tests/Platform), made by the S3 acceptance designer before craft. The S1 maintainer decisions F1 (named log exemption in SecretCustodySeamArchUnitTest), F3 (2 listed ICryptoService Application edges and the fixture offender set in TrackerIntegrationModuleBoundariesArchUnitTest) and F4 (no Platform.Encryption alternative in PromisesAndTheUpdateCode or its composites there) are the only edits of existing tests beyond K1's moves, namespace lines, usings, full-name strings and paths, made by the S1 crafter. A crafter target is never an oracle support. One commit per slice plus its tests refactor commit; GREEN and every review run on a clean committed tree; never git stash; never loosen a rule.
 ```
-Governed slices: S1, S2, S3, S4, S5
 
 #### K3
 
@@ -7243,7 +7249,7 @@ dotnet test Lighthouse.Backend --filter "TestCategory!=JiraIntegration&TestCateg
 
 #### Supports
 
-None.
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneMembershipArchUnitTest\.cs
 
 #### Public oracle
 
