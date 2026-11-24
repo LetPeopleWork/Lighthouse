@@ -267,7 +267,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var type = PlatformLaneMembership.MovingTypes.Single(moving => listed.Target.StartsWith($"{moving.Name}.", StringComparison.Ordinal) || listed.Target == moving.Name);
             var files = WhenTheAnalyserConfigFilesAreRead();
             var rewritten = files.Select(file => (file.File, file.Text.Replace(type.OldFullName, type.NewFullName, StringComparison.Ordinal))).ToList();
-            var removed = files.Select(file => (file.File, file.Text.Replace(type.OldFullName, $"Lighthouse.Backend.Gone.{type.Name}", StringComparison.Ordinal))).ToList();
+            var removed = files.Select(file => (file.File, file.Text.Replace(type.OldFullName, $"Lighthouse.Backend.Gone.{type.Name}", StringComparison.Ordinal).Replace(type.NewFullName, $"Lighthouse.Backend.Gone.{type.Name}", StringComparison.Ordinal))).ToList();
 
             Assert.DoesNotThrow(() => ThenTheTargetsMatchTheList(rewritten, PlatformLaneMembership.SuppressionTargets),
                 $"The target of {type.Name} rewritten to {type.NewNamespace} no longer matched the list. The list writes targets without their namespace, so the move's rewrite must keep this check green.");
