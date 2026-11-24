@@ -1,4 +1,3 @@
-using System.Reflection;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
@@ -19,7 +18,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
+namespace Lighthouse.Backend.Tests.Acceptance.NamedCycleTime
 {
     /// <summary>
     /// A named Cycle Time "Analysis to Ready for Release" is answered from its own Work Items: every item that last
@@ -220,11 +219,13 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 using var scope = harness.NewScope();
                 if (kind == OwnerKind.Team)
                 {
-                    var teamAnswer = (IEnumerable<CycleTimeWorkItem>)AskForTheMeasure<ITeamMetricsService>(scope, nameof(ITeamMetricsService.GetCycleTimeDataForTeam), TheTeam(scope))!;
+                    var teamAnswer = scope.ServiceProvider.GetRequiredService<ITeamMetricsService>()
+                        .GetCycleTimeDataForTeam(TheTeam(scope), FirstOfNovember, LastOfNovember, AnalysisToReadyForRelease);
                     return [.. teamAnswer.Select(entry => Seen(entry.WorkItem.ReferenceId, entry.NamedCycleTimes))];
                 }
 
-                var portfolioAnswer = (IEnumerable<CycleTimeFeature>)AskForTheMeasure<IPortfolioMetricsService>(scope, nameof(IPortfolioMetricsService.GetNamedCycleTimeDataForPortfolio), ThePortfolio(scope))!;
+                var portfolioAnswer = scope.ServiceProvider.GetRequiredService<IPortfolioMetricsService>()
+                    .GetNamedCycleTimeDataForPortfolio(ThePortfolio(scope), FirstOfNovember, LastOfNovember, AnalysisToReadyForRelease);
                 return [.. portfolioAnswer.Select(entry => Seen(entry.Feature.ReferenceId, entry.NamedCycleTimes))];
             }
 
@@ -412,39 +413,13 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             private Portfolio ThePortfolio(IServiceScope scope)
                 => scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(ownerId)!;
 
-            // Looked up by name rather than called directly, so that a port which does not yet take a definition is
-            // reported as a failed expectation instead of stopping the whole test project from building.
-            private static object? AskForTheMeasure<TPort>(IServiceScope scope, string operation, WorkTrackingSystemOptionsOwner owner)
-                where TPort : notnull
-            {
-                var asksWithADefinition = typeof(TPort).GetMethods().SingleOrDefault(method =>
-                    method.Name == operation
-                    && method.GetParameters() is { Length: 4 } parameters
-                    && parameters[3].Name == "definitionId");
-
-                Assert.That(asksWithADefinition, Is.Not.Null,
-                    $"{typeof(TPort).Name}.{operation} takes no definitionId, so the Cycle Time scatterplot cannot ask for a named " +
-                    "Cycle Time's own items. Give it an optional definitionId after the dates; without one it answers as before.");
-
-                return asksWithADefinition!.Invoke(
-                    scope.ServiceProvider.GetRequiredService<TPort>(),
-                    [owner, FirstOfNovember, LastOfNovember, AnalysisToReadyForRelease]);
-            }
-
             private static NamedCycleTimeSeen Seen(string reference, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes)
             {
                 var named = namedCycleTimes.FirstOrDefault(value => value.DefinitionId == AnalysisToReadyForRelease);
                 return new NamedCycleTimeSeen(reference, named?.Days, named == null ? null : EndDayOf(named));
             }
 
-            private static DateOnly? EndDayOf(NamedCycleTimeValue named)
-                => typeof(NamedCycleTimeValue).GetProperty("EndDate", BindingFlags.Public | BindingFlags.Instance)?.GetValue(named) switch
-                {
-                    DateTime endDate => DateOnly.FromDateTime(endDate),
-                    DateTimeOffset endMoment => DateOnly.FromDateTime(endMoment.UtcDateTime),
-                    DateOnly endDay => endDay,
-                    _ => null,
-                };
+            private static DateOnly EndDayOf(NamedCycleTimeValue named) => DateOnly.FromDateTime(named.EndDate);
 
             private static DateTime Oct(int day) => new(2026, 10, day, 9, 0, 0, DateTimeKind.Utc);
 
