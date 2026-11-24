@@ -62,7 +62,7 @@ The built-in Cycle Time measures the whole in-progress span. Often you also want
 
 ![Cycle Time Scatterplot with a named cycle time selected](../assets/features/metrics/cycleScatterNamedCycleTime.png)
 
-Pick **Default** for the built-in Cycle Time, or any named cycle time to re-plot every dot over that window and recompute the percentiles for it. A definition whose start or end state you have since removed is shown disabled with a hint to fix its states; the chart simply stays on the Default until you do.
+Pick **Default** for the built-in Cycle Time, or any named cycle time to plot that measure's own Work Items. The chart then shows every Work Item that reached the named cycle time's end state within the selected dates, whether or not it is closed yet, each placed on the day it reached the end state; the x-axis reads **Date reached** and the end state's name. A Work Item that has not reached the end state is not shown. The percentiles, the Cycle Time Percentiles widget and its **View Data** list use the same Work Items. A definition whose start or end state you have since removed is shown disabled with a hint to fix its states; the chart simply stays on the Default until you do.
 
 {: .note}
 A named cycle time uses half-open `[enter start … enter end)` boundaries: an item's time is measured from when it first reaches the start state up to (but not including) when it reaches the end state.
