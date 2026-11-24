@@ -36,6 +36,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             "additionalFieldDefinitions",
             "writeBackMappingDefinitions",
             "requiresReconnect",
+            "needsWriteConsent",
             "concurrencyToken",
             "defaults",
             "supportedDefaults",
