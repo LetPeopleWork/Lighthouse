@@ -34,7 +34,7 @@ If you want to delete a portfolio, you can click on the 🗑️ icon on the righ
 ![Portfolio Deletion](../assets/features/portfolios_delete.png)
 
 {: .important}
-Deleting a portfolio will remove it from Lighthouse with no functionality to undo this change. This will not remove any of the involved teams in this portfolio though. The portfolio's [reports](../reports/reports.html) are deleted with it.
+Deleting a portfolio will remove it from Lighthouse with no functionality to undo this change. This will not remove any of the involved teams in this portfolio though. The portfolio's [reports](../reports/reports.html) are deleted with it. Its Features that belong to no other portfolio leave the teams' Features tabs and their forecasts at once; a Feature that is still the parent of a Feature in another portfolio is kept, so that Feature can still show its parent.
 
 {: .note}
 You can always add a portfolio again using the same queries. Deleting a portfolio has no effect at all on the data in your Work Tracking System.

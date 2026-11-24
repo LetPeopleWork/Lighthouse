@@ -1,0 +1,31 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/OrphanedFeatureCleanupService.cs",
+      "**/Models/Events/PortfolioDeleted.cs",
+      "**/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs",
+      "**/API/PortfolioController.cs",
+      "**/Services/Implementation/Repositories/PortfolioRepository.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~OrphanedFeatureCleanupServiceTests|FullyQualifiedName~PortfolioDeletedOrphanedFeatureCleanupHandlerTest|FullyQualifiedName~PortfolioControllerTest|FullyQualifiedName~PortfolioRepositoryTest|FullyQualifiedName~DeletionTests|FullyQualifiedName~PortfolioUpdaterTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Contracts",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

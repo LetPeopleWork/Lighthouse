@@ -548,8 +548,9 @@ guard (ADR-268) or removes it.
    *Story 6362 (2026-11-17):* left as it is. `PortfolioUpdater` is the one listed outside caller of the Promises
    Application (R-P4), through `IDeliveryRuleService` and `IDeliverySourceSyncService`.
 5. **A domain event published by a controller.** `TeamDeleted` is published from `API/TeamController.cs:115`, not from
-   the context that owns the Team; Portfolio deletion has no event and cleans the refresh log inline
-   (`API/PortfolioController.cs:77-89`).
+   the context that owns the Team. *Bug 6665 (2026-11-24):* Portfolio deletion now publishes `PortfolioDeleted` the
+   same way, from `API/PortfolioController.cs` after the save, and Work Items runs the orphaned-Feature clean-up in a
+   reaction; the refresh log is still cleaned inline.
 6. **The kernel holds far more than the shared kernel may.** `Models` holds every entity and the DTOs the services
    return; `Feature` carries Forecasting's rows (`Models/Feature.cs:60,66`). Decision 7 narrows it.
 7. **Service locator in the updaters.** The updaters resolve collaborators through
@@ -601,15 +602,15 @@ a word changes meaning.
 
 The other event types that exist today and where they move: `WorkItemTransitioned`, `WorkItemBlocked`,
 `WorkItemUnblocked`, `WorkItemBecameStale`, `FeatureBlocked`, `FeatureUnblocked` to Work Items; `ConnectionFetchShapeChanged`
-to Tracker integration; `TeamDeleted`, `BlackoutConfigurationChanged`, `FeatureOrderingPolicyChanged` to Organisation
-set-up. `FeatureRankChanged` follows wherever Feature ranking lands (see "Left open").
+to Tracker integration; `TeamDeleted`, `PortfolioDeleted` (Bug 6665), `BlackoutConfigurationChanged`,
+`FeatureOrderingPolicyChanged` to Organisation set-up. `FeatureRankChanged` follows wherever Feature ranking lands (see "Left open").
 
 **Gaps the board found.** They are recorded so the features that need them know where they start; closing them is
 feature work, not packaging, unless a packaging Story needs one to remove a ratchet item.
 
 - Events nobody listens to: `WorkItemTransitioned` and `WorkItemBecameStale` are published and have no handler. In
   the target they are inputs to Signals.
-- Facts with no event: Portfolio deleted, Feature transitioned (captured into its own table with no event), a
+- Facts with no event: Feature transitioned (captured into its own table with no event), a
   connection stopped working (and started working again), licence expired, a Delivery created, rescheduled or
   archived, Team or Portfolio created, a refresh failed.
 - The Portfolio refresh's forecast is a direct trigger of the forecast updater (it enqueues work), bypassing an event
@@ -700,7 +701,8 @@ the maintainer). The refresh process itself is still called sync.
 |---|---|---|---|
 | Item | One record mirrored from a tracker, on any level. One model with a level, whether leaf or not | `WorkItem`, `Feature` (both on `WorkItemBase`), parent `Feature` rows | Target: one model with a level instead of separate types per level |
 | Work Item | An item the leaf unit works on | `WorkItem` (and `WorkItemBase`, also the base of `Feature`) | **Overloaded**: a Team's item, any tracker record, and the base type of a Feature. With one item model, "Work Item" in the model means an item on any level, so the leaf's item needs a name of its own: a naming decision for Epic 6455 |
-| Feature | Lighthouse's level-1 unit of work: the item Work Items roll up into and that is forecast. Not SAFe's Feature, which sits a level higher (what Lighthouse calls a Feature, a SAFe customer may call an Epic) | `Feature` | A parent above it is stored as a `Feature` row flagged `IsParentFeature`: one type, two meanings |
+| Feature | Lighthouse's level-1 unit of work: the item Work Items roll up into and that is forecast. Not SAFe's Feature, which sits a level higher (what Lighthouse calls a Feature, a SAFe customer may call an Epic) | `Feature` | A parent above it is stored as a `Feature` row flagged `IsParentFeature`: one type, two meanings. Since Bug 6665 the clean-up no longer reads the flag; a parent stays while a Feature in a Portfolio names it |
+| Orphaned Feature | A Feature in no Portfolio that no Feature in a Portfolio names as its parent. The clean-up deletes it, after every Portfolio refresh, at start and when a Portfolio is deleted; a parent kept outside every Portfolio keeps only its name, with no remaining work | `OrphanedFeatureCleanupService` | Target: with one unit per item (Epic 6455), "in no Portfolio" becomes "has no unit" |
 | Refresh | Bringing a unit's copy of the work up to date | `TeamUpdater`, `PortfolioUpdater`, `WorkItemService` | Users care that data is fresh and a failure is visible, not about the steps |
 | Default-size guess | The remaining work assumed for a Feature with no children | `IsUsingDefaultFeatureSize` | |
 

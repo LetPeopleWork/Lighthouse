@@ -1,0 +1,1509 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1",
+"P2",
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F100",
+"L1/F102",
+"L2/F108"
+],
+"still_passes_if": "F224",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs::AFormerFeatureInNoPortfolioThatIsNoOnesParent_IsDeletedWithItsRemainingWorkAndForecast_AndLeavesTheTeamsFeaturesTab"
+},
+"expected": "F222",
+"stimulus": "F221",
+"user_result": "F223"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F101"
+],
+"still_passes_if": "F228",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs::AFeatureInNoPortfolioThatWasNeverAParent_IsDeletedWithItsRemainingWorkAndForecast"
+},
+"expected": "F226",
+"stimulus": "F225",
+"user_result": "F227"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F103"
+],
+"still_passes_if": "F231",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs::AParentItemThatAFeatureInAPortfolioStillNamesAsItsParent_IsKept"
+},
+"expected": "F230",
+"stimulus": "F229",
+"user_result": "F41"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F104"
+],
+"still_passes_if": "F235",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs::AParentItemWhoseOnlyChildIsInNoPortfolio_IsDeletedWithThatChild"
+},
+"expected": "F233",
+"stimulus": "F232",
+"user_result": "F234"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F113"
+],
+"still_passes_if": "F239",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs::ASecondCleanupRightAfterTheFirst_DeletesNothingAndChangesNothing"
+},
+"expected": "F237",
+"stimulus": "F236",
+"user_result": "F238"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F116"
+],
+"still_passes_if": "F243",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandlerTest.cs::DeletingAPortfolio_RemovesItsFeatureAndThatFeaturesFormerParentFromTheTeamsFeaturesTabAtOnce"
+},
+"expected": "F241",
+"stimulus": "F240",
+"user_result": "F242"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F117"
+],
+"still_passes_if": "F247",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandlerTest.cs::DeletingAPortfolio_KeepsAParentItemThatAFeatureInAnotherPortfolioStillNamesAsItsParent"
+},
+"expected": "F245",
+"stimulus": "F244",
+"user_result": "F246"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F251",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs::HandlersOfAPortfolioDeletion_AreTheOrphanedFeatureCleanupAlone"
+},
+"expected": "F249",
+"stimulus": "F248",
+"user_result": "F250"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F116"
+],
+"still_passes_if": "F259",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs::DeletePortfolio_PublishesPortfolioDeletedForThatPortfolioAfterTheSave"
+},
+"expected": "F257",
+"stimulus": "F256",
+"user_result": "F258"
+}
+],
+"S2": [
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F107",
+"L2/F108",
+"L1/F103"
+],
+"still_passes_if": "F263",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs::AFormerFeatureKeptOnlyAsTheParentOfAFeatureInAPortfolio_LosesItsRemainingWork_SoNoTeamShowsItAndTheFeaturesBelowItMoveUpInTheForecasts"
+},
+"expected": "F261",
+"stimulus": "F260",
+"user_result": "F262"
+}
+],
+"S3": [
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F111",
+"L4/F113"
+],
+"still_passes_if": "F267",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs::AFormerFeatureThatAFeatureInAPortfolioNamesAsItsParent_StaysTheSameItemWithItsHistoryAndForecastOverRepeatedCleanups"
+},
+"expected": "F265",
+"stimulus": "F264",
+"user_result": "F266"
+}
+]
+},
+"counters": {
+"C": 1,
+"D": 9,
+"E": 6,
+"F": 270,
+"K": 4,
+"L": 5,
+"N": 3,
+"P": 6,
+"S": 3,
+"T": 1,
+"Y": 6
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.WorkItems|FullyQualifiedName~DomainEventHandlerOrderPinTest",
+"id": "T1",
+"obligation": "F182",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F89",
+"driven_ports": [
+"F87",
+"F88"
+],
+"driving_port": "F86"
+},
+"claims": [
+{
+"admitted_input": "F126",
+"bypass": "F128",
+"constructor": "OrphanedFeatureCleanupService.CleanupAsync",
+"consumer": "FeatureRepository.FeaturesOfTeam and FeaturesWorkedOnBy",
+"harm": "F125",
+"id": "C1",
+"owner": "OrphanedFeatureCleanupService",
+"proposition": "F124",
+"public_observation": "F127"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F145",
+"design": "Pass",
+"evidence": [
+"docs/feature/bug-6665-former-parents-stranded/models/keepRule.qnt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F144"
+},
+{
+"axis": "Inhabitation",
+"basis": "F147",
+"design": "Pass",
+"evidence": [
+"docs/feature/bug-6665-former-parents-stranded/models/keepRule.qnt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F146"
+},
+{
+"axis": "PublicReachability",
+"basis": "F149",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F148"
+},
+{
+"axis": "Liveness",
+"basis": "F151",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F150"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F57"
+},
+{
+"id": "K2",
+"text": "F58"
+},
+{
+"id": "K3",
+"text": "F59"
+},
+{
+"id": "K4",
+"text": "F60"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F48"
+},
+{
+"id": "D2",
+"text": "F49"
+},
+{
+"id": "D3",
+"text": "F50"
+},
+{
+"id": "D4",
+"text": "F51"
+},
+{
+"id": "D5",
+"text": "F52"
+},
+{
+"id": "D6",
+"text": "F53"
+},
+{
+"id": "D7",
+"text": "F54"
+},
+{
+"id": "D8",
+"text": "F55"
+},
+{
+"id": "D9",
+"text": "F56"
+}
+],
+"equality": [
+{
+"definition": "F98",
+"under": "stored Features"
+}
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IOrphanedFeatureCleanupService.cs:5",
+"reason": "F70"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs:209",
+"reason": "F71"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:742",
+"reason": "F72"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "schema",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs:77",
+"reason": "F73"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:937",
+"reason": "F74"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/ForecastService.cs:128",
+"reason": "F75"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs:118",
+"reason": "F76"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/WorkItemServiceTest.cs:1001",
+"reason": "F77"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs:356",
+"reason": "F78"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesSpecifications.cs:289",
+"reason": "F79"
+},
+{
+"decision": "Changed",
+"kind": "public-interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:72",
+"reason": "F80"
+},
+{
+"decision": "Changed",
+"kind": "build",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1647",
+"reason": "F81"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PortfolioRepository.cs:114",
+"reason": "F82"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:17",
+"reason": "F83"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/bug-6665-former-parents-stranded/models/keepRule.qnt"
+],
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "OrphanedFeatureCleanupService",
+"statement": "F99",
+"treatment": {
+"cases": [
+"F100",
+"F101",
+"F102",
+"F103",
+"F104"
+],
+"kind": "Finite",
+"reason": "F105"
+}
+},
+{
+"evidence": [
+"docs/feature/bug-6665-former-parents-stranded/models/keepRule.qnt"
+],
+"id": "L2",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "OrphanedFeatureCleanupService",
+"statement": "F106",
+"treatment": {
+"cases": [
+"F107",
+"F108"
+],
+"kind": "Finite",
+"reason": "F109"
+}
+},
+{
+"evidence": [
+"docs/feature/bug-6665-former-parents-stranded/models/keepRule.qnt"
+],
+"id": "L3",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "OrphanedFeatureCleanupService",
+"statement": "F110",
+"treatment": {
+"cases": [
+"F111"
+],
+"kind": "Finite",
+"reason": "F109"
+}
+},
+{
+"id": "L4",
+"kind": "Algebraic",
+"layer": "Application",
+"owner": "OrphanedFeatureCleanupService",
+"statement": "F112",
+"treatment": {
+"cases": [
+"F113"
+],
+"kind": "Finite",
+"reason": "F114"
+}
+},
+{
+"evidence": [
+"docs/feature/bug-6665-former-parents-stranded/models/keepRule.qnt"
+],
+"id": "L5",
+"kind": "Refinement",
+"layer": "Application",
+"owner": "PortfolioDeletedOrphanedFeatureCleanupHandler",
+"statement": "F115",
+"treatment": {
+"cases": [
+"F116",
+"F117"
+],
+"kind": "Finite",
+"reason": "F109"
+}
+}
+],
+"models": [
+{
+"assumptions": [
+"F139",
+"F140"
+],
+"atoms": [
+{
+"atomicity": "F137",
+"kind": "Action",
+"name": "cleanup",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:12",
+"symbol": "OrphanedFeatureCleanupService.CleanupAsync"
+},
+{
+"atomicity": "F138",
+"kind": "Action",
+"name": "deletePortfolio",
+"site": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:72",
+"symbol": "PortfolioController.DeletePortfolio"
+},
+{
+"kind": "Action",
+"name": "parentHalf",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1354",
+"symbol": "WorkItemService.RefreshParentFeatures"
+},
+{
+"kind": "Action",
+"name": "leavePortfolio",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:186",
+"symbol": "Portfolio.UpdateFeatures"
+},
+{
+"kind": "State",
+"name": "work",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs:68",
+"symbol": "Feature.FeatureWork"
+},
+{
+"kind": "State",
+"name": "flagged",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs:77",
+"symbol": "Feature.IsParentFeature"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F141",
+"id": "N1"
+},
+{
+"description": "F142",
+"id": "N2"
+},
+{
+"description": "F143",
+"id": "N3"
+}
+],
+"path": "docs/feature/bug-6665-former-parents-stranded/models/keepRule.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "cleanKeepsOnlyMembersAndParents",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:12",
+"statement": "F134",
+"symbol": "CleanupAsync"
+},
+{
+"kind": "Invariant",
+"name": "noWorkOutsidePortfolios",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:12",
+"statement": "F135",
+"symbol": "CleanupAsync"
+},
+{
+"kind": "Invariant",
+"name": "neverDeletesANeededParent",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:12",
+"statement": "F136",
+"symbol": "CleanupAsync"
+}
+]
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F84"
+},
+{
+"analysis": "contract_tests",
+"reason": "F85"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F91",
+"description": "F90",
+"result_type": "set of Feature Id and ReferenceId"
+},
+{
+"cannot_distinguish": "F93",
+"description": "F92",
+"result_type": "IReadOnlyList<Feature>"
+},
+{
+"cannot_distinguish": "F95",
+"description": "F94",
+"result_type": "IReadOnlyList<Feature>"
+},
+{
+"cannot_distinguish": "F97",
+"description": "F96",
+"result_type": "row counts per FeatureId"
+}
+],
+"refuted": [
+{
+"cause": "F119",
+"counterexample": "F120",
+"statement": "F118"
+},
+{
+"cause": "F122",
+"counterexample": "F123",
+"statement": "F121"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:12",
+"reason": "F61",
+"symbol": "OrphanedFeatureCleanupService"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PortfolioRepository.cs:130",
+"reason": "F62",
+"symbol": "RemoveOrphanedFeatures"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Events/TeamDeleted.cs:3",
+"reason": "F63",
+"symbol": "TeamDeleted"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/TeamDeletedRefreshLogCleanupHandler.cs:8",
+"reason": "F64",
+"symbol": "TeamDeletedRefreshLogCleanupHandler"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs:318",
+"reason": "F65",
+"symbol": "ClearFeatureWork"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs:143",
+"reason": "F66",
+"symbol": "FeaturesOfTeam"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs:86",
+"reason": "F67",
+"symbol": "FeaturesWorkedOnBy"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs:72",
+"reason": "F68",
+"symbol": "DeletePortfolio"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1647",
+"reason": "F69",
+"symbol": "TeamDeletedRefreshLogCleanupHandler"
+}
+],
+"risks": [
+{
+"allowed": "F154",
+"forbidden": "F155",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "PortfolioUpdater",
+"preserved": "F153",
+"residue": "F156",
+"source": "F152"
+},
+{
+"allowed": "F159",
+"forbidden": "F160",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "WorkItemService",
+"preserved": "F158",
+"residue": "F161",
+"source": "F157"
+},
+{
+"allowed": "F164",
+"forbidden": "F165",
+"id": "Y3",
+"kind": "Bypass",
+"owner": "OrphanedFeatureCleanupService",
+"preserved": "F163",
+"residue": "F166",
+"source": "F162"
+},
+{
+"allowed": "F169",
+"forbidden": "F170",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "UpdateQueueService",
+"preserved": "F168",
+"residue": "F171",
+"source": "F167"
+},
+{
+"allowed": "F174",
+"forbidden": "F175",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "WorkItemService",
+"preserved": "F173",
+"residue": "F176",
+"source": "F172"
+},
+{
+"allowed": "F179",
+"forbidden": "F180",
+"id": "Y6",
+"kind": "SinglePointOfFailure",
+"owner": "OrphanedFeatureCleanupService",
+"preserved": "F178",
+"residue": "F181",
+"source": "F177"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "WorkItemService",
+"state": "F129"
+},
+{
+"kind": "Admitted",
+"owner": "OrphanedFeatureCleanupService",
+"state": "F130"
+},
+{
+"kind": "Excluded",
+"owner": "OrphanedFeatureCleanupService",
+"state": "F131"
+},
+{
+"kind": "Excluded",
+"owner": "OrphanedFeatureCleanupService",
+"state": "F132"
+},
+{
+"kind": "Unknown",
+"owner": "PortfolioUpdater",
+"state": "F133"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs",
+"public_oracle": {
+"expected": "F209",
+"falsifier": "F210",
+"promises": [
+"P2",
+"P3",
+"P6",
+"P1"
+],
+"stimulus": "F208"
+},
+"records": {
+"decisions": [
+"F211"
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F212"
+},
+{
+"analysis": "reuse",
+"reason": "F213"
+},
+{
+"analysis": "impact",
+"reason": "F214"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandlerTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsMembershipArchUnitTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsPoliciesLayoutArchUnitTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsUnitTestPlacementTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs",
+"reason": "F202"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Events/PortfolioDeleted.cs",
+"reason": "F203"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs",
+"reason": "F204"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+"reason": "F205"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F206"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PortfolioRepository.cs",
+"reason": "F207"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrphanedFeatureCleanupServiceTests|FullyQualifiedName~PortfolioDeletedOrphanedFeatureCleanupHandlerTest|FullyQualifiedName~PortfolioControllerTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.WorkItems|FullyQualifiedName~DomainEventHandlerOrderPinTest|FullyQualifiedName~PortfolioDeleteSerialisationTests"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs",
+"public_oracle": {
+"expected": "F185",
+"falsifier": "F186",
+"promises": [
+"P1",
+"P4"
+],
+"stimulus": "F184"
+},
+"records": {
+"decisions": [
+"F187"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:17",
+"reason": "F189"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F190"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:12",
+"reason": "F188",
+"symbol": "CleanupAsync"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs",
+"reason": "F183"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrphanedFeatureCleanupServiceTests"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OrphanedFeatureCleanupServiceTests.cs",
+"public_oracle": {
+"expected": "F194",
+"falsifier": "F195",
+"promises": [
+"P5"
+],
+"stimulus": "F193"
+},
+"records": {
+"decisions": [
+"F196"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:17",
+"reason": "F199"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1481",
+"reason": "F200"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F201"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs:12",
+"reason": "F197",
+"symbol": "CleanupAsync"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:1484",
+"reason": "F198",
+"symbol": "TheSweepDidNotVouchForThisParent"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OrphanedFeatureCleanupService.cs",
+"reason": "F191"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs",
+"reason": "F192"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~OrphanedFeatureCleanupServiceTests"
+]
+}
+}
+},
+"examination": {
+"E1": {
+"observations": [
+"F268",
+"F269"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F268"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F269"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F268"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F268"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F268",
+"F270"
+],
+"verdict": "met"
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F215"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F216"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F217"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F218"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F219"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F220"
+}
+]
+},
+"facts": {
+"F1": "Bug 6665: Former parent Features never cleaned up: show on Team page with no Portfolio and stale progress/forecasts",
+"F10": "the Feature is gone from the Team's Features tab without waiting for another refresh or a restart",
+"F100": "flagged former Feature, no Portfolio, no child: deleted",
+"F101": "unflagged Feature in no Portfolio, no child: deleted",
+"F102": "Feature in a Portfolio: kept",
+"F103": "parent of a Feature in another Portfolio, itself in none: kept",
+"F104": "parent whose only child is in no Portfolio: deleted",
+"F105": "finite shape set; the Quint model covers interleavings",
+"F106": "After CleanupAsync no FeatureWork row belongs to a Feature in no Portfolio",
+"F107": "kept parent outside every Portfolio with FeatureWork: rows gone, Feature kept",
+"F108": "Feature in a Portfolio with FeatureWork: rows unchanged",
+"F109": "finite shape set",
+"F11": "A former Feature that still parents a Portfolio Feature is kept only as its name",
+"F110": "CleanupAsync never deletes a Feature that is the parent of a Feature in a Portfolio, whatever its IsParentFeature flag; repeated runs keep its Id, transitions and forecasts",
+"F111": "unflagged parent of a Portfolio Feature with transitions and a forecast, CleanupAsync run three times: same Id, rows kept",
+"F112": "CleanupAsync is idempotent: a second run on a cleaned store deletes nothing and changes nothing",
+"F113": "run twice, second returns 0",
+"F114": "single example suffices; follows from the invariant",
+"F115": "Deleting a Portfolio leaves the store as if its memberships were removed and CleanupAsync ran",
+"F116": "parent whose only Portfolio children were in the deleted Portfolio: deleted at once",
+"F117": "Feature only in the deleted Portfolio that parents a Feature in another Portfolio: kept",
+"F118": "A Feature with IsParentFeature set is still a parent",
+"F119": "the flag is written once when the parent half creates the row and never cleared; it is a designation, not the parent relation",
+"F12": "a Feature with remaining work for a Team leaves its last Portfolio while it is still the parent of a Feature in another Portfolio",
+"F120": "item stored as a parent, later its type added to the Portfolio query and removed again: flagged, in no Portfolio, no child, FeatureWork kept: stays on the Team tab forever",
+"F121": "Zeroing FeatureWork removes a Feature from a Team's Features tab",
+"F122": "FeaturesOfTeam selects by row existence, not by counts",
+"F123": "Feature.ClearFeatureWork leaves rows with 0/0; FeaturesOfTeam still returns the Feature",
+"F124": "No Feature outside every Portfolio is on a Team page or in a forecast after the next clean-up",
+"F125": "stranded items take Team throughput and push real Features later; stale progress shown",
+"F126": "any stored Features, memberships and parent links, including legacy flagged rows",
+"F127": "Team Features tab and the forecast set exclude the Feature",
+"F128": "any writer that adds FeatureWork to a Feature in no Portfolio between clean-ups; today only RefreshRemainingWork writes FeatureWork and it loops Portfolio members only",
+"F129": "Feature in at least one Portfolio, with or without FeatureWork",
+"F13": "the Portfolio refresh runs",
+"F130": "Feature in no Portfolio that parents a Feature in a Portfolio, without FeatureWork (name only)",
+"F131": "Feature in no Portfolio that parents no Feature in a Portfolio, after a clean-up",
+"F132": "FeatureWork on a Feature in no Portfolio, after a clean-up",
+"F133": "Window between a Portfolio save and the following clean-up in the same queued update; readers may briefly see the old state",
+"F134": "after a clean-up every stored Feature is in a Portfolio or parents a Portfolio Feature",
+"F135": "after a clean-up no Feature outside every Portfolio has FeatureWork",
+"F136": "no clean-up deletes the parent of a Portfolio Feature",
+"F137": "two ExecuteDeleteAsync statements, Features then FeatureWork, inside one queued update",
+"F138": "repository remove and save, then PortfolioDeleted dispatched in the same queued lambda",
+"F139": "clean-up runs atomically after each refresh, delete and start",
+"F14": "the child still shows its parent's name, the former Feature is not on any Team's Features tab and it takes no place in any forecast, so the Features ranked below it are no longer pushed later",
+"F140": "3 Features, 2 Portfolios, fixed parent chain f1->f2->f3",
+"F141": "today's rule: keep when flagged (mutants/mutant_flag_decides.qnt), violates cleanKeepsOnlyMembersAndParents",
+"F142": "keep only Portfolio members (mutants/mutant_deletes_parents.qnt), violates neverDeletesANeededParent",
+"F143": "kept parents keep their FeatureWork (mutants/mutant_keeps_parent_work.qnt), violates noWorkOutsidePortfolios",
+"F144": "keep rule",
+"F145": "Quint simulation 20000 traces and Apalache bounded check to 5 steps pass; three behavioural mutants killed",
+"F146": "name-only parent",
+"F147": "a Portfolio Feature with ParentReferenceId and its stored parent outside every Portfolio is reachable via parentHalf then leavePortfolio; kept without work",
+"F148": "Team tab and forecast exclusion",
+"F149": "CleanupAsync -> FeatureWork rows gone -> FeaturesOfTeam / FeaturesWorkedOnBy, read by FeatureListService and ForecastService",
+"F15": "A parent of a Portfolio Feature keeps its history across refreshes",
+"F150": "clean-up",
+"F151": "not applicable: synchronous step at the end of every refresh, delete and start; no eventual-progress claim",
+"F152": "assumption: the clean-up runs after every refresh (negated: it throws)",
+"F153": "refresh result saved",
+"F154": "stranded rows survive until the next successful clean-up or start",
+"F155": "refresh failing because of the clean-up",
+"F156": "PortfolioUpdater swallows and logs clean-up failures (non-fatal)",
+"F157": "assumption: only RefreshRemainingWork writes FeatureWork (negated: a new writer adds work to a non-member)",
+"F158": "next clean-up removes it",
+"F159": "one refresh interval of stale work",
+"F16": "a parent item that is not itself in a Portfolio is the parent of a Feature in a Portfolio",
+"F160": "permanent stranded work",
+"F161": "a future writer must target Portfolio members only",
+"F162": "foreign writer: a direct SQL edit or restored backup with stranded rows",
+"F163": "next start or refresh cleans it",
+"F164": "stale rows until then",
+"F165": "rows kept forever",
+"F166": "none beyond the interval",
+"F167": "second set: Portfolio delete raced by a refresh of another Portfolio",
+"F168": "update queue serialises both; each ends with a clean-up",
+"F169": "the later clean-up does the work",
+"F17": "the Portfolio refreshes several times and the orphaned-Feature clean-up runs in between",
+"F170": "a needed parent deleted",
+"F171": "walkthrough only, not executed",
+"F172": "second set: child whose ParentReferenceId points at an item stored twice (duplicate ReferenceId rows)",
+"F173": "both rows kept while the child is in a Portfolio",
+"F174": "duplicates remain as before",
+"F175": "deleting the parent the child names",
+"F176": "duplicate rows are an existing condition, out of scope; walkthrough only",
+"F177": "CleanupAsync is the one owner of deletion and work removal",
+"F178": "one rule, one place",
+"F179": "a failed run is retried at the next refresh or start",
+"F18": "the parent is kept as the same item each time, it is never deleted and re-created, and its history and forecasts remain",
+"F180": "a second deleter (PortfolioRepository.RemoveOrphanedFeatures) diverging",
+"F181": "no architecture test can name 'who deletes Features'; review keeps it single",
+"F182": "The new PortfolioDeletedOrphanedFeatureCleanupHandler sits in Modules/WorkItems/Application/Policies and the Work Items membership, layout, boundary, test-placement and handler-order lists name it; existing suites fail on an unlisted member",
+"F183": "remove FeatureWork of Features in no Portfolio",
+"F184": "Seed Team T, Portfolio P2 holding Feature C with ParentReferenceId = X, Feature R in P2 with FeatureWork for T, and X flagged, in no Portfolio, with FeatureWork for T; call CleanupAsync; read FeatureRepository.FeaturesOfTeam(T) and FeaturesWorkedOnBy([T]) over the same database",
+"F185": "X still exists (C's parent name resolves); X has no FeatureWork rows; neither reader returns X; R and C keep their FeatureWork and R is returned",
+"F186": "After S1 alone X keeps its FeatureWork and both readers return it, ahead of R in the order",
+"F187": "S2 adds the second statement to CleanupAsync: delete every FeatureWork row whose Feature is in no Portfolio, after the Feature delete. Forecast rows are left alone.",
+"F188": "same owner removes remaining work outside every Portfolio",
+"F189": "adds removal of FeatureWork rows of Features in no Portfolio",
+"F19": "An existing instance is cleaned by its next refresh or start",
+"F190": "one added set-based statement in a method S1 already reshaped",
+"F191": "drop the flag from the keep rule",
+"F192": "comment no longer names the flag as the clean-up rule",
+"F193": "Seed Portfolio P with Feature C whose ParentReferenceId = Y; Y stored unflagged, in no Portfolio, with two FeatureStateTransitions and a WhenForecast; call CleanupAsync three times",
+"F194": "Y keeps the same Id after every run and its transitions and forecast rows remain; each run after the first returns 0",
+"F195": "With the flag conjunct, the first run deletes Y and cascades its transitions and forecast",
+"F196": "S3 removes the IsParentFeature conjunct, so the rule is exactly: in a Portfolio or parent of a Portfolio Feature. It rewords the WorkItemService comment above TheSweepDidNotVouchForThisParent, which still names the flag as the clean-up rule.",
+"F197": "same owner; the flag conjunct goes",
+"F198": "only the comment above it changes, so it no longer names the flag as the clean-up rule",
+"F199": "keep rule no longer reads IsParentFeature",
+"F2": "A Feature that has left every Portfolio no longer shows on a Team's Features tab and no longer takes part in forecasting, unless it is still the parent of a Feature in some Portfolio, in which case it is kept only as that parent's name",
+"F20": "an instance already holds a Feature in no Portfolio that is no one's parent, with old progress and forecasts",
+"F200": "comment reworded; no behaviour change",
+"F201": "removes one conjunct and rewords one comment",
+"F202": "keep rule: in a Portfolio or flagged parent of a Portfolio Feature",
+"F203": "domain event record PortfolioDeleted(int PortfolioId)",
+"F204": "Work Items reaction: run the clean-up",
+"F205": "publish PortfolioDeleted after the save in the queued delete",
+"F206": "register the handler beside the TeamDeleted handlers",
+"F207": "Remove stops deleting Features",
+"F208": "In OrphanedFeatureCleanupServiceTests (in-memory SQLite): seed a Team, a Portfolio holding Feature C, and a former Feature X flagged IsParentFeature, in no Portfolio, parent of no Portfolio Feature, with FeatureWork for the Team and a WhenForecast; call IOrphanedFeatureCleanupService.CleanupAsync. In PortfolioDeletedOrphanedFeatureCleanupHandlerTest: seed Portfolio P with Feature C whose parent is flagged item X (in no Portfolio) and a Feature only in P; PortfolioRepository.Remove(P) and Save; handle PortfolioDeleted(P).",
+"F209": "X is deleted with its FeatureWork and forecast; FeaturesOfTeam(team) no longer returns X; C is kept. After the delete, X and P's sole Feature are gone at once without another refresh.",
+"F21": "the next Portfolio refresh or the next start runs the clean-up",
+"F210": "Today's predicate (!IsParentFeature && no Portfolio) keeps X; without the handler X survives the Portfolio delete",
+"F211": "S1 changes the clean-up predicate to: keep iff in a Portfolio, or (IsParentFeature and ParentsAPortfolioFeature). The flag conjunct is a deliberate intermediate that preserves today's behaviour for unflagged parents; S3 removes it. S1 also adds PortfolioDeleted, its Work Items handler and registration, publishes it from PortfolioController.DeletePortfolio, and removes PortfolioRepository.RemoveOrphanedFeatures.",
+"F212": "the changes are a predicate edit, one removed method and two new types; no existing structure needs moving first",
+"F213": "The two created files, Models/Events/PortfolioDeleted.cs and Modules/WorkItems/Application/Policies/PortfolioDeletedOrphanedFeatureCleanupHandler.cs, do not exist yet, so no locator resolves; their CreateNew rationale is recorded against TeamDeleted.cs:3 and TeamDeletedRefreshLogCleanupHandler.cs:8, whose shape they follow, because no Portfolio-deletion event or handler exists.",
+"F214": "The two created files have no consumers before this slice; their only consumers are the PortfolioController publish and the Program.cs registration, both recorded as Changed.",
+"F215": "A Feature that has left every Portfolio is not listed on any Team's Features tab and is not part of any forecast, unless it still parents a Portfolio Feature; then it appears only as that parent's name.",
+"F216": "After a Feature with remaining work for a Team leaves its only Portfolio query and the Portfolio refreshes, and it parents no Portfolio Feature, it is gone: absent from the Team's Features tab and from the forecast order.",
+"F217": "When a Portfolio is deleted, its Features that are in no other Portfolio and parent no Portfolio Feature vanish from Team Features tabs immediately, with no further refresh or restart.",
+"F218": "A former Feature that still parents a Feature in another Portfolio keeps showing as that child's parent name, but is on no Team's Features tab and in no forecast, so Features ranked below it are no longer pushed later.",
+"F219": "A non-Portfolio parent of a Portfolio Feature stays the same item across repeated Portfolio refreshes and clean-ups: never deleted and re-created, its history and forecasts remain.",
+"F22": "that Feature is gone without any data migration",
+"F220": "An existing instance already holding a no-Portfolio, non-parent Feature with old progress and forecasts has it removed by the next Portfolio refresh or start, with no manual data migration step.",
+"F221": "A store already holds a Team, a Portfolio with one Feature with remaining work, and a former parent item in no Portfolio that no Feature names as its parent, with remaining work for the Team and a forecast; the clean-up that every refresh and every start runs is run",
+"F222": "Only the Portfolio Feature is stored; the Team's Features tab and the Team's forecast set show only it; its remaining work is unchanged; the former item's remaining work and forecast are gone",
+"F223": "The Team lead no longer sees the stranded item on the Team's Features tab, and the Team's forecasts no longer give it throughput, after the next refresh or start, with no migration",
+"F224": "the stranded item kept with only its remaining work deleted is caught by the stored-Features check; a clean-up that also deletes the Portfolio Feature is caught by every check",
+"F225": "A Feature that was never a parent is in no Portfolio, with remaining work and a forecast; the clean-up runs",
+"F226": "The Feature, its remaining work and its forecast are gone",
+"F227": "A Feature that left every Portfolio does not stay on the Team's Features tab",
+"F228": "a rule that deletes every Feature outside a Portfolio, parents included; the parent-kept scenario catches that",
+"F229": "A parent item flagged as a parent is in no Portfolio, and a Feature in a Portfolio names it as its parent; the clean-up runs",
+"F23": "The orphaned-Feature clean-up keeps a Feature only while it is in a Portfolio or is the parent of a Feature in a Portfolio; everything else is deleted",
+"F230": "Both the parent item and the Portfolio Feature are kept",
+"F231": "today's rule that keeps every flagged item; the only-child-outside and stranded-item scenarios catch that",
+"F232": "A flagged parent item is in no Portfolio; its only child is in no Portfolio; a Feature in a Portfolio names a different parent; the clean-up runs",
+"F233": "Only the Portfolio Feature is stored and on the Team's Features tab; the parent item and its child are gone",
+"F234": "A parent whose children all left every Portfolio no longer shows on the Team's Features tab",
+"F235": "a rule that keeps a flagged item whenever any stored Feature, in a Portfolio or not, names it as parent",
+"F236": "A store with a Portfolio Feature and a Feature in no Portfolio is cleaned once, then the clean-up runs again",
+"F237": "The second run deletes nothing and the stored Features and their remaining work are unchanged",
+"F238": "Repeated refreshes and starts never take more Features away",
+"F239": "a first run that deletes too little; the keep rule itself is pinned by the other scenarios",
+"F24": "A Feature that leaves its last Portfolio loses its remaining work, so it leaves Team Features tabs and forecasting",
+"F240": "A Portfolio holds a Feature whose parent is a flagged item in no Portfolio; another Portfolio holds an unrelated Feature; the first Portfolio is removed and saved and its deletion event is handled by the Work Items reaction",
+"F241": "Only the other Portfolio's Feature is stored and on the Team's Features tab; the deleted Portfolio's Feature and its former parent are gone at once",
+"F242": "After deleting a Portfolio, the Team lead no longer sees its Features or their parents on the Team's Features tab, without waiting for a refresh or restart",
+"F243": "a reaction that works but that the controller never publishes to; registration is pinned by the handler-order test, the publish is not observed here",
+"F244": "A flagged parent item is only in the Portfolio being deleted and a Feature in another Portfolio names it as its parent; the Portfolio is removed and saved and its deletion event is handled",
+"F245": "The parent item and its child are both still stored",
+"F246": "Deleting a Portfolio does not take away a parent that a Feature in another Portfolio still shows",
+"F247": "a Portfolio removal that keeps deleting its sole-Portfolio Features but spares flagged ones",
+"F248": "The start-up registrations and the compiled product are read",
+"F249": "PortfolioDeleted has exactly the orphaned-Feature clean-up reaction as its handler; the reaction is listed as a Work Items policy in the membership, layout, boundary and test-placement lists, with its one edge to the clean-up service",
+"F25": "Deleting a Portfolio runs the clean-up at once",
+"F250": "A Portfolio deletion reaches the clean-up in the running product",
+"F251": "the controller never publishing the event after the save",
+"F256": "A Portfolio is deleted through the Portfolio delete action; its queued delete runs",
+"F257": "The Portfolio is removed, the removal is saved, and then a Portfolio-deleted event carrying that Portfolio's id is published, in that order",
+"F258": "Deleting a Portfolio in the app triggers the clean-up of its Features at once",
+"F259": "an event published with the right id but by another publisher path than the queued delete, which the dispatcher would still route the same way",
+"F26": "Existing instances are cleaned by the new rule on their next refresh or start",
+"F260": "A Team and another Team, one Portfolio. A former Feature, stored as a parent item, is in no Portfolio and has remaining work for both Teams and a forecast. A real Feature in the Portfolio is ranked below it, and another Feature in the Portfolio names the former Feature as its parent. The clean-up runs.",
+"F261": "The former Feature is still stored and its child still shows its name as parent. It has no remaining work left for any Team, and the work of the two Portfolio Features is unchanged. Neither Team's Features tab shows it, and the forecasts of the two Teams take in only the two Portfolio Features, the real Feature first.",
+"F262": "A Team lead sees only Features that belong to a Portfolio on the Team's Features tab, the Feature's page still shows its parent's name, and the forecasts of the real Features are no longer pushed later by a stranded item.",
+"F263": "A clean-up that removes the remaining work of every Feature outside every Portfolio but also the forecasts of the kept parent; forecast rows of a kept parent are left unasserted here because the design keeps them and this slice does not pin them.",
+"F264": "A Portfolio holds a Feature whose parent is a former Feature in no Portfolio, never stored as a parent item, with two state changes and one forecast; the clean-up runs three times",
+"F265": "After every run the parent is still stored with the same Id, its two state changes and its forecast; the second and third runs delete nothing",
+"F266": "The parent of a Portfolio Feature keeps its history and forecasts across refreshes instead of being deleted and stored again",
+"F267": "a separate step deleted only the parent's start forecasts, which the scenario does not seed; its when-forecast and state changes are pinned",
+"F268": "Probe backend-tests OrphanedFeatureCleanup: 16/16 pass, incl. former Feature no-one's-parent deleted with work+forecast and leaves Team tab; former parent kept only as name loses FeatureWork (features below move up); parent same item over repeated cleanups with history; second cleanup returns nothing.",
+"F269": "Probes PortfolioDeleted (10/10) and DeletePortfolio (9/9): deleting a Portfolio removes its Feature and former parent from Team Features tab at once; parent still named by Feature in another Portfolio is kept; PortfolioDeleted published after save; Update-after-refresh invokes cleanup (1/1).",
+"F27": "No data migration: existing instances are cleaned by the next refresh or start",
+"F270": "Start-time cleanup not directly observed (Startup probe 116 pass, none named cleanup). Refresh-triggered cleanup observed on seeded stale data; no migration step seen. Probes are tests, not an installed host.",
+"F28": "No UI copy or layout changes; items simply stop showing, so no sketch review",
+"F29": "Feature to Portfolio stays many-to-many; mapping an item to exactly one unit of the level above belongs to Epic 6455",
+"F3": "A former Feature that is no one's parent is gone after the next refresh",
+"F30": "No usage-data event, because a data clean-up fix adds nothing to count",
+"F31": "Defect verbatim from ADO Bug #6665: \"Suspected, not reproduced yet. Found by reading the code while preparing a support session. An affected user reports Epics and Features on a Team's Features tab that belong to no Portfolio, with progress and forecast numbers that look arbitrary. [...] So an item that was once a Portfolio Feature and the parent of another Feature (for example a Portfolio holding both Epics and Features, or an Epic level that was later narrowed out of the query) may stay forever after it leaves every Portfolio. If its FeatureWork rows are not cleared, it keeps showing on the Team page with no Portfolio and with old progress and forecasts. [...] Do these Features also take part in forecasting (the instance-wide order) and push real Features later? Workaround: a fresh instance with narrow queries.\"",
+"F32": "Maintainer option A (2026-11-24) 1: the clean-up keeps a Feature only while it is in a Portfolio or is the parent of a Feature in a Portfolio; the stored parent flag no longer decides",
+"F33": "Maintainer option A 2: when a Feature leaves its last Portfolio its remaining work is cleared; a parent outside every Portfolio is kept only as a name for its children, not on Team pages, not in forecasts",
+"F34": "Maintainer option A 3: deleting a Portfolio runs the clean-up at once",
+"F35": "Maintainer option A 4: existing instances are cleaned on the next refresh or start; no data migration",
+"F36": "Feature to Portfolio stays many-to-many for this fix; no UI change, so no sketch review; usage data N/A",
+"F37": "A Team lead opens the Team's Features tab and sees only Features that belong to a Portfolio",
+"F38": "None supplied; the report describes progress and forecast numbers that look arbitrary",
+"F39": "The Team lead reads the forecasts of the Team's real Features, no longer pushed later by stranded items",
+"F4": "a Feature with remaining work for a Team was in one Portfolio and is the parent of no Feature in any Portfolio",
+"F40": "None supplied",
+"F41": "A Portfolio Feature still shows its parent's name",
+"F42": "A Feature that has left every Portfolio and is no one's parent is gone after the next refresh, and at once when its Portfolio is deleted; an existing instance is cleaned the same way by its next refresh or start",
+"F43": "Team Features tabs and forecasts stop carrying Features that belong to no Portfolio",
+"F44": "A Feature that has left its last Portfolio but is still the parent of a Feature in some Portfolio is kept only as that parent's name: it is not on any Team's Features tab and takes no place in any forecast",
+"F45": "Real Features are no longer pushed later in the forecast order by a former Feature kept only as a parent",
+"F46": "A parent of a Portfolio Feature is no longer deleted and re-created between refreshes, so its history and forecasts are kept",
+"F47": "Parents of Portfolio Features keep their history and forecasts across refreshes",
+"F48": "Keep rule has one owner: OrphanedFeatureCleanupService.CleanupAsync, a domain-service policy over the whole Feature set (it reads other Features, so it is cross-aggregate). A Feature is kept iff it is in a Portfolio or its ReferenceId is the ParentReferenceId of a Feature that is in a Portfolio; every other Feature is deleted set-based with ExecuteDeleteAsync. The two clauses are named private static Expression<Func<Feature,bool>> members (IsInAPortfolio, ParentsAPortfolioFeature) so the rule is written once. Rejected: a query method on IFeatureRepository (a second place deciding the same fact); a method on Feature (the rule reads other rows, not one object's data).",
+"F49": "IsParentFeature stops deciding the clean-up. The column and its write in WorkItemService.RefreshParentFeatures stay unchanged (migrations are expand-only: no drop, no rename). Its other reader, WorkItemService.RefreshFeatures (keeps flagged items out of blocked-edge detection), is unchanged and out of scope. The WorkItemService comment above TheSweepDidNotVouchForThisParent that names !f.IsParentFeature as the clean-up rule is reworded in S3. No API DTO or frontend code reads the flag; a child's Parent column resolves its parent by ReferenceId and needs only the stored row. Rejected: dropping the column (expand-only); maintaining the flag on update (no reader needs it any more).",
+"F5": "it leaves that Portfolio's query and the Portfolio refreshes",
+"F50": "Remaining work of a Feature in no Portfolio is removed by the same clean-up: after the Feature delete, CleanupAsync deletes every FeatureWork row whose Feature is in no Portfolio (ExecuteDeleteAsync). Rows are deleted, not zeroed, because FeatureRepository.FeaturesOfTeam and FeaturesWorkedOnBy select by FeatureWork row existence; Feature.ClearFeatureWork only zeroes counts and would leave the item on the Team tab. WhenForecast and StartForecast rows of a kept parent are left alone (P5); with no FeatureWork it is in no forecast set and on no Team page. Rejected: a 'Feature left its last Portfolio' domain event (covers only future departures, so existing instances would still need the sweep: two owners of one fact); clearing inline in WorkItemService.RefreshRemainingWork (it loops only the Portfolio's current Features and misses Portfolio delete and start).",
+"F51": "Portfolio delete runs the clean-up at once through a new domain event PortfolioDeleted(int PortfolioId) in Models/Events, published by PortfolioController.DeletePortfolio's queued lambda after the save, as TeamController publishes TeamDeleted. A new handler PortfolioDeletedOrphanedFeatureCleanupHandler in Modules/WorkItems/Application/Policies calls IOrphanedFeatureCleanupService.CleanupAsync and is registered in Program.cs beside the TeamDeleted handlers. PortfolioRepository.Remove stops deleting Features (RemoveOrphanedFeatures goes): today it is a second owner of the orphan rule and deletes a Feature that still parents a Feature in another Portfolio. Rejected: calling the clean-up directly in the controller lambda (the decision would sit in a driving adapter, and ADR-270 lists Portfolio deleted as a fact with no event); keeping RemoveOrphanedFeatures (duplicate rule that contradicts maintainer decision A1).",
+"F52": "Existing instances need no migration: the startup clean-up (Program.RunStartupOrphanedFeatureCleanupAsync) and the clean-up in the finally of every PortfolioUpdater run call the same CleanupAsync, so the new rule applies at the next start or refresh. The refreshed Portfolio's forecast is enqueued by forecastUpdater.TriggerUpdate and runs after that clean-up; its input fingerprint changes because the gathered Feature set changed, so it recomputes and the stranded Feature no longer takes Team throughput.",
+"F53": "Churn ends by the keep rule alone: a parent stored unflagged (downloaded by the Feature half) is kept while a Portfolio Feature names it, and RefreshParentFeatures finds the row by ReferenceId and updates it (TheStoredFeatureFor), never re-creating it. Once PortfolioRepository.Remove stops deleting Features, the clean-up is the only production path that deletes Features.",
+"F54": "Claim-to-checker: the keep rule, the removal of remaining work outside every Portfolio and no-churn are finite state-safety claims over Features, Portfolio memberships and parent links, checked in Quint (model docs/feature/bug-6665-former-parents-stranded/models/keepRule.qnt): simulation with quint run and a bounded check with quint verify on the Apalache backend. No Agda proof is needed (no totality or arithmetic claim). Liveness does not apply: the clean-up is a synchronous step at the end of every refresh, Portfolio delete and start; nothing promises eventual progress beyond that step running.",
+"F55": "Context map: Work Items context only (ADR-270). New domain event PortfolioDeleted, published where the Portfolio is deleted (a controller today, as for TeamDeleted) and handled in Work Items; it closes ADR-270's gap 'facts with no event: Portfolio deleted'. New Work Items glossary term: Orphaned Feature, a Feature in no Portfolio that parents no Feature in a Portfolio; the clean-up deletes it. ADR-270 (gap list, event-to-context list, glossary) and ARCHITECTURE.md section 4 are updated at finalize. No UI surface change.",
+"F56": "Type strength and PBT: C# with nullable analysis in the build. The keep rule depends on other rows, so it cannot be a constructor invariant; it stays extrinsic and set-based at its single writer. Property-based testing is not used: the relevant shapes form a finite set (in a Portfolio, parents a Portfolio Feature, flagged, has FeatureWork) that native NUnit examples cover, and the broad state space is covered by the Quint model.",
+"F57": "No data migration; EF migrations are additive-only, so the IsParentFeature column stays.",
+"F58": "Feature to Portfolio stays many-to-many; no UI copy or layout change; no usage-data event.",
+"F59": "Backend acceptance scenarios drive the application-service port (IOrphanedFeatureCleanupService, the PortfolioDeleted handler) and never start a new web host (TestHostUseGuardTest).",
+"F6": "the Feature no longer exists: it is not on the Team's Features tab and takes no place in the forecast order",
+"F60": "Authority states no bound on Feature, Portfolio or parent-link counts; the clean-up stays set-based (ExecuteDeleteAsync) and never loads Features into memory.",
+"F61": "already the one clean-up called after every refresh and at start; it becomes the single owner of the keep rule and of removing remaining work outside every Portfolio",
+"F62": "semantic duplicate of the orphan rule that contradicts decision A1; replaced by the clean-up run on PortfolioDeleted",
+"F63": "pattern for a controller-published deletion event; PortfolioDeleted is created new because no Portfolio deletion event exists (ADR-270 gap)",
+"F64": "shape and home of the new Work Items policy handler; no existing handler reacts to a Portfolio deletion, so PortfolioDeletedOrphanedFeatureCleanupHandler is created",
+"F65": "considered and not used for removal: it zeroes counts and keeps rows, which FeaturesOfTeam still selects",
+"F66": "unchanged reader; correct once FeatureWork rows of non-members are gone",
+"F67": "unchanged forecast input; correct once FeatureWork rows of non-members are gone",
+"F68": "S1: existing delete endpoint; its queued lambda publishes PortfolioDeleted after the save, as TeamController does",
+"F69": "S1: existing composition root; the new handler is registered beside the TeamDeleted handlers",
+"F7": "Deleting a Portfolio removes its Features from Team pages at once",
+"F70": "signature unchanged; only the rule behind it changes",
+"F71": "still calls CleanupAsync in its finally",
+"F72": "startup clean-up applies the new rule to existing instances",
+"F73": "IsParentFeature column kept and still written; no migration",
+"F74": "blocked-edge exclusion by flag unchanged and out of scope",
+"F75": "reads FeaturesWorkedOnBy; drops non-members once their FeatureWork rows are gone",
+"F76": "still expects the deleted Portfolio's sole Features gone; now delivered by the PortfolioDeleted handler, so it witnesses the event wiring",
+"F77": "pins the flag written by the parent half, which stays",
+"F78": "asserts the parent is stored and flagged after a delta cycle; both still hold",
+"F79": "same as above",
+"F8": "a Feature that is in only one Portfolio and is the parent of no Feature in any Portfolio shows on a Team's Features tab",
+"F80": "S1: DELETE keeps its route, rights and 204/404; it now also publishes PortfolioDeleted",
+"F81": "S1: new handler registration",
+"F82": "S1: Remove only removes the Portfolio; Feature deletion moves to the clean-up",
+"F83": "S1 to S3: the keep rule and the FeatureWork removal live here",
+"F84": "no shared contract changes: IOrphanedFeatureCleanupService keeps its signature, PortfolioDeleted is a new in-process event with one producer and one consumer in one deployable, no DTO, wire or persisted shape changes",
+"F85": "producer and consumer of PortfolioDeleted live in one deployable and change in the same commit; covered by the slice oracle and the existing delete host test",
+"F86": "IOrphanedFeatureCleanupService.CleanupAsync, called by PortfolioUpdater, the startup clean-up and the PortfolioDeleted handler",
+"F87": "LighthouseAppContext Features and FeatureWork sets",
+"F88": "IDomainEventDispatcher publishing PortfolioDeleted",
+"F89": "PortfolioController publishes PortfolioDeleted -> Work Items policy handler -> clean-up service -> EF context; readers FeatureRepository.FeaturesOfTeam and FeaturesWorkedOnBy unchanged",
+"F9": "the Portfolio is deleted",
+"F90": "Stored Features after CleanupAsync: which rows exist, with their Id",
+"F91": "a row deleted and re-created with the same Id is not possible on SQLite autoincrement, but the observation alone cannot show history loss; transitions and forecasts are observed separately",
+"F92": "A Team's Features tab: FeatureRepository.FeaturesOfTeam(teamId)",
+"F93": "why a Feature is absent (deleted or only its FeatureWork removed)",
+"F94": "Forecast set: FeatureRepository.FeaturesWorkedOnBy(teamIds), the input of ForecastService.UpdateForecastsForPortfolio",
+"F95": "the simulated dates themselves; the order effect follows from set membership",
+"F96": "A kept parent's history: its FeatureStateTransition and WhenForecast rows by FeatureId",
+"F97": "whether the rows are current; only that they survived",
+"F98": "Two stores are equal when they hold the same Feature Ids with the same Portfolio memberships and the same FeatureWork rows per Feature; Order, names and forecast values are not part of it",
+"F99": "After CleanupAsync every stored Feature is in a Portfolio or is the parent of a Feature in a Portfolio"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F31"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F32"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F33"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F34"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F35"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F36"
+}
+],
+"journey": [
+{
+"emotion": "F38",
+"step": "F37"
+},
+{
+"emotion": "F40",
+"step": "F39"
+},
+{
+"emotion": "F40",
+"step": "F41"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F2"
+},
+{
+"given": "F4",
+"id": "P2",
+"kind": "Scenario",
+"then": "F6",
+"title": "F3",
+"when": "F5"
+},
+{
+"given": "F8",
+"id": "P3",
+"kind": "Scenario",
+"then": "F10",
+"title": "F7",
+"when": "F9"
+},
+{
+"given": "F12",
+"id": "P4",
+"kind": "Scenario",
+"then": "F14",
+"title": "F11",
+"when": "F13"
+},
+{
+"given": "F16",
+"id": "P5",
+"kind": "Scenario",
+"then": "F18",
+"title": "F15",
+"when": "F17"
+},
+{
+"given": "F20",
+"id": "P6",
+"kind": "Scenario",
+"then": "F22",
+"title": "F19",
+"when": "F21"
+}
+],
+"scope_in": [
+"F23",
+"F24",
+"F25",
+"F26"
+],
+"scope_out": [
+"F27",
+"F28",
+"F29",
+"F30"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F42",
+"promises": [
+"P2",
+"P3",
+"P6",
+"P1"
+],
+"work": {
+"size": "M",
+"value": "F43"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F44",
+"promises": [
+"P1",
+"P4"
+],
+"work": {
+"size": "S",
+"value": "F45"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S3",
+"observation": "F46",
+"promises": [
+"P5"
+],
+"work": {
+"size": "S",
+"value": "F47"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "bug-6665-former-parents-stranded",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
