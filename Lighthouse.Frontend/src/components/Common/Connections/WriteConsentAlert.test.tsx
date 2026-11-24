@@ -152,6 +152,30 @@ const givenPriyaOpensTheLoadedConnection = async (signIn: SignIn) => {
 	return opened;
 };
 
+const givenPriyaOpensTheConnectionWhoseReloadFails = async (signIn: SignIn) => {
+	let calls = 0;
+	const opened = await givenPriyaOpensTheConnection(() => {
+		calls += 1;
+		return calls === 1
+			? Promise.resolve(fabrikamWithWriteBack(signIn))
+			: Promise.reject(new Error("offline"));
+	});
+	await screen.findByDisplayValue(FABRIKAM);
+	return opened;
+};
+
+const whileWatchingForUnhandledFailures = () => {
+	const unhandled: unknown[] = [];
+	const remember = (reason: unknown) => {
+		unhandled.push(reason);
+	};
+	process.on("unhandledRejection", remember);
+	return {
+		unhandled,
+		stopWatching: () => process.off("unhandledRejection", remember),
+	};
+};
+
 const givenPriyaOpensTheConnectionsList = async (
 	service: IWorkTrackingSystemService,
 	oauthService: IOAuthService = anOAuthServiceThatSignsIn(),
@@ -396,5 +420,37 @@ describe("A connection whose sign-in may only read asks for write consent once w
 			theWriteConsentWarnings(),
 			"WHAT: a write-consent warning shows beside the could-not-load message. WHY: a failed list says nothing about the sign-in's rights. HOW: show only the could-not-load look when the list fails.",
 		).toHaveLength(0);
+	});
+	it("when the connection page cannot load the connection again after signing in, the earlier rights and warning are not shown as current", async () => {
+		const watch = whileWatchingForUnhandledFailures();
+		try {
+			const { getConnectionSettings } =
+				await givenPriyaOpensTheConnectionWhoseReloadFails(MAY_ONLY_READ);
+
+			await whenPriyaSignsInAgain(theWriteConsentWarning());
+
+			await waitFor(() =>
+				expect(
+					getConnectionSettings,
+					"WHAT: after a successful sign-in the connection was not loaded again. HOW: reload the connection on success.",
+				).toHaveBeenCalledTimes(2),
+			);
+			await waitFor(() =>
+				expect(
+					theWriteConsentWarnings(),
+					"WHAT: the warning from before the sign-in still shows after the connection could not be loaded again. WHY: the sign-in may have given write consent, so the warning may no longer be true and must not look current. HOW: when the reload fails, drop the remembered rights and warning or show the page's could-not-load look.",
+				).toHaveLength(0),
+			);
+			expect(
+				screen.queryByText(/^Rights: /),
+				"WHAT: the Rights line from before the sign-in still shows after the connection could not be loaded again. WHY: the sign-in may have changed the rights, so the old line must not look current. HOW: when the reload fails, drop the remembered rights or show the page's could-not-load look.",
+			).not.toBeInTheDocument();
+			expect(
+				watch.unhandled,
+				"WHAT: the failed reload surfaced as an unhandled promise rejection. WHY: a failure nobody handles shows the admin nothing. HOW: catch the failed reload on the connection page and turn it into what the page shows.",
+			).toHaveLength(0);
+		} finally {
+			watch.stopWatching();
+		}
 	});
 });
