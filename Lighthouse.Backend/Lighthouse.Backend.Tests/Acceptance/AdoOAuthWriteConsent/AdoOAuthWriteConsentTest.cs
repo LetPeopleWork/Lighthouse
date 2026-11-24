@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
         [TearDown]
         public void RemoveTheScenariosDatabase() => given.Dispose();
 
-        /// <summary>L2: without write-back mappings the sign-in asks to read work items only.</summary>
+        /// <summary>Without write-back mappings the sign-in asks to read work items only.</summary>
         [Test]
         public async Task A_connection_without_write_back_asks_Microsoft_only_to_read_work_items()
         {
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
             AzureDevOpsSignIn.ThenTheSignInAsksFor(signIn, AzureDevOpsWorkItemsReadOnly, StayOfflineSignedIn);
         }
 
-        /// <summary>L2: with a write-back mapping the sign-in asks to read and write work items.</summary>
+        /// <summary>With a write-back mapping the sign-in asks to read and write work items.</summary>
         [Test]
         public async Task A_connection_with_write_back_asks_Microsoft_to_read_and_write_work_items()
         {
@@ -67,8 +67,8 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
         }
 
         /// <summary>
-        /// L3 (resource/vso.work offline_access gives Read), L4 (Read has no write consent) and L5 (Read is skipped
-        /// and logged): a connection signed in to read only, that then gets a write-back mapping, sends nothing.
+        /// Microsoft granted only the right to read work items, so the connection has no write consent: once it gets a
+        /// write-back mapping, its write-back is not sent and one warning is logged.
         /// </summary>
         [Test]
         public async Task Write_back_on_a_connection_signed_in_only_to_read_sends_nothing_and_logs_one_warning()
@@ -84,8 +84,8 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
         }
 
         /// <summary>
-        /// L3 (resource/vso.work_write offline_access gives ReadAndWrite) and L5 (ReadAndWrite is written): signing in
-        /// again with write consent, after a read-only sign-in, makes write-back work.
+        /// Microsoft granted the right to read and write work items on the second sign-in, so the write-back that the
+        /// read-only sign-in held back is now sent.
         /// </summary>
         [Test]
         public async Task After_the_admin_signs_in_again_with_write_consent_write_back_sends_the_change()
@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
             given.ThenTheChangeWasSentToAzureDevOpsOnce(result);
         }
 
-        /// <summary>L3: a granted scope entry that is exactly vso.work_write also counts as write consent.</summary>
+        /// <summary>A granted scope entry that is exactly vso.work_write also counts as write consent.</summary>
         [Test]
         public async Task A_grant_naming_write_rights_without_the_resource_prefix_lets_write_back_send_the_change()
         {
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
         }
 
         /// <summary>
-        /// L3: a scope that only looks like write rights, an empty scope, and a token answer without any scope all
+        /// A scope that only looks like write rights, an empty scope, and a token answer without any scope all
         /// count as read only, so a connection with a write-back mapping sends nothing.
         /// </summary>
         [TestCase("499b84ac-1321-427f-aa17-267ca6975798/vso.work_write_x", TestName = "A grant of a scope that only starts like write rights sends nothing")]
@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
             given.ThenNothingWasSentToAzureDevOps(result);
         }
 
-        /// <summary>L4 (needed Read never lacks): a read-only sign-in blocks nothing while the connection needs only to read.</summary>
+        /// <summary>A read-only sign-in blocks nothing while the connection needs only to read.</summary>
         [Test]
         public async Task A_read_only_sign_in_does_not_block_a_write_while_the_connection_has_no_write_back_mapping()
         {
@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
             given.ThenTheChangeWasSentToAzureDevOpsOnce(result);
         }
 
-        /// <summary>L4 (null counts as consent) and L5 (null rights are written): existing connections keep working.</summary>
+        /// <summary>A sign-in with no recorded rights counts as write-consented, so existing connections keep writing back.</summary>
         [Test]
         public async Task A_connection_signed_in_before_rights_were_recorded_keeps_writing_back()
         {
@@ -152,7 +152,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
             given.ThenTheChangeWasSentToAzureDevOpsOnce(result);
         }
 
-        /// <summary>L5 (no credential is written): a personal access token connection is not affected.</summary>
+        /// <summary>A connection without an OAuth sign-in is not affected by write consent.</summary>
         [Test]
         public async Task A_connection_signed_in_with_a_personal_access_token_keeps_writing_back()
         {
@@ -163,7 +163,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
             given.ThenTheChangeWasSentToAzureDevOpsOnce(result);
         }
 
-        /// <summary>L6 (Read stays Read): a token refresh never turns a read-only sign-in into write consent.</summary>
+        /// <summary>A token refresh never turns a read-only sign-in into write consent.</summary>
         [Test]
         public async Task A_token_refresh_does_not_give_a_read_only_sign_in_write_consent()
         {
@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.AdoOAuthWriteConsent
             given.ThenNothingWasSentToAzureDevOps(result);
         }
 
-        /// <summary>L6 (null stays null): a token refresh keeps an existing connection write-consented.</summary>
+        /// <summary>A token refresh keeps a sign-in with no recorded rights write-consented.</summary>
         [Test]
         public async Task A_token_refresh_keeps_a_connection_signed_in_before_rights_were_recorded_writing_back()
         {

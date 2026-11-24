@@ -103,6 +103,9 @@ const fabrikamWithWriteBack = (signIn: SignIn, id = 7, name = FABRIKAM) =>
 		signIn,
 	);
 
+const needingReconnect = (connection: WorkTrackingSystemConnection) =>
+	Object.assign(connection, { requiresReconnect: true });
+
 const anOAuthServiceThatSignsIn = (): IOAuthService => ({
 	initiateConnect: vi
 		.fn()
@@ -170,6 +173,14 @@ const theWriteConsentWarnings = () =>
 			alert.textContent?.includes("Write-back needs more rights."),
 		);
 
+const theReconnectBanners = () =>
+	screen
+		.queryAllByRole("alert")
+		.filter(
+			(alert) =>
+				within(alert).queryByRole("button", { name: /^Reconnect$/ }) !== null,
+		);
+
 const theWriteConsentWarning = () => {
 	const warnings = theWriteConsentWarnings();
 	expect(
@@ -215,14 +226,42 @@ const thenTheSignInStartedWithoutDisconnecting = async (
 	).not.toHaveBeenCalled();
 };
 
-const thenItAppearsAbove = (warning: HTMLElement, later: HTMLElement) => {
+const thenItAppearsAbove = (
+	earlier: HTMLElement,
+	later: HTMLElement,
+	what: string,
+) => {
 	expect(
-		warning.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING,
-		"WHAT: the warning is not above the element expected after it. HOW: render the warning directly above the write-back mappings.",
+		earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING,
+		`WHAT: ${what}. WHY: the admin reads each part where the approved sketch puts it. HOW: keep the order of the sketch.`,
 	).toBeTruthy();
 };
 
 const theHeading = (text: string) => screen.getByText(text, { exact: true });
+
+const thenTheRightsLineSitsInTheAuthenticationSection = (
+	rightsLine: HTMLElement,
+) => {
+	thenItAppearsAbove(
+		theHeading("Authentication"),
+		rightsLine,
+		"the Rights line is not below the Authentication heading",
+	);
+	thenItAppearsAbove(
+		rightsLine,
+		theHeading("Additional Fields"),
+		"the Rights line is not inside the Authentication section, before the Additional Fields section",
+	);
+};
+
+const theRightsLine = (text: string) => {
+	const rightsLine = screen.queryByText(text, { exact: true });
+	expect(
+		rightsLine,
+		`WHAT: no '${text}' line. WHY: the admin must see which rights the sign-in holds. HOW: show the rights wording in the Authentication section when grantedRights is set.`,
+	).not.toBeNull();
+	return rightsLine as HTMLElement;
+};
 
 describe("A connection whose sign-in may only read asks for write consent once write-back is set up", () => {
 	beforeEach(() => {
@@ -239,13 +278,20 @@ describe("A connection whose sign-in may only read asks for write consent once w
 			await givenPriyaOpensTheLoadedConnection(MAY_ONLY_READ);
 
 		const warning = theWriteConsentWarning();
-		expect(
-			screen.getByText(READ_ONLY_RIGHTS),
-			"WHAT: no 'Rights: Read work items' line. WHY: the admin must see which rights the sign-in holds. HOW: show the rights wording in the Authentication section when grantedRights is set.",
-		).toBeInTheDocument();
+		thenTheRightsLineSitsInTheAuthenticationSection(
+			theRightsLine(READ_ONLY_RIGHTS),
+		);
 		thenTheWarningSaysWhatIsMissingAndHowToFixIt(warning);
-		thenItAppearsAbove(theHeading("Authentication"), warning);
-		thenItAppearsAbove(warning, theHeading("Sync with Source"));
+		thenItAppearsAbove(
+			theHeading("Authentication"),
+			warning,
+			"the warning is not below the Authentication section",
+		);
+		thenItAppearsAbove(
+			warning,
+			theHeading("Sync with Source"),
+			"the warning is not directly above the write-back mappings",
+		);
 
 		await whenPriyaSignsInAgain(warning);
 
@@ -261,10 +307,9 @@ describe("A connection whose sign-in may only read asks for write consent once w
 	it("the connection page shows read and write rights and no warning once write consent is given", async () => {
 		await givenPriyaOpensTheLoadedConnection(MAY_READ_AND_WRITE);
 
-		expect(
-			screen.getByText(READ_AND_WRITE_RIGHTS),
-			"WHAT: no 'Rights: Read and write work items' line. HOW: word ReadAndWrite as 'Read and write work items'.",
-		).toBeInTheDocument();
+		thenTheRightsLineSitsInTheAuthenticationSection(
+			theRightsLine(READ_AND_WRITE_RIGHTS),
+		);
 		expect(
 			theWriteConsentWarnings(),
 			"WHAT: a write-consent warning shows although the sign-in may write. HOW: render it only when needsWriteConsent is true.",
@@ -284,14 +329,30 @@ describe("A connection whose sign-in may only read asks for write consent once w
 	it("the connections list shows the warning only beside the connection that needs write consent, and signing in again reloads the list", async () => {
 		const { service, oauthService } = await givenPriyaOpensTheConnectionsList(
 			aListOf(
+				needingReconnect(
+					fabrikamWithWriteBack(MAY_READ_AND_WRITE, 8, "Contoso ADO"),
+				),
 				fabrikamWithWriteBack(MAY_ONLY_READ),
-				fabrikamWithWriteBack(MAY_READ_AND_WRITE, 8, "Contoso ADO"),
+				needingReconnect(
+					fabrikamWithWriteBack(MAY_READ_AND_WRITE, 9, "Northwind ADO"),
+				),
 			),
 		);
 		await screen.findByText(FABRIKAM);
 
 		const warning = theWriteConsentWarning();
 		thenTheWarningSaysWhatIsMissingAndHowToFixIt(warning);
+		const [contosoReconnect, northwindReconnect] = theReconnectBanners();
+		thenItAppearsAbove(
+			contosoReconnect,
+			warning,
+			"the warning is not after the banner of the connection listed before Fabrikam ADO",
+		);
+		thenItAppearsAbove(
+			warning,
+			northwindReconnect,
+			"the warning is not before the banner of the connection listed after Fabrikam ADO",
+		);
 
 		await whenPriyaSignsInAgain(warning);
 
@@ -304,16 +365,36 @@ describe("A connection whose sign-in may only read asks for write consent once w
 		);
 	});
 
-	it("when the connections list cannot be loaded, no warning shows", async () => {
-		const service = createMockWorkTrackingSystemService();
-		vi.mocked(service.getConfiguredWorkTrackingSystems).mockRejectedValue(
-			new Error("offline"),
-		);
+	it("when the connections list cannot be loaded again after signing in, the earlier warning is not shown as current", async () => {
+		let failTheReload: (reason: Error) => void = () => {};
+		const service = aListOf(fabrikamWithWriteBack(MAY_ONLY_READ));
+		vi.mocked(service.getConfiguredWorkTrackingSystems)
+			.mockResolvedValueOnce([fabrikamWithWriteBack(MAY_ONLY_READ)])
+			.mockReturnValueOnce(
+				new Promise((_, reject) => {
+					failTheReload = reject;
+				}),
+			);
 		await givenPriyaOpensTheConnectionsList(service);
+		await screen.findByText(FABRIKAM);
+
+		await whenPriyaSignsInAgain(theWriteConsentWarning());
 
 		await waitFor(() =>
-			expect(service.getConfiguredWorkTrackingSystems).toHaveBeenCalled(),
+			expect(
+				theWriteConsentWarnings(),
+				"WHAT: the warning from before the sign-in still shows while the list loads again. WHY: it may no longer be true and must not look current. HOW: drop the remembered list when the sign-in succeeds.",
+			).toHaveLength(0),
 		);
-		expect(theWriteConsentWarnings()).toHaveLength(0);
+		expect(
+			screen.getByRole("progressbar", { name: /^Loading the .+$/ }),
+			"WHAT: no loading look while the list loads again. WHY: an empty area would look like no connections. HOW: show the list's spinner while it loads.",
+		).toBeInTheDocument();
+		failTheReload(new Error("offline"));
+		await screen.findByText(/^Could not load the .+\.$/);
+		expect(
+			theWriteConsentWarnings(),
+			"WHAT: a write-consent warning shows beside the could-not-load message. WHY: a failed list says nothing about the sign-in's rights. HOW: show only the could-not-load look when the list fails.",
+		).toHaveLength(0);
 	});
 });
