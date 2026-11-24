@@ -933,6 +933,37 @@ namespace Lighthouse.Backend.Tests.API
                 "Publish PortfolioDeleted with the Portfolio's id through the domain event dispatcher in the queued delete, after the save.");
         }
 
+        [Test]
+        public async Task DeletePortfolio_QueuesTheDeleteAndPublishesPortfolioDeletedUnderTheRequestsAbortToken()
+        {
+            const int portfolioId = 12;
+            using var aborted = new CancellationTokenSource();
+            var dispatcher = new Mock<IDomainEventDispatcher>();
+            var queuedDelete = new Mock<IServiceProvider>();
+            queuedDelete.Setup(x => x.GetService(typeof(IRepository<Portfolio>))).Returns(Mock.Of<IRepository<Portfolio>>());
+            queuedDelete.Setup(x => x.GetService(typeof(IRefreshLogService))).Returns(Mock.Of<IRefreshLogService>());
+            queuedDelete.Setup(x => x.GetService(typeof(IDomainEventDispatcher))).Returns(dispatcher.Object);
+            portfolioRepoMock.Setup(x => x.Exists(portfolioId)).Returns(true);
+            var queueTokenSeen = CancellationToken.None;
+            updateQueueServiceMock
+                .Setup(x => x.EnqueueAndAwaitAsync(It.IsAny<UpdateType>(), It.IsAny<int>(), It.IsAny<Func<IServiceProvider, Task>>(), It.IsAny<CancellationToken>()))
+                .Returns((UpdateType _, int _, Func<IServiceProvider, Task> queued, CancellationToken token) =>
+                {
+                    queueTokenSeen = token;
+                    return queued(queuedDelete.Object);
+                });
+            var subject = CreateSubject();
+            subject.ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { RequestAborted = aborted.Token } };
+
+            await subject.DeletePortfolio(portfolioId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(queueTokenSeen, Is.EqualTo(aborted.Token), "The queued delete must stop when the caller goes away.");
+                dispatcher.Verify(x => x.PublishAsync(It.Is<PortfolioDeleted>(e => e.PortfolioId == portfolioId), aborted.Token), Times.Once);
+            }
+        }
+
         private sealed class RecordingDispatcher(List<string> whatHappened) : IDomainEventDispatcher
         {
             public Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default) where TEvent : IDomainEvent
