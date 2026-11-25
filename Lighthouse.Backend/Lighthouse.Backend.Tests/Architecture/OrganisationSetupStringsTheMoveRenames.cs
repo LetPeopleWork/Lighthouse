@@ -3,7 +3,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// A string in a test file that names a moving Organisation set-up type, file or namespace by its old Services path, and the
     /// text it reads after the move. MayLeave marks a string the move later takes away altogether: a list entry that leaves its
-    /// list once the edge it allows becomes legal, or a row of a list of files that stay in Services.
+    /// list once the edge it allows becomes legal, a row of a list of files that stay in Services, or the expected offender of a
+    /// made-up type whose rule stops reading the moved type as forbidden, so the made-up type is pointed at another one.
     /// </summary>
     internal sealed record OrganisationSetupRename(string File, string OldText, string NewText, bool MayLeave = false)
     {
@@ -45,7 +46,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "Lighthouse.Backend.Platform.UsageData.UsageDataConsentService -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService"),
             new(Architecture + "PromisesModuleBoundariesArchUnitTest.cs",
                 "Lighthouse.Backend.Services.Interfaces.IAppSettingService",
-                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService"),
+                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService", MayLeave: true),
             new(Architecture + "WorkItemsModuleBoundariesArchUnitTest.cs",
                 "Lighthouse.Backend.Services.Implementation.Connections.ConnectionSaveService",
                 "Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService"),
@@ -72,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "Lighthouse.Backend.Modules.Refinement.Application.RefinementNeedCalculator -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IBlackoutPeriodService", MayLeave: true),
             new(Architecture + "RefinementModuleBoundariesArchUnitTest.cs",
                 "Lighthouse.Backend.Services.Interfaces.IBlackoutPeriodService",
-                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IBlackoutPeriodService"),
+                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IBlackoutPeriodService", MayLeave: true),
             new(Architecture + "RepositoryLeakRatchetArchUnitTest.cs",
                 "Services/Implementation/Connections/ConnectionSaveService.cs",
                 NewApplicationFolder + "Connections/ConnectionSaveService.cs"),
@@ -82,13 +83,13 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             new(Architecture + "AccessModuleBoundariesArchUnitTest.cs",
                 "Lighthouse.Backend.Services.Interfaces.IAppSettingService",
-                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService"),
+                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService", MayLeave: true),
             new(Architecture + "LicensingModuleBoundariesArchUnitTest.cs",
                 "Lighthouse.Backend.Services.Interfaces.IAppSettingService",
-                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService"),
+                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService", MayLeave: true),
             new(Architecture + "ReportsModuleBoundariesArchUnitTest.cs",
                 "Lighthouse.Backend.Services.Interfaces.IAppSettingService",
-                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService"),
+                "Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService", MayLeave: true),
 
             // The platform lane's list of files that stay in Services names each moving set-up file; the row goes when its file moves.
             .. OrganisationSetupMembership.MovingTypes.Select(type => new OrganisationSetupRename(

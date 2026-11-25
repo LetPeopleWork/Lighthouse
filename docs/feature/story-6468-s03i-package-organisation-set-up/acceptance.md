@@ -107,7 +107,7 @@ Read every string literal of the test project that names a moving set-up type or
 ```
 
 ```text
-Every such literal is on the list for its file, in its old or its new form, and every listed string still exists in one form unless its list row may leave; a made-up unlisted old full name and a listed string found in neither form are each named
+Every such literal is on the list for its file, in its old or its new form, and every listed string still exists in one form unless its list row may leave; a row may leave when its list entry becomes legal, when it lists a file that stays in Services, or when it is the expected offender of a made-up type whose rule stops reading the moved type as forbidden (Refinement's unlisted set-up fixture; Reports' unlisted set-up and Promises', Access' and Licensing' unlisted platform fixtures that name the settings port); a made-up unlisted old full name and a listed string found in neither form are each named
 ```
 
 ```text

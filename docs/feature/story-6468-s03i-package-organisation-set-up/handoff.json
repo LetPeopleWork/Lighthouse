@@ -69,7 +69,7 @@
 "still_passes_if": "F235",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs"
 },
-"expected": "F233",
+"expected": "F240",
 "stimulus": "F232",
 "user_result": "F234"
 }
@@ -101,7 +101,7 @@
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 239,
+"F": 240,
 "K": 9,
 "L": 6,
 "P": 4,
@@ -2681,7 +2681,6 @@
 "F230": "A maintainer sees, by class and field, every rule that would silently stop seeing the set-up types at the move, and which rules rightly stay in the old place",
 "F231": "a Context pattern widened to only the Application namespace, which stops seeing the two Domain types",
 "F232": "Read every string literal of the test project that names a moving set-up type or file by its old Services path and compare it with the fixed rename list",
-"F233": "Every such literal is on the list for its file, in its old or its new form, and every listed string still exists in one form unless its list row may leave; a made-up unlisted old full name and a listed string found in neither form are each named",
 "F234": "A maintainer knows every test string the move must rename, so no list or rule is left naming an empty old place",
 "F235": "an old full name built at run time from pieces in a method body, which no literal sweep can read",
 "F236": "Run the calendar, Feature ordering and ranking and optional-feature layout rule on the compiled application and its test project.",
@@ -2689,6 +2688,7 @@
 "F238": "The first half of Organisation set-up lives in its module, with its unit tests beside it, and every other architecture rule stays green.",
 "F239": "A type moved into the module but also kept in its old namespace, or a Domain candidate placed in Application, would pass a rule that only checked the old namespace was empty; the namespace-only and layer rules name both.",
 "F24": "D-5 The four context seeders (AppSettingSeeder, TerminologySeeder, OptionalFeatureSeeder, CategoryListNormalisationSeeder) stay in Services/Implementation/Seeding, owner Organisation set-up, target module start-up (S09a). Rejected: moving them to Adapters/Seeding (a second seeding decision in the Epic).",
+"F240": "Every such literal is on the list for its file, in its old or its new form, and every listed string still exists in one form unless its list row may leave; a row may leave when its list entry becomes legal, when it lists a file that stays in Services, or when it is the expected offender of a made-up type whose rule stops reading the moved type as forbidden (Refinement's unlisted set-up fixture; Reports' unlisted set-up and Promises', Access' and Licensing' unlisted platform fixtures that name the settings port); a made-up unlisted old full name and a listed string found in neither form are each named",
 "F25": "D-6 Nothing of Team and Portfolio moves; no unit, level or event change. Their settings services move (AppSettingService, ConnectionSaveService, WorkTrackingSystemConnectionUsage). The brief IN line narrows accordingly (amended in S5).",
 "F26": "D-7 Rules first: EXTEND the shared NamespaceMoveLaw (it already carries PatternDeclaration Context, Place and Composite roles) with an Organisation set-up map and a per-pattern declaration. For every regex-valued const or static readonly string field and every moved type, the law evaluates the field against its declared subject (Namespace or FullName; an undeclared field is evaluated on both and a match on either fails until declared). A field whose old subject matches carries a role: Context must also match the new subject (S1 widens Namespace fields with the alternative for Modules.OrganisationSetup, FullName fields with the new full name), Place must not match the new subject. Composite fields are declared CompositeOf their component and follow it by reference. String fields equal to an old namespace or old full name take roles by equality. Inline method-body literals are caught only by the literal sweep, whose rename list is fixed at S1 from the pre-move grep. Rejected: a text sweep alone (misses the loose-namespace patterns, which name no type) and plain widening of every match (wrong for Place patterns).",
 "F27": "D-8 Open host by namespace: S4 makes the set-up Application and Domain namespaces a legal outbound target in the Work Items, Flow metrics, Forecasting, Promises, Refinement and Reports rules; their listed set-up edges leave the lists (Work Items 2, Promises 1, others measured). Tracker integration keeps set-up forbidden with one listed edge in TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts: ConnectionHealthCadence to IAppSettingService, owner S09a / Epic 6474. Rejected: legal by namespace for Tracker integration (contradicts the acknowledged-cycle decision); keeping every edge listed.",
