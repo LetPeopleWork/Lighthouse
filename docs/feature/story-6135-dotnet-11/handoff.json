@@ -142,7 +142,7 @@
 "counters": {
 "D": 12,
 "E": 7,
-"F": 237,
+"F": 238,
 "K": 2,
 "P": 7,
 "S": 4,
@@ -580,7 +580,7 @@
 "decision": "Extend",
 "locator": "Lighthouse.EndToEndTests/perf/readings.spec.ts:76",
 "reason": "F118",
-"symbol": "net10.0"
+"symbol": "net11.0"
 },
 {
 "decision": "Extend",
@@ -784,9 +784,9 @@
 },
 {
 "decision": "Extend",
-"locator": ".github/workflows/ci_packageapp.yml:16",
-"reason": "F188",
-"symbol": "dotnet_version"
+"locator": ".github/workflows/ci_packageapp.yml:12",
+"reason": "F238",
+"symbol": "sbom-version"
 }
 ]
 },
@@ -819,8 +819,8 @@
 ],
 "verification": [
 "node --test .github/scripts/toolchain-pins.test.mjs",
-"sh -c '! git grep -nE \"dotnet-version: .?10[.]\" -- .github'",
-"sh -c '! git grep -n \"dotnet_version\" -- .github'"
+"sh -c '! git grep -nE \"dotnet-version: .?10[.]\" -- .github \":!.github/scripts/toolchain-pins.test.mjs\"'",
+"sh -c '! git grep -n \"dotnet_version\" -- .github \":!.github/scripts/toolchain-pins.test.mjs\"'"
 ]
 },
 "S3": {
@@ -1206,7 +1206,6 @@
 "F185": "Existing owner of this pin; edited in place, nothing new is created",
 "F186": "Pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 becomes 11.0.0",
 "F187": "Remove the input dotnet_version, default 10: nothing reads it",
-"F188": "Existing declaration owner; the dead input is deleted in place",
 "F189": "The input is declared once and no caller passes it and no step reads it, so removal leaves no consumer and no second place that names SDK 10; setting it to 11 would keep a third unread version value that can drift from the real pin",
 "F19": "the .NET 10 hold rule is removed from renovate.json",
 "F190": "Delete only the packageRule whose description starts Lighthouse stays on .NET 10, with its allowedVersions <11 (lines 39-51). Keep the separate rule for mcr.microsoft.com/dotnet major updates that sets automerge false. No rule makes the dotnet images float.",
@@ -1262,6 +1261,7 @@
 "F235": "No workflow declares a .NET version input nothing reads, so no second SDK version can drift",
 "F236": "Only one place names the SDK version in the pipelines",
 "F237": "The input renamed or set to 11 under a differently spelled key",
+"F238": "Existing workflow owner; the dead dotnet_version input beside it is deleted in place.",
 "F24": "Any change to routes, DTO shapes, serialized responses, UI pixels or topologies; this is a behaviour-free upgrade.",
 "F25": "Historical architecture briefs, diagrams and decision records that name .NET 10 as history stay unchanged. Release notes are written at release time, not here.",
 "F26": "DISCOVER and DIVERGE are skipped for this Feature.",

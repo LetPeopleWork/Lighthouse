@@ -835,7 +835,7 @@ sh -c &#x27;! git grep -n &quot;10[.]0[.]14&quot; -- Scripts/examine&#x27;
 <pre><code>Existing owner of this fact; edited in place, nothing new is created. bin/Debug/net10.0 becomes net11.0, the path used to find the built migrations DLLs
 </code></pre>
 
-<p>net10.0</p>
+<p>net11.0</p>
 
 <p>Lighthouse.EndToEndTests/perf/readings.spec.ts:76</p>
 
@@ -1160,8 +1160,8 @@ sh -c &#x27;! git grep -n &quot;10[.]0[.]14&quot; -- Scripts/examine&#x27;
 <h4>Verification</h4>
 
 <pre><code>node --test .github/scripts/toolchain-pins.test.mjs
-sh -c &#x27;! git grep -nE &quot;dotnet-version: .?10[.]&quot; -- .github&#x27;
-sh -c &#x27;! git grep -n &quot;dotnet_version&quot; -- .github&#x27;
+sh -c &#x27;! git grep -nE &quot;dotnet-version: .?10[.]&quot; -- .github &quot;:!.github/scripts/toolchain-pins.test.mjs&quot;&#x27;
+sh -c &#x27;! git grep -n &quot;dotnet_version&quot; -- .github &quot;:!.github/scripts/toolchain-pins.test.mjs&quot;&#x27;
 </code></pre>
 
 <h4>Supports</h4>
@@ -1237,13 +1237,13 @@ sh -c &#x27;! git grep -n &quot;dotnet_version&quot; -- .github&#x27;
 <pre><code>Existing owner of this fact; edited in place, nothing new is created. SDK pin moves to 11.0.100.
 </code></pre>
 
-<p>dotnet_version</p>
+<p>sbom-version</p>
 
-<p>.github/workflows/ci_packageapp.yml:16</p>
+<p>.github/workflows/ci_packageapp.yml:12</p>
 
 <p>Extend</p>
 
-<pre><code>Existing declaration owner; the dead input is deleted in place
+<pre><code>Existing workflow owner; the dead dotnet_version input beside it is deleted in place.
 </code></pre>
 
 <h5>Impact</h5>

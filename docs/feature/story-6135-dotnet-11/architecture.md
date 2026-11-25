@@ -781,7 +781,7 @@ Extend
 Existing owner of this fact; edited in place, nothing new is created. bin/Debug/net10.0 becomes net11.0, the path used to find the built migrations DLLs
 ```
 
-net10\.0
+net11\.0
 
 Lighthouse\.EndToEndTests\/perf\/readings\.spec\.ts\:76
 
@@ -1137,8 +1137,8 @@ Remove the input dotnet_version, default 10: nothing reads it
 
 ```text
 node --test .github/scripts/toolchain-pins.test.mjs
-sh -c '! git grep -nE "dotnet-version: .?10[.]" -- .github'
-sh -c '! git grep -n "dotnet_version" -- .github'
+sh -c '! git grep -nE "dotnet-version: .?10[.]" -- .github ":!.github/scripts/toolchain-pins.test.mjs"'
+sh -c '! git grep -n "dotnet_version" -- .github ":!.github/scripts/toolchain-pins.test.mjs"'
 ```
 
 #### Supports
@@ -1221,14 +1221,14 @@ Extend
 Existing owner of this fact; edited in place, nothing new is created. SDK pin moves to 11.0.100.
 ```
 
-dotnet\_version
+sbom\-version
 
-\.github\/workflows\/ci\_packageapp\.yml\:16
+\.github\/workflows\/ci\_packageapp\.yml\:12
 
 Extend
 
 ```text
-Existing declaration owner; the dead input is deleted in place
+Existing workflow owner; the dead dotnet_version input beside it is deleted in place.
 ```
 
 ##### Impact
