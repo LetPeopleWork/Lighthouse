@@ -372,6 +372,58 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>PROBE architecture-rules Reports (filter Architecture and Reports): EXIT=0, Test Run Successful, 108 passed, 0 failed. Public layering rule probe green.
+</code></pre>
+
+<pre><code>PROBE architecture-rules (full architecture filter): EXIT=0, 1861 passed, 0 failed.
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>PROBE test-selection-show Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/ and Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/: EXIT=0. Output backend: true; jira, ado, linear, servicenow, github, shared: false. CI backend suite selected for a Reports change; no live tracker suite selected.
+</code></pre>
+
+<pre><code>PROBE backend-tests fragment Lighthouse.Backend.Tests.Modules.Reports: EXIT=0, Total tests 192, Passed 192, Failed 0. Test names are not enough to show unchanged assertions.
+</code></pre>
+
+<h3>E3</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>PROBE backend-tests fragment Reports: EXIT=0, Total tests 769, Passed 769, Failed 0. Not probed: rename list, Program.cs registration order and lifetimes, file and namespace placement, route, DTO and header diffs. Not probed by any admitted probe: unchanged assertion text.
+</code></pre>
+
+<h3>E4</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>PROBE ef-model-unchanged retry (after host dotnet tool restore): EXIT=0. Output: == Sqlite, No changes have been made to the model since the last migration. == Postgres, No changes have been made to the model since the last migration. No migration added by the move for Sqlite or Postgres.
+</code></pre>
+
+<h3>E5</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>PROBE architecture-rules (full architecture filter): EXIT=0, 1861 passed, 0 failed.
+</code></pre>
+
+<pre><code>PROBE backend-tests (whole filtered backend suite, no fragment): EXIT=0, Test Run Successful, Total 14789, Passed 14777, Skipped 12, Failed 0. Skip reason not shown by the probe output.
+</code></pre>
 
 </body></html>

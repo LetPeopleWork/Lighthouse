@@ -252,4 +252,64 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+PROBE architecture-rules Reports (filter Architecture and Reports): EXIT=0, Test Run Successful, 108 passed, 0 failed. Public layering rule probe green.
+```
+
+```text
+PROBE architecture-rules (full architecture filter): EXIT=0, 1861 passed, 0 failed.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+PROBE test-selection-show Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/ and Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/: EXIT=0. Output backend: true; jira, ado, linear, servicenow, github, shared: false. CI backend suite selected for a Reports change; no live tracker suite selected.
+```
+
+```text
+PROBE backend-tests fragment Lighthouse.Backend.Tests.Modules.Reports: EXIT=0, Total tests 192, Passed 192, Failed 0. Test names are not enough to show unchanged assertions.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+PROBE backend-tests fragment Reports: EXIT=0, Total tests 769, Passed 769, Failed 0. Not probed: rename list, Program.cs registration order and lifetimes, file and namespace placement, route, DTO and header diffs. Not probed by any admitted probe: unchanged assertion text.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+PROBE ef-model-unchanged retry (after host dotnet tool restore): EXIT=0. Output: == Sqlite, No changes have been made to the model since the last migration. == Postgres, No changes have been made to the model since the last migration. No migration added by the move for Sqlite or Postgres.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+PROBE architecture-rules (full architecture filter): EXIT=0, 1861 passed, 0 failed.
+```
+
+```text
+PROBE backend-tests (whole filtered backend suite, no fragment): EXIT=0, Test Run Successful, Total 14789, Passed 14777, Skipped 12, Failed 0. Skip reason not shown by the probe output.
+```

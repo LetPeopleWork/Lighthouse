@@ -111,7 +111,7 @@
 "C": 1,
 "D": 7,
 "E": 5,
-"F": 162,
+"F": 169,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1700,6 +1700,41 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F163",
+"F164"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F165",
+"F166"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F167"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F169"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F164",
+"F168"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1811,6 +1846,13 @@
 "F160": "Production types sit in their module layer namespaces and folders, old production folders hold no moving file, the rename list is empty",
 "F161": "Reports code lives in its module and behaviour is untouched",
 "F162": "Pure placement: behaviour changes are seen by the unchanged acceptance and wire tests, not here",
+"F163": "PROBE architecture-rules Reports (filter Architecture and Reports): EXIT=0, Test Run Successful, 108 passed, 0 failed. Public layering rule probe green.",
+"F164": "PROBE architecture-rules (full architecture filter): EXIT=0, 1861 passed, 0 failed.",
+"F165": "PROBE test-selection-show Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/ and Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/: EXIT=0. Output backend: true; jira, ado, linear, servicenow, github, shared: false. CI backend suite selected for a Reports change; no live tracker suite selected.",
+"F166": "PROBE backend-tests fragment Lighthouse.Backend.Tests.Modules.Reports: EXIT=0, Total tests 192, Passed 192, Failed 0. Test names are not enough to show unchanged assertions.",
+"F167": "PROBE backend-tests fragment Reports: EXIT=0, Total tests 769, Passed 769, Failed 0. Not probed: rename list, Program.cs registration order and lifetimes, file and namespace placement, route, DTO and header diffs. Not probed by any admitted probe: unchanged assertion text.",
+"F168": "PROBE backend-tests (whole filtered backend suite, no fragment): EXIT=0, Test Run Successful, Total 14789, Passed 14777, Skipped 12, Failed 0. Skip reason not shown by the probe output.",
+"F169": "PROBE ef-model-unchanged retry (after host dotnet tool restore): EXIT=0. Output: == Sqlite, No changes have been made to the model since the last migration. == Postgres, No changes have been made to the model since the last migration. No migration added by the move for Sqlite or Postgres.",
 "F17": "Architecture rules probe with the Reports filter stays green after the move, so the layering rules that govern Reports still hold for a user of the build. Exact namespace and folder placement of each moved type is not shown by any admitted probe and is left to the whole-candidate review.",
 "F2": "Reports is packaged in Modules/Reports and nothing a user, a tracker or the database sees changes",
 "F20": "ef-model-unchanged shows the EF model is unchanged with no migration added by the move, so a user of the database sees no schema change.",
