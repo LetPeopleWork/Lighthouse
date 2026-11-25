@@ -151,7 +151,82 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Reports placement architecture test over the compiled backend and the source tree
+</code></pre>
+
+<pre><code>Each of the 31 moving types is found only in its new Reports module namespace and folder, no moving file is left under the old Services folders, and the staying types are where the map lists them
+</code></pre>
+
+<pre><code>Reports sits in its module and nothing of it is left under Services
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs</p>
+
+<pre><code>A behaviour change inside a moved file, which the unchanged acceptance and integration suites observe and not this test
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the same test, which reads the list of strings that name Reports by its old Services path
+</code></pre>
+
+<pre><code>The list holds no entry once every string is renamed or removed
+</code></pre>
+
+<pre><code>No test or rule still points at the old Reports folders
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs</p>
+
+<pre><code>A string renamed to a wrong new name while its entry is removed; the build and the rules catch it, not this test
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the same test against the staying Reports types
+</code></pre>
+
+<pre><code>ReportRepository, the stored models, controllers, owner-write access and DTOs stay in their namespaces, so the wire and stored model are unchanged
+</code></pre>
+
+<pre><code>Nothing an API client or the database sees changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs</p>
+
+<pre><code>A behaviour change inside a moved file, which the unchanged acceptance and integration suites observe and not this test
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

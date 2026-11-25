@@ -2,7 +2,94 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Run the Reports placement architecture test over the compiled backend and the source tree
+```
+
+```text
+Each of the 31 moving types is found only in its new Reports module namespace and folder, no moving file is left under the old Services folders, and the staying types are where the map lists them
+```
+
+```text
+Reports sits in its module and nothing of it is left under Services
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsLivesInItsModuleArchUnitTest\.cs
+
+```text
+A behaviour change inside a moved file, which the unchanged acceptance and integration suites observe and not this test
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run the same test, which reads the list of strings that name Reports by its old Services path
+```
+
+```text
+The list holds no entry once every string is renamed or removed
+```
+
+```text
+No test or rule still points at the old Reports folders
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsLivesInItsModuleArchUnitTest\.cs
+
+```text
+A string renamed to a wrong new name while its entry is removed; the build and the rules catch it, not this test
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Run the same test against the staying Reports types
+```
+
+```text
+ReportRepository, the stored models, controllers, owner-write access and DTOs stay in their namespaces, so the wire and stored model are unchanged
+```
+
+```text
+Nothing an API client or the database sees changes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsLivesInItsModuleArchUnitTest\.cs
+
+```text
+A behaviour change inside a moved file, which the unchanged acceptance and integration suites observe and not this test
+```
+
+###### Obligations
+
 
 ## Expectations
 

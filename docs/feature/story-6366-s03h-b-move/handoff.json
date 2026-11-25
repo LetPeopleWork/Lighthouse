@@ -1,9 +1,61 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F139",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs"
+},
+"expected": "F137",
+"stimulus": "F136",
+"user_result": "F138"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F143",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs"
+},
+"expected": "F141",
+"stimulus": "F140",
+"user_result": "F142"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F139",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs"
+},
+"expected": "F145",
+"stimulus": "F144",
+"user_result": "F146"
+}
+]
+},
 "counters": {
 "C": 1,
 "D": 7,
 "E": 5,
-"F": 135,
+"F": 146,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1676,7 +1728,18 @@
 "F133": "Each of the 18 Reports unit-test classes is in its Tests.Modules.Reports layer namespace and the folder of that namespace; none under the old test folder; the staying Reports tests are where they were.",
 "F134": "test-selection-show for a path under Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/ and for a path under Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/ prints backend: true and no live tracker suite (CI runs the backend suite for a change in the module); and backend-tests with the fragment Lighthouse.Backend.Tests.Modules.Reports runs the moved Reports unit tests by name, all passing. Leave namespace-equals-folder and exact file locations to architecture-rules (the layout tests name them) and to the whole-candidate review.",
 "F135": "backend-tests with the fragment Reports runs the Reports acceptance, integration and wire-contract classes with their assertions unchanged (create, edit, read Then and Now, list across owners, bulk create, bulk removal, cap, refusals). It takes longer than the 2-minute foreground shell limit, so it runs as a background shell job and is read when it ends. The rename list, Program.cs registration order and the lifetimes are not shown by this probe and are left to the whole-candidate review.",
+"F136": "Run the Reports placement architecture test over the compiled backend and the source tree",
+"F137": "Each of the 31 moving types is found only in its new Reports module namespace and folder, no moving file is left under the old Services folders, and the staying types are where the map lists them",
+"F138": "Reports sits in its module and nothing of it is left under Services",
+"F139": "A behaviour change inside a moved file, which the unchanged acceptance and integration suites observe and not this test",
 "F14": "Reports is packaged in its module and every rule and registration follows it",
+"F140": "Run the same test, which reads the list of strings that name Reports by its old Services path",
+"F141": "The list holds no entry once every string is renamed or removed",
+"F142": "No test or rule still points at the old Reports folders",
+"F143": "A string renamed to a wrong new name while its entry is removed; the build and the rules catch it, not this test",
+"F144": "Run the same test against the staying Reports types",
+"F145": "ReportRepository, the stored models, controllers, owner-write access and DTOs stay in their namespaces, so the wire and stored model are unchanged",
+"F146": "Nothing an API client or the database sees changes",
 "F15": "B2: the 18 Reports unit tests live in Tests/Modules/Reports/Domain, /Application and /Application/Metrics, namespace equal to folder, and the port, host, wire-contract and repository tests stay.",
 "F16": "The Reports unit tests sit beside the module they test",
 "F17": "Architecture rules probe with the Reports filter stays green after the move, so the layering rules that govern Reports still hold for a user of the build. Exact namespace and folder placement of each moved type is not shown by any admitted probe and is left to the whole-candidate review.",
