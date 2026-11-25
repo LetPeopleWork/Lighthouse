@@ -171,17 +171,17 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Outcome</p>
 
-<pre><code>A person who creates a Portfolio sees Features without child Work Items counted as 0 (shown as 0 of 0 and No child Work Items yet), not as an inferred Default Feature Size, unless they switch Default Feature sizing on.
+<pre><code>A person who creates a Portfolio sees Features without child Work Items counted as 0 (shown as 0 of 0 and No child Work Items yet), not as an inferred Default Feature Size, unless they switch Default Feature sizing on or unless the Portfolio&#x27;s connection names a Portfolio Size Estimate Field default.
 </code></pre>
 
 <h3>P2</h3>
 
 <p>Scenario</p>
 
-<pre><code>New Portfolio from the wizard starts with Default Feature sizing off
+<pre><code>New Portfolio from the wizard starts with Default Feature sizing off unless its connection names a Portfolio Size Estimate Field default
 </code></pre>
 
-<pre><code>a person creates a Portfolio in the create wizard and does not touch the sizing switch
+<pre><code>a person creates a Portfolio in the create wizard on a connection that names no Portfolio Size Estimate Field default, and does not touch the sizing switch
 </code></pre>
 
 <pre><code>the Portfolio is saved and they open its Features that have no child Work Items
@@ -194,10 +194,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Scenario</p>
 
-<pre><code>New Portfolio created through the API without naming the switch starts off
+<pre><code>New Portfolio created through the API without naming the switch starts off unless its connection names a Portfolio Size Estimate Field default
 </code></pre>
 
-<pre><code>a client creates a Portfolio through the API or Lighthouse-Clients and does not name the sizing switch
+<pre><code>a client creates a Portfolio through the API or Lighthouse-Clients on a connection that names no Portfolio Size Estimate Field default, and does not name the sizing switch
 </code></pre>
 
 <pre><code>the Portfolio is saved
@@ -258,7 +258,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Scenario</p>
 
-<pre><code>Demo Portfolios start off unless a demo needs inferred sizing
+<pre><code>Demo Portfolios start off unless a demo needs inferred sizing or its connection names a Portfolio Size Estimate Field default
 </code></pre>
 
 <pre><code>demo data is created
@@ -267,7 +267,23 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>a person opens a demo Portfolio
 </code></pre>
 
-<pre><code>its switch is off, except a demo Portfolio that must show Default Feature Size behaviour, which has it on explicitly
+<pre><code>its switch is off, except a demo Portfolio that must show Default Feature Size behaviour, which has it on explicitly, and except a demo Portfolio whose connection names a Portfolio Size Estimate Field default, which starts on
+</code></pre>
+
+<h3>P8</h3>
+
+<p>Scenario</p>
+
+<pre><code>New Portfolio on a connection that names a Portfolio Size Estimate Field default starts with Default Feature sizing on
+</code></pre>
+
+<pre><code>an admin has set a Portfolio Size Estimate Field default on the connection, and a person creates a Portfolio on that connection through the wizard or the API without naming the sizing switch
+</code></pre>
+
+<pre><code>the Portfolio is saved and they open its Features that have no child Work Items
+</code></pre>
+
+<pre><code>the switch is on, and each such Feature takes the size the Size Estimate Field holds
 </code></pre>
 
 <h2>Scope</h2>
@@ -288,6 +304,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 </code></pre>
 
 <pre><code>Usage event design for DefaultFeatureSizingSwitchedOff (id 29): left to DEVOPS, not designed here.
+</code></pre>
+
+<pre><code>Own-field case: a create that names the Portfolio&#x27;s own Size Estimate Field rather than following the connection default is not decided; it follows the plain rule (off unless the connection names a default) until the maintainer decides.
+</code></pre>
+
+<pre><code>A Portfolio Size Estimate Field default set on a connection after a Portfolio exists does not switch that existing Portfolio on.
 </code></pre>
 
 <h2>Decisions</h2>
@@ -373,6 +395,23 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Confirmed</p>
 
 
+<pre><code>Maintainer, 2026-11-25 (option B): a new Portfolio starts with Default Feature sizing on when its connection names a Portfolio Size Estimate Field default; otherwise it starts off. This is a small extra rule at create time. A Portfolio created before the admin sets the connection default stays off. Reason: with the switch off the size-estimate field is ignored (Story 6504), so an off start would ignore the field the admin set for the whole connection. An explicit value named on an API create still wins; a clone still keeps its source&#x27;s value.
+</code></pre>
+
+<h4>Status</h4>
+
+<p>Confirmed</p>
+
+
+<pre><code>Own-field case, for the maintainer at the hold: a create that names the Portfolio&#x27;s own Size Estimate Field instead of following the connection default. The maintainer has not decided it. Until then it follows the plain rule: off unless the connection names a Portfolio Size Estimate Field default.
+</code></pre>
+
+<h4>Status</h4>
+
+<p>Open</p>
+
+<p>Product</p>
+
 <h2>Journey</h2>
 
 <pre><code>Person opens Create Portfolio and walks the wizard; the sizing switch is off and they do not touch it
@@ -397,7 +436,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>S1</h3>
 
-<pre><code>A person creates a Portfolio in the wizard and sees Features without child Work Items counted as 0 (0 of 0, No child Work Items yet); an API create without the switch gives the same and one naming the switch keeps it; an existing Portfolio is unchanged; a clone copies the source value; demo Portfolios start off except where one needs inferred sizing; the person can switch it on.
+<pre><code>A person creates a Portfolio in the wizard and sees Features without child Work Items counted as 0 (0 of 0, No child Work Items yet), unless the connection names a Portfolio Size Estimate Field default, in which case the Portfolio starts on and such Features take the size the field holds; an API create without the switch gives the same and one naming the switch keeps it; an existing Portfolio is unchanged; a clone copies the source value; demo Portfolios start off except where one needs inferred sizing; the person can switch it on.
 </code></pre>
 
 <h4>Promises</h4>
@@ -416,6 +455,8 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P7</p>
 
+<p>P8</p>
+
 <h4>Depends on</h4>
 
 <p>None.</p>
@@ -424,7 +465,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>S</p>
 
-<pre><code>A new Portfolio no longer applies an inferred guess to Features without child Work Items, so forecasts show real child Work Items only unless the person opts in.
+<pre><code>A new Portfolio no longer applies an inferred guess to Features without child Work Items, unless its connection names a Portfolio Size Estimate Field default, so forecasts show real child Work Items only unless the person opts in or the admin set a size field for the connection.
 </code></pre>
 
 <h5>Rework</h5>

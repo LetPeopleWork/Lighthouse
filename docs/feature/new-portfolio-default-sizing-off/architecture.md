@@ -11,25 +11,25 @@ object_oriented
 #### D1
 
 ```text
-Owner: Portfolio (Models/Portfolio.cs) owns the starting value of Default Feature sizing. Its property InfersDefaultFeatureSize starts false, so every new Portfolio starts off wherever it is built: API create, demo data, tests. Existing rows keep their stored value, because the column default and the EF sentinel stay true.
+Owner: Portfolio (Models/Portfolio.cs) owns the starting value of Default Feature sizing. The property InfersDefaultFeatureSize starts false (off). A new method Portfolio.StartOnConnection(connection) assigns the connection and sets the switch on exactly when the connection names a Portfolio Size Estimate Field default (SizeEstimateFieldForPortfolios has a value), else leaves it off. It is a named method, not a property setter, so EF materialisation of a stored row never runs it. Only the create path calls it, once, before SyncWithPortfolioSettings. Existing rows are never rewritten; a connection default set after a Portfolio exists does not switch it on.
 ```
 
 #### D2
 
 ```text
-EF mapping: no migration. Mapping stays HasDefaultValue(true).HasSentinel(true). Table, entity value then stored result: absent field gives CLR false, which differs from the sentinel, so EF inserts false (off). Explicit true equals the sentinel, EF omits the column, the DB default true applies (on). Explicit false is inserted false (off). Existing rows and restored old backups hold true and are not touched. Changing the DB column default is rejected: it needs an expand-only migration for every provider and changes no observable outcome.
+EF mapping: no migration. Mapping stays HasDefaultValue(true).HasSentinel(true). Table, entity value then stored result: CLR false (absent field, no connection default, or explicit false) differs from the sentinel, so EF inserts false (off). CLR true (rule with a connection default, or explicit true) equals the sentinel, EF omits the column, the DB default true applies (on). Both starting values store correctly. Existing rows and restored old backups hold true and are not touched. Changing the DB column default is rejected: it needs an expand-only migration for every provider and changes no observable outcome.
 ```
 
 #### D3
 
 ```text
-Create path: the create route stays as it is. PortfolioExtensions keeps the entity value when the DTO bool? is null, so an absent field gives off and a named true or false is kept. The create wizard sends false explicitly (its base settings were true). Clone spreads the source settings, so it keeps the source value. The frontend read fallback stays true: it only meets stored values, or the missing field of an older server, and both mean on.
+Create path: PortfoliosController.CreatePortfolio calls newPortfolio.StartOnConnection(connection) where it now assigns the connection, before the setting-refusal check and SyncWithPortfolioSettings. PortfolioExtensions keeps the entity value when the DTO bool? is null, so an absent field gives the rule value and a named true or false wins. The create wizard omits infersDefaultFeatureSize from its settings, so the backend is the single owner of the starting value (the type already allows an absent field). Clone sends the source settings, so it keeps the source value. The frontend read fallback stays true: it only meets stored values or the missing field of an older server, and both mean on. Usage event 29 does not fire on a wizard create, because an omitted field reads as on and nothing switches on to off.
 ```
 
 #### D4
 
 ```text
-Demo data: demo Portfolios inherit off from the entity with no factory change. A demo Portfolio gets InfersDefaultFeatureSize = true in DemoDataFactory only where a measured screenshot result needs inferred sizes. The crafter runs each affected @screenshot test alone (--grep one test) and decides per Portfolio. Candidates, by what they show: portfolio detail page, Features page, portfolio metrics widgets, delivery creation, retire-delivery record, delivery timeline, team forecasts. No E2E spec sets or reads the sizing fields, so none relies on them. Changed screenshot content is visible to the maintainer: open finding.
+Demo data: DemoDataFactory builds demo Portfolios off (entity default). DemoDataService assigns the demo connection afterwards, and that connection names no Portfolio Size Estimate Field default, so the rule would also give off: the demo path needs no call to StartOnConnection today. If a demo connection ever names such a default, DemoDataService must call StartOnConnection instead of assigning the connection. A demo Portfolio gets InfersDefaultFeatureSize = true in DemoDataFactory only where a measured screenshot result needs inferred sizes; the crafter runs each affected @screenshot test alone and decides per Portfolio.
 ```
 
 #### D5
@@ -41,7 +41,7 @@ Checker choice: the 6504 Quint model (docs/feature/story-6504-childless-feature-
 #### D6
 
 ```text
-Test port: create has no application service; the controller builds the Portfolio. The lowest layer that proves absent field gives off is Portfolio plus SyncWithPortfolioSettings plus repository Save on real SQLite. The older-client wire concern is covered by extending PortfolioSettingDtoCompatibilityTest (JSON without the field, read as the route reads it, then synced). No web host start is warranted.
+Test port: create has no application service; the controller builds the Portfolio. The lowest layer that proves the starting value is PortfoliosController.CreatePortfolio over real SQLite EF, as NewPortfolioStartingValueTest already does through ServicePortHarness; its table gains rows for a connection naming a size field default by absent, explicit false and explicit true. The wizard test pins that the settings sent omit the field. The five Slice10 PortfoliosSizeEstimateFieldDefault scenarios run unchanged and must go green. The older-client wire concern stays in PortfolioSettingDtoCompatibilityTest (connection without a default). No web host start is warranted for the new rows.
 ```
 
 #### D7
@@ -65,13 +65,25 @@ Views: no new or changed view. Create wizard, settings tab and Features list kee
 #### D10
 
 ```text
-Patterns: chosen, a constructor-level default on the aggregate (one owner; covers API, demo data and tests). Rejected: set false in the controller and demo factory (two owners, new Portfolio() stays on elsewhere); change the DB column default (migration, no gain); heuristic migration for already using it (maintainer rejected, moves forecasts); nullable stored value as a third state (needs migration and a resolver).
+Patterns: chosen, a domain-owned named method on the aggregate (Portfolio.StartOnConnection) over a constructor-level false default alone: one owner, called by the one create path, testable without a host. Rejected: an if in the controller (rule outside the entity); a setter on the connection property that sets the switch (EF materialisation would flip stored rows); wizard derives the value from the connection (second owner, races a later connection change); set false in the controller and demo factory (two owners); change the DB column default (migration, no gain); heuristic migration for already using it (maintainer rejected, moves forecasts); nullable stored value as a third state (needs migration and a resolver).
 ```
 
 #### D11
 
 ```text
 Paradigm object_oriented applied (nw-code-design-oo): the starting-value rule is data of the Portfolio entity, no service decides it. No anemic or script path is added.
+```
+
+#### D12
+
+```text
+Routing of the three other failures after the first build, all tests only, acceptance designer owns them. Principle: seed the switch on where the test guards behaviour as before; re-approve only a test about what a new Portfolio holds. (1) Slice02DependencyDetailScenarios A_refresh_that_finds_features_no_one_can_forecast_says_how_many_in_one_line: it guards dependency forecasting for Features that carry work; seed its Portfolio with InfersDefaultFeatureSize true in GivenAPortfolio, or give the Feature child Work Items. (2) Slice02OverviewReadsNamesAndCountsScenarios one Portfolios settings and (3) CatalogueBodiesOnPostgresTests settings: both read the shared Northwind world built in FastWithManyFeaturesAcceptanceTest.cs; they guard that the reads are exactly as before, so seed Northwind Platform with the switch on there and keep the approved body slice02-portfolio-northwind-platform-settings unchanged. No re-approval. If a body is ever re-approved, the mechanism is ApprovedBodies.Verify: it writes the .received.json beside the approved file and the person renames it to .approved.json after reading it.
+```
+
+#### D13
+
+```text
+Crafter hand-back: before handing back, run the whole filtered backend suite, host and container tests included: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter "TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration" (about 8 minutes), as a background job. The earlier probe skipped these tests.
 ```
 
 ### Constraints
@@ -97,13 +109,19 @@ No EF migration and no change to HasDefaultValue(true).HasSentinel(true). Migrat
 #### K4
 
 ```text
-Existing tests that rely on a new Portfolio being on (for example the Untouched cases in DefaultFeatureSizingTest, and fixtures built with new Portfolio) must name the switch explicitly where they test inferred sizing. Owner: acceptance designer, with the crafter running the affected fast loop. The crafter edits no test.
+Existing tests that rely on a new Portfolio being on (the Untouched cases in DefaultFeatureSizingTest, fixtures built with new Portfolio, the Northwind world, the dependency log test) must name the switch explicitly where they test inferred sizing or behaviour as before. Owner: acceptance designer, with the crafter running the affected loop. The crafter edits no test.
 ```
 
 #### K5
 
 ```text
 Test budgets: defaults. The new SQLite table test builds one in-memory database per fixture and stays well inside the per-test budget; no derogation requested.
+```
+
+#### K6
+
+```text
+Starting rule bounds: the rule reads only whether the connection names a Portfolio Size Estimate Field default at create time. A connection that is missing or names none gives off. A create that names its own Size Estimate Field follows the same rule until the maintainer decides (open). An explicit true or false on a create wins over the rule. A clone and an update never run the rule.
 ```
 
 ### Reuse
@@ -185,7 +203,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Portfolio\.cs
 Extend
 
 ```text
-InfersDefaultFeatureSize starts false.
+InfersDefaultFeatureSize starts false; new method StartOnConnection assigns the connection and sets the switch on when the connection names a Portfolio Size Estimate Field default.
 ```
 
 Lighthouse\.Frontend\/src\/components\/Common\/CreateWizards\/CreatePortfolioWizard\.tsx
@@ -193,7 +211,7 @@ Lighthouse\.Frontend\/src\/components\/Common\/CreateWizards\/CreatePortfolioWiz
 Extend
 
 ```text
-Wizard base settings name infersDefaultFeatureSize false.
+Wizard base settings omit infersDefaultFeatureSize so the backend decides.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Factories\/DemoDataFactory\.cs
@@ -209,7 +227,7 @@ docs\/product\/architecture\/adr\-270\-bounded\-contexts\-context\-map\-and\-mod
 Extend
 
 ```text
-Glossary row for Default Feature sizing states the new starting value.
+Glossary row states the starting value: off, on when the connection names a Portfolio Size Estimate Field default.
 ```
 
 docs\/portfolios\/edit\.md
@@ -217,7 +235,15 @@ docs\/portfolios\/edit\.md
 Extend
 
 ```text
-User docs state the new starting value.
+User docs state the starting value, including the connection default case.
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/PortfoliosController\.cs
+
+Extend
+
+```text
+CreatePortfolio calls StartOnConnection where it assigned the connection.
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/WorkItems\/Application\/DefaultFeatureSizingTest\.cs
@@ -225,7 +251,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/WorkItems\/Application
 #### Verification
 
 ```text
-dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DefaultFeatureSizingTest|FullyQualifiedName~NewPortfolioStartingValueTest|FullyQualifiedName~PortfolioSettingDtoCompatibilityTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DefaultFeatureSizingTest|FullyQualifiedName~NewPortfolioStartingValueTest|FullyQualifiedName~PortfolioSettingDtoCompatibilityTest|FullyQualifiedName~Slice10PortfoliosSizeEstimateFieldDefaultScenarios
 pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/CreateWizards/CreatePortfolioWizard.test.tsx
 ```
 
@@ -233,22 +259,28 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/CreateWizar
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DTO\/PortfolioSettingDtoCompatibilityTest\.cs
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Data\/NewPortfolioStartingValueTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DefaultFeatureSizing\/NewPortfolioStartingValueTest\.cs
 
 Lighthouse\.Frontend\/src\/components\/Common\/CreateWizards\/CreatePortfolioWizard\.test\.tsx
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/ConfigureOncePerConnection\/Slice10PortfoliosSizeEstimateFieldDefaultScenarios\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/FastWithManyFeatures\/FastWithManyFeaturesAcceptanceTest\.cs
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Dependencies\/Slice02DependencyDetailScenarios\.cs
 
 #### Public oracle
 
 ```text
-Create a Portfolio through the create route with the sizing switch absent (and, as table rows, true and false), clone one with the switch on and one off, then refresh it with a Feature that has no child Work Items; the wizard creates without touching the switch.
+Create a Portfolio through the create route on a connection with no size field default and on one that names it, with the sizing switch absent (and, as table rows, true and false), clone one with the switch on and one off, then refresh with a Feature that has no child Work Items; the wizard creates without touching the switch and sends no value for it.
 ```
 
 ```text
-Absent gives off and the Feature counts as 0 (0 of 0, No child Work Items yet); named values are kept; clones copy the source; an existing stored true stays true; switching on later gives the Default Feature Size.
+Absent gives off (0 of 0, No child Work Items yet) without a connection default and on with one (the Feature takes the size the field holds); named values are kept; clones copy the source; an existing stored true stays true; switching on later gives the Default Feature Size.
 ```
 
 ```text
-The Portfolio is saved on after an absent field (entity default still true), explicit true is stored off, or an existing row flips; also a wizard create that sends true.
+A Portfolio on a size-field-default connection stored off after an absent field (the field ignored), one without it stored on, explicit true stored off, an existing row flipped, or a wizard create that sends a value.
 ```
 
 ##### Promises
@@ -266,6 +298,8 @@ P5
 P6
 
 P7
+
+P8
 
 #### Prefactoring
 
@@ -290,7 +324,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Portfolio\.cs\:17
 Extend
 
 ```text
-Portfolio already owns the switch and its two guarded selectors; only the initial value changes. No other candidate decides a new Portfolio starting state.
+Portfolio owns the switch, its two guarded selectors and the connection-default size field readers; the starting rule is its data. No other candidate decides a new Portfolio starting state.
 ```
 
 HasSentinel
@@ -317,10 +351,10 @@ CreatePortfolio
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/API\/PortfoliosController\.cs\:104
 
-Reuse
+Extend
 
 ```text
-new Portfolio() then sync is the single create path for API, Clients and wizard; it inherits the new entity default.
+The one create path for API, Clients and wizard; its connection assignment becomes the single call of the domain rule.
 ```
 
 CreateDemoProject
@@ -340,7 +374,7 @@ Lighthouse\.Frontend\/src\/components\/Common\/CreateWizards\/CreatePortfolioWiz
 Extend
 
 ```text
-The wizard names the switch with true today; it must name false so a wizard create starts off.
+The wizard names the switch today; it must stop naming it so the backend rule applies. The field is already optional in the settings type.
 ```
 
 getPortfolioSettings
@@ -383,6 +417,16 @@ Extend
 The docs section on the switch is the one user-facing owner; edit it instead of adding a page.
 ```
 
+SizeEstimateFieldForPortfolios
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/WorkTrackingSystemConnection\.cs\:77
+
+Reuse
+
+```text
+The connection default the rule reads. Same fact Portfolio.SizeEstimateField already follows; no second copy.
+```
+
 ##### Impact
 
 domain\-entity
@@ -392,7 +436,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Portfolio\.cs\:17
 Changed
 
 ```text
-Initial value true to false.
+Initial value true to false; new StartOnConnection method.
 ```
 
 persistence\-mapping
@@ -472,7 +516,7 @@ Lighthouse\.Frontend\/src\/components\/Common\/CreateWizards\/CreatePortfolioWiz
 Changed
 
 ```text
-Wizard names false.
+Wizard omits the field.
 ```
 
 frontend\-component
@@ -502,7 +546,7 @@ docs\/product\/architecture\/adr\-270\-bounded\-contexts\-context\-map\-and\-mod
 Changed
 
 ```text
-Glossary row says On by default; must say on for existing Portfolios, off for new ones.
+Glossary row says On by default; must say on for existing Portfolios, off for new ones unless the connection names a Portfolio Size Estimate Field default.
 ```
 
 documentation
@@ -512,7 +556,7 @@ docs\/portfolios\/edit\.md\:141
 Changed
 
 ```text
-User docs section on the switch states the new starting value.
+User docs section on the switch states the new starting value and the connection default exception.
 ```
 
 documentation
@@ -533,6 +577,26 @@ Changed
 
 ```text
 Screenshot tests over demo data that shows Features without child Work Items (portfolio detail, Features page, portfolio metrics, delivery shots, team forecasts) may change content; crafter measures each alone and sets a demo Portfolio on only where needed.
+```
+
+api\-adapter
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/API\/PortfoliosController\.cs\:104
+
+Changed
+
+```text
+Create calls StartOnConnection instead of assigning the connection; update, clone and validate paths do not run the rule.
+```
+
+test\-seed
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/FastWithManyFeatures\/FastWithManyFeaturesAcceptanceTest\.cs\:237
+
+Changed
+
+```text
+The Northwind world and the dependency scenarios seed the switch on where they guard behaviour as before; tests only, acceptance designer.
 ```
 
 ##### Agreement
@@ -558,7 +622,7 @@ Consumer
 UnchangedCompatible
 
 ```text
-Absent keeps the entity value, now off for a create; named value kept.
+Absent keeps the entity value, which a create has already set by the connection rule; a named value is kept.
 ```
 
 PortfolioSettingDto\.InfersDefaultFeatureSize \(bool\?\, absent keeps the entity value\)
@@ -570,7 +634,7 @@ Producer
 Migrated
 
 ```text
-Wizard sends false instead of true.
+Wizard omits the field instead of sending true.
 ```
 
 PortfolioSettingDto\.InfersDefaultFeatureSize \(bool\?\, absent keeps the entity value\)
@@ -620,7 +684,7 @@ No dependency, boundary or owner law is reachable by this change: one entity def
 prefactoring
 
 ```text
-One property default and one literal change; no structure blocks the change, so no preserving move is needed.
+One property default, one new method on the entity and one controller line; no structure blocks the change, so no preserving move is needed.
 ```
 
 ##### Boundaries
@@ -669,12 +733,16 @@ new Portfolio\(\)
 
 Portfolio\(\) \-\> Portfolio with InfersDefaultFeatureSize \= false
 
+Portfolio\.StartOnConnection
+
+StartOnConnection\(WorkTrackingSystemConnection\) \-\> void\; assigns the connection\; InfersDefaultFeatureSize \= connection\.SizeEstimateFieldForPortfolios\.HasValue
+
 ##### Laws
 
 ###### L1
 
 ```text
-Starting-value table: create without the field gives off; create naming true gives on; create naming false gives off; clone gives the source value; an existing stored row is read unchanged; after save and reload through real SQLite EF.
+Starting-value table, after save and reload through real SQLite EF: create without the field gives off, or on when the connection names a size field default; create naming true gives on; create naming false gives off whatever the connection; clone gives the source value; an existing stored row is read unchanged; a connection default set after create does not change a stored Portfolio.
 ```
 
 Invariant
@@ -690,15 +758,27 @@ Finite
 ###### Cases
 
 ```text
-create absent -> off
+create absent, no connection default -> off
 ```
 
 ```text
-create true -> on
+create absent, connection default -> on
 ```
 
 ```text
-create false -> off
+create true, no connection default -> on
+```
+
+```text
+create true, connection default -> on
+```
+
+```text
+create false, no connection default -> off
+```
+
+```text
+create false, connection default -> off
 ```
 
 ```text
@@ -714,7 +794,11 @@ existing row true -> true
 ```
 
 ```text
-Closed finite domain of three inputs by three paths; a native TestCase table is exhaustive and PBT adds nothing.
+connection default set after create, stored off -> off
+```
+
+```text
+Closed finite domain of three inputs by two connection states by the create, clone and existing paths; a native TestCase table is exhaustive and PBT adds nothing.
 ```
 
 ###### Evidence
@@ -760,29 +844,29 @@ None.
 ###### C1
 
 ```text
-A Portfolio built without naming the switch is off; one naming true or false keeps that value; stored rows are not rewritten.
+A Portfolio built by the create path without naming the switch is on exactly when its connection names a Portfolio Size Estimate Field default, else off; one naming true or false keeps that value; stored rows are not rewritten.
 ```
 
 ```text
-Wrong default: new Portfolios infer sizes (the confusion) or existing Portfolios silently flip and forecasts move.
+Wrong default: new Portfolios infer sizes (the confusion), a connection size field is ignored by a Portfolio that follows it, or existing Portfolios silently flip and forecasts move.
 ```
 
 Portfolio
 
 ```text
-absent, true or false switch in a create payload; stored true
+absent, true or false switch in a create payload; connection with or without a size field default; stored true
 ```
 
-Portfolio\(\) default false\, with SyncWithPortfolioSettings for a named value
+Portfolio\(\) default false\, then StartOnConnection\(connection\)\, then SyncWithPortfolioSettings for a named value
 
-WorkItemService sizing selectors and PortfolioSettingDto GET
+WorkItemService sizing selectors\, Portfolio\.SizeEstimateAdditionalFieldDefinitionId readers and PortfolioSettingDto GET
 
 ```text
-GET settings shows the value; Feature rows show 0 of 0 and No child Work Items yet when off
+GET settings shows the value; Feature rows show 0 of 0 and No child Work Items yet when off, or the size the Size Estimate Field holds when on through the connection default
 ```
 
 ```text
-Raw SQL insert or an old backup restore omit the column and get the DB default true (on); no writer in the product does so. A direct EF save of a Portfolio set true by code is explicit.
+Raw SQL insert or an old backup restore omit the column and get the DB default true; a direct EF save of a Portfolio set by code is explicit; a caller that assigns the connection without StartOnConnection gets off.
 ```
 
 ##### States
@@ -798,7 +882,7 @@ Portfolio
 Excluded
 
 ```text
-new Portfolio created without the field starting on
+new Portfolio created without the field starting on without a connection size field default, or starting off with one
 ```
 
 Portfolio
@@ -810,6 +894,14 @@ which demo Portfolio screenshots need inferred sizing until measured
 ```
 
 crafter
+
+Unknown
+
+```text
+own-field create: a create naming its own Size Estimate Field follows the plain rule (off unless the connection names a default) until decided
+```
+
+maintainer
 
 ##### Models
 
@@ -828,7 +920,7 @@ Pass
 DesignedNotBuilt
 
 ```text
-Entity default false plus unchanged sentinel gives the table by EF semantics; falsified by the SQLite table test.
+Entity default false, StartOnConnection as the only raiser at create, and the unchanged sentinel give the table by EF semantics; falsified by the SQLite table test and the five Slice10 scenarios.
 ```
 
 ###### Evidence
@@ -846,7 +938,7 @@ Pass
 DesignedNotBuilt
 
 ```text
-Input: create payload; constructor: new Portfolio() then SyncWithPortfolioSettings; consumer: PortfolioSettingDto GET and sizing selectors; port: PortfoliosController.CreatePortfolio.
+Input: create payload and connection; constructor: new Portfolio(), StartOnConnection, SyncWithPortfolioSettings; consumer: PortfolioSettingDto GET and sizing selectors; port: PortfoliosController.CreatePortfolio. Both starting values are reachable.
 ```
 
 ###### Evidence
@@ -995,6 +1087,58 @@ Update goes through sync on a loaded entity, which keeps the stored value on nul
 
 crafter
 
+###### Y5
+
+Stressor
+
+```text
+Assumption: the connection default is present when the Portfolio is created. Negated: an admin sets it after the Portfolio exists, or the connection is missing.
+```
+
+```text
+Existing Portfolio keeps its stored value
+```
+
+```text
+a Portfolio created before the admin set the default stays off
+```
+
+```text
+a later default switching a stored Portfolio on, or a missing connection failing the create
+```
+
+```text
+The size field is ignored by an off Portfolio until the person switches sizing on; accepted by the maintainer.
+```
+
+maintainer
+
+###### Y6
+
+Bypass
+
+```text
+Assumption: only the create path starts a Portfolio. Negated: EF materialisation or a second caller runs the rule on a stored row, or a new create path skips it.
+```
+
+```text
+Stored rows are read unchanged
+```
+
+```text
+a new create path calls StartOnConnection itself
+```
+
+```text
+a stored row rewritten on load
+```
+
+```text
+StartOnConnection is a named method, never a setter, so loading cannot run it; a future create path that skips it gets off. Owner crafter: the controller is the only saved create path today (validate and forecast write-back build unsaved Portfolios).
+```
+
+crafter
+
 ##### Architectural tests
 
 None.
@@ -1004,7 +1148,7 @@ None.
 ###### T1
 
 ```text
-An older client payload without the switch, read as the create route reads it and synced into a new Portfolio, starts off; a payload naming true or false keeps it.
+An older client payload without the switch, read as the create route reads it and synced into a new Portfolio on a connection without a size field default, starts off; a payload naming true or false keeps it.
 ```
 
 PortfolioSettingDto\.InfersDefaultFeatureSize wire shape
