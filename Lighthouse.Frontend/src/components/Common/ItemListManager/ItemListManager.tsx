@@ -189,8 +189,12 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 											e.preventDefault();
 											e.stopPropagation();
 
-											// If an option is highlighted in the dropdown, use that
-											if (highlightedOption) {
+											// The suggestions can change under an open list, so the
+											// highlight counts only while the list still offers it.
+											if (
+												highlightedOption &&
+												filteredSuggestions.includes(highlightedOption)
+											) {
 												addItem(highlightedOption);
 											} else if (inputValue.trim()) {
 												// Otherwise use the input value
