@@ -72,27 +72,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheRenameList_HoldsNoEntryOnceTheStringsFollowTheMove()
-        {
-            var problems = WhenTheRenameListIsRead(ReportsStringsTheMoveRenames.Entries);
-
-            ThenThereAreNoProblems(problems, "a string that names Reports by its old Services path is still on the rename list",
-                "The list shrinks as each string is renamed or removed and ends empty once the move is done.",
-                "Rename the string to the new place, or delete the row that only existed for the old folder, and take its entry off the list in the same change.");
-        }
-
-        [Test]
-        public void ARenameListEntryThatIsLeft_IsNamedWithItsFile()
-        {
-            var moved = MovingType("ReportCommands");
-            var left = new ReportsRename("SomeArchUnitTest.cs", $"{moved.OldNamespace}.{moved.Name}", $"{moved.NewNamespace}.{moved.Name}");
-
-            var problems = WhenTheRenameListIsRead([left]);
-
-            ThenTheProblemsNameOnly(problems, left.File);
-        }
-
-        [Test]
         public void AMetricTypeDeclaredInTheApplicationNamespace_IsNamedAsInTheWrongLayer()
         {
             var misplaced = MovingType("WipReportMetric");
@@ -257,9 +236,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(type => found.Count(candidate => candidate.Namespace == type.Namespace && candidate.Name == type.Name) != 1)
                 .Select(type => $"{type.Name}: expected once in {type.Namespace}")];
         }
-
-        private static List<string> WhenTheRenameListIsRead(IEnumerable<ReportsRename> entries)
-            => [.. entries.Select(entry => $"{entry.File}: still names {entry.OldText}")];
 
         private static void ThenThereAreNoProblems(List<string> problems, string what, string why, string how)
             => Assert.That(problems, Is.Empty, $"WHAT: {what}: {string.Join("; ", problems)}. WHY: {why} HOW: {how}");

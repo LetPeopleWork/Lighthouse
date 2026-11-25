@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string TheUpdateCode = @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices\.Update|Interfaces\.Update)(\.|$)"
             + @"|^Lighthouse\.Backend\.Platform\.UpdateQueue(\.|$)";
 
-        private const string RefinementAndReports = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Reports(\.|$)|^Lighthouse\.Backend\.Modules\.Refinement(\.|$)|^Lighthouse\.Backend\.Modules\.Reports(\.|$)";
+        private const string RefinementAndReports = @"^Lighthouse\.Backend\.Modules\.Refinement(\.|$)|^Lighthouse\.Backend\.Modules\.Reports(\.|$)";
 
         private const string MadeUpModule = @"^Lighthouse\.Backend\.Modules\.AccessFixtures\.Boundaries(\.|$)";
 

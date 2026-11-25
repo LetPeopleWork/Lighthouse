@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         internal const string RefinementPattern =
             @"^Lighthouse\.Backend\.Modules\.Refinement(\.|$)";
         internal const string ReportsPattern =
-            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Reports($|\..*)|^Lighthouse\.Backend\.Modules\.Reports(\.|$)";
+            @"^Lighthouse\.Backend\.Modules\.Reports(\.|$)";
         private static readonly string[] FlowMetricsNamespaces =
         [
             @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Domain$",
