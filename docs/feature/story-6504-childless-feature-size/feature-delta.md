@@ -100,3 +100,21 @@ Authority: `architecture.md` (rendered from `handoff.json`), Quint model and rec
 
 - **Oracle folders:** the S1 and S2 oracles live in `Lighthouse.Backend.Tests/Modules/WorkItems/Application/` as siblings, not under `Tests/Acceptance/<feature>/`: both drive `IWorkItemService.UpdateFeaturesForPortfolio` with the existing `WorkItemServiceTestBuilder` style of that folder. Retained as a non-blocking review note for the final review.
 - **S1 slice review blocker** (override rule still active while the switch is off, with its control greyed out) is resolved by S2, whose oracle fails before and passes after; nothing is pushed between slices.
+- **Childless row look (EXAMINE):** the row showed "Could not determine work"; the approved sketch shows `0 of 0`. Fixed in `978c5ab9a` (the progress cell shows "0 of 0" only for a Feature flagged as having no child Work Items yet). The note itself sits on the warnings icon, not on an extra info icon beside "0 of 0" as the sketch drew it; the candidate review left that placement for the maintainer to confirm.
+- **Not declared as a support:** `CreatePortfolioWizard.test.tsx` carries the E8 row but is not in S1's declared supports (only the acceptance row names it).
+
+## EXAMINE — 2026-11-25 (closed by the maintainer's decision, not by nwdes)
+
+Three source-blind runs on the reviewer model (Haiku). The examiner judged from the names of the passing tests its probes printed. No run found a contradiction of any promise.
+
+- Run 1 found nothing: its probes missed the feature's tests.
+- Run 2 judged E1, E2, E5, E6 and E7 met. It found no test for E3 (the containing Delivery's forecast), E4 (no "0 of 4") or E8 (a newly created Portfolio).
+- The maintainer chose to add those tests. Doing so surfaced the `0 of 0` deviation above, which is fixed.
+- Run 3 judged E1, E4, E5, E7 and E8 met. It left E2, E3 and E6 as observation gaps, because the half each one names cannot be read from a test name:
+  - E2: the count of 4 split across Teams;
+  - E3: no special wording in a forecast;
+  - E6: an override-state Feature not marked as default-sized.
+
+  Tests at the service port cover all three: `DefaultFeatureSizingTest` and `DefaultFeatureSizingOverrideStatesTest`, 24/24.
+
+nwdes refuses an `indeterminate` close while any verdict is unmet. The maintainer therefore chose to record the result here, abort the draft and go on. There is no nwdes-closed EXAMINE record for this feature.
