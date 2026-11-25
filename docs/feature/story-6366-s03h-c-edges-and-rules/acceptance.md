@@ -2,7 +2,72 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Sweep every rule constant of the test assembly and every string literal of the test sources for the old Reports forms (plain name, regex alternative, group member, folder path), with only exact-path exclusions that must spell an old form; the exclusion list is compared both ways
+```
+
+```text
+No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each made-up offender in each form is named, a Modules-only twin is not, and a listed exclusion with no old form is named stale
+```
+
+```text
+No rule still points at where Reports used to live
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesNameOnlyTheModuleArchUnitTest\.cs\:\:NoRuleConstantNamesReportsByItsFormerPlace\, NoStringLiteralOutsideTheMeasurementFilesNamesReportsByItsFormerPlace\, TheListedMeasurementFilesAreExactlyTheFilesThatKeepAFormerForm\, MadeUpRuleConstantsInEachFormerFormAreNamedAndAModulesOnlyConstantIsNot\, AMadeUpLiteralInAFormerFormOutsideTheMeasurementFilesIsNamed\, AListedMeasurementFileWithNoFormerFormLeftIsNamedAsStale
+
+```text
+A rule narrowed in its constant but kept as a literal in another file, or an exclusion list left wider than needed, would still pass
+```
+
+###### Obligations
+
+
+
+
+
+
+
+##### Covers
+
+P1
+
+P3
+
+```text
+Check each narrowed Reports alternative against the types of the Reports module and the joint Tracker integration pattern for its Services alternatives
+```
+
+```text
+Every Modules.Reports alternative matches a Reports module type in each owning rule file, a made-up dead alternative is named, and the joint Tracker integration pattern names no Services namespace and still names the Reports module
+```
+
+```text
+Reports rules keep constraining Reports and the dead Auth, Authorization and Licensing alternatives are gone
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesNameOnlyTheModuleArchUnitTest\.cs\:\:EveryNarrowedReportsPatternStillMatchesATypeOfTheModule\, AMadeUpPatternAnchoredToNoReportsTypeIsNamedDead\, TheJointTrackerIntegrationPatternNamesNoServicesNamespaceAndStillNamesTheReportsModule\, AMadeUpJointPatternKeepingTheServicesAlternativesIsNamedAndAModulesOnlyOneIsNot
+
+```text
+A rule that drops Reports entirely, leaving it unconstrained, is caught only by the owner and count checks
+```
+
+###### Obligations
+
 
 ## Expectations
 
