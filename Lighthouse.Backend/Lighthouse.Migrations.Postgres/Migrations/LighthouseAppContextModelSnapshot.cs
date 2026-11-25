@@ -1109,6 +1109,11 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<bool>("IgnoreDependencies")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("InfersDefaultFeatureSize")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");

@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Models
 
         public int DefaultAmountOfWorkItemsPerFeature { get; set; } = 25;
 
+        public bool InfersDefaultFeatureSize { get; set; } = true;
+
         public int? OwningTeamId { get; set; }
 
         public Team? OwningTeam { get; set; }
@@ -191,6 +193,11 @@ namespace Lighthouse.Backend.Models
 
         public IEnumerable<Feature> GetFeaturesToExtrapolate()
         {
+            if (!InfersDefaultFeatureSize)
+            {
+                return [];
+            }
+
             return Features.Where(feature => feature.StateCategory != StateCategories.Done && feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0);
         }
 

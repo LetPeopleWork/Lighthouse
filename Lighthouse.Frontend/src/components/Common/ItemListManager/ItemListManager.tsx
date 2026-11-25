@@ -22,6 +22,8 @@ interface ItemListManagerProps {
 	isLoading?: boolean;
 	/** Items that stand for a group, each with the tooltip it shows; they cannot be removed here. */
 	groupedItems?: ReadonlyMap<string, string>;
+	/** Greys out the whole list: chips cannot be removed and nothing can be added. */
+	disabled?: boolean;
 }
 
 const ItemListManager: React.FC<ItemListManagerProps> = ({
@@ -33,6 +35,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 	suggestions = [],
 	isLoading = false,
 	groupedItems,
+	disabled = false,
 }) => {
 	const [inputValue, setInputValue] = useState<string>("");
 	const [highlightedOption, setHighlightedOption] = useState<string | null>(
@@ -118,6 +121,8 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 									label={item}
 									color="primary"
 									{...chipLookFor(item, groupTooltip, onRemoveItem)}
+									disabled={disabled}
+									aria-disabled={disabled || undefined}
 									draggable={!!onReorderItems}
 									onDragStart={(e) => handleDragStart(e, index)}
 									onDragOver={handleDragOver}
@@ -169,6 +174,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 								<TextField
 									{...params}
 									label={`New ${title}`}
+									disabled={disabled}
 									fullWidth
 									margin="normal"
 									inputRef={inputRef}
@@ -212,6 +218,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 					<>
 						<TextField
 							label={`New ${title}`}
+							disabled={disabled}
 							fullWidth
 							margin="normal"
 							value={inputValue}

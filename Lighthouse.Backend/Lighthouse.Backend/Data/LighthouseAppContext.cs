@@ -349,6 +349,11 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<Portfolio>()
                 .Ignore(p => p.Teams);
 
+            modelBuilder.Entity<Portfolio>()
+                .Property(p => p.InfersDefaultFeatureSize)
+                .HasDefaultValue(true)
+                .HasSentinel(true);
+
             // Only the forecast run writes this, with a targeted update. A Portfolio loaded before that run
             // and saved after it would otherwise write back the value it was loaded with.
             modelBuilder.Entity<Portfolio>()

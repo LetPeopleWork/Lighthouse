@@ -1053,6 +1053,11 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<bool>("IgnoreDependencies")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("InfersDefaultFeatureSize")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");

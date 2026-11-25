@@ -32,6 +32,7 @@ interface ConnectionDefaultFieldSelectProps {
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	onFollow: () => void;
 	onOwn: (field: number | null) => void;
+	disabled?: boolean;
 }
 
 /** A field list that offers the connection's default above the fields, where the connection holds one. */
@@ -48,6 +49,7 @@ const ConnectionDefaultFieldSelect: React.FC<
 	additionalFieldDefinitions,
 	onFollow,
 	onOwn,
+	disabled = false,
 }) => {
 	const { getTerm } = useTerminology();
 	const info = directionTip(
@@ -86,6 +88,7 @@ const ConnectionDefaultFieldSelect: React.FC<
 			label={label}
 			value={follows ? FollowTheConnection : (ownField ?? "")}
 			onChange={handleChange}
+			disabled={disabled}
 			firstOption={
 				trackerName
 					? {

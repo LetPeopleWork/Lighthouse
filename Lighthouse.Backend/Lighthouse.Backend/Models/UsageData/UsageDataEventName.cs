@@ -107,5 +107,11 @@ namespace Lighthouse.Backend.Models.UsageData
         /// carries nothing: not which Team or Portfolio, not how many outliers, not which items.
         /// </summary>
         OutlierHandlingSwitchedOff = 28,
+
+        /// <summary>
+        /// Somebody switched default Feature sizing off in a Portfolio's settings. It carries nothing: not which
+        /// Portfolio, not how many Features, not whose.
+        /// </summary>
+        DefaultFeatureSizingSwitchedOff = 29,
     }
 }

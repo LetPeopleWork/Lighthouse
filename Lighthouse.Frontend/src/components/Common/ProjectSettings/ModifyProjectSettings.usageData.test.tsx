@@ -62,7 +62,7 @@ describe("Switching default Feature sizing off is counted once, when the save is
 
 	const aSavedPortfolio = (infersDefaultFeatureSize: boolean) => ({
 		...createMockProjectSettings(),
-		...{ infersDefaultFeatureSize },
+		infersDefaultFeatureSize,
 		name: "Ocean",
 		dataRetrievalValue: "type = Epic",
 		dataRetrievalSchema: {

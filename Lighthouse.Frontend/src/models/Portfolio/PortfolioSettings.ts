@@ -22,4 +22,5 @@ export interface IPortfolioSettings extends IBaseSettings {
 	dependencyFieldSource?: SettingSource;
 	dependencyFieldDefaultName?: string | null;
 	ignoreDependencies: boolean;
+	infersDefaultFeatureSize?: boolean;
 }

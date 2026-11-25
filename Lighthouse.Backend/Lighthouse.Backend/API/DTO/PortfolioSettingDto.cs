@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             UsePercentileToCalculateDefaultAmountOfWorkItems = portfolio.UsePercentileToCalculateDefaultAmountOfWorkItems;
             DefaultAmountOfWorkItemsPerFeature = portfolio.DefaultAmountOfWorkItemsPerFeature;
+            InfersDefaultFeatureSize = portfolio.InfersDefaultFeatureSize;
             DefaultWorkItemPercentile = portfolio.DefaultWorkItemPercentile;
             PercentileHistoryInDays = portfolio.PercentileHistoryInDays;
             OverrideRealChildCountStates = portfolio.OverrideRealChildCountStates;
@@ -92,5 +93,8 @@ namespace Lighthouse.Backend.API.DTO
         // off; a new Portfolio holds "acts on its dependencies", which is what one did before the setting
         // was there. Demanding the field instead turns every saved payload into a 400.
         public bool? IgnoreDependencies { get; set; }
+
+        // Absent keeps what the Portfolio holds, so an older payload cannot switch inferred sizing off.
+        public bool? InfersDefaultFeatureSize { get; set; }
     }
 }

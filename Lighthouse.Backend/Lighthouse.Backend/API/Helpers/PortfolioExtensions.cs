@@ -28,6 +28,7 @@ namespace Lighthouse.Backend.API.Helpers
 
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
             project.IgnoreDependencies = portfolioSetting.IgnoreDependencies ?? project.IgnoreDependencies;
+            project.InfersDefaultFeatureSize = portfolioSetting.InfersDefaultFeatureSize ?? project.InfersDefaultFeatureSize;
             project.SystemWIPLimit = portfolioSetting.SystemWIPLimit;
             project.ProcessBehaviourChartBaselineStartDate = portfolioSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(portfolioSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;
             project.ProcessBehaviourChartBaselineEndDate = portfolioSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(portfolioSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;

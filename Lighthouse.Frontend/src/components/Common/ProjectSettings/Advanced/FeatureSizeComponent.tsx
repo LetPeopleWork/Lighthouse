@@ -40,6 +40,8 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const infersSize = projectSettings?.infersDefaultFeatureSize ?? true;
+	const sizingOff = !infersSize;
 
 	useEffect(() => {
 		const fetchStates = async () => {
@@ -98,6 +100,31 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 				<FormControlLabel
 					control={
 						<Switch
+							checked={infersSize}
+							onChange={(e) =>
+								onProjectSettingsChange(
+									"infersDefaultFeatureSize",
+									e.target.checked,
+								)
+							}
+						/>
+					}
+					label={`Infer a size for ${featuresTerm} without child ${workItemsTerm}`}
+				/>
+				<Typography
+					variant="caption"
+					color="text.secondary"
+					sx={{ display: "block" }}
+				>
+					{`When off, a ${featureTerm} without child ${workItemsTerm} counts as 0.`}
+				</Typography>
+			</Grid>
+
+			<Grid size={{ xs: 12 }}>
+				<FormControlLabel
+					control={
+						<Switch
+							disabled={sizingOff}
 							checked={
 								projectSettings?.usePercentileToCalculateDefaultAmountOfWorkItems
 							}
@@ -121,6 +148,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 							type="number"
 							fullWidth
 							margin="normal"
+							disabled={sizingOff}
 							value={projectSettings?.defaultWorkItemPercentile || ""}
 							slotProps={{
 								htmlInput: {
@@ -142,6 +170,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 							type="number"
 							fullWidth
 							margin="normal"
+							disabled={sizingOff}
 							value={
 								projectSettings?.percentileHistoryInDays ||
 								DEFAULT_PERCENTILE_HISTORY_DAYS
@@ -167,6 +196,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 						type="number"
 						fullWidth
 						margin="normal"
+						disabled={sizingOff}
 						value={projectSettings?.defaultAmountOfWorkItemsPerFeature ?? ""}
 						onChange={(e) =>
 							onProjectSettingsChange(
@@ -188,6 +218,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 					source={projectSettings?.sizeEstimateSource}
 					ownField={projectSettings?.sizeEstimateAdditionalFieldDefinitionId}
 					additionalFieldDefinitions={additionalFieldDefinitions}
+					disabled={sizingOff}
 					{...followOrOwn<IPortfolioSettings>(
 						onProjectSettingsChange,
 						"sizeEstimateSource",
@@ -208,6 +239,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 					onRemoveItem={handleRemoveOverrideChildCountState}
 					suggestions={statesSuggestions}
 					isLoading={isLoading}
+					disabled={sizingOff}
 				/>
 			</Grid>
 		</InputGroup>

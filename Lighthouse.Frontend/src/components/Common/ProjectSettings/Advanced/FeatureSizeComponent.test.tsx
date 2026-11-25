@@ -1,10 +1,4 @@
-import {
-	act,
-	fireEvent,
-	render,
-	screen,
-	within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
@@ -12,10 +6,13 @@ import { WorkTrackingSystemConnection } from "../../../../models/WorkTracking/Wo
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { actAndSettle } from "../../../../tests/actAndSettle";
 import {
+	RenamedTerms,
+	renderWithTerms,
+} from "../../../../tests/FieldTipsTestKit";
+import {
 	createMockApiServiceContext,
 	createMockSuggestionService,
 } from "../../../../tests/MockApiServiceProvider";
-import { RenamedTerms, renderWithTerms } from "../../../../tests/FieldTipsTestKit";
 import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import FeatureSizeComponent from "./FeatureSizeComponent";
 
@@ -525,7 +522,7 @@ describe("FeatureSizeComponent default Feature sizing switch", () => {
 
 	const openTheForm = async (settings: IPortfolioSettings) => {
 		const view = render(theForm(settings));
-		await act(async () => {
+		await actAndSettle(() => {
 			fireEvent.click(screen.getByLabelText("toggle"));
 		});
 		return view;
@@ -543,14 +540,18 @@ describe("FeatureSizeComponent default Feature sizing switch", () => {
 	it("greys out the four settings without effect while off, keeps their values, and brings them back when on", async () => {
 		const view = await openTheForm(aPortfolioHoldingSeven(switchedOff));
 
-		expect(screen.getByLabelText(/Infer a size for Features/i)).not.toBeChecked();
+		expect(
+			screen.getByLabelText(/Infer a size for Features/i),
+		).not.toBeChecked();
 		const numberField = screen.getByLabelText(
 			/Default Number of Work Items per Feature/i,
 		);
 		expect(numberField).toBeDisabled();
 		expect(numberField).toHaveValue(7);
 		expect(
-			screen.getByLabelText(/Use Historical Feature Size To Calculate Default/i),
+			screen.getByLabelText(
+				/Use Historical Feature Size To Calculate Default/i,
+			),
 		).toBeDisabled();
 		expect(theSizeEstimate()).toHaveAttribute("aria-disabled", "true");
 		expect(theSizeEstimate()).toHaveTextContent("Story Points");
@@ -563,7 +564,9 @@ describe("FeatureSizeComponent default Feature sizing switch", () => {
 		expect(numberField).toBeEnabled();
 		expect(numberField).toHaveValue(7);
 		expect(
-			screen.getByLabelText(/Use Historical Feature Size To Calculate Default/i),
+			screen.getByLabelText(
+				/Use Historical Feature Size To Calculate Default/i,
+			),
 		).toBeEnabled();
 		expect(theSizeEstimate()).not.toHaveAttribute("aria-disabled", "true");
 		expect(theSizeEstimate()).toHaveTextContent("Story Points");
@@ -616,7 +619,9 @@ describe("FeatureSizeComponent default Feature sizing switch", () => {
 		} as Record<string, unknown>;
 		delete savedBeforeTheSwitchExisted.infersDefaultFeatureSize;
 
-		await openTheForm(savedBeforeTheSwitchExisted as unknown as IPortfolioSettings);
+		await openTheForm(
+			savedBeforeTheSwitchExisted as unknown as IPortfolioSettings,
+		);
 
 		expect(screen.getByLabelText(/Infer a size for Features/i)).toBeChecked();
 		expect(

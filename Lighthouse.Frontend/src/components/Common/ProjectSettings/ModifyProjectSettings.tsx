@@ -42,6 +42,7 @@ import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
 import OwnershipComponent from "./Advanced/OwnershipComponent";
 import PortfolioSizeNote from "./PortfolioSizeNote";
 import { portfolioAutoSaveBlockers } from "./portfolioAutoSaveBlockers";
+import { useDefaultFeatureSizingSavedReporter } from "./useDefaultFeatureSizingSavedReporter";
 
 interface ModifyProjectSettingsProps {
 	title: string;
@@ -77,7 +78,12 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const { portfolioService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const portfolioIdRef = useRef(0);
-	const { settingsLoaded, settingsSaved } = useParentSourcesSavedReporter();
+	const {
+		settingsLoaded: parentSourcesLoaded,
+		settingsSaved: parentSourcesSaved,
+	} = useParentSourcesSavedReporter();
+	const { settingsLoaded: sizingLoaded, settingsSaved: sizingSaved } =
+		useDefaultFeatureSizingSavedReporter();
 
 	const loadTeams = useCallback(async () => {
 		setTeams(await getAllTeams());
@@ -115,10 +121,12 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		doneHandlers,
 	} = useModifySettings<IPortfolioSettings>({
 		getWorkTrackingSystems,
-		getSettings: async () => settingsLoaded(await getProjectSettings()),
+		getSettings: async () =>
+			sizingLoaded(parentSourcesLoaded(await getProjectSettings())),
 		saveSettings: async (settings) => {
 			const saved = await saveProjectSettings(settings);
-			settingsSaved(settings);
+			parentSourcesSaved(settings);
+			sizingSaved(settings);
 			return saved;
 		},
 		validateSettings: validateProjectSettings,

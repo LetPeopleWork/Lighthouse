@@ -51,6 +51,7 @@ export const UsageDataEventName = {
 	SystemWideAccessGranted: "SystemWideAccessGranted",
 	OutlierListOpened: "OutlierListOpened",
 	OutlierHandlingSwitchedOff: "OutlierHandlingSwitchedOff",
+	DefaultFeatureSizingSwitchedOff: "DefaultFeatureSizingSwitchedOff",
 } as const;
 
 export type UsageDataEventName =
