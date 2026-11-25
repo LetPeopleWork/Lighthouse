@@ -203,6 +203,11 @@ namespace Lighthouse.Backend.Models
 
         public IEnumerable<Feature> GetFeaturesToOverrideWithDefaultSize()
         {
+            if (!InfersDefaultFeatureSize)
+            {
+                return [];
+            }
+
             return Features.Where(f => OverrideRealChildCountStates.Contains(f.State));
         }
 
