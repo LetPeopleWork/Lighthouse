@@ -415,6 +415,60 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P6</p>
+
+<pre><code>Build and start a standalone package for Linux, macOS or Windows and ask it for its system information
+</code></pre>
+
+<pre><code>Each serves the app and reports a .NET 11 runtime
+</code></pre>
+
+<pre><code>A self-hoster who runs a standalone package gets the app on a .NET 11 runtime
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Standalone packages are built and started only by the post-push standalone, codesign and verify pipelines on their own operating systems; no local or ci_docker.yml port observes them; their SDK pin is covered by the toolchain pin test
+</code></pre>
+
+<p>maintainer</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P6</p>
+
+<pre><code>Build the Docker image, start it with SQLite and ask the running container for its system information
+</code></pre>
+
+<pre><code>The container starts, serves the app, and its runtime field starts with .NET 11
+</code></pre>
+
+<pre><code>A self-hoster who pulls the image gets the app running on a .NET 11 runtime
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/workflows/ci_docker.yml:Check the container runs on .NET 11</p>
+
+<pre><code>An image on the 10.0 base images that builds and starts fine but reports a .NET 10 runtime would pass a start-only check; the runtime-field check rejects it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

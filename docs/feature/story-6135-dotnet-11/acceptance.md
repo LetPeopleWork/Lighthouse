@@ -306,6 +306,68 @@ The input renamed or set to 11 under a differently spelled key
 
 None.
 
+### S3
+
+##### Covers
+
+P3
+
+P6
+
+```text
+Build and start a standalone package for Linux, macOS or Windows and ask it for its system information
+```
+
+```text
+Each serves the app and reports a .NET 11 runtime
+```
+
+```text
+A self-hoster who runs a standalone package gets the app on a .NET 11 runtime
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Standalone packages are built and started only by the post-push standalone, codesign and verify pipelines on their own operating systems; no local or ci_docker.yml port observes them; their SDK pin is covered by the toolchain pin test
+```
+
+maintainer
+
+##### Covers
+
+P3
+
+P6
+
+```text
+Build the Docker image, start it with SQLite and ask the running container for its system information
+```
+
+```text
+The container starts, serves the app, and its runtime field starts with .NET 11
+```
+
+```text
+A self-hoster who pulls the image gets the app running on a .NET 11 runtime
+```
+
+##### Disposition
+
+Tested
+
+\.github\/workflows\/ci\_docker\.yml\:Check the container runs on \.NET 11
+
+```text
+An image on the 10.0 base images that builds and starts fine but reports a .NET 10 runtime would pass a start-only check; the runtime-field check rejects it
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

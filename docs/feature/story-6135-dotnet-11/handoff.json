@@ -137,12 +137,42 @@
 "stimulus": "F234",
 "user_result": "F236"
 }
+],
+"S3": [
+{
+"covers": [
+"P3",
+"P6"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "maintainer",
+"reason": "F242"
+},
+"expected": "F240",
+"stimulus": "F239",
+"user_result": "F241"
+},
+{
+"covers": [
+"P3",
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F246",
+"test": ".github/workflows/ci_docker.yml:Check the container runs on .NET 11"
+},
+"expected": "F244",
+"stimulus": "F243",
+"user_result": "F245"
+}
 ]
 },
 "counters": {
 "D": 12,
 "E": 7,
-"F": 238,
+"F": 246,
 "K": 2,
 "P": 7,
 "S": 4,
@@ -1262,7 +1292,15 @@
 "F236": "Only one place names the SDK version in the pipelines",
 "F237": "The input renamed or set to 11 under a differently spelled key",
 "F238": "Existing workflow owner; the dead dotnet_version input beside it is deleted in place.",
+"F239": "Build and start a standalone package for Linux, macOS or Windows and ask it for its system information",
 "F24": "Any change to routes, DTO shapes, serialized responses, UI pixels or topologies; this is a behaviour-free upgrade.",
+"F240": "Each serves the app and reports a .NET 11 runtime",
+"F241": "A self-hoster who runs a standalone package gets the app on a .NET 11 runtime",
+"F242": "Standalone packages are built and started only by the post-push standalone, codesign and verify pipelines on their own operating systems; no local or ci_docker.yml port observes them; their SDK pin is covered by the toolchain pin test",
+"F243": "Build the Docker image, start it with SQLite and ask the running container for its system information",
+"F244": "The container starts, serves the app, and its runtime field starts with .NET 11",
+"F245": "A self-hoster who pulls the image gets the app running on a .NET 11 runtime",
+"F246": "An image on the 10.0 base images that builds and starts fine but reports a .NET 10 runtime would pass a start-only check; the runtime-field check rejects it",
 "F25": "Historical architecture briefs, diagrams and decision records that name .NET 10 as history stay unchanged. Release notes are written at release time, not here.",
 "F26": "DISCOVER and DIVERGE are skipped for this Feature.",
 "F27": "The work item gets the Release Notes tag with one short line at release time: Lighthouse now runs on .NET 11.",

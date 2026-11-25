@@ -93,8 +93,17 @@ jobs:
       - name: Wait for Lighthouse to start
         run: |
           echo "Waiting for server to be ready..."
-          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:443; do sleep 1; done'
+          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:443/api/latest/systeminfo; do sleep 1; done'
           echo "Server is ready!"
+
+      - name: Check the container runs on .NET 11
+        run: |
+          runtime=$(curl --silent --fail --insecure https://localhost:443/api/latest/systeminfo | jq -r '.runtime // .Runtime')
+          echo "Runtime reported by the container: $runtime"
+          case "$runtime" in
+            ".NET 11"*) ;;
+            *) echo "Expected a runtime that starts with .NET 11, got: $runtime"; exit 1 ;;
+          esac
 
       - name: Cleanup test container
         if: always()
