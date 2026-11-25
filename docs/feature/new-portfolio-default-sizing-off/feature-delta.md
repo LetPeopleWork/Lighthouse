@@ -71,3 +71,26 @@ Authority: `architecture.md` (rendered from `handoff.json`).
 
 - **Rigor profile:** `standard` for S1 (agreed with the maintainer on entry to AFK mode).
 - **UI sketch:** none needed. No layout, control or copy changes; the childless-Feature look ("0 of 0", "No child Work Items yet") was sketched and approved in Story 6504. Screenshots of demo Portfolios may change content; they are listed at the hold.
+
+## DELIVER — S1 (AFK)
+
+| Step | Result |
+|---|---|
+| Oracle, first | RED 5/31 backend, 1/29 frontend; review rejected once (API create did not go through the controller), accepted after the fix |
+| Craft, first | GREEN `c22ecd4fc`; full backend run then failed 8 host-level tests |
+| Product amendment | Maintainer chose B: a new Portfolio starts on when its connection names a Portfolio Size Estimate Field default (P8). The own-field case stays open |
+| Oracle rework | RED 1/79 backend (the P8 row), 1/29 frontend (the wizard omits the switch); five host-level scenarios that seed Portfolios directly switch sizing on; accepted on review |
+| Craft rework | `Portfolio.StartOnConnection` called by the create controller; the wizard no longer sends the switch. GREEN 79/79 and 29/29; whole filtered backend suite 0 failed of 14,891 |
+| Whole-candidate review (Haiku) | Rejected once (demo data unobserved, copy and existing-row coverage, screenshot impact row); after one revision pass accepted, one non-blocking note: the Slice10 and Slice11 set-ups switch every Portfolio in their test database on |
+
+## EXAMINE — 2026-11-25 (waived by the maintainer, not closed by nwdes)
+
+Two source-blind runs on the reviewer model (Haiku). Both found no public observation for any of E1–E7: the
+public read index is empty, and the only admitted probes are the internal test suites, which the examiner judged to
+be producer evidence (`feature-proof` had no evidence folder for this feature). Every expectation was recorded
+`observation_gap`, none as a product failure. nwdes refuses an `indeterminate` close (`RoleNotAccepted: examine`).
+The maintainer chose to waive EXAMINE as in Story 6504: the draft was aborted and there is no nwdes-closed EXAMINE
+record. Each expectation is covered at the port: `NewPortfolioStartingValueTest` (create, clone, existing value,
+connection size field default) through `PortfoliosController` over SQLite, `DefaultFeatureSizingTest`,
+`CreatePortfolioWizard.test.tsx`, `DemoDataFactoryTest`, and the Story 6504 copy tests in
+`PortfolioFeatureList.test.tsx` and `columns.warnings.test.tsx`.
