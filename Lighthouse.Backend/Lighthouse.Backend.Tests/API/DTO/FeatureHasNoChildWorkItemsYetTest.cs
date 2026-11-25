@@ -1,7 +1,12 @@
+using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Moq;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
@@ -56,6 +61,50 @@ namespace Lighthouse.Backend.Tests.API.DTO
             {
                 Assert.That(OnTheFeaturePayload(feature), Is.False, "A finished Feature is not waiting for child Work Items.");
                 Assert.That(OnTheListRow(feature), Is.False, "A finished Feature's list row is not waiting for child Work Items.");
+            }
+        }
+
+        [Test]
+        [TestCase(false, true)]
+        [TestCase(true, false)]
+        public async Task A_refreshed_Feature_without_child_Work_Items_says_so_only_while_default_sizing_is_off(bool defaultSizingIsOn, bool saysNoChildWorkItemsYet)
+        {
+            var portfolio = new Portfolio { Id = 100, Name = "Ocean", DefaultAmountOfWorkItemsPerFeature = 4, InfersDefaultFeatureSize = defaultSizingIsOn };
+            portfolio.WorkItemTypes.Add("Feature");
+            portfolio.WorkTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
+            portfolio.UpdateTime = DateTime.UtcNow;
+            var feature = new Feature { ReferenceId = "F-1" };
+            var teams = new List<Team> { Atlas, new() { Id = 2, Name = "Pacific" } };
+
+            var connector = new Mock<IWorkTrackingConnector>();
+            connector.As<IFeatureSource>()
+                .Setup(source => source.GetFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([feature]);
+            var workItemRepository = new Mock<IWorkItemRepository>();
+            workItemRepository
+                .Setup(repository => repository.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(new List<WorkItem>().AsQueryable());
+            var teamRepository = new Mock<IRepository<Team>>();
+            teamRepository.Setup(repository => repository.GetAll()).Returns(teams);
+            var featureStateTransitions = new Mock<IFeatureStateTransitionRepository>();
+            featureStateTransitions
+                .Setup(repository => repository.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
+                .Returns(new List<FeatureStateTransition>().AsQueryable());
+
+            var service = new WorkItemServiceTestBuilder()
+                .WithConnector(connector.Object)
+                .WithWorkItemRepository(workItemRepository.Object)
+                .WithTeamRepository(teamRepository.Object)
+                .WithFeatureStateTransitionRepository(featureStateTransitions.Object)
+                .Build();
+
+            await service.UpdateFeaturesForPortfolio(portfolio);
+
+            var refreshed = portfolio.Features.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OnTheFeaturePayload(refreshed), Is.EqualTo(saysNoChildWorkItemsYet), $"After a refresh with default sizing {(defaultSizingIsOn ? "on" : "off")}, the Feature payload must carry hasNoChildWorkItemsYet = {saysNoChildWorkItemsYet}.");
+                Assert.That(OnTheListRow(refreshed), Is.EqualTo(saysNoChildWorkItemsYet), $"After a refresh with default sizing {(defaultSizingIsOn ? "on" : "off")}, the list row must carry hasNoChildWorkItemsYet = {saysNoChildWorkItemsYet}.");
             }
         }
 

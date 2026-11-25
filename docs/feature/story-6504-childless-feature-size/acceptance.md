@@ -706,6 +706,126 @@ An export that reads only the default-size flag
 
 None.
 
+##### Covers
+
+P5
+
+```text
+A Feature payload arrives with hasNoChildWorkItemsYet true
+```
+
+```text
+The decoded Feature reads true
+```
+
+```text
+A Feature waiting for child Work Items is marked
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioFeatureList\.test\.tsx \:\: reads hasNoChildWorkItemsYet true as true
+
+```text
+A decoder that drops the field and so reads false for every payload
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+A Feature payload arrives with hasNoChildWorkItemsYet false
+```
+
+```text
+The decoded Feature reads false
+```
+
+```text
+A Feature with child Work Items is not marked
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioFeatureList\.test\.tsx \:\: reads hasNoChildWorkItemsYet false as false
+
+```text
+A decoder that reads true for every payload
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+A Feature payload arrives without hasNoChildWorkItemsYet
+```
+
+```text
+The decoded Feature reads false
+```
+
+```text
+An older payload never shows the note
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioFeatureList\.test\.tsx \:\: reads an absent hasNoChildWorkItemsYet as false
+
+```text
+A schema that requires the field or defaults it to true
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+A Portfolio is refreshed with default sizing off, then with it on, holding a Feature without child Work Items
+```
+
+```text
+Off: the Feature payload and the list row say hasNoChildWorkItemsYet true; on: both say false
+```
+
+```text
+Switching default sizing off is what makes the Feature say it has no child Work Items yet
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DTO\/FeatureHasNoChildWorkItemsYetTest\.cs \:\: A\_refreshed\_Feature\_without\_child\_Work\_Items\_says\_so\_only\_while\_default\_sizing\_is\_off
+
+```text
+A flag set from the Feature alone, regardless of the Portfolio switch, or never true after a refresh
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

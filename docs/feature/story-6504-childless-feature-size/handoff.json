@@ -339,6 +339,58 @@
 "expected": "F430",
 "stimulus": "F381",
 "user_result": "F431"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F436",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: reads hasNoChildWorkItemsYet true as true"
+},
+"expected": "F434",
+"stimulus": "F433",
+"user_result": "F435"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F440",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: reads hasNoChildWorkItemsYet false as false"
+},
+"expected": "F438",
+"stimulus": "F437",
+"user_result": "F439"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F443",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: reads an absent hasNoChildWorkItemsYet as false"
+},
+"expected": "F438",
+"stimulus": "F441",
+"user_result": "F442"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F447",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/FeatureHasNoChildWorkItemsYetTest.cs :: A_refreshed_Feature_without_child_Work_Items_says_so_only_while_default_sizing_is_off"
+},
+"expected": "F445",
+"stimulus": "F444",
+"user_result": "F446"
 }
 ]
 },
@@ -347,7 +399,7 @@
 "C": 2,
 "D": 9,
 "E": 8,
-"F": 432,
+"F": 447,
 "K": 8,
 "L": 4,
 "N": 2,
@@ -1931,7 +1983,22 @@
 "F430": "The Warnings cell says Yes",
 "F431": "An exported report does not show a childless Feature as clean",
 "F432": "An export that reads only the default-size flag",
+"F433": "A Feature payload arrives with hasNoChildWorkItemsYet true",
+"F434": "The decoded Feature reads true",
+"F435": "A Feature waiting for child Work Items is marked",
+"F436": "A decoder that drops the field and so reads false for every payload",
+"F437": "A Feature payload arrives with hasNoChildWorkItemsYet false",
+"F438": "The decoded Feature reads false",
+"F439": "A Feature with child Work Items is not marked",
 "F44": "Context map placement after ADR-270/ADR-271: which bounded contexts the switch touches (Portfolio configuration, Feature sizing, Forecasting), the glossary term for the switch (proposed 'default Feature sizing'), whether turning it off publishes or reacts to a domain event (proposed: a Portfolio settings-changed event triggers the existing Feature recalculation), and the UI surface (proposed: the Portfolio's settings tab).",
+"F440": "A decoder that reads true for every payload",
+"F441": "A Feature payload arrives without hasNoChildWorkItemsYet",
+"F442": "An older payload never shows the note",
+"F443": "A schema that requires the field or defaults it to true",
+"F444": "A Portfolio is refreshed with default sizing off, then with it on, holding a Feature without child Work Items",
+"F445": "Off: the Feature payload and the list row say hasNoChildWorkItemsYet true; on: both say false",
+"F446": "Switching default sizing off is what makes the Feature say it has no child Work Items yet",
+"F447": "A flag set from the Feature alone, regardless of the Portfolio switch, or never true after a refresh",
 "F45": "End-of-DISCUSS checklist view: RBAC unchanged, the switch is a Portfolio setting edited by whoever edits Portfolio settings today (Portfolio admins). Lighthouse-Clients CLI/MCP: the Portfolio settings payload gains the switch and clients that read or write Portfolio settings must carry it; the Feature payload gains nothing new. Website: one line, e.g. 'Turn off default Feature sizing: a Feature without child Work Items counts as 0, never a guess'. Context map: see the Design open decision.",
 "F46": "No labelling change when the switch is on: the existing warning icon and sentence stay; no stronger 'assumed' mark (maintainer, 2026-11-25).",
 "F47": "Switching default sizing off also turns off the 'override real child count states' rule. Off means Lighthouse never puts a default size in place of real children: a Feature's size is its real child count, or 0 if it has none (maintainer, 2026-11-25).",

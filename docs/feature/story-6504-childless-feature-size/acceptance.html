@@ -763,6 +763,110 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Feature payload arrives with hasNoChildWorkItemsYet true
+</code></pre>
+
+<pre><code>The decoded Feature reads true
+</code></pre>
+
+<pre><code>A Feature waiting for child Work Items is marked
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: reads hasNoChildWorkItemsYet true as true</p>
+
+<pre><code>A decoder that drops the field and so reads false for every payload
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Feature payload arrives with hasNoChildWorkItemsYet false
+</code></pre>
+
+<pre><code>The decoded Feature reads false
+</code></pre>
+
+<pre><code>A Feature with child Work Items is not marked
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: reads hasNoChildWorkItemsYet false as false</p>
+
+<pre><code>A decoder that reads true for every payload
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Feature payload arrives without hasNoChildWorkItemsYet
+</code></pre>
+
+<pre><code>The decoded Feature reads false
+</code></pre>
+
+<pre><code>An older payload never shows the note
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: reads an absent hasNoChildWorkItemsYet as false</p>
+
+<pre><code>A schema that requires the field or defaults it to true
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Portfolio is refreshed with default sizing off, then with it on, holding a Feature without child Work Items
+</code></pre>
+
+<pre><code>Off: the Feature payload and the list row say hasNoChildWorkItemsYet true; on: both say false
+</code></pre>
+
+<pre><code>Switching default sizing off is what makes the Feature say it has no child Work Items yet
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/FeatureHasNoChildWorkItemsYetTest.cs :: A_refreshed_Feature_without_child_Work_Items_says_so_only_while_default_sizing_is_off</p>
+
+<pre><code>A flag set from the Feature alone, regardless of the Portfolio switch, or never true after a refresh
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

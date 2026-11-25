@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Delivery, type IDelivery } from "../../../models/Delivery";
-import { Feature, type IFeature } from "../../../models/Feature";
+import { Feature, FeatureSchema, type IFeature } from "../../../models/Feature";
 import type { IForecast } from "../../../models/Forecasts/IForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
@@ -639,5 +639,48 @@ describe("a Feature without child Work Items says so on the Delivery timeline an
 			],
 			"The export's Warnings cell must say Yes for a Feature that has the note.",
 		).toBe("Yes");
+	});
+});
+
+describe("reading the childless note flag off the wire", () => {
+	const decode = (overrides: Record<string, unknown>): Feature =>
+		Feature.fromParsed(
+			FeatureSchema.parse({
+				name: "Fresh idea",
+				id: 42,
+				referenceId: "NW-42",
+				state: "In Progress",
+				type: "Feature",
+				stateCategory: "Doing",
+				lastUpdated: "2026-09-20T08:00:00Z",
+				startedDate: null,
+				closedDate: null,
+				cycleTime: 0,
+				workItemAge: 3,
+				size: 0,
+				owningTeam: "",
+				isUsingDefaultFeatureSize: false,
+				parentWorkItemReference: "",
+				remainingWork: {},
+				totalWork: {},
+				forecasts: [],
+				...overrides,
+			}),
+		);
+
+	it("reads hasNoChildWorkItemsYet true as true", () => {
+		expect(
+			decode({ hasNoChildWorkItemsYet: true }).hasNoChildWorkItemsYet,
+		).toBe(true);
+	});
+
+	it("reads hasNoChildWorkItemsYet false as false", () => {
+		expect(
+			decode({ hasNoChildWorkItemsYet: false }).hasNoChildWorkItemsYet,
+		).toBe(false);
+	});
+
+	it("reads an absent hasNoChildWorkItemsYet as false", () => {
+		expect(decode({}).hasNoChildWorkItemsYet).toBe(false);
 	});
 });
