@@ -125,26 +125,30 @@ Switching on is ignored after create
 P7
 
 ```text
-Demo data is created and a demo Portfolio is opened
+Demo data builds each demo Portfolio
 ```
 
 ```text
-Its switch is off except where a screenshot needs inferred sizing
+Every demo Portfolio holds default Feature sizing off
 ```
 
 ```text
-Demo Portfolios start off
+Demo Portfolios start off like any new Portfolio
 ```
 
 ##### Disposition
 
-NotTested
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Factories\/DemoDataFactoryTest\.cs
 
 ```text
-Follows from the entity default; which demo Portfolio needs on is measured per screenshot by the crafter, so no fixed expectation exists
+A demo Portfolio is built on without a screenshot needing it
 ```
 
-crafter
+###### Obligations
+
+None.
 
 ##### Covers
 
@@ -272,6 +276,36 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/ConfigureOnce
 
 ```text
 A Portfolio ignores the connection size field while following it
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+A Portfolio with default sizing off lists a Feature that has no child Work Items
+```
+
+```text
+The row reads 0 of 0 and says it has no child Work Items yet, with no default-size sentence
+```
+
+```text
+A person sees real child Work Items only
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioFeatureList\.test\.tsx
+
+```text
+The row shows an inferred count out of the default size
 ```
 
 ###### Obligations

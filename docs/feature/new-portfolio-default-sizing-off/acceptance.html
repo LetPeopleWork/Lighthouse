@@ -257,23 +257,27 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P7</p>
 
-<pre><code>Demo data is created and a demo Portfolio is opened
+<pre><code>Demo data builds each demo Portfolio
 </code></pre>
 
-<pre><code>Its switch is off except where a screenshot needs inferred sizing
+<pre><code>Every demo Portfolio holds default Feature sizing off
 </code></pre>
 
-<pre><code>Demo Portfolios start off
+<pre><code>Demo Portfolios start off like any new Portfolio
 </code></pre>
 
 <h5>Disposition</h5>
 
-<p>NotTested</p>
+<p>Tested</p>
 
-<pre><code>Follows from the entity default; which demo Portfolio needs on is measured per screenshot by the crafter, so no fixed expectation exists
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs</p>
+
+<pre><code>A demo Portfolio is built on without a screenshot needing it
 </code></pre>
 
-<p>crafter</p>
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h5>Covers</h5>
 
@@ -385,6 +389,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice10PortfoliosSizeEstimateFieldDefaultScenarios.cs</p>
 
 <pre><code>A Portfolio ignores the connection size field while following it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A Portfolio with default sizing off lists a Feature that has no child Work Items
+</code></pre>
+
+<pre><code>The row reads 0 of 0 and says it has no child Work Items yet, with no default-size sentence
+</code></pre>
+
+<pre><code>A person sees real child Work Items only
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx</p>
+
+<pre><code>The row shows an inferred count out of the default size
 </code></pre>
 
 <h6>Obligations</h6>

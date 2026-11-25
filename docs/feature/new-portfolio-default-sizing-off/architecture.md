@@ -367,14 +367,14 @@ Extend
 Inherits off from the entity. Extended only to set InfersDefaultFeatureSize = true on a demo Portfolio whose measured screenshot needs inferred sizes; the factory is the one place demo Portfolios are built.
 ```
 
-infersDefaultFeatureSize
+buildDto
 
-Lighthouse\.Frontend\/src\/components\/Common\/CreateWizards\/CreatePortfolioWizard\.tsx\:47
+Lighthouse\.Frontend\/src\/components\/Common\/CreateWizards\/CreatePortfolioWizard\.tsx\:30
 
 Extend
 
 ```text
-The wizard names the switch today; it must stop naming it so the backend rule applies. The field is already optional in the settings type.
+The wizard settings builder no longer names infersDefaultFeatureSize, so the backend rule applies. The field is already optional in the settings type.
 ```
 
 getPortfolioSettings
@@ -503,10 +503,10 @@ demo\-data
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Factories\/DemoDataFactory\.cs\:32
 
-Changed
+UnchangedCompatible
 
 ```text
-Demo Portfolios now start off; a demo that needs inferred sizing is set on explicitly.
+Demo Portfolios start off from the entity default; no demo Portfolio needs the switch on, so the factory is unchanged.
 ```
 
 frontend\-component
@@ -573,10 +573,10 @@ e2e\-and\-screenshots
 
 Lighthouse\.EndToEndTests\/tests\/specs\/screenshots\/Screenshots\.spec\.ts\:365
 
-Changed
+UnchangedCompatible
 
 ```text
-Screenshot tests over demo data that shows Features without child Work Items (portfolio detail, Features page, portfolio metrics, delivery shots, team forecasts) may change content; crafter measures each alone and sets a demo Portfolio on only where needed.
+No docs page or screenshot spec shows Default Feature Size behaviour on a demo Portfolio, so no spec changes in this candidate. Screenshots of demo Portfolios with childless Features may change content; they are regenerated at the feature finalize step.
 ```
 
 api\-adapter

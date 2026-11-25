@@ -269,6 +269,20 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
+        [TestCase("Project Apollo")]
+        [TestCase("Project Orion")]
+        [TestCase("Project Ocean Explorer")]
+        [TestCase("Project NeuroLink City")]
+        [TestCase("Project Altobelli")]
+        public void A_demo_Portfolio_starts_with_default_Feature_sizing_off(string projectName)
+        {
+            var demoProject = CreateSubject().CreateDemoProject(projectName);
+
+            Assert.That(demoProject.InfersDefaultFeatureSize, Is.False,
+                $"Demo Portfolio {projectName} should start with default Feature sizing off, because demo data starts like any new Portfolio and Features without child Work Items count as 0. Switch it on only where a demo must show the Default Feature Size.");
+        }
+
+        [Test]
         public async Task CreateDemoProject_EpicForecast_WaitsOnWhatTheScenarioIsMeantToShow()
         {
             var dependencies = await DependenciesOfDemoPortfolio(DemoProjectNames.EpicForecast);
