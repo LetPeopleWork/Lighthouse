@@ -3891,7 +3891,13 @@ None.
 
 ##### Decisions
 
-None.
+```text
+S5 Context-field actions, measured from source and the loose Services declarations (12 files in Services/Implementation and 6 in Services/Interfaces; sub-namespaces Repositories, Seeding, BackgroundServices.Update stay and are not old subjects of a moved type; Connections and OptionalFeatures hold no type). StrayLooseImplementation (14 full names, nested types included by plus-suffix): Lighthouse.Backend.Services.Implementation.{EstimateNormalizationResult, EstimateNormalizationBatchResult, EstimateNormalizer, FeatureListActiveWork, FeatureListOwners, FeatureListService, FeaturePositionMap, InProgressFeatureResolution, OrphanedFeatureCleanupService, WriteBackCollector, WriteBackRoundContext, WriteBackRound, WriteBackService, WriteBackTriggerService}. StrayLooseInterfaces (8 full names): Lighthouse.Backend.Services.Interfaces.{IFeatureListService, FeatureListRead, TeamAtWork, IFeaturePositionMap, IOrphanedFeatureCleanupService, IWriteBackCollector, IWriteBackService, IWriteBackTriggerService}. One definition, in WorkItemsModuleBoundariesArchUnitTest as internal constants StrayLooseImplementation, StrayLooseInterfaces and StrayLooseServices (the two joined), reused by the other rules as ModuleBoundariesArchUnitTest.RefinementPattern already is; the list is matched by full name (HaveFullNameMatching or the IL full-name predicate), never as a namespace, so the same types are matched as before and nothing loosens or tightens. (1) WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp: remove the alternative for the two loose namespaces, add StrayLooseServices; measured: the Work Items Application reaches one stray, IOrphanedFeatureCleanupService from PortfolioDeletedOrphanedFeatureCleanupHandler, the listed edge, and it must stay matched. (2) TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace: replace Services.Implementation with the sub-namespaces (Repositories|Seeding|BackgroundServices) plus StrayLooseImplementation; measured: the board port IBoardInformationProvider names only Models types and Tracker integration source names no stray type, so no stray is reached today, and the old reach is kept. (3) RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace: replace the Services.Implementation alternative with StrayLooseImplementation, reached by no one today (RecurringBlackoutRule references no stray), kept so the entity-does-not-reach-services rule does not loosen. (4) RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern: drop the Services.Implementation alternative; measured: WeeklyRecurrence is declared only in Modules.OrganisationSetup.Domain, so no staying type has that old full name and the exclusion cannot loosen. (5) TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts: drop the alternative Services.(Implementation|Interfaces).(Connections|OptionalFeatures); measured: no file declares either namespace; the other alternatives, including Modules.OrganisationSetup, stay unchanged.
+```
+
+```text
+S5 docs closure, an observation at the candidate review and not a test (prose, reviewed): grep and read ADR-270 rows 62 and 63, line 289 and the Left-open lines 845-851; ARCHITECTURE.md section 4 row and the rules bullet; the feature brief and the ADO catalogue entry 6468, each showing Organisation set-up packaged in Modules/OrganisationSetup with no old Services namespace named as its home. The Place fields are covered by the finite law L6, which gains the case that every Place field still matches no moved type, observed by the same S5 oracle (F200).
+```
 
 ##### Constraints
 
@@ -4124,7 +4130,7 @@ None.
 ###### L6
 
 ```text
-No Context field matches an old subject of a moved type and no test-project literal names an old full name or path of the 27, outside the exact self-exclusion list.
+No Context field matches an old subject of a moved type and no test-project literal names an old full name or path of the 27, outside the exact self-exclusion list; every Place field still matches no moved type.
 ```
 
 Invariant
@@ -4149,6 +4155,10 @@ Each S1 rename-list literal
 
 ```text
 Exclusion list equals the named paths and each exists
+```
+
+```text
+Each Place field of the S1 declarations still matches no moved type
 ```
 
 ```text
