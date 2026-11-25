@@ -13,6 +13,15 @@ namespace Lighthouse.Backend.Tests.API.Helpers
     public class PortfolioExtensionsTest
     {
         private const int TheConnectionsDefault = 9;
+
+        private static readonly string[] TheBacklog = ["Backlog"];
+        private static readonly string[] TheActive = ["Active"];
+        private static readonly string[] TheClosed = ["Closed"];
+        private static readonly string[] TheWaiting = ["Waiting"];
+        private static readonly string[] TheReview = ["Review"];
+        private static readonly string[] ReviewStates = ["Code Review", "QA"];
+        private static readonly int[] KeptThenNumbered = [5, 6, 7];
+        private static readonly int[] OneThenTwo = [1, 2];
         private const int ItsOwnField = 5;
         private const int AnotherField = 7;
 
@@ -292,6 +301,98 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Assert.That(portfolio.IgnoreDependencies, Is.True, "The connection holds no Ignore Dependencies default to take it from.");
                 Assert.That(portfolio.DependencyFieldSource, Is.EqualTo(SettingSource.ConnectionDefault));
             }
+        }
+
+        [Test]
+        public void Saving_settings_stores_the_baseline_dates_as_UTC_and_the_state_lists_trimmed()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            var settings = SettingsNaming(null);
+            settings.ProcessBehaviourChartBaselineStartDate = new DateTime(2025, 3, 1, 0, 0, 0, DateTimeKind.Unspecified);
+            settings.ProcessBehaviourChartBaselineEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Unspecified);
+            settings.ToDoStates = [" Backlog "];
+            settings.DoingStates = [" Active "];
+            settings.DoneStates = [" Closed "];
+            settings.WaitStates = [" Waiting "];
+            settings.BlockedRuleSetJson = "{\"rules\":[]}";
+            settings.StateMappings = [new StateMappingDto { Name = " Review ", States = [" Code Review ", " QA "] }];
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolio.ProcessBehaviourChartBaselineStartDate, Is.EqualTo(new DateTime(2025, 3, 1, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.That(portfolio.ProcessBehaviourChartBaselineStartDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(portfolio.ProcessBehaviourChartBaselineEndDate, Is.EqualTo(new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.That(portfolio.ProcessBehaviourChartBaselineEndDate!.Value.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(portfolio.ToDoStates, Is.EqualTo(TheBacklog));
+                Assert.That(portfolio.DoingStates, Is.EqualTo(TheActive));
+                Assert.That(portfolio.DoneStates, Is.EqualTo(TheClosed));
+                Assert.That(portfolio.WaitStates, Is.EqualTo(TheWaiting));
+                Assert.That(portfolio.BlockedRuleSetJson, Is.EqualTo("{\"rules\":[]}"));
+                Assert.That(portfolio.StateMappings.Select(mapping => mapping.Name), Is.EqualTo(TheReview));
+                Assert.That(portfolio.StateMappings.Single().States, Is.EqualTo(ReviewStates));
+            }
+        }
+
+        [Test]
+        public void Saving_settings_without_baseline_dates_leaves_them_unset()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            portfolio.ProcessBehaviourChartBaselineStartDate = new DateTime(2025, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+            portfolio.ProcessBehaviourChartBaselineEndDate = new DateTime(2025, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            portfolio.SyncWithPortfolioSettings(SettingsNaming(null), Teams());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolio.ProcessBehaviourChartBaselineStartDate, Is.Null);
+                Assert.That(portfolio.ProcessBehaviourChartBaselineEndDate, Is.Null);
+            }
+        }
+
+        [Test]
+        public void Saving_cycle_time_definitions_keeps_known_ids_and_numbers_the_rest_after_the_highest()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            portfolio.CycleTimeDefinitions =
+            [
+                new CycleTimeDefinition { Id = 3, Name = "Old", StartState = "A", EndState = "B" },
+                new CycleTimeDefinition { Id = 5, Name = "Kept", StartState = "A", EndState = "B" },
+            ];
+            var settings = SettingsNaming(null);
+            settings.CycleTimeDefinitions =
+            [
+                new CycleTimeDefinitionDto { Id = 5, Name = " Kept ", StartState = " Active ", EndState = " Closed " },
+                new CycleTimeDefinitionDto { Id = 0, Name = "New", StartState = "A", EndState = "B" },
+                new CycleTimeDefinitionDto { Id = 9, Name = "Unknown id", StartState = "A", EndState = "B" },
+            ];
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolio.CycleTimeDefinitions.Select(definition => definition.Id), Is.EqualTo(KeptThenNumbered));
+                Assert.That(portfolio.CycleTimeDefinitions[0].Name, Is.EqualTo("Kept"));
+                Assert.That(portfolio.CycleTimeDefinitions[0].StartState, Is.EqualTo("Active"));
+                Assert.That(portfolio.CycleTimeDefinitions[0].EndState, Is.EqualTo("Closed"));
+            }
+        }
+
+        [Test]
+        public void Saving_cycle_time_definitions_to_a_portfolio_with_none_numbers_them_from_one()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            var settings = SettingsNaming(null);
+            settings.CycleTimeDefinitions =
+            [
+                new CycleTimeDefinitionDto { Id = 0, Name = "First", StartState = "A", EndState = "B" },
+                new CycleTimeDefinitionDto { Id = 0, Name = "Second", StartState = "A", EndState = "B" },
+            ];
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            Assert.That(portfolio.CycleTimeDefinitions.Select(definition => definition.Id), Is.EqualTo(OneThenTwo));
         }
 
         private static Portfolio APortfolioFollowingTheDefault() => new()

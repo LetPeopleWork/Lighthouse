@@ -94,6 +94,23 @@ describe("ProgressIndicator component", () => {
 		expect(screen.getByRole("button")).toBeInTheDocument(); // Info button
 	});
 
+	it("explains on its info button why the work could not be determined, beside the label", () => {
+		render(
+			<ProgressIndicator
+				title="Test Progress"
+				progressableItem={createProgressable(0, 0)}
+			/>,
+		);
+
+		expect(screen.getByRole("button")).toHaveAccessibleName(
+			/The remaining and total work could not be determined\. This can happen if the work was added to a .+ in your .+, but you have not defined this .+ yet in Lighthouse\./,
+		);
+		expect(screen.getByText(/Could not determine work/)).toHaveStyle({
+			display: "flex",
+			alignItems: "center",
+		});
+	});
+
 	it("does not show details when showDetails is false", () => {
 		const progressable = createProgressable(4, 10);
 

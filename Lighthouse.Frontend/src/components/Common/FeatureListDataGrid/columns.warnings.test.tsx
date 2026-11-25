@@ -41,6 +41,11 @@ describe("createWarningsColumn sorts on everything the icons show", () => {
 		expect(sortsAsWarning(aRow())).toBe(false);
 	});
 
+	it("sorts a Feature with no child Work Items yet as warned", () => {
+		expect(sortsAsWarning(aRow({ hasNoChildWorkItemsYet: true }))).toBe(true);
+		expect(sortsAsWarning(aRow({ hasNoChildWorkItemsYet: false }))).toBe(false);
+	});
+
 	it("sorts a Feature marked done with work still on it as warned", () => {
 		expect(
 			sortsAsWarning(

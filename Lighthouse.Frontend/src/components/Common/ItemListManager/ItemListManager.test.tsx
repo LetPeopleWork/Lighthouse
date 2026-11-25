@@ -28,6 +28,22 @@ describe("ItemListManager", () => {
 		}
 	});
 
+	it("leaves the input and the chips enabled unless the list is disabled", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={items}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+			/>,
+		);
+
+		expect(screen.getByLabelText(`New ${title}`)).toBeEnabled();
+		expect(
+			screen.getByText("Item 1").closest(".MuiChip-root"),
+		).not.toHaveAttribute("aria-disabled");
+	});
+
 	it("calls onAddItem when Enter key is pressed with text input", () => {
 		render(
 			<ItemListManager

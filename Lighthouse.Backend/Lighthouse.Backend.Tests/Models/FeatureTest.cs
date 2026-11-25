@@ -269,6 +269,29 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
+        public void GetRemainingWorkForTeam_TeamHasNoWorkOnTheFeature_ReturnsMinusOne()
+        {
+            var subject = new Feature();
+            subject.AddOrUpdateWorkForTeam(new Team { Id = 1, Name = "Alpha" }, 4, 6);
+
+            var result = subject.GetRemainingWorkForTeam(new Team { Id = 2, Name = "Zulu" });
+
+            Assert.That(result, Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void ANewFeature_IsNotAParentFeatureAndNamesNoOwningTeam()
+        {
+            var subject = new Feature();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.IsParentFeature, Is.False);
+                Assert.That(subject.OwningTeam, Is.Empty);
+            }
+        }
+
+        [Test]
         public void GetRemainingWorkForTeam_DuplicateTeamIdExists_DoesNotThrow()
         {
             var team = new Team { Name = "Team A", Id = 12 };
