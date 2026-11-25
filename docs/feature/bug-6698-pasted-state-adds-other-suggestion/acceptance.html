@@ -231,6 +231,84 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The user types &#x27;Waiting for&#x27;, hovers the suggestion &#x27;Waiting for Deployment&#x27;, closes the list with Escape and presses Enter.
+</code></pre>
+
+<pre><code>The entered text &#x27;Waiting for&#x27; is added once; the suggestion that is no longer shown is not.
+</code></pre>
+
+<pre><code>The user gets the text they entered, not a suggestion they can no longer see.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx::adds the entered text, not a suggestion highlighted before the list was closed with Escape</p>
+
+<pre><code>Enter adds the last highlighted suggestion after the list closed.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The user types &#x27;Waiting for&#x27;, hovers &#x27;Waiting for Deployment&#x27;, tabs out of the field, clicks back into it and presses Enter.
+</code></pre>
+
+<pre><code>The entered text &#x27;Waiting for&#x27; is added once.
+</code></pre>
+
+<pre><code>Leaving and re-entering the field drops the old highlight.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx::adds the entered text, not a suggestion highlighted before the field lost and regained focus</p>
+
+<pre><code>A highlight survives blur and refocus and is added on Enter.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The user types &#x27;Waiting for A&#x27;, hovers &#x27;Waiting for Approval&#x27; and presses Enter.
+</code></pre>
+
+<pre><code>&#x27;Waiting for Approval&#x27; is added once.
+</code></pre>
+
+<pre><code>A suggestion the user picked for the current text is added.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx::adds the suggestion the mouse picked for the text now in the input</p>
+
+<pre><code>Enter adds the typed text &#x27;Waiting for A&#x27; and ignores a mouse pick.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

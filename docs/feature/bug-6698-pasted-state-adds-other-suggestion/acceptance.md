@@ -94,6 +94,96 @@ Fix that never adds the highlighted option, adding typed text only (second case 
 
 None.
 
+##### Covers
+
+P1
+
+```text
+The user types 'Waiting for', hovers the suggestion 'Waiting for Deployment', closes the list with Escape and presses Enter.
+```
+
+```text
+The entered text 'Waiting for' is added once; the suggestion that is no longer shown is not.
+```
+
+```text
+The user gets the text they entered, not a suggestion they can no longer see.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/ItemListManager\/ItemListManager\.pastedEntry\.test\.tsx\:\:adds the entered text\, not a suggestion highlighted before the list was closed with Escape
+
+```text
+Enter adds the last highlighted suggestion after the list closed.
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The user types 'Waiting for', hovers 'Waiting for Deployment', tabs out of the field, clicks back into it and presses Enter.
+```
+
+```text
+The entered text 'Waiting for' is added once.
+```
+
+```text
+Leaving and re-entering the field drops the old highlight.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/ItemListManager\/ItemListManager\.pastedEntry\.test\.tsx\:\:adds the entered text\, not a suggestion highlighted before the field lost and regained focus
+
+```text
+A highlight survives blur and refocus and is added on Enter.
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The user types 'Waiting for A', hovers 'Waiting for Approval' and presses Enter.
+```
+
+```text
+'Waiting for Approval' is added once.
+```
+
+```text
+A suggestion the user picked for the current text is added.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/ItemListManager\/ItemListManager\.pastedEntry\.test\.tsx\:\:adds the suggestion the mouse picked for the text now in the input
+
+```text
+Enter adds the typed text 'Waiting for A' and ignores a mouse pick.
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

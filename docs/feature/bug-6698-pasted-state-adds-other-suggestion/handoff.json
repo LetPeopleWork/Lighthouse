@@ -39,12 +39,51 @@
 "expected": "F18",
 "stimulus": "F17",
 "user_result": "F19"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F27",
+"test": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx::adds the entered text, not a suggestion highlighted before the list was closed with Escape"
+},
+"expected": "F25",
+"stimulus": "F24",
+"user_result": "F26"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F31",
+"test": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx::adds the entered text, not a suggestion highlighted before the field lost and regained focus"
+},
+"expected": "F29",
+"stimulus": "F28",
+"user_result": "F30"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F35",
+"test": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx::adds the suggestion the mouse picked for the text now in the input"
+},
+"expected": "F33",
+"stimulus": "F32",
+"user_result": "F34"
 }
 ]
 },
 "counters": {
 "E": 4,
-"F": 23,
+"F": 35,
 "P": 1,
 "S": 1
 },
@@ -115,6 +154,18 @@
 "F21": "When the user pastes or types a value and presses Enter, the value added is the entered text (in a matching suggestion's casing when one matches it), or the suggestion the user picked for the text now in the input; a suggestion highlighted before the input changed is never added in its place.",
 "F22": "When the user pastes or types a value with no suggestion picked for it and presses Enter, the value added is the text shown in the input; if a suggestion matches that text, the value added takes that suggestion's casing.",
 "F23": "When the user has picked a suggestion for the text now in the input and presses Enter, the picked suggestion is the value added.",
+"F24": "The user types 'Waiting for', hovers the suggestion 'Waiting for Deployment', closes the list with Escape and presses Enter.",
+"F25": "The entered text 'Waiting for' is added once; the suggestion that is no longer shown is not.",
+"F26": "The user gets the text they entered, not a suggestion they can no longer see.",
+"F27": "Enter adds the last highlighted suggestion after the list closed.",
+"F28": "The user types 'Waiting for', hovers 'Waiting for Deployment', tabs out of the field, clicks back into it and presses Enter.",
+"F29": "The entered text 'Waiting for' is added once.",
+"F30": "Leaving and re-entering the field drops the old highlight.",
+"F31": "A highlight survives blur and refocus and is added on Enter.",
+"F32": "The user types 'Waiting for A', hovers 'Waiting for Approval' and presses Enter.",
+"F33": "'Waiting for Approval' is added once.",
+"F34": "A suggestion the user picked for the current text is added.",
+"F35": "Enter adds the typed text 'Waiting for A' and ignores a mouse pick.",
 "F4": "In a states list (and every other list built on ItemListManager), the user lets a suggestion become highlighted, then pastes or types a different value and presses Enter: the pasted or typed value is added, not the earlier highlighted suggestion.",
 "F5": "Render the list with suggestions such as 'Waiting for Deployment' and 'Waiting for Approval'; open the suggestions and highlight 'Waiting for Deployment' with the mouse (and, in a second case, with the keyboard); then paste or type 'Waiting for Reproduction' and press Enter.",
 "F6": "onAddItem is called once with 'Waiting for Reproduction'. A suggestion that the user highlights and confirms with Enter while it is still shown is still added as before, and a case-insensitive match of a typed value to a suggestion still takes the suggestion's casing.",

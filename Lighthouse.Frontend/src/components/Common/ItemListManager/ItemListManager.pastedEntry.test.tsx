@@ -73,6 +73,54 @@ describe("ItemListManager entry confirmed with Enter", () => {
 		).toEqual([["Waiting for Approval"]]);
 	});
 
+	it("adds the suggestion the mouse picked for the text now in the input", async () => {
+		const { user, input } = renderList();
+
+		await user.type(input, "Waiting for A");
+		await user.hover(
+			await screen.findByRole("option", { name: "Waiting for Approval" }),
+		);
+		await user.keyboard("{Enter}");
+
+		expect(
+			onAddItem.mock.calls,
+			"A suggestion the mouse picked for the current text must be added.",
+		).toEqual([["Waiting for Approval"]]);
+	});
+
+	it("adds the entered text, not a suggestion highlighted before the list was closed with Escape", async () => {
+		const { user, input } = renderList();
+
+		await user.type(input, "Waiting for");
+		await user.hover(
+			await screen.findByRole("option", { name: "Waiting for Deployment" }),
+		);
+		await user.keyboard("{Escape}");
+		await user.keyboard("{Enter}");
+
+		expect(
+			onAddItem.mock.calls,
+			"Bug 6698: once the list is closed the highlighted suggestion is no longer shown; Enter must add the entered text.",
+		).toEqual([["Waiting for"]]);
+	});
+
+	it("adds the entered text, not a suggestion highlighted before the field lost and regained focus", async () => {
+		const { user, input } = renderList();
+
+		await user.type(input, "Waiting for");
+		await user.hover(
+			await screen.findByRole("option", { name: "Waiting for Deployment" }),
+		);
+		await user.tab();
+		await user.click(input);
+		await user.keyboard("{Enter}");
+
+		expect(
+			onAddItem.mock.calls,
+			"Bug 6698: a highlight does not survive leaving the field; Enter must add the entered text.",
+		).toEqual([["Waiting for"]]);
+	});
+
 	it("gives a typed value that matches a suggestion in other casing the suggestion's casing", async () => {
 		const { user, input } = renderList();
 
