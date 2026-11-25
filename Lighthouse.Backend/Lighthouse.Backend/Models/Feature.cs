@@ -78,6 +78,15 @@ namespace Lighthouse.Backend.Models
 
         public bool IsUsingDefaultFeatureSize { get; set; } = false;
 
+        /// <summary>
+        /// A Feature that is still open, has no child Work Items and is not counted by a default size. That is
+        /// what a Feature looks like while its Portfolio does not infer a size, so a list can say why it shows 0.
+        /// </summary>
+        public bool HasNoChildWorkItemsYet =>
+            StateCategory != StateCategories.Done
+            && !IsUsingDefaultFeatureSize
+            && FeatureWork.Sum(fw => fw.TotalWorkItems) == 0;
+
         public int Size
         {
             get

@@ -10,12 +10,14 @@ import WarningsIcon from "../WarningsIcon/WarningsIcon";
 type WarningsIndicatorProps = {
 	isDoneWithRemainingWork: boolean;
 	isUsingDefaultFeatureSize: boolean;
+	hasNoChildWorkItemsYet?: boolean;
 	dependencies?: IFeatureDependency[];
 };
 
 const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 	isDoneWithRemainingWork,
 	isUsingDefaultFeatureSize,
+	hasNoChildWorkItemsYet = false,
 	dependencies = [],
 }) => {
 	const { getTerm } = useTerminology();
@@ -24,7 +26,12 @@ const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
 	const warnings = featureWarningSentences(
-		{ isDoneWithRemainingWork, isUsingDefaultFeatureSize, dependencies },
+		{
+			isDoneWithRemainingWork,
+			isUsingDefaultFeatureSize,
+			hasNoChildWorkItemsYet,
+			dependencies,
+		},
 		{ workItemsTerm, featureTerm, portfolioTerm },
 	);
 

@@ -12,6 +12,7 @@ import {
 export type FeatureWarningInput = {
 	isDoneWithRemainingWork: boolean;
 	isUsingDefaultFeatureSize: boolean;
+	hasNoChildWorkItemsYet?: boolean;
 	dependencies?: IFeatureDependency[];
 };
 
@@ -28,16 +29,19 @@ export function featureWarningSentences(
 	{
 		isDoneWithRemainingWork,
 		isUsingDefaultFeatureSize,
+		hasNoChildWorkItemsYet = false,
 		dependencies = [],
 	}: FeatureWarningInput,
 	{ workItemsTerm, featureTerm, portfolioTerm }: FeatureWarningTerms,
 ): string[] {
 	const doneWithRemainingWorkWarning = `This ${featureTerm} is marked as done but still has remaining ${workItemsTerm}. Please verify if all work has been completed.`;
 	const defaultSizeWarning = `No child ${workItemsTerm} were found for this ${featureTerm}. The remaining ${workItemsTerm} displayed are based on the default ${featureTerm} size specified in the advanced project settings.`;
+	const noChildWorkItemsNote = `No child ${workItemsTerm} yet for this ${featureTerm}. It counts as 0 because default ${featureTerm} sizing is off in this ${portfolioTerm}'s settings.`;
 
 	return [
 		...(isDoneWithRemainingWork ? [doneWithRemainingWorkWarning] : []),
 		...(isUsingDefaultFeatureSize ? [defaultSizeWarning] : []),
+		...(hasNoChildWorkItemsYet ? [noChildWorkItemsNote] : []),
 		// Having a dependency is not a warning; only one with something wrong with it is.
 		...dependencies
 			.filter(isWorthWarningAbout)

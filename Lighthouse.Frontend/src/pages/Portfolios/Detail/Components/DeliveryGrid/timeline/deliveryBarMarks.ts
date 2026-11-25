@@ -46,6 +46,7 @@ export const warningInputFor = (feature: IFeature): FeatureWarningInput => ({
 		feature.stateCategory === "Done" &&
 		feature.getRemainingWorkForFeature() > 0,
 	isUsingDefaultFeatureSize: feature.isUsingDefaultFeatureSize,
+	hasNoChildWorkItemsYet: feature.hasNoChildWorkItemsYet,
 	dependencies: feature.dependsOn,
 });
 

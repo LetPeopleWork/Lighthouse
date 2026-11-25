@@ -52,6 +52,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             LastUpdated = DateTime.SpecifyKind(feature.Forecast?.CreationTime ?? DateTime.MinValue, DateTimeKind.Utc);
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
+            HasNoChildWorkItemsYet = feature.HasNoChildWorkItemsYet;
             Size = feature.Size;
             OwningTeam = feature.OwningTeam;
 
@@ -81,6 +82,8 @@ namespace Lighthouse.Backend.API.DTO
         }
 
         public bool IsUsingDefaultFeatureSize { get; }
+
+        public bool HasNoChildWorkItemsYet { get; }
 
         public int Size { get; }
 

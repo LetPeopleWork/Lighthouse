@@ -150,6 +150,7 @@ export const createWarningsColumn = (): DataGridColumn<
 	valueGetter: (_, row) =>
 		(row.stateCategory === "Done" && row.getRemainingWorkForFeature() > 0) ||
 		row.isUsingDefaultFeatureSize ||
+		row.hasNoChildWorkItemsYet === true ||
 		(row.dependsOn ?? []).some(isWorthWarningAbout),
 	renderCell: ({ row }) => (
 		<WarningsIndicator
@@ -157,6 +158,7 @@ export const createWarningsColumn = (): DataGridColumn<
 				row.stateCategory === "Done" && row.getRemainingWorkForFeature() > 0
 			}
 			isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
+			hasNoChildWorkItemsYet={row.hasNoChildWorkItemsYet}
 			dependencies={row.dependsOn}
 		/>
 	),

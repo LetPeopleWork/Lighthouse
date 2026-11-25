@@ -14,6 +14,7 @@ import type { IWorkItem, StateCategory } from "./WorkItem";
 export interface IFeature extends IWorkItem {
 	lastUpdated: Date;
 	isUsingDefaultFeatureSize: boolean;
+	hasNoChildWorkItemsYet?: boolean;
 	size: number;
 	owningTeam: string;
 	remainingWork: { [key: number]: number };
@@ -107,6 +108,7 @@ export const FeatureSchema = z.object({
 	size: z.number(),
 	owningTeam: z.string(),
 	isUsingDefaultFeatureSize: z.boolean(),
+	hasNoChildWorkItemsYet: z.boolean().optional().default(false),
 	parentWorkItemReference: z.string(),
 	isBlocked: z.boolean().optional().default(false),
 	url: z.string().nullable().optional(),
@@ -150,6 +152,7 @@ export class Feature implements IFeature {
 	type!: string;
 	lastUpdated!: Date;
 	isUsingDefaultFeatureSize!: boolean;
+	hasNoChildWorkItemsYet?: boolean;
 	parentWorkItemReference!: string;
 	isBlocked!: boolean;
 
@@ -252,6 +255,7 @@ export class Feature implements IFeature {
 		feature.size = data.size;
 		feature.owningTeam = data.owningTeam;
 		feature.isUsingDefaultFeatureSize = data.isUsingDefaultFeatureSize;
+		feature.hasNoChildWorkItemsYet = data.hasNoChildWorkItemsYet;
 		feature.parentWorkItemReference = data.parentWorkItemReference;
 		feature.isBlocked = data.isBlocked;
 		feature.url = data.url ?? "";

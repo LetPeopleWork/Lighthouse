@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Delivery } from "../../../models/Delivery";
+import { Delivery, type IDelivery } from "../../../models/Delivery";
 import { Feature, type IFeature } from "../../../models/Feature";
 import type { IForecast } from "../../../models/Forecasts/IForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
@@ -440,7 +440,9 @@ const theRowOf = (name: RegExp) => screen.findByRole("row", { name });
 
 const renderListOf = (...rows: IFeature[]) =>
 	renderAFeatureList(
-		<PortfolioFeatureList portfolio={{ ...new Portfolio(), id: 2 }} />,
+		<PortfolioFeatureList
+			portfolio={Object.assign(new Portfolio(), { id: 2 })}
+		/>,
 		{
 			terms: TENANT_TERMS,
 			featureService: aFeatureServiceAnswering(Promise.resolve(aList(rows))),
@@ -547,7 +549,7 @@ describe("a Feature without child Work Items says so on the Delivery timeline an
 			completionDates: [],
 			selectionMode: DeliverySelectionMode.Manual,
 			metricSnapshotCount: 0,
-		} as unknown as ConstructorParameters<typeof Delivery>[0]);
+		} as unknown as IDelivery);
 
 	const warningsOf = (feature: IFeature) =>
 		featureWarningSentences(
@@ -632,7 +634,9 @@ describe("a Feature without child Work Items says so on the Delivery timeline an
 		);
 
 		expect(
-			table.rows[0][table.headers.indexOf("Warnings")],
+			table.rows.find((row) => row[0].includes("Fresh idea"))?.[
+				table.headers.indexOf("Warnings")
+			],
 			"The export's Warnings cell must say Yes for a Feature that has the note.",
 		).toBe("Yes");
 	});
