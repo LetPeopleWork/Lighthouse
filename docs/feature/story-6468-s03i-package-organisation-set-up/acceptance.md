@@ -2,7 +2,131 @@
 
 ## Slices
 
-None.
+### S1
+
+##### Covers
+
+P1
+
+```text
+Before any file moves, look up every Organisation set-up type of the membership map in the compiled code, and every staying set-up file with its owner and reason
+```
+
+```text
+All 27 moving types are found in their old or their new namespace, and every staying file exists with an owner and a reason; a made-up type found in neither namespace, a made-up staying file that does not exist and one without an owner are each named
+```
+
+```text
+A maintainer sees which set-up types move, where to, and which set-up files stay with whom and why, before the move starts
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupMembershipArchUnitTest\.cs
+
+```text
+a moving type listed under the wrong layer whose wrong new namespace no code ever has, while it still sits in its old namespace
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Read the compiled references of the two Domain candidates, the weekly recurrence and the recurring-rule extensions, and the references the move takes out of namespace scope
+```
+
+```text
+Each candidate reaches only the kernel, the base library and the other candidate; a made-up candidate that reaches the database is named with the database context; the only reference that compiles today only by sharing a namespace and needs a using after the split is the blackout service calling the recurring-rule extensions
+```
+
+```text
+A maintainer knows the two calendar calculations can go to the module's Domain and which file needs a using line when they do
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupMembershipArchUnitTest\.cs
+
+```text
+a Domain candidate that reaches a set-up port through an attribute argument, which the compiled-reference reader does not see
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Ask every constant and static read-only string field of the test assembly that matches a moving type's old or new name, on the subject its rule reads, whether it keeps its declared role through the move
+```
+
+```text
+RED before the S1 rule edits, exactly the five Context patterns that see a set-up type in the old place and not in the new: the Work Items set-up pattern and its composite, the blackout seam's service implementation pattern, the board port's implementation pattern and the weekly recurrence full-name pattern, 80 type breaks in all; every Place pattern and every folder-only pattern holds; made-up keys show an undeclared pattern, a blind context, its composite and an old location widened into the new place are each named and a correctly widened context is not; no OrganisationSetup alternative reaches outside the module
+```
+
+```text
+A maintainer sees, by class and field, every rule that would silently stop seeing the set-up types at the move, and which rules rightly stay in the old place
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupMembershipArchUnitTest\.cs
+
+```text
+a Context pattern widened to only the Application namespace, which stops seeing the two Domain types
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Read every string literal of the test project that names a moving set-up type or file by its old Services path and compare it with the fixed rename list
+```
+
+```text
+Every such literal is on the list for its file, in its old or its new form, and every listed string still exists in one form unless its list row may leave; a made-up unlisted old full name and a listed string found in neither form are each named
+```
+
+```text
+A maintainer knows every test string the move must rename, so no list or rule is left naming an empty old place
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupMembershipArchUnitTest\.cs
+
+```text
+an old full name built at run time from pieces in a method body, which no literal sweep can read
+```
+
+###### Obligations
+
+
 
 ## Expectations
 

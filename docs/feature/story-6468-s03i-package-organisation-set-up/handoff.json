@@ -1,9 +1,85 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"T1",
+"L2/F141",
+"L2/F143"
+],
+"still_passes_if": "F223",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs"
+},
+"expected": "F221",
+"stimulus": "F220",
+"user_result": "F222"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"T1",
+"L2/F142",
+"L2/F144"
+],
+"still_passes_if": "F227",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs"
+},
+"expected": "F225",
+"stimulus": "F224",
+"user_result": "F226"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"T1"
+],
+"still_passes_if": "F231",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs"
+},
+"expected": "F229",
+"stimulus": "F228",
+"user_result": "F230"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"T1"
+],
+"still_passes_if": "F235",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs"
+},
+"expected": "F233",
+"stimulus": "F232",
+"user_result": "F234"
+}
+]
+},
 "counters": {
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 219,
+"F": 235,
 "K": 9,
 "L": 6,
 "P": 4,
@@ -2569,7 +2645,23 @@
 "F218": "Run architecture-rules with the oracle class fragments for the Organisation set-up boundary rules (OrganisationSetupMembershipArchUnitTest, OrganisationSetupRulesNameOnlyTheModuleArchUnitTest and the slices' boundary and event-publisher classes): one pass line per test. Downstream modules reach Organisation set-up by namespace with no list entry, Tracker integration only along its one listed edge, Organisation set-up has its own boundary rules read from the IL, no second controller publishes a set-up event unseen, and every rule naming Organisation set-up uses Modules.OrganisationSetup only, with no rule constant or literal naming a moved type by its old place.",
 "F219": "Organisation set-up types live in Modules/OrganisationSetup in their measured layer with unit tests beside them: test-selection-show on the new module paths shows the moved tests selected, and backend-tests with a fragment shows the named tests green. The application behaves as before: ef-model-unchanged reports the EF model unchanged for every provider, and the full filtered backend-tests suite, run as a background shell job (about 8 minutes) and read when it ends, shows 0 failed. That only namespaces changed in production files, and Program.cs order, are not shown by any probe and are left to the whole-candidate review.",
 "F22": "D-3 Models: every set-up Models type stays in the kernel (EF entities, types reached by entities, wire types, events handled by other contexts); ManualRankComparer stays by default for S04b.",
+"F220": "Before any file moves, look up every Organisation set-up type of the membership map in the compiled code, and every staying set-up file with its owner and reason",
+"F221": "All 27 moving types are found in their old or their new namespace, and every staying file exists with an owner and a reason; a made-up type found in neither namespace, a made-up staying file that does not exist and one without an owner are each named",
+"F222": "A maintainer sees which set-up types move, where to, and which set-up files stay with whom and why, before the move starts",
+"F223": "a moving type listed under the wrong layer whose wrong new namespace no code ever has, while it still sits in its old namespace",
+"F224": "Read the compiled references of the two Domain candidates, the weekly recurrence and the recurring-rule extensions, and the references the move takes out of namespace scope",
+"F225": "Each candidate reaches only the kernel, the base library and the other candidate; a made-up candidate that reaches the database is named with the database context; the only reference that compiles today only by sharing a namespace and needs a using after the split is the blackout service calling the recurring-rule extensions",
+"F226": "A maintainer knows the two calendar calculations can go to the module's Domain and which file needs a using line when they do",
+"F227": "a Domain candidate that reaches a set-up port through an attribute argument, which the compiled-reference reader does not see",
+"F228": "Ask every constant and static read-only string field of the test assembly that matches a moving type's old or new name, on the subject its rule reads, whether it keeps its declared role through the move",
+"F229": "RED before the S1 rule edits, exactly the five Context patterns that see a set-up type in the old place and not in the new: the Work Items set-up pattern and its composite, the blackout seam's service implementation pattern, the board port's implementation pattern and the weekly recurrence full-name pattern, 80 type breaks in all; every Place pattern and every folder-only pattern holds; made-up keys show an undeclared pattern, a blind context, its composite and an old location widened into the new place are each named and a correctly widened context is not; no OrganisationSetup alternative reaches outside the module",
 "F23": "D-4 Repositories stay in Services/*/Repositories, named in the membership with owner (S05c Team, S05d Portfolio, S05e connections, Organisation set-up for settings, terminology and blackouts) and target Modules/OrganisationSetup/Adapters/Persistence when S05 or S10 reshape repositories.",
+"F230": "A maintainer sees, by class and field, every rule that would silently stop seeing the set-up types at the move, and which rules rightly stay in the old place",
+"F231": "a Context pattern widened to only the Application namespace, which stops seeing the two Domain types",
+"F232": "Read every string literal of the test project that names a moving set-up type or file by its old Services path and compare it with the fixed rename list",
+"F233": "Every such literal is on the list for its file, in its old or its new form, and every listed string still exists in one form unless its list row may leave; a made-up unlisted old full name and a listed string found in neither form are each named",
+"F234": "A maintainer knows every test string the move must rename, so no list or rule is left naming an empty old place",
+"F235": "an old full name built at run time from pieces in a method body, which no literal sweep can read",
 "F24": "D-5 The four context seeders (AppSettingSeeder, TerminologySeeder, OptionalFeatureSeeder, CategoryListNormalisationSeeder) stay in Services/Implementation/Seeding, owner Organisation set-up, target module start-up (S09a). Rejected: moving them to Adapters/Seeding (a second seeding decision in the Epic).",
 "F25": "D-6 Nothing of Team and Portfolio moves; no unit, level or event change. Their settings services move (AppSettingService, ConnectionSaveService, WorkTrackingSystemConnectionUsage). The brief IN line narrows accordingly (amended in S5).",
 "F26": "D-7 Rules first: EXTEND the shared NamespaceMoveLaw (it already carries PatternDeclaration Context, Place and Composite roles) with an Organisation set-up map and a per-pattern declaration. For every regex-valued const or static readonly string field and every moved type, the law evaluates the field against its declared subject (Namespace or FullName; an undeclared field is evaluated on both and a match on either fails until declared). A field whose old subject matches carries a role: Context must also match the new subject (S1 widens Namespace fields with the alternative for Modules.OrganisationSetup, FullName fields with the new full name), Place must not match the new subject. Composite fields are declared CompositeOf their component and follow it by reference. String fields equal to an old namespace or old full name take roles by equality. Inline method-body literals are caught only by the literal sweep, whose rename list is fixed at S1 from the pre-move grep. Rejected: a text sweep alone (misses the loose-namespace patterns, which name no type) and plain widening of every match (wrong for Place patterns).",
