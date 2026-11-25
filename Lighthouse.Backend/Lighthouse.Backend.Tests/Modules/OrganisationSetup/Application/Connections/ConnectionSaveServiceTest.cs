@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
+namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application.Connections
 {
     public class ConnectionSaveServiceTest
     {

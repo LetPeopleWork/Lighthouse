@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using System.Linq;
 
-namespace Lighthouse.Backend.Tests.API
+namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application
 {
     [TestFixture]
     public class TerminologyServiceTest

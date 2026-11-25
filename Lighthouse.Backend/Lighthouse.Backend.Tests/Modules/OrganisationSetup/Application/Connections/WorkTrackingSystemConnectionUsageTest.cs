@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 using System.Linq.Expressions;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application.Connections
 {
     public class WorkTrackingSystemConnectionUsageTest
     {
