@@ -90,3 +90,8 @@ Authority: `architecture.md` (rendered from `handoff.json`), Quint model and rec
 
 - **Team page shows no note.** With the switch off a childless Feature carries no Team work, so it is not listed on any Team page at all; the note shows on the Portfolio Feature list and the Delivery timeline only. This follows from the confirmed rule "no Team carries work for it"; listing such Features on Team pages would be a product change.
 - The setting takes effect on the next refresh cycle, as Default Feature Size does today.
+
+## DEVOPS — 2026-11-25
+
+- **Platform risk:** none. One additive NOT NULL DEFAULT true column on Portfolios (expand-only, `Create-Migration.ps1` for every provider); no new service, configuration, port, secret or CI change.
+- **Usage-data event:** `DefaultFeatureSizingSwitchedOff = 29`, name-only, no properties. The frontend sends it once when a Portfolio settings save that changes the switch from on to off is accepted; not on switching on, on saving an unchanged off, or on create. It counts how many Portfolios actually opt out of default sizing, the outcome this Story exists for. S1 emits it and adds the catalog row to `docs/settings/usagedata.md` ("Nothing. Not which Portfolio, not how many Features, not whose").

@@ -248,6 +248,11 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Test budgets: default per-test and property budgets and default CI share apply; no derogation requested. Test command cwd is the repository root.
 </code></pre>
 
+<h4>K8</h4>
+
+<pre><code>Platform risk: none. One additive NOT NULL DEFAULT true column on Portfolios (expand-only), generated with Create-Migration.ps1 for every provider; no new service, config, port, secret or CI change.
+</code></pre>
+
 <h3>Reuse</h3>
 
 <p>GetFeaturesToExtrapolate</p>
@@ -1029,6 +1034,34 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Section 4: one line on the sizing switch under Work Items
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Append DefaultFeatureSizingSwitchedOff = 29
+</code></pre>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Frontend mirror of the event name
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/ConnectionDefault/useParentSourcesSavedReporter.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Reporter pattern reused for the on-to-off save; the crafter may add a sibling reporter instead
+</code></pre>
+
+<p>docs/settings/usagedata.md</p>
+
+<p>Extend</p>
+
+<pre><code>Catalog row next to Outlier handling was switched off
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs</p>
 
 <h4>Verification</h4>
@@ -1037,6 +1070,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioSettingDtoCompatibilityTest
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchShapingPropertyGuardTest
 pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx
+pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSettings/ModifyProjectSettings.usageData.test.tsx
 </code></pre>
 
 <h4>Supports</h4>
@@ -1050,6 +1084,8 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSett
 <p>Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx</p>
 
 <p>Lighthouse.Frontend/src/tests/TestDataProvider.ts</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.usageData.test.tsx</p>
 
 <h4>Public oracle</h4>
 
@@ -1088,7 +1124,8 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSett
 
 <h5>Constraints</h5>
 
-<p>None.</p>
+<pre><code>Usage data: append DefaultFeatureSizingSwitchedOff = 29 to UsageDataEventName (backend and frontend mirror), name-only, no properties. The frontend emits it once when a Portfolio settings save that changes the switch from on to off is accepted by the server, after the pattern of useParentSourcesSavedReporter and OutlierHandlingSwitchedOff = 28. Not sent on switching on, on saving an unchanged off, or on create. The catalog row in docs/settings/usagedata.md carries: Nothing. Not which Portfolio, not how many Features, not whose.
+</code></pre>
 
 <h5>Reuse</h5>
 
@@ -1198,6 +1235,42 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSett
 <p>Extend</p>
 
 <pre><code>Section 4 module list gains one line
+</code></pre>
+
+<p>OutlierHandlingSwitchedOff</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:109</p>
+
+<p>Extend</p>
+
+<pre><code>Next integer in the same enum, never renumbered
+</code></pre>
+
+<p>OutlierHandlingSwitchedOff</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:53</p>
+
+<p>Extend</p>
+
+<pre><code>Mirror of the backend enum
+</code></pre>
+
+<p>useParentSourcesSavedReporter</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ConnectionDefault/useParentSourcesSavedReporter.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing save-accepted reporter pattern
+</code></pre>
+
+<p>Outlier</p>
+
+<p>docs/settings/usagedata.md:72</p>
+
+<p>Extend</p>
+
+<pre><code>Catalog row beside the sibling row
 </code></pre>
 
 <h5>Impact</h5>
@@ -1344,6 +1417,42 @@ pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSett
 <p>Changed</p>
 
 <pre><code>One line under Work Items
+</code></pre>
+
+<p>usage-data-enum</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:109</p>
+
+<p>Changed</p>
+
+<pre><code>New value 29, append only
+</code></pre>
+
+<p>usage-data-enum</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:53</p>
+
+<p>Changed</p>
+
+<pre><code>Mirror value
+</code></pre>
+
+<p>usage-reporter</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ConnectionDefault/useParentSourcesSavedReporter.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Emission on accepted on-to-off save
+</code></pre>
+
+<p>usage-catalog-doc</p>
+
+<p>docs/settings/usagedata.md:72</p>
+
+<p>Changed</p>
+
+<pre><code>New catalog row
 </code></pre>
 
 <h5>Agreement</h5>

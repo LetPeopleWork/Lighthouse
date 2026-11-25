@@ -3,8 +3,8 @@
 "B": 2,
 "C": 2,
 "D": 9,
-"F": 282,
-"K": 7,
+"F": 296,
+"K": 8,
 "L": 4,
 "N": 2,
 "P": 8,
@@ -125,6 +125,10 @@
 {
 "id": "K7",
 "text": "F83"
+},
+{
+"id": "K8",
+"text": "F283"
 }
 ],
 "constructors": [
@@ -572,6 +576,9 @@
 ],
 "driving_port": "F279"
 },
+"constraints": [
+"F288"
+],
 "contract_tests": [
 {
 "command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioSettingDtoCompatibilityTest",
@@ -680,6 +687,30 @@
 "kind": "architecture-doc",
 "locator": "ARCHITECTURE.md:85",
 "reason": "F274"
+},
+{
+"decision": "Changed",
+"kind": "usage-data-enum",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:109",
+"reason": "F293"
+},
+{
+"decision": "Changed",
+"kind": "usage-data-enum",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:53",
+"reason": "F294"
+},
+{
+"decision": "Changed",
+"kind": "usage-reporter",
+"locator": "Lighthouse.Frontend/src/components/Common/ConnectionDefault/useParentSourcesSavedReporter.ts:1",
+"reason": "F295"
+},
+{
+"decision": "Changed",
+"kind": "usage-catalog-doc",
+"locator": "docs/settings/usagedata.md:72",
+"reason": "F296"
 }
 ],
 "reuse": [
@@ -754,6 +785,30 @@
 "locator": "ARCHITECTURE.md:85",
 "reason": "F259",
 "symbol": "modules"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:109",
+"reason": "F289",
+"symbol": "OutlierHandlingSwitchedOff"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:53",
+"reason": "F290",
+"symbol": "OutlierHandlingSwitchedOff"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/ConnectionDefault/useParentSourcesSavedReporter.ts:1",
+"reason": "F291",
+"symbol": "useParentSourcesSavedReporter"
+},
+{
+"decision": "Extend",
+"locator": "docs/settings/usagedata.md:72",
+"reason": "F292",
+"symbol": "Outlier"
 }
 ]
 },
@@ -762,7 +817,8 @@
 "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs",
 "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioSettingDtoCompatibilityTest.cs",
 "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx",
-"Lighthouse.Frontend/src/tests/TestDataProvider.ts"
+"Lighthouse.Frontend/src/tests/TestDataProvider.ts",
+"Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.usageData.test.tsx"
 ],
 "targets": [
 {
@@ -824,13 +880,34 @@
 "change": "Extend",
 "path": "ARCHITECTURE.md",
 "reason": "F244"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs",
+"reason": "F284"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts",
+"reason": "F285"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/ConnectionDefault/useParentSourcesSavedReporter.ts",
+"reason": "F286"
+},
+{
+"change": "Extend",
+"path": "docs/settings/usagedata.md",
+"reason": "F287"
 }
 ],
 "verification": [
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DefaultFeatureSizingTest",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioSettingDtoCompatibilityTest",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchShapingPropertyGuardTest",
-"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx"
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSettings/ModifyProjectSettings.usageData.test.tsx"
 ]
 },
 "S2": {
@@ -1317,7 +1394,21 @@
 "F280": "Frontend and API inward to Portfolio; WorkItemService to Portfolio selectors",
 "F281": "An older payload without the field never turns the switch off; explicit false and true are honoured",
 "F282": "Stored switch after the save equals the previous value for absent and the wire value otherwise",
+"F283": "Platform risk: none. One additive NOT NULL DEFAULT true column on Portfolios (expand-only), generated with Create-Migration.ps1 for every provider; no new service, config, port, secret or CI change.",
+"F284": "Append DefaultFeatureSizingSwitchedOff = 29",
+"F285": "Frontend mirror of the event name",
+"F286": "Reporter pattern reused for the on-to-off save; the crafter may add a sibling reporter instead",
+"F287": "Catalog row next to Outlier handling was switched off",
+"F288": "Usage data: append DefaultFeatureSizingSwitchedOff = 29 to UsageDataEventName (backend and frontend mirror), name-only, no properties. The frontend emits it once when a Portfolio settings save that changes the switch from on to off is accepted by the server, after the pattern of useParentSourcesSavedReporter and OutlierHandlingSwitchedOff = 28. Not sent on switching on, on saving an unchanged off, or on create. The catalog row in docs/settings/usagedata.md carries: Nothing. Not which Portfolio, not how many Features, not whose.",
+"F289": "Next integer in the same enum, never renumbered",
 "F29": "default sizing is switched on for both, next to Default Feature Size, and their Feature counts are as before",
+"F290": "Mirror of the backend enum",
+"F291": "Existing save-accepted reporter pattern",
+"F292": "Catalog row beside the sibling row",
+"F293": "New value 29, append only",
+"F294": "Mirror value",
+"F295": "Emission on accepted on-to-off save",
+"F296": "New catalog row",
 "F3": "A Portfolio owner can switch default (inferred) Feature sizing off. When it is off, a Feature with no child Work Items gets size 0: Lighthouse invents no count for it and assigns nothing to any Team, and forecasts take that 0 as it comes. When it is on, Lighthouse behaves as today.",
 "F30": "With the switch off, a not-Done Feature with no child Work Items gets size 0: no inferred count, no remaining work assigned to any Team, and forecasts take the 0 as it comes.",
 "F31": "A per-Portfolio on/off switch for default Feature sizing in the advanced settings next to Default Feature Size, on for existing and new Portfolios.",

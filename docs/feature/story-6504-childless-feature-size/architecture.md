@@ -115,6 +115,12 @@ Copy uses the configurable terms (Feature, Work Items, Portfolio) from the termi
 Test budgets: default per-test and property budgets and default CI share apply; no derogation requested. Test command cwd is the repository root.
 ```
 
+#### K8
+
+```text
+Platform risk: none. One additive NOT NULL DEFAULT true column on Portfolios (expand-only), generated with Create-Migration.ps1 for every provider; no new service, config, port, secret or CI change.
+```
+
 ### Reuse
 
 GetFeaturesToExtrapolate
@@ -1011,6 +1017,38 @@ Extend
 Section 4: one line on the sizing switch under Work Items
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs
+
+Extend
+
+```text
+Append DefaultFeatureSizingSwitchedOff = 29
+```
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts
+
+Extend
+
+```text
+Frontend mirror of the event name
+```
+
+Lighthouse\.Frontend\/src\/components\/Common\/ConnectionDefault\/useParentSourcesSavedReporter\.ts
+
+Extend
+
+```text
+Reporter pattern reused for the on-to-off save; the crafter may add a sibling reporter instead
+```
+
+docs\/settings\/usagedata\.md
+
+Extend
+
+```text
+Catalog row next to Outlier handling was switched off
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/WorkItems\/Application\/DefaultFeatureSizingTest\.cs
 
 #### Verification
@@ -1020,6 +1058,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioSettingDtoCompatibilityTest
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchShapingPropertyGuardTest
 pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx
+pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSettings/ModifyProjectSettings.usageData.test.tsx
 ```
 
 #### Supports
@@ -1033,6 +1072,8 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DTO\/PortfolioSettingDtoCo
 Lighthouse\.Frontend\/src\/components\/Common\/ProjectSettings\/Advanced\/FeatureSizeComponent\.test\.tsx
 
 Lighthouse\.Frontend\/src\/tests\/TestDataProvider\.ts
+
+Lighthouse\.Frontend\/src\/components\/Common\/ProjectSettings\/ModifyProjectSettings\.usageData\.test\.tsx
 
 #### Public oracle
 
@@ -1074,7 +1115,9 @@ None.
 
 ##### Constraints
 
-None.
+```text
+Usage data: append DefaultFeatureSizingSwitchedOff = 29 to UsageDataEventName (backend and frontend mirror), name-only, no properties. The frontend emits it once when a Portfolio settings save that changes the switch from on to off is accepted by the server, after the pattern of useParentSourcesSavedReporter and OutlierHandlingSwitchedOff = 28. Not sent on switching on, on saving an unchanged off, or on create. The catalog row in docs/settings/usagedata.md carries: Nothing. Not which Portfolio, not how many Features, not whose.
+```
 
 ##### Reuse
 
@@ -1196,6 +1239,46 @@ Extend
 
 ```text
 Section 4 module list gains one line
+```
+
+OutlierHandlingSwitchedOff
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs\:109
+
+Extend
+
+```text
+Next integer in the same enum, never renumbered
+```
+
+OutlierHandlingSwitchedOff
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts\:53
+
+Extend
+
+```text
+Mirror of the backend enum
+```
+
+useParentSourcesSavedReporter
+
+Lighthouse\.Frontend\/src\/components\/Common\/ConnectionDefault\/useParentSourcesSavedReporter\.ts\:1
+
+Extend
+
+```text
+Existing save-accepted reporter pattern
+```
+
+Outlier
+
+docs\/settings\/usagedata\.md\:72
+
+Extend
+
+```text
+Catalog row beside the sibling row
 ```
 
 ##### Impact
@@ -1358,6 +1441,46 @@ Changed
 
 ```text
 One line under Work Items
+```
+
+usage\-data\-enum
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/UsageData\/UsageDataEventName\.cs\:109
+
+Changed
+
+```text
+New value 29, append only
+```
+
+usage\-data\-enum
+
+Lighthouse\.Frontend\/src\/services\/Api\/UsageDataService\.ts\:53
+
+Changed
+
+```text
+Mirror value
+```
+
+usage\-reporter
+
+Lighthouse\.Frontend\/src\/components\/Common\/ConnectionDefault\/useParentSourcesSavedReporter\.ts\:1
+
+Changed
+
+```text
+Emission on accepted on-to-off save
+```
+
+usage\-catalog\-doc
+
+docs\/settings\/usagedata\.md\:72
+
+Changed
+
+```text
+New catalog row
 ```
 
 ##### Agreement
