@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 
-namespace Lighthouse.Backend.Services.Implementation.Connections
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections
 {
     /// <summary>How the owners a connection default is held for are named in its log entry.</summary>
     internal sealed record OwnerWords(string One, string Many);

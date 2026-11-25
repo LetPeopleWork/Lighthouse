@@ -7,7 +7,7 @@ using System.Globalization;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
 {
     public class AppSettingService(
         IRepository<AppSetting> repository,

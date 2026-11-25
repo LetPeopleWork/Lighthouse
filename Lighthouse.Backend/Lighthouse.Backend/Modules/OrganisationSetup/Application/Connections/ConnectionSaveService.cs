@@ -6,7 +6,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Modules.WorkItems.Domain;
 
-namespace Lighthouse.Backend.Services.Implementation.Connections
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections
 {
     public class ConnectionSaveService(
         IRepository<WorkTrackingSystemConnection> connectionRepository,

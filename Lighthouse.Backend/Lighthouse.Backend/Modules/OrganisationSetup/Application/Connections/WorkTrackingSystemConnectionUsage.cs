@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections
 {
     public class WorkTrackingSystemConnectionUsage(IRepository<Team> teamRepository, IRepository<Portfolio> portfolioRepository) : IWorkTrackingSystemConnectionUsage
     {
