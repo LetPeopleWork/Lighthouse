@@ -286,7 +286,7 @@
 "counters": {
 "D": 5,
 "E": 5,
-"F": 198,
+"F": 204,
 "K": 2,
 "L": 2,
 "P": 3,
@@ -754,6 +754,34 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F199"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F200"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F201",
+"F202",
+"F203"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F204"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -885,8 +913,14 @@
 "F196": "The rule names the catch-only edge as offending in Reports wording",
 "F197": "An edge that is only caught, never constructed or called, can no longer slip into Reports unseen",
 "F198": "An IL reader that skips exception handlers would pass the rule without naming the edge; the test fails then",
+"F199": "Probe architecture-rules ReportsRulesNameOnlyTheModule from candidate checkout: Test Run Successful, 13 total, 13 passed, 0 failed. Passing tests include NoRuleConstantNamesReportsByItsFormerPlace, NoStringLiteralOutsideTheMeasurementFilesNamesReportsByItsFormerPlace, TheJointTrackerIntegrationPatternNamesReportsOnlyByTheModule_AndKeepsTheOldAccessAndLicensingGuard, EveryNarrowedReportsPatternStillMatchesATypeOfTheModule, TheListedMeasurementFilesAreExactlyTheFilesThatKeepAFormerForm, and made-up-offender tests per former form (plain name, regex alternative, group member, old folder path), a dead anchored pattern, and a stale measurement entry; each made-up offender is named and a Modules-only twin is not. Source: probe stdout file scratch/p1-e1-sweep.txt.",
 "F2": "Reports' boundaries are guarded by its own module rules and no rule still points at where it used to live",
 "F20": "Test side only, behaviour-free. No production file, no Program.cs, no configuration key changes. Carrier owners: rule constants stay on their existing rule classes (ModuleBoundariesArchUnitTest, TrackerIntegrationModuleBoundariesArchUnitTest, Access and Licensing module boundaries tests); the module rule shapes stay on ModuleRules; Reports module boundaries get one new NUnit fixture ReportsModuleBoundariesArchUnitTest that holds its inline lists by full type name. Procedural-style static rule helpers are the repository convention for architecture tests; no new class is invented beyond the fixture and its made-up offender types.",
+"F200": "Probe architecture-rules ReportsModuleBoundaries from candidate checkout: Test Run Successful, 37 total, 37 passed, 0 failed. Passing tests cover EveryReportsType_LivesInItsLayer_AndNoneIsLeftUnderServices (Domain, Application, Application.Metrics), TheReportsDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary, four AReportsListedRule_MatchesWhatTheCompiledCodeReaches_InBothDirections cases (outside to Domain, outside to Application, Application into forbidden code, Application into Flow metrics, Licensing, set-up and platform), each deleted-list-entry and deleted-edge case, and made-up offenders per rule (misplaced Reports type, Domain reaching a service, outside type reaching Domain or Application, Application reaching Data, API, module adapter, tracker, RBAC, update code and EF Core DbSet, unlisted Flow metrics, Licensing, set-up and platform types, an empty rule over nothing failing) each with a compliant twin. Output lines carry test names, not R-RP1 to R-RP6 labels; the mapping to rules is inferred from names. Source: scratch/p2-e2-boundaries.txt.",
+"F201": "Probe ef-model-unchanged: Sqlite and Postgres each print 'No changes have been made to the model since the last migration.'",
+"F202": "Probe backend-tests with fragment ReportsModuleBoundaries: Test Run Successful, 37 total, 37 passed, 0 failed. Source: scratch/p5-e4-fragment.txt.",
+"F203": "Probe backend-tests with no fragment (whole filtered backend run): Test Run Successful, 14830 total, 14818 passed, 0 failed, 12 skipped, exit 0; wall time about 7 minutes (started 15:43, finished about 15:50 CET). Source: scratch/p6-e4-whole.txt. The probe prints no diff, so no production-file change is observed.",
+"F204": "Probe test-selection-show Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs: backend true; jira false; ado false; linear false; servicenow false; github false; shared false.",
 "F21": "Claim-to-checker: every claim here is a finite set comparison over the compiled IL (listed types equal measured types, listed edges equal measured edges, both ways) or a text sweep. Quint, TLA+ and Agda are not applicable: there is no state machine, no transition, no temporal or fairness claim and no unbounded input, so a model would restate the set comparison. The executable checker is the NUnit oracle itself on the compiled IL, with a made-up offender per rule and per list position as falsifier. Liveness: not applicable, nothing runs over time. Types: Mono.Cecil IL reading gives string full names, so a list entry is a string key, not a type; the made-up offenders prove each key position is live. Property testing: not applicable, the domains are finite and enumerated.",
 "F22": "Measured baselines, re-measured from today's compiled IL (Release-equivalent IlDependencies read): Domain 3 types, Application 25 top-level types, Application.Metrics 8 types, 36 in all, ReportRepository the only Reports type left under Services. Domain reaches only Models (kernel) and System: R-RP2 exception list empty. Outside reaches Domain: 0 types, R-RP3 list empty. Outside reaches Application: API controllers and Program (allowed by role) plus ReportRepository: R-RP4 list holds 1. Application reaches Data, API, module Adapters, Tracker integration, RBAC, update code: none. EF Core: ReportBulkCommands -> DbUpdateException, ReportBulkRemover -> DbUpdateException: R-RP5 list holds 2. R-RP6 list holds 12 edges: DailySeriesSummary -> FlowMetrics.Domain.PercentileCalculator; ReportCommands and ReportQueries -> Licensing.Application.ILicenseService; ReportOwnerLookup, TeamReportMetricSeries and PortfolioReportMetricSeries -> Services.Interfaces.Repositories.IRepository1; six types (PortfolioReportMetricSeries, ReportBulkCommands, ReportCommands, ReportQueries, TeamReportMetricSeries, ThenAndNowTemplate) -> Platform.Host.ILighthouseClock. Flow metrics Application edges (TeamReportMetricSeries -> ITeamMetricsService, PortfolioReportMetricSeries -> IPortfolioMetricsService) are legal conformist edges and not listed.",
 "F23": "Difference from the DESIGN: the IL read yields 2 EF Core edges, not 3. ReportBulkRemover reaches DbUpdateConcurrencyException only in a catch clause, which the IL reader does not see (known reader limit); its DbUpdateException edge is seen. The list holds the 2 measured edges and the rule is compared both ways on them. The Application type count is 25 types (DESIGN counted 20 files). The oracle must re-measure and the IL decides; the lists only shrink.",

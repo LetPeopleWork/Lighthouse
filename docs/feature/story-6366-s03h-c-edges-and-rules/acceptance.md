@@ -564,4 +564,50 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules ReportsRulesNameOnlyTheModule from candidate checkout: Test Run Successful, 13 total, 13 passed, 0 failed. Passing tests include NoRuleConstantNamesReportsByItsFormerPlace, NoStringLiteralOutsideTheMeasurementFilesNamesReportsByItsFormerPlace, TheJointTrackerIntegrationPatternNamesReportsOnlyByTheModule_AndKeepsTheOldAccessAndLicensingGuard, EveryNarrowedReportsPatternStillMatchesATypeOfTheModule, TheListedMeasurementFilesAreExactlyTheFilesThatKeepAFormerForm, and made-up-offender tests per former form (plain name, regex alternative, group member, old folder path), a dead anchored pattern, and a stale measurement entry; each made-up offender is named and a Modules-only twin is not. Source: probe stdout file scratch/p1-e1-sweep.txt.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules ReportsModuleBoundaries from candidate checkout: Test Run Successful, 37 total, 37 passed, 0 failed. Passing tests cover EveryReportsType_LivesInItsLayer_AndNoneIsLeftUnderServices (Domain, Application, Application.Metrics), TheReportsDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary, four AReportsListedRule_MatchesWhatTheCompiledCodeReaches_InBothDirections cases (outside to Domain, outside to Application, Application into forbidden code, Application into Flow metrics, Licensing, set-up and platform), each deleted-list-entry and deleted-edge case, and made-up offenders per rule (misplaced Reports type, Domain reaching a service, outside type reaching Domain or Application, Application reaching Data, API, module adapter, tracker, RBAC, update code and EF Core DbSet, unlisted Flow metrics, Licensing, set-up and platform types, an empty rule over nothing failing) each with a compliant twin. Output lines carry test names, not R-RP1 to R-RP6 labels; the mapping to rules is inferred from names. Source: scratch/p2-e2-boundaries.txt.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Probe ef-model-unchanged: Sqlite and Postgres each print 'No changes have been made to the model since the last migration.'
+```
+
+```text
+Probe backend-tests with fragment ReportsModuleBoundaries: Test Run Successful, 37 total, 37 passed, 0 failed. Source: scratch/p5-e4-fragment.txt.
+```
+
+```text
+Probe backend-tests with no fragment (whole filtered backend run): Test Run Successful, 14830 total, 14818 passed, 0 failed, 12 skipped, exit 0; wall time about 7 minutes (started 15:43, finished about 15:50 CET). Source: scratch/p6-e4-whole.txt. The probe prints no diff, so no production-file change is observed.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Probe test-selection-show Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs: backend true; jira false; ado false; linear false; servicenow false; github false; shared false.
+```
