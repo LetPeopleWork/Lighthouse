@@ -1,0 +1,28 @@
+{
+	"$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+	"packageManager": "pnpm",
+	"testRunner": "vitest",
+	"plugins": ["@stryker-mutator/vitest-runner"],
+	"vitest": {
+		"configFile": "vitest.mutation.6698.config.ts",
+		"related": false
+	},
+	"reporters": ["clear-text", "progress", "json"],
+	"coverageAnalysis": "perTest",
+	"incremental": true,
+	"incrementalFile": "reports/mutation/stryker-incremental-6698.json",
+	"concurrency": 4,
+	"timeoutMS": 60000,
+	"inPlace": true,
+	"disableTypeChecks": false,
+	"ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports"],
+	"mutate": [
+		"src/components/Common/ItemListManager/ItemListManager.tsx:160-166",
+		"src/components/Common/ItemListManager/ItemListManager.tsx:192-197"
+	],
+	"thresholds": { "high": 90, "low": 80, "break": 80 },
+	"jsonReporter": {
+		"fileName": "../docs/feature/bug-6698-pasted-state-adds-other-suggestion/mutation/stryker-6698-frontend.json"
+	},
+	"tempDirName": ".stryker-tmp-6698"
+}
