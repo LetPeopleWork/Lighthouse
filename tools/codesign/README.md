@@ -172,6 +172,92 @@ What a failure means:
   unblock-pin`). Make sure the `YUBI_PIN` secret holds the right PIN, undo the host changes, and only then
   re-run.
 
+## Renewing the certificate (every year)
+
+The certificate comes from SSL.com (OV code signing, "own YubiKey" with key attestation, ECC). A
+multi-year order still gives only a certificate of about one year: each year SSL.com sends a reminder, and
+you "reprocess" the order at no cost with a new key. Plan about one hour plus SSL.com's issuing time.
+
+What the repository expects, so that no code changes:
+
+- The key and certificate are in **PIV slot 9a**. `sign-windows.sh` signs with `pkcs11:id=%01`, which is
+  slot 9a.
+- The certificate is issued by **SSL.com Code Signing Intermediate CA ECC R2**, the file
+  `SSL_COM_CODE_SIGNING_INTERMEDIATE_CA_ECC_R2.crt` here. A certificate from another intermediate needs that
+  file replaced; an RSA certificate comes from another intermediate.
+- The key is **ECC P-384**. SSL.com does not accept P-256 from a YubiKey with firmware older than 5.7.4 (ours
+  is a YubiKey 5 NFC FIPS, firmware 5.4.3). The script does not depend on the curve.
+- The key needs its PIN once per session and no touch (`--pin-policy ONCE --touch-policy NEVER`). A touch
+  requirement would make the unattended sign job hang.
+- GitHub needs no change: the `YUBI_PIN` secret stays as long as the PIN stays.
+
+**Generating the new key deletes the old one at once.** From then until the new certificate is imported,
+nothing can be signed, so no release can go out in that window. Pushing to `main` stays fine: signing
+matters only for a release. Already signed binaries stay valid after the old certificate expires, because
+they are timestamped. Do the renewal on a day without a release, and only after SSL.com has validated the
+order, so the window lasts only as long as the issuing.
+
+1. **SSL.com: renew and validate.** Renew the order (renew link on the order, or the reprocess link in the
+   reminder) with the options above. Wait for the "order validated" email.
+2. **Free the YubiKey on the host.** Plug in the key. The host needs `ykman` (Arch: `yubikey-manager`).
+
+   ```bash
+   sudo systemctl stop lighthouse-codesign-runner
+   sudo systemctl start pcscd.socket
+   ykman info                          # device type and firmware
+   ykman piv info                      # slot 9A: algorithm, issuer, "Not after"
+   ykman piv keys info 9a              # PIN and touch policy of the old key
+   ykman piv certificates export 9a ~/old-9a.crt
+   ```
+
+3. **New key and attestation in slot 9a** (this deletes the old key). The management key prompt takes a
+   blank answer while the key still has the factory default. The CSR step asks for the PIN: the key allows
+   three tries.
+
+   ```bash
+   ykman piv keys generate --algorithm ECCP384 --pin-policy ONCE --touch-policy NEVER 9a ~/pub.pem
+   ykman piv certificates request -s "CN=LetPeopleWork GmbH" 9a ~/pub.pem ~/csr.pem
+   ykman piv keys attest 9a ~/attestation-9a.crt
+   ykman piv certificates export f9 ~/attestation-intermediate.crt
+   ykman piv keys info 9a              # must show ECCP384, PIN ONCE, touch NEVER
+   ```
+
+   Check that the attestation is for the new key: the two public keys must be the same.
+
+   ```bash
+   diff <(openssl x509 -in ~/attestation-9a.crt -pubkey -noout) ~/pub.pem && echo MATCH
+   ```
+
+4. **Submit the attestation.** On ssl.com go to Orders, then **details** on the order, then under
+   **attestation** click **manage** (on a reprocess, first **Delete** the previous attestation). Paste the
+   whole of `~/attestation-9a.crt` into **Attestation Certificate** and `~/attestation-intermediate.crt` into
+   **Intermediate Certificate**, from `-----BEGIN` to `-----END`, and submit. The form asks for no CSR. A
+   green "Successful attestation" alert means it was accepted. Do not choose eSigner or order a YubiKey.
+5. **Download the certificate** when SSL.com emails that it is issued. The order page can show "validated"
+   for a while after the email. Orders, then **download** on the order, then under **END ENTITY
+   CERTIFICATE** choose **individual certificates** and **Download**. From the zip, keep only the end-entity
+   `.crt` (named after LetPeopleWork) as `~/new-cert.crt`. Check it before importing: the issuer must be the
+   ECC R2 intermediate, and the public key must match the key in 9a. If `openssl` cannot load the file, add
+   `-inform DER`.
+
+   ```bash
+   openssl x509 -in ~/new-cert.crt -noout -subject -issuer -startdate -enddate
+   diff <(openssl x509 -in ~/new-cert.crt -pubkey -noout) ~/pub.pem && echo MATCH
+   ```
+
+6. **Import it and give the key back to the container.**
+
+   ```bash
+   ykman piv certificates import 9a ~/new-cert.crt
+   ykman piv info                      # slot 9A shows the new "Not after"
+   sudo systemctl stop pcscd.socket pcscd.service
+   sudo systemctl start lighthouse-codesign-runner
+   bash tools/codesign/check-host.sh   # must say: host is clean
+   ```
+
+7. **Verify.** Re-run the job `codesign-windows` of the latest `main` run, or wait for the next push. On
+   Windows, the signed exe's Digital Signatures tab shows the new certificate.
+
 ## Rolling back to an earlier image
 
 The runner uses the tag `latest` unless you pin another. When a new image breaks signing:
