@@ -703,7 +703,7 @@ describe("CreatePortfolioWizard", () => {
 			expect(savedSettings.blockedStalenessThresholdDays).toBe(0);
 		});
 
-		it("saves a newly created Portfolio with default Feature sizing switched on", async () => {
+		it("saves a newly created Portfolio with default Feature sizing switched off", async () => {
 			const { user, savePortfolioSettings } = await goToNameCreate();
 			await user.click(screen.getByRole("button", { name: /Create/i }));
 			await waitFor(() => {
@@ -711,8 +711,8 @@ describe("CreatePortfolioWizard", () => {
 			});
 			expect(
 				savePortfolioSettings.mock.calls[0][0].infersDefaultFeatureSize,
-				"A newly created Portfolio must be saved with default Feature sizing on, because new Portfolios keep today's behaviour until the owner switches it off.",
-			).toBe(true);
+				"A newly created Portfolio must be saved with default Feature sizing off, because new Portfolios count Features without child Work Items as 0 until the owner switches it on. Send infersDefaultFeatureSize false from the wizard's base settings.",
+			).toBe(false);
 		});
 
 		it("shows Back button that returns to Configure step", async () => {

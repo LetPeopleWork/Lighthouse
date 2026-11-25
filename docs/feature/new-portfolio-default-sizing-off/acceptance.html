@@ -151,7 +151,187 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The create wizard saves a new Portfolio without the person touching the switch
+</code></pre>
+
+<pre><code>The saved settings name the switch off
+</code></pre>
+
+<pre><code>A wizard-created Portfolio starts with sizing off
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.test.tsx</p>
+
+<pre><code>The wizard omits the field and relies on the server default
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A Portfolio stored on is saved by an older client that does not name the switch
+</code></pre>
+
+<pre><code>It stays on
+</code></pre>
+
+<pre><code>Existing Portfolios keep their value and forecasts do not move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NewPortfolioStartingValueTest.cs</p>
+
+<pre><code>A save without the field flips the stored value
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>An older client payload without the switch is read as the create route reads it and synced into a new Portfolio, and payloads naming true or false likewise
+</code></pre>
+
+<pre><code>Absent gives off, named values are kept and a stored value is kept on later saves
+</code></pre>
+
+<pre><code>Older scripts create Portfolios that start off
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioSettingDtoCompatibilityTest.cs</p>
+
+<pre><code>Absent keeps the old entity default on
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>The owner of a new Portfolio switches default sizing on and the Portfolio is refreshed again
+</code></pre>
+
+<pre><code>Features without child Work Items get the Default Feature Size again
+</code></pre>
+
+<pre><code>A person can opt in to inferred sizing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs</p>
+
+<pre><code>Switching on is ignored after create
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>Demo data is created and a demo Portfolio is opened
+</code></pre>
+
+<pre><code>Its switch is off except where a screenshot needs inferred sizing
+</code></pre>
+
+<pre><code>Demo Portfolios start off
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Follows from the entity default; which demo Portfolio needs on is measured per screenshot by the crafter, so no fixed expectation exists
+</code></pre>
+
+<p>crafter</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>A person creates a Portfolio without touching the sizing switch and it is refreshed with a Feature that has no child Work Items
+</code></pre>
+
+<pre><code>The Feature counts as 0 (0 of 0, No child Work Items yet), with or without a tracker estimate, and no Team carries invented work
+</code></pre>
+
+<pre><code>Features without child Work Items show no inferred size in a new Portfolio
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs</p>
+
+<pre><code>The switch reads off but the refresh still applies the Default Feature Size
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P5</p>
+
+<pre><code>A Portfolio is created without naming the switch, naming on and naming off, and clones of an on and an off Portfolio are created, on real SQLite saved and reloaded
+</code></pre>
+
+<pre><code>Absent gives off, named values are kept and clones copy the source value
+</code></pre>
+
+<pre><code>API, Clients and clone behave as promised
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NewPortfolioStartingValueTest.cs</p>
+
+<pre><code>Absent is stored on by the column default, or an explicit true is stored off
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
 
 <h2>Expectations</h2>
 

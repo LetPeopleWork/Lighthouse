@@ -1,9 +1,128 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F171",
+"test": "Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.test.tsx"
+},
+"expected": "F169",
+"stimulus": "F168",
+"user_result": "F170"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F122"
+],
+"still_passes_if": "F175",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NewPortfolioStartingValueTest.cs"
+},
+"expected": "F173",
+"stimulus": "F172",
+"user_result": "F174"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F179",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioSettingDtoCompatibilityTest.cs"
+},
+"expected": "F177",
+"stimulus": "F176",
+"user_result": "F178"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F125"
+],
+"still_passes_if": "F183",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs"
+},
+"expected": "F181",
+"stimulus": "F180",
+"user_result": "F182"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "crafter",
+"reason": "F187"
+},
+"expected": "F185",
+"stimulus": "F184",
+"user_result": "F186"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F191",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs"
+},
+"expected": "F189",
+"stimulus": "F188",
+"user_result": "F190"
+},
+{
+"covers": [
+"P3",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F117",
+"L1/F118",
+"L1/F119",
+"L1/F120",
+"L1/F121"
+],
+"still_passes_if": "F195",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NewPortfolioStartingValueTest.cs"
+},
+"expected": "F193",
+"stimulus": "F192",
+"user_result": "F194"
+}
+]
+},
 "counters": {
 "C": 1,
 "D": 11,
 "E": 7,
-"F": 167,
+"F": 195,
 "K": 5,
 "L": 2,
 "P": 7,
@@ -654,9 +773,37 @@
 "F165": "A cloned Portfolio keeps the sizing switch value of its source: a clone of a switch-on Portfolio is on, and a clone of a switch-off Portfolio is off.",
 "F166": "A person who switches Default Feature sizing on for a new Portfolio and saves gets Default Feature Size again for Features without child Work Items, as before this change.",
 "F167": "Demo Portfolios have the sizing switch off, except a demo Portfolio that must show Default Feature Size behaviour, which has it on explicitly.",
+"F168": "The create wizard saves a new Portfolio without the person touching the switch",
+"F169": "The saved settings name the switch off",
 "F17": "a Portfolio has the switch on",
+"F170": "A wizard-created Portfolio starts with sizing off",
+"F171": "The wizard omits the field and relies on the server default",
+"F172": "A Portfolio stored on is saved by an older client that does not name the switch",
+"F173": "It stays on",
+"F174": "Existing Portfolios keep their value and forecasts do not move",
+"F175": "A save without the field flips the stored value",
+"F176": "An older client payload without the switch is read as the create route reads it and synced into a new Portfolio, and payloads naming true or false likewise",
+"F177": "Absent gives off, named values are kept and a stored value is kept on later saves",
+"F178": "Older scripts create Portfolios that start off",
+"F179": "Absent keeps the old entity default on",
 "F18": "a person clones it",
+"F180": "The owner of a new Portfolio switches default sizing on and the Portfolio is refreshed again",
+"F181": "Features without child Work Items get the Default Feature Size again",
+"F182": "A person can opt in to inferred sizing",
+"F183": "Switching on is ignored after create",
+"F184": "Demo data is created and a demo Portfolio is opened",
+"F185": "Its switch is off except where a screenshot needs inferred sizing",
+"F186": "Demo Portfolios start off",
+"F187": "Follows from the entity default; which demo Portfolio needs on is measured per screenshot by the crafter, so no fixed expectation exists",
+"F188": "A person creates a Portfolio without touching the sizing switch and it is refreshed with a Feature that has no child Work Items",
+"F189": "The Feature counts as 0 (0 of 0, No child Work Items yet), with or without a tracker estimate, and no Team carries invented work",
 "F19": "the clone has the switch on; and a clone of a Portfolio with the switch off has it off",
+"F190": "Features without child Work Items show no inferred size in a new Portfolio",
+"F191": "The switch reads off but the refresh still applies the Default Feature Size",
+"F192": "A Portfolio is created without naming the switch, naming on and naming off, and clones of an on and an off Portfolio are created, on real SQLite saved and reloaded",
+"F193": "Absent gives off, named values are kept and clones copy the source value",
+"F194": "API, Clients and clone behave as promised",
+"F195": "Absent is stored on by the column default, or an explicit true is stored off",
 "F2": "A person who creates a Portfolio sees Features without child Work Items counted as 0, not as an inferred guess, unless they switch default Feature sizing on.",
 "F20": "A person can switch Default Feature sizing on for a new Portfolio",
 "F21": "a new Portfolio has the switch off",

@@ -103,10 +103,13 @@ namespace Lighthouse.Backend.Tests.API.DTO
         /// <summary>
         /// Every combination of what the Portfolio holds and what a save says about default Feature sizing.
         /// A payload that never heard of the switch must leave it where it was; only a payload that names it
-        /// moves it. A Portfolio nobody has saved yet holds the switch on.
+        /// moves it. A Portfolio nobody has saved yet holds the switch off, so a new Portfolio created by an
+        /// older client starts off and one that names the switch keeps what it names.
         /// </summary>
         [Test]
-        [TestCase(null, null, true)]
+        [TestCase(null, null, false)]
+        [TestCase(null, true, true)]
+        [TestCase(null, false, false)]
         [TestCase(true, null, true)]
         [TestCase(false, null, false)]
         [TestCase(true, false, false)]
@@ -125,7 +128,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             Assert.That(TheSwitchTheSettingsFormReads(portfolio), Is.EqualTo(heldAfter),
                 $"After a save that {(sentNow is null ? "does not mention" : $"sends {sentNow}")} infersDefaultFeatureSize on a Portfolio that held {(heldBefore?.ToString() ?? "nothing yet")}, "
-                + $"the switch should read {heldAfter}, because only an explicit value may move it and an older client must never turn default sizing off. Keep the stored value when the field is absent.");
+                + $"the switch should read {heldAfter}, because only an explicit value may move it. Keep the stored value when the field is absent, and start a new Portfolio off.");
         }
 
         private static PortfolioSettingDto Deserialize()
