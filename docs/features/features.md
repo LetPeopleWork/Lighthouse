@@ -112,6 +112,7 @@ A row warns when:
 
 - **It is marked done but still has remaining Work Items.** Worth checking whether the work really finished.
 - **It has no children, so its size comes from the [Default Feature Size](../portfolios/edit.html#default-feature-size).** The remaining Work Items you see are an assumption, not a count.
+- **It has no child Work Items yet, and default Feature sizing is off for its Portfolio.** It counts as 0 until it is broken down. See [Switching default Feature sizing off](../portfolios/edit.html#switching-default-feature-sizing-off).
 - **It depends on a Feature in no Portfolio they share.** Lighthouse reasons within a Portfolio, so a dependency reaching outside every Portfolio the two share can't be taken into account.
 - **It and another Feature are waiting on each other.** A loop has no order to resolve, so neither end of it can be taken into account.
 - **It depends on a Feature with no measured delivery to forecast from.** Nothing has been completed there, so the wait can't be given a date — see [when a Team cannot be forecast](../concepts/howlighthouseforecasts.html#when-a-team-cannot-be-forecast).

@@ -138,6 +138,17 @@ Lighthouse will determine the size in this order:
 
 If no child items are defined, it will fall back to the estimation. If no field is defined, or the field is defined but no estimate is found for a feature, it will fall back to the default or historical value (depending on your configuration).
 
+## Switching default Feature sizing off
+Some teams would rather see a Feature as empty than give it a size nobody counted. The switch **Infer a size for Features without child Work Items** sits at the top of this group. It is on for every Portfolio, old and new.
+
+When you switch it off:
+- A Feature without child Work Items counts as **0**. No Team carries remaining work for it, and every forecast that contains it, its own and a Delivery's, counts it as 0.
+- The State Override no longer applies. A Feature in one of those states keeps its real child Work Items.
+- The Default Feature Size, the historical percentile, the Size Estimate Field and the override states are greyed out. Lighthouse keeps their values, and they apply again as soon as you switch sizing back on.
+- In the Feature list and on the Delivery timeline, such a Feature shows **0 of 0**, and its warning reads *No child Work Items yet*.
+
+Features that are done, and Features that already have child Work Items, are counted exactly as before. The change applies on the next refresh of the Portfolio.
+
 ## Default Feature Size
 The easiest way is to define a fix number, for example 10 items. You can base this number on your historical data or just go with your gut.
 

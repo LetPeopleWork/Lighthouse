@@ -67,7 +67,7 @@ The name of the feature. This is also a clickable link, that points to this spec
 The item each Feature hangs under in your work tracking system — for example an *Initiative* or *Objective* if you use OKRs or some kind of quarterly planning. The name links to the item in your work tracking system; *No Parent* means the Feature has none. To take the parent from somewhere else, or from several places in order, set the [Parent sources](edit.html#parent-sources).
 
 Three further columns say something about every row:
-- **Warnings** carries one icon per Feature — a green check when there is nothing to say, an amber triangle when there is. Hover it to read every reason at once: a Feature marked done that still has open Work Items, one using the *Default Feature Size* because it isn't broken down yet, or a dependency Lighthouse can't take into account. See [Warnings](../features/features.html#warnings).
+- **Warnings** carries one icon per Feature — a green check when there is nothing to say, an amber triangle when there is. Hover it to read every reason at once: a Feature marked done that still has open Work Items, one using the *Default Feature Size* because it isn't broken down yet (or, with default Feature sizing off, one that has no child Work Items yet and counts as 0), or a dependency Lighthouse can't take into account. See [Warnings](../features/features.html#warnings).
 - **Active Work** shows whether any involved team currently has child items of this Feature in a [Doing State](./edit.html#states), and names the teams.
 - **Dependencies** lists the other Features this one is waiting on, read from your work tracking system. See [Dependencies](../features/features.html#dependencies).
 
