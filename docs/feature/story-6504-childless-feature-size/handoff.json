@@ -177,11 +177,11 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F368",
-"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: with default sizing off, the row says it has no child Work Items yet"
+"still_passes_if": "F387",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: with default sizing off, the childless row says it has no child Work Items yet and no default-size sentence"
 },
-"expected": "F366",
-"stimulus": "F365",
+"expected": "F386",
+"stimulus": "F385",
 "user_result": "F367"
 },
 {
@@ -190,11 +190,37 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F372",
+"still_passes_if": "F391",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: a Feature with real counts shows no warning"
+},
+"expected": "F389",
+"stimulus": "F388",
+"user_result": "F390"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F394",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: a Feature with no work counted but not flagged shows no warning"
+},
+"expected": "F389",
+"stimulus": "F392",
+"user_result": "F393"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F397",
 "test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: with default sizing on, a Feature counted by the default size keeps its default-size sentence only"
 },
-"expected": "F370",
-"stimulus": "F369",
+"expected": "F396",
+"stimulus": "F395",
 "user_result": "F371"
 },
 {
@@ -203,12 +229,25 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F376",
+"still_passes_if": "F401",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: a default-sized Feature with no work counted gets the default-size sentence and never the note"
+},
+"expected": "F399",
+"stimulus": "F398",
+"user_result": "F400"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F405",
 "test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the sentence owner gives the note alone for a childless Feature"
 },
-"expected": "F374",
-"stimulus": "F373",
-"user_result": "F375"
+"expected": "F403",
+"stimulus": "F402",
+"user_result": "F404"
 },
 {
 "covers": [
@@ -216,12 +255,38 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F380",
+"still_passes_if": "F409",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the sentence owner gives the default-size sentence alone for a default-sized Feature"
+},
+"expected": "F407",
+"stimulus": "F406",
+"user_result": "F408"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F413",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the sentence owner gives nothing for a Feature that is neither"
+},
+"expected": "F411",
+"stimulus": "F410",
+"user_result": "F412"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F417",
 "test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the timeline bar carries the note as a warning"
 },
-"expected": "F378",
-"stimulus": "F377",
-"user_result": "F379"
+"expected": "F415",
+"stimulus": "F414",
+"user_result": "F416"
 },
 {
 "covers": [
@@ -229,12 +294,51 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F384",
+"still_passes_if": "F421",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the timeline leaves a Feature with no work counted but not flagged unmarked"
+},
+"expected": "F419",
+"stimulus": "F418",
+"user_result": "F420"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F425",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the Delivery's Work Items warnings column lists the note"
+},
+"expected": "F423",
+"stimulus": "F422",
+"user_result": "F424"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F429",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the Delivery has something to warn about when a Feature has the note"
+},
+"expected": "F427",
+"stimulus": "F426",
+"user_result": "F428"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F432",
 "test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the exported table marks the childless Feature as having a warning"
 },
-"expected": "F382",
+"expected": "F430",
 "stimulus": "F381",
-"user_result": "F383"
+"user_result": "F431"
 }
 ]
 },
@@ -243,7 +347,7 @@
 "C": 2,
 "D": 9,
 "E": 8,
-"F": 384,
+"F": 432,
 "K": 8,
 "L": 4,
 "N": 2,
@@ -1768,34 +1872,65 @@
 "F362": "Only the refreshed childless Feature, not finished and not sized by the default, says it has no child Work Items yet; all other cases say it does not",
 "F363": "The list and timeline can tell a Feature with no child Work Items from one with real counts, so the note never claims a false cause",
 "F364": "A payload that says no child Work Items yet whenever total work is 0, or that leaves the field out and so reads as false for every Feature",
-"F365": "The Portfolio Feature list shows a refreshed Feature with no child Work Items while default Feature sizing is off, beside a Feature with real counts and one with no work counted but not flagged, under renamed terms",
-"F366": "The childless row's warning icon and tooltip say exactly: No child Work Items yet for this Bet. It counts as 0 because default Bet sizing is off in this Program's settings. The default-size sentence is absent. The other two rows show no warning",
 "F367": "The Portfolio owner reads why a Feature shows 0 instead of mistaking it for finished",
-"F368": "A note keyed on total work alone, which also marks a Feature with zero counted work that is not flagged, or a note with the default words Feature and Portfolio instead of the tenant's terms, or the note shown beside the default-size sentence",
-"F369": "The Portfolio Feature list shows a Feature counted by the default size while default Feature sizing is on",
 "F37": "Changing how Default Feature Size or its percentile is computed, and rewriting Delivery metrics history or archived Deliveries.",
-"F370": "Its warning keeps today's default-size sentence only, with no note about child Work Items",
 "F371": "With the switch on nothing changes for the Portfolio owner",
-"F372": "Replacing the default-size sentence with the new note whenever a Feature has no children, or showing both sentences",
-"F373": "The sentence owner is asked for the reasons of a childless Feature, a default-sized Feature and a clean Feature",
-"F374": "Childless gives the note alone; default-sized gives the default-size sentence alone; clean gives nothing",
-"F375": "Every place that lists a Feature's warnings says the same thing about it",
-"F376": "A sentence function that appends the note to the default-size sentence, or that derives the note from the default-size flag",
-"F377": "The Delivery timeline reads a childless Feature with warnings on, with warnings off, and the same Feature unflagged",
-"F378": "The bar carries the note as a warning, the Work Items warnings column lists the same note, the Delivery has something to warn about; an unflagged Feature with no counted work stays unmarked",
-"F379": "The Portfolio owner sees the note on the Delivery timeline bar where today's default-size warning sits",
 "F38": "No Epic, because 6504 is a single stand-alone Story (maintainer, 2026-11-25). DISCOVER and DIVERGE were skipped explicitly by the maintainer on 2026-11-25.",
-"F380": "A bar note keyed on size 0, or that reaches the bar but not the Work Items warnings column",
 "F381": "A Delivery containing a childless Feature is exported",
-"F382": "The Warnings cell of that Feature says Yes",
-"F383": "An exported report does not show a childless Feature as clean while the screen marks it",
-"F384": "An export that asks only about the default-size flag and so says No",
+"F385": "The Portfolio Feature list shows a refreshed Feature with no child Work Items while default Feature sizing is off, under a Feature list under a tenant that renamed Feature, Portfolio and Work Items",
+"F386": "The row's warning icon and tooltip say exactly the note in the tenant's own words (Tasks, Bet, Program) and no default-size sentence",
+"F387": "A note with the default words Work Items, Feature or Portfolio instead of the tenant's terms, or the note shown beside the default-size sentence",
+"F388": "The Feature list shows a Feature with real child counts",
+"F389": "No warning",
 "F39": "One general on/off switch for default (inferred) Feature sizing. On: today's behaviour, unchanged. Off: a Feature with no child Work Items gets size 0, so there is no inferred count and nothing is assigned to any Team (maintainer, 2026-11-25: 'a general switch to turn default size off, then we simply take 0 and live with the consequences').",
+"F390": "A Feature with real counts is not marked",
+"F391": "A note shown on every row",
+"F392": "The Feature list shows a Feature with no work counted but not flagged",
+"F393": "Only the refreshed childless Feature is marked, never one that merely counts 0",
+"F394": "A note keyed on total work alone",
+"F395": "The Feature list shows a Feature counted by the default size, default sizing on",
+"F396": "The default-size sentence only, no note",
+"F397": "The default-size sentence replaced by the note, or both shown",
+"F398": "The Feature list shows a default-sized Feature with no work counted",
+"F399": "Exactly the default-size sentence, never the note",
 "F4": "Default sizing on: a Feature without child Work Items is sized as today",
 "F40": "The Story's open forecast question is answered: no special forecast handling. When the switch is off, When / How Many forecasts, Delivery likelihood and the Delivery timeline take the 0 as it comes, whatever that means for dates and likelihood (maintainer, 2026-11-25).",
+"F400": "A guessed count is never labelled as a missing child count",
+"F401": "A note keyed on total work alone shown beside or instead of the default-size sentence",
+"F402": "The sentence owner is asked for a childless Feature",
+"F403": "The note alone",
+"F404": "Every place that lists a Feature's warnings says the same about it",
+"F405": "The note missing, or built from the default-size flag",
+"F406": "The sentence owner is asked for a default-sized Feature",
+"F407": "The default-size sentence alone",
+"F408": "Today's warning is unchanged",
+"F409": "The note appended to the default-size sentence",
 "F41": "Old records stay as recorded: Delivery metrics history and archived Deliveries keep the 'using default size' flag they were captured with; switching off changes only what is computed from then on.",
+"F410": "The sentence owner is asked for a Feature that is neither",
+"F411": "No sentence",
+"F412": "A clean Feature stays clean",
+"F413": "The note given for any zero-work Feature",
+"F414": "The Delivery timeline reads a childless Feature with warnings on",
+"F415": "The bar carries the note as a warning",
+"F416": "The owner sees the note on the timeline bar where today's warning sits",
+"F417": "A bar note keyed on size 0, or not reaching the bar",
+"F418": "The Delivery timeline reads a Feature with no work counted but not flagged",
+"F419": "No mark on the bar",
 "F42": "Done Features, Features that have child Work Items, and the percentile calculation of Default Feature Size are unaffected by the switch.",
+"F420": "No false note on the timeline",
+"F421": "A bar note keyed on size 0",
+"F422": "The Delivery's Work Items warnings column is asked about a childless Feature",
+"F423": "It lists the note",
+"F424": "The same note appears in the Delivery's Work Items list",
+"F425": "A note that reaches the bar but not the column",
+"F426": "The Delivery is asked whether it has anything to warn about, for a childless Feature",
+"F427": "Yes",
+"F428": "The warnings control is offered when the note applies",
+"F429": "A check that ignores the note",
 "F43": "Every changed view that shows data (Feature lists on Portfolio and Team pages, Delivery timeline, Delivery Feature-size chart, Portfolio advanced settings): what it shows while loading and when loading fails.",
+"F430": "The Warnings cell says Yes",
+"F431": "An exported report does not show a childless Feature as clean",
+"F432": "An export that reads only the default-size flag",
 "F44": "Context map placement after ADR-270/ADR-271: which bounded contexts the switch touches (Portfolio configuration, Feature sizing, Forecasting), the glossary term for the switch (proposed 'default Feature sizing'), whether turning it off publishes or reacts to a domain event (proposed: a Portfolio settings-changed event triggers the existing Feature recalculation), and the UI surface (proposed: the Portfolio's settings tab).",
 "F45": "End-of-DISCUSS checklist view: RBAC unchanged, the switch is a Portfolio setting edited by whoever edits Portfolio settings today (Portfolio admins). Lighthouse-Clients CLI/MCP: the Portfolio settings payload gains the switch and clients that read or write Portfolio settings must carry it; the Feature payload gains nothing new. Website: one line, e.g. 'Turn off default Feature sizing: a Feature without child Work Items counts as 0, never a guess'. Context map: see the Design open decision.",
 "F46": "No labelling change when the switch is on: the existing warning icon and sentence stay; no stronger 'assumed' mark (maintainer, 2026-11-25).",
