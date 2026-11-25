@@ -143,7 +143,7 @@ Three nwdes features on `main`, behaviour-free, no schema change, no route or DT
 
 ## Gates
 
-- Backend filtered suite (live connector categories left out), after rebasing onto origin: FULL_SUITE.
+- Backend filtered suite (live connector categories left out): 14827 passed, 0 failed before the rebase onto origin; after it, `dotnet build` 0 warnings and the Architecture namespace 1902 passed locally, then CI run 45639531555 green (Sonar gates OK, no new issue).
 - Architecture namespace: 1902 passed, 0 failed. `dotnet build Lighthouse.Backend`: 0 warnings.
 - Whole-candidate review: features A and B accepted; feature C accepted at the second round.
 - EXAMINE: feature A accepted (second round), feature B accepted (second round), feature C accepted (first round; 14818 passed, 0 failed in its own whole run).
