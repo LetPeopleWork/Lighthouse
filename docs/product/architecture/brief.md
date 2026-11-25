@@ -11839,3 +11839,29 @@ the 11 licence readers. S03g, S09a, S12, S04b and S12c as above.
 
 ADR-270 (Decision 1 Access and Licensing rows, "Every edge", "Edges measured by packaging Access and Licensing", ratchet
 candidate 2, Decision 6), ADR-268 (ratchet convention), ADR-001 (RBAC through one port).
+
+## Application Architecture — story-6468 s03i package organisation set-up
+
+### Module layout (as shipped)
+
+Story 6468 moved 27 types out of `Services/{Interfaces,Implementation}` into `Lighthouse.Backend.Modules.OrganisationSetup`
+(2026-11-25): the settings (`AppSettingService`), Terminology, blackout periods and recurring rules, Feature ordering and
+Feature ranking, the optional feature appliers, and connection defaults and connection usage. `WeeklyRecurrence` and the
+recurring-rule extensions are in `Domain`; the services and their ports are in `Application`, with `Application/Connections`
+and `Application/OptionalFeatures`. Each moved file differs from its old self only in its namespace and `using` lines. The unit
+tests moved with it, to `Lighthouse.Backend.Tests/Modules/OrganisationSetup`.
+
+Organisation set-up is an open host: every downstream module reaches its `Domain` and `Application` by namespace. Tracker
+integration reaches it along one listed edge (`ConnectionHealthCadence` to `IAppSettingService`). Its four events
+(`TeamDeleted`, `BlackoutConfigurationChanged`, `FeatureOrderingPolicyChanged`, `FeatureRankChanged`) are constructed only in
+its `Application`, except `TeamController` to `TeamDeleted`.
+
+### Left
+
+Teams, Portfolios and levels stay in the kernel and the repositories (Epic 6474; repositories S05c to S05e). The set-up events
+stay in `Models.Events`. The `TeamController` edge to `TeamDeleted` leaves with Epic 6474.
+
+### ADR references
+
+ADR-270 ("Edges measured by packaging Organisation set-up", Decision 1 Organisation set-up row, "Left open" Feature ranking and
+`ManualRank`), ADR-268 (ratchet convention).
