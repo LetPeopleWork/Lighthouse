@@ -207,7 +207,9 @@ Today the old-namespace alternatives in ReportsPattern, RefinementReportsAccessA
 
 ##### Promises
 
-None.
+P1
+
+P3
 
 #### Prefactoring
 

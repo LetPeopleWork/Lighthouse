@@ -108,6 +108,10 @@
 "public_oracle": {
 "expected": "F130",
 "falsifier": "F70",
+"promises": [
+"P1",
+"P3"
+],
 "stimulus": "F68"
 },
 "records": {
