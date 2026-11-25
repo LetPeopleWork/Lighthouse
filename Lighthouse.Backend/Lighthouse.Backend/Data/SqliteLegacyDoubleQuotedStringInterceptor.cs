@@ -7,12 +7,12 @@ namespace Lighthouse.Backend.Data
 {
     /// <summary>
     /// Restores SQLite's legacy double-quoted-string tolerance (DQS) on every opened SQLite connection.
-    /// SQLitePCLRaw.bundle_e_sqlite3 2.1.12 (pinned to resolve CVE-2025-6965) ships a SQLite engine with
+    /// SQLitePCLRaw.bundle_e_sqlite3 2.1.12 and later (the CVE-2025-6965 fix) ship a SQLite engine with
     /// DQS disabled, which rejects double-quoted identifiers that older engines silently reinterpreted as
     /// string literals. Several historical EF migrations regenerate table-rebuild SQL that relied on that
     /// lenient behaviour, so a from-scratch <c>Migrate()</c> otherwise fails with
     /// <c>no such column: "X" - should this be a string literal in single-quotes?</c>. Enabling DQS_DML/DQS_DDL
-    /// reproduces the pre-2.1.12 engine behaviour without reverting the security pin or rewriting applied
+    /// reproduces the pre-2.1.12 engine behaviour without going back to a vulnerable engine or rewriting applied
     /// migrations. No-op for non-SQLite providers.
     /// </summary>
     public sealed class SqliteLegacyDoubleQuotedStringInterceptor : DbConnectionInterceptor

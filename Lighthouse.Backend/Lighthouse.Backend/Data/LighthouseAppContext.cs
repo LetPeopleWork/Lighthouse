@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Data
         {
             // Restore SQLite's legacy double-quoted-string tolerance on every EF-opened connection.
             // No-op for non-SQLite providers. See SqliteLegacyDoubleQuotedStringInterceptor for rationale
-            // (SQLitePCLRaw 2.1.12 / CVE-2025-6965 security pin exposed a latent migration-SQL reliance).
+            // (the SQLite engine fixed for CVE-2025-6965 exposed a latent migration-SQL reliance).
             optionsBuilder.AddInterceptors(SqliteLegacyDoubleQuotedStringInterceptor.Instance);
             base.OnConfiguring(optionsBuilder);
         }
