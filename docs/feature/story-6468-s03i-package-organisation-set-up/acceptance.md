@@ -331,7 +331,7 @@ A new set-up type that no layer list names, since the layer rule checks the list
 P4
 
 ```text
-Run the Context-field check: every Context rule pattern that is not folder-only and does not take in all of Services is matched against the old namespace or full name of each of the 27 moved types, with an empty rename list; planted fields, one with an old alternative and one naming only the old place, are named; a narrowed one and one taking in all of Services pass
+Run the Context-field check: every Context rule pattern that is not folder-only and not on the exact list of 23 broad whole-backend, project-folder and Services-and-modules fields is matched against the old namespace or full name of each of the 27 moved types, with an empty rename list; the broad list is asserted equal to its expected names and each a declared Context field; planted fields (an old alternative, only the old place, Services alternated with the module) are named, a narrowed one passes
 ```
 
 ```text
@@ -349,7 +349,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest\.cs
 
 ```text
-an old Services alternative is re-added to any Context field that is not folder-only it fails naming that field
+an old Services alternative is re-added to any Context field not on the broad list it fails naming that field
 ```
 
 ###### Obligations
@@ -422,6 +422,7 @@ the module is added to an old-place pattern it fails naming the field and type
 ```
 
 ###### Obligations
+
 
 
 

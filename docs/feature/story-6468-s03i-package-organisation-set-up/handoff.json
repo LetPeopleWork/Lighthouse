@@ -211,11 +211,11 @@
 "L1/F70",
 "L1/F73"
 ],
-"still_passes_if": "F279",
+"still_passes_if": "F285",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs"
 },
 "expected": "F277",
-"stimulus": "F276",
+"stimulus": "F284",
 "user_result": "F278"
 },
 {
@@ -246,6 +246,7 @@
 "L6",
 "T6",
 "L6/F214",
+"L6/F283",
 "L1/F71",
 "L1/F72"
 ],
@@ -262,7 +263,7 @@
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 283,
+"F": 285,
 "K": 9,
 "L": 6,
 "P": 4,
@@ -2894,15 +2895,15 @@
 "F273": "No Place pattern matches a moved type in its new place (already satisfied; Place patterns untouched)",
 "F274": "Rules that ask whether a type is left in the old place never find it in the module",
 "F275": "the module is added to an old-place pattern it fails naming the field and type",
-"F276": "Run the Context-field check: every Context rule pattern that is not folder-only and does not take in all of Services is matched against the old namespace or full name of each of the 27 moved types, with an empty rename list; planted fields, one with an old alternative and one naming only the old place, are named; a narrowed one and one taking in all of Services pass",
 "F277": "RED at S5 start: names RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace, RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern, TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace, TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts, WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp (and no other field); GREEN once each names only the module",
 "F278": "A rule cannot keep naming the old Services place for set-up once the module exists, with or without naming the module",
-"F279": "an old Services alternative is re-added to any Context field that is not folder-only it fails naming that field",
 "F28": "D-9 New rules: OrganisationSetupModuleBoundariesArchUnitTest on the shared ModuleRules (R-OS1 layer membership, R-OS2 Domain reaches kernel and base library only, R-OS3 Application reaches no API, module adapter or downstream context except listed edges, EF Core only along listed edges, R-OS4 Tracker integration reaches set-up only along its listed edge, R-OS5 set-up events constructed only in set-up Application except the listed TeamController to TeamDeleted edge, R-OS6 downstream allowance by namespace), lists inline by full type name, compared both ways, only shrink, ModuleWording for Organisation set-up. FeatureOrderingSingleSource, RecurringBlackoutEventsSeam, ConnectionFetchShapeChangedSinglePublisher, OptionalFeatureApplierSeam, BlackoutForecastShiftSeam and CategoryListOwnershipGuard keep every assertion and change only through classified patterns and renamed literals.",
 "F280": "S5 Context-field actions, measured from source and the loose Services declarations (12 files in Services/Implementation and 6 in Services/Interfaces; sub-namespaces Repositories, Seeding, BackgroundServices.Update stay and are not old subjects of a moved type; Connections and OptionalFeatures hold no type). StrayLooseImplementation (14 full names, nested types included by plus-suffix): Lighthouse.Backend.Services.Implementation.{EstimateNormalizationResult, EstimateNormalizationBatchResult, EstimateNormalizer, FeatureListActiveWork, FeatureListOwners, FeatureListService, FeaturePositionMap, InProgressFeatureResolution, OrphanedFeatureCleanupService, WriteBackCollector, WriteBackRoundContext, WriteBackRound, WriteBackService, WriteBackTriggerService}. StrayLooseInterfaces (8 full names): Lighthouse.Backend.Services.Interfaces.{IFeatureListService, FeatureListRead, TeamAtWork, IFeaturePositionMap, IOrphanedFeatureCleanupService, IWriteBackCollector, IWriteBackService, IWriteBackTriggerService}. One definition, in WorkItemsModuleBoundariesArchUnitTest as internal constants StrayLooseImplementation, StrayLooseInterfaces and StrayLooseServices (the two joined), reused by the other rules as ModuleBoundariesArchUnitTest.RefinementPattern already is; the list is matched by full name (HaveFullNameMatching or the IL full-name predicate), never as a namespace, so the same types are matched as before and nothing loosens or tightens. (1) WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp: remove the alternative for the two loose namespaces, add StrayLooseServices; measured: the Work Items Application reaches one stray, IOrphanedFeatureCleanupService from PortfolioDeletedOrphanedFeatureCleanupHandler, the listed edge, and it must stay matched. (2) TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace: replace Services.Implementation with the sub-namespaces (Repositories|Seeding|BackgroundServices) plus StrayLooseImplementation; measured: the board port IBoardInformationProvider names only Models types and Tracker integration source names no stray type, so no stray is reached today, and the old reach is kept. (3) RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace: replace the Services.Implementation alternative with StrayLooseImplementation, reached by no one today (RecurringBlackoutRule references no stray), kept so the entity-does-not-reach-services rule does not loosen. (4) RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern: drop the Services.Implementation alternative; measured: WeeklyRecurrence is declared only in Modules.OrganisationSetup.Domain, so no staying type has that old full name and the exclusion cannot loosen. (5) TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts: drop the alternative Services.(Implementation|Interfaces).(Connections|OptionalFeatures); measured: no file declares either namespace; the other alternatives, including Modules.OrganisationSetup, stay unchanged.\n",
 "F281": "S5 docs closure, an observation at the candidate review and not a test (prose, reviewed): grep and read ADR-270 rows 62 and 63, line 289 and the Left-open lines 845-851; ARCHITECTURE.md section 4 row and the rules bullet; the feature brief and the ADO catalogue entry 6468, each showing Organisation set-up packaged in Modules/OrganisationSetup with no old Services namespace named as its home. The Place fields are covered by the finite law L6, which gains the case that every Place field still matches no moved type, observed by the same S5 oracle (F200).\n",
 "F282": "No Context field matches an old subject of a moved type and no test-project literal names an old full name or path of the 27, outside the exact self-exclusion list; every Place field still matches no moved type.",
 "F283": "Each Place field of the S1 declarations still matches no moved type",
+"F284": "Run the Context-field check: every Context rule pattern that is not folder-only and not on the exact list of 23 broad whole-backend, project-folder and Services-and-modules fields is matched against the old namespace or full name of each of the 27 moved types, with an empty rename list; the broad list is asserted equal to its expected names and each a declared Context field; planted fields (an old alternative, only the old place, Services alternated with the module) are named, a narrowed one passes",
+"F285": "an old Services alternative is re-added to any Context field not on the broad list it fails naming that field",
 "F29": "D-10 The 9 unit tests move with production to Lighthouse.Backend.Tests/Modules/OrganisationSetup/{Domain, Application, Application/Connections} (namespace = folder), including the misplaced API/TerminologyServiceTest and Services/BlackoutPeriodServiceTest; OrganisationSetupUnitTestPlacementTest keeps them there from S4. API, integration, ManualSorting, container and seeder tests stay and change only using lines. The test-improvement rule is waived for move-only and using-only edits; a mock-heavy moved test is noted for the reviewer, not rewritten.",
 "F3": "Every architecture rule keeps its verdict for every moving Organisation set-up type through the move, and every rule pattern that matches a moving type's old name is classified as standing for the context or for the place.",
 "F30": "D-11 DI: same registrations, order and lifetimes. Program.cs gains up to three using lines for the set-up namespaces and rewrites only the namespace text of the four fully qualified registrations (the three optional-feature lines and the ConnectionSaveService line); the loose usings stay. No AddOrganisationSetup (S09a).",

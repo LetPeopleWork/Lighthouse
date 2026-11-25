@@ -20,7 +20,34 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Properties, not constants: the other moves' checks read every string field of the test assembly as a rule pattern.
         private static string Architecture => "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/";
 
-        private static string TheLooseServicesAsAWhole => "Lighthouse.Backend.Services";
+        // The Context fields that name the whole backend, a project folder or all of Services, modules and platform alike: they see
+        // every loose type and every module, so the move leaves them as they are. Every other Context field is judged.
+        private static readonly string[] TheBroadContextFields =
+        [
+            "AccessAndLicensingUnitTestPlacementTest.ProductionProjectDirectory",
+            "AccessHttpAdaptersLayoutArchUnitTest.TheWholeAssembly",
+            "AdditionalFieldInUseRulePurityArchUnitTest.AnythingOfLighthouseOutsideModels",
+            "ApplicationCoreRules.ApplicationCore",
+            "CalendarDayAnchorSeamArchUnitTest.ProductionProjectDirectory",
+            "CategoryListOwnershipGuardTest.ProductionProject",
+            "ConnectorsDeclareNoUnsupportedMembersArchUnitTest.AllOfTheBackend",
+            "DependencySingleDecisionArchUnitTest.BackendProjectDirectory",
+            "FastWithManyFeaturesArchUnitTest.ProductionProjectDirectory",
+            "JiraRouteLiteralsTest.ProductionProjectDirectory",
+            "OverTimeReconstructionSeamArchUnitTest.ProductionProjectDirectory",
+            "ProductionSource.ProductionProjectDirectory",
+            "PromisesLayoutArchUnitTest.TheWholeAssembly",
+            "PromisesModuleBoundariesArchUnitTest.OutsideTrackerIntegration",
+            "PromisesUnitTestPlacementTest.ProductionProjectDirectory",
+            "RealityCheckReadOnlyArchUnitTest.ImplementationPattern",
+            "SecretReadPathSourceStructureTest.ProductionProjectDirectory",
+            "SecretRotationWriteSurfaceTest.ProductionProjectDirectory",
+            "StalenessPolicyPurityArchUnitTest.ServicesPattern",
+            "TrackerIntegrationApplicationLayoutArchUnitTest.TheWholeAssembly",
+            "TrackerIntegrationUnitTestPlacementTest.ProductionProjectDirectory",
+            "UpdateCancellationContextWriterArchUnitTest.ProductionProjectDirectory",
+            "ZonedTimestampParsingArchUnitTest.ProductionProjectDirectory",
+        ];
 
         private static string TheModuleNamespace => @"^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)";
 
@@ -73,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheSweepExclusions_AreExactlyTheFilesThatMustSpellTheOldNamesAndEachExists()
         {
-            var problems = WhenTheExclusionsAreComparedWithTheFiles(TheSweepExclusions, TheSweepExclusions);
+            var problems = WhenTheExclusionsAreComparedWithTheFiles(TheSweepExclusions, GivenTheFilesThatMustSpellTheOldNames());
 
             ThenTheExclusionsAreExactlyTheFiles(problems);
         }
@@ -86,6 +113,16 @@ namespace Lighthouse.Backend.Tests.Architecture
             var seeingTheNewPlace = WhenThePlaceFieldsAreAskedAboutTheNewNames(patterns, OrganisationSetupPatternRoles.PatternRoles);
 
             ThenNoPlaceFieldSeesAMovedTypeInItsNewPlace(seeingTheNewPlace);
+        }
+
+        [Test]
+        public void TheBroadContextFields_AreExactlyTheWholeBackendFieldsAndEachIsADeclaredContextField()
+        {
+            var expected = GivenTheBroadContextFieldsThatSeeEveryLooseTypeAndEveryModule();
+
+            var problems = WhenTheBroadFieldsAreComparedWithTheDeclaredRoles(TheBroadContextFields, expected, OrganisationSetupPatternRoles.PatternRoles);
+
+            ThenTheBroadFieldsAreExactlyTheExpectedDeclaredContextFields(problems);
         }
 
         [Test]
@@ -111,9 +148,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheExclusionCheck_NamesAnExtraPathAndAPathThatDoesNotExist()
         {
-            var exclusions = GivenExclusionsWithARealRuleFileAndAMadeUpPath(TheSweepExclusions);
+            var expected = GivenTheFilesThatMustSpellTheOldNames();
+            var exclusions = GivenExclusionsWithARealRuleFileAndAMadeUpPath(expected);
 
-            var problems = WhenTheExclusionsAreComparedWithTheFiles(exclusions, TheSweepExclusions);
+            var problems = WhenTheExclusionsAreComparedWithTheFiles(exclusions, expected);
 
             ThenTheRuleFileAndTheMadeUpPathAreNamed(problems, exclusions);
         }
@@ -153,6 +191,61 @@ namespace Lighthouse.Backend.Tests.Architecture
             return files;
         }
 
+        private static string[] GivenTheFilesThatMustSpellTheOldNames()
+            =>
+            [
+                Architecture + "OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs",
+                Architecture + "OrganisationSetupMembership.cs",
+                Architecture + "OrganisationSetupMembershipArchUnitTest.cs",
+                Architecture + "OrganisationSetupPatternRoles.cs",
+                Architecture + "OrganisationSetupStringsTheMoveRenames.cs",
+            ];
+
+        private static string[] GivenTheBroadContextFieldsThatSeeEveryLooseTypeAndEveryModule()
+            =>
+            [
+                "AccessAndLicensingUnitTestPlacementTest.ProductionProjectDirectory",
+                "AccessHttpAdaptersLayoutArchUnitTest.TheWholeAssembly",
+                "AdditionalFieldInUseRulePurityArchUnitTest.AnythingOfLighthouseOutsideModels",
+                "ApplicationCoreRules.ApplicationCore",
+                "CalendarDayAnchorSeamArchUnitTest.ProductionProjectDirectory",
+                "CategoryListOwnershipGuardTest.ProductionProject",
+                "ConnectorsDeclareNoUnsupportedMembersArchUnitTest.AllOfTheBackend",
+                "DependencySingleDecisionArchUnitTest.BackendProjectDirectory",
+                "FastWithManyFeaturesArchUnitTest.ProductionProjectDirectory",
+                "JiraRouteLiteralsTest.ProductionProjectDirectory",
+                "OverTimeReconstructionSeamArchUnitTest.ProductionProjectDirectory",
+                "ProductionSource.ProductionProjectDirectory",
+                "PromisesLayoutArchUnitTest.TheWholeAssembly",
+                "PromisesModuleBoundariesArchUnitTest.OutsideTrackerIntegration",
+                "PromisesUnitTestPlacementTest.ProductionProjectDirectory",
+                "RealityCheckReadOnlyArchUnitTest.ImplementationPattern",
+                "SecretReadPathSourceStructureTest.ProductionProjectDirectory",
+                "SecretRotationWriteSurfaceTest.ProductionProjectDirectory",
+                "StalenessPolicyPurityArchUnitTest.ServicesPattern",
+                "TrackerIntegrationApplicationLayoutArchUnitTest.TheWholeAssembly",
+                "TrackerIntegrationUnitTestPlacementTest.ProductionProjectDirectory",
+                "UpdateCancellationContextWriterArchUnitTest.ProductionProjectDirectory",
+                "ZonedTimestampParsingArchUnitTest.ProductionProjectDirectory",
+            ];
+
+        private static List<string> WhenTheBroadFieldsAreComparedWithTheDeclaredRoles(string[] broad, string[] expected, IReadOnlyDictionary<string, PatternDeclaration> roles)
+            =>
+            [
+                .. broad.Except(expected, StringComparer.Ordinal).Select(name => $"exempt but not an expected broad field: {name}"),
+                .. expected.Except(broad, StringComparer.Ordinal).Select(name => $"an expected broad field that is not exempt: {name}"),
+                .. broad.Where(name => Resolve(roles, name, out _) is not { Role: PatternRole.Context }).Select(name => $"exempt but not a declared Context field: {name}"),
+            ];
+
+        private static void ThenTheBroadFieldsAreExactlyTheExpectedDeclaredContextFields(List<string> problems)
+            => Assert.That(
+                problems,
+                Is.Empty,
+                "The Context fields the check leaves unjudged differ from the expected broad fields, or one is not declared:" + Environment.NewLine +
+                string.Join(Environment.NewLine, problems) + Environment.NewLine +
+                "Why it matters: an exempt field is never asked about the old names, so a set-up-specific field on the list would keep an old alternative unseen. " +
+                "How to fix: list only fields that name the whole backend, a project folder or all of Services and modules, edit both lists together, and give each its declared Context role.");
+
         private static string[] GivenExclusionsWithARealRuleFileAndAMadeUpPath(string[] expected)
             => [.. expected, Architecture + "WorkItemsModuleBoundariesArchUnitTest.cs", Architecture + "AMadeUpFileThatIsNotThere.cs"];
 
@@ -161,7 +254,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             [
                 new(PlantedFields.TheOldAlternativeKept, @"^Lighthouse\.Backend\.(Services\.Interfaces|Modules\.OrganisationSetup\.Application)$"),
                 new(PlantedFields.TheTokenlessOldOnly, @"^Lighthouse\.Backend\.Services\.Interfaces$"),
-                new(PlantedFields.TheWholeOfServices, @"^Lighthouse\.Backend\.(Services|Modules)(\.|$)"),
+                new(PlantedFields.TheServicesAlternatedWithAModule, @"^Lighthouse\.Backend\.(Services|Modules\.OrganisationSetup)(\.|$)"),
                 new(PlantedFields.TheNarrowedToTheModule, @"^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)"),
             ];
 
@@ -181,9 +274,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var folderOnly = OrganisationSetupPatternRoles.FolderOnlyMatches;
             var found = new List<string>();
 
-            // A field that takes in all of Services, the whole backend or a project folder names no old place of set-up's: it sees
-            // every loose type and every module alike, so the move leaves it as it is.
-            foreach (var pattern in patterns.Where(pattern => !NamespaceMoveLaw.IsMatch(TheLooseServicesAsAWhole, pattern.Value)))
+            foreach (var pattern in patterns.Where(pattern => !TheBroadContextFields.Contains(pattern.Field, StringComparer.Ordinal)))
             {
                 var declared = Resolve(roles, pattern.Field, out var components);
                 if (declared is not { Role: PatternRole.Context, Subject: { } subject })
@@ -277,8 +368,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static void ThenOnlyThePlantedFieldWithTheOldAlternativeIsNamed(List<string> stillOld)
             => Assert.That(
                 stillOld,
-                Has.Count.EqualTo(2).And.Some.Contains(PlantedFields.TheOldAlternativeKept).And.Some.Contains(PlantedFields.TheTokenlessOldOnly),
-                $"The check named [{string.Join(" | ", stillOld)}]; it should name exactly the planted field that keeps an old alternative and the planted field that names only the old place, and pass the narrowed one and the one taking in all of Services. Why it matters: a check that names nothing lets an old alternative stay behind, and one that names the narrowed field fails a finished move. How to fix: match every module-naming Context field against the old subject of each moved type.");
+                Has.Count.EqualTo(3).And.Some.Contains(PlantedFields.TheOldAlternativeKept).And.Some.Contains(PlantedFields.TheTokenlessOldOnly).And.Some.Contains(PlantedFields.TheServicesAlternatedWithAModule),
+                $"The check named [{string.Join(" | ", stillOld)}]; it should name exactly the three planted fields that still see the old place (an old alternative, only the old place, Services alternated with the module), and pass the narrowed one. Why it matters: a check that names nothing lets an old alternative stay behind, and one that names the narrowed field fails a finished move. How to fix: match every module-naming Context field against the old subject of each moved type.");
 
         private static void ThenOnlyThePlantedOldFullNameIsNamed(List<string> stillOld)
             => Assert.That(
@@ -339,7 +430,7 @@ namespace Lighthouse.Backend.Tests.Architecture.OrganisationSetupRulesNameOnlyTh
 
         public static string TheTokenlessOldOnly => "PlantedFields.TheTokenlessOldOnly";
 
-        public static string TheWholeOfServices => "PlantedFields.TheWholeOfServices";
+        public static string TheServicesAlternatedWithAModule => "PlantedFields.TheServicesAlternatedWithAModule";
 
         public static string TheNarrowedToTheModule => "PlantedFields.Nested.TheNarrowedToTheModule";
 
@@ -347,7 +438,7 @@ namespace Lighthouse.Backend.Tests.Architecture.OrganisationSetupRulesNameOnlyTh
         {
             [TheOldAlternativeKept] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code that kept its old alternative"),
             [TheTokenlessOldOnly] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code that never named the module, only the old place"),
-            [TheWholeOfServices] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code taking in all of Services and every module"),
+            [TheServicesAlternatedWithAModule] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code alternating all of Services with the module, not on the broad list"),
             [TheNarrowedToTheModule] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code narrowed to the module"),
         };
     }
