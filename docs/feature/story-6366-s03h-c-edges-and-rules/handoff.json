@@ -1,0 +1,737 @@
+{
+"counters": {
+"D": 5,
+"E": 5,
+"F": 117,
+"K": 2,
+"L": 2,
+"P": 3,
+"S": 2,
+"T": 2,
+"Y": 1
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"constraints": [
+{
+"id": "K1",
+"text": "F25"
+},
+{
+"id": "K2",
+"text": "F26"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F20"
+},
+{
+"id": "D2",
+"text": "F21"
+},
+{
+"id": "D3",
+"text": "F22"
+},
+{
+"id": "D4",
+"text": "F23"
+},
+{
+"id": "D5",
+"text": "F24"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F27"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesNameOnlyTheModuleArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs",
+"move": "F71",
+"preserved": "F72",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleArchUnitTest"
+]
+},
+"public_oracle": {
+"expected": "F69",
+"falsifier": "F70",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F68"
+},
+"records": {
+"agreement": [
+{
+"contract": "Reports namespace pattern shared by rule files",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25",
+"party": "Producer",
+"reason": "F93"
+},
+{
+"contract": "Reports namespace pattern shared by rule files",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:1",
+"party": "Consumer",
+"reason": "F94"
+},
+{
+"contract": "Reports namespace pattern shared by rule files",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:1",
+"party": "Consumer",
+"reason": "F94"
+},
+{
+"contract": "Reports namespace pattern shared by rule files",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:1",
+"party": "Consumer",
+"reason": "F94"
+},
+{
+"contract": "Reports namespace pattern shared by rule files",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:1",
+"party": "Consumer",
+"reason": "F94"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsRulesNameOnlyTheModuleArchUnitTest",
+"id": "T2",
+"obligation": "F113",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesNameOnlyTheModuleArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F96",
+"driving_port": "F95"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F108",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F107"
+},
+{
+"axis": "Inhabitation",
+"basis": "F110",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F109"
+},
+{
+"axis": "PublicReachability",
+"basis": "F112",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F111"
+}
+],
+"equality": [
+{
+"definition": "F99",
+"under": "exclusion list"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "architecture-rule-constant",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25",
+"reason": "F84"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule-constant",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:60",
+"reason": "F85"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule-constant",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:65",
+"reason": "F86"
+},
+{
+"decision": "Changed",
+"kind": "architecture-rule-constant",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:65",
+"reason": "F86"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs:1",
+"reason": "F87"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs:75",
+"reason": "F88"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:1",
+"reason": "F89"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F90"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsPatternRoles.cs:1",
+"reason": "F91"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs:1",
+"reason": "F92"
+}
+],
+"laws": [
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "ReportsRulesNameOnlyTheModuleArchUnitTest",
+"statement": "F100",
+"treatment": {
+"cases": [
+"F101",
+"F102",
+"F103",
+"F104",
+"F105"
+],
+"kind": "Finite",
+"reason": "F106"
+}
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F98",
+"description": "F97",
+"result_type": "string list"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementRulesNameOnlyTheModuleArchUnitTest.cs:1",
+"reason": "F73",
+"symbol": "RefinementRulesNameOnlyTheModuleArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:25",
+"reason": "F74",
+"symbol": "ReportsPattern"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:60",
+"reason": "F75",
+"symbol": "RefinementReportsAccessAndLicensing"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:65",
+"reason": "F76",
+"symbol": "RefinementAndReports"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs:1",
+"reason": "F77",
+"symbol": "ReportsMembership"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F78",
+"symbol": "RefinementAndReports"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs:1",
+"reason": "F79",
+"symbol": "ReportsRulesSeeTheMoveArchUnitTest"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsPatternRoles.cs:1",
+"reason": "F80",
+"symbol": "ReportsPatternRoles"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs:1",
+"reason": "F81",
+"symbol": "ReportsStringsTheMoveRenames"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs:1",
+"reason": "F82",
+"symbol": "ReportsLivesInItsModuleArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:1",
+"reason": "F83",
+"symbol": "ReportsModuleArchUnitTest"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F64"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F64"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F64"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F64"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs",
+"reason": "F65"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsPatternRoles.cs",
+"reason": "F65"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs",
+"reason": "F65"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs",
+"reason": "F66"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs",
+"reason": "F67"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsRulesNameOnlyTheModuleArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs",
+"public_oracle": {
+"expected": "F29",
+"falsifier": "F30",
+"promises": [
+"P2",
+"P3"
+],
+"stimulus": "F28"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleBoundariesArchUnitTest",
+"id": "T1",
+"obligation": "F63",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F39",
+"driving_port": "F38"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F53",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F52"
+},
+{
+"axis": "Inhabitation",
+"basis": "F55",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F54"
+},
+{
+"axis": "PublicReachability",
+"basis": "F57",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F56"
+}
+],
+"equality": [
+{
+"definition": "F42",
+"under": "list comparison"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "ReportsModuleBoundariesArchUnitTest",
+"statement": "F43",
+"treatment": {
+"cases": [
+"F44",
+"F45",
+"F46",
+"F47",
+"F48",
+"F49",
+"F50"
+],
+"kind": "Finite",
+"reason": "F51"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "impact",
+"reason": "F35"
+},
+{
+"analysis": "agreement",
+"reason": "F36"
+},
+{
+"analysis": "prefactoring",
+"reason": "F37"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F41",
+"description": "F40",
+"result_type": "string list"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:150",
+"reason": "F31",
+"symbol": "ModuleRules"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementModuleBoundariesArchUnitTest.cs:40",
+"reason": "F32",
+"symbol": "RefinementModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs:1",
+"reason": "F33",
+"symbol": "ReportsMembership"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs:1",
+"reason": "F34",
+"symbol": "ReportsModuleBoundariesArchUnitTest"
+}
+],
+"risks": [
+{
+"allowed": "F60",
+"forbidden": "F61",
+"id": "Y1",
+"kind": "Bypass",
+"owner": "ReportsModuleBoundariesArchUnitTest",
+"preserved": "F59",
+"residue": "F62",
+"source": "F58"
+}
+]
+},
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ReportsModuleBoundariesArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F114"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F115"
+},
+{
+"id": "E4",
+"promises": [
+"P3"
+],
+"text": "F116"
+},
+{
+"id": "E5",
+"promises": [
+"P3"
+],
+"text": "F117"
+}
+]
+},
+"facts": {
+"F1": "ADO Story #6366 S03h Package Reports, feature C (edges and rules): every Reports rule names Reports by Modules.Reports only, the joint Tracker integration pattern drops Reports and its dead Auth, Authorization and Licensing alternatives, and no rule constant or string literal in the test project still matches the old Services.Implementation.Reports or Services.Interfaces.Reports namespaces or paths (C1); Reports gets its own module rule set ReportsModuleBoundariesArchUnitTest on ModuleRules, read from the IL with baselines measured there and lists inline by full type name, compared both ways and never loosened: R-RP1 each listed type in its layer and none under Services, R-RP2 Domain reaches only the kernel and the BCL, R-RP3 outside reaches Domain only from API, the composition root and Reports Application, R-RP4 outside reaches Application only from API, the composition root and ReportRepository, R-RP5 Application reaches no Data, API, module Adapters, Tracker integration, RBAC or update code and EF Core only along a measured list, R-RP6 Application reaches Flow metrics Domain, Licensing, Organisation set-up data and platform infrastructure only along a measured list (C2). Test side only. DESIGN: docs/feature/story-6366-s03h-package-reports/feature-delta.md; features A and B: docs/feature/story-6366-s03h-a-rules-first/ and docs/feature/story-6366-s03h-b-move/.",
+"F10": "Each slice's RED: C1 fails while any rule constant or literal still matches the old Reports namespaces or paths (the old-namespace alternatives features A and B left in place); C2 fails on a made-up offender per rule and per list position. Behaviour is proved by the unchanged tests and EXAMINE through admitted probes (architecture-rules Reports and all, backend-tests as a background job, ef-model-unchanged). Behaviour-free: no review window, UI and usage-data N/A, Quint N/A.",
+"F100": "For every rule constant and string literal outside the exact exclusions, no old Reports form matches; every Modules.Reports alternative matches a module type",
+"F101": "dotted name offender",
+"F102": "regex alternative offender",
+"F103": "group member offender",
+"F104": "slash path offender",
+"F105": "Modules-only twin passes",
+"F106": "closed finite domain of four forms",
+"F107": "Old-path sweep",
+"F108": "Sweep with empty allowance list over constants and literals; made-up offenders per form",
+"F109": "Narrowed Reports alternatives",
+"F11": "C1: no rule constant or string literal in the test project matches the old Reports namespaces or paths any more; every Reports rule names Modules.Reports only and keeps its verdict, and the dead Auth, Authorization and Licensing alternatives of the joint Tracker integration pattern are gone.",
+"F110": "Each Modules.Reports alternative matches a measured type of the 36",
+"F111": "Sweep through dotnet test",
+"F112": "NUnit class drives the real rule constants and test sources: input constants -> sweep -> failure naming the offender",
+"F113": "Rule constants and literals name Reports by Modules.Reports only; no Reports rule is dead",
+"F114": "Running the architecture-rules probe filtered to ReportsRulesNameOnlyTheModule prints a passing verdict for every test in that sweep, so the Reports rules name Modules.Reports only and no rule changes verdict on today's code. Whether any old Reports namespace string remains in the test project is not visible through a probe and is left to the whole-candidate review.",
+"F115": "Running the architecture-rules probe filtered to ReportsModuleBoundaries prints one line each for the rules R-RP1 to R-RP6, and each line, together with one made-up-offender test per rule, shows a passing verdict on the candidate; a made-up-offender test passes only when its rule fails on the offender, so the failure behaviour is observed too. Reports therefore has its own module boundary rule set with its layer, Domain, Application and EF Core lists checked.",
+"F116": "ef-model-unchanged reports the EF Core model as unchanged, and backend-tests run with a fragment shows its selected tests green, so the user-visible surface (API, Program.cs behaviour, configuration) is not shown to have changed. The whole filtered backend-tests run (no fragment) runs as a background shell job, takes about seven minutes and reports 0 failed; no probe shows a source diff, so that no production file changed is left to the whole-candidate review.",
+"F117": "test-selection-show for Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs prints backend: true and jira, ado, linear, servicenow, github and shared false, so the CI selection a user sees does not change.",
+"F12": "No rule still points at where Reports used to live",
+"F13": "C2: Reports has its own module rules R-RP1 to R-RP6 on ModuleRules, read from the IL with measured inline lists, and each catches a made-up offender in Reports' own wording.",
+"F14": "A new edge into or out of Reports is caught by its own rules",
+"F2": "Reports' boundaries are guarded by its own module rules and no rule still points at where it used to live",
+"F20": "Test side only, behaviour-free. No production file, no Program.cs, no configuration key changes. Carrier owners: rule constants stay on their existing rule classes (ModuleBoundariesArchUnitTest, TrackerIntegrationModuleBoundariesArchUnitTest, Access and Licensing module boundaries tests); the module rule shapes stay on ModuleRules; Reports module boundaries get one new NUnit fixture ReportsModuleBoundariesArchUnitTest that holds its inline lists by full type name. Procedural-style static rule helpers are the repository convention for architecture tests; no new class is invented beyond the fixture and its made-up offender types.",
+"F21": "Claim-to-checker: every claim here is a finite set comparison over the compiled IL (listed types equal measured types, listed edges equal measured edges, both ways) or a text sweep. Quint, TLA+ and Agda are not applicable: there is no state machine, no transition, no temporal or fairness claim and no unbounded input, so a model would restate the set comparison. The executable checker is the NUnit oracle itself on the compiled IL, with a made-up offender per rule and per list position as falsifier. Liveness: not applicable, nothing runs over time. Types: Mono.Cecil IL reading gives string full names, so a list entry is a string key, not a type; the made-up offenders prove each key position is live. Property testing: not applicable, the domains are finite and enumerated.",
+"F22": "Measured baselines, re-measured from today's compiled IL (Release-equivalent IlDependencies read): Domain 3 types, Application 25 top-level types, Application.Metrics 8 types, 36 in all, ReportRepository the only Reports type left under Services. Domain reaches only Models (kernel) and System: R-RP2 exception list empty. Outside reaches Domain: 0 types, R-RP3 list empty. Outside reaches Application: API controllers and Program (allowed by role) plus ReportRepository: R-RP4 list holds 1. Application reaches Data, API, module Adapters, Tracker integration, RBAC, update code: none. EF Core: ReportBulkCommands -> DbUpdateException, ReportBulkRemover -> DbUpdateException: R-RP5 list holds 2. R-RP6 list holds 12 edges: DailySeriesSummary -> FlowMetrics.Domain.PercentileCalculator; ReportCommands and ReportQueries -> Licensing.Application.ILicenseService; ReportOwnerLookup, TeamReportMetricSeries and PortfolioReportMetricSeries -> Services.Interfaces.Repositories.IRepository1; six types (PortfolioReportMetricSeries, ReportBulkCommands, ReportCommands, ReportQueries, TeamReportMetricSeries, ThenAndNowTemplate) -> Platform.Host.ILighthouseClock. Flow metrics Application edges (TeamReportMetricSeries -> ITeamMetricsService, PortfolioReportMetricSeries -> IPortfolioMetricsService) are legal conformist edges and not listed.",
+"F23": "Difference from the DESIGN: the IL read yields 2 EF Core edges, not 3. ReportBulkRemover reaches DbUpdateConcurrencyException only in a catch clause, which the IL reader does not see (known reader limit); its DbUpdateException edge is seen. The list holds the 2 measured edges and the rule is compared both ways on them. The Application type count is 25 types (DESIGN counted 20 files). The oracle must re-measure and the IL decides; the lists only shrink.",
+"F24": "Old-path sweep law (S1): no rule constant and no string literal in the test project matches the old Reports namespaces or paths in any form (dotted, regex alternative, group member, slash path), with an EMPTY allowance list. Exact-path exclusions only: feature A measurement files that must spell old names (ReportsMembership.cs, ReportsMembershipArchUnitTest.cs, and any fixture they use), the sweep oracle itself (builds old names from segments), and RefinementRulesNameOnlyTheModuleArchUnitTest.cs, whose frozen made-up offender names Reports as a group member of the old Services alternation. Feature A's three helper files ReportsRulesSeeTheMoveArchUnitTest.cs, ReportsPatternRoles.cs and ReportsStringsTheMoveRenames.cs assert old-or-new sight and an old-path rename list; after the move they are settled and removed by the crafter, as feature C of the previous package did, and ReportsLivesInItsModuleArchUnitTest drops its rename-list tests. Every other Reports rule keeps its verdict.",
+"F25": "No rule or list is loosened: lists are inline by full type name, compared both ways, only shrink. Rules read the compiled IL, never an empty set: each rule asserts its subject set is not empty. Outer types only for set comparison (strip the part after plus). A rule exemption is exact per type, never a namespace or layer. Failures use Reports own wording (ModuleWording Reports, the API). No nWave scenario tags in code. No edit to an approved oracle of this feature after approval; one oracle file per slice.",
+"F26": "Input bounds: no stored or validated input is introduced. The rule input is the compiled production assembly; its size is the 36 Reports types and the edges measured above, with no declared upper bound, so the lists are exact sets and a new edge fails by design rather than being clipped. Test budgets: default per-test budget, the IL read is shared per fixture (Lazy ModuleDefinition disposed in OneTimeTearDown); no derogation requested.",
+"F27": "Single deployable and a single test assembly; producers and consumers of the rule constants change in the same commit, so the primary oracle covers them.",
+"F28": "Run ReportsModuleBoundariesArchUnitTest through dotnet test: R-RP1 to R-RP6 read the compiled IL with ModuleRules and compare the measured types and edges both ways with the inline lists, then run the same rules over made-up offender types in a fixture namespace (Lighthouse.Backend.Modules.ReportsFixtures).",
+"F29": "Each listed type lives in its layer with none under Services; Domain reaches only the kernel and System; outside reaches Domain only from API, the composition root and Reports Application (empty list) and Application only from API, the composition root and ReportRepository; Application reaches no Data, API, module Adapters, Tracker integration, RBAC or update code and EF Core only along the 2 listed edges; Application reaches Flow metrics Domain, Licensing, Organisation set-up data and platform infrastructure only along the 12 listed edges. Compliant twins pass.",
+"F3": "No rule constant and no string literal in the test project matches Services.Implementation.Reports, Services.Interfaces.Reports, Services/Implementation/Reports or Services/Interfaces/Reports any more, outside feature A's measurement files: ReportsPattern names Reports by Modules.Reports only, the joint Tracker integration pattern RefinementReportsAccessAndLicensing no longer names Reports nor the dead Auth, Authorization and Licensing alternatives, the Access and Licensing RefinementAndReports patterns name Reports by Modules.Reports only, and every rule keeps its verdict on today's code; ReportsModuleArchUnitTest keeps every assertion.",
+"F30": "A made-up misplaced type, unlisted layer type, Domain type reaching a service, outside type reaching Domain or Application, Application type reaching forbidden code or an unlisted EF Core, Flow metrics Domain, Licensing, set-up or platform type, an entry deleted from a list and a listed edge that no longer exists are each named in Reports wording; an empty subject set fails.",
+"F31": "TypesLiveInTheirLayer, DomainReachesOnlyTheKernelAndTheBaseLibrary, DomainIsReachedFromOutsideOnlyBy, ApplicationIsReachedFromOutsideOnlyBy and OutboundEdges already carry the six rule shapes with parameterised namespaces and wording",
+"F32": "Same module rule set shape; modelled on it with Reports lists, no shared base class because lists and wording are per module",
+"F33": "Measured layer map of the 36 Reports types for cross-checking; the new oracle still carries its own inline lists by full type name",
+"F34": "No existing fixture owns Reports module layer and edge lists; ReportsModuleArchUnitTest holds design-law guards by type identity, a different responsibility",
+"F35": "S2 adds one test file only; no production or existing test file changes (oracle is the new rule file, no targets)",
+"F36": "No shared contract is touched; the new fixture reads ModuleRules without changing it",
+"F37": "No code target: S1 already narrowed the constants and nothing is moved in S2",
+"F38": "dotnet test on the NUnit fixture ReportsModuleBoundariesArchUnitTest reading the production and test assemblies IL through ModuleRules",
+"F39": "test reads production IL; no production change",
+"F4": "Reports has its own module rule set on ModuleRules, read from the compiled IL, with every list inline by full type name, compared both ways and never loosened: each listed type sits in its layer and none under Services (R-RP1); Domain reaches only the kernel and the BCL (R-RP2); code outside Reports reaches Domain only from API, the composition root and Reports Application (R-RP3) and Application only from API, the composition root and ReportRepository (R-RP4); Application reaches no Data, API, module Adapters, Tracker integration, RBAC or update code, and EF Core only along a measured list (R-RP5); Application reaches Flow metrics Domain, Licensing, Organisation set-up data and platform infrastructure only along a list measured from the IL (R-RP6). A made-up offender for each rule and each list position makes the rule fail and the failure names the edge in Reports' own wording.",
+"F40": "Offending types and edges named in Reports wording, or the full list entries to delete",
+"F41": "Catch-clause, event and attribute-named-argument references, which the IL reader misses (ReportBulkRemover catch of DbUpdateConcurrencyException)",
+"F42": "A listed set equals the measured set of full outer type names or Dependent -> Target edges, both ways; nested types reduce to the outer type",
+"F43": "Each of R-RP1 to R-RP6 passes on today's IL with the inline lists and fails on a made-up offender per rule and per list position",
+"F44": "layer membership offender",
+"F45": "Domain reaching a service",
+"F46": "outside type reaching Domain",
+"F47": "outside type reaching Application off the list",
+"F48": "Application reaching forbidden code",
+"F49": "unlisted EF Core, Flow metrics Domain, Licensing, set-up or platform edge",
+"F5": "Nothing a user, an API client, a tracker or the database sees changes: feature C edits only test-side rule files (no production file, no Program.cs, no configuration key), no rule or list is loosened, and the whole filtered backend suite stays green.",
+"F50": "deleted and stale list entries",
+"F51": "closed finite domain enumerated from the IL",
+"F52": "R-RP1 to R-RP6 rules",
+"F53": "ModuleRules on the IL; both-ways lists; non-empty subject asserted; made-up offender per rule",
+"F54": "Measured lists",
+"F55": "Lists measured from today's IL: 36 types, 1 outside Application caller, 2 EF edges, 12 edges",
+"F56": "Rules through dotnet test",
+"F57": "NUnit fixture drives ModuleRules over the real assembly and made-up fixtures: IL -> rule -> verdict naming the edge",
+"F58": "IL reader misses catch-clause, event and attribute-argument references",
+"F59": "Listed edges equal IL-visible edges",
+"F6": "Narrowing every Reports rule constant to Modules.Reports only and removing Reports and the dead Auth, Authorization and Licensing alternatives from the joint Tracker integration pattern; settling feature A's preservation law and old-path sweep for Reports now that the move is done; the ReportsModuleBoundariesArchUnitTest rule set R-RP1 to R-RP6 on ModuleRules with IL-measured baselines and made-up offenders.",
+"F60": "A catch-only reference such as DbUpdateConcurrencyException stays unlisted",
+"F61": "Claiming a rule sees catch-only references",
+"F62": "Catch-only edges invisible to R-RP5",
+"F63": "R-RP1 to R-RP6: Reports layers, kernel-only Domain, inbound and outbound edge lists compared both ways with made-up offenders",
+"F64": "Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)",
+"F65": "Settled by the move: the file asserts old-or-new sight or an old-path rename list and is removed, as the previous package did",
+"F66": "Drop the rename-list tests that read the removed rename list; keep the layout assertions",
+"F67": "Only if it names a removed support type; every assertion stays",
+"F68": "Run ReportsRulesNameOnlyTheModuleArchUnitTest through dotnet test: it sweeps every rule constant of the test assembly and every string literal of the test sources for the old Reports forms (dotted name, regex alternative, group member, slash folder path) with an empty allowance list and exact-path exclusions, matches each narrowed Reports alternative against the types of the module, and runs the sweep over made-up offenders in each form.",
+"F69": "No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each narrowed alternative still matches a Reports module type; the joint Tracker integration pattern no longer names Reports, Auth, Authorization or Licensing under Services; each made-up former form is named and a Modules-only twin is not.",
+"F7": "Any production file or Program.cs change; a separate Reports unit-test placement test (feature B's ReportsUnitTestsBesideTheModuleArchUnitTest already pins it); the architecture documents ARCHITECTURE.md section 4, ADR-270 and the Epic catalogue row, which the finalize checklist updates before the push; ReportRepository and Models/Reports (stay).",
+"F70": "Today the old-namespace alternatives in ReportsPattern, RefinementReportsAccessAndLicensing and the Access and Licensing RefinementAndReports patterns still match, so the sweep fails and names each; a rule narrowed in its constant but kept as a literal, or a narrowed alternative anchored to no type, is named by the made-up offenders.",
+"F71": "Narrow the Reports rule constants and settle feature A helper files (behaviour and production untouched); makes the new module rule set of S2 the only Reports layout guard",
+"F72": "Every Reports rule keeps its verdict on today's code; ReportsModuleArchUnitTest keeps every assertion",
+"F73": "Same law shape (constants plus literals sweep, both-ways exclusion list, narrowed-alternative liveness, made-up offenders); modelled on it, not shared, because the module name and exclusions differ",
+"F74": "Single owner of the Reports namespace pattern read by ReportsModuleArchUnitTest and three interpolated readers; narrowing here reaches every reader",
+"F75": "Joint pattern owner for Tracker integration; drop Reports and the dead Auth, Authorization, Licensing alternatives",
+"F76": "Access pattern names Reports by the old alternative too; same constant also in Licensing tests, narrowed in each owner",
+"F77": "Measured map of the 36 Reports types by layer; stays as the measurement owner and old-name exclusion",
+"F78": "Owner of its Reports pattern constant; narrowed here",
+"F79": "Old-or-new sight law is settled by the move; removed",
+"F8": "Rigor standard for feature C: architect, acceptance designer and crafter on sonnet; reviewers and EXAMINE on haiku (DESIGN open question 1, maintainer's take-DESIGN-defaults on 2026-11-24).",
+"F80": "Role map for the old-or-new sight law; removed with it",
+"F81": "Old-path rename list ends empty after the move; removed",
+"F82": "Layout assertions stay; rename-list tests dropped",
+"F83": "Edited only if it names a removed support type; every assertion stays",
+"F84": "ReportsPattern narrowed to Modules.Reports",
+"F85": "Reports and dead alternatives removed",
+"F86": "Reports named by Modules.Reports only",
+"F87": "Removed once settled by the move, together with ReportsPatternRoles.cs and ReportsStringsTheMoveRenames.cs",
+"F88": "Rename-list tests dropped with the list",
+"F89": "Reads ReportsPattern only; every assertion keeps its verdict on the narrowed pattern",
+"F9": "The Reports unit-test placement test the DESIGN names for S3 is not written again: feature B's ReportsUnitTestsBesideTheModuleArchUnitTest already pins the 18 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders. The dead Auth, Authorization and Licensing alternatives go now, as the host decided at feature A's start.",
+"F90": "No production file, DI registration or configuration key changes",
+"F91": "Removed with the old-or-new sight law",
+"F92": "Removed once the rename list is empty",
+"F93": "Narrowed to Modules.Reports",
+"F94": "Reads the constant; verdict unchanged on today's code because every Reports type is already under Modules.Reports",
+"F95": "dotnet test on the NUnit fixture ReportsRulesNameOnlyTheModuleArchUnitTest; reads the test assembly constants by reflection and test sources as text",
+"F96": "tests read production IL and test sources; no production code is touched",
+"F97": "Names of rule constants and literals that still match an old Reports form, plus narrowed alternatives that match no module type",
+"F98": "A form written in a way the four forms do not cover; the oracle names the covered forms",
+"F99": "Listed exclusion paths equal the files that must spell an old form, both ways; a listed file with no old form is named stale"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F8"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F9"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F10"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_in": [
+"F6"
+],
+"scope_out": [
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F11",
+"promises": [
+"P1",
+"P3"
+],
+"work": {
+"size": "S",
+"value": "F12"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F13",
+"promises": [
+"P2",
+"P3"
+],
+"work": {
+"size": "S",
+"value": "F14"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6366-s03h-c-edges-and-rules",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
