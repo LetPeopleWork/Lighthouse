@@ -397,3 +397,16 @@ existing suite GREEN before and after S1, then S2 moves).
 - Moving the EF exception catches into an adapter (rejected): an edit, not a move; listed edges instead.
 - Single responsibility / dependency inversion: ports stay with their use cases; Reports depends down only, and only
   the API and the composition root depend on it.
+
+### Host decision during AFK DELIVER, for the maintainer to confirm (2026-11-25)
+
+**The joint Tracker integration pattern keeps its old Auth, Authorization and Licensing alternatives under
+Services; only Reports leaves it.** Feature A's design had them dropped as dead. Dropping them made two rows of
+`AccessAndLicensingRulesSeeTheModulesArchUnitTest` (S03e) fail, because those rows demand that a Tracker
+integration type reaching the old Access and Licensing places is still caught. Keeping them loosens nothing.
+Taken by the host in AFK mode, not by the maintainer; recorded in feature C's `architecture.md` and its revised
+C1 oracle. Revisit if the old places are confirmed empty for good.
+
+**R-RP5 lists the catch-only EF edge.** The candidate review of feature C found that the IL reader skipped
+`catch` clauses, so `ReportBulkRemover -> DbUpdateConcurrencyException` was invisible. The reader now reads the
+catch types too, and the list carries all three EF edges the design asked for.
