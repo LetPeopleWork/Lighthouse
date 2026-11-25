@@ -30,6 +30,7 @@
   "dependencyFieldSource": "ConnectionDefault",
   "dependencyFieldDefaultName": null,
   "ignoreDependencies": false,
+  "infersDefaultFeatureSize": true,
   "id": 2,
   "name": "Northwind Platform",
   "dataRetrievalValue": "project = NORTHWIND AND type = Epic",

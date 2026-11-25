@@ -1,6 +1,7 @@
 [
   {
     "isUsingDefaultFeatureSize": false,
+    "hasNoChildWorkItemsYet": false,
     "size": 16,
     "owningTeam": "",
     "projects": [
@@ -238,6 +239,7 @@
   },
   {
     "isUsingDefaultFeatureSize": false,
+    "hasNoChildWorkItemsYet": false,
     "size": 8,
     "owningTeam": "",
     "projects": [
@@ -392,6 +394,7 @@
   },
   {
     "isUsingDefaultFeatureSize": false,
+    "hasNoChildWorkItemsYet": false,
     "size": 8,
     "owningTeam": "",
     "projects": [

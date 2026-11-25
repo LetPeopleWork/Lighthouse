@@ -29,7 +29,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// is still pending, so a fixture pinned AFTER it is left alone.
         /// </param>
         /// <param name="PostgresType">Only for a column whose type no single name covers on both providers, such as a list.</param>
-        private sealed record LaterColumn(string Table, string Column, string Type, string AddedByMigration, string? PostgresType = null);
+        /// <param name="Default">Only for a column the model reads back after an insert because it declares a default: the real migration gives it that default, so the patched column must too, or the read-back is NULL.</param>
+        private sealed record LaterColumn(string Table, string Column, string Type, string AddedByMigration, string? PostgresType = null, string? Default = null);
 
         private static readonly LaterColumn[] ColumnsAddedAfterTheseFixturesPinnedTheirSchema =
         [
@@ -37,7 +38,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("Portfolios", "FetchFingerprint", "TEXT", "AddFetchFingerprintToQueryOwners"),
             new("Portfolios", "DependencyOverrideAdditionalFieldDefinitionId", "INTEGER", "AddPortfolioDependencySettings"),
             new("Portfolios", "IgnoreDependencies", "boolean", "AddPortfolioDependencySettings"),
-            new("Portfolios", "InfersDefaultFeatureSize", "boolean", "AddPortfolioInfersDefaultFeatureSize"),
+            new("Portfolios", "InfersDefaultFeatureSize", "boolean", "AddPortfolioInfersDefaultFeatureSize", Default: "TRUE"),
             new("Deliveries", "ArchivedOn", "timestamp with time zone", "AddDeliveryArchiveAndClosureRecord"),
             new("Deliveries", "SourceKey", "TEXT", "AddDeliverySourceBinding"),
             new("Deliveries", "SourceReference", "TEXT", "AddDeliverySourceBinding"),
@@ -77,7 +78,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>
         public static Task AddColumnsTheCurrentModelExpectsAsync(LighthouseAppContext context)
             => ApplyAsync(context, column => "ALTER TABLE \"" + column.Table + "\" ADD COLUMN \"" + column.Column + "\" "
-                + (context.Database.IsNpgsql() ? column.PostgresType ?? column.Type : column.Type) + " NULL");
+                + (context.Database.IsNpgsql() ? column.PostgresType ?? column.Type : column.Type) + " NULL"
+                + (column.Default is null ? string.Empty : " DEFAULT " + column.Default));
 
         /// <summary>Call after seeding, before migrating forward - or the real migration re-adds the column and fails.</summary>
         public static Task RemoveColumnsTheCurrentModelExpectsAsync(LighthouseAppContext context)

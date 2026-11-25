@@ -1,6 +1,7 @@
 [
   {
     "isUsingDefaultFeatureSize": false,
+    "hasNoChildWorkItemsYet": false,
     "size": 8,
     "owningTeam": "",
     "projects": [
