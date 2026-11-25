@@ -171,7 +171,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Outcome</p>
 
-<pre><code>No rule constant and no string literal in the test project matches Services.Implementation.Reports, Services.Interfaces.Reports, Services/Implementation/Reports or Services/Interfaces/Reports any more, outside feature A&#x27;s measurement files: ReportsPattern names Reports by Modules.Reports only, the joint Tracker integration pattern RefinementReportsAccessAndLicensing no longer names Reports nor the dead Auth, Authorization and Licensing alternatives, the Access and Licensing RefinementAndReports patterns name Reports by Modules.Reports only, and every rule keeps its verdict on today&#x27;s code; ReportsModuleArchUnitTest keeps every assertion.
+<pre><code>No rule constant and no string literal in the test project matches Services.Implementation.Reports, Services.Interfaces.Reports, Services/Implementation/Reports or Services/Interfaces/Reports any more, outside feature A&#x27;s measurement files: ReportsPattern names Reports by Modules.Reports only, the joint Tracker integration pattern RefinementReportsAccessAndLicensing no longer names Reports under Services but keeps its old Auth, Authorization and Licensing alternatives, which still catch a connector reaching the old Access and Licensing places as the Access and Licensing checks require, the Access and Licensing RefinementAndReports patterns name Reports by Modules.Reports only, and every rule keeps its verdict on today&#x27;s code; ReportsModuleArchUnitTest keeps every assertion.
 </code></pre>
 
 <h3>P2</h3>
@@ -190,7 +190,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Scope</h2>
 
-<pre><code>Narrowing every Reports rule constant to Modules.Reports only and removing Reports and the dead Auth, Authorization and Licensing alternatives from the joint Tracker integration pattern; settling feature A&#x27;s preservation law and old-path sweep for Reports now that the move is done; the ReportsModuleBoundariesArchUnitTest rule set R-RP1 to R-RP6 on ModuleRules with IL-measured baselines and made-up offenders.
+<pre><code>Narrowing every Reports rule constant to Modules.Reports only and removing Reports from the Services alternative of the joint Tracker integration pattern; retiring feature A&#x27;s move-time helpers now that the move is done; the ReportsModuleBoundariesArchUnitTest rule set R-RP1 to R-RP6 on ModuleRules with IL-measured baselines and made-up offenders.
 </code></pre>
 
 <pre><code>Any production file or Program.cs change; a separate Reports unit-test placement test (feature B&#x27;s ReportsUnitTestsBesideTheModuleArchUnitTest already pins it); the architecture documents ARCHITECTURE.md section 4, ADR-270 and the Epic catalogue row, which the finalize checklist updates before the push; ReportRepository and Models/Reports (stay).
@@ -206,7 +206,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Confirmed</p>
 
 
-<pre><code>The Reports unit-test placement test the DESIGN names for S3 is not written again: feature B&#x27;s ReportsUnitTestsBesideTheModuleArchUnitTest already pins the 18 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave&#x27;s own folders. The dead Auth, Authorization and Licensing alternatives go now, as the host decided at feature A&#x27;s start.
+<pre><code>The Reports unit-test placement test the DESIGN names for S3 is not written again: feature B&#x27;s ReportsUnitTestsBesideTheModuleArchUnitTest already pins the 18 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave&#x27;s own folders. The old Auth, Authorization and Licensing alternatives of the joint Tracker integration pattern stay (host revision 2026-11-25): AccessAndLicensingRulesSeeTheModulesArchUnitTest requires the Tracker integration rule to keep catching a connector reaching the old Access and Licensing places, as it does for every other context, so dropping them would loosen a rule.
 </code></pre>
 
 <h4>Status</h4>
@@ -230,7 +230,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>S1</h3>
 
-<pre><code>C1: no rule constant or string literal in the test project matches the old Reports namespaces or paths any more; every Reports rule names Modules.Reports only and keeps its verdict, and the dead Auth, Authorization and Licensing alternatives of the joint Tracker integration pattern are gone.
+<pre><code>C1: no rule constant or string literal in the test project matches the old Reports namespaces or paths any more; every Reports rule names Modules.Reports only and keeps its verdict, and the joint Tracker integration pattern keeps its old Access and Licensing guard without Reports.
 </code></pre>
 
 <h4>Promises</h4>

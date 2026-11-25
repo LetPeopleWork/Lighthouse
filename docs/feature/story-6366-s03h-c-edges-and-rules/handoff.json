@@ -44,7 +44,7 @@
 "counters": {
 "D": 5,
 "E": 5,
-"F": 124,
+"F": 128,
 "K": 2,
 "L": 2,
 "P": 3,
@@ -590,7 +590,6 @@
 "F107": "Old-path sweep",
 "F108": "Sweep with empty allowance list over constants and literals; made-up offenders per form",
 "F109": "Narrowed Reports alternatives",
-"F11": "C1: no rule constant or string literal in the test project matches the old Reports namespaces or paths any more; every Reports rule names Modules.Reports only and keeps its verdict, and the dead Auth, Authorization and Licensing alternatives of the joint Tracker integration pattern are gone.",
 "F110": "Each Modules.Reports alternative matches a measured type of the 36",
 "F111": "Sweep through dotnet test",
 "F112": "NUnit class drives the real rule constants and test sources: input constants -> sweep -> failure naming the offender",
@@ -607,6 +606,10 @@
 "F122": "Every Modules.Reports alternative matches a Reports module type in each owning rule file, a made-up dead alternative is named, and the joint Tracker integration pattern names no Services namespace and still names the Reports module",
 "F123": "Reports rules keep constraining Reports and the dead Auth, Authorization and Licensing alternatives are gone",
 "F124": "A rule that drops Reports entirely, leaving it unconstrained, is caught only by the owner and count checks",
+"F125": "No rule constant and no string literal in the test project matches Services.Implementation.Reports, Services.Interfaces.Reports, Services/Implementation/Reports or Services/Interfaces/Reports any more, outside feature A's measurement files: ReportsPattern names Reports by Modules.Reports only, the joint Tracker integration pattern RefinementReportsAccessAndLicensing no longer names Reports under Services but keeps its old Auth, Authorization and Licensing alternatives, which still catch a connector reaching the old Access and Licensing places as the Access and Licensing checks require, the Access and Licensing RefinementAndReports patterns name Reports by Modules.Reports only, and every rule keeps its verdict on today's code; ReportsModuleArchUnitTest keeps every assertion.",
+"F126": "Narrowing every Reports rule constant to Modules.Reports only and removing Reports from the Services alternative of the joint Tracker integration pattern; retiring feature A's move-time helpers now that the move is done; the ReportsModuleBoundariesArchUnitTest rule set R-RP1 to R-RP6 on ModuleRules with IL-measured baselines and made-up offenders.",
+"F127": "The Reports unit-test placement test the DESIGN names for S3 is not written again: feature B's ReportsUnitTestsBesideTheModuleArchUnitTest already pins the 18 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders. The old Auth, Authorization and Licensing alternatives of the joint Tracker integration pattern stay (host revision 2026-11-25): AccessAndLicensingRulesSeeTheModulesArchUnitTest requires the Tracker integration rule to keep catching a connector reaching the old Access and Licensing places, as it does for every other context, so dropping them would loosen a rule.",
+"F128": "C1: no rule constant or string literal in the test project matches the old Reports namespaces or paths any more; every Reports rule names Modules.Reports only and keeps its verdict, and the joint Tracker integration pattern keeps its old Access and Licensing guard without Reports.",
 "F13": "C2: Reports has its own module rules R-RP1 to R-RP6 on ModuleRules, read from the IL with measured inline lists, and each catches a made-up offender in Reports' own wording.",
 "F14": "A new edge into or out of Reports is caught by its own rules",
 "F2": "Reports' boundaries are guarded by its own module rules and no rule still points at where it used to live",
@@ -620,7 +623,6 @@
 "F27": "Single deployable and a single test assembly; producers and consumers of the rule constants change in the same commit, so the primary oracle covers them.",
 "F28": "Run ReportsModuleBoundariesArchUnitTest through dotnet test: R-RP1 to R-RP6 read the compiled IL with ModuleRules and compare the measured types and edges both ways with the inline lists, then run the same rules over made-up offender types in a fixture namespace (Lighthouse.Backend.Modules.ReportsFixtures).",
 "F29": "Each listed type lives in its layer with none under Services; Domain reaches only the kernel and System; outside reaches Domain only from API, the composition root and Reports Application (empty list) and Application only from API, the composition root and ReportRepository; Application reaches no Data, API, module Adapters, Tracker integration, RBAC or update code and EF Core only along the 2 listed edges; Application reaches Flow metrics Domain, Licensing, Organisation set-up data and platform infrastructure only along the 12 listed edges. Compliant twins pass.",
-"F3": "No rule constant and no string literal in the test project matches Services.Implementation.Reports, Services.Interfaces.Reports, Services/Implementation/Reports or Services/Interfaces/Reports any more, outside feature A's measurement files: ReportsPattern names Reports by Modules.Reports only, the joint Tracker integration pattern RefinementReportsAccessAndLicensing no longer names Reports nor the dead Auth, Authorization and Licensing alternatives, the Access and Licensing RefinementAndReports patterns name Reports by Modules.Reports only, and every rule keeps its verdict on today's code; ReportsModuleArchUnitTest keeps every assertion.",
 "F30": "A made-up misplaced type, unlisted layer type, Domain type reaching a service, outside type reaching Domain or Application, Application type reaching forbidden code or an unlisted EF Core, Flow metrics Domain, Licensing, set-up or platform type, an entry deleted from a list and a listed edge that no longer exists are each named in Reports wording; an empty subject set fails.",
 "F31": "TypesLiveInTheirLayer, DomainReachesOnlyTheKernelAndTheBaseLibrary, DomainIsReachedFromOutsideOnlyBy, ApplicationIsReachedFromOutsideOnlyBy and OutboundEdges already carry the six rule shapes with parameterised namespaces and wording",
 "F32": "Same module rule set shape; modelled on it with Reports lists, no shared base class because lists and wording are per module",
@@ -653,7 +655,6 @@
 "F57": "NUnit fixture drives ModuleRules over the real assembly and made-up fixtures: IL -> rule -> verdict naming the edge",
 "F58": "IL reader misses catch-clause, event and attribute-argument references",
 "F59": "Listed edges equal IL-visible edges",
-"F6": "Narrowing every Reports rule constant to Modules.Reports only and removing Reports and the dead Auth, Authorization and Licensing alternatives from the joint Tracker integration pattern; settling feature A's preservation law and old-path sweep for Reports now that the move is done; the ReportsModuleBoundariesArchUnitTest rule set R-RP1 to R-RP6 on ModuleRules with IL-measured baselines and made-up offenders.",
 "F60": "A catch-only reference such as DbUpdateConcurrencyException stays unlisted",
 "F61": "Claiming a rule sees catch-only references",
 "F62": "Catch-only edges invisible to R-RP5",
@@ -686,7 +687,6 @@
 "F87": "Removed once settled by the move, together with ReportsPatternRoles.cs and ReportsStringsTheMoveRenames.cs",
 "F88": "Rename-list tests dropped with the list",
 "F89": "Reads ReportsPattern only; every assertion keeps its verdict on the narrowed pattern",
-"F9": "The Reports unit-test placement test the DESIGN names for S3 is not written again: feature B's ReportsUnitTestsBesideTheModuleArchUnitTest already pins the 18 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders. The dead Auth, Authorization and Licensing alternatives go now, as the host decided at feature A's start.",
 "F90": "No production file, DI registration or configuration key changes",
 "F91": "Removed with the old-or-new sight law",
 "F92": "Removed once the rename list is empty",
@@ -710,7 +710,7 @@
 "status": {
 "kind": "Confirmed"
 },
-"text": "F9"
+"text": "F127"
 },
 {
 "status": {
@@ -723,7 +723,7 @@
 {
 "id": "P1",
 "kind": "Outcome",
-"text": "F3"
+"text": "F125"
 },
 {
 "id": "P2",
@@ -737,7 +737,7 @@
 }
 ],
 "scope_in": [
-"F6"
+"F126"
 ],
 "scope_out": [
 "F7"
@@ -745,7 +745,7 @@
 "slices": [
 {
 "id": "S1",
-"observation": "F11",
+"observation": "F128",
 "promises": [
 "P1",
 "P3"

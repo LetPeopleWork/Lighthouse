@@ -25,7 +25,7 @@ None.
 Outcome
 
 ```text
-No rule constant and no string literal in the test project matches Services.Implementation.Reports, Services.Interfaces.Reports, Services/Implementation/Reports or Services/Interfaces/Reports any more, outside feature A's measurement files: ReportsPattern names Reports by Modules.Reports only, the joint Tracker integration pattern RefinementReportsAccessAndLicensing no longer names Reports nor the dead Auth, Authorization and Licensing alternatives, the Access and Licensing RefinementAndReports patterns name Reports by Modules.Reports only, and every rule keeps its verdict on today's code; ReportsModuleArchUnitTest keeps every assertion.
+No rule constant and no string literal in the test project matches Services.Implementation.Reports, Services.Interfaces.Reports, Services/Implementation/Reports or Services/Interfaces/Reports any more, outside feature A's measurement files: ReportsPattern names Reports by Modules.Reports only, the joint Tracker integration pattern RefinementReportsAccessAndLicensing no longer names Reports under Services but keeps its old Auth, Authorization and Licensing alternatives, which still catch a connector reaching the old Access and Licensing places as the Access and Licensing checks require, the Access and Licensing RefinementAndReports patterns name Reports by Modules.Reports only, and every rule keeps its verdict on today's code; ReportsModuleArchUnitTest keeps every assertion.
 ```
 
 ### P2
@@ -47,7 +47,7 @@ Nothing a user, an API client, a tracker or the database sees changes: feature C
 ## Scope
 
 ```text
-Narrowing every Reports rule constant to Modules.Reports only and removing Reports and the dead Auth, Authorization and Licensing alternatives from the joint Tracker integration pattern; settling feature A's preservation law and old-path sweep for Reports now that the move is done; the ReportsModuleBoundariesArchUnitTest rule set R-RP1 to R-RP6 on ModuleRules with IL-measured baselines and made-up offenders.
+Narrowing every Reports rule constant to Modules.Reports only and removing Reports from the Services alternative of the joint Tracker integration pattern; retiring feature A's move-time helpers now that the move is done; the ReportsModuleBoundariesArchUnitTest rule set R-RP1 to R-RP6 on ModuleRules with IL-measured baselines and made-up offenders.
 ```
 
 ```text
@@ -66,7 +66,7 @@ Confirmed
 
 
 ```text
-The Reports unit-test placement test the DESIGN names for S3 is not written again: feature B's ReportsUnitTestsBesideTheModuleArchUnitTest already pins the 18 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders. The dead Auth, Authorization and Licensing alternatives go now, as the host decided at feature A's start.
+The Reports unit-test placement test the DESIGN names for S3 is not written again: feature B's ReportsUnitTestsBesideTheModuleArchUnitTest already pins the 18 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders. The old Auth, Authorization and Licensing alternatives of the joint Tracker integration pattern stay (host revision 2026-11-25): AccessAndLicensingRulesSeeTheModulesArchUnitTest requires the Tracker integration rule to keep catching a connector reaching the old Access and Licensing places, as it does for every other context, so dropping them would loosen a rule.
 ```
 
 #### Status
@@ -92,7 +92,7 @@ None.
 ### S1
 
 ```text
-C1: no rule constant or string literal in the test project matches the old Reports namespaces or paths any more; every Reports rule names Modules.Reports only and keeps its verdict, and the dead Auth, Authorization and Licensing alternatives of the joint Tracker integration pattern are gone.
+C1: no rule constant or string literal in the test project matches the old Reports namespaces or paths any more; every Reports rule names Modules.Reports only and keeps its verdict, and the joint Tracker integration pattern keeps its old Access and Licensing guard without Reports.
 ```
 
 #### Promises
