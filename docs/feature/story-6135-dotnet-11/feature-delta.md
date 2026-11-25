@@ -53,3 +53,14 @@ image and standalone builds run on .NET 11.
 - System Info reads the runtime version at run time; the ".NET 10.0.x" strings in its tests are fixtures.
 - Out of scope, possible follow-up: new .NET 11 APIs, such as a first-class cookie `Partitioned` property
   that `Program.cs` works around today.
+
+## Wave: DESIGN
+
+Closed accepted 2026-11-25 (solution architect, final-review mode). Authority: `handoff.json` -> `architecture.md`.
+
+- Push point: commit S1-S4 locally in order, push once after S4 (S1 alone is red in CI on SDK 10.0.404).
+- No `global.json`: CI pins the SDK through setup-dotnet (Renovate keeps it current); a second pin would drift.
+- Added target found in DESIGN: `dotnet-ef` 10.0.15 -> 11.0.0 in `Lighthouse.Backend/.config/dotnet-tools.json` (rollForward false).
+- No ADR, no formal model (no state machine or temporal law), prefactoring N/A in every slice.
+- Residual risks: EF/Npgsql 11 pending model change (crafter stops, back to architect); new analyzer warnings under TreatWarningsAsErrors (fix or narrow suppression); dotnet-stryker 5.1.0 on net11.0 unverified; Docker and standalone builds are not required checks.
+- Local toolchain: SDK 11.0.100 and ASP.NET Core 11.0.0 installed 2026-11-25 beside 10.0.114.

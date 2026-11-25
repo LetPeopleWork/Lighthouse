@@ -151,13 +151,1575 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>object_oriented</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Paradigm: object_oriented, unchanged. No domain, application or adapter code changes. The upgrade moves the target framework, the package majors, the SDK pins and the container images from 10 to 11 in one change.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Push point: commit S1, S2, S3 and S4 locally in order and push once after S4. S1 alone is red in CI because the pipelines install SDK 10.0.404, which cannot build net11.0. After S2 the Docker image build, which no required check runs, still uses sdk:10.0. After S3 only the Renovate hold and the prose are left, so one push after S4 gives one CI run and keeps main green. No slice is merged, split or reordered; the order follows the product dependencies.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Version targets: TargetFramework net11.0. Every .NET-versioned package moves from 10.0.15 to 11.0.0, and Npgsql.EntityFrameworkCore.PostgreSQL from 10.0.3 to 11.0.0. The dotnet-ef tool in Lighthouse.Backend/.config/dotnet-tools.json moves from 10.0.15 to 11.0.0, because Create-Migration.ps1 uses it with rollForward false. SDK pin 10.0.404 becomes 11.0.100. Docker tags aspnet:10.0 and sdk:10.0 become 11.0. Packages on their own release trains stay: coverlet.collector, Microsoft.Extensions.TimeProvider.Testing, Serilog.AspNetCore, Serilog.Settings.Configuration, SonarAnalyzer.CSharp, NUnit and adapters, Moq, Microsoft.NET.Test.Sdk, SQLitePCLRaw.
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>Preservation oracle: the existing backend suite, unmodified, is the behaviour-preservation oracle. NoPendingModelChangesTest is the oracle for &quot;no migration reports a pending model change&quot;. If it fails under EF 11, the crafter stops and returns the finding to the architect: a snapshot-only migration is a new decision, not part of this upgrade. Fixtures that say .NET 10.0.0 in SystemInfoControllerTest and in the examine script are values, not pins.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>Formal verification: no domain state machine, protocol, concurrency or temporal law is added or changed, so no Quint, TLA+ or Agda model is warranted and no checker is required. Liveness is not applicable: no progress property exists. Safety, inhabitation and reachability are covered by the real build, the existing test suite and the running app, not by a model. Type strength is unchanged. Property-based testing is not applicable, because no input domain or law changes. Jev is unauthorized in this repository: typesafe: unavailable by configuration.
+</code></pre>
+
+<h4>D6</h4>
+
+<pre><code>No ADR: the change makes no durable decision beyond moving to the current runtime. The existing Renovate rule that keeps .NET major image updates manual stays when the hold is removed. Stryker.NET (dotnet-stryker 5.1.0) names no target framework in its per-feature config files, so no config change is needed; whether it runs on a net11.0 test project is checked at the next backend mutation run.
+</code></pre>
+
+<h4>D7</h4>
+
+<pre><code>No global.json: CI keeps pinning the SDK through setup-dotnet, which Renovate already updates, so a global.json would be a second authority for the same pin that can drift from it. SDK 11 builds net10.0 projects, so other worktrees still on net10.0 keep working with the newest installed SDK as default. Revisit if a local SDK mismatch causes a real incident.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Input bounds: none are stored or validated by this change. Behaviour-free rule: routes, DTO shapes, serialized responses, UI pixels and topologies stay unchanged. Historical briefs, diagrams and decision records that name .NET 10 stay unchanged. Lighthouse.sln line 5 MinimumVisualStudioVersion is a Visual Studio version and stays. Existing migration Designer files keep their ProductVersion annotations. Adopting new .NET 11 APIs, for example the cookie Partitioned property, is out of scope.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>Local toolchain: SDK 11.0.100 and runtime 11.0.0 are installed next to 10.0.114, so S1 can be built and run locally. Docker is installed and the 11.0 images exist, so S3 can be checked locally. No new analyzer warning may be silenced project-wide: TreatWarningsAsErrors is on in Directory.Build.props, so a warning that .NET 11 adds is fixed in code or suppressed narrowly at the call site.
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>Target framework and EF Core major agree across the four backend projects</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj:4</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Builds the migrations assembly that Backend loads; must target net11.0 with EF 11.0.0
+</code></pre>
+
+<p>Target framework and EF Core major agree across the four backend projects</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj:4</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Builds the migrations assembly that Backend loads; must target net11.0 with EF 11.0.0 and Npgsql 11.0.0
+</code></pre>
+
+<p>Target framework and EF Core major agree across the four backend projects</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj:90</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Loads both migrations DLLs by HintPath from the gitignored Migrations folder; the first build after the retarget must rebuild them
+</code></pre>
+
+<p>Target framework and EF Core major agree across the four backend projects</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj:4</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Test project references Backend and the Testing packages, so it moves to net11.0 and 11.0.0 packages
+</code></pre>
+
+<p>SDK version installed by every pipeline can build net11.0</p>
+
+<p>.github/actions/build-backend/action.yml:21</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Shared composite action used by ci_backend.yml and package-app.yml, which serves the Linux and Windows standalone workflows
+</code></pre>
+
+<p>SDK version installed by every pipeline can build net11.0</p>
+
+<p>.github/workflows/ci_package-macos-standalone.yml:35</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Installs SDK itself before it calls build-backend
+</code></pre>
+
+<p>SDK version installed by every pipeline can build net11.0</p>
+
+<p>.github/workflows/ci_sbom.yml:26</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Restores the solution and runs CycloneDX, which needs the SDK that can read net11.0 projects
+</code></pre>
+
+<p>SDK version installed by every pipeline can build net11.0</p>
+
+<p>.github/workflows/ci_sonar_gates.yml:79</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Sonar scan builds the backend and needs SDK 11
+</code></pre>
+
+<p>SDK version installed by every pipeline can build net11.0</p>
+
+<p>Dockerfile:13</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Build stage restores and builds the net11.0 projects; sdk:11.0 image
+</code></pre>
+
+<p>SDK version installed by every pipeline can build net11.0</p>
+
+<p>.github/workflows/ci_package-linux-standalone.yml:1</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reaches the SDK only through package-app and build-backend; no pin of its own
+</code></pre>
+
+<p>SDK version installed by every pipeline can build net11.0</p>
+
+<p>.github/workflows/ci_package-win-standalone.yml:1</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reaches the SDK only through package-app and build-backend; no pin of its own
+</code></pre>
+
+<h3>Not applicable</h3>
+
+<p>architectural_tests</p>
+
+<pre><code>No dependency, boundary or owner law is touched: no application code moves and no import direction changes. The existing architecture tests in the backend suite run unmodified as part of the preservation oracle.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Producer and consumer of every touched contract change in the same commit and ship in one deployable. The build, NoPendingModelChangesTest and the running app already close the TFM and migrations agreement; persisted data and the wire format are unchanged.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>Public HTTP API GET /api/latest/systeminfo served by the app started through Lighthouse.Backend/Start-DevServer.ps1, the Docker image and the standalone packages
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>NuGet restore, EF Core providers for SQLite and PostgreSQL, GitHub Actions setup-dotnet, mcr.microsoft.com/dotnet images
+</code></pre>
+
+<pre><code>Build and CI configuration point at the .NET 11 toolchain; application code is untouched and depends on the same ports as before
+</code></pre>
+
+<h4>Failures</h4>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<p>None.</p>
+
+<h3>Equality</h3>
+
+<p>None.</p>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<p>None.</p>
+
+<h3>States</h3>
+
+<p>None.</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>Retarget to net11.0 and the .NET 11 toolchain
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Excluded state: a project or pipeline still on 10 next to net11.0 projects. The shared TFM and SDK agreements list every producer and consumer, and each slice carries a command that finds a leftover 10 reference.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Retarget to net11.0 and the .NET 11 toolchain
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Valid state exists: GA packages 11.0.0 and SDK 11.0.100 and images aspnet:11.0 and sdk:11.0 were observed to exist.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Retarget to net11.0 and the .NET 11 toolchain
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Public path: Start-DevServer.ps1, Docker run or standalone start, then GET /api/latest/systeminfo reports a .NET 11 runtime.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Retarget to net11.0 and the .NET 11 toolchain
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>Indeterminate</p>
+
+<pre><code>Not applicable: no progress or fairness property exists in a behaviour-free platform upgrade; no checker is required.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: EF Core 11 and Npgsql 11 model building is unchanged for the current model
+</code></pre>
+
+<pre><code>Migrations describe the current model for SQLite and PostgreSQL
+</code></pre>
+
+<pre><code>Different generated SQL text that keeps the same schema
+</code></pre>
+
+<pre><code>A pending model change or a changed column type or default
+</code></pre>
+
+<pre><code>Provider conventions may differ in ways the in-memory and SQLite tests cannot see; Postgres integration tests with containers are the check
+</code></pre>
+
+<p>crafter S1; returns to architect if NoPendingModelChangesTest fails</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: no .NET 11 analyzer or API obsolescence warning appears
+</code></pre>
+
+<pre><code>Zero-warning build with TreatWarningsAsErrors
+</code></pre>
+
+<pre><code>Narrow fixes in the call site
+</code></pre>
+
+<pre><code>Project-wide warning suppression or removal of TreatWarningsAsErrors
+</code></pre>
+
+<pre><code>New SYSLIB or ASP obsolescence warnings in production or test code
+</code></pre>
+
+<p>crafter S1</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: dotnet-stryker 5.1.0 runs against a net11.0 test project
+</code></pre>
+
+<pre><code>Per-feature mutation testing stays possible
+</code></pre>
+
+<pre><code>A Stryker version bump or a roll-forward setting at the next mutation run
+</code></pre>
+
+<pre><code>Skipping mutation testing silently
+</code></pre>
+
+<pre><code>Unverified until the next mutation run; no mutation run belongs to this upgrade
+</code></pre>
+
+<p>host, next backend feature with mutation testing</p>
+
+<h4>Y4</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>One push after S4 puts every change into one CI run
+</code></pre>
+
+<pre><code>Main stays green
+</code></pre>
+
+<pre><code>A fix commit before the push
+</code></pre>
+
+<pre><code>Pushing S1 alone or a state that installs SDK 10 with net11.0 projects
+</code></pre>
+
+<pre><code>Docker image and standalone builds are not required checks, so only the local S3 check and the post-push run show them
+</code></pre>
+
+<p>host</p>
+
+<h4>Y5</h4>
+
+<p>Bypass</p>
+
+<pre><code>Second stressor set: a runner image or setup-dotnet cache still offers only SDK 10, the aspnet:11.0 image lacks zoneinfo, the Partitioned cookie comment becomes false
+</code></pre>
+
+<pre><code>Pipelines install SDK 11.0.100 explicitly; IANA time zone ids resolve in the image; comments stay true
+</code></pre>
+
+<pre><code>Comment rewording
+</code></pre>
+
+<pre><code>A comment that states a false .NET 11 fact
+</code></pre>
+
+<pre><code>The zoneinfo claim in LighthouseClockTest and the CookieBuilder claim in Program.cs are re-verified in S1 and S3 and reworded if they changed; the Docker run in S3 resolves Europe/Zurich
+</code></pre>
+
+<p>crafter S1 and S3</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj</p>
+
+<p>Extend</p>
+
+<pre><code>TFM net11.0 and the 11.0.0 package set (Microsoft.AspNetCore.*, EntityFrameworkCore.*, System.Configuration.ConfigurationManager, Npgsql provider); the Serilog packages and SQLitePCLRaw stay
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj</p>
+
+<p>Extend</p>
+
+<pre><code>TFM net11.0 and Mvc.Testing, SignalR.Client, EFCore.InMemory 11.0.0
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj</p>
+
+<p>Extend</p>
+
+<pre><code>TFM net11.0 and EF Design, Relational, Cryptography.Xml, Drawing.Common 11.0.0
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj</p>
+
+<p>Extend</p>
+
+<pre><code>TFM net11.0 and EF 11.0.0, Npgsql 11.0.0, Cryptography.Xml 11.0.0
+</code></pre>
+
+<p>Lighthouse.Backend/.config/dotnet-tools.json</p>
+
+<p>Extend</p>
+
+<pre><code>dotnet-ef 10.0.15 to 11.0.0 so Create-Migration.ps1 matches the EF runtime; dotnet-stryker stays 5.1.0
+</code></pre>
+
+<p>Lighthouse.Backend/Start-DevServer.ps1</p>
+
+<p>Extend</p>
+
+<pre><code>bin/Debug/net10.0 becomes net11.0, the path used to find the built migrations DLLs
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/perf/readings.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>build output folder name net10.0 becomes net11.0
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/perf/README.md</p>
+
+<p>Extend</p>
+
+<pre><code>documented default build path net10.0 becomes net11.0
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/LighthouseClockTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Comment only: re-verify that .NET 11 accepts IANA ids on every platform and that the aspnet:11.0 image has zoneinfo, then reword the .NET 10 claim to say what is true
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Comment only at the Partitioned cookie workaround: say what is true for net11.0 without adopting a new API; check whether CookieBuilder now has a Partitioned property and, if so, note the follow-up in plain words
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NoPendingModelChangesTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet build Lighthouse.Backend/Lighthouse.sln
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
+sh -c &#x27;! git grep -nE &quot;net10\.0|10\.0\.15|10\.0\.3[^0-9]&quot; -- Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj Lighthouse.Backend/.config/dotnet-tools.json Lighthouse.Backend/Start-DevServer.ps1 Lighthouse.EndToEndTests/perf/readings.spec.ts Lighthouse.EndToEndTests/perf/README.md&#x27;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Build the solution and run the full backend suite with the filter above on SDK 11.0.100, then start the app with Lighthouse.Backend/Start-DevServer.ps1 and send GET /api/latest/systeminfo
+</code></pre>
+
+<pre><code>Build has zero warnings, every test passes (including NoPendingModelChangesTest for SQLite and PostgreSQL), the response has the same shape as before and its runtime field starts with .NET 11
+</code></pre>
+
+<pre><code>A net10.0 or 10.0.15 reference left in the listed files, a failing test, HasPendingModelChanges true, or a runtime field that starts with .NET 10
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>TargetFramework</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj:4</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Target framework and package majors move to 11.
+</code></pre>
+
+<p>TargetFramework</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj:4</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Target framework and test package majors move to 11.
+</code></pre>
+
+<p>TargetFramework</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj:4</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Target framework and EF majors move to 11.
+</code></pre>
+
+<p>TargetFramework</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj:4</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Target framework, EF and Npgsql majors move to 11.
+</code></pre>
+
+<p>dotnet-ef</p>
+
+<p>Lighthouse.Backend/.config/dotnet-tools.json:5</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. dotnet-ef moves to 11.0.0.
+</code></pre>
+
+<p>Start-DevServer.ps1</p>
+
+<p>Lighthouse.Backend/Start-DevServer.ps1:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. bin/Debug/net10.0 becomes net11.0, the path used to find the built migrations DLLs
+</code></pre>
+
+<p>net10.0</p>
+
+<p>Lighthouse.EndToEndTests/perf/readings.spec.ts:76</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Build folder name moves to net11.0.
+</code></pre>
+
+<p>PERF_BACKEND_EXECUTABLE</p>
+
+<p>Lighthouse.EndToEndTests/perf/README.md:29</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Documented default build path moves to net11.0.
+</code></pre>
+
+<p>ResolutionOrder_ConfiguredIanaIdWins</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/LighthouseClockTest.cs:110</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Comment only.
+</code></pre>
+
+<p>Partitioned</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:942</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Comment only.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj:1</p>
+
+<p>Changed</p>
+
+<pre><code>TFM net11.0 and the 11.0.0 package set (Microsoft.AspNetCore.*, EntityFrameworkCore.*, System.Configuration.ConfigurationManager, Npgsql provider); the Serilog packages and SQLitePCLRaw stay
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj:1</p>
+
+<p>Changed</p>
+
+<pre><code>TFM net11.0 and Mvc.Testing, SignalR.Client, EFCore.InMemory 11.0.0
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj:1</p>
+
+<p>Changed</p>
+
+<pre><code>TFM net11.0 and EF Design, Relational, Cryptography.Xml, Drawing.Common 11.0.0
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj:1</p>
+
+<p>Changed</p>
+
+<pre><code>TFM net11.0 and EF 11.0.0, Npgsql 11.0.0, Cryptography.Xml 11.0.0
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/.config/dotnet-tools.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>dotnet-ef 10.0.15 to 11.0.0 so Create-Migration.ps1 matches the EF runtime; dotnet-stryker stays 5.1.0
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/Start-DevServer.ps1:1</p>
+
+<p>Changed</p>
+
+<pre><code>bin/Debug/net10.0 becomes net11.0, the path used to find the built migrations DLLs
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.EndToEndTests/perf/readings.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>build output folder name net10.0 becomes net11.0
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.EndToEndTests/perf/README.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>documented default build path net10.0 becomes net11.0
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/LighthouseClockTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Comment only: re-verify that .NET 11 accepts IANA ids on every platform and that the aspnet:11.0 image has zoneinfo, then reword the .NET 10 claim to say what is true
+</code></pre>
+
+<p>build-config</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Comment only at the Partitioned cookie workaround: say what is true for net11.0 without adopting a new API; check whether CookieBuilder now has a Partitioned property and, if so, note the follow-up in plain words
+</code></pre>
+
+<p>solution</p>
+
+<p>Lighthouse.Backend/Lighthouse.sln:5</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>MinimumVisualStudioVersion is a Visual Studio version, not .NET; the solution names no target framework
+</code></pre>
+
+<p>test-fixture</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs:83</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>The string .NET 10.0.0 is a fixture value passed through the controller, not a pin
+</code></pre>
+
+<p>build-props</p>
+
+<p>Lighthouse.Backend/Directory.Build.props:21</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>TreatWarningsAsErrors stays; SonarAnalyzer.CSharp is on its own release train; new .NET 11 warnings are fixed in code
+</code></pre>
+
+<p>generated-migrations</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Existing migrations and snapshots keep their ProductVersion annotations; no new migration is generated unless the oracle shows a pending change, which returns to the architect
+</code></pre>
+
+<p>generated-output</p>
+
+<p>Lighthouse.Backend/Migrations:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Gitignored folder with the copied migrations DLLs; the first build after the retarget overwrites them
+</code></pre>
+
+<p>consumer-public-contract</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs:46</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Response shape is unchanged; Runtime reads RuntimeInformation.FrameworkDescription at run time and shows .NET 11 without code change
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>No structure move makes the retarget easier; the edits are version values and two comments.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>.github/actions/build-backend/action.yml</p>
+
+<p>Extend</p>
+
+<pre><code>setup-dotnet dotnet-version 10.0.404 becomes 11.0.100; this composite action also serves ci_backend and the Linux and Windows standalone workflows through package-app
+</code></pre>
+
+<p>.github/workflows/ci_package-macos-standalone.yml</p>
+
+<p>Extend</p>
+
+<pre><code>dotnet-version 10.0.404 becomes 11.0.100
+</code></pre>
+
+<p>.github/workflows/ci_sbom.yml</p>
+
+<p>Extend</p>
+
+<pre><code>dotnet-version 10.0.404 becomes 11.0.100; the committed backend.cdx.json stays a pipeline-generated file and is not edited by hand
+</code></pre>
+
+<p>.github/workflows/ci_sonar_gates.yml</p>
+
+<p>Extend</p>
+
+<pre><code>dotnet-version 10.0.404 becomes 11.0.100
+</code></pre>
+
+<p>.github/scripts/toolchain-pins.test.mjs</p>
+
+<h4>Verification</h4>
+
+<pre><code>node --test .github/scripts/toolchain-pins.test.mjs
+sh -c &#x27;! git grep -nE &quot;dotnet-version: .?10[.]&quot; -- .github&#x27;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the pin checker test and search .github for an SDK 10 pin; after the push, the SQLite and Postgres verify builds, E2E and Sonar run
+</code></pre>
+
+<pre><code>The pin checker test passes, no workflow or action installs SDK 10, and the pipelines are green with no new Sonar issue
+</code></pre>
+
+<pre><code>Any setup-dotnet step with a 10.x version, or a pipeline that cannot build net11.0
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P5</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>dotnet-version</p>
+
+<p>.github/actions/build-backend/action.yml:21</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. SDK pin moves to 11.0.100.
+</code></pre>
+
+<p>dotnet-version</p>
+
+<p>.github/workflows/ci_package-macos-standalone.yml:35</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. SDK pin moves to 11.0.100.
+</code></pre>
+
+<p>dotnet-version</p>
+
+<p>.github/workflows/ci_sbom.yml:26</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. SDK pin moves to 11.0.100.
+</code></pre>
+
+<p>dotnet-version</p>
+
+<p>.github/workflows/ci_sonar_gates.yml:79</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. SDK pin moves to 11.0.100.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>ci-config</p>
+
+<p>.github/actions/build-backend/action.yml:1</p>
+
+<p>Changed</p>
+
+<pre><code>setup-dotnet dotnet-version 10.0.404 becomes 11.0.100; this composite action also serves ci_backend and the Linux and Windows standalone workflows through package-app
+</code></pre>
+
+<p>ci-config</p>
+
+<p>.github/workflows/ci_package-macos-standalone.yml:1</p>
+
+<p>Changed</p>
+
+<pre><code>dotnet-version 10.0.404 becomes 11.0.100
+</code></pre>
+
+<p>ci-config</p>
+
+<p>.github/workflows/ci_sbom.yml:1</p>
+
+<p>Changed</p>
+
+<pre><code>dotnet-version 10.0.404 becomes 11.0.100; the committed backend.cdx.json stays a pipeline-generated file and is not edited by hand
+</code></pre>
+
+<p>ci-config</p>
+
+<p>.github/workflows/ci_sonar_gates.yml:1</p>
+
+<p>Changed</p>
+
+<pre><code>dotnet-version 10.0.404 becomes 11.0.100
+</code></pre>
+
+<p>test-fixture</p>
+
+<p>.github/scripts/toolchain-pins.test.mjs:73</p>
+
+<p>Changed</p>
+
+<pre><code>The embedded Dockerfile fixture names sdk:10.0; the oracle owner aligns it to sdk:11.0 so the fixture does not name .NET 10 as current. The pin checker itself pins Node and pnpm, not .NET, so no rule changes.
+</code></pre>
+
+<p>ci-config</p>
+
+<p>.github/workflows/ci_package-linux-standalone.yml:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No SDK pin of its own; uses package-app and build-backend
+</code></pre>
+
+<p>ci-config</p>
+
+<p>.github/workflows/ci_package-win-standalone.yml:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No SDK pin of its own; uses package-app and build-backend
+</code></pre>
+
+<p>generated-output</p>
+
+<p>Lighthouse.Frontend/public/sbom/backend.cdx.json:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>A 3.8 KB placeholder that every pipeline overwrites from the CycloneDX run; it names no .NET version
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Only pinned version strings change.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Dockerfile</p>
+
+<p>Extend</p>
+
+<pre><code>FROM aspnet:10.0 becomes aspnet:11.0 and FROM sdk:10.0 becomes sdk:11.0
+</code></pre>
+
+<p>.github/workflows/ci_docker.yml</p>
+
+<h4>Verification</h4>
+
+<pre><code>sh -c &#x27;docker build --build-arg NODE_VERSION=$(cat .nvmrc) -t lighthouse-s6135 .&#x27;
+sh -c &#x27;docker run -d --rm --name lighthouse-s6135 -p 8443:443 -e Database__Provider=sqlite -e UsageData__CollectorBaseUrl=http://127.0.0.1:9 -e &quot;Database__ConnectionString=Data Source=lighthouse.db&quot; lighthouse-s6135 &amp;&amp; timeout 60 bash -c &quot;until curl --silent --fail --insecure https://localhost:8443/api/latest/systeminfo; do sleep 1; done&quot;; docker stop lighthouse-s6135&#x27;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Build the Docker image, run it with SQLite and send GET /api/latest/systeminfo; start a standalone package built with SDK 11 the same way
+</code></pre>
+
+<pre><code>Both serve the app and the runtime field starts with .NET 11
+</code></pre>
+
+<pre><code>A build or start failure, or a runtime field that starts with .NET 10
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<p>P6</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>aspnet</p>
+
+<p>Dockerfile:5</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Image tags move to 11.0.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>container-image</p>
+
+<p>Dockerfile:5</p>
+
+<p>Changed</p>
+
+<pre><code>Runtime image tag 11.0; confirm /usr/share/zoneinfo is present so IANA time zone ids still resolve
+</code></pre>
+
+<p>container-image</p>
+
+<p>Dockerfile:13</p>
+
+<p>Changed</p>
+
+<pre><code>Build image tag 11.0, built from the net11.0 projects
+</code></pre>
+
+<p>ci-config</p>
+
+<p>.github/workflows/ci_docker.yml:64</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Builds and starts the image from the Dockerfile; no .NET version in the workflow
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Only two image tags change.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>renovate.json</p>
+
+<p>Extend</p>
+
+<pre><code>Remove the rule that holds .NET images and packages below 11; keep the rule that leaves .NET major image updates to a maintainer
+</code></pre>
+
+<p>.github/actions/README.md</p>
+
+<p>Extend</p>
+
+<pre><code>build-backend description says .NET 11
+</code></pre>
+
+<p>Scripts/examine/test-platform-answers-compare.sh</p>
+
+<p>Extend</p>
+
+<pre><code>Fixture runtime value .NET 10.0.0 becomes .NET 11.0.0 so it reads as current
+</code></pre>
+
+<p>ARCHITECTURE.md</p>
+
+<p>Extend</p>
+
+<pre><code>Lines naming .NET 10 as current (process box, paradigm, test stack) name .NET 11
+</code></pre>
+
+<p>CLAUDE.md</p>
+
+<p>Extend</p>
+
+<pre><code>Backend line says C# .NET 11
+</code></pre>
+
+<p>docs/Installation/configuration.md</p>
+
+<p>Extend</p>
+
+<pre><code>Time zone sentence names .NET 11, after the IANA claim is re-verified
+</code></pre>
+
+<p>docs/compliance/cra-technical-file.md</p>
+
+<p>Extend</p>
+
+<pre><code>Technology stack table says .NET 11
+</code></pre>
+
+<p>renovate.json</p>
+
+<h4>Verification</h4>
+
+<pre><code>python3 -m json.tool renovate.json
+sh -c &#x27;! git grep -n &quot;&lt;11&quot; -- renovate.json&#x27;
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Parse renovate.json and search it for the below-11 cap; read the listed current-state docs
+</code></pre>
+
+<pre><code>The file parses, no rule caps .NET packages or images, and the listed docs name .NET 11 while historical records are unchanged
+</code></pre>
+
+<pre><code>A rule with allowedVersions below 11 for .NET, or a listed current-state doc that still names .NET 10 as current
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P7</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>allowedVersions</p>
+
+<p>renovate.json:50</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. The .NET hold rule is removed.
+</code></pre>
+
+<p>build-backend</p>
+
+<p>.github/actions/README.md:6</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Description names .NET 11.
+</code></pre>
+
+<p>test-platform-answers-compare.sh</p>
+
+<p>Scripts/examine/test-platform-answers-compare.sh:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this statement; edited in place. Fixture runtime value .NET 10.0.0 becomes .NET 11.0.0 so it reads as current
+</code></pre>
+
+<p>Paradigm</p>
+
+<p>ARCHITECTURE.md:52</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Statements name .NET 11.
+</code></pre>
+
+<p>CLAUDE.md</p>
+
+<p>CLAUDE.md:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this statement; edited in place. Backend line says C# .NET 11
+</code></pre>
+
+<p>IANA</p>
+
+<p>docs/Installation/configuration.md:51</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Sentence names .NET 11.
+</code></pre>
+
+<p>Technology Stack</p>
+
+<p>docs/compliance/cra-technical-file.md:148</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this fact; edited in place, nothing new is created. Table names .NET 11.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>docs-or-config</p>
+
+<p>renovate.json:1</p>
+
+<p>Changed</p>
+
+<pre><code>Remove the rule that holds .NET images and packages below 11; keep the rule that leaves .NET major image updates to a maintainer
+</code></pre>
+
+<p>docs-or-config</p>
+
+<p>.github/actions/README.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>build-backend description says .NET 11
+</code></pre>
+
+<p>docs-or-config</p>
+
+<p>Scripts/examine/test-platform-answers-compare.sh:1</p>
+
+<p>Changed</p>
+
+<pre><code>Fixture runtime value .NET 10.0.0 becomes .NET 11.0.0 so it reads as current
+</code></pre>
+
+<p>docs-or-config</p>
+
+<p>ARCHITECTURE.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lines naming .NET 10 as current (process box, paradigm, test stack) name .NET 11
+</code></pre>
+
+<p>docs-or-config</p>
+
+<p>CLAUDE.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>Backend line says C# .NET 11
+</code></pre>
+
+<p>docs-or-config</p>
+
+<p>docs/Installation/configuration.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>Time zone sentence names .NET 11, after the IANA claim is re-verified
+</code></pre>
+
+<p>docs-or-config</p>
+
+<p>docs/compliance/cra-technical-file.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>Technology stack table says .NET 11
+</code></pre>
+
+<p>history</p>
+
+<p>docs/product/architecture:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Historical briefs, diagrams and decision records that name .NET 10 as history stay unchanged; release notes are written at release time
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>Renovate configuration after the hold is gone</p>
+
+<p>renovate.json:39</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Rule that capped .NET at below 11 is removed; the manual-merge rule for major .NET images stays
+</code></pre>
+
+<p>Renovate configuration after the hold is gone</p>
+
+<p>.github/scripts/dependency-bot.mjs:1</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Reads PR metadata, not the removed rule; a read of the file is the check
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Prose and one config rule; no structure moves.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
 
 <p>None.</p>
 

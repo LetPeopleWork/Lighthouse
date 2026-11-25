@@ -1,18 +1,904 @@
 {
 "counters": {
-"F": 44,
+"D": 7,
+"F": 168,
+"K": 2,
 "P": 7,
-"S": 4
+"S": 4,
+"Y": 5
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"agreement": [
+{
+"contract": "Target framework and EF Core major agree across the four backend projects",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj:4",
+"party": "Producer",
+"reason": "F54"
+},
+{
+"contract": "Target framework and EF Core major agree across the four backend projects",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj:4",
+"party": "Producer",
+"reason": "F55"
+},
+{
+"contract": "Target framework and EF Core major agree across the four backend projects",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj:90",
+"party": "Consumer",
+"reason": "F56"
+},
+{
+"contract": "Target framework and EF Core major agree across the four backend projects",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj:4",
+"party": "Consumer",
+"reason": "F57"
+},
+{
+"contract": "SDK version installed by every pipeline can build net11.0",
+"decision": "Migrated",
+"locator": ".github/actions/build-backend/action.yml:21",
+"party": "Producer",
+"reason": "F58"
+},
+{
+"contract": "SDK version installed by every pipeline can build net11.0",
+"decision": "Migrated",
+"locator": ".github/workflows/ci_package-macos-standalone.yml:35",
+"party": "Producer",
+"reason": "F59"
+},
+{
+"contract": "SDK version installed by every pipeline can build net11.0",
+"decision": "Migrated",
+"locator": ".github/workflows/ci_sbom.yml:26",
+"party": "Producer",
+"reason": "F60"
+},
+{
+"contract": "SDK version installed by every pipeline can build net11.0",
+"decision": "Migrated",
+"locator": ".github/workflows/ci_sonar_gates.yml:79",
+"party": "Producer",
+"reason": "F61"
+},
+{
+"contract": "SDK version installed by every pipeline can build net11.0",
+"decision": "Migrated",
+"locator": "Dockerfile:13",
+"party": "Consumer",
+"reason": "F62"
+},
+{
+"contract": "SDK version installed by every pipeline can build net11.0",
+"decision": "UnchangedCompatible",
+"locator": ".github/workflows/ci_package-linux-standalone.yml:1",
+"party": "Consumer",
+"reason": "F63"
+},
+{
+"contract": "SDK version installed by every pipeline can build net11.0",
+"decision": "UnchangedCompatible",
+"locator": ".github/workflows/ci_package-win-standalone.yml:1",
+"party": "Consumer",
+"reason": "F63"
+}
+],
+"boundaries": {
+"dependency_direction": "F68",
+"driven_ports": [
+"F67"
+],
+"driving_port": "F66"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F70",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F69"
+},
+{
+"axis": "Inhabitation",
+"basis": "F71",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F69"
+},
+{
+"axis": "PublicReachability",
+"basis": "F72",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F69"
+},
+{
+"axis": "Liveness",
+"basis": "F73",
+"design": "Pass",
+"runtime": "Indeterminate",
+"subject": "F69"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F52"
+},
+{
+"id": "K2",
+"text": "F53"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F45"
+},
+{
+"id": "D2",
+"text": "F46"
+},
+{
+"id": "D3",
+"text": "F47"
+},
+{
+"id": "D4",
+"text": "F48"
+},
+{
+"id": "D5",
+"text": "F49"
+},
+{
+"id": "D6",
+"text": "F50"
+},
+{
+"id": "D7",
+"text": "F51"
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F64"
+},
+{
+"analysis": "contract_tests",
+"reason": "F65"
+}
+],
+"risks": [
+{
+"allowed": "F76",
+"forbidden": "F77",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "crafter S1; returns to architect if NoPendingModelChangesTest fails",
+"preserved": "F75",
+"residue": "F78",
+"source": "F74"
+},
+{
+"allowed": "F81",
+"forbidden": "F82",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "crafter S1",
+"preserved": "F80",
+"residue": "F83",
+"source": "F79"
+},
+{
+"allowed": "F86",
+"forbidden": "F87",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "host, next backend feature with mutation testing",
+"preserved": "F85",
+"residue": "F88",
+"source": "F84"
+},
+{
+"allowed": "F91",
+"forbidden": "F92",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "host",
+"preserved": "F90",
+"residue": "F93",
+"source": "F89"
+},
+{
+"allowed": "F96",
+"forbidden": "F97",
+"id": "Y5",
+"kind": "Bypass",
+"owner": "crafter S1 and S3",
+"preserved": "F95",
+"residue": "F98",
+"source": "F94"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NoPendingModelChangesTest.cs",
+"public_oracle": {
+"expected": "F110",
+"falsifier": "F111",
+"promises": [
+"P1",
+"P4"
+],
+"stimulus": "F109"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj:1",
+"reason": "F99"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj:1",
+"reason": "F100"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj:1",
+"reason": "F101"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj:1",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.Backend/.config/dotnet-tools.json:1",
+"reason": "F103"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.Backend/Start-DevServer.ps1:1",
+"reason": "F104"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.EndToEndTests/perf/readings.spec.ts:1",
+"reason": "F105"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.EndToEndTests/perf/README.md:1",
+"reason": "F106"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/LighthouseClockTest.cs:1",
+"reason": "F107"
+},
+{
+"decision": "Changed",
+"kind": "build-config",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F108"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "solution",
+"locator": "Lighthouse.Backend/Lighthouse.sln:5",
+"reason": "F121"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-fixture",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs:83",
+"reason": "F122"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "build-props",
+"locator": "Lighthouse.Backend/Directory.Build.props:21",
+"reason": "F123"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "generated-migrations",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations:1",
+"reason": "F124"
+},
+{
+"decision": "Migrated",
+"kind": "generated-output",
+"locator": "Lighthouse.Backend/Migrations:1",
+"reason": "F125"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer-public-contract",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs:46",
+"reason": "F126"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F127"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj:4",
+"reason": "F112",
+"symbol": "TargetFramework"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj:4",
+"reason": "F113",
+"symbol": "TargetFramework"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj:4",
+"reason": "F114",
+"symbol": "TargetFramework"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj:4",
+"reason": "F115",
+"symbol": "TargetFramework"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/.config/dotnet-tools.json:5",
+"reason": "F116",
+"symbol": "dotnet-ef"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Start-DevServer.ps1:1",
+"reason": "F117",
+"symbol": "Start-DevServer.ps1"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/perf/readings.spec.ts:76",
+"reason": "F118",
+"symbol": "net10.0"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/perf/README.md:29",
+"reason": "F119",
+"symbol": "PERF_BACKEND_EXECUTABLE"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/LighthouseClockTest.cs:110",
+"reason": "F120",
+"symbol": "ResolutionOrder_ConfiguredIanaIdWins"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:942",
+"reason": "F120",
+"symbol": "Partitioned"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj",
+"reason": "F99"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
+"reason": "F100"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj",
+"reason": "F101"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj",
+"reason": "F102"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/.config/dotnet-tools.json",
+"reason": "F103"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Start-DevServer.ps1",
+"reason": "F104"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/perf/readings.spec.ts",
+"reason": "F105"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/perf/README.md",
+"reason": "F106"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/Host/LighthouseClockTest.cs",
+"reason": "F107"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F108"
+}
+],
+"verification": [
+"dotnet build Lighthouse.Backend/Lighthouse.sln",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\"",
+"sh -c '! git grep -nE \"net10\\.0|10\\.0\\.15|10\\.0\\.3[^0-9]\" -- Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj Lighthouse.Backend/.config/dotnet-tools.json Lighthouse.Backend/Start-DevServer.ps1 Lighthouse.EndToEndTests/perf/readings.spec.ts Lighthouse.EndToEndTests/perf/README.md'"
+]
+},
+"S2": {
+"oracle": ".github/scripts/toolchain-pins.test.mjs",
+"public_oracle": {
+"expected": "F132",
+"falsifier": "F133",
+"promises": [
+"P2",
+"P5"
+],
+"stimulus": "F131"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "ci-config",
+"locator": ".github/actions/build-backend/action.yml:1",
+"reason": "F128"
+},
+{
+"decision": "Changed",
+"kind": "ci-config",
+"locator": ".github/workflows/ci_package-macos-standalone.yml:1",
+"reason": "F129"
+},
+{
+"decision": "Changed",
+"kind": "ci-config",
+"locator": ".github/workflows/ci_sbom.yml:1",
+"reason": "F130"
+},
+{
+"decision": "Changed",
+"kind": "ci-config",
+"locator": ".github/workflows/ci_sonar_gates.yml:1",
+"reason": "F129"
+},
+{
+"decision": "Changed",
+"kind": "test-fixture",
+"locator": ".github/scripts/toolchain-pins.test.mjs:73",
+"reason": "F135"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "ci-config",
+"locator": ".github/workflows/ci_package-linux-standalone.yml:1",
+"reason": "F136"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "ci-config",
+"locator": ".github/workflows/ci_package-win-standalone.yml:1",
+"reason": "F136"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "generated-output",
+"locator": "Lighthouse.Frontend/public/sbom/backend.cdx.json:1",
+"reason": "F137"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F138"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": ".github/actions/build-backend/action.yml:21",
+"reason": "F134",
+"symbol": "dotnet-version"
+},
+{
+"decision": "Extend",
+"locator": ".github/workflows/ci_package-macos-standalone.yml:35",
+"reason": "F134",
+"symbol": "dotnet-version"
+},
+{
+"decision": "Extend",
+"locator": ".github/workflows/ci_sbom.yml:26",
+"reason": "F134",
+"symbol": "dotnet-version"
+},
+{
+"decision": "Extend",
+"locator": ".github/workflows/ci_sonar_gates.yml:79",
+"reason": "F134",
+"symbol": "dotnet-version"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": ".github/actions/build-backend/action.yml",
+"reason": "F128"
+},
+{
+"change": "Extend",
+"path": ".github/workflows/ci_package-macos-standalone.yml",
+"reason": "F129"
+},
+{
+"change": "Extend",
+"path": ".github/workflows/ci_sbom.yml",
+"reason": "F130"
+},
+{
+"change": "Extend",
+"path": ".github/workflows/ci_sonar_gates.yml",
+"reason": "F129"
+}
+],
+"verification": [
+"node --test .github/scripts/toolchain-pins.test.mjs",
+"sh -c '! git grep -nE \"dotnet-version: .?10[.]\" -- .github'"
+]
+},
+"S3": {
+"oracle": ".github/workflows/ci_docker.yml",
+"public_oracle": {
+"expected": "F141",
+"falsifier": "F142",
+"promises": [
+"P3",
+"P6"
+],
+"stimulus": "F140"
+},
+"records": {
+"impact": [
+{
+"decision": "Changed",
+"kind": "container-image",
+"locator": "Dockerfile:5",
+"reason": "F144"
+},
+{
+"decision": "Changed",
+"kind": "container-image",
+"locator": "Dockerfile:13",
+"reason": "F145"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "ci-config",
+"locator": ".github/workflows/ci_docker.yml:64",
+"reason": "F146"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F147"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Dockerfile:5",
+"reason": "F143",
+"symbol": "aspnet"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Dockerfile",
+"reason": "F139"
+}
+],
+"verification": [
+"sh -c 'docker build --build-arg NODE_VERSION=$(cat .nvmrc) -t lighthouse-s6135 .'",
+"sh -c 'docker run -d --rm --name lighthouse-s6135 -p 8443:443 -e Database__Provider=sqlite -e UsageData__CollectorBaseUrl=http://127.0.0.1:9 -e \"Database__ConnectionString=Data Source=lighthouse.db\" lighthouse-s6135 && timeout 60 bash -c \"until curl --silent --fail --insecure https://localhost:8443/api/latest/systeminfo; do sleep 1; done\"; docker stop lighthouse-s6135'"
+]
+},
+"S4": {
+"oracle": "renovate.json",
+"public_oracle": {
+"expected": "F156",
+"falsifier": "F157",
+"promises": [
+"P2",
+"P7"
+],
+"stimulus": "F155"
+},
+"records": {
+"agreement": [
+{
+"contract": "Renovate configuration after the hold is gone",
+"decision": "Migrated",
+"locator": "renovate.json:39",
+"party": "Producer",
+"reason": "F166"
+},
+{
+"contract": "Renovate configuration after the hold is gone",
+"decision": "UnchangedCompatible",
+"locator": ".github/scripts/dependency-bot.mjs:1",
+"party": "Consumer",
+"reason": "F167"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "docs-or-config",
+"locator": "renovate.json:1",
+"reason": "F148"
+},
+{
+"decision": "Changed",
+"kind": "docs-or-config",
+"locator": ".github/actions/README.md:1",
+"reason": "F149"
+},
+{
+"decision": "Changed",
+"kind": "docs-or-config",
+"locator": "Scripts/examine/test-platform-answers-compare.sh:1",
+"reason": "F150"
+},
+{
+"decision": "Changed",
+"kind": "docs-or-config",
+"locator": "ARCHITECTURE.md:1",
+"reason": "F151"
+},
+{
+"decision": "Changed",
+"kind": "docs-or-config",
+"locator": "CLAUDE.md:1",
+"reason": "F152"
+},
+{
+"decision": "Changed",
+"kind": "docs-or-config",
+"locator": "docs/Installation/configuration.md:1",
+"reason": "F153"
+},
+{
+"decision": "Changed",
+"kind": "docs-or-config",
+"locator": "docs/compliance/cra-technical-file.md:1",
+"reason": "F154"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "history",
+"locator": "docs/product/architecture:1",
+"reason": "F165"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F168"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "renovate.json:50",
+"reason": "F158",
+"symbol": "allowedVersions"
+},
+{
+"decision": "Extend",
+"locator": ".github/actions/README.md:6",
+"reason": "F159",
+"symbol": "build-backend"
+},
+{
+"decision": "Extend",
+"locator": "Scripts/examine/test-platform-answers-compare.sh:1",
+"reason": "F160",
+"symbol": "test-platform-answers-compare.sh"
+},
+{
+"decision": "Extend",
+"locator": "ARCHITECTURE.md:52",
+"reason": "F161",
+"symbol": "Paradigm"
+},
+{
+"decision": "Extend",
+"locator": "CLAUDE.md:1",
+"reason": "F162",
+"symbol": "CLAUDE.md"
+},
+{
+"decision": "Extend",
+"locator": "docs/Installation/configuration.md:51",
+"reason": "F163",
+"symbol": "IANA"
+},
+{
+"decision": "Extend",
+"locator": "docs/compliance/cra-technical-file.md:148",
+"reason": "F164",
+"symbol": "Technology Stack"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "renovate.json",
+"reason": "F148"
+},
+{
+"change": "Extend",
+"path": ".github/actions/README.md",
+"reason": "F149"
+},
+{
+"change": "Extend",
+"path": "Scripts/examine/test-platform-answers-compare.sh",
+"reason": "F150"
+},
+{
+"change": "Extend",
+"path": "ARCHITECTURE.md",
+"reason": "F151"
+},
+{
+"change": "Extend",
+"path": "CLAUDE.md",
+"reason": "F152"
+},
+{
+"change": "Extend",
+"path": "docs/Installation/configuration.md",
+"reason": "F153"
+},
+{
+"change": "Extend",
+"path": "docs/compliance/cra-technical-file.md",
+"reason": "F154"
+}
+],
+"verification": [
+"python3 -m json.tool renovate.json",
+"sh -c '! git grep -n \"<11\" -- renovate.json'"
+]
+}
+}
 },
 "facts": {
 "F1": "ADO Story 6135: Upgrade Lighthouse from .NET 10 to .NET 11 in one change, now that .NET 11.0.0 is GA (2026-11-10, SDK 11.0.100) and Npgsql.EntityFrameworkCore.PostgreSQL 11.0.0 is released. Retarget all four projects, SDK pins, Docker images and the .NET-versioned packages together, and remove the Renovate .NET 10 hold.",
 "F10": "Build pipelines verify the app on .NET 11",
+"F100": "TFM net11.0 and Mvc.Testing, SignalR.Client, EFCore.InMemory 11.0.0",
+"F101": "TFM net11.0 and EF Design, Relational, Cryptography.Xml, Drawing.Common 11.0.0",
+"F102": "TFM net11.0 and EF 11.0.0, Npgsql 11.0.0, Cryptography.Xml 11.0.0",
+"F103": "dotnet-ef 10.0.15 to 11.0.0 so Create-Migration.ps1 matches the EF runtime; dotnet-stryker stays 5.1.0",
+"F104": "bin/Debug/net10.0 becomes net11.0, the path used to find the built migrations DLLs",
+"F105": "build output folder name net10.0 becomes net11.0",
+"F106": "documented default build path net10.0 becomes net11.0",
+"F107": "Comment only: re-verify that .NET 11 accepts IANA ids on every platform and that the aspnet:11.0 image has zoneinfo, then reword the .NET 10 claim to say what is true",
+"F108": "Comment only at the Partitioned cookie workaround: say what is true for net11.0 without adopting a new API; check whether CookieBuilder now has a Partitioned property and, if so, note the follow-up in plain words",
+"F109": "Build the solution and run the full backend suite with the filter above on SDK 11.0.100, then start the app with Lighthouse.Backend/Start-DevServer.ps1 and send GET /api/latest/systeminfo",
 "F11": "the SDK pins and toolchain pin checks name .NET 11",
+"F110": "Build has zero warnings, every test passes (including NoPendingModelChangesTest for SQLite and PostgreSQL), the response has the same shape as before and its runtime field starts with .NET 11",
+"F111": "A net10.0 or 10.0.15 reference left in the listed files, a failing test, HasPendingModelChanges true, or a runtime field that starts with .NET 10",
+"F112": "Existing owner of this fact; edited in place, nothing new is created. Target framework and package majors move to 11.",
+"F113": "Existing owner of this fact; edited in place, nothing new is created. Target framework and test package majors move to 11.",
+"F114": "Existing owner of this fact; edited in place, nothing new is created. Target framework and EF majors move to 11.",
+"F115": "Existing owner of this fact; edited in place, nothing new is created. Target framework, EF and Npgsql majors move to 11.",
+"F116": "Existing owner of this fact; edited in place, nothing new is created. dotnet-ef moves to 11.0.0.",
+"F117": "Existing owner of this fact; edited in place, nothing new is created. bin/Debug/net10.0 becomes net11.0, the path used to find the built migrations DLLs",
+"F118": "Existing owner of this fact; edited in place, nothing new is created. Build folder name moves to net11.0.",
+"F119": "Existing owner of this fact; edited in place, nothing new is created. Documented default build path moves to net11.0.",
 "F12": "the SQLite and Postgres verify builds, E2E and Sonar run",
+"F120": "Existing owner of this fact; edited in place, nothing new is created. Comment only.",
+"F121": "MinimumVisualStudioVersion is a Visual Studio version, not .NET; the solution names no target framework",
+"F122": "The string .NET 10.0.0 is a fixture value passed through the controller, not a pin",
+"F123": "TreatWarningsAsErrors stays; SonarAnalyzer.CSharp is on its own release train; new .NET 11 warnings are fixed in code",
+"F124": "Existing migrations and snapshots keep their ProductVersion annotations; no new migration is generated unless the oracle shows a pending change, which returns to the architect",
+"F125": "Gitignored folder with the copied migrations DLLs; the first build after the retarget overwrites them",
+"F126": "Response shape is unchanged; Runtime reads RuntimeInformation.FrameworkDescription at run time and shows .NET 11 without code change",
+"F127": "No structure move makes the retarget easier; the edits are version values and two comments.",
+"F128": "setup-dotnet dotnet-version 10.0.404 becomes 11.0.100; this composite action also serves ci_backend and the Linux and Windows standalone workflows through package-app",
+"F129": "dotnet-version 10.0.404 becomes 11.0.100",
 "F13": "all are green with no new Sonar issue; a pipeline that still installs SDK 10 falsifies this",
+"F130": "dotnet-version 10.0.404 becomes 11.0.100; the committed backend.cdx.json stays a pipeline-generated file and is not edited by hand",
+"F131": "Run the pin checker test and search .github for an SDK 10 pin; after the push, the SQLite and Postgres verify builds, E2E and Sonar run",
+"F132": "The pin checker test passes, no workflow or action installs SDK 10, and the pipelines are green with no new Sonar issue",
+"F133": "Any setup-dotnet step with a 10.x version, or a pipeline that cannot build net11.0",
+"F134": "Existing owner of this fact; edited in place, nothing new is created. SDK pin moves to 11.0.100.",
+"F135": "The embedded Dockerfile fixture names sdk:10.0; the oracle owner aligns it to sdk:11.0 so the fixture does not name .NET 10 as current. The pin checker itself pins Node and pnpm, not .NET, so no rule changes.",
+"F136": "No SDK pin of its own; uses package-app and build-backend",
+"F137": "A 3.8 KB placeholder that every pipeline overwrites from the CycloneDX run; it names no .NET version",
+"F138": "Only pinned version strings change.",
+"F139": "FROM aspnet:10.0 becomes aspnet:11.0 and FROM sdk:10.0 becomes sdk:11.0",
 "F14": "Docker image and standalone builds serve the app",
+"F140": "Build the Docker image, run it with SQLite and send GET /api/latest/systeminfo; start a standalone package built with SDK 11 the same way",
+"F141": "Both serve the app and the runtime field starts with .NET 11",
+"F142": "A build or start failure, or a runtime field that starts with .NET 10",
+"F143": "Existing owner of this fact; edited in place, nothing new is created. Image tags move to 11.0.",
+"F144": "Runtime image tag 11.0; confirm /usr/share/zoneinfo is present so IANA time zone ids still resolve",
+"F145": "Build image tag 11.0, built from the net11.0 projects",
+"F146": "Builds and starts the image from the Dockerfile; no .NET version in the workflow",
+"F147": "Only two image tags change.",
+"F148": "Remove the rule that holds .NET images and packages below 11; keep the rule that leaves .NET major image updates to a maintainer",
+"F149": "build-backend description says .NET 11",
 "F15": "the Dockerfile uses the 11.0 images and the standalone workflows use the 11 SDK",
+"F150": "Fixture runtime value .NET 10.0.0 becomes .NET 11.0.0 so it reads as current",
+"F151": "Lines naming .NET 10 as current (process box, paradigm, test stack) name .NET 11",
+"F152": "Backend line says C# .NET 11",
+"F153": "Time zone sentence names .NET 11, after the IANA claim is re-verified",
+"F154": "Technology stack table says .NET 11",
+"F155": "Parse renovate.json and search it for the below-11 cap; read the listed current-state docs",
+"F156": "The file parses, no rule caps .NET packages or images, and the listed docs name .NET 11 while historical records are unchanged",
+"F157": "A rule with allowedVersions below 11 for .NET, or a listed current-state doc that still names .NET 10 as current",
+"F158": "Existing owner of this fact; edited in place, nothing new is created. The .NET hold rule is removed.",
+"F159": "Existing owner of this fact; edited in place, nothing new is created. Description names .NET 11.",
 "F16": "the image is built and started, and a standalone package is built and started",
+"F160": "Existing owner of this statement; edited in place. Fixture runtime value .NET 10.0.0 becomes .NET 11.0.0 so it reads as current",
+"F161": "Existing owner of this fact; edited in place, nothing new is created. Statements name .NET 11.",
+"F162": "Existing owner of this statement; edited in place. Backend line says C# .NET 11",
+"F163": "Existing owner of this fact; edited in place, nothing new is created. Sentence names .NET 11.",
+"F164": "Existing owner of this fact; edited in place, nothing new is created. Table names .NET 11.",
+"F165": "Historical briefs, diagrams and decision records that name .NET 10 as history stay unchanged; release notes are written at release time",
+"F166": "Rule that capped .NET at below 11 is removed; the manual-merge rule for major .NET images stays",
+"F167": "Reads PR metadata, not the removed rule; a read of the file is the check",
+"F168": "Prose and one config rule; no structure moves.",
 "F17": "each serves the app and reports a .NET 11 runtime; a build or start failure falsifies this",
 "F18": "Renovate no longer holds .NET",
 "F19": "the .NET 10 hold rule is removed from renovate.json",
@@ -44,11 +930,66 @@
 "F42": "Self-hosted image and standalone builds run on .NET 11",
 "F43": "A maintainer reads renovate.json and the docs: no rule holds back .NET, and current-state docs and pins name .NET 11 while history stays unchanged.",
 "F44": "Renovate keeps the .NET stack current and the docs match the runtime",
+"F45": "Paradigm: object_oriented, unchanged. No domain, application or adapter code changes. The upgrade moves the target framework, the package majors, the SDK pins and the container images from 10 to 11 in one change.",
+"F46": "Push point: commit S1, S2, S3 and S4 locally in order and push once after S4. S1 alone is red in CI because the pipelines install SDK 10.0.404, which cannot build net11.0. After S2 the Docker image build, which no required check runs, still uses sdk:10.0. After S3 only the Renovate hold and the prose are left, so one push after S4 gives one CI run and keeps main green. No slice is merged, split or reordered; the order follows the product dependencies.",
+"F47": "Version targets: TargetFramework net11.0. Every .NET-versioned package moves from 10.0.15 to 11.0.0, and Npgsql.EntityFrameworkCore.PostgreSQL from 10.0.3 to 11.0.0. The dotnet-ef tool in Lighthouse.Backend/.config/dotnet-tools.json moves from 10.0.15 to 11.0.0, because Create-Migration.ps1 uses it with rollForward false. SDK pin 10.0.404 becomes 11.0.100. Docker tags aspnet:10.0 and sdk:10.0 become 11.0. Packages on their own release trains stay: coverlet.collector, Microsoft.Extensions.TimeProvider.Testing, Serilog.AspNetCore, Serilog.Settings.Configuration, SonarAnalyzer.CSharp, NUnit and adapters, Moq, Microsoft.NET.Test.Sdk, SQLitePCLRaw.",
+"F48": "Preservation oracle: the existing backend suite, unmodified, is the behaviour-preservation oracle. NoPendingModelChangesTest is the oracle for \"no migration reports a pending model change\". If it fails under EF 11, the crafter stops and returns the finding to the architect: a snapshot-only migration is a new decision, not part of this upgrade. Fixtures that say .NET 10.0.0 in SystemInfoControllerTest and in the examine script are values, not pins.",
+"F49": "Formal verification: no domain state machine, protocol, concurrency or temporal law is added or changed, so no Quint, TLA+ or Agda model is warranted and no checker is required. Liveness is not applicable: no progress property exists. Safety, inhabitation and reachability are covered by the real build, the existing test suite and the running app, not by a model. Type strength is unchanged. Property-based testing is not applicable, because no input domain or law changes. Jev is unauthorized in this repository: typesafe: unavailable by configuration.",
 "F5": "The self-hosted Docker image and the Linux, macOS and Windows standalone builds run on .NET 11 and serve the app.",
+"F50": "No ADR: the change makes no durable decision beyond moving to the current runtime. The existing Renovate rule that keeps .NET major image updates manual stays when the hold is removed. Stryker.NET (dotnet-stryker 5.1.0) names no target framework in its per-feature config files, so no config change is needed; whether it runs on a net11.0 test project is checked at the next backend mutation run.",
+"F51": "No global.json: CI keeps pinning the SDK through setup-dotnet, which Renovate already updates, so a global.json would be a second authority for the same pin that can drift from it. SDK 11 builds net10.0 projects, so other worktrees still on net10.0 keep working with the newest installed SDK as default. Revisit if a local SDK mismatch causes a real incident.",
+"F52": "Input bounds: none are stored or validated by this change. Behaviour-free rule: routes, DTO shapes, serialized responses, UI pixels and topologies stay unchanged. Historical briefs, diagrams and decision records that name .NET 10 stay unchanged. Lighthouse.sln line 5 MinimumVisualStudioVersion is a Visual Studio version and stays. Existing migration Designer files keep their ProductVersion annotations. Adopting new .NET 11 APIs, for example the cookie Partitioned property, is out of scope.",
+"F53": "Local toolchain: SDK 11.0.100 and runtime 11.0.0 are installed next to 10.0.114, so S1 can be built and run locally. Docker is installed and the 11.0 images exist, so S3 can be checked locally. No new analyzer warning may be silenced project-wide: TreatWarningsAsErrors is on in Directory.Build.props, so a warning that .NET 11 adds is fixed in code or suppressed narrowly at the call site.",
+"F54": "Builds the migrations assembly that Backend loads; must target net11.0 with EF 11.0.0",
+"F55": "Builds the migrations assembly that Backend loads; must target net11.0 with EF 11.0.0 and Npgsql 11.0.0",
+"F56": "Loads both migrations DLLs by HintPath from the gitignored Migrations folder; the first build after the retarget must rebuild them",
+"F57": "Test project references Backend and the Testing packages, so it moves to net11.0 and 11.0.0 packages",
+"F58": "Shared composite action used by ci_backend.yml and package-app.yml, which serves the Linux and Windows standalone workflows",
+"F59": "Installs SDK itself before it calls build-backend",
 "F6": "Backend runs on .NET 11 with the full suite green",
+"F60": "Restores the solution and runs CycloneDX, which needs the SDK that can read net11.0 projects",
+"F61": "Sonar scan builds the backend and needs SDK 11",
+"F62": "Build stage restores and builds the net11.0 projects; sdk:11.0 image",
+"F63": "Reaches the SDK only through package-app and build-backend; no pin of its own",
+"F64": "No dependency, boundary or owner law is touched: no application code moves and no import direction changes. The existing architecture tests in the backend suite run unmodified as part of the preservation oracle.",
+"F65": "Producer and consumer of every touched contract change in the same commit and ship in one deployable. The build, NoPendingModelChangesTest and the running app already close the TFM and migrations agreement; persisted data and the wire format are unchanged.",
+"F66": "Public HTTP API GET /api/latest/systeminfo served by the app started through Lighthouse.Backend/Start-DevServer.ps1, the Docker image and the standalone packages",
+"F67": "NuGet restore, EF Core providers for SQLite and PostgreSQL, GitHub Actions setup-dotnet, mcr.microsoft.com/dotnet images",
+"F68": "Build and CI configuration point at the .NET 11 toolchain; application code is untouched and depends on the same ports as before",
+"F69": "Retarget to net11.0 and the .NET 11 toolchain",
 "F7": "all four projects target net11.0 with .NET 11 package versions",
+"F70": "Excluded state: a project or pipeline still on 10 next to net11.0 projects. The shared TFM and SDK agreements list every producer and consumer, and each slice carries a command that finds a leftover 10 reference.",
+"F71": "Valid state exists: GA packages 11.0.0 and SDK 11.0.100 and images aspnet:11.0 and sdk:11.0 were observed to exist.",
+"F72": "Public path: Start-DevServer.ps1, Docker run or standalone start, then GET /api/latest/systeminfo reports a .NET 11 runtime.",
+"F73": "Not applicable: no progress or fairness property exists in a behaviour-free platform upgrade; no checker is required.",
+"F74": "Assumption: EF Core 11 and Npgsql 11 model building is unchanged for the current model",
+"F75": "Migrations describe the current model for SQLite and PostgreSQL",
+"F76": "Different generated SQL text that keeps the same schema",
+"F77": "A pending model change or a changed column type or default",
+"F78": "Provider conventions may differ in ways the in-memory and SQLite tests cannot see; Postgres integration tests with containers are the check",
+"F79": "Assumption: no .NET 11 analyzer or API obsolescence warning appears",
 "F8": "the full backend suite runs, Integration included, and the app starts from the dev server script",
-"F9": "all tests pass, no migration reports a pending model change, and Settings, System Info shows a .NET 11 runtime; a net10.0 reference or a failing test falsifies this"
+"F80": "Zero-warning build with TreatWarningsAsErrors",
+"F81": "Narrow fixes in the call site",
+"F82": "Project-wide warning suppression or removal of TreatWarningsAsErrors",
+"F83": "New SYSLIB or ASP obsolescence warnings in production or test code",
+"F84": "Assumption: dotnet-stryker 5.1.0 runs against a net11.0 test project",
+"F85": "Per-feature mutation testing stays possible",
+"F86": "A Stryker version bump or a roll-forward setting at the next mutation run",
+"F87": "Skipping mutation testing silently",
+"F88": "Unverified until the next mutation run; no mutation run belongs to this upgrade",
+"F89": "One push after S4 puts every change into one CI run",
+"F9": "all tests pass, no migration reports a pending model change, and Settings, System Info shows a .NET 11 runtime; a net10.0 reference or a failing test falsifies this",
+"F90": "Main stays green",
+"F91": "A fix commit before the push",
+"F92": "Pushing S1 alone or a state that installs SDK 10 with net11.0 projects",
+"F93": "Docker image and standalone builds are not required checks, so only the local S3 check and the post-push run show them",
+"F94": "Second stressor set: a runner image or setup-dotnet cache still offers only SDK 10, the aspnet:11.0 image lacks zoneinfo, the Partitioned cookie comment becomes false",
+"F95": "Pipelines install SDK 11.0.100 explicitly; IANA time zone ids resolve in the image; comments stay true",
+"F96": "Comment rewording",
+"F97": "A comment that states a false .NET 11 fact",
+"F98": "The zoneinfo claim in LighthouseClockTest and the CookieBuilder claim in Program.cs are re-verified in S1 and S3 and reworded if they changed; the Docker run in S3 resolves Europe/Zurich",
+"F99": "TFM net11.0 and the 11.0.0 package set (Microsoft.AspNetCore.*, EntityFrameworkCore.*, System.Configuration.ConfigurationManager, Npgsql provider); the Serilog packages and SQLitePCLRaw stay"
 },
 "product": {
 "decisions": [
