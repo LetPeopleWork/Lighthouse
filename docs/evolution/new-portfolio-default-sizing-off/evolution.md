@@ -47,7 +47,7 @@ c088a7b8d docs(portfolio): new Portfolios start with default Feature sizing off 
 | Item | Answer |
 |---|---|
 | Docs prose | **Done.** `docs/portfolios/edit.md`: the section is now "Switching default Feature sizing on and off" and says a new Portfolio starts off, starts on when its connection names a Size Estimate Field for Portfolios, a clone keeps its source's setting, and an existing Portfolio keeps its own; the Default Feature Size intro says it applies only while sizing is on. `docs/features/features.md`: the link follows the renamed heading. `docs/settings/usagedata.md`: unchanged, its row for event 29 still holds. |
-| Screenshots | **Skipped by the maintainer.** Demo Portfolios now start off, so a demo Feature without child Work Items would show "0 of 0" in the Features page, Portfolio detail and Delivery shots; nobody measured whether such a Feature appears in them, and the maintainer chose not to regenerate them. |
+| Screenshots | **Deferred by the maintainer to the pre-release pass.** Demo Portfolios now start off, so a demo Feature without child Work Items would show "0 of 0" in the Features page, Portfolio detail and Delivery shots; nobody measured whether such a Feature appears in them, the maintainer will regenerate them before the next release. |
 | Demo data | **Done.** Demo Portfolios start off; `DemoDataFactoryTest.A_demo_Portfolio_starts_with_default_Feature_sizing_off` guards it. The demo connection names no Size Estimate Field default, so no demo Portfolio starts on. |
 | Website assets | **N/A**, because no asset under `docs/assets/` changed. |
 | Clients (CLI, MCP) | **N/A, no release.** `createPortfolio` sends an untyped payload that never names the switch, so a Client create gets the backend's rule. No version bump. |
