@@ -1,0 +1,2890 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: story-6657-write-back-round</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>D-0 No schema or behaviour change: no entity, DbSet, migration, route, DTO, WriteBackValueSource ordinal, usage-data event, configuration key, DI lifetime or registration order changes; what is written to Jira and Azure DevOps, when and how often per round, and the quiet, suppression, licence and consent behaviour stay as they are. Observed by ef-model-unchanged, an empty diff under migrations, frontend and E2E, and the unchanged write-back acceptance and host tests.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>D-1 Owner Forecasting: the 5 classes (WriteBackCollector, WriteBackRound, WriteBackRoundContext, WriteBackService, WriteBackTriggerService) and 3 ports (IWriteBackCollector, IWriteBackService, IWriteBackTriggerService) move to Modules/Forecasting/Application/WriteBack, namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack, ports co-located. The sub-namespace gives the round a name rules key on. Rejected: flat Application (8-name lists return), split into the platform lane (staging is context knowledge), Tracker integration, Promises, Work Items, staying in Services. No Domain member: the round is application orchestration.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>D-2 Membership: WriteBackMembership lists the 8 moving types with old and new namespace, area Forecasting, and the staying neighbours with reason: Models/WriteBack (kernel), IWriteBackTarget and connectors (Tracker integration), the API mapping helpers and DTO (driving adapter), the updaters and UpdateQueueService (callers). Membership is checked against the compiled IL, top-level types only (nested names reduced before the plus sign).
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>D-3 Models/WriteBack stays in the kernel (all 9 types): the mapping definition is an EF entity, the value source is stored by ordinal, and the result and field-update types sit on IWriteBackTarget&#x27;s signature in Tracker integration.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>D-4 Tracker integration edge stays listed by name, one caller: WriteBackService is the only outside type of Tracker integration&#x27;s write-back port (R-T4 entry renamed); Forecasting is not made a legal caller by namespace. ADR-270 gets the row Tracker integration to Forecasting, customer of the ACL&#x27;s write-back capability, one listed type.
+</code></pre>
+
+<h4>D6</h4>
+
+<pre><code>D-5 Rules first (S1): one owner ModuleRules.TheWriteBackRound, matched against the full name, equal to the 8 old full names union the new namespace; the Access, Licensing and Promises predicates take the round pattern as an argument (production value for the real rule, a made-up value naming the fixture namespace for the falsifier) instead of reading their 8-name lists. The shared NamespaceMoveLaw is reused unchanged with a write-back map; the literal sweep WriteBackStringsTheMoveRenames is fixed from the pre-move grep and only shrinks in meaning.
+</code></pre>
+
+<h4>D7</h4>
+
+<pre><code>D-6 Tests move with production: the 8 unit-test files move in S2 to Tests/Modules/Forecasting/Application/WriteBack, namespace equals folder; RoundWriteBackDuringDatabaseMaintenanceTest stays with the update code unless S1 finds it constructs only round types. Acceptance, host and container tests stay; only their using lines change. Improve-the-tests-you-touch is waived for move-only and using-only edits.
+</code></pre>
+
+<h4>D8</h4>
+
+<pre><code>D-7 Platform lane to Forecasting edges (UpdateQueueService and its nested HeldUpdate creating, handing over and flushing the round) are listed in Forecasting&#x27;s inbound list, not in the platform lane&#x27;s list, as DatabaseMaintenanceGate is in Flow metrics. Inverting the flush behind a queue-owned port is noted for S09a, not done here.
+</code></pre>
+
+<h4>D9</h4>
+
+<pre><code>D-8 Update code to Forecasting edges are listed (TeamUpdater, UpdateServiceBase with its generic arity; PortfolioUpdater already listed); owner Epic 6474 slice 12.
+</code></pre>
+
+<h4>D10</h4>
+
+<pre><code>D-9 Order: after Story 6468, before Story 6382 (S09a); the move does not wait for S09a. S1 first runs the three merged checks for 6365, 6366 and 6468 and stops if any fails.
+</code></pre>
+
+<h4>D11</h4>
+
+<pre><code>D-10 Commit per slice, moves in refactor(forecasting) commits apart from edits; push S1 to S3 together once all three are green, so the Program.cs change triggers one live connector run.
+</code></pre>
+
+<h4>D12</h4>
+
+<pre><code>D-11 Behaviour-free proof reuses the admitted probes: architecture-rules (all), ef-model-unchanged, backend-tests on the unchanged write-back acceptance and host test classes on both revisions, test-selection-show for Modules/Forecasting paths and Program.cs. No new compare command.
+</code></pre>
+
+<h4>D13</h4>
+
+<pre><code>D-12 Mutation bar last, on frozen code: Stryker.NET over Modules/Forecasting/Application/WriteBack compared with the same files on the pre-move revision; no survivor or no-coverage mutant added; the 80 percent project bar reported.
+</code></pre>
+
+<h4>D14</h4>
+
+<pre><code>D-13 Formal verification: no Quint, TLA+ or Agda model selected (maintainer default taken). Claims C1 preservation, membership and the sweep are relations over a finite closed set (compiled types x membership map x rule fields x test-project literals) with no state, transition, time, fairness or unbounded input; a model over a hand-copied abstraction would be weaker than deciding the relation on the compiled assembly. Each is decided exhaustively by NUnit over the IL in the default suite. The round&#x27;s concurrency (AsyncLocal context, last-out flush) is unchanged (D-0) and stays observed by the TaskManager, ResponsiveDuringUpdates and CancelAllWhileWorkIsAdmitted tests. PBT not applicable (closed finite domain). Formal result NOT_SELECTED; no install or waiver needed.
+</code></pre>
+
+<h4>D15</h4>
+
+<pre><code>D-14 Re-read against Story 6468 as shipped (main up to 6d531d0d1). E2 holds: PromisesModuleBoundariesArchUnitTest IsUpstreamCode still recognises the round only by its 8-name list, and TheNamespacedUpstreamCode (module adapters, update code, Access and Licensing) does not name Forecasting. E4 holds: Forecasting inbound list 1 (PortfolioUpdater), licence-edge list 1, platform lane 5 UpdateQueueService write-back edges, Flow metrics R4, Licensing R-L3 and Tracker integration R-T4 each still carry their one write-back entry; the 3 Access, Licensing and Promises lists still hold the same 8 names. IBlackoutPeriodService now lives in Modules/OrganisationSetup/Application (M15). Line numbers moved (PlatformLaneMembership 293-301, PlatformLaneUnitTestPlacementTest 88-98, PromisesUnitTestPlacementTest prefixes now only WriteBack and IWriteBack); S1 re-measures them.
+</code></pre>
+
+<h4>D16</h4>
+
+<pre><code>D-15 New since the design, from Story 6468: (a) WorkItemsModuleBoundariesArchUnitTest.StrayLooseImplementation and StrayLooseInterfaces (and the composite StrayLooseServices, also read by RecurringBlackoutEventsSeamArchUnitTest) name the 8 round types by old full name as regex alternatives. S1 declares them Place on the full name in WriteBackPatternRoles and puts them on the sweep; S3 removes the 8 alternatives. S1 also proves with a planted Work Items Application type reaching a made-up round type in the new place that a Work Items rule still refuses the edge; if none does, the 8 alternatives are replaced by the new full names instead of removed. (b) OrganisationSetupMembership.cs lists 3 round files by old path as staying neighbours; S2 renames those paths. (c) NamespaceMoveLaw has no exception for a move into an existing area: admissions live per move in its PatternRoles class (6468&#x27;s WholeParentPatterns and NamedByTheModuleOnly), so S1 creates WriteBackPatternRoles and leaves the law unchanged (M3 answered).
+</code></pre>
+
+<h4>D17</h4>
+
+<pre><code>D-16 Narrowing planned from S1 so no frozen file is edited later: WriteBackPatternRoles holds one admission set, SeeTheRoundInItsNewPlace, for every Context pattern that must see the round in Forecasting (ModuleRules.TheWriteBackRound, ModuleRules.ForecastingModule and Forecasting Application patterns the role check reports). For those patterns the S1 check requires the new subject of every moved type to match and leaves the old subject free, so the same S1 oracle holds after the S1 widening, the S2 move and the S3 narrowing. A declared Place pattern may stop matching its old subject. S3&#x27;s own oracle then asserts that every entry of that set and every Place entry sees no moved type under its old subject, which is 6468&#x27;s NamedByTheModuleOnly check; the narrowing cannot hide a pattern that still reads the old home.
+</code></pre>
+
+<h4>D18</h4>
+
+<pre><code>D-17 One oracle file per slice, approved bytes frozen: S1 WriteBackMembershipArchUnitTest (membership in old or new place, the law with the write-back map, the Promises falsifier); S2 WriteBackRoundLivesInForecastingArchUnitTest (each listed type only in its new namespace; deviation from the design text, which tightened S1&#x27;s test, because an approved oracle is never edited); S3 WriteBackRulesNameOnlyForecastingArchUnitTest (sweep with an empty list, round pattern new-only). Each WriteBackStringsTheMoveRenames entry holds while its file carries exactly one of its old or new text, so S2 renames without editing the S1 support. R-WB1 to R-WB4 in WriteBackRoundBoundariesArchUnitTest are an S3 crafter target with planted falsifiers, green on writing.
+</code></pre>
+
+<h4>D19</h4>
+
+<pre><code>D-18 Carriers: decisions are NUnit verdicts over IlDependencies reads (owner: each ArchUnitTest class); the moved production types keep their carriers unchanged (WriteBackRoundContext per-execution AsyncLocal state, WriteBackRound staging per round, results in Models/WriteBack); the map is WriteBackMembership (MovingType records), the roles WriteBackPatternRoles (PatternDeclaration records), the literal list WriteBackStringsTheMoveRenames (RenamedString records), the round pattern ModuleRules.TheWriteBackRound. Effects: none beyond git mv. Paradigm object_oriented: rule classes own their lists; no anemic split.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Behaviour-free: production changes only by git mv plus namespace and using lines (S2); no registration line, order or lifetime in Program.cs changes; one using line added there.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K2</h4>
+
+<pre><code>No rule or list is loosened. Lists are inline, by full type name, compared both ways and only shrink, except the measured growth of Forecasting&#x27;s inbound and licence-edge lists (E4), which moves existing edges from other lists and is recorded in ADR-270 with owner.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K3</h4>
+
+<pre><code>Rule exemptions for a moved type are exact (that type and its nested types by full name), never a namespace or layer; every rule edit is proved by a throwaway probe whose offender is caught, then reverted, recorded as craft commands.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K4</h4>
+
+<pre><code>Approved oracle and support files of this feature are never edited, not even a using line; oracles name production types as strings. After S1&#x27;s sweep lands, a test literal naming a moving type by its old Services path is built from segments.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K5</h4>
+
+<pre><code>No nWave scenario tags in code. Live-connector categories (JiraIntegration, LinearIntegration, AdoIntegration, ServiceNowIntegration, GithubIntegration) are never run; any filter selecting WriteBack adds TestCategory exclusions for JiraIntegration and AdoIntegration.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h4>K6</h4>
+
+<pre><code>No input bound applies: no stored or validated input changes; the rule inputs are the compiled assemblies and the test project&#x27;s source text.
+</code></pre>
+<p>Governed slices: S1, S2, S3</p>
+
+<h3>Reuse</h3>
+
+<p>NamespaceMoveLaw</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:118</p>
+
+<p>Reuse</p>
+
+<pre><code>Shared preservation law; takes a NamespaceMove and a PatternRoleMap; no change needed, admissions live in the move&#x27;s roles class.
+</code></pre>
+
+<p>OrganisationSetupPatternRoles</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs:20</p>
+
+<p>Reuse</p>
+
+<pre><code>Shape copied for WriteBackPatternRoles (PatternRoles, FolderOnlyMatches, admission set); the class itself is not edited.
+</code></pre>
+
+<p>RefinementMembership</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembership.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Membership-map shape reused for WriteBackMembership; no existing map owns the round.
+</code></pre>
+
+<p>TheWriteBackRound</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:171</p>
+
+<p>Replace</p>
+
+<pre><code>Three lists (Access, Licensing, Promises) answer the same fact; replaced by one ModuleRules.TheWriteBackRound pattern; semantic duplicate removed.
+</code></pre>
+
+<p>ModuleRules</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:25</p>
+
+<p>Extend</p>
+
+<pre><code>Owner of module patterns and shared rules; gains TheWriteBackRound; R-WB1 to R-WB4 reuse OutboundEdges and ModuleWording.
+</code></pre>
+
+<p>StrayLooseImplementation</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:56</p>
+
+<p>Extend</p>
+
+<pre><code>6468&#x27;s full-name list of loose services; the 8 round alternatives leave in S3 (Place role).
+</code></pre>
+
+<p>ForecastingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:103</p>
+
+<p>Extend</p>
+
+<pre><code>Forecasting&#x27;s inbound and licence-edge lists take the measured round edges.
+</code></pre>
+
+<p>ModuleRulesCatchANewOffenderArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Planted-offender style for R-WB falsifiers.
+</code></pre>
+
+<p>QuietWriteBackSeamArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/QuietWriteBackSeamArchUnitTest.cs:19</p>
+
+<p>Extend</p>
+
+<pre><code>HaveFullName strings become typeof full names so the rule cannot select an empty set after the move.
+</code></pre>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>agreement</p>
+
+<pre><code>No shared wire, schema or configuration contract changes (D-0); the moved types are in-process, one deployable, all consumers change in the same commit.
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Single deployable; producer and consumer of every touched interface change together; the tracker receives the same writes, observed by the unchanged acceptance tests.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>Compiled production and test assemblies read through IlDependencies by NUnit architecture tests (in-process; nearest argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture)
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>Production runtime unchanged: IWriteBackTarget via IWorkTrackingConnectorFactory (Tracker integration), ITeamMetricsService (Flow metrics), ILicenseService (Licensing), IBlackoutPeriodService (Organisation set-up), repositories, ILighthouseClock
+</code></pre>
+
+<pre><code>Platform UpdateQueueService, the update code and ForecastUpdater call into Forecasting.Application.WriteBack (listed edges); the round calls out to Tracker integration (one listed type), Flow metrics, Licensing (listed), Organisation set-up (legal), kernel Models and repositories; Promises, Access and Licensing never call the round.
+</code></pre>
+
+<h4>Failures</h4>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<pre><code>NUnit verdict of an architecture rule, failing with a message that names each offending type, edge, pattern or literal
+</code></pre>
+
+<p>NUnit outcome with failure message</p>
+
+<pre><code>Edges the IL reader misses (event declarations, named attribute arguments) and patterns declared as properties rather than fields, which the reflection over rule fields does not read
+</code></pre>
+
+<pre><code>Placement of the moving types measured from the compiled IL
+</code></pre>
+
+<p>set of (top-level type full name, namespace)</p>
+
+<pre><code>Nested types unless reduced to their top-level type; a same short name in another namespace unless matched by full name
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>Membership</p>
+
+<pre><code>Two placements are equal when every listed top-level type resolves to the same namespace and no listed type exists in both its old and new namespace.
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>Move preservation: for every moved type T and every declared rule pattern, a Context pattern that matches the old subject of T matches its new subject; a Place pattern never matches the new subject; a pattern in SeeTheRoundInItsNewPlace matches the new subject of every T; an undeclared pattern matches neither subject.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>WriteBackMembershipArchUnitTest</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Context field seeing only the old place: StopsSeeingTheType
+</code></pre>
+
+<pre><code>Place field widened into the new place: SeesTheTypeInItsNewPlace
+</code></pre>
+
+<pre><code>Undeclared field matching an old full name: NotDeclared
+</code></pre>
+
+<pre><code>Forecasting module pattern sees the round only after the move: admitted by SeeTheRoundInItsNewPlace
+</code></pre>
+
+<pre><code>TheWriteBackRound old union new, then new only: admitted at every slice
+</code></pre>
+
+<pre><code>StrayLooseImplementation without the 8 alternatives: Place may stop matching
+</code></pre>
+
+<pre><code>Finite closed set: compiled rule fields x 8 moving types; decided exhaustively over the IL, with made-up keys proving each break kind.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<pre><code>The module rules cover what the three 8-name round lists did, so the lists can simply be dropped after the move.
+</code></pre>
+
+<pre><code>Carrier: the lists named the round because it had no namespace; Promises reaches Forecasting Application by right, so the module rule cannot tell the round from the rest of Forecasting.
+</code></pre>
+
+<pre><code>A made-up Promises Application type reaching a made-up round type in the new WriteBack namespace passes Promises&#x27; upstream rule while the predicate reads only the old 8 names.
+</code></pre>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>No existing architecture rule silently stops seeing a write-back round type when it moves, and no Promises, Access or Licensing type can join the round unseen.
+</code></pre>
+
+<pre><code>A rule passes over an empty or shrunken subject set and a forbidden edge ships unseen; Promises reaches Forecasting by right, so a dropped list would admit it into the round.
+</code></pre>
+
+<p>WriteBackMembershipArchUnitTest</p>
+
+<pre><code>Compiled test assembly rule fields, the write-back membership map and the test project&#x27;s source literals
+</code></pre>
+
+<p>WriteBackPatternRoles declarations plus NamespaceMoveLaw plus ModuleRules.TheWriteBackRound</p>
+
+<p>Every ArchUnit rule reading a declared field; the Access, Licensing and Promises outbound predicates</p>
+
+<pre><code>dotnet test --filter FullyQualifiedName~WriteBackMembershipArchUnitTest fails naming an undeclared or unpreserved field or a Promises type reaching the round
+</code></pre>
+
+<pre><code>Inline method-body literals (covered only by the sweep); patterns built at run time or declared as properties; rules selecting types by short name
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Before S2 every listed type is in its old namespace; after S2 only in its new one; TheWriteBackRound matches old and new during the move and new only after S3.
+</code></pre>
+
+<p>None.</p>
+
+<p>Excluded</p>
+
+<pre><code>A listed type in both or neither namespace; a Context pattern seeing a moved type only in the old place; any regex field or test literal naming an old full name or path after S3 outside the exact exclusion list.
+</code></pre>
+
+<p>WriteBackMembershipArchUnitTest</p>
+
+<p>Unknown</p>
+
+<pre><code>Whether a Work Items rule other than the StrayLoose list refuses a Work Items Application type reaching the round once it lives in Forecasting; S1 decides by a planted falsifier (D-15a).
+</code></pre>
+
+<p>S1 acceptance designer and crafter</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>write-back round placement rules
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Excluded states refused by S1 law and S3 sweep, each with a planted made-up offender; not built yet.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>write-back round placement rules
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>The 8 listed types exist today in Services.Implementation and Services.Interfaces (git ls-files); the map is constructible from them; S2 inhabits the new place.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>write-back round placement rules
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>compiled assembly, WriteBackMembership plus law plus TheWriteBackRound, module rules, dotnet test exit and message; acyclic, no bootstrap needed.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>write-back round placement rules
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: no progress claim; each rule is a terminating evaluation over a finite assembly; the round&#x27;s runtime progress is unchanged (D-0) and observed by existing tests.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated: a pattern sees the round (false, it has no namespace)
+</code></pre>
+
+<pre><code>Every old literal is renamed or deleted
+</code></pre>
+
+<pre><code>Literal list fixed at S1, entries hold in old or new state
+</code></pre>
+
+<pre><code>An unlisted old literal surviving S3
+</code></pre>
+
+<pre><code>Literals built at run time
+</code></pre>
+
+<p>WriteBackStringsTheMoveRenames</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated: module rules cover what the lists did (false for Promises)
+</code></pre>
+
+<pre><code>Promises, Access, Licensing never reach the round
+</code></pre>
+
+<pre><code>Lists kept until S3, predicates read the pattern from S1
+</code></pre>
+
+<pre><code>A Promises type joining the round unseen
+</code></pre>
+
+<pre><code>None
+</code></pre>
+
+<p>PromisesModuleBoundariesArchUnitTest</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated: HaveFullName fails on an empty set (unknown)
+</code></pre>
+
+<pre><code>QuietWriteBackSeam keeps selecting WriteBackTriggerService
+</code></pre>
+
+<pre><code>typeof full names
+</code></pre>
+
+<pre><code>A rule passing over an empty selection
+</code></pre>
+
+<pre><code>None
+</code></pre>
+
+<p>S2 crafter</p>
+
+<h4>Y4</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated: sibling Stories left counts as measured (false by construction; 6468 added StrayLoose and staying paths)
+</code></pre>
+
+<pre><code>Every list compared both ways
+</code></pre>
+
+<pre><code>Re-measure M1-M17 at S1, differences recorded
+</code></pre>
+
+<pre><code>Arguing a count instead of recording it
+</code></pre>
+
+<pre><code>None
+</code></pre>
+
+<p>S1 crafter</p>
+
+<h4>Y5</h4>
+
+<p>Stressor</p>
+
+<pre><code>Negated: the shared law admits a move into an existing area (false: no such exception in NamespaceMoveLaw)
+</code></pre>
+
+<pre><code>Forecasting patterns must see the round
+</code></pre>
+
+<pre><code>Admission set SeeTheRoundInItsNewPlace in WriteBackPatternRoles
+</code></pre>
+
+<pre><code>Editing the shared law or S1 supports later
+</code></pre>
+
+<pre><code>None
+</code></pre>
+
+<p>WriteBackMembershipArchUnitTest</p>
+
+<h4>Y6</h4>
+
+<p>Bypass</p>
+
+<pre><code>Rule pattern declared as a C# property (6468 used this to escape the law) or built in a method body
+</code></pre>
+
+<pre><code>The S3 sweep reads source text of the test project, not only fields
+</code></pre>
+
+<pre><code>Properties for deliberate exclusions with a reason
+</code></pre>
+
+<pre><code>A property pattern still naming an old full name after S3
+</code></pre>
+
+<pre><code>Short-name selections stay unseen by both
+</code></pre>
+
+<p>S3 crafter and reviewer</p>
+
+<h4>Y7</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>WriteBackMembership is hand-kept
+</code></pre>
+
+<pre><code>Map equals the IL measurement
+</code></pre>
+
+<pre><code>Map edited only by S1
+</code></pre>
+
+<pre><code>A missing or extra listed type
+</code></pre>
+
+<pre><code>None: membership test compares both ways
+</code></pre>
+
+<p>WriteBackMembershipArchUnitTest</p>
+
+<h4>Y8</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set, walked not executed: host-test row naming a moved class; WriteBackValueSource ordinals; queue flushing from another scope; ADR-270 drawing Forecasting to Tracker integration as new coupling
+</code></pre>
+
+<pre><code>All survive: M13 re-measure, D-3 enum untouched, DI lifetimes unchanged, the edge existed under Services
+</code></pre>
+
+<pre><code>Walkthrough only
+</code></pre>
+
+<pre><code>None found
+</code></pre>
+
+<pre><code>Platform to Forecasting (S09a) and update code to Forecasting (Epic 6474 slice 12) edges stay listed
+</code></pre>
+
+<p>Host</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Adds TheWriteBackRound, full-name pattern: the 8 old full names union the new WriteBack namespace.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Outbound predicate takes the round pattern as an argument (ModuleRules.TheWriteBackRound in production); the 8-name list stays until S3, no loosening.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Outbound predicate takes the round pattern as an argument (ModuleRules.TheWriteBackRound in production); the 8-name list stays until S3, no loosening.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Outbound predicate takes the round pattern as an argument (ModuleRules.TheWriteBackRound in production); the 8-name list stays until S3, no loosening.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackMembershipArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackPatternRoles.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackStringsTheMoveRenames.cs</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run WriteBackMembershipArchUnitTest: (1) each type of WriteBackMembership exists in its old or its new namespace in the compiled IL, top-level names only; (2) NamespaceMoveLaw with the write-back map and WriteBackPatternRoles over every regex field of the test assembly; (3) a made-up Promises Application type reaching a made-up round type, judged by Promises&#x27; upstream predicate given a round pattern naming the fixture namespace; (4) a made-up Work Items Application type reaching a made-up round type in the new place, judged by Work Items&#x27; rules; (5) the literal sweep with WriteBackStringsTheMoveRenames.
+</code></pre>
+
+<pre><code>RED today on (3): the predicate reads only the 8 old full names, so the made-up Promises type passes. GREEN once Access, Licensing and Promises predicates read the round pattern; (1), (2), (5) green before and after S2 and S3 (entries hold in old or new state; admission set SeeTheRoundInItsNewPlace requires the new subject only); (4) records which Work Items rule refuses the edge.
+</code></pre>
+
+<pre><code>Dropping a listed type, an undeclared regex field matching an old or new full name, a Context field losing an old subject, a Place field matching the new namespace, or a predicate reading the list again fails naming the field, type or offender.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>AccessModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this rule, consumer or test; only its lists, literals or using lines follow the move.
+</code></pre>
+
+<p>LicensingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this rule, consumer or test; only its lists, literals or using lines follow the move.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Adds TheWriteBackRound, full-name pattern: the 8 old full names union the new WriteBack namespace.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Outbound predicate takes the round pattern as an argument (ModuleRules.TheWriteBackRound in production); the 8-name list stays until S3, no loosening.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Outbound predicate takes the round pattern as an argument (ModuleRules.TheWriteBackRound in production); the 8-name list stays until S3, no loosening.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Outbound predicate takes the round pattern as an argument (ModuleRules.TheWriteBackRound in production); the 8-name list stays until S3, no loosening.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>S1 is itself the rules-first step of the move: rule changes only, production untouched; the existing Architecture suite is GREEN before and after it.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L2</h6>
+
+<pre><code>Round guard: Promises, Access and Licensing types reach no type whose full name matches ModuleRules.TheWriteBackRound outside their listed edges, whatever namespace the round sits in.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>WriteBackMembershipArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Made-up Promises type reaching a made-up round type in the new namespace: refused
+</code></pre>
+
+<pre><code>Existing made-up Access and Promises fixtures reaching IWriteBackTriggerService: refused
+</code></pre>
+
+<pre><code>No production Promises, Access or Licensing type reaches the round: empty
+</code></pre>
+
+<pre><code>Finite set of compiled types; decided over the IL with planted offenders.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>No rule loses a write-back edge while the round moves; Promises, Access and Licensing refuse any round type by the one round pattern.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackMembershipArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackCollector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackCollector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackRound.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackRound.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackRoundContext.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackRoundContext.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackTriggerService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackCollector.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Services/Interfaces; namespace line only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackCollector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Services/Interfaces; namespace line only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackTriggerService.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv from Services/Interfaces; namespace line only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackTriggerService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateQueueService.cs</p>
+
+<p>Extend</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs</p>
+
+<p>Extend</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs</p>
+
+<p>Extend</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs</p>
+
+<p>Extend</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/BlackoutForecastShiftWriteBackTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackCollectorTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackCollectorTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackRoundTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackRoundTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackServiceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackSuppressionWarningTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.BeyondTheHorizon.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.BeyondTheHorizon.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.StartDates.cs</p>
+
+<p>Create</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.StartDates.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/Slice01WriteBackCollectionSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SleRisk/Slice01SleRiskReadSpecifications.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/FlushRecordingWriteBackCollector.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice04CancellationReachProbe.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CancelAllMultiReplicaTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ScalabilityTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkItemBaseAgeOnDayTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/CancelAllWhileWorkIsAdmittedTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/RefreshRoundSummaryLineSkippedForecastTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/UpdateQueueServiceTests.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/RoundWriteBackDuringDatabaseMaintenanceTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/UpdateServiceTestBase.cs</p>
+
+<p>Extend</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/QuietWriteBackSeamArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackSinglePathArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRoundLivesInForecastingArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;(FullyQualifiedName~WriteBack|FullyQualifiedName~TaskManager|FullyQualifiedName~AdoOAuthWriteConsent)&amp;TestCategory!=JiraIntegration&amp;TestCategory!=AdoIntegration&quot;
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run WriteBackRoundLivesInForecastingArchUnitTest: each type of WriteBackMembership, read from the compiled IL by top-level full name, exists in its new namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack and not in its old Services namespace; no top-level type named WriteBack* or IWriteBack* remains under Lighthouse.Backend.Services; the 8 unit-test files sit under Tests/Modules/Forecasting/Application/WriteBack.
+</code></pre>
+
+<pre><code>RED before the move, naming the 8 types still in Services.Implementation and Services.Interfaces; GREEN after the git mv with every existing Architecture rule green under the measured list changes.
+</code></pre>
+
+<pre><code>Leaving one type or test file in Services, or moving a type to flat Forecasting Application, fails naming that type or file.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>None.</p>
+
+<h5>Impact</h5>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackCollector.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackCollector.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackRound.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackRound.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackRoundContext.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackRoundContext.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackTriggerService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv from Services/Implementation; namespace and using lines only.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackCollector.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv from Services/Interfaces; namespace line only.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackCollector.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv from Services/Interfaces; namespace line only.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackTriggerService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv from Services/Interfaces; namespace line only.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackTriggerService.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateQueueService.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>production</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Program.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>One using line for Modules.Forecasting.Application.WriteBack; nothing else.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/BlackoutForecastShiftWriteBackTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackCollectorTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackCollectorTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackRoundTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackRoundTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackServiceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackSuppressionWarningTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.BeyondTheHorizon.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.BeyondTheHorizon.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.StartDates.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>git mv of the unit test beside its subject; namespace equals folder.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.StartDates.cs:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Removed by the git mv.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/Slice01WriteBackCollectionSpecifications.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SleRisk/Slice01SleRiskReadSpecifications.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/FlushRecordingWriteBackCollector.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice04CancellationReachProbe.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CancelAllMultiReplicaTests.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ScalabilityTests.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkItemBaseAgeOnDayTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/CancelAllWhileWorkIsAdmittedTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/RefreshRoundSummaryLineSkippedForecastTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/UpdateQueueServiceTests.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/RoundWriteBackDuringDatabaseMaintenanceTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/UpdateServiceTestBase.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/QuietWriteBackSeamArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackSinglePathArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>reuse</p>
+
+<pre><code>S2 creates no new type and extends no owner&#x27;s responsibility: every production and unit-test target is an existing type or test moved unchanged by git mv (its new path does not exist before the move), and every other target only follows the move in using lines, literals or compared-both-ways lists. The owners consulted are recorded in the shared reuse rows (NamespaceMoveLaw, ModuleRules, ForecastingModuleBoundariesArchUnitTest, QuietWriteBackSeamArchUnitTest).
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>The move is itself the preserving change; S1 already made the rules see both places, and the unchanged write-back acceptance and host tests observe behaviour before and after.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L4</h6>
+
+<pre><code>Placement: every listed round type resolves to exactly its new namespace, and the set of top-level types of the new namespace equals the listed 8.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>WriteBackRoundLivesInForecastingArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Type still in old namespace: refused
+</code></pre>
+
+<pre><code>Type in both namespaces: refused
+</code></pre>
+
+<pre><code>Extra type in the WriteBack namespace: refused
+</code></pre>
+
+<pre><code>Eight named types, exhaustively checked over the IL.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T4</h6>
+
+<pre><code>The round lives in Forecasting Application WriteBack and nowhere else.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRoundLivesInForecastingArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs</p>
+
+<p>Extend</p>
+
+<pre><code>TheWriteBackRound narrowed to ^Lighthouse.Backend.Modules.Forecasting.Application.WriteBack namespace only; no old alternative.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>8-name TheWriteBackRound list and its no-namespace comment deleted; predicate reads only ModuleRules.TheWriteBackRound.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>8-name TheWriteBackRound list and its no-namespace comment deleted; predicate reads only ModuleRules.TheWriteBackRound.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>8-name TheWriteBackRound list and its no-namespace comment deleted; predicate reads only ModuleRules.TheWriteBackRound.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>The 8 round alternatives leave StrayLooseImplementation and StrayLooseInterfaces (or are replaced by new full names if S1 found no other Work Items rule refusing the edge).
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>WriteBack and IWriteBack prefixes and the write-back newcomer case leave; R-WB1 takes the newcomer.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Placement covers the WriteBack sub-folder if S2 did not need it already.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs</p>
+
+<p>Create</p>
+
+<pre><code>R-WB1 to R-WB4 with planted falsifiers, lists inline by full name, compared both ways, ModuleWording for the round.
+</code></pre>
+
+<p>ARCHITECTURE.md</p>
+
+<p>Extend</p>
+
+<pre><code>Section 4 Forecasting row gains Application.WriteBack; Forecasting rules bullet (inbound count, licence edges, Tracker integration edge, R-WB); Flow metrics count; section 3 namespace list. Prose, reviewed, no test.
+</code></pre>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md</p>
+
+<p>Extend</p>
+
+<pre><code>Left open write-back answered (Forecasting Application/WriteBack); edge rows Tracker integration to Forecasting (one listed type) and platform lane to Forecasting (listed, S09a note); layout line; glossary term write-back round if absent. Prose, reviewed.
+</code></pre>
+
+<p>docs/feature/epic-6264-modular-monolith/feature-delta.md</p>
+
+<p>Extend</p>
+
+<pre><code>Catalogue note: S03d&#x27;s last named exception closed; S09a note on inverting the queue flush.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRulesNameOnlyForecastingArchUnitTest
+dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture
+dotnet build Lighthouse.Backend
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run WriteBackRulesNameOnlyForecastingArchUnitTest: the S1 sweep with an empty rename list over every regex field and string literal of the test project, excluding by exact path only itself, WriteBackMembership.cs, WriteBackPatternRoles.cs, WriteBackStringsTheMoveRenames.cs and WriteBackMembershipArchUnitTest.cs (that exclusion list asserted equal to exactly those paths); and the role check asserting that every SeeTheRoundInItsNewPlace and Place entry sees no moved type under its old subject.
+</code></pre>
+
+<pre><code>RED at S3 start, naming TheWriteBackRound&#x27;s old alternatives, the three 8-name lists, the StrayLoose round alternatives and the Promises prefixes; GREEN once each names the round by its Forecasting namespace only.
+</code></pre>
+
+<pre><code>Re-adding an old full name to any regex field or literal, an old alternative to TheWriteBackRound, or an extra path to the exclusion list fails naming it.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>AccessModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this rule, consumer or test; only its lists, literals or using lines follow the move.
+</code></pre>
+
+<p>LicensingModuleBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this rule, consumer or test; only its lists, literals or using lines follow the move.
+</code></pre>
+
+<p>PromisesUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this rule, consumer or test; only its lists, literals or using lines follow the move.
+</code></pre>
+
+<p>ForecastingUnitTestPlacementTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this rule, consumer or test; only its lists, literals or using lines follow the move.
+</code></pre>
+
+<p>WriteBackRoundBoundariesArchUnitTest</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No existing rule class owns the round&#x27;s own boundaries; built from ModuleRules.OutboundEdges and ModuleWording.
+</code></pre>
+
+<p>Forecasting</p>
+
+<p>ARCHITECTURE.md:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner; only using lines, literals or prose follow the move.
+</code></pre>
+
+<p>write-back</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner; only using lines, literals or prose follow the move.
+</code></pre>
+
+<p>feature-delta</p>
+
+<p>docs/feature/epic-6264-modular-monolith/feature-delta.md:1</p>
+
+<p>Extend</p>
+
+<pre><code>The current authority document for this fact; extended in place, no second document.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>TheWriteBackRound narrowed to ^Lighthouse.Backend.Modules.Forecasting.Application.WriteBack namespace only; no old alternative.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>8-name TheWriteBackRound list and its no-namespace comment deleted; predicate reads only ModuleRules.TheWriteBackRound.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>8-name TheWriteBackRound list and its no-namespace comment deleted; predicate reads only ModuleRules.TheWriteBackRound.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>8-name TheWriteBackRound list and its no-namespace comment deleted; predicate reads only ModuleRules.TheWriteBackRound.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>The 8 round alternatives leave StrayLooseImplementation and StrayLooseInterfaces (or are replaced by new full names if S1 found no other Work Items rule refusing the edge).
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>WriteBack and IWriteBack prefixes and the write-back newcomer case leave; R-WB1 takes the newcomer.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>Placement covers the WriteBack sub-folder if S2 did not need it already.
+</code></pre>
+
+<p>test-rule</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs:1</p>
+
+<p>Changed</p>
+
+<pre><code>R-WB1 to R-WB4 with planted falsifiers, lists inline by full name, compared both ways, ModuleWording for the round.
+</code></pre>
+
+<p>docs</p>
+
+<p>ARCHITECTURE.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>Section 4 Forecasting row gains Application.WriteBack; Forecasting rules bullet (inbound count, licence edges, Tracker integration edge, R-WB); Flow metrics count; section 3 namespace list. Prose, reviewed, no test.
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>Left open write-back answered (Forecasting Application/WriteBack); edge rows Tracker integration to Forecasting (one listed type) and platform lane to Forecasting (listed, S09a note); layout line; glossary term write-back round if absent. Prose, reviewed.
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/feature/epic-6264-modular-monolith/feature-delta.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>Catalogue note: S03d&#x27;s last named exception closed; S09a note on inverting the queue flush.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>Narrowing and new rules over an already moved round; no preparatory move; S1 and S2 oracles stay green across it by the admission set.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<h6>L3</h6>
+
+<pre><code>Namespace only: after S3 no regex field or string literal of the test project outside the exact exclusion list matches an old full name or old path of a round type, and TheWriteBackRound matches exactly the new namespace.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Infrastructure</p>
+
+<p>WriteBackRulesNameOnlyForecastingArchUnitTest</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>Old alternative left in TheWriteBackRound: refused
+</code></pre>
+
+<pre><code>8-name list left in a boundaries test: refused
+</code></pre>
+
+<pre><code>StrayLoose round alternative left: refused
+</code></pre>
+
+<pre><code>Extra exclusion path: refused
+</code></pre>
+
+<pre><code>Finite source text and field set of one test project.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T2</h6>
+
+<pre><code>Rules name the write-back round by its Forecasting namespace only.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRulesNameOnlyForecastingArchUnitTest
+</code></pre>
+
+<h6>T3</h6>
+
+<pre><code>R-WB1 each round type lives in Forecasting Application WriteBack, no WriteBack or IWriteBack type under Services; R-WB2 inside Forecasting only WriteBackService reaches Tracker integration, along 2 listed edges; R-WB3 Promises, Access and Licensing reach no round type; R-WB4 inside Forecasting only ForecastUpdater and the round reach the round.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRoundBoundariesArchUnitTest
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>

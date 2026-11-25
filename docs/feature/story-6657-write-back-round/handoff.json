@@ -1,0 +1,1957 @@
+{
+"counters": {
+"C": 1,
+"D": 19,
+"F": 173,
+"K": 6,
+"L": 4,
+"P": 3,
+"S": 3,
+"T": 4,
+"Y": 8
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F52",
+"driven_ports": [
+"F51"
+],
+"driving_port": "F50"
+},
+"claims": [
+{
+"admitted_input": "F71",
+"bypass": "F73",
+"constructor": "WriteBackPatternRoles declarations plus NamespaceMoveLaw plus ModuleRules.TheWriteBackRound",
+"consumer": "Every ArchUnit rule reading a declared field; the Access, Licensing and Promises outbound predicates",
+"harm": "F70",
+"id": "C1",
+"owner": "WriteBackMembershipArchUnitTest",
+"proposition": "F69",
+"public_observation": "F72"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F78",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F77"
+},
+{
+"axis": "Inhabitation",
+"basis": "F79",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F77"
+},
+{
+"axis": "PublicReachability",
+"basis": "F80",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F77"
+},
+{
+"axis": "Liveness",
+"basis": "F81",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F77"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F33"
+},
+{
+"id": "K2",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F34"
+},
+{
+"id": "K3",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F35"
+},
+{
+"id": "K4",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F36"
+},
+{
+"id": "K5",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F37"
+},
+{
+"id": "K6",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F38"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F14"
+},
+{
+"id": "D2",
+"text": "F15"
+},
+{
+"id": "D3",
+"text": "F16"
+},
+{
+"id": "D4",
+"text": "F17"
+},
+{
+"id": "D5",
+"text": "F18"
+},
+{
+"id": "D6",
+"text": "F19"
+},
+{
+"id": "D7",
+"text": "F20"
+},
+{
+"id": "D8",
+"text": "F21"
+},
+{
+"id": "D9",
+"text": "F22"
+},
+{
+"id": "D10",
+"text": "F23"
+},
+{
+"id": "D11",
+"text": "F24"
+},
+{
+"id": "D12",
+"text": "F25"
+},
+{
+"id": "D13",
+"text": "F26"
+},
+{
+"id": "D14",
+"text": "F27"
+},
+{
+"id": "D15",
+"text": "F28"
+},
+{
+"id": "D16",
+"text": "F29"
+},
+{
+"id": "D17",
+"text": "F30"
+},
+{
+"id": "D18",
+"text": "F31"
+},
+{
+"id": "D19",
+"text": "F32"
+}
+],
+"equality": [
+{
+"definition": "F57",
+"under": "Membership"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "WriteBackMembershipArchUnitTest",
+"statement": "F58",
+"treatment": {
+"cases": [
+"F59",
+"F60",
+"F61",
+"F62",
+"F63",
+"F64"
+],
+"kind": "Finite",
+"reason": "F65"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F48"
+},
+{
+"analysis": "contract_tests",
+"reason": "F49"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F54",
+"description": "F53",
+"result_type": "NUnit outcome with failure message"
+},
+{
+"cannot_distinguish": "F56",
+"description": "F55",
+"result_type": "set of (top-level type full name, namespace)"
+}
+],
+"refuted": [
+{
+"cause": "F67",
+"counterexample": "F68",
+"statement": "F66"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamespaceMoveLaw.cs:118",
+"reason": "F39",
+"symbol": "NamespaceMoveLaw"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupPatternRoles.cs:20",
+"reason": "F40",
+"symbol": "OrganisationSetupPatternRoles"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RefinementMembership.cs:1",
+"reason": "F41",
+"symbol": "RefinementMembership"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:171",
+"reason": "F42",
+"symbol": "TheWriteBackRound"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:25",
+"reason": "F43",
+"symbol": "ModuleRules"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:56",
+"reason": "F44",
+"symbol": "StrayLooseImplementation"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:103",
+"reason": "F45",
+"symbol": "ForecastingModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRulesCatchANewOffenderArchUnitTest.cs:1",
+"reason": "F46",
+"symbol": "ModuleRulesCatchANewOffenderArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/QuietWriteBackSeamArchUnitTest.cs:19",
+"reason": "F47",
+"symbol": "QuietWriteBackSeamArchUnitTest"
+}
+],
+"risks": [
+{
+"allowed": "F84",
+"forbidden": "F85",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "WriteBackStringsTheMoveRenames",
+"preserved": "F83",
+"residue": "F86",
+"source": "F82"
+},
+{
+"allowed": "F89",
+"forbidden": "F90",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "PromisesModuleBoundariesArchUnitTest",
+"preserved": "F88",
+"residue": "F91",
+"source": "F87"
+},
+{
+"allowed": "F94",
+"forbidden": "F95",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "S2 crafter",
+"preserved": "F93",
+"residue": "F91",
+"source": "F92"
+},
+{
+"allowed": "F98",
+"forbidden": "F99",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "S1 crafter",
+"preserved": "F97",
+"residue": "F91",
+"source": "F96"
+},
+{
+"allowed": "F102",
+"forbidden": "F103",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "WriteBackMembershipArchUnitTest",
+"preserved": "F101",
+"residue": "F91",
+"source": "F100"
+},
+{
+"allowed": "F106",
+"forbidden": "F107",
+"id": "Y6",
+"kind": "Bypass",
+"owner": "S3 crafter and reviewer",
+"preserved": "F105",
+"residue": "F108",
+"source": "F104"
+},
+{
+"allowed": "F111",
+"forbidden": "F112",
+"id": "Y7",
+"kind": "SinglePointOfFailure",
+"owner": "WriteBackMembershipArchUnitTest",
+"preserved": "F110",
+"residue": "F113",
+"source": "F109"
+},
+{
+"allowed": "F116",
+"forbidden": "F117",
+"id": "Y8",
+"kind": "Stressor",
+"owner": "Host",
+"preserved": "F115",
+"residue": "F118",
+"source": "F114"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"state": "F74"
+},
+{
+"kind": "Excluded",
+"owner": "WriteBackMembershipArchUnitTest",
+"state": "F75"
+},
+{
+"kind": "Unknown",
+"owner": "S1 acceptance designer and crafter",
+"state": "F76"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs",
+"public_oracle": {
+"expected": "F122",
+"falsifier": "F123",
+"promises": [
+"P1"
+],
+"stimulus": "F121"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackMembershipArchUnitTest",
+"id": "T1",
+"obligation": "F131",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembershipArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1",
+"reason": "F119"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1",
+"reason": "F120"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F120"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1",
+"reason": "F120"
+}
+],
+"laws": [
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "WriteBackMembershipArchUnitTest",
+"statement": "F126",
+"treatment": {
+"cases": [
+"F127",
+"F128",
+"F129"
+],
+"kind": "Finite",
+"reason": "F130"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F125"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1",
+"reason": "F124",
+"symbol": "AccessModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F124",
+"symbol": "LicensingModuleBoundariesArchUnitTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackPatternRoles.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackStringsTheMoveRenames.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs",
+"reason": "F119"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F120"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F120"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F120"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackMembershipArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs",
+"public_oracle": {
+"expected": "F164",
+"falsifier": "F165",
+"promises": [
+"P2"
+],
+"stimulus": "F163"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRoundLivesInForecastingArchUnitTest",
+"id": "T4",
+"obligation": "F173",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundLivesInForecastingArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackCollector.cs:1",
+"reason": "F156"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackCollector.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackRound.cs:1",
+"reason": "F156"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackRound.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackRoundContext.cs:1",
+"reason": "F156"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackRoundContext.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackService.cs:1",
+"reason": "F156"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackTriggerService.cs:1",
+"reason": "F156"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackCollector.cs:1",
+"reason": "F158"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackCollector.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackService.cs:1",
+"reason": "F158"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackService.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackTriggerService.cs:1",
+"reason": "F158"
+},
+{
+"decision": "Migrated",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackTriggerService.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateQueueService.cs:1",
+"reason": "F159"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs:1",
+"reason": "F159"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs:1",
+"reason": "F159"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs:1",
+"reason": "F159"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:1",
+"reason": "F159"
+},
+{
+"decision": "Changed",
+"kind": "production",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F159"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/BlackoutForecastShiftWriteBackTest.cs:1",
+"reason": "F160"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackCollectorTest.cs:1",
+"reason": "F160"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackCollectorTest.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackRoundTest.cs:1",
+"reason": "F160"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackRoundTest.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackServiceTest.cs:1",
+"reason": "F160"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackSuppressionWarningTest.cs:1",
+"reason": "F160"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.cs:1",
+"reason": "F160"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.BeyondTheHorizon.cs:1",
+"reason": "F160"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.BeyondTheHorizon.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.StartDates.cs:1",
+"reason": "F160"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.StartDates.cs:1",
+"reason": "F157"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/Slice01WriteBackCollectionSpecifications.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SleRisk/Slice01SleRiskReadSpecifications.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/FlushRecordingWriteBackCollector.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice04CancellationReachProbe.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CancelAllMultiReplicaTests.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ScalabilityTests.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkItemBaseAgeOnDayTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/CancelAllWhileWorkIsAdmittedTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/RefreshRoundSummaryLineSkippedForecastTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/UpdateQueueServiceTests.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/RoundWriteBackDuringDatabaseMaintenanceTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/UpdateServiceTestBase.cs:1",
+"reason": "F161"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/QuietWriteBackSeamArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackSinglePathArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1",
+"reason": "F162"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1",
+"reason": "F162"
+}
+],
+"laws": [
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "WriteBackRoundLivesInForecastingArchUnitTest",
+"statement": "F168",
+"treatment": {
+"cases": [
+"F169",
+"F170",
+"F171"
+],
+"kind": "Finite",
+"reason": "F172"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F166"
+},
+{
+"analysis": "prefactoring",
+"reason": "F167"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackMembership.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackCollector.cs",
+"reason": "F156"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackCollector.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackRound.cs",
+"reason": "F156"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackRound.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackRoundContext.cs",
+"reason": "F156"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackRoundContext.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackService.cs",
+"reason": "F156"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackService.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/WriteBackTriggerService.cs",
+"reason": "F156"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackCollector.cs",
+"reason": "F158"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackCollector.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackService.cs",
+"reason": "F158"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackService.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Application/WriteBack/IWriteBackTriggerService.cs",
+"reason": "F158"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IWriteBackTriggerService.cs",
+"reason": "F157"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Platform/UpdateQueue/UpdateQueueService.cs",
+"reason": "F159"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+"reason": "F159"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+"reason": "F159"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+"reason": "F159"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs",
+"reason": "F159"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F159"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/BlackoutForecastShiftWriteBackTest.cs",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackCollectorTest.cs",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackCollectorTest.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackRoundTest.cs",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackRoundTest.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackServiceTest.cs",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackServiceTest.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackSuppressionWarningTest.cs",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackSuppressionWarningTest.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.cs",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.BeyondTheHorizon.cs",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.BeyondTheHorizon.cs",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/WriteBack/WriteBackTriggerServiceTest.StartDates.cs",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.StartDates.cs",
+"reason": "F157"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/Slice01WriteBackCollectionSpecifications.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SleRisk/Slice01SleRiskReadSpecifications.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/FlushRecordingWriteBackCollector.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice04CancellationReachProbe.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerHarness.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/AdoOAuthWriteConsent/AdoOAuthWriteConsentTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/JiraOAuthWriteConsent/JiraOAuthWriteConsentTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/WorkItems/TeamMetricsFollowTheTeamRefreshTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CancelAllMultiReplicaTests.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ScalabilityTests.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkItemBaseAgeOnDayTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Adapters/Background/ForecastUpdaterTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Forecasting/Application/Policies/FeatureRankChangedForecastTriggerHandlerTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/CancelAllWhileWorkIsAdmittedTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/RefreshRoundSummaryLineSkippedForecastTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Platform/UpdateQueue/UpdateQueueServiceTests.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/RoundWriteBackDuringDatabaseMaintenanceTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/UpdateServiceTestBase.cs",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingModuleBoundariesArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneBoundariesArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneMembership.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/QuietWriteBackSeamArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembership.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingApplicationLayoutArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackSinglePathArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackTargetCapabilityArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F162"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRoundLivesInForecastingArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"(FullyQualifiedName~WriteBack|FullyQualifiedName~TaskManager|FullyQualifiedName~AdoOAuthWriteConsent)&TestCategory!=JiraIntegration&TestCategory!=AdoIntegration\"",
+"dotnet build Lighthouse.Backend"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs",
+"public_oracle": {
+"expected": "F142",
+"falsifier": "F143",
+"promises": [
+"P3"
+],
+"stimulus": "F141"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRulesNameOnlyForecastingArchUnitTest",
+"id": "T2",
+"obligation": "F154",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRulesNameOnlyForecastingArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRoundBoundariesArchUnitTest",
+"id": "T3",
+"obligation": "F155",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs:1",
+"reason": "F132"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs:1",
+"reason": "F133"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs:1",
+"reason": "F134"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:1",
+"reason": "F135"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1",
+"reason": "F136"
+},
+{
+"decision": "Changed",
+"kind": "test-rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs:1",
+"reason": "F137"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "ARCHITECTURE.md:1",
+"reason": "F138"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1",
+"reason": "F139"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/feature/epic-6264-modular-monolith/feature-delta.md:1",
+"reason": "F140"
+}
+],
+"laws": [
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "WriteBackRulesNameOnlyForecastingArchUnitTest",
+"statement": "F148",
+"treatment": {
+"cases": [
+"F149",
+"F150",
+"F151",
+"F152"
+],
+"kind": "Finite",
+"reason": "F153"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F147"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs:1",
+"reason": "F124",
+"symbol": "AccessModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F124",
+"symbol": "LicensingModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs:1",
+"reason": "F124",
+"symbol": "PromisesUnitTestPlacementTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs:1",
+"reason": "F124",
+"symbol": "ForecastingUnitTestPlacementTest"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs:1",
+"reason": "F144",
+"symbol": "WriteBackRoundBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "ARCHITECTURE.md:1",
+"reason": "F145",
+"symbol": "Forecasting"
+},
+{
+"decision": "Extend",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:1",
+"reason": "F145",
+"symbol": "write-back"
+},
+{
+"decision": "Extend",
+"locator": "docs/feature/epic-6264-modular-monolith/feature-delta.md:1",
+"reason": "F146",
+"symbol": "feature-delta"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleRules.cs",
+"reason": "F132"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
+"reason": "F133"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F133"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesModuleBoundariesArchUnitTest.cs",
+"reason": "F133"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WorkItemsModuleBoundariesArchUnitTest.cs",
+"reason": "F134"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PromisesUnitTestPlacementTest.cs",
+"reason": "F135"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ForecastingUnitTestPlacementTest.cs",
+"reason": "F136"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/WriteBackRoundBoundariesArchUnitTest.cs",
+"reason": "F137"
+},
+{
+"change": "Extend",
+"path": "ARCHITECTURE.md",
+"reason": "F138"
+},
+{
+"change": "Extend",
+"path": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md",
+"reason": "F139"
+},
+{
+"change": "Extend",
+"path": "docs/feature/epic-6264-modular-monolith/feature-delta.md",
+"reason": "F140"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~WriteBackRulesNameOnlyForecastingArchUnitTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend"
+]
+}
+}
+},
+"facts": {
+"F1": "Place the write-back round (Story 6657): move the 8 write-back round files from the loose Services namespaces into Modules/Forecasting/Application/WriteBack, behaviour-free, with rules first and rules by namespace after",
+"F10": "The write-back round lives in Modules/Forecasting/Application/WriteBack and its unit tests sit beside it; production changes only in namespace and using lines.",
+"F100": "Negated: the shared law admits a move into an existing area (false: no such exception in NamespaceMoveLaw)",
+"F101": "Forecasting patterns must see the round",
+"F102": "Admission set SeeTheRoundInItsNewPlace in WriteBackPatternRoles",
+"F103": "Editing the shared law or S1 supports later",
+"F104": "Rule pattern declared as a C# property (6468 used this to escape the law) or built in a method body",
+"F105": "The S3 sweep reads source text of the test project, not only fields",
+"F106": "Properties for deliberate exclusions with a reason",
+"F107": "A property pattern still naming an old full name after S3",
+"F108": "Short-name selections stay unseen by both",
+"F109": "WriteBackMembership is hand-kept",
+"F11": "The round sits in Forecasting",
+"F110": "Map equals the IL measurement",
+"F111": "Map edited only by S1",
+"F112": "A missing or extra listed type",
+"F113": "None: membership test compares both ways",
+"F114": "Second set, walked not executed: host-test row naming a moved class; WriteBackValueSource ordinals; queue flushing from another scope; ADR-270 drawing Forecasting to Tracker integration as new coupling",
+"F115": "All survive: M13 re-measure, D-3 enum untouched, DI lifetimes unchanged, the edge existed under Services",
+"F116": "Walkthrough only",
+"F117": "None found",
+"F118": "Platform to Forecasting (S09a) and update code to Forecasting (Epic 6474 slice 12) edges stay listed",
+"F119": "Adds TheWriteBackRound, full-name pattern: the 8 old full names union the new WriteBack namespace.",
+"F12": "Every rule names the write-back round by its Forecasting namespace only; the round has its own boundary rules; the architecture docs show it placed in Forecasting.",
+"F120": "Outbound predicate takes the round pattern as an argument (ModuleRules.TheWriteBackRound in production); the 8-name list stays until S3, no loosening.",
+"F121": "Run WriteBackMembershipArchUnitTest: (1) each type of WriteBackMembership exists in its old or its new namespace in the compiled IL, top-level names only; (2) NamespaceMoveLaw with the write-back map and WriteBackPatternRoles over every regex field of the test assembly; (3) a made-up Promises Application type reaching a made-up round type, judged by Promises' upstream predicate given a round pattern naming the fixture namespace; (4) a made-up Work Items Application type reaching a made-up round type in the new place, judged by Work Items' rules; (5) the literal sweep with WriteBackStringsTheMoveRenames.",
+"F122": "RED today on (3): the predicate reads only the 8 old full names, so the made-up Promises type passes. GREEN once Access, Licensing and Promises predicates read the round pattern; (1), (2), (5) green before and after S2 and S3 (entries hold in old or new state; admission set SeeTheRoundInItsNewPlace requires the new subject only); (4) records which Work Items rule refuses the edge.",
+"F123": "Dropping a listed type, an undeclared regex field matching an old or new full name, a Context field losing an old subject, a Place field matching the new namespace, or a predicate reading the list again fails naming the field, type or offender.",
+"F124": "Existing owner of this rule, consumer or test; only its lists, literals or using lines follow the move.",
+"F125": "S1 is itself the rules-first step of the move: rule changes only, production untouched; the existing Architecture suite is GREEN before and after it.",
+"F126": "Round guard: Promises, Access and Licensing types reach no type whose full name matches ModuleRules.TheWriteBackRound outside their listed edges, whatever namespace the round sits in.",
+"F127": "Made-up Promises type reaching a made-up round type in the new namespace: refused",
+"F128": "Existing made-up Access and Promises fixtures reaching IWriteBackTriggerService: refused",
+"F129": "No production Promises, Access or Licensing type reaches the round: empty",
+"F13": "No rule names the old home; the round is guarded by its own rules",
+"F130": "Finite set of compiled types; decided over the IL with planted offenders.",
+"F131": "No rule loses a write-back edge while the round moves; Promises, Access and Licensing refuse any round type by the one round pattern.",
+"F132": "TheWriteBackRound narrowed to ^Lighthouse.Backend.Modules.Forecasting.Application.WriteBack namespace only; no old alternative.",
+"F133": "8-name TheWriteBackRound list and its no-namespace comment deleted; predicate reads only ModuleRules.TheWriteBackRound.",
+"F134": "The 8 round alternatives leave StrayLooseImplementation and StrayLooseInterfaces (or are replaced by new full names if S1 found no other Work Items rule refusing the edge).",
+"F135": "WriteBack and IWriteBack prefixes and the write-back newcomer case leave; R-WB1 takes the newcomer.",
+"F136": "Placement covers the WriteBack sub-folder if S2 did not need it already.",
+"F137": "R-WB1 to R-WB4 with planted falsifiers, lists inline by full name, compared both ways, ModuleWording for the round.",
+"F138": "Section 4 Forecasting row gains Application.WriteBack; Forecasting rules bullet (inbound count, licence edges, Tracker integration edge, R-WB); Flow metrics count; section 3 namespace list. Prose, reviewed, no test.",
+"F139": "Left open write-back answered (Forecasting Application/WriteBack); edge rows Tracker integration to Forecasting (one listed type) and platform lane to Forecasting (listed, S09a note); layout line; glossary term write-back round if absent. Prose, reviewed.",
+"F14": "D-0 No schema or behaviour change: no entity, DbSet, migration, route, DTO, WriteBackValueSource ordinal, usage-data event, configuration key, DI lifetime or registration order changes; what is written to Jira and Azure DevOps, when and how often per round, and the quiet, suppression, licence and consent behaviour stay as they are. Observed by ef-model-unchanged, an empty diff under migrations, frontend and E2E, and the unchanged write-back acceptance and host tests.",
+"F140": "Catalogue note: S03d's last named exception closed; S09a note on inverting the queue flush.",
+"F141": "Run WriteBackRulesNameOnlyForecastingArchUnitTest: the S1 sweep with an empty rename list over every regex field and string literal of the test project, excluding by exact path only itself, WriteBackMembership.cs, WriteBackPatternRoles.cs, WriteBackStringsTheMoveRenames.cs and WriteBackMembershipArchUnitTest.cs (that exclusion list asserted equal to exactly those paths); and the role check asserting that every SeeTheRoundInItsNewPlace and Place entry sees no moved type under its old subject.",
+"F142": "RED at S3 start, naming TheWriteBackRound's old alternatives, the three 8-name lists, the StrayLoose round alternatives and the Promises prefixes; GREEN once each names the round by its Forecasting namespace only.",
+"F143": "Re-adding an old full name to any regex field or literal, an old alternative to TheWriteBackRound, or an extra path to the exclusion list fails naming it.",
+"F144": "No existing rule class owns the round's own boundaries; built from ModuleRules.OutboundEdges and ModuleWording.",
+"F145": "Existing owner; only using lines, literals or prose follow the move.",
+"F146": "The current authority document for this fact; extended in place, no second document.",
+"F147": "Narrowing and new rules over an already moved round; no preparatory move; S1 and S2 oracles stay green across it by the admission set.",
+"F148": "Namespace only: after S3 no regex field or string literal of the test project outside the exact exclusion list matches an old full name or old path of a round type, and TheWriteBackRound matches exactly the new namespace.",
+"F149": "Old alternative left in TheWriteBackRound: refused",
+"F15": "D-1 Owner Forecasting: the 5 classes (WriteBackCollector, WriteBackRound, WriteBackRoundContext, WriteBackService, WriteBackTriggerService) and 3 ports (IWriteBackCollector, IWriteBackService, IWriteBackTriggerService) move to Modules/Forecasting/Application/WriteBack, namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack, ports co-located. The sub-namespace gives the round a name rules key on. Rejected: flat Application (8-name lists return), split into the platform lane (staging is context knowledge), Tracker integration, Promises, Work Items, staying in Services. No Domain member: the round is application orchestration.",
+"F150": "8-name list left in a boundaries test: refused",
+"F151": "StrayLoose round alternative left: refused",
+"F152": "Extra exclusion path: refused",
+"F153": "Finite source text and field set of one test project.",
+"F154": "Rules name the write-back round by its Forecasting namespace only.",
+"F155": "R-WB1 each round type lives in Forecasting Application WriteBack, no WriteBack or IWriteBack type under Services; R-WB2 inside Forecasting only WriteBackService reaches Tracker integration, along 2 listed edges; R-WB3 Promises, Access and Licensing reach no round type; R-WB4 inside Forecasting only ForecastUpdater and the round reach the round.",
+"F156": "git mv from Services/Implementation; namespace and using lines only.",
+"F157": "Removed by the git mv.",
+"F158": "git mv from Services/Interfaces; namespace line only.",
+"F159": "One using line for Modules.Forecasting.Application.WriteBack; nothing else.",
+"F16": "D-2 Membership: WriteBackMembership lists the 8 moving types with old and new namespace, area Forecasting, and the staying neighbours with reason: Models/WriteBack (kernel), IWriteBackTarget and connectors (Tracker integration), the API mapping helpers and DTO (driving adapter), the updaters and UpdateQueueService (callers). Membership is checked against the compiled IL, top-level types only (nested names reduced before the plus sign).",
+"F160": "git mv of the unit test beside its subject; namespace equals folder.",
+"F161": "using lines (and the cref full name in QuietWriteBackAcceptanceTest) follow the move; no assertion changes.",
+"F162": "Lists compared both ways updated from the IL (Forecasting inbound plus TeamUpdater, UpdateServiceBase, UpdateQueueService and HeldUpdate as measured; licence edges plus WriteBackTriggerService; Flow metrics R4 entry leaves; R-L3 and R-T4 entries renamed; platform lane 5 edges and still-in-Services entries leave; Promises placement exceptions leave), old literals renamed, HaveFullName to typeof, staying paths renamed, fixture references to moved types renamed; using lines.",
+"F163": "Run WriteBackRoundLivesInForecastingArchUnitTest: each type of WriteBackMembership, read from the compiled IL by top-level full name, exists in its new namespace Lighthouse.Backend.Modules.Forecasting.Application.WriteBack and not in its old Services namespace; no top-level type named WriteBack* or IWriteBack* remains under Lighthouse.Backend.Services; the 8 unit-test files sit under Tests/Modules/Forecasting/Application/WriteBack.",
+"F164": "RED before the move, naming the 8 types still in Services.Implementation and Services.Interfaces; GREEN after the git mv with every existing Architecture rule green under the measured list changes.",
+"F165": "Leaving one type or test file in Services, or moving a type to flat Forecasting Application, fails naming that type or file.",
+"F166": "S2 creates no new type and extends no owner's responsibility: every production and unit-test target is an existing type or test moved unchanged by git mv (its new path does not exist before the move), and every other target only follows the move in using lines, literals or compared-both-ways lists. The owners consulted are recorded in the shared reuse rows (NamespaceMoveLaw, ModuleRules, ForecastingModuleBoundariesArchUnitTest, QuietWriteBackSeamArchUnitTest).",
+"F167": "The move is itself the preserving change; S1 already made the rules see both places, and the unchanged write-back acceptance and host tests observe behaviour before and after.",
+"F168": "Placement: every listed round type resolves to exactly its new namespace, and the set of top-level types of the new namespace equals the listed 8.",
+"F169": "Type still in old namespace: refused",
+"F17": "D-3 Models/WriteBack stays in the kernel (all 9 types): the mapping definition is an EF entity, the value source is stored by ordinal, and the result and field-update types sit on IWriteBackTarget's signature in Tracker integration.",
+"F170": "Type in both namespaces: refused",
+"F171": "Extra type in the WriteBack namespace: refused",
+"F172": "Eight named types, exhaustively checked over the IL.",
+"F173": "The round lives in Forecasting Application WriteBack and nowhere else.",
+"F18": "D-4 Tracker integration edge stays listed by name, one caller: WriteBackService is the only outside type of Tracker integration's write-back port (R-T4 entry renamed); Forecasting is not made a legal caller by namespace. ADR-270 gets the row Tracker integration to Forecasting, customer of the ACL's write-back capability, one listed type.",
+"F19": "D-5 Rules first (S1): one owner ModuleRules.TheWriteBackRound, matched against the full name, equal to the 8 old full names union the new namespace; the Access, Licensing and Promises predicates take the round pattern as an argument (production value for the real rule, a made-up value naming the fixture namespace for the falsifier) instead of reading their 8-name lists. The shared NamespaceMoveLaw is reused unchanged with a write-back map; the literal sweep WriteBackStringsTheMoveRenames is fixed from the pre-move grep and only shrinks in meaning.",
+"F2": "The last named exception of the Promises packaging leaves Services; the round sits inside the context that owns it, so S09a sees it there",
+"F20": "D-6 Tests move with production: the 8 unit-test files move in S2 to Tests/Modules/Forecasting/Application/WriteBack, namespace equals folder; RoundWriteBackDuringDatabaseMaintenanceTest stays with the update code unless S1 finds it constructs only round types. Acceptance, host and container tests stay; only their using lines change. Improve-the-tests-you-touch is waived for move-only and using-only edits.",
+"F21": "D-7 Platform lane to Forecasting edges (UpdateQueueService and its nested HeldUpdate creating, handing over and flushing the round) are listed in Forecasting's inbound list, not in the platform lane's list, as DatabaseMaintenanceGate is in Flow metrics. Inverting the flush behind a queue-owned port is noted for S09a, not done here.",
+"F22": "D-8 Update code to Forecasting edges are listed (TeamUpdater, UpdateServiceBase with its generic arity; PortfolioUpdater already listed); owner Epic 6474 slice 12.",
+"F23": "D-9 Order: after Story 6468, before Story 6382 (S09a); the move does not wait for S09a. S1 first runs the three merged checks for 6365, 6366 and 6468 and stops if any fails.",
+"F24": "D-10 Commit per slice, moves in refactor(forecasting) commits apart from edits; push S1 to S3 together once all three are green, so the Program.cs change triggers one live connector run.",
+"F25": "D-11 Behaviour-free proof reuses the admitted probes: architecture-rules (all), ef-model-unchanged, backend-tests on the unchanged write-back acceptance and host test classes on both revisions, test-selection-show for Modules/Forecasting paths and Program.cs. No new compare command.",
+"F26": "D-12 Mutation bar last, on frozen code: Stryker.NET over Modules/Forecasting/Application/WriteBack compared with the same files on the pre-move revision; no survivor or no-coverage mutant added; the 80 percent project bar reported.",
+"F27": "D-13 Formal verification: no Quint, TLA+ or Agda model selected (maintainer default taken). Claims C1 preservation, membership and the sweep are relations over a finite closed set (compiled types x membership map x rule fields x test-project literals) with no state, transition, time, fairness or unbounded input; a model over a hand-copied abstraction would be weaker than deciding the relation on the compiled assembly. Each is decided exhaustively by NUnit over the IL in the default suite. The round's concurrency (AsyncLocal context, last-out flush) is unchanged (D-0) and stays observed by the TaskManager, ResponsiveDuringUpdates and CancelAllWhileWorkIsAdmitted tests. PBT not applicable (closed finite domain). Formal result NOT_SELECTED; no install or waiver needed.",
+"F28": "D-14 Re-read against Story 6468 as shipped (main up to 6d531d0d1). E2 holds: PromisesModuleBoundariesArchUnitTest IsUpstreamCode still recognises the round only by its 8-name list, and TheNamespacedUpstreamCode (module adapters, update code, Access and Licensing) does not name Forecasting. E4 holds: Forecasting inbound list 1 (PortfolioUpdater), licence-edge list 1, platform lane 5 UpdateQueueService write-back edges, Flow metrics R4, Licensing R-L3 and Tracker integration R-T4 each still carry their one write-back entry; the 3 Access, Licensing and Promises lists still hold the same 8 names. IBlackoutPeriodService now lives in Modules/OrganisationSetup/Application (M15). Line numbers moved (PlatformLaneMembership 293-301, PlatformLaneUnitTestPlacementTest 88-98, PromisesUnitTestPlacementTest prefixes now only WriteBack and IWriteBack); S1 re-measures them.",
+"F29": "D-15 New since the design, from Story 6468: (a) WorkItemsModuleBoundariesArchUnitTest.StrayLooseImplementation and StrayLooseInterfaces (and the composite StrayLooseServices, also read by RecurringBlackoutEventsSeamArchUnitTest) name the 8 round types by old full name as regex alternatives. S1 declares them Place on the full name in WriteBackPatternRoles and puts them on the sweep; S3 removes the 8 alternatives. S1 also proves with a planted Work Items Application type reaching a made-up round type in the new place that a Work Items rule still refuses the edge; if none does, the 8 alternatives are replaced by the new full names instead of removed. (b) OrganisationSetupMembership.cs lists 3 round files by old path as staying neighbours; S2 renames those paths. (c) NamespaceMoveLaw has no exception for a move into an existing area: admissions live per move in its PatternRoles class (6468's WholeParentPatterns and NamedByTheModuleOnly), so S1 creates WriteBackPatternRoles and leaves the law unchanged (M3 answered).",
+"F3": "Every rule keeps its verdict for the write-back round while it moves.",
+"F30": "D-16 Narrowing planned from S1 so no frozen file is edited later: WriteBackPatternRoles holds one admission set, SeeTheRoundInItsNewPlace, for every Context pattern that must see the round in Forecasting (ModuleRules.TheWriteBackRound, ModuleRules.ForecastingModule and Forecasting Application patterns the role check reports). For those patterns the S1 check requires the new subject of every moved type to match and leaves the old subject free, so the same S1 oracle holds after the S1 widening, the S2 move and the S3 narrowing. A declared Place pattern may stop matching its old subject. S3's own oracle then asserts that every entry of that set and every Place entry sees no moved type under its old subject, which is 6468's NamedByTheModuleOnly check; the narrowing cannot hide a pattern that still reads the old home.",
+"F31": "D-17 One oracle file per slice, approved bytes frozen: S1 WriteBackMembershipArchUnitTest (membership in old or new place, the law with the write-back map, the Promises falsifier); S2 WriteBackRoundLivesInForecastingArchUnitTest (each listed type only in its new namespace; deviation from the design text, which tightened S1's test, because an approved oracle is never edited); S3 WriteBackRulesNameOnlyForecastingArchUnitTest (sweep with an empty list, round pattern new-only). Each WriteBackStringsTheMoveRenames entry holds while its file carries exactly one of its old or new text, so S2 renames without editing the S1 support. R-WB1 to R-WB4 in WriteBackRoundBoundariesArchUnitTest are an S3 crafter target with planted falsifiers, green on writing.",
+"F32": "D-18 Carriers: decisions are NUnit verdicts over IlDependencies reads (owner: each ArchUnitTest class); the moved production types keep their carriers unchanged (WriteBackRoundContext per-execution AsyncLocal state, WriteBackRound staging per round, results in Models/WriteBack); the map is WriteBackMembership (MovingType records), the roles WriteBackPatternRoles (PatternDeclaration records), the literal list WriteBackStringsTheMoveRenames (RenamedString records), the round pattern ModuleRules.TheWriteBackRound. Effects: none beyond git mv. Paradigm object_oriented: rule classes own their lists; no anemic split.",
+"F33": "Behaviour-free: production changes only by git mv plus namespace and using lines (S2); no registration line, order or lifetime in Program.cs changes; one using line added there.",
+"F34": "No rule or list is loosened. Lists are inline, by full type name, compared both ways and only shrink, except the measured growth of Forecasting's inbound and licence-edge lists (E4), which moves existing edges from other lists and is recorded in ADR-270 with owner.",
+"F35": "Rule exemptions for a moved type are exact (that type and its nested types by full name), never a namespace or layer; every rule edit is proved by a throwaway probe whose offender is caught, then reverted, recorded as craft commands.",
+"F36": "Approved oracle and support files of this feature are never edited, not even a using line; oracles name production types as strings. After S1's sweep lands, a test literal naming a moving type by its old Services path is built from segments.",
+"F37": "No nWave scenario tags in code. Live-connector categories (JiraIntegration, LinearIntegration, AdoIntegration, ServiceNowIntegration, GithubIntegration) are never run; any filter selecting WriteBack adds TestCategory exclusions for JiraIntegration and AdoIntegration.",
+"F38": "No input bound applies: no stored or validated input changes; the rule inputs are the compiled assemblies and the test project's source text.",
+"F39": "Shared preservation law; takes a NamespaceMove and a PatternRoleMap; no change needed, admissions live in the move's roles class.",
+"F4": "The write-back round and its unit tests live in Forecasting's Application/WriteBack, with no behaviour change.",
+"F40": "Shape copied for WriteBackPatternRoles (PatternRoles, FolderOnlyMatches, admission set); the class itself is not edited.",
+"F41": "Membership-map shape reused for WriteBackMembership; no existing map owns the round.",
+"F42": "Three lists (Access, Licensing, Promises) answer the same fact; replaced by one ModuleRules.TheWriteBackRound pattern; semantic duplicate removed.",
+"F43": "Owner of module patterns and shared rules; gains TheWriteBackRound; R-WB1 to R-WB4 reuse OutboundEdges and ModuleWording.",
+"F44": "6468's full-name list of loose services; the 8 round alternatives leave in S3 (Place role).",
+"F45": "Forecasting's inbound and licence-edge lists take the measured round edges.",
+"F46": "Planted-offender style for R-WB falsifiers.",
+"F47": "HaveFullName strings become typeof full names so the rule cannot select an empty set after the move.",
+"F48": "No shared wire, schema or configuration contract changes (D-0); the moved types are in-process, one deployable, all consumers change in the same commit.",
+"F49": "Single deployable; producer and consumer of every touched interface change together; the tracker receives the same writes, observed by the unchanged acceptance tests.",
+"F5": "Rules name the round by its Forecasting namespace only, and the round has its own boundary rules.",
+"F50": "Compiled production and test assemblies read through IlDependencies by NUnit architecture tests (in-process; nearest argv: dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture)",
+"F51": "Production runtime unchanged: IWriteBackTarget via IWorkTrackingConnectorFactory (Tracker integration), ITeamMetricsService (Flow metrics), ILicenseService (Licensing), IBlackoutPeriodService (Organisation set-up), repositories, ILighthouseClock",
+"F52": "Platform UpdateQueueService, the update code and ForecastUpdater call into Forecasting.Application.WriteBack (listed edges); the round calls out to Tracker integration (one listed type), Flow metrics, Licensing (listed), Organisation set-up (legal), kernel Models and repositories; Promises, Access and Licensing never call the round.",
+"F53": "NUnit verdict of an architecture rule, failing with a message that names each offending type, edge, pattern or literal",
+"F54": "Edges the IL reader misses (event declarations, named attribute arguments) and patterns declared as properties rather than fields, which the reflection over rule fields does not read",
+"F55": "Placement of the moving types measured from the compiled IL",
+"F56": "Nested types unless reduced to their top-level type; a same short name in another namespace unless matched by full name",
+"F57": "Two placements are equal when every listed top-level type resolves to the same namespace and no listed type exists in both its old and new namespace.",
+"F58": "Move preservation: for every moved type T and every declared rule pattern, a Context pattern that matches the old subject of T matches its new subject; a Place pattern never matches the new subject; a pattern in SeeTheRoundInItsNewPlace matches the new subject of every T; an undeclared pattern matches neither subject.",
+"F59": "Context field seeing only the old place: StopsSeeingTheType",
+"F6": "The 8 write-back round files (5 classes, 3 ports), their unit tests, the rule files that name them, Program.cs and the consumers' using lines, ARCHITECTURE.md §4 and ADR-270.",
+"F60": "Place field widened into the new place: SeesTheTypeInItsNewPlace",
+"F61": "Undeclared field matching an old full name: NotDeclared",
+"F62": "Forecasting module pattern sees the round only after the move: admitted by SeeTheRoundInItsNewPlace",
+"F63": "TheWriteBackRound old union new, then new only: admitted at every slice",
+"F64": "StrayLooseImplementation without the 8 alternatives: Place may stop matching",
+"F65": "Finite closed set: compiled rule fields x 8 moving types; decided exhaustively over the IL, with made-up keys proving each break kind.",
+"F66": "The module rules cover what the three 8-name round lists did, so the lists can simply be dropped after the move.",
+"F67": "Carrier: the lists named the round because it had no namespace; Promises reaches Forecasting Application by right, so the module rule cannot tell the round from the rest of Forecasting.",
+"F68": "A made-up Promises Application type reaching a made-up round type in the new WriteBack namespace passes Promises' upstream rule while the predicate reads only the old 8 names.",
+"F69": "No existing architecture rule silently stops seeing a write-back round type when it moves, and no Promises, Access or Licensing type can join the round unseen.",
+"F7": "Models/WriteBack (stays in the kernel), Tracker integration's write-back port and connectors, the acceptance and host tests, registration extensions (S09a), any behaviour, schema, route or DTO change.",
+"F70": "A rule passes over an empty or shrunken subject set and a forbidden edge ships unseen; Promises reaches Forecasting by right, so a dropped list would admit it into the round.",
+"F71": "Compiled test assembly rule fields, the write-back membership map and the test project's source literals",
+"F72": "dotnet test --filter FullyQualifiedName~WriteBackMembershipArchUnitTest fails naming an undeclared or unpreserved field or a Promises type reaching the round",
+"F73": "Inline method-body literals (covered only by the sweep); patterns built at run time or declared as properties; rules selecting types by short name",
+"F74": "Before S2 every listed type is in its old namespace; after S2 only in its new one; TheWriteBackRound matches old and new during the move and new only after S3.",
+"F75": "A listed type in both or neither namespace; a Context pattern seeing a moved type only in the old place; any regex field or test literal naming an old full name or path after S3 outside the exact exclusion list.",
+"F76": "Whether a Work Items rule other than the StrayLoose list refuses a Work Items Application type reaching the round once it lives in Forecasting; S1 decides by a planted falsifier (D-15a).",
+"F77": "write-back round placement rules",
+"F78": "Excluded states refused by S1 law and S3 sweep, each with a planted made-up offender; not built yet.",
+"F79": "The 8 listed types exist today in Services.Implementation and Services.Interfaces (git ls-files); the map is constructible from them; S2 inhabits the new place.",
+"F8": "The rules see the write-back round's move before it happens: its membership is measured from the compiled code, the shared namespace-move law covers the write-back map, and the round pattern sees both the old and the new namespace.",
+"F80": "compiled assembly, WriteBackMembership plus law plus TheWriteBackRound, module rules, dotnet test exit and message; acyclic, no bootstrap needed.",
+"F81": "Not applicable: no progress claim; each rule is a terminating evaluation over a finite assembly; the round's runtime progress is unchanged (D-0) and observed by existing tests.",
+"F82": "Negated: a pattern sees the round (false, it has no namespace)",
+"F83": "Every old literal is renamed or deleted",
+"F84": "Literal list fixed at S1, entries hold in old or new state",
+"F85": "An unlisted old literal surviving S3",
+"F86": "Literals built at run time",
+"F87": "Negated: module rules cover what the lists did (false for Promises)",
+"F88": "Promises, Access, Licensing never reach the round",
+"F89": "Lists kept until S3, predicates read the pattern from S1",
+"F9": "No rule loses a write-back edge while the round moves",
+"F90": "A Promises type joining the round unseen",
+"F91": "None",
+"F92": "Negated: HaveFullName fails on an empty set (unknown)",
+"F93": "QuietWriteBackSeam keeps selecting WriteBackTriggerService",
+"F94": "typeof full names",
+"F95": "A rule passing over an empty selection",
+"F96": "Negated: sibling Stories left counts as measured (false by construction; 6468 added StrayLoose and staying paths)",
+"F97": "Every list compared both ways",
+"F98": "Re-measure M1-M17 at S1, differences recorded",
+"F99": "Arguing a count instead of recording it"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_in": [
+"F6"
+],
+"scope_out": [
+"F7"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F8",
+"promises": [
+"P1"
+],
+"work": {
+"size": "M",
+"value": "F9"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F10",
+"promises": [
+"P2"
+],
+"work": {
+"size": "M",
+"value": "F11"
+}
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F12",
+"promises": [
+"P3"
+],
+"work": {
+"size": "M",
+"value": "F13"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6657-write-back-round",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
