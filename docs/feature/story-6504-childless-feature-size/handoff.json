@@ -3,7 +3,7 @@
 "B": 2,
 "C": 2,
 "D": 9,
-"F": 296,
+"F": 301,
 "K": 8,
 "L": 4,
 "N": 2,
@@ -1268,7 +1268,6 @@
 "F167": "Off means nothing is invented",
 "F168": "None",
 "F169": "A caller that extrapolates without the selectors",
-"F17": "a Portfolio owner looks at F in the Feature list of Ocean's Portfolio page, a Team's page, and the Delivery timeline",
 "F170": "WorkItemService is the only caller; example cases and the Quint mapping pin both selectors",
 "F171": "Deserialization: a payload with infersDefaultFeatureSize false sent by a script, or a restored database backup from before the column",
 "F172": "Explicit false is honoured; a backup row gets the column default true on migration",
@@ -1409,10 +1408,14 @@
 "F294": "Mirror value",
 "F295": "Emission on accepted on-to-off save",
 "F296": "New catalog row",
+"F297": "a Portfolio owner looks at F in the Feature list of Ocean's Portfolio page and on the Delivery timeline",
+"F298": "With the switch off, the Feature shows the note 'No child Work Items yet' in today's warning-icon place in the Feature list on the Portfolio page and on the Delivery timeline.",
+"F299": "With the switch off, a Feature with no child Work Items shows 0 remaining Work Items plus the note 'No child Work Items yet' in today's warning-icon place: the Feature list on the Portfolio page and the Delivery timeline (maintainer, 2026-11-25; Team pages dropped by the AFK correction below).",
 "F3": "A Portfolio owner can switch default (inferred) Feature sizing off. When it is off, a Feature with no child Work Items gets size 0: Lighthouse invents no count for it and assigns nothing to any Team, and forecasts take that 0 as it comes. When it is on, Lighthouse behaves as today.",
 "F30": "With the switch off, a not-Done Feature with no child Work Items gets size 0: no inferred count, no remaining work assigned to any Team, and forecasts take the 0 as it comes.",
+"F300": "A Feature without child Work Items is not listed on any Team page while default sizing is off, because it carries no Team work; the note therefore shows on the Portfolio Feature list and the Delivery timeline only (follows from the confirmed 'no Team carries work' rule; taken in AFK mode 2026-11-25, open for the maintainer to revisit).",
+"F301": "With default Feature sizing off, a Feature with no child Work Items shows 'No child Work Items yet' in the Feature list on the Portfolio page and on the Delivery timeline, instead of today's default-size warning.",
 "F31": "A per-Portfolio on/off switch for default Feature sizing in the advanced settings next to Default Feature Size, on for existing and new Portfolios.",
-"F32": "With the switch off, the Feature shows the note 'No child Work Items yet' in today's warning-icon place in the Feature lists on the Portfolio and Team pages and on the Delivery timeline.",
 "F33": "With the switch off, the override real child count states rule and a mapped size-estimate field have no effect: a Feature's size is its real child count, or 0.",
 "F34": "With the switch off, Default Feature Size, the percentile option, the size-estimate field mapping and the override-states selection are greyed out; their stored values are kept and come back when the switch is on again.",
 "F35": "Special forecast handling for a Feature sized 0 (skipping it, showing no date, warnings on the forecast): excluded because the maintainer decided the forecast takes the 0 as it comes.",
@@ -1430,7 +1433,6 @@
 "F46": "No labelling change when the switch is on: the existing warning icon and sentence stay; no stronger 'assumed' mark (maintainer, 2026-11-25).",
 "F47": "Switching default sizing off also turns off the 'override real child count states' rule. Off means Lighthouse never puts a default size in place of real children: a Feature's size is its real child count, or 0 if it has none (maintainer, 2026-11-25).",
 "F48": "The switch lives per Portfolio in its advanced settings next to Default Feature Size. It is on for existing and new Portfolios, so nothing changes on upgrade (maintainer, 2026-11-25).",
-"F49": "With the switch off, a Feature with no child Work Items shows 0 remaining Work Items plus the note 'No child Work Items yet' in today's warning-icon place: the Feature lists on the Portfolio and Team pages and the Delivery timeline (maintainer, 2026-11-25).",
 "F5": "Portfolio Ocean has Default Feature Size 4, default sizing is switched on, and Feature F has no child Work Items in any Team",
 "F50": "With the switch off, a mapped size-estimate field does not size a Feature: always 0 without children. While off, the Portfolio settings grey out Default Feature Size, the percentile option, the size-estimate field mapping and the override-states selection, because none has an effect; their stored values are kept, so switching on again restores them (maintainer, 2026-11-25: 'No, always 0. And we shouldn't even be able to set any other value/option in the default feature size').",
 "F51": "Quint scenario exploration is not run. The forecast value (P3) was settled by the maintainer as 'no special handling'; the maintainer refused exploration of the switch x override-states x child-count combination on 2026-11-25 ('Skip it'). Those Quint-relevant values stay unexplored for that reason.",
@@ -1449,7 +1451,6 @@
 "F63": "With default Feature sizing off, a Feature in an override real child count state keeps its real child count instead of the default size.",
 "F64": "The Portfolio owner sees real child counts for Features in override states, so switching off means no default size anywhere.",
 "F65": "Extends S1; nothing delivered is revised.",
-"F66": "With default Feature sizing off, a Feature with no child Work Items shows 'No child Work Items yet' in the Feature lists on the Portfolio and Team pages and on the Delivery timeline, instead of today's default-size warning.",
 "F67": "The Portfolio owner reads why a Feature shows 0 instead of mistaking it for finished.",
 "F68": "Absent field: PortfolioSettingDto.InfersDefaultFeatureSize is bool? (the IgnoreDependencies precedent) and PortfolioExtensions keeps the stored value when it is absent, so an older UI, script or CLI payload cannot switch it off. A new Portfolio holds true. The column is additive: NOT NULL with default true for existing rows, generated by Create-Migration.ps1 for Sqlite and Postgres. The wire name is infersDefaultFeatureSize. Rejected: JsonRequired (turns every older payload into a 400), plain bool (missing field would mean false, which silently turns sizing off).",
 "F69": "Feature read model: Feature gains a derived read-only property HasNoChildWorkItemsYet (not Done, no child Work Items, not using the default size), exposed on FeatureDto and FeatureListRowDto and decoded by the frontend Feature model. It is true exactly when the switch is off for a childless Feature, so the note cannot claim a cause that is false and the frontend holds no copy of the rule. This replaces the DISCUSS expectation that the Feature payload gains nothing. Rejected: deriving it in the frontend from total work (a second copy of the rule that mislabels a Feature not yet refreshed), reading the Portfolio setting in the lists (the Team list and the timeline hold no Portfolio setting, and a Feature may sit in several Portfolios).",
@@ -1561,7 +1562,7 @@
 "status": {
 "kind": "Confirmed"
 },
-"text": "F49"
+"text": "F299"
 },
 {
 "status": {
@@ -1574,6 +1575,12 @@
 "kind": "Confirmed"
 },
 "text": "F51"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F300"
 }
 ],
 "journey": [
@@ -1630,7 +1637,7 @@
 "kind": "Scenario",
 "then": "F18",
 "title": "F15",
-"when": "F17"
+"when": "F297"
 },
 {
 "given": "F20",
@@ -1660,7 +1667,7 @@
 "scope_in": [
 "F30",
 "F31",
-"F32",
+"F298",
 "F33",
 "F34"
 ],
@@ -1713,7 +1720,7 @@
 "S1"
 ],
 "id": "S3",
-"observation": "F66",
+"observation": "F301",
 "promises": [
 "P5"
 ],

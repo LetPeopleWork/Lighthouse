@@ -101,7 +101,7 @@ default sizing of Portfolio Ocean is switched off and Feature F has no child Wor
 ```
 
 ```text
-a Portfolio owner looks at F in the Feature list of Ocean's Portfolio page, a Team's page, and the Delivery timeline
+a Portfolio owner looks at F in the Feature list of Ocean's Portfolio page and on the Delivery timeline
 ```
 
 ```text
@@ -179,7 +179,7 @@ A per-Portfolio on/off switch for default Feature sizing in the advanced setting
 ```
 
 ```text
-With the switch off, the Feature shows the note 'No child Work Items yet' in today's warning-icon place in the Feature lists on the Portfolio and Team pages and on the Delivery timeline.
+With the switch off, the Feature shows the note 'No child Work Items yet' in today's warning-icon place in the Feature list on the Portfolio page and on the Delivery timeline.
 ```
 
 ```text
@@ -306,7 +306,7 @@ Confirmed
 
 
 ```text
-With the switch off, a Feature with no child Work Items shows 0 remaining Work Items plus the note 'No child Work Items yet' in today's warning-icon place: the Feature lists on the Portfolio and Team pages and the Delivery timeline (maintainer, 2026-11-25).
+With the switch off, a Feature with no child Work Items shows 0 remaining Work Items plus the note 'No child Work Items yet' in today's warning-icon place: the Feature list on the Portfolio page and the Delivery timeline (maintainer, 2026-11-25; Team pages dropped by the AFK correction below).
 ```
 
 #### Status
@@ -325,6 +325,15 @@ Confirmed
 
 ```text
 Quint scenario exploration is not run. The forecast value (P3) was settled by the maintainer as 'no special handling'; the maintainer refused exploration of the switch x override-states x child-count combination on 2026-11-25 ('Skip it'). Those Quint-relevant values stay unexplored for that reason.
+```
+
+#### Status
+
+Confirmed
+
+
+```text
+A Feature without child Work Items is not listed on any Team page while default sizing is off, because it carries no Team work; the note therefore shows on the Portfolio Feature list and the Delivery timeline only (follows from the confirmed 'no Team carries work' rule; taken in AFK mode 2026-11-25, open for the maintainer to revisit).
 ```
 
 #### Status
@@ -445,7 +454,7 @@ Extends S1; nothing delivered is revised.
 ### S3
 
 ```text
-With default Feature sizing off, a Feature with no child Work Items shows 'No child Work Items yet' in the Feature lists on the Portfolio and Team pages and on the Delivery timeline, instead of today's default-size warning.
+With default Feature sizing off, a Feature with no child Work Items shows 'No child Work Items yet' in the Feature list on the Portfolio page and on the Delivery timeline, instead of today's default-size warning.
 ```
 
 #### Promises

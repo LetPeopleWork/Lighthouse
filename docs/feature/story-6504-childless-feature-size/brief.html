@@ -232,7 +232,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>default sizing of Portfolio Ocean is switched off and Feature F has no child Work Items in any Team
 </code></pre>
 
-<pre><code>a Portfolio owner looks at F in the Feature list of Ocean&#x27;s Portfolio page, a Team&#x27;s page, and the Delivery timeline
+<pre><code>a Portfolio owner looks at F in the Feature list of Ocean&#x27;s Portfolio page and on the Delivery timeline
 </code></pre>
 
 <pre><code>in each place F shows the note &#x27;No child Work Items yet&#x27; where today&#x27;s default-size warning icon sits, and today&#x27;s sentence about the default Feature size does not appear
@@ -294,7 +294,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A per-Portfolio on/off switch for default Feature sizing in the advanced settings next to Default Feature Size, on for existing and new Portfolios.
 </code></pre>
 
-<pre><code>With the switch off, the Feature shows the note &#x27;No child Work Items yet&#x27; in today&#x27;s warning-icon place in the Feature lists on the Portfolio and Team pages and on the Delivery timeline.
+<pre><code>With the switch off, the Feature shows the note &#x27;No child Work Items yet&#x27; in today&#x27;s warning-icon place in the Feature list on the Portfolio page and on the Delivery timeline.
 </code></pre>
 
 <pre><code>With the switch off, the override real child count states rule and a mapped size-estimate field have no effect: a Feature&#x27;s size is its real child count, or 0.
@@ -404,7 +404,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Confirmed</p>
 
 
-<pre><code>With the switch off, a Feature with no child Work Items shows 0 remaining Work Items plus the note &#x27;No child Work Items yet&#x27; in today&#x27;s warning-icon place: the Feature lists on the Portfolio and Team pages and the Delivery timeline (maintainer, 2026-11-25).
+<pre><code>With the switch off, a Feature with no child Work Items shows 0 remaining Work Items plus the note &#x27;No child Work Items yet&#x27; in today&#x27;s warning-icon place: the Feature list on the Portfolio page and the Delivery timeline (maintainer, 2026-11-25; Team pages dropped by the AFK correction below).
 </code></pre>
 
 <h4>Status</h4>
@@ -421,6 +421,14 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 <pre><code>Quint scenario exploration is not run. The forecast value (P3) was settled by the maintainer as &#x27;no special handling&#x27;; the maintainer refused exploration of the switch x override-states x child-count combination on 2026-11-25 (&#x27;Skip it&#x27;). Those Quint-relevant values stay unexplored for that reason.
+</code></pre>
+
+<h4>Status</h4>
+
+<p>Confirmed</p>
+
+
+<pre><code>A Feature without child Work Items is not listed on any Team page while default sizing is off, because it carries no Team work; the note therefore shows on the Portfolio Feature list and the Delivery timeline only (follows from the confirmed &#x27;no Team carries work&#x27; rule; taken in AFK mode 2026-11-25, open for the maintainer to revisit).
 </code></pre>
 
 <h4>Status</h4>
@@ -524,7 +532,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h3>S3</h3>
 
-<pre><code>With default Feature sizing off, a Feature with no child Work Items shows &#x27;No child Work Items yet&#x27; in the Feature lists on the Portfolio and Team pages and on the Delivery timeline, instead of today&#x27;s default-size warning.
+<pre><code>With default Feature sizing off, a Feature with no child Work Items shows &#x27;No child Work Items yet&#x27; in the Feature list on the Portfolio page and on the Delivery timeline, instead of today&#x27;s default-size warning.
 </code></pre>
 
 <h4>Promises</h4>
