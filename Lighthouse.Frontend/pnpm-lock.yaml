@@ -287,7 +287,7 @@ importers:
         specifier: ^10.1.1
         version: 10.1.1(@stryker-mutator/core@10.1.1(@types/node@26.6.6))(vitest@5.1.1)
       '@tauri-apps/cli':
-        specifier: ^2.12.5
+        specifier: ^2.12.6
         version: 2.12.6
       '@testing-library/dom':
         specifier: ^10.4.2
