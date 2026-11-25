@@ -86,6 +86,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             return method.HasBody
                 ? declared
                     .Concat(method.Body.Variables.Select(variable => variable.VariableType))
+                    .Concat(method.Body.ExceptionHandlers.Select(handler => handler.CatchType).OfType<TypeReference>())
                     .Concat(method.Body.Instructions.SelectMany(TypesInOperand))
                 : declared;
         }

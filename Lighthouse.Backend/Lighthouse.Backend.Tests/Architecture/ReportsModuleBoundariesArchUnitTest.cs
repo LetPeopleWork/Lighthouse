@@ -5,6 +5,7 @@ using Lighthouse.Backend.Modules.ReportFixtures.Boundaries.Domain;
 using Lighthouse.Backend.Modules.ReportFixtures.Boundaries.Services;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.Compliant.Application;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.HoldingADbSet.Application;
+using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.OnlyCatching.Application;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnAdapter.Application;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnApiType.Application;
 using Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnUnlistedFlowMetricsDomainType.Application;
@@ -37,10 +38,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// code. Every list is compared both ways and only shrinks. The same rules run on made-up types: each rule and each
     /// list position names its made-up offender and passes its compliant twin.
     /// </summary>
-    /// <remarks>
-    /// The IL reader does not see types used only in a catch clause, an event or a named attribute argument, so the
-    /// concurrency exception that the bulk remover only catches is not on the EF Core list.
-    /// </remarks>
     [TestFixture]
     public class ReportsModuleBoundariesArchUnitTest
     {
@@ -154,10 +151,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // The edges from Reports' Application into EF Core, the data layer, the API, any module's adapters, Tracker
         // integration, the RBAC service or the update code: the bulk commands and the bulk remover name the database
-        // exception they translate into a refusal. The list only shrinks.
+        // exceptions they translate into a refusal, the remover also the one it only catches. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationIntoForbiddenCode =
         [
             "Lighthouse.Backend.Modules.Reports.Application.ReportBulkCommands -> Microsoft.EntityFrameworkCore.DbUpdateException",
+            "Lighthouse.Backend.Modules.Reports.Application.ReportBulkRemover -> Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException",
             "Lighthouse.Backend.Modules.Reports.Application.ReportBulkRemover -> Microsoft.EntityFrameworkCore.DbUpdateException",
         ];
 
@@ -337,6 +335,17 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             ThenTheFailureNamesOnly(ApplicationInboundRule(TestModule.Value, [], outside).Check, listed, [MadeUpController, MadeUpCompositionRoot], "the Application inbound rule without its listed caller");
             ThenTheGoneEntryIsNamedForDeletion(ApplicationInboundRule(TestModule.Value, [listed, AGoneEntry], outside).Check, AGoneEntry, "the Application inbound rule");
+        }
+
+        [Test]
+        public void ATypeThatOnlyCatchesAnExceptionInACatchClause_IsSeenReferencingIt()
+        {
+            var offender = typeof(AReportServiceOnlyCatchingAnEntityFrameworkCoreException);
+            var concurrency = typeof(Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException).FullName!;
+
+            var verdict = ForbiddenCodeRule(TestModule.Value, NamespacePatternOf(offender), []);
+
+            ThenTheFailureNamesOnly(verdict.Check, $"Not on the list, and offending: {Edge(offender, concurrency)}", [], "the forbidden-code rule over a catch-only reference");
         }
 
         [Test]
@@ -762,6 +771,25 @@ namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.HoldingAD
     internal sealed class AReportServiceHoldingADbSet(global::Microsoft.EntityFrameworkCore.DbSet<global::Lighthouse.Backend.Models.Delivery> deliveries)
     {
         public global::Microsoft.EntityFrameworkCore.DbSet<global::Lighthouse.Backend.Models.Delivery> Deliveries { get; } = deliveries;
+    }
+}
+
+namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.OnlyCatching.Application
+{
+    internal static class AReportServiceOnlyCatchingAnEntityFrameworkCoreException
+    {
+        public static bool Attempt(Action work)
+        {
+            try
+            {
+                work();
+                return true;
+            }
+            catch (global::Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+            {
+                return false;
+            }
+        }
     }
 }
 

@@ -219,7 +219,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Run Reports&#x27; layer rule, its kernel-only Domain rule and its four listed edge rules over today&#x27;s compiled code
 </code></pre>
 
-<pre><code>Each listed type sits in its layer and none under Services; Domain reaches only the kernel and System; the inbound lists (empty for Domain, the report repository for Application) and the outbound lists (2 EF Core edges, 12 Flow metrics, Licensing, set-up and platform edges) equal the measured sets both ways
+<pre><code>Each listed type sits in its layer and none under Services; Domain reaches only the kernel and System; the inbound lists (empty for Domain, the report repository for Application) and the outbound lists (3 EF Core edges including the one the bulk remover only names in a catch clause, 12 Flow metrics, Licensing, set-up and platform edges) equal the measured sets both ways
 </code></pre>
 
 <pre><code>Today&#x27;s Reports passes its own rules, so a later new edge is the only thing that can fail them
@@ -231,12 +231,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AReportsListedRule_MatchesWhatTheCompiledCodeReaches_InBothDirections</p>
 
-<pre><code>A list with an extra stale entry or a missing entry would pass if the comparison ran one way only; it runs both ways
+<pre><code>A list with an extra stale entry, a missing entry, or a catch-only edge left off the list would pass if the comparison ran one way only or the reader skipped catch clauses; it runs both ways and reads catch clauses
 </code></pre>
 
 <h6>Obligations</h6>
 
-
+<p>None.</p>
 
 <h5>Covers</h5>
 
@@ -568,6 +568,32 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h6>Obligations</h6>
 
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A type in Reports&#x27; Application whose only reference to an EF Core exception is a catch clause is run through the forbidden-code rule
+</code></pre>
+
+<pre><code>The rule names the catch-only edge as offending in Reports wording
+</code></pre>
+
+<pre><code>An edge that is only caught, never constructed or called, can no longer slip into Reports unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#ATypeThatOnlyCatchesAnExceptionInACatchClause_IsSeenReferencingIt</p>
+
+<pre><code>An IL reader that skips exception handlers would pass the rule without naming the edge; the test fails then
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 

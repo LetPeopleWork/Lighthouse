@@ -80,7 +80,7 @@ Run Reports' layer rule, its kernel-only Domain rule and its four listed edge ru
 ```
 
 ```text
-Each listed type sits in its layer and none under Services; Domain reaches only the kernel and System; the inbound lists (empty for Domain, the report repository for Application) and the outbound lists (2 EF Core edges, 12 Flow metrics, Licensing, set-up and platform edges) equal the measured sets both ways
+Each listed type sits in its layer and none under Services; Domain reaches only the kernel and System; the inbound lists (empty for Domain, the report repository for Application) and the outbound lists (3 EF Core edges including the one the bulk remover only names in a catch clause, 12 Flow metrics, Licensing, set-up and platform edges) equal the measured sets both ways
 ```
 
 ```text
@@ -94,12 +94,12 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AReportsListedRule\_MatchesWhatTheCompiledCodeReaches\_InBothDirections
 
 ```text
-A list with an extra stale entry or a missing entry would pass if the comparison ran one way only; it runs both ways
+A list with an extra stale entry, a missing entry, or a catch-only edge left off the list would pass if the comparison ran one way only or the reader skipped catch clauses; it runs both ways and reads catch clauses
 ```
 
 ###### Obligations
 
-
+None.
 
 ##### Covers
 
@@ -483,6 +483,36 @@ A one-way comparison
 
 ###### Obligations
 
+
+##### Covers
+
+P2
+
+```text
+A type in Reports' Application whose only reference to an EF Core exception is a catch clause is run through the forbidden-code rule
+```
+
+```text
+The rule names the catch-only edge as offending in Reports wording
+```
+
+```text
+An edge that is only caught, never constructed or called, can no longer slip into Reports unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#ATypeThatOnlyCatchesAnExceptionInACatchClause\_IsSeenReferencingIt
+
+```text
+An IL reader that skips exception handlers would pass the rule without naming the edge; the test fails then
+```
+
+###### Obligations
+
+None.
 
 ## Expectations
 
