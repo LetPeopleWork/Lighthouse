@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.API
             var newPortfolio = new Portfolio();
             if (workTrackingSystemConnectionRepository.GetById(portfolioSetting.WorkTrackingSystemConnectionId) is { } connection)
             {
-                newPortfolio.WorkTrackingSystemConnection = connection;
+                newPortfolio.StartOnConnection(connection);
             }
 
             if (ownerSettingRefusals.RefusalOf(this, SettingsOwnerKind.Portfolio, newPortfolio, portfolioSetting) is { } settingRefusal)

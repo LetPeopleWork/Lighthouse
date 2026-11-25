@@ -16,6 +16,12 @@ namespace Lighthouse.Backend.Models
 
         public bool InfersDefaultFeatureSize { get; set; } = false;
 
+        public void StartOnConnection(WorkTrackingSystemConnection connection)
+        {
+            WorkTrackingSystemConnection = connection;
+            InfersDefaultFeatureSize = connection.SizeEstimateFieldForPortfolios.HasValue;
+        }
+
         public int? OwningTeamId { get; set; }
 
         public Team? OwningTeam { get; set; }

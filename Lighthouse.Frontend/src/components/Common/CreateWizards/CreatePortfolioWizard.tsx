@@ -44,7 +44,6 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 			sizeEstimateAdditionalFieldDefinitionId: null,
 			dependencyOverrideAdditionalFieldDefinitionId: null,
 			ignoreDependencies: false,
-			infersDefaultFeatureSize: false,
 			featureOwnerAdditionalFieldDefinitionId: null,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,
