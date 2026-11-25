@@ -1,0 +1,18 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Modules/OrganisationSetup/Domain/**/*.cs",
+      "**/Modules/OrganisationSetup/Application/**/*.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Lighthouse.Backend.Tests.Modules.OrganisationSetup|FullyQualifiedName~Tests.API.AppSettingsControllerTest|FullyQualifiedName~Tests.API.BlackoutPeriodsControllerTest|FullyQualifiedName~Tests.API.RecurringBlackoutRulesControllerTest|FullyQualifiedName~Tests.API.TerminologyControllerTest|FullyQualifiedName~Tests.API.OptionalFeaturesControllerTest|FullyQualifiedName~Tests.Data.RecurringBlackoutRulePersistenceTest|FullyQualifiedName~Tests.Services.SurveyNudgeSettingsTest|FullyQualifiedName~Tests.Models.RecurringBlackoutRuleDtoTest|FullyQualifiedName~FeatureOrderingPolicyChangedForecastTriggerHandlerTest|FullyQualifiedName~FeatureRankChangedForecastTriggerHandlerTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood&FullyQualifiedName!~WriteBack&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
