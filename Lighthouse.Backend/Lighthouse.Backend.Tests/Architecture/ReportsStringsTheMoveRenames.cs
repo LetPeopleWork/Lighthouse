@@ -11,80 +11,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
     /// <summary>
     /// Every string in the test project that names Reports by its old Services path when the Reports types are about to move
-    /// into Lighthouse.Backend.Modules.Reports. The list was taken from a search of the test project before the move and only
-    /// shrinks: an entry leaves the list in the commit that renames or deletes its string.
+    /// into Lighthouse.Backend.Modules.Reports. The move renamed or deleted each of them, so the list is empty.
     /// </summary>
     internal static class ReportsStringsTheMoveRenames
     {
-        private const string Architecture = "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/";
-
-        private const string OldImplementationFolder = "Services/Implementation/Reports/";
-
-        private const string OldMetricsFolder = "Services/Implementation/Reports/Metrics/";
-
-        private const string OldInterfacesFolder = "Services/Interfaces/Reports/";
-
-        private const string NewApplicationFolder = "Modules/Reports/Application/";
-
-        public static IReadOnlyList<ReportsRename> Entries { get; } =
-        [
-            new(Architecture + "FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs",
-                "Lighthouse.Backend.Services.Implementation.Reports.Metrics.DailySeriesSummary",
-                "Lighthouse.Backend.Modules.Reports.Application.Metrics.DailySeriesSummary"),
-            new(Architecture + "LicensingModuleBoundariesArchUnitTest.cs",
-                "Lighthouse.Backend.Services.Implementation.Reports.ReportCommands",
-                "Lighthouse.Backend.Modules.Reports.Application.ReportCommands"),
-            new(Architecture + "LicensingModuleBoundariesArchUnitTest.cs",
-                "Lighthouse.Backend.Services.Implementation.Reports.ReportQueries",
-                "Lighthouse.Backend.Modules.Reports.Application.ReportQueries"),
-            new(Architecture + "RepositoryLeakRatchetArchUnitTest.cs",
-                OldImplementationFolder + "ReportOwnerLookup.cs",
-                NewApplicationFolder + "ReportOwnerLookup.cs"),
-            new(Architecture + "TrackerIntegrationModuleBoundariesArchUnitTest.cs",
-                "Lighthouse.Backend.Services.Interfaces.Reports.IReportQueries",
-                "Lighthouse.Backend.Modules.Reports.Application.IReportQueries"),
-
-            // The platform lane's list of files that stay in Services names each moving Reports file; the row goes when its file moves.
-            .. FilesThatLeaveTheStayingList(
-                OldMetricsFolder,
-                "ArrivalsReportMetric.cs",
-                "CycleTimeReportMetric.cs",
-                "DailySeriesSummary.cs",
-                "ReportMetricCatalog.cs",
-                "ThroughputReportMetric.cs",
-                "WindowedReportMetric.cs",
-                "WipReportMetric.cs",
-                "WorkItemAgeReportMetric.cs"),
-            .. FilesThatLeaveTheStayingList(
-                OldImplementationFolder,
-                "PortfolioReportMetricSeries.cs",
-                "ReportBulkCommands.cs",
-                "ReportBulkRemover.cs",
-                "ReportCapPolicy.cs",
-                "ReportCommands.cs",
-                "ReportMetricSeriesByOwner.cs",
-                "ReportOwnerLookup.cs",
-                "ReportQueries.cs",
-                "ReportSeriesReading.cs",
-                "ReportWindowPolicy.cs",
-                "TeamReportMetricSeries.cs",
-                "ThenAndNowTemplate.cs"),
-            .. FilesThatLeaveTheStayingList(
-                OldInterfacesFolder,
-                "IReportBulkCommands.cs",
-                "IReportBulkRemover.cs",
-                "IReportCommands.cs",
-                "IReportMetric.cs",
-                "IReportMetricSeries.cs",
-                "IReportOwnerLookup.cs",
-                "IReportOwnerWriteAccess.cs",
-                "IReportQueries.cs",
-                "IReportReader.cs",
-                "IReportTemplate.cs",
-                "IReportWriter.cs"),
-        ];
-
-        private static IEnumerable<ReportsRename> FilesThatLeaveTheStayingList(string folder, params string[] files)
-            => files.Select(file => new ReportsRename(Architecture + "PlatformLaneUnitTestPlacementTest.cs", folder + file, NewText: null));
+        public static IReadOnlyList<ReportsRename> Entries { get; } = [];
     }
 }

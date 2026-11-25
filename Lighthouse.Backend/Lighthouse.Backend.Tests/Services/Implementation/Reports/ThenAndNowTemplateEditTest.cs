@@ -1,8 +1,7 @@
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Implementation.Reports;
-using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
-using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Modules.Reports.Application.Metrics;
+using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;

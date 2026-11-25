@@ -443,7 +443,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             yield return OtherContextCase("ReachingASecondPromisesType", "Lighthouse.Backend.Modules.Promises.Application.IDeliveryForecastPublishingService", "ATrackerIntegrationTypeReachingPromisesBeyondTheListedRenderer_IsNamed");
             yield return OtherContextCase("ReachingTheUpdateCode", "Lighthouse.Backend.Platform.UpdateQueue.UpdateKey", "ATrackerIntegrationTypeReachingTheUpdateCode_IsNamed");
             yield return OtherContextCase("ReachingRefinement", "Lighthouse.Backend.Modules.Refinement.Application.IRefinementViewQuery", "ATrackerIntegrationTypeReachingRefinement_IsNamed");
-            yield return OtherContextCase("ReachingReports", "Lighthouse.Backend.Services.Interfaces.Reports.IReportQueries", "ATrackerIntegrationTypeReachingReports_IsNamed");
+            yield return OtherContextCase("ReachingReports", "Lighthouse.Backend.Modules.Reports.Application.IReportQueries", "ATrackerIntegrationTypeReachingReports_IsNamed");
             yield return OtherContextCase("ReachingAccess", "Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService", "ATrackerIntegrationTypeReachingAccess_IsNamed");
             yield return OtherContextCase("ReachingTheLicence", "Lighthouse.Backend.Modules.Licensing.Application.ILicenseService", "ATrackerIntegrationTypeReachingTheLicence_IsNamed");
         }
@@ -880,7 +880,7 @@ namespace Lighthouse.Backend.Modules.TrackerIntegrationFixtures.BoundariesOutbou
 {
     internal static class AConnector
     {
-        public static bool Reaches(global::Lighthouse.Backend.Services.Interfaces.Reports.IReportQueries other) => other is not null;
+        public static bool Reaches(global::Lighthouse.Backend.Modules.Reports.Application.IReportQueries other) => other is not null;
     }
 
     internal static class AConnectorMergingTheForecastBlock

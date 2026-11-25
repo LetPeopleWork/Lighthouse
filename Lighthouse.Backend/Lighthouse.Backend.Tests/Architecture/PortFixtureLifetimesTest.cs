@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
+using Lighthouse.Backend.Modules.Reports.Application.Metrics;
+using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Services.Implementation.Repositories;
-using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Tests.Contracts.PortFixtures;

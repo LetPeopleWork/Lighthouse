@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.API.TeamController",
             "Lighthouse.Backend.API.TeamsController",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService",
-            "Lighthouse.Backend.Services.Implementation.Reports.Metrics.DailySeriesSummary",
+            "Lighthouse.Backend.Modules.Reports.Application.Metrics.DailySeriesSummary",
         ];
 
         // The allowed outside type, the type it reaches, and a type in the module's Application that reaches the

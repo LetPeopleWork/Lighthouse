@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Licensing.Application;
-using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Modules.Reports.Domain;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.Reports.Application

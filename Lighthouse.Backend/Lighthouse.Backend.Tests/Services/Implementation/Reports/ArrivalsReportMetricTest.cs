@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
-using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Modules.Reports.Application.Metrics;
+using Lighthouse.Backend.Modules.Reports.Application;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Reports

@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Implementation.Reports;
-using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

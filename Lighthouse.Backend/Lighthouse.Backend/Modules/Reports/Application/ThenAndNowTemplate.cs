@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
-using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Modules.Reports.Application.Metrics;
+using Lighthouse.Backend.Modules.Reports.Domain;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.Reports.Application

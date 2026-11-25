@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.Reports;
+using Lighthouse.Backend.Modules.Reports.Domain;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 {

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Modules.Reports.Application;
 
 namespace Lighthouse.Backend.Modules.Reports.Application.Metrics
 {

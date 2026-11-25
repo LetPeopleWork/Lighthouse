@@ -2,9 +2,8 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
-using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using static Lighthouse.Backend.Services.Implementation.Reports.ReportSeriesReading;
+using static Lighthouse.Backend.Modules.Reports.Domain.ReportSeriesReading;
 using Lighthouse.Backend.Platform.Host;
 
 namespace Lighthouse.Backend.Modules.Reports.Application

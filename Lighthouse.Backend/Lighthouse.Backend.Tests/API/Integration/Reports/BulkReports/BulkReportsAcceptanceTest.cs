@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Access.Application;
-using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Implementation.Reports;
+using Lighthouse.Backend.Modules.Reports.Application;
 
 namespace Lighthouse.Backend.API.DTO.Reports
 {

@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Modules.Reports.Application

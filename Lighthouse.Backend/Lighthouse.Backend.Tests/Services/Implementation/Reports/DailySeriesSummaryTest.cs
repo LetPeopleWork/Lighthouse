@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
+using Lighthouse.Backend.Modules.Reports.Application.Metrics;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 {

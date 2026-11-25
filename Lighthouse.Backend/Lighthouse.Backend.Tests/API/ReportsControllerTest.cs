@@ -2,7 +2,7 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO.Reports;
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Access.Application;
-using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Modules.Reports.Application;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
