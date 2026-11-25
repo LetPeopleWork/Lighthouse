@@ -784,6 +784,11 @@ namespace Lighthouse.Backend.Modules.WorkItems.Application
 
         private void AssignExtrapolatedWorkToTeams(Portfolio portfolio, Feature feature, int remainingWork)
         {
+            if (remainingWork <= 0)
+            {
+                return;
+            }
+
             var involvedTeams = portfolio.Teams.ToList();
 
             var owningTeams = involvedTeams.Count > 0
