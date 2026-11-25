@@ -54,10 +54,7 @@ const secondRange = () =>
 // Items 90 and 91 were finished or are in progress today, but on no day of the range.
 const NEVER_IN_PROGRESS_DURING_THE_RANGE = [workItem(90), workItem(91)];
 
-const viewDataFor = (
-	ownerKind: "team" | "portfolio",
-	range: RunChartData,
-) =>
+const viewDataFor = (ownerKind: "team" | "portfolio", range: RunChartData) =>
 	buildViewData({
 		title: "Work Items",
 		endDate: new Date("2026-10-01T12:00:00"),
