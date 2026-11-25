@@ -50,6 +50,36 @@ No ADR: the change makes no durable decision beyond moving to the current runtim
 No global.json: CI keeps pinning the SDK through setup-dotnet, which Renovate already updates, so a global.json would be a second authority for the same pin that can drift from it. SDK 11 builds net10.0 projects, so other worktrees still on net10.0 keep working with the newest installed SDK as default. Revisit if a local SDK mismatch causes a real incident.
 ```
 
+#### D8
+
+```text
+ci_packageapp.yml input dotnet_version (default 10) is dead: git grep finds only its declaration. It is removed in S2, not set to 11. .github/actions/README.md:6, docs/Installation/configuration.md:51 and docs/compliance/cra-technical-file.md:153 are S4 targets already. docs/analysis/ADO-5567-backend-utc-today-anchor.md:145 is history and stays.
+```
+
+#### D9
+
+```text
+Base image: aspnet:11.0 is Ubuntu 26.04 (resolute) where aspnet:10.0 is Ubuntu 24.04 (noble). APP_UID 1654, the Kestrel overrides on :80 and :443 and ASPNETCORE_HTTP_PORTS are unchanged, so existing docker run, compose and Helm values keep working. tzdata and ICU are present and libgdiplus is not needed. The PGDG apt source in the Dockerfile uses VERSION_CODENAME and stays dynamic: the apt.postgresql.org Release file answers 200 for resolute-pgdg and noble-pgdg. The S3 local docker build is the falsifier.
+```
+
+#### D10
+
+```text
+Rollout and recovery: only Verify Backend, Verify End to End Tests, Verify Frontend, Verify Postgres Linux Build, Package App, Verify SQLite Linux Build, sonar-gates, Verify Workflow Scripts and verify are required on main. Docker image build and push, the Linux, Windows and macOS standalone packages, codesign-windows, verifywindows, verifymacos and sbom run only after the push. The release job needs them, so a failed build publishes nothing. Remedy after a failed push: a forward fix commit or a git revert of the slice commits. Owner: the maintainer.
+```
+
+#### D11
+
+```text
+Post-push health signals: every required job green; the Docker job steps Run Docker container for health check and Wait for Lighthouse to start; the standalone, codesign and verify workflows green; GET /api/latest/systeminfo has a Runtime that starts with .NET 11. Highest risk observed only after the push: the macOS install_name_tool rpath, codesign and notarise step on .NET 11 self-contained output. Owner: the maintainer.
+```
+
+#### D12
+
+```text
+Rollback for self-hosters: no migration is planned, so an older image reads the same database, and the Data Protection key ring format is unchanged across majors. This is designed, not observed. Optional observation: run the .NET 11 image on a SQLite and key-ring volume, start the previous tag on that volume, and check systeminfo and one stored credential. Support: .NET 10 LTS and .NET 11 STS both end support on 2028-11-14, so the move loses no support time. Usage data: not applicable, because the upgrade is behaviour-free and adds nothing a user can do.
+```
+
 ### Constraints
 
 #### K1
@@ -478,6 +508,58 @@ The zoneinfo claim in LighthouseClockTest and the CookieBuilder claim in Program
 
 crafter S1 and S3
 
+#### Y6
+
+SinglePointOfFailure
+
+```text
+The macOS standalone workflow is the only observer of rpath, codesign and notarise on .NET 11 self-contained output and is not a required check
+```
+
+```text
+A signed, notarised macOS package that starts
+```
+
+```text
+A forward fix to the install_name_tool step
+```
+
+```text
+Publishing a macOS package that was not built and signed
+```
+
+```text
+Not observable before the push
+```
+
+maintainer\, after the push
+
+#### Y7
+
+Stressor
+
+```text
+Assumption: a self-hoster can start the previous image on the same data after trying .NET 11
+```
+
+```text
+Same database and key ring readable by both
+```
+
+```text
+Nothing new written to the key ring
+```
+
+```text
+A migration or a changed key-ring format
+```
+
+```text
+Designed, not observed; guarded by NoPendingModelChangesTest
+```
+
+maintainer\, optional volume check
+
 ### Architectural tests
 
 None.
@@ -572,6 +654,22 @@ Extend
 Comment only at the Partitioned cookie workaround: say what is true for net11.0 without adopting a new API; check whether CookieBuilder now has a Partitioned property and, if so, note the follow-up in plain words
 ```
 
+Scripts\/examine\/build\-examine\-commands
+
+Extend
+
+```text
+Real package pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 in a file-based app directive; moves to 11.0.0 so the examine tooling runs on the net11.0 backend
+```
+
+Scripts\/examine\/forecast\-triggers\-show\.cs
+
+Extend
+
+```text
+Real package pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 in a file-based app directive; moves to 11.0.0 so the examine tooling runs on the net11.0 backend
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Data\/NoPendingModelChangesTest\.cs
 
 #### Verification
@@ -580,6 +678,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Data\/NoPendingModelChangesTest
 dotnet build Lighthouse.Backend/Lighthouse.sln
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter "TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration"
 sh -c '! git grep -nE "net10\.0|10\.0\.15|10\.0\.3[^0-9]" -- Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj Lighthouse.Backend/.config/dotnet-tools.json Lighthouse.Backend/Start-DevServer.ps1 Lighthouse.EndToEndTests/perf/readings.spec.ts Lighthouse.EndToEndTests/perf/README.md'
+sh -c '! git grep -n "10[.]0[.]14" -- Scripts/examine'
 ```
 
 #### Supports
@@ -720,6 +819,26 @@ Extend
 
 ```text
 Existing owner of this fact; edited in place, nothing new is created. Comment only.
+```
+
+Microsoft\.AspNetCore\.Mvc\.Testing
+
+Scripts\/examine\/build\-examine\-commands\:105
+
+Extend
+
+```text
+Existing owner of this pin; edited in place, nothing new is created
+```
+
+Microsoft\.AspNetCore\.Mvc\.Testing
+
+Scripts\/examine\/forecast\-triggers\-show\.cs\:4
+
+Extend
+
+```text
+Existing owner of this pin; edited in place, nothing new is created
 ```
 
 ##### Impact
@@ -884,6 +1003,26 @@ UnchangedCompatible
 Response shape is unchanged; Runtime reads RuntimeInformation.FrameworkDescription at run time and shows .NET 11 without code change
 ```
 
+package\-pin
+
+Scripts\/examine\/build\-examine\-commands\:105
+
+Changed
+
+```text
+Pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 becomes 11.0.0
+```
+
+package\-pin
+
+Scripts\/examine\/forecast\-triggers\-show\.cs\:4
+
+Changed
+
+```text
+Pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 becomes 11.0.0
+```
+
 ##### Agreement
 
 None.
@@ -984,6 +1123,14 @@ Extend
 dotnet-version 10.0.404 becomes 11.0.100
 ```
 
+\.github\/workflows\/ci\_packageapp\.yml
+
+Extend
+
+```text
+Remove the input dotnet_version, default 10: nothing reads it
+```
+
 \.github\/scripts\/toolchain\-pins\.test\.mjs
 
 #### Verification
@@ -991,6 +1138,7 @@ dotnet-version 10.0.404 becomes 11.0.100
 ```text
 node --test .github/scripts/toolchain-pins.test.mjs
 sh -c '! git grep -nE "dotnet-version: .?10[.]" -- .github'
+sh -c '! git grep -n "dotnet_version" -- .github'
 ```
 
 #### Supports
@@ -1073,6 +1221,16 @@ Extend
 Existing owner of this fact; edited in place, nothing new is created. SDK pin moves to 11.0.100.
 ```
 
+dotnet\_version
+
+\.github\/workflows\/ci\_packageapp\.yml\:16
+
+Extend
+
+```text
+Existing declaration owner; the dead input is deleted in place
+```
+
 ##### Impact
 
 ci\-config
@@ -1153,6 +1311,16 @@ UnchangedCompatible
 
 ```text
 A 3.8 KB placeholder that every pipeline overwrites from the CycloneDX run; it names no .NET version
+```
+
+ci\-config
+
+\.github\/workflows\/ci\_packageapp\.yml\:16
+
+Changed
+
+```text
+The input is declared once and no caller passes it and no step reads it, so removal leaves no consumer and no second place that names SDK 10; setting it to 11 would keep a third unread version value that can drift from the real pin
 ```
 
 ##### Agreement
@@ -1395,7 +1563,7 @@ renovate\.json
 Extend
 
 ```text
-Remove the rule that holds .NET images and packages below 11; keep the rule that leaves .NET major image updates to a maintainer
+Delete only the packageRule whose description starts Lighthouse stays on .NET 10, with its allowedVersions <11 (lines 39-51). Keep the separate rule for mcr.microsoft.com/dotnet major updates that sets automerge false. No rule makes the dotnet images float.
 ```
 
 \.github\/actions\/README\.md
@@ -1569,12 +1737,12 @@ Existing owner of this fact; edited in place, nothing new is created. Table name
 
 docs\-or\-config
 
-renovate\.json\:1
+renovate\.json\:39
 
 Changed
 
 ```text
-Remove the rule that holds .NET images and packages below 11; keep the rule that leaves .NET major image updates to a maintainer
+Delete only the .NET 10 hold packageRule; the manual-major rule for the dotnet images stays
 ```
 
 docs\-or\-config

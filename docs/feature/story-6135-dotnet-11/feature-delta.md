@@ -64,3 +64,14 @@ Closed accepted 2026-11-25 (solution architect, final-review mode). Authority: `
 - No ADR, no formal model (no state machine or temporal law), prefactoring N/A in every slice.
 - Residual risks: EF/Npgsql 11 pending model change (crafter stops, back to architect); new analyzer warnings under TreatWarningsAsErrors (fix or narrow suppression); dotnet-stryker 5.1.0 on net11.0 unverified; Docker and standalone builds are not required checks.
 - Local toolchain: SDK 11.0.100 and ASP.NET Core 11.0.0 installed 2026-11-25 beside 10.0.114.
+
+## Wave: DEVOPS
+
+Closed 2026-11-25. Platform lens run (risk is material: base image, packaging, CI pins); its facts are recorded in the design authority (`architecture.md`).
+
+- **Usage-data event: N/A**, because the upgrade is behaviour-free and adds nothing a user can do.
+- Base image: Ubuntu 24.04 (noble) -> 26.04 (resolute). UID 1654, ports and Kestrel overrides unchanged; compose and Helm values keep working. PGDG `resolute-pgdg` exists (HTTP 200, probed 2026-11-25).
+- Added targets: `Scripts/examine` Mvc.Testing pins 10.0.14 -> 11.0.0 (S1); unused `dotnet_version` input removed from `ci_packageapp.yml` (S2). Renovate: delete only the hold rule; the manual-major rule stays (S4).
+- Post-push only (not required checks): Docker build + health check, standalone packaging, codesign, verifywindows/verifymacos, SBOM. Highest risk: macOS rpath/codesign/notarise step. The release job needs these, so a failed build publishes nothing; remedy is a forward fix or revert.
+- Rollback for self-hosters: no migration planned, key-ring format unchanged across majors — designed, not observed.
+- Support: .NET 10 LTS and .NET 11 STS both end 2028-11-14; no support time lost.

@@ -192,6 +192,31 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>No global.json: CI keeps pinning the SDK through setup-dotnet, which Renovate already updates, so a global.json would be a second authority for the same pin that can drift from it. SDK 11 builds net10.0 projects, so other worktrees still on net10.0 keep working with the newest installed SDK as default. Revisit if a local SDK mismatch causes a real incident.
 </code></pre>
 
+<h4>D8</h4>
+
+<pre><code>ci_packageapp.yml input dotnet_version (default 10) is dead: git grep finds only its declaration. It is removed in S2, not set to 11. .github/actions/README.md:6, docs/Installation/configuration.md:51 and docs/compliance/cra-technical-file.md:153 are S4 targets already. docs/analysis/ADO-5567-backend-utc-today-anchor.md:145 is history and stays.
+</code></pre>
+
+<h4>D9</h4>
+
+<pre><code>Base image: aspnet:11.0 is Ubuntu 26.04 (resolute) where aspnet:10.0 is Ubuntu 24.04 (noble). APP_UID 1654, the Kestrel overrides on :80 and :443 and ASPNETCORE_HTTP_PORTS are unchanged, so existing docker run, compose and Helm values keep working. tzdata and ICU are present and libgdiplus is not needed. The PGDG apt source in the Dockerfile uses VERSION_CODENAME and stays dynamic: the apt.postgresql.org Release file answers 200 for resolute-pgdg and noble-pgdg. The S3 local docker build is the falsifier.
+</code></pre>
+
+<h4>D10</h4>
+
+<pre><code>Rollout and recovery: only Verify Backend, Verify End to End Tests, Verify Frontend, Verify Postgres Linux Build, Package App, Verify SQLite Linux Build, sonar-gates, Verify Workflow Scripts and verify are required on main. Docker image build and push, the Linux, Windows and macOS standalone packages, codesign-windows, verifywindows, verifymacos and sbom run only after the push. The release job needs them, so a failed build publishes nothing. Remedy after a failed push: a forward fix commit or a git revert of the slice commits. Owner: the maintainer.
+</code></pre>
+
+<h4>D11</h4>
+
+<pre><code>Post-push health signals: every required job green; the Docker job steps Run Docker container for health check and Wait for Lighthouse to start; the standalone, codesign and verify workflows green; GET /api/latest/systeminfo has a Runtime that starts with .NET 11. Highest risk observed only after the push: the macOS install_name_tool rpath, codesign and notarise step on .NET 11 self-contained output. Owner: the maintainer.
+</code></pre>
+
+<h4>D12</h4>
+
+<pre><code>Rollback for self-hosters: no migration is planned, so an older image reads the same database, and the Data Protection key ring format is unchanged across majors. This is designed, not observed. Optional observation: run the .NET 11 image on a SQLite and key-ring volume, start the previous tag on that volume, and check systeminfo and one stored credential. Support: .NET 10 LTS and .NET 11 STS both end support on 2028-11-14, so the move loses no support time. Usage data: not applicable, because the upgrade is behaviour-free and adds nothing a user can do.
+</code></pre>
+
 <h3>Constraints</h3>
 
 <h4>K1</h4>
@@ -569,6 +594,48 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>crafter S1 and S3</p>
 
+<h4>Y6</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>The macOS standalone workflow is the only observer of rpath, codesign and notarise on .NET 11 self-contained output and is not a required check
+</code></pre>
+
+<pre><code>A signed, notarised macOS package that starts
+</code></pre>
+
+<pre><code>A forward fix to the install_name_tool step
+</code></pre>
+
+<pre><code>Publishing a macOS package that was not built and signed
+</code></pre>
+
+<pre><code>Not observable before the push
+</code></pre>
+
+<p>maintainer, after the push</p>
+
+<h4>Y7</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: a self-hoster can start the previous image on the same data after trying .NET 11
+</code></pre>
+
+<pre><code>Same database and key ring readable by both
+</code></pre>
+
+<pre><code>Nothing new written to the key ring
+</code></pre>
+
+<pre><code>A migration or a changed key-ring format
+</code></pre>
+
+<pre><code>Designed, not observed; guarded by NoPendingModelChangesTest
+</code></pre>
+
+<p>maintainer, optional volume check</p>
+
 <h3>Architectural tests</h3>
 
 <p>None.</p>
@@ -653,6 +720,20 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Comment only at the Partitioned cookie workaround: say what is true for net11.0 without adopting a new API; check whether CookieBuilder now has a Partitioned property and, if so, note the follow-up in plain words
 </code></pre>
 
+<p>Scripts/examine/build-examine-commands</p>
+
+<p>Extend</p>
+
+<pre><code>Real package pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 in a file-based app directive; moves to 11.0.0 so the examine tooling runs on the net11.0 backend
+</code></pre>
+
+<p>Scripts/examine/forecast-triggers-show.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Real package pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 in a file-based app directive; moves to 11.0.0 so the examine tooling runs on the net11.0 backend
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NoPendingModelChangesTest.cs</p>
 
 <h4>Verification</h4>
@@ -660,6 +741,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>dotnet build Lighthouse.Backend/Lighthouse.sln
 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;TestCategory!=JiraIntegration&amp;TestCategory!=LinearIntegration&amp;TestCategory!=AdoIntegration&amp;TestCategory!=ServiceNowIntegration&amp;TestCategory!=GithubIntegration&quot;
 sh -c &#x27;! git grep -nE &quot;net10\.0|10\.0\.15|10\.0\.3[^0-9]&quot; -- Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj Lighthouse.Backend/.config/dotnet-tools.json Lighthouse.Backend/Start-DevServer.ps1 Lighthouse.EndToEndTests/perf/readings.spec.ts Lighthouse.EndToEndTests/perf/README.md&#x27;
+sh -c &#x27;! git grep -n &quot;10[.]0[.]14&quot; -- Scripts/examine&#x27;
 </code></pre>
 
 <h4>Supports</h4>
@@ -787,6 +869,24 @@ sh -c &#x27;! git grep -nE &quot;net10\.0|10\.0\.15|10\.0\.3[^0-9]&quot; -- Ligh
 <p>Extend</p>
 
 <pre><code>Existing owner of this fact; edited in place, nothing new is created. Comment only.
+</code></pre>
+
+<p>Microsoft.AspNetCore.Mvc.Testing</p>
+
+<p>Scripts/examine/build-examine-commands:105</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this pin; edited in place, nothing new is created
+</code></pre>
+
+<p>Microsoft.AspNetCore.Mvc.Testing</p>
+
+<p>Scripts/examine/forecast-triggers-show.cs:4</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of this pin; edited in place, nothing new is created
 </code></pre>
 
 <h5>Impact</h5>
@@ -935,6 +1035,24 @@ sh -c &#x27;! git grep -nE &quot;net10\.0|10\.0\.15|10\.0\.3[^0-9]&quot; -- Ligh
 <pre><code>Response shape is unchanged; Runtime reads RuntimeInformation.FrameworkDescription at run time and shows .NET 11 without code change
 </code></pre>
 
+<p>package-pin</p>
+
+<p>Scripts/examine/build-examine-commands:105</p>
+
+<p>Changed</p>
+
+<pre><code>Pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 becomes 11.0.0
+</code></pre>
+
+<p>package-pin</p>
+
+<p>Scripts/examine/forecast-triggers-show.cs:4</p>
+
+<p>Changed</p>
+
+<pre><code>Pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 becomes 11.0.0
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>None.</p>
@@ -1030,12 +1148,20 @@ sh -c &#x27;! git grep -nE &quot;net10\.0|10\.0\.15|10\.0\.3[^0-9]&quot; -- Ligh
 <pre><code>dotnet-version 10.0.404 becomes 11.0.100
 </code></pre>
 
+<p>.github/workflows/ci_packageapp.yml</p>
+
+<p>Extend</p>
+
+<pre><code>Remove the input dotnet_version, default 10: nothing reads it
+</code></pre>
+
 <p>.github/scripts/toolchain-pins.test.mjs</p>
 
 <h4>Verification</h4>
 
 <pre><code>node --test .github/scripts/toolchain-pins.test.mjs
 sh -c &#x27;! git grep -nE &quot;dotnet-version: .?10[.]&quot; -- .github&#x27;
+sh -c &#x27;! git grep -n &quot;dotnet_version&quot; -- .github&#x27;
 </code></pre>
 
 <h4>Supports</h4>
@@ -1111,6 +1237,15 @@ sh -c &#x27;! git grep -nE &quot;dotnet-version: .?10[.]&quot; -- .github&#x27;
 <pre><code>Existing owner of this fact; edited in place, nothing new is created. SDK pin moves to 11.0.100.
 </code></pre>
 
+<p>dotnet_version</p>
+
+<p>.github/workflows/ci_packageapp.yml:16</p>
+
+<p>Extend</p>
+
+<pre><code>Existing declaration owner; the dead input is deleted in place
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>ci-config</p>
@@ -1183,6 +1318,15 @@ sh -c &#x27;! git grep -nE &quot;dotnet-version: .?10[.]&quot; -- .github&#x27;
 <p>UnchangedCompatible</p>
 
 <pre><code>A 3.8 KB placeholder that every pipeline overwrites from the CycloneDX run; it names no .NET version
+</code></pre>
+
+<p>ci-config</p>
+
+<p>.github/workflows/ci_packageapp.yml:16</p>
+
+<p>Changed</p>
+
+<pre><code>The input is declared once and no caller passes it and no step reads it, so removal leaves no consumer and no second place that names SDK 10; setting it to 11 would keep a third unread version value that can drift from the real pin
 </code></pre>
 
 <h5>Agreement</h5>
@@ -1413,7 +1557,7 @@ sh -c &#x27;docker run -d --rm --name lighthouse-s6135 -p 8443:443 -e Database__
 
 <p>Extend</p>
 
-<pre><code>Remove the rule that holds .NET images and packages below 11; keep the rule that leaves .NET major image updates to a maintainer
+<pre><code>Delete only the packageRule whose description starts Lighthouse stays on .NET 10, with its allowedVersions &lt;11 (lines 39-51). Keep the separate rule for mcr.microsoft.com/dotnet major updates that sets automerge false. No rule makes the dotnet images float.
 </code></pre>
 
 <p>.github/actions/README.md</p>
@@ -1570,11 +1714,11 @@ sh -c &#x27;! git grep -n &quot;&lt;11&quot; -- renovate.json&#x27;
 
 <p>docs-or-config</p>
 
-<p>renovate.json:1</p>
+<p>renovate.json:39</p>
 
 <p>Changed</p>
 
-<pre><code>Remove the rule that holds .NET images and packages below 11; keep the rule that leaves .NET major image updates to a maintainer
+<pre><code>Delete only the .NET 10 hold packageRule; the manual-major rule for the dotnet images stays
 </code></pre>
 
 <p>docs-or-config</p>

@@ -1,11 +1,11 @@
 {
 "counters": {
-"D": 7,
-"F": 168,
+"D": 12,
+"F": 191,
 "K": 2,
 "P": 7,
 "S": 4,
-"Y": 5
+"Y": 7
 },
 "design": {
 "paradigm": "object_oriented",
@@ -164,6 +164,26 @@
 {
 "id": "D7",
 "text": "F51"
+},
+{
+"id": "D8",
+"text": "F169"
+},
+{
+"id": "D9",
+"text": "F170"
+},
+{
+"id": "D10",
+"text": "F171"
+},
+{
+"id": "D11",
+"text": "F172"
+},
+{
+"id": "D12",
+"text": "F173"
 }
 ],
 "not_applicable": [
@@ -226,6 +246,26 @@
 "preserved": "F95",
 "residue": "F98",
 "source": "F94"
+},
+{
+"allowed": "F176",
+"forbidden": "F177",
+"id": "Y6",
+"kind": "SinglePointOfFailure",
+"owner": "maintainer, after the push",
+"preserved": "F175",
+"residue": "F178",
+"source": "F174"
+},
+{
+"allowed": "F181",
+"forbidden": "F182",
+"id": "Y7",
+"kind": "Stressor",
+"owner": "maintainer, optional volume check",
+"preserved": "F180",
+"residue": "F183",
+"source": "F179"
 }
 ]
 },
@@ -338,6 +378,18 @@
 "kind": "consumer-public-contract",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs:46",
 "reason": "F126"
+},
+{
+"decision": "Changed",
+"kind": "package-pin",
+"locator": "Scripts/examine/build-examine-commands:105",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "package-pin",
+"locator": "Scripts/examine/forecast-triggers-show.cs:4",
+"reason": "F186"
 }
 ],
 "not_applicable": [
@@ -406,6 +458,18 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:942",
 "reason": "F120",
 "symbol": "Partitioned"
+},
+{
+"decision": "Extend",
+"locator": "Scripts/examine/build-examine-commands:105",
+"reason": "F185",
+"symbol": "Microsoft.AspNetCore.Mvc.Testing"
+},
+{
+"decision": "Extend",
+"locator": "Scripts/examine/forecast-triggers-show.cs:4",
+"reason": "F185",
+"symbol": "Microsoft.AspNetCore.Mvc.Testing"
 }
 ]
 },
@@ -459,12 +523,23 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
 "reason": "F108"
+},
+{
+"change": "Extend",
+"path": "Scripts/examine/build-examine-commands",
+"reason": "F184"
+},
+{
+"change": "Extend",
+"path": "Scripts/examine/forecast-triggers-show.cs",
+"reason": "F184"
 }
 ],
 "verification": [
 "dotnet build Lighthouse.Backend/Lighthouse.sln",
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\"",
-"sh -c '! git grep -nE \"net10\\.0|10\\.0\\.15|10\\.0\\.3[^0-9]\" -- Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj Lighthouse.Backend/.config/dotnet-tools.json Lighthouse.Backend/Start-DevServer.ps1 Lighthouse.EndToEndTests/perf/readings.spec.ts Lighthouse.EndToEndTests/perf/README.md'"
+"sh -c '! git grep -nE \"net10\\.0|10\\.0\\.15|10\\.0\\.3[^0-9]\" -- Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj Lighthouse.Backend/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj Lighthouse.Backend/.config/dotnet-tools.json Lighthouse.Backend/Start-DevServer.ps1 Lighthouse.EndToEndTests/perf/readings.spec.ts Lighthouse.EndToEndTests/perf/README.md'",
+"sh -c '! git grep -n \"10[.]0[.]14\" -- Scripts/examine'"
 ]
 },
 "S2": {
@@ -527,6 +602,12 @@
 "kind": "generated-output",
 "locator": "Lighthouse.Frontend/public/sbom/backend.cdx.json:1",
 "reason": "F137"
+},
+{
+"decision": "Changed",
+"kind": "ci-config",
+"locator": ".github/workflows/ci_packageapp.yml:16",
+"reason": "F189"
 }
 ],
 "not_applicable": [
@@ -559,6 +640,12 @@
 "locator": ".github/workflows/ci_sonar_gates.yml:79",
 "reason": "F134",
 "symbol": "dotnet-version"
+},
+{
+"decision": "Extend",
+"locator": ".github/workflows/ci_packageapp.yml:16",
+"reason": "F188",
+"symbol": "dotnet_version"
 }
 ]
 },
@@ -582,11 +669,17 @@
 "change": "Extend",
 "path": ".github/workflows/ci_sonar_gates.yml",
 "reason": "F129"
+},
+{
+"change": "Extend",
+"path": ".github/workflows/ci_packageapp.yml",
+"reason": "F187"
 }
 ],
 "verification": [
 "node --test .github/scripts/toolchain-pins.test.mjs",
-"sh -c '! git grep -nE \"dotnet-version: .?10[.]\" -- .github'"
+"sh -c '! git grep -nE \"dotnet-version: .?10[.]\" -- .github'",
+"sh -c '! git grep -n \"dotnet_version\" -- .github'"
 ]
 },
 "S3": {
@@ -680,8 +773,8 @@
 {
 "decision": "Changed",
 "kind": "docs-or-config",
-"locator": "renovate.json:1",
-"reason": "F148"
+"locator": "renovate.json:39",
+"reason": "F191"
 },
 {
 "decision": "Changed",
@@ -781,7 +874,7 @@
 {
 "change": "Extend",
 "path": "renovate.json",
-"reason": "F148"
+"reason": "F190"
 },
 {
 "change": "Extend",
@@ -876,7 +969,6 @@
 "F145": "Build image tag 11.0, built from the net11.0 projects",
 "F146": "Builds and starts the image from the Dockerfile; no .NET version in the workflow",
 "F147": "Only two image tags change.",
-"F148": "Remove the rule that holds .NET images and packages below 11; keep the rule that leaves .NET major image updates to a maintainer",
 "F149": "build-backend description says .NET 11",
 "F15": "the Dockerfile uses the 11.0 images and the standalone workflows use the 11 SDK",
 "F150": "Fixture runtime value .NET 10.0.0 becomes .NET 11.0.0 so it reads as current",
@@ -899,9 +991,32 @@
 "F166": "Rule that capped .NET at below 11 is removed; the manual-merge rule for major .NET images stays",
 "F167": "Reads PR metadata, not the removed rule; a read of the file is the check",
 "F168": "Prose and one config rule; no structure moves.",
+"F169": "ci_packageapp.yml input dotnet_version (default 10) is dead: git grep finds only its declaration. It is removed in S2, not set to 11. .github/actions/README.md:6, docs/Installation/configuration.md:51 and docs/compliance/cra-technical-file.md:153 are S4 targets already. docs/analysis/ADO-5567-backend-utc-today-anchor.md:145 is history and stays.",
 "F17": "each serves the app and reports a .NET 11 runtime; a build or start failure falsifies this",
+"F170": "Base image: aspnet:11.0 is Ubuntu 26.04 (resolute) where aspnet:10.0 is Ubuntu 24.04 (noble). APP_UID 1654, the Kestrel overrides on :80 and :443 and ASPNETCORE_HTTP_PORTS are unchanged, so existing docker run, compose and Helm values keep working. tzdata and ICU are present and libgdiplus is not needed. The PGDG apt source in the Dockerfile uses VERSION_CODENAME and stays dynamic: the apt.postgresql.org Release file answers 200 for resolute-pgdg and noble-pgdg. The S3 local docker build is the falsifier.",
+"F171": "Rollout and recovery: only Verify Backend, Verify End to End Tests, Verify Frontend, Verify Postgres Linux Build, Package App, Verify SQLite Linux Build, sonar-gates, Verify Workflow Scripts and verify are required on main. Docker image build and push, the Linux, Windows and macOS standalone packages, codesign-windows, verifywindows, verifymacos and sbom run only after the push. The release job needs them, so a failed build publishes nothing. Remedy after a failed push: a forward fix commit or a git revert of the slice commits. Owner: the maintainer.",
+"F172": "Post-push health signals: every required job green; the Docker job steps Run Docker container for health check and Wait for Lighthouse to start; the standalone, codesign and verify workflows green; GET /api/latest/systeminfo has a Runtime that starts with .NET 11. Highest risk observed only after the push: the macOS install_name_tool rpath, codesign and notarise step on .NET 11 self-contained output. Owner: the maintainer.",
+"F173": "Rollback for self-hosters: no migration is planned, so an older image reads the same database, and the Data Protection key ring format is unchanged across majors. This is designed, not observed. Optional observation: run the .NET 11 image on a SQLite and key-ring volume, start the previous tag on that volume, and check systeminfo and one stored credential. Support: .NET 10 LTS and .NET 11 STS both end support on 2028-11-14, so the move loses no support time. Usage data: not applicable, because the upgrade is behaviour-free and adds nothing a user can do.",
+"F174": "The macOS standalone workflow is the only observer of rpath, codesign and notarise on .NET 11 self-contained output and is not a required check",
+"F175": "A signed, notarised macOS package that starts",
+"F176": "A forward fix to the install_name_tool step",
+"F177": "Publishing a macOS package that was not built and signed",
+"F178": "Not observable before the push",
+"F179": "Assumption: a self-hoster can start the previous image on the same data after trying .NET 11",
 "F18": "Renovate no longer holds .NET",
+"F180": "Same database and key ring readable by both",
+"F181": "Nothing new written to the key ring",
+"F182": "A migration or a changed key-ring format",
+"F183": "Designed, not observed; guarded by NoPendingModelChangesTest",
+"F184": "Real package pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 in a file-based app directive; moves to 11.0.0 so the examine tooling runs on the net11.0 backend",
+"F185": "Existing owner of this pin; edited in place, nothing new is created",
+"F186": "Pin Microsoft.AspNetCore.Mvc.Testing@10.0.14 becomes 11.0.0",
+"F187": "Remove the input dotnet_version, default 10: nothing reads it",
+"F188": "Existing declaration owner; the dead input is deleted in place",
+"F189": "The input is declared once and no caller passes it and no step reads it, so removal leaves no consumer and no second place that names SDK 10; setting it to 11 would keep a third unread version value that can drift from the real pin",
 "F19": "the .NET 10 hold rule is removed from renovate.json",
+"F190": "Delete only the packageRule whose description starts Lighthouse stays on .NET 10, with its allowedVersions <11 (lines 39-51). Keep the separate rule for mcr.microsoft.com/dotnet major updates that sets automerge false. No rule makes the dotnet images float.",
+"F191": "Delete only the .NET 10 hold packageRule; the manual-major rule for the dotnet images stays",
 "F2": "Lighthouse runs on .NET 11 with unchanged behaviour, so self-hosters get the current runtime and Renovate can keep the .NET stack current again.",
 "F20": "Renovate reads its configuration",
 "F21": "no rule holds back .NET packages or images, and the remaining docs and pins that name .NET 10 as current now name .NET 11; historical briefs and decision records stay unchanged",
