@@ -13,7 +13,7 @@ const loadRules = async () => {
 const names = (rule) => [...(rule.matchPackageNames ?? []), ...(rule.matchDepNames ?? [])];
 const isDotnetRule = (rule) =>
 	names(rule).some((name) =>
-		/^(mcr\.microsoft\.com\/dotnet|Microsoft\.AspNetCore|Microsoft\.EntityFrameworkCore|Npgsql\.EntityFrameworkCore)/.test(name),
+		/^(mcr\.microsoft\.com\/dotnet|Microsoft\.AspNetCore|Microsoft\.EntityFrameworkCore|Npgsql\.EntityFrameworkCore\.PostgreSQL|System\.Configuration\.ConfigurationManager|System\.Drawing\.Common|System\.Security\.Cryptography\.Xml)/.test(name),
 	);
 
 test('no rule caps .NET packages or images below version 11', async () => {
