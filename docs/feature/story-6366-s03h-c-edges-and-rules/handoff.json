@@ -3,6 +3,23 @@
 "S1": [
 {
 "covers": [
+"P1",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F136",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesNameOnlyTheModuleArchUnitTest.cs::EveryNarrowedReportsPatternStillMatchesATypeOfTheModule, AMadeUpPatternAnchoredToNoReportsTypeIsNamedDead, TheJointTrackerIntegrationPatternNamesReportsOnlyByTheModule_AndKeepsTheOldAccessAndLicensingGuard, AMadeUpJointPatternKeepingReportsUnderServicesOrDroppingTheGuardIsNamedAndTheNarrowedOneIsNot"
+},
+"expected": "F134",
+"stimulus": "F133",
+"user_result": "F135"
+},
+{
+"covers": [
 "P1"
 ],
 "disposition": {
@@ -21,30 +38,13 @@
 "expected": "F119",
 "stimulus": "F118",
 "user_result": "F12"
-},
-{
-"covers": [
-"P1",
-"P3"
-],
-"disposition": {
-"kind": "Tested",
-"obligations": [
-"T2"
-],
-"still_passes_if": "F124",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesNameOnlyTheModuleArchUnitTest.cs::EveryNarrowedReportsPatternStillMatchesATypeOfTheModule, AMadeUpPatternAnchoredToNoReportsTypeIsNamedDead, TheJointTrackerIntegrationPatternNamesNoServicesNamespaceAndStillNamesTheReportsModule, AMadeUpJointPatternKeepingTheServicesAlternativesIsNamedAndAModulesOnlyOneIsNot"
-},
-"expected": "F122",
-"stimulus": "F121",
-"user_result": "F123"
 }
 ]
 },
 "counters": {
 "D": 5,
 "E": 5,
-"F": 132,
+"F": 136,
 "K": 2,
 "L": 2,
 "P": 3,
@@ -569,10 +569,6 @@
 "F119": "No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each made-up offender in each form is named, a Modules-only twin is not, and a listed exclusion with no old form is named stale",
 "F12": "No rule still points at where Reports used to live",
 "F120": "A rule narrowed in its constant but kept as a literal in another file, or an exclusion list left wider than needed, would still pass",
-"F121": "Check each narrowed Reports alternative against the types of the Reports module and the joint Tracker integration pattern for its Services alternatives",
-"F122": "Every Modules.Reports alternative matches a Reports module type in each owning rule file, a made-up dead alternative is named, and the joint Tracker integration pattern names no Services namespace and still names the Reports module",
-"F123": "Reports rules keep constraining Reports and the dead Auth, Authorization and Licensing alternatives are gone",
-"F124": "A rule that drops Reports entirely, leaving it unconstrained, is caught only by the owner and count checks",
 "F125": "No rule constant and no string literal in the test project matches Services.Implementation.Reports, Services.Interfaces.Reports, Services/Implementation/Reports or Services/Interfaces/Reports any more, outside feature A's measurement files: ReportsPattern names Reports by Modules.Reports only, the joint Tracker integration pattern RefinementReportsAccessAndLicensing no longer names Reports under Services but keeps its old Auth, Authorization and Licensing alternatives, which still catch a connector reaching the old Access and Licensing places as the Access and Licensing checks require, the Access and Licensing RefinementAndReports patterns name Reports by Modules.Reports only, and every rule keeps its verdict on today's code; ReportsModuleArchUnitTest keeps every assertion.",
 "F126": "Narrowing every Reports rule constant to Modules.Reports only and removing Reports from the Services alternative of the joint Tracker integration pattern; retiring feature A's move-time helpers now that the move is done; the ReportsModuleBoundariesArchUnitTest rule set R-RP1 to R-RP6 on ModuleRules with IL-measured baselines and made-up offenders.",
 "F127": "The Reports unit-test placement test the DESIGN names for S3 is not written again: feature B's ReportsUnitTestsBesideTheModuleArchUnitTest already pins the 18 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders. The old Auth, Authorization and Licensing alternatives of the joint Tracker integration pattern stay (host revision 2026-11-25): AccessAndLicensingRulesSeeTheModulesArchUnitTest requires the Tracker integration rule to keep catching a connector reaching the old Access and Licensing places, as it does for every other context, so dropping them would loosen a rule.",
@@ -582,6 +578,10 @@
 "F130": "No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each narrowed alternative still matches a Reports module type; the joint Tracker integration pattern no longer names Reports under Services, keeps its Auth, Authorization and Licensing alternatives and still names Modules.Reports; each made-up former form is named and a Modules-only twin is not.",
 "F131": "Joint pattern owner for Tracker integration; Reports leaves the Services alternative, Auth, Authorization and Licensing stay, and the pattern still names Modules.Reports",
 "F132": "Reports leaves the Services alternative; Auth, Authorization and Licensing stay",
+"F133": "Check each narrowed Reports alternative against the types of the Reports module, and the joint Tracker integration pattern for Reports under Services, for the Modules.Reports alternative and for the old Auth, Authorization and Licensing guard",
+"F134": "Every Modules.Reports alternative matches a Reports module type, a made-up dead alternative is named, and the joint Tracker integration pattern names Reports by its module only while keeping the old Auth, Authorization and Licensing alternatives under Services; a made-up pattern keeping Reports under Services or dropping the guard is named and a narrowed one is not",
+"F135": "Reports rules keep constraining Reports, the Tracker integration rule still catches a connector reaching the old Access and Licensing places, and no dead Reports alternative remains",
+"F136": "A joint pattern that drops Reports entirely, leaving it unconstrained, is caught only by the Modules.Reports and owner checks",
 "F14": "A new edge into or out of Reports is caught by its own rules",
 "F2": "Reports' boundaries are guarded by its own module rules and no rule still points at where it used to live",
 "F20": "Test side only, behaviour-free. No production file, no Program.cs, no configuration key changes. Carrier owners: rule constants stay on their existing rule classes (ModuleBoundariesArchUnitTest, TrackerIntegrationModuleBoundariesArchUnitTest, Access and Licensing module boundaries tests); the module rule shapes stay on ModuleRules; Reports module boundaries get one new NUnit fixture ReportsModuleBoundariesArchUnitTest that holds its inline lists by full type name. Procedural-style static rule helpers are the repository convention for architecture tests; no new class is invented beyond the fixture and its made-up offender types.",

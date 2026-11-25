@@ -42,6 +42,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             "LicensingModuleBoundariesArchUnitTest",
         ];
 
+        private static readonly string[] TheOldAccessAndLicensingGuard = ["Auth", "Authorization", "Licensing"];
+
         private static readonly string[] TheStaleOnes = ["Architecture/MadeUpFinished.cs", "Architecture/MadeUpAbsent.cs"];
 
         private const int TheNumberOfReportsRuleConstantsTheDesignNames = 4;
@@ -193,36 +195,47 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheJointTrackerIntegrationPatternNamesNoServicesNamespaceAndStillNamesTheReportsModule()
+        public void TheJointTrackerIntegrationPatternNamesReportsOnlyByTheModule_AndKeepsTheOldAccessAndLicensingGuard()
         {
             var joint = TheJointTrackerIntegrationPattern();
 
-            var deadServices = ServicesAlternativesIn(joint);
+            var reportsUnderServices = ReportsUnderServicesIn(joint);
+            var guardMissing = AccessAndLicensingGuardMissingFrom(joint);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(deadServices, Is.Empty,
-                    $"The joint Tracker integration pattern still names [{string.Join("; ", deadServices)}] under a former Services namespace." + Environment.NewLine +
-                    "Why it matters: Reports, Auth, Authorization and Licensing no longer have types there, so the alternative matches nothing and only looks like a rule. " +
-                    "How to fix: keep Refinement, Reports, Access and Licensing by their modules only.");
+                Assert.That(reportsUnderServices, Is.Empty,
+                    $"The joint Tracker integration pattern still names Reports under a former Services namespace in [{string.Join("; ", reportsUnderServices)}]." + Environment.NewLine +
+                    "Why it matters: Reports no longer has types there, so that alternative matches nothing and only looks like a rule. " +
+                    "How to fix: drop Reports from the Services alternative and keep it by its module only.");
                 Assert.That(joint, Does.Contain(@"Modules\.Reports"),
                     "The joint Tracker integration pattern no longer names the Reports module." + Environment.NewLine +
                     "Why it matters: Tracker integration would then be free to reach Reports. How to fix: keep the Modules.Reports alternative.");
+                Assert.That(guardMissing, Is.Empty,
+                    $"The joint Tracker integration pattern no longer names [{string.Join(", ", guardMissing)}] under a former Services namespace." + Environment.NewLine +
+                    "Why it matters: the Access and Licensing checks need Tracker integration to keep catching a connector that reaches the old Access and Licensing places. " +
+                    "How to fix: keep the Auth, Authorization and Licensing alternatives under Services and drop only Reports.");
             }
         }
 
         [Test]
-        public void AMadeUpJointPatternKeepingTheServicesAlternativesIsNamedAndAModulesOnlyOneIsNot()
+        public void AMadeUpJointPatternKeepingReportsUnderServicesOrDroppingTheGuardIsNamedAndTheNarrowedOneIsNot()
         {
-            var kept = ServicesAlternativesIn(JointPatternOffender.Rule);
-            var clean = ServicesAlternativesIn(ModulesOnlyRule.Rule);
+            var keepsReports = ReportsUnderServicesIn(JointPatternOffender.Rule);
+            var narrowed = ReportsUnderServicesIn(JointPatternKeepingOnlyTheGuard.Rule);
+            var guardKept = AccessAndLicensingGuardMissingFrom(JointPatternKeepingOnlyTheGuard.Rule);
+            var guardDropped = AccessAndLicensingGuardMissingFrom(ModulesOnlyRule.Rule);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(kept, Is.Not.Empty,
-                    "The check did not name the Services alternative of the made-up joint pattern. Why it matters: a check blind to it lets the dead alternatives stay. How to fix: read every alternative that starts under Services.");
-                Assert.That(clean, Is.Empty,
-                    $"The check named [{string.Join("; ", clean)}] in a pattern that names the module only. How to fix: flag only alternatives under Services.");
+                Assert.That(keepsReports, Is.Not.Empty,
+                    "The check did not name Reports under Services in the made-up joint pattern that keeps it. Why it matters: a check blind to it lets the dead alternative stay. How to fix: read every alternative that starts under Services.");
+                Assert.That(narrowed, Is.Empty,
+                    $"The check named [{string.Join("; ", narrowed)}] in a pattern that keeps only Auth, Authorization and Licensing under Services. How to fix: flag only Reports.");
+                Assert.That(guardKept, Is.Empty,
+                    $"The check reported [{string.Join(", ", guardKept)}] missing from a pattern that keeps the whole guard. How to fix: look for each name among the Services alternatives.");
+                Assert.That(guardDropped, Is.EquivalentTo(TheOldAccessAndLicensingGuard),
+                    $"The check reported [{string.Join(", ", guardDropped)}] missing from a pattern that dropped the whole guard, and should name all three. Why it matters: a check blind to a lost guard lets Tracker integration reach the old Access and Licensing places. How to fix: look for each name among the Services alternatives.");
             }
         }
 
@@ -238,6 +251,16 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static List<string> ServicesAlternativesIn(string pattern)
             => [.. TopLevelAlternatives(pattern).Where(alternative => alternative.Contains(@"Services\.", StringComparison.Ordinal))];
+
+        private static List<string> ReportsUnderServicesIn(string pattern)
+            => [.. ServicesAlternativesIn(pattern).Where(alternative => TheFormerReportsForms.IsMatch(alternative))];
+
+        private static List<string> AccessAndLicensingGuardMissingFrom(string pattern)
+        {
+            var services = string.Join("|", ServicesAlternativesIn(pattern));
+            return [.. TheOldAccessAndLicensingGuard
+                .Where(name => !Regex.IsMatch(services, $@"\b{name}\b", RegexOptions.CultureInvariant, PatternTimeout))];
+        }
 
         private static Regex BuildTheFormerForms()
         {
@@ -431,6 +454,11 @@ namespace Lighthouse.Backend.Tests.Architecture.ReportsRulesNameOnlyTheModuleFix
     internal static class JointPatternOffender
     {
         public const string Rule = @"^Lighthouse\.Backend\.Services\." + @"(Implementation|Interfaces)" + @"\.(Reports|Auth|Authorization|Licensing)(\.|$)|^Lighthouse\.Backend\.Modules\.Reports(\.|$)";
+    }
+
+    internal static class JointPatternKeepingOnlyTheGuard
+    {
+        public const string Rule = @"^Lighthouse\.Backend\.Services\." + @"(Implementation|Interfaces)" + @"\.(Auth|Authorization|Licensing)(\.|$)|^Lighthouse\.Backend\.Modules\.Reports(\.|$)";
     }
 
     internal static class ModulesOnlyRule

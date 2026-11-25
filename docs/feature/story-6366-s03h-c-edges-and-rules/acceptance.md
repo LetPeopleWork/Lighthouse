@@ -8,6 +8,37 @@
 
 P1
 
+P3
+
+```text
+Check each narrowed Reports alternative against the types of the Reports module, and the joint Tracker integration pattern for Reports under Services, for the Modules.Reports alternative and for the old Auth, Authorization and Licensing guard
+```
+
+```text
+Every Modules.Reports alternative matches a Reports module type, a made-up dead alternative is named, and the joint Tracker integration pattern names Reports by its module only while keeping the old Auth, Authorization and Licensing alternatives under Services; a made-up pattern keeping Reports under Services or dropping the guard is named and a narrowed one is not
+```
+
+```text
+Reports rules keep constraining Reports, the Tracker integration rule still catches a connector reaching the old Access and Licensing places, and no dead Reports alternative remains
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesNameOnlyTheModuleArchUnitTest\.cs\:\:EveryNarrowedReportsPatternStillMatchesATypeOfTheModule\, AMadeUpPatternAnchoredToNoReportsTypeIsNamedDead\, TheJointTrackerIntegrationPatternNamesReportsOnlyByTheModule\_AndKeepsTheOldAccessAndLicensingGuard\, AMadeUpJointPatternKeepingReportsUnderServicesOrDroppingTheGuardIsNamedAndTheNarrowedOneIsNot
+
+```text
+A joint pattern that drops Reports entirely, leaving it unconstrained, is caught only by the Modules.Reports and owner checks
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
 ```text
 Sweep every rule constant of the test assembly and every string literal of the test sources for the old Reports forms (plain name, regex alternative, group member, folder path), with only exact-path exclusions that must spell an old form; the exclusion list is compared both ways
 ```
@@ -36,37 +67,6 @@ A rule narrowed in its constant but kept as a literal in another file, or an exc
 
 
 
-
-
-##### Covers
-
-P1
-
-P3
-
-```text
-Check each narrowed Reports alternative against the types of the Reports module and the joint Tracker integration pattern for its Services alternatives
-```
-
-```text
-Every Modules.Reports alternative matches a Reports module type in each owning rule file, a made-up dead alternative is named, and the joint Tracker integration pattern names no Services namespace and still names the Reports module
-```
-
-```text
-Reports rules keep constraining Reports and the dead Auth, Authorization and Licensing alternatives are gone
-```
-
-##### Disposition
-
-Tested
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesNameOnlyTheModuleArchUnitTest\.cs\:\:EveryNarrowedReportsPatternStillMatchesATypeOfTheModule\, AMadeUpPatternAnchoredToNoReportsTypeIsNamedDead\, TheJointTrackerIntegrationPatternNamesNoServicesNamespaceAndStillNamesTheReportsModule\, AMadeUpJointPatternKeepingTheServicesAlternativesIsNamedAndAModulesOnlyOneIsNot
-
-```text
-A rule that drops Reports entirely, leaving it unconstrained, is caught only by the owner and count checks
-```
-
-###### Obligations
 
 
 ## Expectations
