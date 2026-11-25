@@ -128,6 +128,41 @@ an old full name built at run time from pieces in a method body, which no litera
 
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Run the calendar, Feature ordering and ranking and optional-feature layout rule on the compiled application and its test project.
+```
+
+```text
+Each of the 18 types is found only in its Organisation set-up module namespace (2 Domain, 12 Application, 4 Application.OptionalFeatures), none is left in the loose Services namespaces, and the five unit tests sit beside the module in the namespace of their folder; a made-up type left behind or put in the wrong layer is named.
+```
+
+```text
+The first half of Organisation set-up lives in its module, with its unit tests beside it, and every other architecture rule stays green.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest\.cs
+
+```text
+A type moved into the module but also kept in its old namespace, or a Domain candidate placed in Application, would pass a rule that only checked the old namespace was empty; the namespace-only and layer rules name both.
+```
+
+###### Obligations
+
+
+
+
+
+
 ## Expectations
 
 ### Rows
