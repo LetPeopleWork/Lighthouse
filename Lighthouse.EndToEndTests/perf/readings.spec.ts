@@ -73,7 +73,7 @@ const settings = {
 			contentRoot,
 			"bin",
 			"Debug",
-			"net10.0",
+			"net11.0",
 			"linux-x64",
 			"Lighthouse",
 		),

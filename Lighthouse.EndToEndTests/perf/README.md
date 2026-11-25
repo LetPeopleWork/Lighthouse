@@ -26,7 +26,7 @@ counters). Nothing else is written.
 | `PERF_KEYS_DIR`                           | `keys/` beside the seeded file                 | key ring the seed was written with (copied)                                              |
 | `PERF_VERSION`                            | `main`                                         | label for the build under test                                                           |
 | `PERF_BACKEND_DIR`                        | this checkout's backend                        | content root (a worktree at the tag for the old build)                                   |
-| `PERF_BACKEND_EXECUTABLE`                 | `<dir>/bin/Debug/net10.0/linux-x64/Lighthouse` | the build to start                                                                       |
+| `PERF_BACKEND_EXECUTABLE`                 | `<dir>/bin/Debug/net11.0/linux-x64/Lighthouse` | the build to start                                                                       |
 | `PERF_PORT`                               | `5421`                                         | HTTP port; HTTPS is port + 1000                                                          |
 | `PERF_SCALE` (or `PERF_SCALE_POINTS`)     | `100,400,920`                                  | each names the Portfolio holding exactly that many Features; one value restricts the run |
 | `PERF_STATES`                             | `idle,computed,skipped`                        | empty skips the opens                                                                    |

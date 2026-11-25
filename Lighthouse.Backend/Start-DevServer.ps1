@@ -74,7 +74,7 @@ if ($Fresh) {
 if (-not $SkipBuild) {
     # The migration projects are referenced by path, so the app cannot load them until they are built.
     foreach ($project in @('Lighthouse.Migrations.Sqlite', 'Lighthouse.Migrations.Postgres')) {
-        $assembly = Join-Path $backendRoot "$project/bin/Debug/net10.0/$project.dll"
+        $assembly = Join-Path $backendRoot "$project/bin/Debug/net11.0/$project.dll"
         if (-not (Test-Path $assembly)) {
             Write-Host "Building $project ..." -ForegroundColor Cyan
             dotnet build (Join-Path $backendRoot $project) | Out-Null

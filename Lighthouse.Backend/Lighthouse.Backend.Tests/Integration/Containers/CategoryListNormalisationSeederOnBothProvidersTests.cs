@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await context.SaveChangesAsync();
 
             var aGroupWithNoStates = statesAreNull ? "[{\"Name\":\"Review\",\"States\":null}]" : "[{\"Name\":\"Review\",\"States\":[]}]";
-            await context.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"Teams\" SET \"StateMappings\" = {aGroupWithNoStates} WHERE \"Id\" = {team.Id}");
+            await context.Database.ExecuteSqlAsync($"UPDATE \"Teams\" SET \"StateMappings\" = {aGroupWithNoStates} WHERE \"Id\" = {team.Id}");
             return team.Id;
         }
 

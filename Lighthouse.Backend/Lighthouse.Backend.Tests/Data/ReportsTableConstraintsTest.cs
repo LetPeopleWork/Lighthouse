@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Tests
 
         private static Task<int> InsertReportRow(LighthouseAppContext context, int? teamId, int? portfolioId)
         {
-            return context.Database.ExecuteSqlInterpolatedAsync($$"""
+            return context.Database.ExecuteSqlAsync($$"""
                 INSERT INTO "Reports" ("TeamId", "PortfolioId", "TemplateKey", "Name", "CreatedAt",
                                        "ShownMetricKeysJson", "TemplatePayloadJson", "PayloadSchemaVersion", "ConcurrencyToken")
                 VALUES ({{teamId}}, {{portfolioId}}, 'then-and-now', 'Refused', '2026-10-13 09:00:00', '[]', '{}', 1, {{Guid.NewGuid()}})

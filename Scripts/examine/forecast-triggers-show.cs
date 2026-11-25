@@ -1,7 +1,7 @@
 #:project @BACKEND@/Lighthouse.Backend/Lighthouse.Backend.csproj
 #:project @BACKEND@/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj
 #:project @BACKEND@/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj
-#:package Microsoft.AspNetCore.Mvc.Testing@10.0.14
+#:package Microsoft.AspNetCore.Mvc.Testing@11.0.0
 #:property TreatWarningsAsErrors=false
 #:property Nullable=enable
 #:property PublishAot=false

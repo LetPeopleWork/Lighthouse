@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFramework>net11.0</TargetFramework>
 		<RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -37,24 +37,24 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.15" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.15" />
-		<PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.15" />
-		<PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.15" />
-		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.15" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="11.0.0" />
 		<!-- Microsoft.TeamFoundationServer.Client floors this at 6.0.1 while Microsoft.Data.SqlClient needs 8.0.0 or later; a direct reference settles the conflict. -->
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.15" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="11.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="11.0.0" />
 		<!-- Pin transitive SQLitePCLRaw above 2.1.11 to resolve CVE-2025-6965 (GHSA-2m69-gcr7-jv3q); EFCore.Sqlite 10.0.9 still floors it at 2.1.11. -->
 		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.15">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="11.0.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="20.256.2" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="11.0.0" />
 		<PackageReference Include="Octokit" Version="14.0.0" />
 		<PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.18.0-beta.1" />
 		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.21.0" />
@@ -99,12 +99,12 @@
 
 
 	<ItemGroup>
-  	<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.15" />
-  	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
+  	<PackageReference Include="Microsoft.EntityFrameworkCore" Version="11.0.0" />
+  	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="11.0.0">
   	  <PrivateAssets>all</PrivateAssets>
   	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   	</PackageReference>
-	<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.15" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0" />
 	  <None Update="certs\LighthouseCert.pfx">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

@@ -939,8 +939,8 @@ namespace Lighthouse.Backend
                 embedOptions.Cookie.SameSite = SameSiteMode.None;
                 embedOptions.Cookie.Name = SmartAuthSchemeSelector.EmbedCookieName;
 
-                // No first-class Partitioned property exists at net10.0, so the attribute is appended
-                // verbatim through CookieBuilder.Extensions.
+                // ASP.NET Core 11 still has no first-class Partitioned property on the cookie builder,
+                // so the attribute is appended verbatim through CookieBuilder.Extensions.
                 embedOptions.Cookie.Extensions.Add("Partitioned");
 
                 embedOptions.ExpireTimeSpan = TimeSpan.FromMinutes(embedConfig.ResolveSessionLifetimeMinutes());

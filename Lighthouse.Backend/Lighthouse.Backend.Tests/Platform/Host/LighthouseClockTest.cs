@@ -101,8 +101,8 @@ namespace Lighthouse.Backend.Tests.Platform.Host
         }
 
         /// <summary>
-        /// Branch 1 of the resolution order. .NET 10 accepts IANA ids on every platform, and
-        /// /usr/share/zoneinfo is present in mcr.microsoft.com/dotnet/aspnet:10.0, so no Dockerfile
+        /// Branch 1 of the resolution order. .NET 11 accepts IANA ids on every platform, and
+        /// /usr/share/zoneinfo is present in mcr.microsoft.com/dotnet/aspnet:11.0, so no Dockerfile
         /// change is needed for a team to opt in.
         /// </summary>
         [TestCase("Europe/Zurich")]
