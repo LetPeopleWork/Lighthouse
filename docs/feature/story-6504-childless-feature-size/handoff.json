@@ -1,31 +1,1322 @@
 {
 "counters": {
-"F": 67,
+"B": 2,
+"C": 2,
+"D": 9,
+"F": 282,
+"K": 7,
+"L": 4,
+"N": 2,
 "P": 8,
-"S": 3
+"S": 3,
+"T": 1,
+"Y": 6
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F94",
+"driven_ports": [
+"F92",
+"F93"
+],
+"driving_port": "F91",
+"failures": [
+{
+"condition": "F95",
+"id": "B1",
+"observation": "F96",
+"outcome": "Refusal"
+},
+{
+"condition": "F97",
+"id": "B2",
+"observation": "F98",
+"outcome": "Indeterminate"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F129",
+"bypass": "F131",
+"constructor": "Portfolio.GetFeaturesToExtrapolate",
+"consumer": "WorkItemService.UpdateRemainingWorkForPortfolio",
+"harm": "F128",
+"id": "C1",
+"owner": "Portfolio",
+"proposition": "F127",
+"public_observation": "F130"
+},
+{
+"admitted_input": "F134",
+"bypass": "F136",
+"constructor": "PortfolioSettingDto",
+"consumer": "Portfolio.InfersDefaultFeatureSize",
+"harm": "F133",
+"id": "C2",
+"owner": "PortfolioExtensions",
+"proposition": "F132",
+"public_observation": "F135"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F150",
+"design": "Pass",
+"evidence": [
+"docs/feature/story-6504-childless-feature-size/model/default-sizing.receipt.txt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F149"
+},
+{
+"axis": "Inhabitation",
+"basis": "F151",
+"design": "Pass",
+"evidence": [
+"docs/feature/story-6504-childless-feature-size/model/default-sizing.qnt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F149"
+},
+{
+"axis": "PublicReachability",
+"basis": "F153",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F152"
+},
+{
+"axis": "Liveness",
+"basis": "F155",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F154"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F77"
+},
+{
+"id": "K2",
+"text": "F78"
+},
+{
+"id": "K3",
+"text": "F79"
+},
+{
+"id": "K4",
+"text": "F80"
+},
+{
+"id": "K5",
+"text": "F81"
+},
+{
+"id": "K6",
+"text": "F82"
+},
+{
+"id": "K7",
+"text": "F83"
+}
+],
+"constructors": [
+{
+"name": "Portfolio.InfersDefaultFeatureSize",
+"signature": "bool, default true; set by SyncWithPortfolioSettings only from a present wire value"
+},
+{
+"name": "Feature.HasNoChildWorkItemsYet",
+"signature": "bool derived: StateCategory is not Done and not IsUsingDefaultFeatureSize and FeatureWork has zero total Work Items"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S1"
+],
+"text": "F68"
+},
+{
+"id": "D2",
+"slices": [
+"S3"
+],
+"text": "F69"
+},
+{
+"id": "D3",
+"slices": [
+"S3"
+],
+"text": "F70"
+},
+{
+"id": "D4",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F71"
+},
+{
+"id": "D5",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F72"
+},
+{
+"id": "D6",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F73"
+},
+{
+"id": "D7",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F74"
+},
+{
+"id": "D8",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F75"
+},
+{
+"id": "D9",
+"slices": [
+"S1",
+"S2",
+"S3"
+],
+"text": "F76"
+}
+],
+"equality": [
+{
+"definition": "F103",
+"under": "sizing observation"
+},
+{
+"definition": "F104",
+"under": "settings payload"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/story-6504-childless-feature-size/model/default-sizing.qnt"
+],
+"id": "L1",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "Portfolio",
+"statement": "F105",
+"treatment": {
+"cases": [
+"F106",
+"F107",
+"F108",
+"F109",
+"F110"
+],
+"kind": "Finite",
+"reason": "F111"
+}
+},
+{
+"evidence": [
+"docs/feature/story-6504-childless-feature-size/model/default-sizing.qnt"
+],
+"id": "L2",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "Portfolio",
+"statement": "F112",
+"treatment": {
+"cases": [
+"F113",
+"F114",
+"F115"
+],
+"kind": "Finite",
+"reason": "F116"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "PortfolioExtensions",
+"statement": "F117",
+"treatment": {
+"cases": [
+"F118",
+"F119",
+"F120",
+"F121",
+"F122"
+],
+"kind": "Finite",
+"reason": "F123"
+}
+},
+{
+"id": "L4",
+"kind": "RoundTrip",
+"layer": "Application",
+"owner": "PortfolioExtensions",
+"statement": "F124",
+"treatment": {
+"cases": [
+"F125"
+],
+"kind": "Finite",
+"reason": "F126"
+}
+}
+],
+"models": [
+{
+"assumptions": [
+"F145",
+"F146"
+],
+"atoms": [
+{
+"kind": "State",
+"name": "infer",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:82",
+"symbol": "Portfolio.InfersDefaultFeatureSize"
+},
+{
+"kind": "Action",
+"name": "sizing",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:708",
+"symbol": "WorkItemService.UpdateRemainingWorkForPortfolio"
+},
+{
+"kind": "Constant",
+"name": "DEFAULT",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:15",
+"symbol": "Portfolio.DefaultAmountOfWorkItemsPerFeature"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F147",
+"id": "N1",
+"kills": [
+"offSizeIsRealChildren",
+"offAssignsOnlyRealWork"
+]
+},
+{
+"description": "F148",
+"id": "N2",
+"kills": [
+"offInventsNothing",
+"offSizeIsRealChildren",
+"offAssignsOnlyRealWork"
+]
+}
+],
+"path": "docs/feature/story-6504-childless-feature-size/model/default-sizing.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "offInventsNothing",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:192",
+"statement": "F140",
+"symbol": "Portfolio.GetFeaturesToExtrapolate"
+},
+{
+"kind": "Invariant",
+"name": "offSizeIsRealChildren",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:197",
+"statement": "F141",
+"symbol": "Portfolio.GetFeaturesToOverrideWithDefaultSize"
+},
+{
+"kind": "Invariant",
+"name": "offAssignsOnlyRealWork",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:192",
+"statement": "F142",
+"symbol": "Portfolio.GetFeaturesToExtrapolate"
+},
+{
+"kind": "Invariant",
+"name": "onChildlessIsInferred",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:754",
+"statement": "F143",
+"symbol": "WorkItemService.ExtrapolateNotBrokenDownFeatures"
+},
+{
+"kind": "Invariant",
+"name": "onWithRealChildrenUntouched",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:754",
+"statement": "F144",
+"symbol": "WorkItemService.ExtrapolateNotBrokenDownFeatures"
+}
+]
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F89"
+},
+{
+"analysis": "prefactoring",
+"reason": "F90"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F100",
+"description": "F99",
+"result_type": "FeatureListRowDto and FeatureDto fields RemainingWork, TotalWork, Size, IsUsingDefaultFeatureSize, HasNoChildWorkItemsYet"
+},
+{
+"cannot_distinguish": "F102",
+"description": "F101",
+"result_type": "PortfolioSettingDto.InfersDefaultFeatureSize (bool?) plus the unchanged stored values of the four dependent settings"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:192",
+"reason": "F84",
+"symbol": "GetFeaturesToExtrapolate"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:197",
+"reason": "F85",
+"symbol": "GetFeaturesToOverrideWithDefaultSize"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs:94",
+"reason": "F86",
+"symbol": "IgnoreDependencies"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:754",
+"reason": "F87",
+"symbol": "ExtrapolateNotBrokenDownFeatures"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/utils/features/featureWarningSentences.ts:23",
+"reason": "F88",
+"symbol": "featureWarningSentences"
+}
+],
+"risks": [
+{
+"allowed": "F158",
+"forbidden": "F159",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "Solution architect",
+"preserved": "F157",
+"residue": "F160",
+"source": "F156"
+},
+{
+"allowed": "F163",
+"forbidden": "F164",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "Maintainer",
+"preserved": "F162",
+"residue": "F165",
+"source": "F161"
+},
+{
+"allowed": "F168",
+"forbidden": "F169",
+"id": "Y3",
+"kind": "SinglePointOfFailure",
+"owner": "Crafter",
+"preserved": "F167",
+"residue": "F170",
+"source": "F166"
+},
+{
+"allowed": "F173",
+"forbidden": "F174",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "Crafter",
+"preserved": "F172",
+"residue": "F175",
+"source": "F171"
+},
+{
+"allowed": "F178",
+"forbidden": "F179",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "Crafter",
+"preserved": "F177",
+"residue": "F180",
+"source": "F176"
+},
+{
+"allowed": "F183",
+"forbidden": "F184",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "Crafter",
+"preserved": "F182",
+"residue": "F185",
+"source": "F181"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "Portfolio",
+"state": "F137"
+},
+{
+"kind": "Excluded",
+"owner": "Portfolio",
+"state": "F138"
+},
+{
+"kind": "Unknown",
+"owner": "Solution architect with the maintainer",
+"state": "F139"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs",
+"public_oracle": {
+"expected": "F246",
+"falsifier": "F247",
+"promises": [
+"P1",
+"P2",
+"P3",
+"P4",
+"P7",
+"P8"
+],
+"stimulus": "F245"
+},
+"records": {
+"agreement": [
+{
+"contract": "Portfolio settings payload infersDefaultFeatureSize",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs:94",
+"party": "Producer",
+"reason": "F275"
+},
+{
+"contract": "Portfolio settings payload infersDefaultFeatureSize",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs:30",
+"party": "Consumer",
+"reason": "F276"
+},
+{
+"contract": "Portfolio settings payload infersDefaultFeatureSize",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/models/Portfolio/PortfolioSettings.ts:24",
+"party": "Consumer",
+"reason": "F277"
+},
+{
+"contract": "Portfolio settings payload infersDefaultFeatureSize",
+"decision": "UnchangedCompatible",
+"locator": "lighthouse-clients/packages/client/src/index.ts:2544",
+"party": "Consumer",
+"reason": "F278"
+}
+],
+"boundaries": {
+"dependency_direction": "F280",
+"driven_ports": [
+"F196"
+],
+"driving_port": "F279"
+},
+"contract_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioSettingDtoCompatibilityTest",
+"consumer": "Real SyncWithPortfolioSettings on a stored Portfolio",
+"contract": "Portfolio settings payload infersDefaultFeatureSize",
+"id": "T1",
+"obligation": "F281",
+"observation": "F282",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioSettingDtoCompatibilityTest.cs",
+"producer": "Older UI or client JSON without the field, deserialized by the real PortfolioSettingDto"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "domain-model",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:192",
+"reason": "F260"
+},
+{
+"decision": "Changed",
+"kind": "wire-dto",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs:94",
+"reason": "F261"
+},
+{
+"decision": "Changed",
+"kind": "settings-sync",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs:30",
+"reason": "F262"
+},
+{
+"decision": "Migrated",
+"kind": "persistence-migration",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs:1",
+"reason": "F263"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "refresh-service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:754",
+"reason": "F264"
+},
+{
+"decision": "Changed",
+"kind": "fetch-guard",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs:156",
+"reason": "F265"
+},
+{
+"decision": "Changed",
+"kind": "frontend-model",
+"locator": "Lighthouse.Frontend/src/models/Portfolio/PortfolioSettings.ts:24",
+"reason": "F266"
+},
+{
+"decision": "Changed",
+"kind": "ui-component",
+"locator": "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.tsx:101",
+"reason": "F267"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "clients-cli-mcp",
+"locator": "lighthouse-clients/packages/client/src/index.ts:2544",
+"reason": "F268"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "delivery-history",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs:667",
+"reason": "F269"
+},
+{
+"decision": "Migrated",
+"kind": "persistence-migration",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs:1",
+"reason": "F270"
+},
+{
+"decision": "Changed",
+"kind": "wizard",
+"locator": "Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.tsx:46",
+"reason": "F271"
+},
+{
+"decision": "Changed",
+"kind": "ui-component",
+"locator": "Lighthouse.Frontend/src/components/Common/ConnectionDefault/ConnectionDefaultFieldSelect.tsx:1",
+"reason": "F272"
+},
+{
+"decision": "Changed",
+"kind": "ui-component",
+"locator": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.tsx:1",
+"reason": "F272"
+},
+{
+"decision": "Changed",
+"kind": "architecture-doc",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:686",
+"reason": "F273"
+},
+{
+"decision": "Changed",
+"kind": "architecture-doc",
+"locator": "ARCHITECTURE.md:85",
+"reason": "F274"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:15",
+"reason": "F248",
+"symbol": "Portfolio"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.tsx:101",
+"reason": "F249",
+"symbol": "FeatureSizeComponent"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/DependenciesComponent.tsx:64",
+"reason": "F250",
+"symbol": "ignoreDependencies"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs:30",
+"reason": "F251",
+"symbol": "IgnoreDependencies"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs:1",
+"reason": "F252",
+"symbol": "IgnoreDependencies"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs:1",
+"reason": "F253",
+"symbol": "IgnoreDependencies"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/models/Portfolio/PortfolioSettings.ts:24",
+"reason": "F254",
+"symbol": "ignoreDependencies"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.tsx:46",
+"reason": "F255",
+"symbol": "ignoreDependencies"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/ConnectionDefault/ConnectionDefaultFieldSelect.tsx:1",
+"reason": "F256",
+"symbol": "ConnectionDefaultFieldSelect"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.tsx:1",
+"reason": "F257",
+"symbol": "ItemListManager"
+},
+{
+"decision": "Extend",
+"locator": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:686",
+"reason": "F258",
+"symbol": "Default"
+},
+{
+"decision": "Extend",
+"locator": "ARCHITECTURE.md:85",
+"reason": "F259",
+"symbol": "modules"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioSettingDtoCompatibilityTest.cs",
+"Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx",
+"Lighthouse.Frontend/src/tests/TestDataProvider.ts"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs",
+"reason": "F233"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs",
+"reason": "F234"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+"reason": "F235"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/LighthouseAppContextModelSnapshot.cs",
+"reason": "F236"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs",
+"reason": "F237"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Portfolio/PortfolioSettings.ts",
+"reason": "F238"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.tsx",
+"reason": "F239"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.tsx",
+"reason": "F240"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/ConnectionDefault/ConnectionDefaultFieldSelect.tsx",
+"reason": "F241"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.tsx",
+"reason": "F242"
+},
+{
+"change": "Extend",
+"path": "docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md",
+"reason": "F243"
+},
+{
+"change": "Extend",
+"path": "ARCHITECTURE.md",
+"reason": "F244"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DefaultFeatureSizingTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioSettingDtoCompatibilityTest",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FetchShapingPropertyGuardTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingOverrideStatesTest.cs",
+"public_oracle": {
+"expected": "F188",
+"falsifier": "F189",
+"promises": [
+"P6"
+],
+"stimulus": "F187"
+},
+"records": {
+"boundaries": {
+"dependency_direction": "F197",
+"driven_ports": [
+"F196"
+],
+"driving_port": "F195"
+},
+"impact": [
+{
+"decision": "Changed",
+"kind": "domain-model",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:197",
+"reason": "F191"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "refresh-service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs:756",
+"reason": "F192"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F193"
+},
+{
+"analysis": "agreement",
+"reason": "F194"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:197",
+"reason": "F190",
+"symbol": "GetFeaturesToOverrideWithDefaultSize"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs",
+"reason": "F186"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DefaultFeatureSizingOverrideStatesTest"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx",
+"public_oracle": {
+"expected": "F208",
+"falsifier": "F209",
+"promises": [
+"P5"
+],
+"stimulus": "F207"
+},
+"records": {
+"agreement": [
+{
+"contract": "Feature payload hasNoChildWorkItemsYet",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureListDto.cs:83",
+"party": "Producer",
+"reason": "F227"
+},
+{
+"contract": "Feature payload hasNoChildWorkItemsYet",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/models/Feature.ts:109",
+"party": "Consumer",
+"reason": "F228"
+}
+],
+"boundaries": {
+"dependency_direction": "F232",
+"driven_ports": [
+"F231"
+],
+"driving_port": "F230"
+},
+"impact": [
+{
+"decision": "Changed",
+"kind": "domain-model",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs:79",
+"reason": "F218"
+},
+{
+"decision": "Changed",
+"kind": "wire-dto",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs:74",
+"reason": "F219"
+},
+{
+"decision": "Changed",
+"kind": "wire-dto",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureListDto.cs:83",
+"reason": "F220"
+},
+{
+"decision": "Changed",
+"kind": "frontend-model",
+"locator": "Lighthouse.Frontend/src/models/Feature.ts:109",
+"reason": "F221"
+},
+{
+"decision": "Changed",
+"kind": "warning-text",
+"locator": "Lighthouse.Frontend/src/utils/features/featureWarningSentences.ts:35",
+"reason": "F222"
+},
+{
+"decision": "Changed",
+"kind": "warning-consumers",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:152",
+"reason": "F223"
+},
+{
+"decision": "Changed",
+"kind": "timeline",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryBarMarks.ts:44",
+"reason": "F224"
+},
+{
+"decision": "Changed",
+"kind": "export",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryExportTable.ts:131",
+"reason": "F224"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "team-list",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx:60",
+"reason": "F225"
+},
+{
+"decision": "Changed",
+"kind": "ui-component",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/WarningsIndicator.tsx:11",
+"reason": "F226"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F229"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/utils/features/featureWarningSentences.ts:23",
+"reason": "F210",
+"symbol": "featureWarningSentences"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs:79",
+"reason": "F211",
+"symbol": "IsUsingDefaultFeatureSize"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs:74",
+"reason": "F212",
+"symbol": "IsUsingDefaultFeatureSize"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureListDto.cs:83",
+"reason": "F212",
+"symbol": "IsUsingDefaultFeatureSize"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/models/Feature.ts:109",
+"reason": "F213",
+"symbol": "isUsingDefaultFeatureSize"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/WarningsIndicator.tsx:11",
+"reason": "F214",
+"symbol": "isUsingDefaultFeatureSize"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx:152",
+"reason": "F215",
+"symbol": "isUsingDefaultFeatureSize"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryBarMarks.ts:48",
+"reason": "F216",
+"symbol": "isUsingDefaultFeatureSize"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryExportTable.ts:136",
+"reason": "F217",
+"symbol": "isUsingDefaultFeatureSize"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/FeatureHasNoChildWorkItemsYetTest.cs",
+"Lighthouse.Frontend/src/tests/FeatureListTestKit.tsx"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs",
+"reason": "F198"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs",
+"reason": "F199"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureListDto.cs",
+"reason": "F200"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Feature.ts",
+"reason": "F201"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/utils/features/featureWarningSentences.ts",
+"reason": "F202"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/WarningsIndicator.tsx",
+"reason": "F203"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx",
+"reason": "F204"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryBarMarks.ts",
+"reason": "F205"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryExportTable.ts",
+"reason": "F206"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~FeatureHasNoChildWorkItemsYetTest",
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryBarMarks.test.ts"
+]
+}
+}
 },
 "facts": {
 "F1": "ADO Story 6504: Choose whether a Feature without children gets an inferred size. Today a Feature with no child Work Items is sized by the Portfolio's Default Feature Size and that count is spread across the teams (e.g. '0 of 4'); some users read it as data from the tracker. Want a setting: Infer (today's behaviour, clearly labelled as an assumption wherever the count shows) or Disable (no inferred count; the Feature shows no remaining work and says it has no child Work Items yet). Open: what a forecast does for such a Feature when inference is off. Source: customer feedback 2026-11-02 ('No guessing when an item has no children ... I'd rather see nothing, or a clear label saying it's an assumption'). Maintainer skipped DISCOVER and DIVERGE explicitly on 2026-11-25; stand-alone Story, no parent Epic.",
 "F10": "a Portfolio owner looks at the forecast of F and of a Delivery that contains F",
+"F100": "Which refresh cycle produced the values, and whether the switch was changed after the last cycle (values are stale until the next cycle)",
+"F101": "The switch and its dependent settings as the settings form and GET settings report them",
+"F102": "A payload that omitted the field and one that resent the stored value (both keep it, by design)",
+"F103": "Two refresh outcomes are equal when each Feature has the same per-Team remaining and total counts, the same IsUsingDefaultFeatureSize and the same HasNoChildWorkItemsYet; the Portfolio setting values themselves are not part of the outcome.",
+"F104": "Two settings saves are equal when they leave the stored switch and the four dependent stored values equal; an absent switch equals the stored switch.",
+"F105": "Switch off: after a refresh, every not-Done Feature without child Work Items has no FeatureWork, size 0, IsUsingDefaultFeatureSize false and HasNoChildWorkItemsYet true; a Feature with children keeps its real counts whether or not its state is in the override list or an estimate is mapped",
+"F106": "off, childless, default size 4: size 0, no Team work",
+"F107": "off, childless, estimate mapped to 9: still 0",
+"F108": "off, 1 child, state in override list, default size 4: size 1, not using default",
+"F109": "off, Done and childless: untouched, flag false",
 "F11": "F counts as 0 remaining Work Items in those forecasts, the same as any Feature with nothing remaining; Lighthouse adds no special forecast handling for F",
+"F110": "off, percentile option on: no percentile query reached",
+"F111": "Finite domain of five small inputs, fully enumerated by the Quint model and by a table of example cases",
+"F112": "Switch on: behaviour is exactly the behaviour before the change: childless not-Done Features get the estimate or default size across Teams and IsUsingDefaultFeatureSize true; override-state Features with fewer children than the default are re-sized by default",
+"F113": "on, childless, default size 4: 4 split across Teams, flag true",
+"F114": "on, childless, estimate 9: 9",
+"F115": "on, override state, 1 child: default size",
+"F116": "Preservation law over a finite input table; existing WorkItemServiceTest cases are the reference and must stay unchanged",
+"F117": "Absent switch keeps stored value: for stored value in {true,false} and wire value in {absent,true,false}, the stored value after the save is the wire value when present and the previous value when absent; a new Portfolio holds true",
+"F118": "stored true, absent: true",
+"F119": "stored false, absent: false",
 "F12": "Default sizing off: a Feature without child Work Items gets no invented count",
+"F120": "stored true, wire false: false",
+"F121": "stored false, wire true: true",
+"F122": "new Portfolio, absent: true",
+"F123": "Six-cell table; the old counterexample is a payload without the field turning the switch off",
+"F124": "Round trip: switching off then on again returns Default Feature Size, percentile option, history days, size-estimate field mapping and override states to their stored values; off never writes them",
+"F125": "size 7, mapping set, override states set: off then on equals before",
+"F126": "Identity law over the four stored values; one table case per value",
+"F127": "With the switch off no Feature carries a size or Team work derived from the default size, the percentile, an estimate field or the override rule",
+"F128": "A Portfolio owner reads an invented count as tracker data",
+"F129": "Portfolio with the switch false and any Features",
 "F13": "Portfolio Ocean has Default Feature Size 4, default sizing is switched off, and Feature F has no child Work Items in any Team",
+"F130": "Feature list row: remaining 0, no Team work, IsUsingDefaultFeatureSize false",
+"F131": "A direct database write of FeatureWork or of the flag; a second caller of the extrapolation code (none exists, WorkItemService is the only one); a Feature in two Portfolios with different switches (last Portfolio refreshed wins)",
+"F132": "A save without the switch field never turns the switch off",
+"F133": "Silent loss of the default sizing for every older client",
+"F134": "PortfolioSettingDto without InfersDefaultFeatureSize",
+"F135": "GET settings after the save reports the previous value",
+"F136": "A client that sends false explicitly; a direct database edit; raw SQL default of the migration",
+"F137": "Switch on or off with any values of the four dependent settings, including values that have no effect while off",
+"F138": "Switch off and IsUsingDefaultFeatureSize true on a refreshed Feature (selectors return nothing; true only on a Feature not refreshed since the switch changed)",
+"F139": "Features of one Portfolio shown after a switch change and before the next refresh cycle; the Feature in several Portfolios with different switches",
 "F14": "F shows 0 remaining Work Items, no count such as '0 of 4' appears for F, and no Team carries remaining work for F",
+"F140": "Off: usingDefault is false",
+"F141": "Off: size equals the real child count",
+"F142": "Off: Team work exists iff there are real children",
+"F143": "On: childless not-Done is sized by estimate or default",
+"F144": "On: a Feature with at least default-size children keeps them",
+"F145": "Finite inputs: switch, Done, child count 0 to 6, override membership, estimate 0 to 9, default size 4",
+"F146": "One Feature in one Portfolio; Team assignment abstracted to a boolean",
+"F147": "Off still applies the override-states rule (clears real children below the default size)",
+"F148": "Off still extrapolates a childless Feature by default or estimate",
+"F149": "Off-rule sizing",
 "F15": "Default sizing off: the Feature says it has no child Work Items yet",
+"F150": "Quint run found no violation of five invariants; two behavioral mutants are killed by run --invariant; verify depth 2 covers every input of the finite step. Mapped to Portfolio selectors; runtime not built",
+"F151": "Input: settings save with infersDefaultFeatureSize false, then the refresh cycle; producer Portfolio selectors; consumer FeatureListRowDto; port the Feature list endpoint. Acyclic; every step names an existing symbol or a declared target",
+"F152": "Childless note",
+"F153": "Feature.HasNoChildWorkItemsYet to FeatureListRowDto and FeatureDto to Feature.ts decode to featureWarningSentences to WarningsIndicator, the timeline bar and the export; the Team list is reached only for a listed Feature (decision on Team page)",
+"F154": "Sizing rule and note",
+"F155": "Not applicable: the rule is a total pure function evaluated once per refresh cycle; no waiting, retry or fairness-dependent progress is introduced. Eventual effect is bounded by the existing cycle, not by a new mechanism",
+"F156": "Assumption: a settings save is followed by a recalculation. Negated: the next refresh cycle is far away",
+"F157": "Stored values and the switch",
+"F158": "Lists show the previous sizing until the next cycle",
+"F159": "Lists mixing both rules inside one cycle",
 "F16": "default sizing of Portfolio Ocean is switched off and Feature F has no child Work Items in any Team",
+"F160": "Delay is the same as for Default Feature Size today",
+"F161": "Assumption: a Feature belongs to one Portfolio. Negated: two Portfolios with different switches",
+"F162": "No crash and no invented count in the Portfolio with the switch off",
+"F163": "The last refreshed Portfolio decides the Feature flags and work",
+"F164": "Partial FeatureWork from both",
+"F165": "IsUsingDefaultFeatureSize is already one flag per Feature; unchanged ambiguity",
+"F166": "The guard in the two Portfolio selectors",
+"F167": "Off means nothing is invented",
+"F168": "None",
+"F169": "A caller that extrapolates without the selectors",
 "F17": "a Portfolio owner looks at F in the Feature list of Ocean's Portfolio page, a Team's page, and the Delivery timeline",
+"F170": "WorkItemService is the only caller; example cases and the Quint mapping pin both selectors",
+"F171": "Deserialization: a payload with infersDefaultFeatureSize false sent by a script, or a restored database backup from before the column",
+"F172": "Explicit false is honoured; a backup row gets the column default true on migration",
+"F173": "Explicit false by a caller with PortfolioWrite",
+"F174": "Missing field read as false",
+"F175": "Migration default and nullable DTO; contract case pins the absent field",
+"F176": "Second set. Tracker returns children later: a Feature leaves the childless state",
+"F177": "Real counts replace 0 on the next cycle",
+"F178": "Note disappears next cycle",
+"F179": "Note shown beside real counts",
 "F18": "in each place F shows the note 'No child Work Items yet' where today's default-size warning icon sits, and today's sentence about the default Feature size does not appear",
+"F180": "HasNoChildWorkItemsYet is derived from FeatureWork, so it clears with the work",
+"F181": "Second set. No Team is selectable for the Feature, or Done Feature in an override state, or a Feature with zero children moved to Done",
+"F182": "Done Features untouched by the switch",
+"F183": "On: unchanged quirk of the override rule",
+"F184": "Off: any clearing of Done Feature work",
+"F185": "Selectors return nothing when off, which covers it; the on-case quirk is not changed",
+"F186": "GetFeaturesToOverrideWithDefaultSize returns no Feature when the switch is off",
+"F187": "Portfolio Ocean (default size 4, override state In Progress, switch off) is refreshed through IWorkItemService.UpdateFeaturesForPortfolio with Feature G In Progress with 1 child Work Item",
+"F188": "G has size 1 with its real Team work and IsUsingDefaultFeatureSize false; with the switch on G is re-sized to the default as today",
+"F189": "An override rule that ignores the switch clears G work and makes G extrapolate to 4",
 "F19": "Default sizing off: a Feature in an override state keeps its real child count",
+"F190": "Single selector of the override rule",
+"F191": "Guard on the switch",
+"F192": "Loop consumes the selector unchanged",
+"F193": "No cross-owner contract: one selector inside one deployable, covered by the primary oracle.",
+"F194": "No shared contract is touched; the slice changes one internal selector.",
+"F195": "IWorkItemService.UpdateFeaturesForPortfolio(Portfolio)",
+"F196": "IFeatureRepository",
+"F197": "WorkItemService to Portfolio selector",
+"F198": "Derived HasNoChildWorkItemsYet",
+"F199": "Expose HasNoChildWorkItemsYet",
 "F2": "A Portfolio owner decides whether Lighthouse invents a size for a Feature that has no child Work Items yet, and nobody mistakes an assumed count for tracker data.",
 "F20": "Portfolio Ocean has Default Feature Size 4 and lists state 'In Progress' under override real child count states, default sizing is switched off, and Feature G is In Progress with 1 child Work Item",
+"F200": "Expose HasNoChildWorkItemsYet on the list row",
+"F201": "Decode the field",
+"F202": "The note sentence beside the other warnings",
+"F203": "Pass the flag to the sentence owner",
+"F204": "Warnings cell condition and prop",
+"F205": "warningInputFor carries the flag",
+"F206": "Export warnings input carries the flag",
+"F207": "Open the Portfolio Feature list (and the Delivery timeline marks) for a refreshed childless Feature F with the switch off, and for the same F with it on",
+"F208": "Off: F shows the sentence No child Work Items yet for this Feature, counted as 0 because default Feature sizing is off, in the warning tooltip, and no default-size sentence; On: the existing default-size sentence only",
+"F209": "A note keyed on total work alone shows beside the default-size sentence on or beside real counts",
 "F21": "G shows its real child count of 1, not 4, and is not marked as using the default size",
+"F210": "One owner of warning text for list, timeline and export",
+"F211": "Sibling fact on the Feature; the derived property lives beside it",
+"F212": "Field beside the sibling flag",
+"F213": "Decode beside the sibling flag",
+"F214": "Prop beside the sibling prop",
+"F215": "Cell condition beside the sibling flag",
+"F216": "Warning input beside the sibling flag",
+"F217": "Export input beside the sibling flag",
+"F218": "New derived property",
+"F219": "New field on Feature payload",
 "F22": "Default sizing off: settings without effect cannot be changed, and their values come back",
+"F220": "New field on list row",
+"F221": "Decode and test kit default extended first",
+"F222": "New sentence with configurable terms",
+"F223": "Cell shows the icon when the note applies",
+"F224": "Input carries the flag",
+"F225": "Shares the warnings column; a childless Feature is not listed for a Team",
+"F226": "New prop passed to the sentence owner",
+"F227": "Adds one boolean",
+"F228": "Decodes the boolean",
+"F229": "Producer and consumer ship in one deployable and change in one commit; the primary oracle reads the real payload.",
 "F23": "Portfolio Ocean has Default Feature Size 7, a size-estimate field mapping and override states set",
+"F230": "Feature list endpoint rendered by PortfolioFeatureList; Delivery timeline bar notes",
+"F231": "IFeatureListReader",
+"F232": "Frontend to FeatureListRowDto and FeatureDto to Feature",
+"F233": "InfersDefaultFeatureSize property and guarded selectors",
+"F234": "Nullable switch on the wire, read from the Portfolio",
+"F235": "Keep the stored value when the wire value is absent",
+"F236": "Snapshot for the additive column; the new migration files are generated by Create-Migration.ps1 and carry timestamped names",
+"F237": "Same column for Postgres",
+"F238": "infersDefaultFeatureSize field",
+"F239": "New Portfolio starts with the switch on",
 "F24": "a Portfolio owner switches default sizing off in Ocean's advanced settings, and later switches it on again",
+"F240": "Switch first in the group; dependent controls disabled while off",
+"F241": "A disabled option so the size-estimate field can be greyed",
+"F242": "A disabled option so the override states can be greyed",
+"F243": "Glossary term default Feature sizing",
+"F244": "Section 4: one line on the sizing switch under Work Items",
+"F245": "Portfolio Ocean (default size 4) is refreshed through IWorkItemService.UpdateFeaturesForPortfolio with the switch on, then with it off, childless Feature F; and the settings form is opened with the switch off then on",
+"F246": "On: F has 4 remaining across Teams and IsUsingDefaultFeatureSize true. Off: F has size 0, no Team work, flag false, no 0 of 4; the four dependent controls are disabled and show 7, the same mapping and states after switching on; both an existing and a new Portfolio read the switch as on",
+"F247": "A selector that ignores the switch, a missing-field default of false, or a switch-off that clears stored values makes a case fail",
+"F248": "Owner of the sizing settings; the switch sits beside DefaultAmountOfWorkItemsPerFeature",
+"F249": "Existing Default Feature Size group and MUI Switch; no new component",
 "F25": "while off, Default Feature Size, the percentile option, the size-estimate field mapping and the override-states selection are greyed out and cannot be changed; after switching on, they show 7, the same mapping and the same states",
+"F250": "Precedent for a switch field in the Advanced settings",
+"F251": "Same keep-stored-on-absent line pattern; one more line beside it",
+"F252": "Snapshot regenerated by the migration script; precedent AddPortfolioDependencySettings",
+"F253": "Same for Postgres",
+"F254": "Settings model field beside ignoreDependencies",
+"F255": "Wizard default value beside ignoreDependencies",
+"F256": "Existing select used for the size-estimate field; gains a disabled option, a second control would duplicate it",
+"F257": "Existing chip list for override states; gains a disabled option",
+"F258": "The ADR already lists default Feature size under connection defaults; the glossary gains one term",
+"F259": "Section 4 module list gains one line",
 "F26": "Existing Portfolios keep today's behaviour after the upgrade",
+"F260": "New property and selector guards",
+"F261": "New nullable field",
+"F262": "Absent keeps stored value",
+"F263": "Additive NOT NULL column default true for both providers; HistoricalSchemaPatch lists it",
+"F264": "Loops over the guarded selectors; no edit needed",
+"F265": "Property classified Cost.Nothing (support edit by the oracle owner)",
+"F266": "New field; TestDataProvider and wizard default extended",
+"F267": "Switch and disabled state",
+"F268": "updatePortfolio passes an untyped payload; separate repo; no code change",
+"F269": "Recorded flag keeps its meaning; old records not rewritten",
 "F27": "Portfolio Ocean existed before this change, and Portfolio Reef is created after it",
+"F270": "Same additive column for Postgres",
+"F271": "New Portfolio sends the switch as true",
+"F272": "Optional disabled prop; other callers keep the default enabled",
+"F273": "Glossary term added",
+"F274": "One line under Work Items",
+"F275": "Adds nullable field to GET and accepts it on PUT",
+"F276": "Reads it with keep-stored on absent",
+"F277": "Frontend model carries and resends the field",
+"F278": "Untyped passthrough; older payloads without the field keep the switch",
+"F279": "IWorkItemService.UpdateFeaturesForPortfolio(Portfolio); settings form ModifyProjectSettings and PUT/GET Portfolio settings",
 "F28": "a Portfolio owner opens the advanced settings of Ocean and of Reef",
+"F280": "Frontend and API inward to Portfolio; WorkItemService to Portfolio selectors",
+"F281": "An older payload without the field never turns the switch off; explicit false and true are honoured",
+"F282": "Stored switch after the save equals the previous value for absent and the wire value otherwise",
 "F29": "default sizing is switched on for both, next to Default Feature Size, and their Feature counts are as before",
 "F3": "A Portfolio owner can switch default (inferred) Feature sizing off. When it is off, a Feature with no child Work Items gets size 0: Lighthouse invents no count for it and assigns nothing to any Team, and forecasts take that 0 as it comes. When it is on, Lighthouse behaves as today.",
 "F30": "With the switch off, a not-Done Feature with no child Work Items gets size 0: no inferred count, no remaining work assigned to any Team, and forecasts take the 0 as it comes.",
@@ -69,9 +1360,41 @@
 "F65": "Extends S1; nothing delivered is revised.",
 "F66": "With default Feature sizing off, a Feature with no child Work Items shows 'No child Work Items yet' in the Feature lists on the Portfolio and Team pages and on the Delivery timeline, instead of today's default-size warning.",
 "F67": "The Portfolio owner reads why a Feature shows 0 instead of mistaking it for finished.",
+"F68": "Absent field: PortfolioSettingDto.InfersDefaultFeatureSize is bool? (the IgnoreDependencies precedent) and PortfolioExtensions keeps the stored value when it is absent, so an older UI, script or CLI payload cannot switch it off. A new Portfolio holds true. The column is additive: NOT NULL with default true for existing rows, generated by Create-Migration.ps1 for Sqlite and Postgres. The wire name is infersDefaultFeatureSize. Rejected: JsonRequired (turns every older payload into a 400), plain bool (missing field would mean false, which silently turns sizing off).",
+"F69": "Feature read model: Feature gains a derived read-only property HasNoChildWorkItemsYet (not Done, no child Work Items, not using the default size), exposed on FeatureDto and FeatureListRowDto and decoded by the frontend Feature model. It is true exactly when the switch is off for a childless Feature, so the note cannot claim a cause that is false and the frontend holds no copy of the rule. This replaces the DISCUSS expectation that the Feature payload gains nothing. Rejected: deriving it in the frontend from total work (a second copy of the rule that mislabels a Feature not yet refreshed), reading the Portfolio setting in the lists (the Team list and the timeline hold no Portfolio setting, and a Feature may sit in several Portfolios).",
 "F7": "F shows 4 remaining Work Items split across its Teams, with today's warning that the size comes from the default Feature size",
+"F70": "Team page: a Team list holds the Features that a Team carries work for (FeatureRepository.FeaturesOfTeam). With the switch off a childless Feature has no Team work, so it is not listed on any Team page; that satisfies the rule that no Team carries remaining work for it. The note appears wherever the Feature is listed: the Portfolio Feature list and the Delivery timeline. The Team list uses the same warnings column and shows the note for a listed Feature that has no children, which cannot occur; no extra code. Flagged to the host: the product wording lists the Team page as a place of the note.",
+"F71": "Owner: Portfolio owns the sizing rule. It gains one setting, InfersDefaultFeatureSize (bool, true by default), and its two existing selectors GetFeaturesToExtrapolate and GetFeaturesToOverrideWithDefaultSize return no Feature when the setting is off. WorkItemService.UpdateRemainingWorkForPortfolio is unchanged: with both selections empty it neither clears real children nor extrapolates, so a childless not-Done Feature keeps no FeatureWork and IsUsingDefaultFeatureSize stays false (size 0). The percentile and estimate-field helpers are then never reached. Rejected: a branch in WorkItemService (transaction script over Portfolio data), a second sizing strategy object (one boolean, no second implementation).",
+"F72": "Propagation (changes the proposed domain event): no new event and no inline call. Remaining work is recomputed from stored data in every Portfolio and Team refresh cycle (WorkItemService.UpdateFeaturesForPortfolio and UpdateWorkItemsForTeam), exactly as it is for Default Feature Size today; Forecasting already reacts to PortfolioFeaturesRefreshed. A settings save therefore takes effect on the next refresh cycle, not at the click. The setting is classified Cost.Nothing in FetchShapingPropertyGuardTest: it shapes no fetch. Rejected: a PortfolioSettingsChanged event that forces recalculation (new edge and handler for a rule the cycle already re-evaluates; the existing sizing settings have no such event).",
+"F73": "Context map (ADR-270): the setting is Portfolio configuration, owned by Organisation set-up with the other connection-default style sizing settings; the rule is applied inside Work Items (WorkItemService refresh over Portfolio.Features); Forecasting is unchanged and reads the resulting size through the existing Feature refresh event. No new context and no new edge. One new glossary term, default Feature sizing (the on/off switch for inferring a size, distinct from default Feature size, the number); the term is recorded in the ADR-270 glossary and ARCHITECTURE.md section 4 by slice S1. UI surface (ADR-271): the Advanced tab of the Portfolio settings, inside the existing Default Feature Size group; the note surfaces on existing Feature lists and the Delivery timeline.",
+"F74": "Loading and failure looks (answers the open DESIGN item), each reusing what exists: Portfolio advanced settings keeps the existing settings-page gate (EditPortfolio gate.isLoading and its failure path); the new Switch renders from the loaded settings and so has no look of its own. Feature lists on the Portfolio and Team pages keep FeatureListDataGrid status from useFeatureList (keyed query; dimmed under a spinner, lone spinner, could-not-load message); only a tooltip sentence changes. Delivery timeline keeps its existing load and failure handling; only the bar note text changes. Delivery Feature-size chart is unchanged: it reads the recorded IsUsingDefaultSize flag, so it needs no new state. No view shows a previous answer as current: the sentence derives from the same row that is on screen.",
+"F75": "Formal verification mapping: the sizing rule is a finite pure total function of switch, Done, child count, override membership and estimate. Checker: Quint 0.33.1 (state model, run and bounded verify with behavioral mutants), because the claims are safety and exclusion only. Agda is not needed (no proof beyond the finite domain). TLA+/TLC is not needed (no temporal or fairness claim; see liveness closure). Property-based testing: not applied, because the domain is finite and fully covered by native table-style example cases (closed-world falsifier gate). Types: native bool plus a guarded selector; the invalid combination off-and-using-default is made unrepresentable by the selectors returning no Feature, and is not enforced by the type system (C# runtime checker only).",
+"F76": "Checklist items: RBAC unchanged (PortfolioWrite on the existing PUT, PortfolioRead on GET settings; the Switch sits behind the same useRbac gating). Lighthouse-Clients: updatePortfolio passes an untyped payload, no change; the absent-field rule keeps older client payloads safe. Website: one line at finalize, host-owned. No Epic. Usage data is the DEVOPS question. Object-oriented smell catalog (nw-code-design-oo) applied: Feature Envy and transaction-script placement avoided by putting the decision on Portfolio and Feature; Primitive Obsession accepted for one boolean on an entity that holds its settings as plain properties (Calisthenics rule 3 and 8 broken consciously: wrapping one boolean costs a type for no rule, EF and DTO mapping stay primitive).",
+"F77": "Switch domain: boolean, no range. Existing Portfolios migrate to true; a new Portfolio (API and create wizard) holds true; an absent wire value keeps the stored value. Nullable on the wire only (deviation from the plain-bool Portfolio properties, deliberate).",
+"F78": "Off affects only a not-Done Feature without child Work Items and the override-states rule: Done Features, Features with children and the percentile calculation are unaffected. Stored values of Default Feature Size, percentile option, history days, size-estimate field mapping and override states are never cleared by switching off.",
+"F79": "Old records are not rewritten: Delivery metric history and archived Deliveries keep the IsUsingDefaultSize flag recorded; DeliveryMetricValuesProjector and Delivery.cs are unchanged.",
 "F8": "Default sizing off: the forecast takes the 0 with no special handling",
-"F9": "default sizing of Portfolio Ocean is switched off and Feature F has no child Work Items"
+"F80": "Forecasts take size 0 with no special handling: no change to Forecasting, Delivery likelihood or the timeline beyond the note.",
+"F81": "EF migrations are additive only, generated by Create-Migration.ps1 for all providers after a backend build; no dotnet ef migrations add. The HistoricalSchemaPatch test helper lists the new column.",
+"F82": "Copy uses the configurable terms (Feature, Work Items, Portfolio) from the terminology hook; no Epic. A new backend scenario drives the application-service port IWorkItemService; a host starts only as a named skeleton or wire contract.",
+"F83": "Test budgets: default per-test and property budgets and default CI share apply; no derogation requested. Test command cwd is the repository root.",
+"F84": "Already the single selector of Features that receive an inferred size; guarding it on the switch keeps one owner. A new service would duplicate the decision.",
+"F85": "Already the single selector of the override-states rule; guarded the same way.",
+"F86": "Precedent for a nullable-on-wire boolean that keeps the stored value when absent; the new field copies the pattern.",
+"F87": "Loops over the Portfolio selectors, so it needs no edit; candidate owner rejected because the rule belongs on Portfolio.",
+"F88": "Single owner of every warning sentence shared by the list tooltip, the timeline bar and the export; the note joins it.",
+"F89": "No new dependency, module edge or owner law: the switch is a property of Portfolio read by Portfolio selectors, and the existing ArchUnit rules on module dependencies already cover the change. The one classification guard, FetchShapingPropertyGuardTest, must list the property and is an existing check extended by the oracle supports.",
+"F9": "default sizing of Portfolio Ocean is switched off and Feature F has no child Work Items",
+"F90": "No preserving move is needed: the selectors already exist on Portfolio and the settings pattern to copy (IgnoreDependencies) is in place; behaviour changes land directly.",
+"F91": "IWorkItemService.UpdateFeaturesForPortfolio(Portfolio) for sizing; PUT /api/portfolios/{id} (PortfolioController.UpdatePortfolio) and GET settings for the switch; Feature list and Delivery endpoints for the note",
+"F92": "IFeatureRepository (Save and list reads)",
+"F93": "IPortfolioRepository",
+"F94": "API and frontend point inward to Models.Portfolio and Models.Feature; WorkItemService depends on Portfolio selectors, Portfolio depends on nothing outward; DTOs read Feature; no new module edge",
+"F95": "Settings save carries a stale concurrency token",
+"F96": "Existing optimistic concurrency refusal of the PUT; the switch is not changed",
+"F97": "Settings or Feature list cannot be loaded",
+"F98": "Existing settings-page gate and FeatureListDataGrid could-not-load status; no value is shown as current",
+"F99": "What the Feature list, Team list, Delivery timeline and forecast show for one Feature after a refresh cycle: remaining and total Work Items per Team, the default-size flag, and the child-less note flag"
 },
 "product": {
 "decisions": [

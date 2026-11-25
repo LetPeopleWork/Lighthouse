@@ -1,0 +1,37 @@
+0.33.1
+exit typecheck 0
+== ds offInventsNothing
+Use --verbosity to produce more (or less) output.
+Use --seed=0x58e6a91099260629 --backend=rust to reproduce.
+== ds offSizeIsRealChildren
+Use --verbosity to produce more (or less) output.
+Use --seed=0xe198ba29012321d7 --backend=rust to reproduce.
+== ds offAssignsOnlyRealWork
+Use --verbosity to produce more (or less) output.
+Use --seed=0x30cd70effc6a029f --backend=rust to reproduce.
+== ds onChildlessIsInferred
+Use --verbosity to produce more (or less) output.
+Use --seed=0x79e2dd73b7b7f23d --backend=rust to reproduce.
+== ds onWithRealChildrenUntouched
+Use --verbosity to produce more (or less) output.
+Use --seed=0xb0978f7b05201f1a --backend=rust to reproduce.
+== m1 offInventsNothing
+Use --verbosity to produce more (or less) output.
+Use --seed=0xf9f43b7f5dd7321d --backend=rust to reproduce.
+== m1 offSizeIsRealChildren
+Use --seed=0x616fa63556d321 --backend=rust to reproduce.
+error: Invariant violated
+== m1 offAssignsOnlyRealWork
+Use --seed=0xb61a13a8a0b92dc5 --backend=rust to reproduce.
+error: Invariant violated
+== m2 offInventsNothing
+Use --seed=0x7d5b28b6aed12443 --backend=rust to reproduce.
+error: Invariant violated
+== m2 offSizeIsRealChildren
+Use --seed=0x1cdddb5f95f097de --backend=rust to reproduce.
+error: Invariant violated
+== m2 offAssignsOnlyRealWork
+Use --seed=0xf6b91c9a92837c44 --backend=rust to reproduce.
+error: Invariant violated
+
+== quint verify ds.qnt --init=init --step=step --invariant=<all five> --max-steps=2 (apalache): [ok] No violation found; run from scratchpad copy, exit 0

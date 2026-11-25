@@ -75,3 +75,18 @@ Still **Open, owner Design**: the loading and failure looks of each changed view
 | Lighthouse-Clients CLI / MCP | The Portfolio settings payload gains the switch; the Feature payloads gain nothing. The client's `updatePortfolio` passes an untyped payload through (`lighthouse-clients/packages/client/src/index.ts:2544`), so no client code change is needed to carry it. **Constraint for DESIGN:** a client or older UI that sends a Portfolio payload without the new field must leave the switch as it is (or On), never turn it off by a missing-field default. Client version bump: none expected; confirm at finalize. |
 | Website marketing surface | One line is worth it, e.g. "Turn off default Feature sizing: a Feature without child Work Items counts as 0, never a guess." No new asset needed; the settings screenshot is refreshed at finalize if the docs show it. |
 | Context map | Deferred to DESIGN (allowed at the latest there). Proposed by the Product Owner: contexts Portfolio configuration, Feature sizing and Forecasting; glossary term "default Feature sizing"; a Portfolio settings change triggers the existing Feature recalculation (domain event preferred over an inline call); UI surface the Portfolio's settings tab (ADR-271). DESIGN confirms against ADR-270 and updates it and `ARCHITECTURE.md` §4 if a term or edge is new. |
+
+## DESIGN — 2026-11-25 (AFK, propose mode)
+
+Authority: `architecture.md` (rendered from `handoff.json`), Quint model and receipt in `model/`.
+
+- **Rule owner:** `Portfolio`'s two selectors (`GetFeaturesToExtrapolate`, `GetFeaturesToOverrideWithDefaultSize`) return nothing when the new `InfersDefaultFeatureSize` is off; `WorkItemService` is unchanged.
+- **Wire:** `bool?` on `PortfolioSettingDto`, absent keeps the stored value (same as `IgnoreDependencies`), so an older client cannot switch it off. New column NOT NULL, default true (expand-only).
+- **Note (S3):** a derived `Feature.HasNoChildWorkItemsYet` on the Feature payloads, so the UI never re-derives the rule. This changes the DISCUSS checklist answer "Feature payload gains nothing": it gains one boolean. Clients pass it through.
+- **Context map:** no new context, edge or domain event (the refresh cycle already recomputes from stored settings). New glossary term "default Feature sizing" (the switch) next to "default Feature size" (the number); S1 adds it to ADR-270 and `ARCHITECTURE.md` §4. UI surface: Portfolio settings, Advanced, Default Feature Size group.
+- **Loading / failure looks:** every changed view lives inside a view that already has both (settings page gate, `FeatureListDataGrid` status, Delivery timeline); no new look.
+
+### Decisions taken in AFK mode (for the maintainer to revisit)
+
+- **Team page shows no note.** With the switch off a childless Feature carries no Team work, so it is not listed on any Team page at all; the note shows on the Portfolio Feature list and the Delivery timeline only. This follows from the confirmed rule "no Team carries work for it"; listing such Features on Team pages would be a product change.
+- The setting takes effect on the next refresh cycle, as Default Feature Size does today.
