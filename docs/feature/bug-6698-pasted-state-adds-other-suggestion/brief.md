@@ -25,7 +25,7 @@ None.
 Outcome
 
 ```text
-The value the user pasted or typed and confirmed with Enter is the value that is added; a suggestion highlighted before the input changed is never added in its place.
+When the user pastes or types a value and presses Enter, the value added is the entered text (in a matching suggestion's casing when one matches it), or the suggestion the user picked for the text now in the input; a suggestion highlighted before the input changed is never added in its place.
 ```
 
 ## Scope

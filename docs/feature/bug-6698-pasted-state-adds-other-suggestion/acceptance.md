@@ -98,16 +98,6 @@ None.
 
 ### Rows
 
-#### E1
-
-##### Promises
-
-P1
-
-```text
-When the user pastes or types a value and confirms it with Enter, the value added is exactly the value shown in the input at confirmation.
-```
-
 #### E2
 
 ##### Promises
@@ -116,6 +106,26 @@ P1
 
 ```text
 A suggestion that was highlighted before the input changed is never added in place of the pasted or typed value.
+```
+
+#### E3
+
+##### Promises
+
+P1
+
+```text
+When the user pastes or types a value with no suggestion picked for it and presses Enter, the value added is the text shown in the input; if a suggestion matches that text, the value added takes that suggestion's casing.
+```
+
+#### E4
+
+##### Promises
+
+P1
+
+```text
+When the user has picked a suggestion for the text now in the input and presses Enter, the picked suggestion is the value added.
 ```
 
 ## Charter

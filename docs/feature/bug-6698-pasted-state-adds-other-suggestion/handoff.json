@@ -43,8 +43,8 @@
 ]
 },
 "counters": {
-"E": 2,
-"F": 20,
+"E": 4,
+"F": 23,
 "P": 1,
 "S": 1
 },
@@ -76,18 +76,25 @@
 "expectations": {
 "rows": [
 {
-"id": "E1",
-"promises": [
-"P1"
-],
-"text": "F8"
-},
-{
 "id": "E2",
 "promises": [
 "P1"
 ],
 "text": "F9"
+},
+{
+"id": "E3",
+"promises": [
+"P1"
+],
+"text": "F22"
+},
+{
+"id": "E4",
+"promises": [
+"P1"
+],
+"text": "F23"
 }
 ]
 },
@@ -105,12 +112,13 @@
 "F19": "Confirming a shown suggestion and case-insensitive matching still work",
 "F2": "A state (or any list entry) that the user pastes or types and confirms with Enter is the one that gets added, never a different suggestion that was highlighted earlier.",
 "F20": "Fix that never adds the highlighted option, adding typed text only (second case would still pass; first would not)",
-"F3": "The value the user pasted or typed and confirmed with Enter is the value that is added; a suggestion highlighted before the input changed is never added in its place.",
+"F21": "When the user pastes or types a value and presses Enter, the value added is the entered text (in a matching suggestion's casing when one matches it), or the suggestion the user picked for the text now in the input; a suggestion highlighted before the input changed is never added in its place.",
+"F22": "When the user pastes or types a value with no suggestion picked for it and presses Enter, the value added is the text shown in the input; if a suggestion matches that text, the value added takes that suggestion's casing.",
+"F23": "When the user has picked a suggestion for the text now in the input and presses Enter, the picked suggestion is the value added.",
 "F4": "In a states list (and every other list built on ItemListManager), the user lets a suggestion become highlighted, then pastes or types a different value and presses Enter: the pasted or typed value is added, not the earlier highlighted suggestion.",
 "F5": "Render the list with suggestions such as 'Waiting for Deployment' and 'Waiting for Approval'; open the suggestions and highlight 'Waiting for Deployment' with the mouse (and, in a second case, with the keyboard); then paste or type 'Waiting for Reproduction' and press Enter.",
 "F6": "onAddItem is called once with 'Waiting for Reproduction'. A suggestion that the user highlights and confirms with Enter while it is still shown is still added as before, and a case-insensitive match of a typed value to a suggestion still takes the suggestion's casing.",
 "F7": "onAddItem is called with 'Waiting for Deployment' (or any suggestion other than the one matching the entered text), or is not called at all.",
-"F8": "When the user pastes or types a value and confirms it with Enter, the value added is exactly the value shown in the input at confirmation.",
 "F9": "A suggestion that was highlighted before the input changed is never added in place of the pasted or typed value."
 },
 "product": {
@@ -118,7 +126,7 @@
 {
 "id": "P1",
 "kind": "Outcome",
-"text": "F3"
+"text": "F21"
 }
 ],
 "slices": [
