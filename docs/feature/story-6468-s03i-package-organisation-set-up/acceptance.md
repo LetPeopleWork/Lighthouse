@@ -163,6 +163,41 @@ A type moved into the module but also kept in its old namespace, or a Domain can
 
 
 
+### S3
+
+##### Covers
+
+P2
+
+```text
+Run the settings, terminology and connections placement rules on the compiled assembly, the test sources and the Tracker integration edge list
+```
+
+```text
+Each of the 9 types is found only in its module namespace (4 in Application, 5 in Application.Connections), none in the loose Services namespaces; the 4 unit tests sit beside them in their layer folder with the folder namespace; Tracker integration lists exactly the ConnectionHealthCadence to IAppSettingService edge. Before the move every one of these is reported by name
+```
+
+```text
+Settings, terminology, connection defaults and connection usage live in the Organisation set-up module with their unit tests, and the application behaves as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/SettingsTerminologyAndConnectionsLiveInOrganisationSetupArchUnitTest\.cs
+
+```text
+A type copied into the module but kept in its old namespace, a connection type placed in the plain Application namespace, a unit test left in an old folder, a second or missing Tracker edge: all are named by the made-up offender checks, so none passes
+```
+
+###### Obligations
+
+
+
+
+
+
 ## Expectations
 
 ### Rows
