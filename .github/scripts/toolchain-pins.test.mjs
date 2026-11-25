@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
+import { checkScannedYamlFiles } from './scanned-yaml-files.mjs';
 import { findToolchainPinViolations } from './toolchain-pins.mjs';
 
 const REPO_ROOT = resolve(import.meta.dirname, '../..');
@@ -70,7 +71,7 @@ on:
         node-version-file: '.nvmrc'
 `,
 	Dockerfile: `ARG NODE_VERSION
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 
 FROM node:\${NODE_VERSION}-bookworm-slim AS node-builder
 WORKDIR /node
@@ -139,6 +140,66 @@ test('a tree reading every version from its single source passes', async (t) => 
 	const { root } = await tree(t);
 	const violations = await findToolchainPinViolations(root);
 	assert.deepEqual(violations, [], describeAll(violations));
+});
+
+// --- .NET SDK: every pipeline installs the 11 SDK and no unread version input lingers ----------
+
+const SDK_PIN = /^\s*-?\s*dotnet-version:\s*['"]?([^'"\s#]+)/;
+const SDK_INPUT = /^\s*dotnet_version:/;
+
+const sdkPins = (root) =>
+	checkScannedYamlFiles(root, (file, content) =>
+		content.split(/\r?\n/).flatMap((text, index) => {
+			const version = SDK_PIN.exec(text)?.[1];
+			return version === undefined ? [] : [{ file, line: index + 1, version }];
+		}),
+	);
+
+const unreadSdkInputs = (root) =>
+	checkScannedYamlFiles(root, (file, content) =>
+		content.split(/\r?\n/).flatMap((text, index) => (SDK_INPUT.test(text) ? [{ file, line: index + 1 }] : [])),
+	);
+
+const describePins = (pins) =>
+	pins.map((p) => `${p.file}:${p.line} dotnet-version ${p.version}`).join('\n') || '(none)';
+
+test('every pipeline step that installs the .NET SDK installs an 11 SDK', async () => {
+	const pins = await sdkPins(REPO_ROOT);
+	assert.ok(
+		pins.length >= 4,
+		`expected the build action and three workflows to pin the SDK, found:\n${describePins(pins)}`,
+	);
+	const stale = pins.filter((p) => !/^11\.\d+\.\d+$/.test(p.version));
+	assert.deepEqual(
+		stale,
+		[],
+		`a pipeline that installs another SDK cannot build net11.0; set these to 11.0.100:\n${describePins(stale)}`,
+	);
+});
+
+test('no pipeline declares a .NET version input that nothing reads', async () => {
+	const inputs = await unreadSdkInputs(REPO_ROOT);
+	assert.deepEqual(
+		inputs,
+		[],
+		`an unread version input can drift from the real SDK pin; delete it:\n${inputs.map((i) => `${i.file}:${i.line}`).join('\n')}`,
+	);
+});
+
+test('the SDK pin scan reports a pipeline still installing SDK 10 and a leftover version input', async (t) => {
+	const { root } = await tree(t, {
+		'.github/actions/build-backend/action.yml':
+			"runs:\n  steps:\n    - uses: actions/setup-dotnet@v5\n      with:\n        dotnet-version: '10.0.404'\n",
+		'.github/workflows/ci_packageapp.yml': "on:\n  workflow_call:\n    inputs:\n      dotnet_version:\n        default: '10'\n",
+	});
+	assert.deepEqual(
+		(await sdkPins(root)).map((p) => `${p.file}:${p.line} ${p.version}`),
+		['.github/actions/build-backend/action.yml:5 10.0.404'],
+	);
+	assert.deepEqual(
+		(await unreadSdkInputs(root)).map((i) => `${i.file}:${i.line}`),
+		['.github/workflows/ci_packageapp.yml:4'],
+	);
 });
 
 // --- Node: each seeded drift is reported at the file and line that introduced it --------------

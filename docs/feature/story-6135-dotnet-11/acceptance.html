@@ -331,6 +331,90 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>reviewer: the whole-candidate review reads both comments</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A seeded pipeline tree still pins SDK 10 and keeps the version input
+</code></pre>
+
+<pre><code>The scan reports exactly that pin and that input with file and line
+</code></pre>
+
+<pre><code>The check cannot pass by looking at nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/scripts/toolchain-pins.test.mjs::the SDK pin scan reports a pipeline still installing SDK 10 and a leftover version input</p>
+
+<pre><code>A scan that also reports non-pin lines in the same files
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<p>P5</p>
+
+<pre><code>The pipeline definitions are checked for the .NET SDK each build step installs
+</code></pre>
+
+<pre><code>Every step that installs the SDK installs an 11 SDK, so a pipeline can build net11.0
+</code></pre>
+
+<pre><code>The maintainer&#x27;s verify builds, E2E and Sonar run on the .NET 11 SDK
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/scripts/toolchain-pins.test.mjs::every pipeline step that installs the .NET SDK installs an 11 SDK</p>
+
+<pre><code>A step whose version key sits in an unscanned file; a pin written as bare major 11 is refused, and at least four pins must be found
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<p>P5</p>
+
+<pre><code>The packaging workflow inputs are checked for an unread .NET version setting
+</code></pre>
+
+<pre><code>No workflow declares a .NET version input nothing reads, so no second SDK version can drift
+</code></pre>
+
+<pre><code>Only one place names the SDK version in the pipelines
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/scripts/toolchain-pins.test.mjs::no pipeline declares a .NET version input that nothing reads</p>
+
+<pre><code>The input renamed or set to 11 under a differently spelled key
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

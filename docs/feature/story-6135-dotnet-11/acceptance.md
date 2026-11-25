@@ -210,6 +210,102 @@ Comment-only prose; a test would pin wording, which the test rules forbid
 
 reviewer\: the whole\-candidate review reads both comments
 
+### S2
+
+##### Covers
+
+P5
+
+```text
+A seeded pipeline tree still pins SDK 10 and keeps the version input
+```
+
+```text
+The scan reports exactly that pin and that input with file and line
+```
+
+```text
+The check cannot pass by looking at nothing
+```
+
+##### Disposition
+
+Tested
+
+\.github\/scripts\/toolchain\-pins\.test\.mjs\:\:the SDK pin scan reports a pipeline still installing SDK 10 and a leftover version input
+
+```text
+A scan that also reports non-pin lines in the same files
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+P5
+
+```text
+The pipeline definitions are checked for the .NET SDK each build step installs
+```
+
+```text
+Every step that installs the SDK installs an 11 SDK, so a pipeline can build net11.0
+```
+
+```text
+The maintainer's verify builds, E2E and Sonar run on the .NET 11 SDK
+```
+
+##### Disposition
+
+Tested
+
+\.github\/scripts\/toolchain\-pins\.test\.mjs\:\:every pipeline step that installs the \.NET SDK installs an 11 SDK
+
+```text
+A step whose version key sits in an unscanned file; a pin written as bare major 11 is refused, and at least four pins must be found
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+P5
+
+```text
+The packaging workflow inputs are checked for an unread .NET version setting
+```
+
+```text
+No workflow declares a .NET version input nothing reads, so no second SDK version can drift
+```
+
+```text
+Only one place names the SDK version in the pipelines
+```
+
+##### Disposition
+
+Tested
+
+\.github\/scripts\/toolchain\-pins\.test\.mjs\:\:no pipeline declares a \.NET version input that nothing reads
+
+```text
+The input renamed or set to 11 under a differently spelled key
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

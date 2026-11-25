@@ -94,12 +94,55 @@
 "stimulus": "F222",
 "user_result": "F224"
 }
+],
+"S2": [
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F229",
+"test": ".github/scripts/toolchain-pins.test.mjs::the SDK pin scan reports a pipeline still installing SDK 10 and a leftover version input"
+},
+"expected": "F227",
+"stimulus": "F226",
+"user_result": "F228"
+},
+{
+"covers": [
+"P2",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F233",
+"test": ".github/scripts/toolchain-pins.test.mjs::every pipeline step that installs the .NET SDK installs an 11 SDK"
+},
+"expected": "F231",
+"stimulus": "F230",
+"user_result": "F232"
+},
+{
+"covers": [
+"P2",
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F237",
+"test": ".github/scripts/toolchain-pins.test.mjs::no pipeline declares a .NET version input that nothing reads"
+},
+"expected": "F235",
+"stimulus": "F234",
+"user_result": "F236"
+}
 ]
 },
 "counters": {
 "D": 12,
 "E": 7,
-"F": 225,
+"F": 237,
 "K": 2,
 "P": 7,
 "S": 4,
@@ -1206,7 +1249,19 @@
 "F223": "Each states what is true on .NET 11 in plain words, and no new .NET 11 cookie API is adopted",
 "F224": "A maintainer reading the code is not told a .NET 10 fact that no longer holds",
 "F225": "Comment-only prose; a test would pin wording, which the test rules forbid",
+"F226": "A seeded pipeline tree still pins SDK 10 and keeps the version input",
+"F227": "The scan reports exactly that pin and that input with file and line",
+"F228": "The check cannot pass by looking at nothing",
+"F229": "A scan that also reports non-pin lines in the same files",
 "F23": "Adopting new .NET 11 APIs, for example the first-class cookie Partitioned property that Program.cs works around today. Possible follow-up only.",
+"F230": "The pipeline definitions are checked for the .NET SDK each build step installs",
+"F231": "Every step that installs the SDK installs an 11 SDK, so a pipeline can build net11.0",
+"F232": "The maintainer's verify builds, E2E and Sonar run on the .NET 11 SDK",
+"F233": "A step whose version key sits in an unscanned file; a pin written as bare major 11 is refused, and at least four pins must be found",
+"F234": "The packaging workflow inputs are checked for an unread .NET version setting",
+"F235": "No workflow declares a .NET version input nothing reads, so no second SDK version can drift",
+"F236": "Only one place names the SDK version in the pipelines",
+"F237": "The input renamed or set to 11 under a differently spelled key",
 "F24": "Any change to routes, DTO shapes, serialized responses, UI pixels or topologies; this is a behaviour-free upgrade.",
 "F25": "Historical architecture briefs, diagrams and decision records that name .NET 10 as history stay unchanged. Release notes are written at release time, not here.",
 "F26": "DISCOVER and DIVERGE are skipped for this Feature.",
