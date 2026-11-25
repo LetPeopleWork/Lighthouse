@@ -1,0 +1,129 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F13",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/ZeroDefaultFeatureSizeTest.cs::A_Feature_whose_default_size_is_zero_is_not_listed_on_any_Team_but_stays_in_its_Portfolio"
+},
+"expected": "F11",
+"stimulus": "F10",
+"user_result": "F12"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F17",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/ZeroDefaultFeatureSizeTest.cs::A_Feature_with_a_tracker_estimate_above_zero_still_carries_it_for_its_Teams_while_the_default_size_is_zero"
+},
+"expected": "F15",
+"stimulus": "F14",
+"user_result": "F16"
+}
+]
+},
+"counters": {
+"E": 2,
+"F": 17,
+"P": 1,
+"S": 1
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/ZeroDefaultFeatureSizeTest.cs",
+"public_oracle": {
+"expected": "F6",
+"falsifier": "F7",
+"promises": [
+"P1"
+],
+"stimulus": "F5"
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/WorkItems/Application/WorkItemService.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ZeroDefaultFeatureSizeTest"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F8"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F9"
+}
+]
+},
+"facts": {
+"F1": "Features whose default size works out to 0 still get a 0/0 work row for every team (or the Owning Team / Feature Owner team), so they show on each team's Features tab although no team has work for them. They should not appear on any team; they should still appear on the Portfolio itself.",
+"F10": "The owner saves a Portfolio with default sizing on and default Feature size 0 (no Owning Team, an Owning Team, or a Feature Owner field naming a Team); it holds an open Feature without child Work Items and without an estimate; the Portfolio is refreshed",
+"F11": "The Feature has no work row for any Team and is listed on no Team, is still marked as sized by the default, and is still in the Portfolio",
+"F12": "The Feature appears on the Portfolio but on no Team's Features tab",
+"F13": "A fix that removes the Feature from the Portfolio, or clears the default-size flag, or only handles the fallback teams but still gives the Owning Team or Feature Owner team a 0/0 row, would fail here; a fix that left the Team list empty but kept a 0/0 row would also fail",
+"F14": "Same Portfolio settings (default Feature size 0, default sizing on, three Team placements); the open Feature without child Work Items has a tracker estimate of 9; the Portfolio is refreshed",
+"F15": "The Feature still carries 9 remaining Work Items for its Team(s): shared by both Teams, or all with the Owning Team, or all with the Team named in the Feature Owner field",
+"F16": "A Feature with an estimate stays listed on the Teams that carry its work",
+"F17": "A fix that skips Team assignment for every default-sized Feature regardless of estimate would fail; passes today as a guard (already satisfied behaviour)",
+"F2": "A team's Features tab lists only Features that carry work for that team",
+"F3": "A Feature whose default size works out to 0 is not shown on any Team, and still shows on its Portfolio",
+"F4": "After a Portfolio refresh, an open Feature without child Work Items whose size works out to 0 (no estimate, default Feature size 0, default sizing on) carries no work row for any Team (not for the fallback teams, not for the Portfolio's Owning Team, not for teams named in the Feature Owner field), so it is not listed on any Team's Features; it is still marked as sized by the default and still belongs to the Portfolio",
+"F5": "Save a Portfolio with default sizing on and default Feature size 0 (once with no Owning Team, once with an Owning Team, once with a Feature Owner field naming a Team), give it an open Feature with no child Work Items and no estimate, refresh the Portfolio through the WorkItemService",
+"F6": "The Feature has no FeatureWork row for any Team, IsUsingDefaultFeatureSize is true, the Feature is still in the Portfolio; a Feature with an estimate above 0 under the same Portfolio still carries that estimate for its Team(s)",
+"F7": "The Feature carries a 0/0 FeatureWork row for any Team (fallback, Owning Team or Feature Owner), or loses IsUsingDefaultFeatureSize, or a Feature with an estimate above 0 loses its Team work",
+"F8": "A Feature whose default size works out to 0 does not appear in the Features list of any Team. Observable: open each Team's Features list and check that the zero-size Feature is absent from all of them.",
+"F9": "A Feature whose default size works out to 0 still appears in the Feature list of its Portfolio. Observable: open the Portfolio's Feature list and check that the zero-size Feature is present."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+}
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F4",
+"promises": [
+"P1"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "bug-6697-zero-size-features-on-teams",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
