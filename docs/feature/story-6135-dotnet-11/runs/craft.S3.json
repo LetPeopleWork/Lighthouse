@@ -1,0 +1,1 @@
+{"files": [{"path": "Dockerfile", "change": "Modified"}], "commands": [{"command": "sh -c 'grep -n \"^FROM.*dotnet\" Dockerfile; ! grep -n \":10.0\" Dockerfile'", "exit": 0}], "outcome": "accepted", "diagnostic": "Dockerfile lines 5 and 13 moved to aspnet:11.0 and sdk:11.0; no :10.0 left. Docker build and run left to host. No refactor.", "blocked_by": null, "slice": "S3"}

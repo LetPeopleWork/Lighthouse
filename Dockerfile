@@ -2,7 +2,7 @@
 # NODE_VERSION has no default on purpose, so a build that does not pass it fails
 # instead of quietly using some other Node. This check only warns about exactly that.
 ARG NODE_VERSION
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/aspnet:11.0 AS base
 USER app
 WORKDIR /app
 EXPOSE 80 443
@@ -10,7 +10,7 @@ EXPOSE 80 443
 # Copy the default certificate
 COPY ["Lighthouse.Backend/Lighthouse.Backend/certs/LighthouseCert.pfx", "/app/certs/LighthouseCert.pfx"]
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 ARG BUILD_CONFIGURATION=Release
 ARG VERSION=0.0.1
 WORKDIR /src
