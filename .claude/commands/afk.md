@@ -101,8 +101,9 @@ are reviewed is complete.
       2. `git fetch` and check `origin/main`. If it moved and the push would need a rebase or merge,
          that is a stop ("Trunk moved"): never rebase or merge on your own.
       3. Push, move the slice's Story to Resolved (`/ado-sync`), and start watching the CI run in the
-         background with `/clean-ci`'s Step 3 poll loop (Bash `run_in_background`, or a `ctx_shell`
-         background job plus a one-shot `CronCreate` check, see "Timers"). **Never use
+         background by invoking `/clean-ci` and following its Step 3: rounds of
+         `.claude/scripts/ci-poll-round.sh` under `Monitor`, re-armed until there is an answer. Never use a
+         home-made watcher, and never a guessed `CronCreate` check time. **Never use
          `gh run watch`**: on `main` the Standalone packaging jobs park at the release-approval gate
          (`waiting`), so the watch never exits and the Story stays Resolved for hours. Carry on with
          the next slice meanwhile; do not wait for CI.

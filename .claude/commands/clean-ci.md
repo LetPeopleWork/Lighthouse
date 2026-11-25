@@ -65,15 +65,20 @@ Do NOT sit on a long blocking `sleep`, and do NOT wait on `gh run watch`. On `ma
 packaging jobs park at a release-approval gate (`status: waiting`), so the run never completes and the
 watcher never exits. An agent waiting on its exit waits forever, even once everything else is green.
 
-Instead, run a poll loop that exits as soon as there is an answer. Launch it via Bash with
-`run_in_background: true`; you are woken once, when it exits:
+Instead, poll in **rounds**. lean-ctx kills any shell after 120 s, and that includes a Bash
+`run_in_background` job and a `Monitor`. One loop that waits for the whole run is killed after 2 minutes
+(exit 137), silently, and nothing wakes you. So run one round at a time with `.claude/scripts/ci-poll-round.sh`.
+Each round polls for about 90 s, prints one line and exits.
+
+Start each round with `Monitor`, with `timeout_ms: 115000`. You are woken when the round ends:
 
 ```bash
-until s=$(gh run view <id> -R LetPeopleWork/Lighthouse --json jobs -q '[.jobs[] | select(.conclusion=="failure" or .conclusion=="timed_out" or .conclusion=="cancelled" or .conclusion=="action_required")] | length') \
-  && p=$(gh run view <id> -R LetPeopleWork/Lighthouse --json jobs -q '[.jobs[] | select(.status=="in_progress" or .status=="queued" or .status=="pending")] | length') \
-  && { [ "$s" -gt 0 ] || [ "$p" -eq 0 ]; }; do sleep 60; done; echo "failed=$s pending=$p"
+bash .claude/scripts/ci-poll-round.sh <id>
 ```
 
+- `still-running pending=N`: no answer yet. Start the next round right away. Never put a guessed wait
+  between rounds.
+- `exit 137` or an expiry notice: the round was killed. Start the next round; it is not a CI result.
 - `failed>0`: a job failed. Go to Step 4 right away; do not wait for the rest.
 - `failed=0 pending=0`: everything except the release gates is done. Re-run Step 2. It lands on GREEN,
   or on WAITING ON RELEASE GATE when only `waiting` jobs remain.
