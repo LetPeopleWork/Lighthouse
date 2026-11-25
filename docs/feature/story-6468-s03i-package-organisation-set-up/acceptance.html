@@ -323,6 +323,116 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read every outbound rule and outbound list of Work Items, Flow metrics, Forecasting, Promises, Refinement, Reports, Access and Licensing, and the compiled edges of Work Items into set-up.
+</code></pre>
+
+<pre><code>No downstream rule reads set-up&#x27;s Application or Domain as foreign and no downstream list names an edge into set-up, while each rule still reads one named foreign namespace that is not set-up (the loose services, Licensing, Access, Work Items, the data layer or a set-up adapter) and Work Items still reaches set-up&#x27;s settings and Feature ordering in the compiled code. RED today: Work Items&#x27; list names RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering, and Work Items&#x27; target reads all four set-up namespaces as foreign.
+</code></pre>
+
+<pre><code>Contexts that build on Organisation set-up use its settings, calendar and Feature ordering without an exception on a list, and still cannot reach anything else unseen.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<pre><code>A downstream rule that admits set-up and also some other foreign namespace than the one checked for that rule.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read Tracker integration&#x27;s other-contexts rule and its list, and apply the rule to a made-up Tracker integration type that asks the settings.
+</code></pre>
+
+<pre><code>Tracker integration still reads all four set-up namespaces as another context, its list holds exactly the connection-health cadence edge into the settings, and the made-up type&#x27;s edge to the settings is named.
+</code></pre>
+
+<pre><code>Tracker integration keeps translating what the trackers send; a second dependency on set-up is caught before it ships.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<pre><code>A Tracker integration type reaching set-up only through an event declaration or a named attribute argument, which the IL reader does not see.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Read every construction of a Team deleted, blackout change, Feature ordering change or Feature rank change event in the compiled product, and in a made-up controller that publishes a blackout change.
+</code></pre>
+
+<pre><code>Outside set-up&#x27;s Application only the Team controller constructs Team deleted, exactly as listed, and the made-up controller&#x27;s blackout change is named.
+</code></pre>
+
+<pre><code>No second place can announce a set-up change that set-up never made.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs</p>
+
+<pre><code>An event built by reflection or by a factory in another assembly, which no constructor call in the product&#x27;s IL shows.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run set-up&#x27;s own boundary rules and the placement check of its unit tests on the compiled product and the test project.
+</code></pre>
+
+<pre><code>Every set-up type lives in its layer and none is left under Services; set-up&#x27;s Domain reaches only the kernel and the base library; its Application reaches the API, adapters, the data layer, EF Core and downstream contexts only along the listed edges (Feature ranking and its seeder into the database, the connection save into Work Items&#x27; fetch fingerprint and EF Core); Tracker integration reaches set-up only along the cadence edge; each deleted entry and a made-up stale entry are named; the nine moved unit tests sit in their layer folder with its namespace, and a made-up misplaced tree is reported.
+</code></pre>
+
+<pre><code>Organisation set-up keeps its own boundaries as it grows, and its tests are found beside it.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs</p>
+
+<pre><code>A new set-up type that no layer list names, since the layer rule checks the listed types only.
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

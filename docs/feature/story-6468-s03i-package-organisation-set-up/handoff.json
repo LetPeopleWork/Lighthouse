@@ -117,13 +117,87 @@
 "stimulus": "F244",
 "user_result": "F246"
 }
+],
+"S4": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5",
+"T4",
+"L5/F189",
+"L5/F190"
+],
+"still_passes_if": "F251",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
+},
+"expected": "F249",
+"stimulus": "F248",
+"user_result": "F250"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5",
+"T4",
+"L5/F191",
+"L5/F192"
+],
+"still_passes_if": "F255",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
+},
+"expected": "F253",
+"stimulus": "F252",
+"user_result": "F254"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5",
+"T4",
+"L5/F193"
+],
+"still_passes_if": "F259",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
+},
+"expected": "F257",
+"stimulus": "F256",
+"user_result": "F258"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T5"
+],
+"still_passes_if": "F263",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs"
+},
+"expected": "F261",
+"stimulus": "F260",
+"user_result": "F262"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 247,
+"F": 263,
 "K": 9,
 "L": 6,
 "P": 4,
@@ -2725,8 +2799,24 @@
 "F245": "Each of the 9 types is found only in its module namespace (4 in Application, 5 in Application.Connections), none in the loose Services namespaces; the 4 unit tests sit beside them in their layer folder with the folder namespace; Tracker integration lists exactly the ConnectionHealthCadence to IAppSettingService edge. Before the move every one of these is reported by name",
 "F246": "Settings, terminology, connection defaults and connection usage live in the Organisation set-up module with their unit tests, and the application behaves as before",
 "F247": "A type copied into the module but kept in its old namespace, a connection type placed in the plain Application namespace, a unit test left in an old folder, a second or missing Tracker edge: all are named by the made-up offender checks, so none passes",
+"F248": "Read every outbound rule and outbound list of Work Items, Flow metrics, Forecasting, Promises, Refinement, Reports, Access and Licensing, and the compiled edges of Work Items into set-up.",
+"F249": "No downstream rule reads set-up's Application or Domain as foreign and no downstream list names an edge into set-up, while each rule still reads one named foreign namespace that is not set-up (the loose services, Licensing, Access, Work Items, the data layer or a set-up adapter) and Work Items still reaches set-up's settings and Feature ordering in the compiled code. RED today: Work Items' list names RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering, and Work Items' target reads all four set-up namespaces as foreign.",
 "F25": "D-6 Nothing of Team and Portfolio moves; no unit, level or event change. Their settings services move (AppSettingService, ConnectionSaveService, WorkTrackingSystemConnectionUsage). The brief IN line narrows accordingly (amended in S5).",
+"F250": "Contexts that build on Organisation set-up use its settings, calendar and Feature ordering without an exception on a list, and still cannot reach anything else unseen.",
+"F251": "A downstream rule that admits set-up and also some other foreign namespace than the one checked for that rule.",
+"F252": "Read Tracker integration's other-contexts rule and its list, and apply the rule to a made-up Tracker integration type that asks the settings.",
+"F253": "Tracker integration still reads all four set-up namespaces as another context, its list holds exactly the connection-health cadence edge into the settings, and the made-up type's edge to the settings is named.",
+"F254": "Tracker integration keeps translating what the trackers send; a second dependency on set-up is caught before it ships.",
+"F255": "A Tracker integration type reaching set-up only through an event declaration or a named attribute argument, which the IL reader does not see.",
+"F256": "Read every construction of a Team deleted, blackout change, Feature ordering change or Feature rank change event in the compiled product, and in a made-up controller that publishes a blackout change.",
+"F257": "Outside set-up's Application only the Team controller constructs Team deleted, exactly as listed, and the made-up controller's blackout change is named.",
+"F258": "No second place can announce a set-up change that set-up never made.",
+"F259": "An event built by reflection or by a factory in another assembly, which no constructor call in the product's IL shows.",
 "F26": "D-7 Rules first: EXTEND the shared NamespaceMoveLaw (it already carries PatternDeclaration Context, Place and Composite roles) with an Organisation set-up map and a per-pattern declaration. For every regex-valued const or static readonly string field and every moved type, the law evaluates the field against its declared subject (Namespace or FullName; an undeclared field is evaluated on both and a match on either fails until declared). A field whose old subject matches carries a role: Context must also match the new subject (S1 widens Namespace fields with the alternative for Modules.OrganisationSetup, FullName fields with the new full name), Place must not match the new subject. Composite fields are declared CompositeOf their component and follow it by reference. String fields equal to an old namespace or old full name take roles by equality. Inline method-body literals are caught only by the literal sweep, whose rename list is fixed at S1 from the pre-move grep. Rejected: a text sweep alone (misses the loose-namespace patterns, which name no type) and plain widening of every match (wrong for Place patterns).",
+"F260": "Run set-up's own boundary rules and the placement check of its unit tests on the compiled product and the test project.",
+"F261": "Every set-up type lives in its layer and none is left under Services; set-up's Domain reaches only the kernel and the base library; its Application reaches the API, adapters, the data layer, EF Core and downstream contexts only along the listed edges (Feature ranking and its seeder into the database, the connection save into Work Items' fetch fingerprint and EF Core); Tracker integration reaches set-up only along the cadence edge; each deleted entry and a made-up stale entry are named; the nine moved unit tests sit in their layer folder with its namespace, and a made-up misplaced tree is reported.",
+"F262": "Organisation set-up keeps its own boundaries as it grows, and its tests are found beside it.",
+"F263": "A new set-up type that no layer list names, since the layer rule checks the listed types only.",
 "F28": "D-9 New rules: OrganisationSetupModuleBoundariesArchUnitTest on the shared ModuleRules (R-OS1 layer membership, R-OS2 Domain reaches kernel and base library only, R-OS3 Application reaches no API, module adapter or downstream context except listed edges, EF Core only along listed edges, R-OS4 Tracker integration reaches set-up only along its listed edge, R-OS5 set-up events constructed only in set-up Application except the listed TeamController to TeamDeleted edge, R-OS6 downstream allowance by namespace), lists inline by full type name, compared both ways, only shrink, ModuleWording for Organisation set-up. FeatureOrderingSingleSource, RecurringBlackoutEventsSeam, ConnectionFetchShapeChangedSinglePublisher, OptionalFeatureApplierSeam, BlackoutForecastShiftSeam and CategoryListOwnershipGuard keep every assertion and change only through classified patterns and renamed literals.",
 "F29": "D-10 The 9 unit tests move with production to Lighthouse.Backend.Tests/Modules/OrganisationSetup/{Domain, Application, Application/Connections} (namespace = folder), including the misplaced API/TerminologyServiceTest and Services/BlackoutPeriodServiceTest; OrganisationSetupUnitTestPlacementTest keeps them there from S4. API, integration, ManualSorting, container and seeder tests stay and change only using lines. The test-improvement rule is waived for move-only and using-only edits; a mock-heavy moved test is noted for the reviewer, not rewritten.",
 "F3": "Every architecture rule keeps its verdict for every moving Organisation set-up type through the move, and every rule pattern that matches a moving type's old name is classified as standing for the context or for the place.",

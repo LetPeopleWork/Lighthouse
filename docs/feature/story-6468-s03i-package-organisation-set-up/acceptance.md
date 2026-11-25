@@ -198,6 +198,132 @@ A type copied into the module but kept in its old namespace, a connection type p
 
 
 
+### S4
+
+##### Covers
+
+P3
+
+```text
+Read every outbound rule and outbound list of Work Items, Flow metrics, Forecasting, Promises, Refinement, Reports, Access and Licensing, and the compiled edges of Work Items into set-up.
+```
+
+```text
+No downstream rule reads set-up's Application or Domain as foreign and no downstream list names an edge into set-up, while each rule still reads one named foreign namespace that is not set-up (the loose services, Licensing, Access, Work Items, the data layer or a set-up adapter) and Work Items still reaches set-up's settings and Feature ordering in the compiled code. RED today: Work Items' list names RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering, and Work Items' target reads all four set-up namespaces as foreign.
+```
+
+```text
+Contexts that build on Organisation set-up use its settings, calendar and Feature ordering without an exception on a list, and still cannot reach anything else unseen.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupIsAnOpenHostArchUnitTest\.cs
+
+```text
+A downstream rule that admits set-up and also some other foreign namespace than the one checked for that rule.
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Read Tracker integration's other-contexts rule and its list, and apply the rule to a made-up Tracker integration type that asks the settings.
+```
+
+```text
+Tracker integration still reads all four set-up namespaces as another context, its list holds exactly the connection-health cadence edge into the settings, and the made-up type's edge to the settings is named.
+```
+
+```text
+Tracker integration keeps translating what the trackers send; a second dependency on set-up is caught before it ships.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupIsAnOpenHostArchUnitTest\.cs
+
+```text
+A Tracker integration type reaching set-up only through an event declaration or a named attribute argument, which the IL reader does not see.
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Read every construction of a Team deleted, blackout change, Feature ordering change or Feature rank change event in the compiled product, and in a made-up controller that publishes a blackout change.
+```
+
+```text
+Outside set-up's Application only the Team controller constructs Team deleted, exactly as listed, and the made-up controller's blackout change is named.
+```
+
+```text
+No second place can announce a set-up change that set-up never made.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupIsAnOpenHostArchUnitTest\.cs
+
+```text
+An event built by reflection or by a factory in another assembly, which no constructor call in the product's IL shows.
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P3
+
+```text
+Run set-up's own boundary rules and the placement check of its unit tests on the compiled product and the test project.
+```
+
+```text
+Every set-up type lives in its layer and none is left under Services; set-up's Domain reaches only the kernel and the base library; its Application reaches the API, adapters, the data layer, EF Core and downstream contexts only along the listed edges (Feature ranking and its seeder into the database, the connection save into Work Items' fetch fingerprint and EF Core); Tracker integration reaches set-up only along the cadence edge; each deleted entry and a made-up stale entry are named; the nine moved unit tests sit in their layer folder with its namespace, and a made-up misplaced tree is reported.
+```
+
+```text
+Organisation set-up keeps its own boundaries as it grows, and its tests are found beside it.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupModuleBoundariesArchUnitTest\.cs
+
+```text
+A new set-up type that no layer list names, since the layer rule checks the listed types only.
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
