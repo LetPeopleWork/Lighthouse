@@ -275,49 +275,28 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Extend</p>
 
-<pre><code>Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)
+<pre><code>Narrow the Reports rule constant to Modules.Reports only (and in the joint Tracker integration pattern drop only Reports from the Services alternative; Auth, Authorization and Licensing stay)
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs</p>
 
 <p>Extend</p>
 
-<pre><code>Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)
+<pre><code>Narrow the Reports rule constant to Modules.Reports only (and in the joint Tracker integration pattern drop only Reports from the Services alternative; Auth, Authorization and Licensing stay)
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs</p>
 
 <p>Extend</p>
 
-<pre><code>Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)
+<pre><code>Narrow the Reports rule constant to Modules.Reports only (and in the joint Tracker integration pattern drop only Reports from the Services alternative; Auth, Authorization and Licensing stay)
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs</p>
 
 <p>Extend</p>
 
-<pre><code>Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Settled by the move: the file asserts old-or-new sight or an old-path rename list and is removed, as the previous package did
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsPatternRoles.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Settled by the move: the file asserts old-or-new sight or an old-path rename list and is removed, as the previous package did
-</code></pre>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs</p>
-
-<p>Extend</p>
-
-<pre><code>Settled by the move: the file asserts old-or-new sight or an old-path rename list and is removed, as the previous package did
+<pre><code>Narrow the Reports rule constant to Modules.Reports only (and in the joint Tracker integration pattern drop only Reports from the Services alternative; Auth, Authorization and Licensing stay)
 </code></pre>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs</p>
@@ -351,7 +330,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <pre><code>Run ReportsRulesNameOnlyTheModuleArchUnitTest through dotnet test: it sweeps every rule constant of the test assembly and every string literal of the test sources for the old Reports forms (dotted name, regex alternative, group member, slash folder path) with an empty allowance list and exact-path exclusions, matches each narrowed Reports alternative against the types of the module, and runs the sweep over made-up offenders in each form.
 </code></pre>
 
-<pre><code>No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each narrowed alternative still matches a Reports module type; the joint Tracker integration pattern no longer names Reports, Auth, Authorization or Licensing under Services; each made-up former form is named and a Modules-only twin is not.
+<pre><code>No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each narrowed alternative still matches a Reports module type; the joint Tracker integration pattern no longer names Reports under Services, keeps its Auth, Authorization and Licensing alternatives and still names Modules.Reports; each made-up former form is named and a Modules-only twin is not.
 </code></pre>
 
 <pre><code>Today the old-namespace alternatives in ReportsPattern, RefinementReportsAccessAndLicensing and the Access and Licensing RefinementAndReports patterns still match, so the sweep fails and names each; a rule narrowed in its constant but kept as a literal, or a narrowed alternative anchored to no type, is named by the made-up offenders.
@@ -359,9 +338,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <h5>Promises</h5>
 
-<p>P1</p>
-
-<p>P3</p>
+<p>None.</p>
 
 <h4>Prefactoring</h4>
 
@@ -414,7 +391,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>Extend</p>
 
-<pre><code>Joint pattern owner for Tracker integration; drop Reports and the dead Auth, Authorization, Licensing alternatives
+<pre><code>Joint pattern owner for Tracker integration; Reports leaves the Services alternative, Auth, Authorization and Licensing stay, and the pattern still names Modules.Reports
 </code></pre>
 
 <p>RefinementAndReports</p>
@@ -442,33 +419,6 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 <p>Extend</p>
 
 <pre><code>Owner of its Reports pattern constant; narrowed here
-</code></pre>
-
-<p>ReportsRulesSeeTheMoveArchUnitTest</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs:1</p>
-
-<p>Replace</p>
-
-<pre><code>Old-or-new sight law is settled by the move; removed
-</code></pre>
-
-<p>ReportsPatternRoles</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsPatternRoles.cs:1</p>
-
-<p>Replace</p>
-
-<pre><code>Role map for the old-or-new sight law; removed with it
-</code></pre>
-
-<p>ReportsStringsTheMoveRenames</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs:1</p>
-
-<p>Replace</p>
-
-<pre><code>Old-path rename list ends empty after the move; removed
 </code></pre>
 
 <p>ReportsLivesInItsModuleArchUnitTest</p>
@@ -506,7 +456,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedN
 
 <p>Changed</p>
 
-<pre><code>Reports and dead alternatives removed
+<pre><code>Reports leaves the Services alternative; Auth, Authorization and Licensing stay
 </code></pre>
 
 <p>architecture-rule-constant</p>

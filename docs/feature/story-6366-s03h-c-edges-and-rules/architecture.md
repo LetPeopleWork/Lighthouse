@@ -135,7 +135,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ModuleBoundariesA
 Extend
 
 ```text
-Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)
+Narrow the Reports rule constant to Modules.Reports only (and in the joint Tracker integration pattern drop only Reports from the Services alternative; Auth, Authorization and Licensing stay)
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegrationModuleBoundariesArchUnitTest\.cs
@@ -143,7 +143,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegratio
 Extend
 
 ```text
-Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)
+Narrow the Reports rule constant to Modules.Reports only (and in the joint Tracker integration pattern drop only Reports from the Services alternative; Auth, Authorization and Licensing stay)
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBoundariesArchUnitTest\.cs
@@ -151,7 +151,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/AccessModuleBound
 Extend
 
 ```text
-Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)
+Narrow the Reports rule constant to Modules.Reports only (and in the joint Tracker integration pattern drop only Reports from the Services alternative; Auth, Authorization and Licensing stay)
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBoundariesArchUnitTest\.cs
@@ -159,31 +159,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/LicensingModuleBo
 Extend
 
 ```text
-Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesSeeTheMoveArchUnitTest\.cs
-
-Extend
-
-```text
-Settled by the move: the file asserts old-or-new sight or an old-path rename list and is removed, as the previous package did
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsPatternRoles\.cs
-
-Extend
-
-```text
-Settled by the move: the file asserts old-or-new sight or an old-path rename list and is removed, as the previous package did
-```
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsStringsTheMoveRenames\.cs
-
-Extend
-
-```text
-Settled by the move: the file asserts old-or-new sight or an old-path rename list and is removed, as the previous package did
+Narrow the Reports rule constant to Modules.Reports only (and in the joint Tracker integration pattern drop only Reports from the Services alternative; Auth, Authorization and Licensing stay)
 ```
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsLivesInItsModuleArchUnitTest\.cs
@@ -222,7 +198,7 @@ Run ReportsRulesNameOnlyTheModuleArchUnitTest through dotnet test: it sweeps eve
 ```
 
 ```text
-No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each narrowed alternative still matches a Reports module type; the joint Tracker integration pattern no longer names Reports, Auth, Authorization or Licensing under Services; each made-up former form is named and a Modules-only twin is not.
+No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each narrowed alternative still matches a Reports module type; the joint Tracker integration pattern no longer names Reports under Services, keeps its Auth, Authorization and Licensing alternatives and still names Modules.Reports; each made-up former form is named and a Modules-only twin is not.
 ```
 
 ```text
@@ -231,9 +207,7 @@ Today the old-namespace alternatives in ReportsPattern, RefinementReportsAccessA
 
 ##### Promises
 
-P1
-
-P3
+None.
 
 #### Prefactoring
 
@@ -292,7 +266,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegratio
 Extend
 
 ```text
-Joint pattern owner for Tracker integration; drop Reports and the dead Auth, Authorization, Licensing alternatives
+Joint pattern owner for Tracker integration; Reports leaves the Services alternative, Auth, Authorization and Licensing stay, and the pattern still names Modules.Reports
 ```
 
 RefinementAndReports
@@ -323,36 +297,6 @@ Extend
 
 ```text
 Owner of its Reports pattern constant; narrowed here
-```
-
-ReportsRulesSeeTheMoveArchUnitTest
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsRulesSeeTheMoveArchUnitTest\.cs\:1
-
-Replace
-
-```text
-Old-or-new sight law is settled by the move; removed
-```
-
-ReportsPatternRoles
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsPatternRoles\.cs\:1
-
-Replace
-
-```text
-Role map for the old-or-new sight law; removed with it
-```
-
-ReportsStringsTheMoveRenames
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsStringsTheMoveRenames\.cs\:1
-
-Replace
-
-```text
-Old-path rename list ends empty after the move; removed
 ```
 
 ReportsLivesInItsModuleArchUnitTest
@@ -394,7 +338,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TrackerIntegratio
 Changed
 
 ```text
-Reports and dead alternatives removed
+Reports leaves the Services alternative; Auth, Authorization and Licensing stay
 ```
 
 architecture\-rule\-constant

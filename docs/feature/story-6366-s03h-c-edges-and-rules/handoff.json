@@ -44,7 +44,7 @@
 "counters": {
 "D": 5,
 "E": 5,
-"F": 128,
+"F": 132,
 "K": 2,
 "L": 2,
 "P": 3,
@@ -106,12 +106,8 @@
 ]
 },
 "public_oracle": {
-"expected": "F69",
+"expected": "F130",
 "falsifier": "F70",
-"promises": [
-"P1",
-"P3"
-],
 "stimulus": "F68"
 },
 "records": {
@@ -204,7 +200,7 @@
 "decision": "Changed",
 "kind": "architecture-rule-constant",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:60",
-"reason": "F85"
+"reason": "F132"
 },
 {
 "decision": "Changed",
@@ -298,7 +294,7 @@
 {
 "decision": "Extend",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:60",
-"reason": "F75",
+"reason": "F131",
 "symbol": "RefinementReportsAccessAndLicensing"
 },
 {
@@ -320,24 +316,6 @@
 "symbol": "RefinementAndReports"
 },
 {
-"decision": "Replace",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs:1",
-"reason": "F79",
-"symbol": "ReportsRulesSeeTheMoveArchUnitTest"
-},
-{
-"decision": "Replace",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsPatternRoles.cs:1",
-"reason": "F80",
-"symbol": "ReportsPatternRoles"
-},
-{
-"decision": "Replace",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs:1",
-"reason": "F81",
-"symbol": "ReportsStringsTheMoveRenames"
-},
-{
 "decision": "Extend",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs:1",
 "reason": "F82",
@@ -355,37 +333,22 @@
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
-"reason": "F64"
+"reason": "F129"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
-"reason": "F64"
+"reason": "F129"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessModuleBoundariesArchUnitTest.cs",
-"reason": "F64"
+"reason": "F129"
 },
 {
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
-"reason": "F64"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs",
-"reason": "F65"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsPatternRoles.cs",
-"reason": "F65"
-},
-{
-"change": "Extend",
-"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs",
-"reason": "F65"
+"reason": "F129"
 },
 {
 "change": "Extend",
@@ -610,7 +573,11 @@
 "F126": "Narrowing every Reports rule constant to Modules.Reports only and removing Reports from the Services alternative of the joint Tracker integration pattern; retiring feature A's move-time helpers now that the move is done; the ReportsModuleBoundariesArchUnitTest rule set R-RP1 to R-RP6 on ModuleRules with IL-measured baselines and made-up offenders.",
 "F127": "The Reports unit-test placement test the DESIGN names for S3 is not written again: feature B's ReportsUnitTestsBesideTheModuleArchUnitTest already pins the 18 unit tests to their layer folders and the staying tests in place. The architecture documents are prose and go into the finalize checklist, because nwdes accepts prose-only slices only under nWave's own folders. The old Auth, Authorization and Licensing alternatives of the joint Tracker integration pattern stay (host revision 2026-11-25): AccessAndLicensingRulesSeeTheModulesArchUnitTest requires the Tracker integration rule to keep catching a connector reaching the old Access and Licensing places, as it does for every other context, so dropping them would loosen a rule.",
 "F128": "C1: no rule constant or string literal in the test project matches the old Reports namespaces or paths any more; every Reports rule names Modules.Reports only and keeps its verdict, and the joint Tracker integration pattern keeps its old Access and Licensing guard without Reports.",
+"F129": "Narrow the Reports rule constant to Modules.Reports only (and in the joint Tracker integration pattern drop only Reports from the Services alternative; Auth, Authorization and Licensing stay)",
 "F13": "C2: Reports has its own module rules R-RP1 to R-RP6 on ModuleRules, read from the IL with measured inline lists, and each catches a made-up offender in Reports' own wording.",
+"F130": "No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each narrowed alternative still matches a Reports module type; the joint Tracker integration pattern no longer names Reports under Services, keeps its Auth, Authorization and Licensing alternatives and still names Modules.Reports; each made-up former form is named and a Modules-only twin is not.",
+"F131": "Joint pattern owner for Tracker integration; Reports leaves the Services alternative, Auth, Authorization and Licensing stay, and the pattern still names Modules.Reports",
+"F132": "Reports leaves the Services alternative; Auth, Authorization and Licensing stay",
 "F14": "A new edge into or out of Reports is caught by its own rules",
 "F2": "Reports' boundaries are guarded by its own module rules and no rule still points at where it used to live",
 "F20": "Test side only, behaviour-free. No production file, no Program.cs, no configuration key changes. Carrier owners: rule constants stay on their existing rule classes (ModuleBoundariesArchUnitTest, TrackerIntegrationModuleBoundariesArchUnitTest, Access and Licensing module boundaries tests); the module rule shapes stay on ModuleRules; Reports module boundaries get one new NUnit fixture ReportsModuleBoundariesArchUnitTest that holds its inline lists by full type name. Procedural-style static rule helpers are the repository convention for architecture tests; no new class is invented beyond the fixture and its made-up offender types.",
@@ -659,30 +626,22 @@
 "F61": "Claiming a rule sees catch-only references",
 "F62": "Catch-only edges invisible to R-RP5",
 "F63": "R-RP1 to R-RP6: Reports layers, kernel-only Domain, inbound and outbound edge lists compared both ways with made-up offenders",
-"F64": "Narrow the Reports rule constant to Modules.Reports only (and drop the dead Auth, Authorization and Licensing alternatives in the joint Tracker integration pattern)",
-"F65": "Settled by the move: the file asserts old-or-new sight or an old-path rename list and is removed, as the previous package did",
 "F66": "Drop the rename-list tests that read the removed rename list; keep the layout assertions",
 "F67": "Only if it names a removed support type; every assertion stays",
 "F68": "Run ReportsRulesNameOnlyTheModuleArchUnitTest through dotnet test: it sweeps every rule constant of the test assembly and every string literal of the test sources for the old Reports forms (dotted name, regex alternative, group member, slash folder path) with an empty allowance list and exact-path exclusions, matches each narrowed Reports alternative against the types of the module, and runs the sweep over made-up offenders in each form.",
-"F69": "No constant and no literal outside the exact exclusions names Reports by a former Services namespace or path; each narrowed alternative still matches a Reports module type; the joint Tracker integration pattern no longer names Reports, Auth, Authorization or Licensing under Services; each made-up former form is named and a Modules-only twin is not.",
 "F7": "Any production file or Program.cs change; a separate Reports unit-test placement test (feature B's ReportsUnitTestsBesideTheModuleArchUnitTest already pins it); the architecture documents ARCHITECTURE.md section 4, ADR-270 and the Epic catalogue row, which the finalize checklist updates before the push; ReportRepository and Models/Reports (stay).",
 "F70": "Today the old-namespace alternatives in ReportsPattern, RefinementReportsAccessAndLicensing and the Access and Licensing RefinementAndReports patterns still match, so the sweep fails and names each; a rule narrowed in its constant but kept as a literal, or a narrowed alternative anchored to no type, is named by the made-up offenders.",
 "F71": "Narrow the Reports rule constants and settle feature A helper files (behaviour and production untouched); makes the new module rule set of S2 the only Reports layout guard",
 "F72": "Every Reports rule keeps its verdict on today's code; ReportsModuleArchUnitTest keeps every assertion",
 "F73": "Same law shape (constants plus literals sweep, both-ways exclusion list, narrowed-alternative liveness, made-up offenders); modelled on it, not shared, because the module name and exclusions differ",
 "F74": "Single owner of the Reports namespace pattern read by ReportsModuleArchUnitTest and three interpolated readers; narrowing here reaches every reader",
-"F75": "Joint pattern owner for Tracker integration; drop Reports and the dead Auth, Authorization, Licensing alternatives",
 "F76": "Access pattern names Reports by the old alternative too; same constant also in Licensing tests, narrowed in each owner",
 "F77": "Measured map of the 36 Reports types by layer; stays as the measurement owner and old-name exclusion",
 "F78": "Owner of its Reports pattern constant; narrowed here",
-"F79": "Old-or-new sight law is settled by the move; removed",
 "F8": "Rigor standard for feature C: architect, acceptance designer and crafter on sonnet; reviewers and EXAMINE on haiku (DESIGN open question 1, maintainer's take-DESIGN-defaults on 2026-11-24).",
-"F80": "Role map for the old-or-new sight law; removed with it",
-"F81": "Old-path rename list ends empty after the move; removed",
 "F82": "Layout assertions stay; rename-list tests dropped",
 "F83": "Edited only if it names a removed support type; every assertion stays",
 "F84": "ReportsPattern narrowed to Modules.Reports",
-"F85": "Reports and dead alternatives removed",
 "F86": "Reports named by Modules.Reports only",
 "F87": "Removed once settled by the move, together with ReportsPatternRoles.cs and ReportsStringsTheMoveRenames.cs",
 "F88": "Rename-list tests dropped with the list",
