@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using System.Linq;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application
 {

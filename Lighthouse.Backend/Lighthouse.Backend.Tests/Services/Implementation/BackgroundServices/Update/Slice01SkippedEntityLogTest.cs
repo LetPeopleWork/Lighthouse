@@ -9,6 +9,7 @@ using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {

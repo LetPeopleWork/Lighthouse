@@ -431,7 +431,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedAccessType), "Lighthouse.Backend.Modules.Access.Application.IAuthModeResolver")
                 .SetName("ARefinementApplicationTypeReachingAnUnlistedAccessType_IsNamed");
-            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), typeof(global::Lighthouse.Backend.Services.Interfaces.IAppSettingService).FullName!)
+            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), typeof(global::Lighthouse.Backend.Services.Interfaces.IFeatureListService).FullName!)
                 .SetName("ARefinementApplicationTypeReachingAnUnlistedSetUpType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedPlatformType), "Lighthouse.Backend.Platform.Host.ILighthouseClock")
                 .SetName("ARefinementApplicationTypeReachingAnUnlistedPlatformLaneType_IsNamed");
@@ -640,7 +640,7 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.Boundaries.Domain
         public int Width => High - Low;
     }
 
-    internal sealed class AnEstimateBandAskingTheSettings(global::Lighthouse.Backend.Services.Interfaces.IAppSettingService settings)
+    internal sealed class AnEstimateBandAskingTheSettings(global::Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService settings)
     {
         public int Describe() => settings.GetHashCode();
     }
@@ -792,7 +792,7 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingA
 
 namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnlistedSetUpType.Application
 {
-    internal sealed class AnApplicationTypeReachingAnUnlistedSetUpType(global::Lighthouse.Backend.Services.Interfaces.IAppSettingService settings)
+    internal sealed class AnApplicationTypeReachingAnUnlistedSetUpType(global::Lighthouse.Backend.Services.Interfaces.IFeatureListService settings)
     {
         public int Describe() => settings.GetHashCode();
     }

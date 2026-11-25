@@ -17,6 +17,7 @@ using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Security.Claims;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.API
 {

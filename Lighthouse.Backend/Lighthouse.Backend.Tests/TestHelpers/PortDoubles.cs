@@ -5,6 +5,7 @@ using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Microsoft.AspNetCore.Http;
 using Moq;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {

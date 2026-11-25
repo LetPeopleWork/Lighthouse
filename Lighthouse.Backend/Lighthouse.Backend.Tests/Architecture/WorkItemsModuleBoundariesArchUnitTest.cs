@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             "Lighthouse.Backend.API.Helpers.WorkTrackingSystemOptionsOwnerExtensions",
             "Lighthouse.Backend.Program",
-            "Lighthouse.Backend.Services.Implementation.Connections.ConnectionSaveService",
+            "Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService",
         ];
 
         // The outside types, besides the API, the composition root, Flow metrics, Forecasting, Refinement and Promises'
@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.DependencyDecision -> Lighthouse.Backend.Modules.Licensing.Application.ILicenseService",
             "Lighthouse.Backend.Modules.WorkItems.Application.Dependencies.FeatureDependencyRendering -> Lighthouse.Backend.Modules.Access.Application.IRbacAdministrationService",
             "Lighthouse.Backend.Modules.WorkItems.Application.Policies.PortfolioDeletedOrphanedFeatureCleanupHandler -> Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService",
-            "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Services.Interfaces.IAppSettingService",
+            "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.UpdateQueue.UpdateCancellationContext",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IFeatureOrdering",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",

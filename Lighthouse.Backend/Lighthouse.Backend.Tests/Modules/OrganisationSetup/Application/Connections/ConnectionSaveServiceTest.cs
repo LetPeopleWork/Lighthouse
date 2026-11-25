@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Services.Implementation.Connections;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -10,6 +9,8 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application.Connections
 {

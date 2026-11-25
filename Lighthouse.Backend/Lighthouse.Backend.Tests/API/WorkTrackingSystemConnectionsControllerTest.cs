@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend.Tests.API
 {

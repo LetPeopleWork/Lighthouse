@@ -85,6 +85,7 @@ using Lighthouse.Backend.Modules.Promises.Application;
 using Lighthouse.Backend.Modules.Promises.Application.Policies;
 using Lighthouse.Backend.Platform.Host;
 using Lighthouse.Backend.Modules.OrganisationSetup.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend
 {
@@ -1462,7 +1463,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRecurringBlackoutRuleService, RecurringBlackoutRuleService>();
             builder.Services.AddScoped<ILicenseService, LicenseService>();
             builder.Services.AddScoped<IRefreshLogService, RefreshLogService>();
-            builder.Services.AddScoped<IConnectionSaveService, Lighthouse.Backend.Services.Implementation.Connections.ConnectionSaveService>();
+            builder.Services.AddScoped<IConnectionSaveService, Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections.ConnectionSaveService>();
             builder.Services.AddScoped<Lighthouse.Backend.API.Helpers.OwnerSettingRefusals>();
             builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();

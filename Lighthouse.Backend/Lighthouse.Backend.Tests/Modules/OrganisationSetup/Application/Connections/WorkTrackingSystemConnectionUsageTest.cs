@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 using System.Linq.Expressions;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application.Connections
 {

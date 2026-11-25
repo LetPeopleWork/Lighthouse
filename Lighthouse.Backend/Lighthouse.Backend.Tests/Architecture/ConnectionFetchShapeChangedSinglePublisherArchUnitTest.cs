@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Modules.WorkItems.Application.Policies;
 using System.Text.RegularExpressions;
 using ArchUnitNET.NUnit;
-using Lighthouse.Backend.Services.Implementation.Connections;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 using Lighthouse.Backend.Models.Events;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;

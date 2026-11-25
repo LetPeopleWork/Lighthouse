@@ -10,6 +10,7 @@ using Lighthouse.Backend.Modules.Licensing.Application;
 using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
 {

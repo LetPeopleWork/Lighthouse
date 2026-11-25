@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend.API.DTO
 {

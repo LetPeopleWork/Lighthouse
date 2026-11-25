@@ -6,6 +6,7 @@ using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Options;
 using Moq;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Platform.UsageData
 {

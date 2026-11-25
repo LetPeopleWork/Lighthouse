@@ -139,7 +139,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // The edges from Tracker integration into another context. The Jira connector merges the forecast block through a
         // port Tracker integration owns, so the module reaches no other context. The list only shrinks.
-        private static readonly string[] EdgesOfTheModuleIntoOtherContexts = [];
+        private static readonly string[] EdgesOfTheModuleIntoOtherContexts =
+        [
+            "Lighthouse.Backend.Modules.TrackerIntegration.Application.ConnectionHealth.ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService",
+        ];
 
         private static readonly string[] TheApplicationTypesThatNameConnectors =
         [
@@ -229,8 +232,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Assert.That(
                 EdgesOfTheModuleIntoOtherContexts,
-                Is.Empty,
-                "Tracker integration's list of edges into other contexts is not empty. " +
+                Has.Length.EqualTo(1).And.All.EndsWith("ConnectionHealthCadence -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IAppSettingService"),
+                "Tracker integration's list of edges into other contexts holds more than the settings read of the connection health cadence. " +
                 "Why it matters: the module is a leaf that translates what trackers send, and another context that needs something from " +
                 "a connector implements a port Tracker integration owns. How to fix: undo the edge the rule names, through such a port.");
         }

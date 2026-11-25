@@ -13,6 +13,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Models.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend.API
 {

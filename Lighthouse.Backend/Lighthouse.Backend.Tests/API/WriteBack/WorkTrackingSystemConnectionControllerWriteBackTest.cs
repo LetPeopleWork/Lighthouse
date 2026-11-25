@@ -2,7 +2,6 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
-using Lighthouse.Backend.Services.Implementation.Connections;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Modules.Licensing.Application;
@@ -11,6 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend.Tests.API.WriteBack
 {

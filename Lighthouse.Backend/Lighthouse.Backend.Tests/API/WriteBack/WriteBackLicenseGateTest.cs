@@ -11,6 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend.Tests.API.WriteBack
 {

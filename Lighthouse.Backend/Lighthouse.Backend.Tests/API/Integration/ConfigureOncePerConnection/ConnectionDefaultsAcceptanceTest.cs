@@ -23,6 +23,7 @@ using Serilog.Events;
 using Serilog.Extensions.Logging;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 {

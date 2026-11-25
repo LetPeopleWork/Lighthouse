@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.Connections;
 
 namespace Lighthouse.Backend.API.DTO
 {

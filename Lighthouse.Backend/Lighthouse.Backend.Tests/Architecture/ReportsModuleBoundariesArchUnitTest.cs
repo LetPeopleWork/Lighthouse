@@ -473,7 +473,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("AReportsApplicationTypeReachingAnUnlistedFlowMetricsDomainType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedLicensingType), "Lighthouse.Backend.Modules.Licensing.Application.ILicenseService")
                 .SetName("AReportsApplicationTypeReachingAnUnlistedLicensingType_IsNamed");
-            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), "Lighthouse.Backend.Services.Interfaces.IAppSettingService")
+            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), "Lighthouse.Backend.Services.Interfaces.IFeatureListService")
                 .SetName("AReportsApplicationTypeReachingAnUnlistedSetUpType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedPlatformType), "Lighthouse.Backend.Platform.Host.ILighthouseClock")
                 .SetName("AReportsApplicationTypeReachingAnUnlistedPlatformType_IsNamed");
@@ -680,7 +680,7 @@ namespace Lighthouse.Backend.Modules.ReportFixtures.Boundaries.Domain
         public int Width => High - Low;
     }
 
-    internal sealed class AReportBandAskingTheSettings(global::Lighthouse.Backend.Services.Interfaces.IAppSettingService settings)
+    internal sealed class AReportBandAskingTheSettings(global::Lighthouse.Backend.Services.Interfaces.IFeatureListService settings)
     {
         public int Describe() => settings.GetHashCode();
     }
@@ -867,7 +867,7 @@ namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingA
 
 namespace Lighthouse.Backend.Modules.ReportFixtures.BoundariesOutbound.ReachingAnUnlistedSetUpType.Application
 {
-    internal sealed class AnApplicationTypeReachingAnUnlistedSetUpType(global::Lighthouse.Backend.Services.Interfaces.IAppSettingService settings)
+    internal sealed class AnApplicationTypeReachingAnUnlistedSetUpType(global::Lighthouse.Backend.Services.Interfaces.IFeatureListService settings)
     {
         public int Describe() => settings.GetHashCode();
     }

@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Modules.WorkItems.Application
 {

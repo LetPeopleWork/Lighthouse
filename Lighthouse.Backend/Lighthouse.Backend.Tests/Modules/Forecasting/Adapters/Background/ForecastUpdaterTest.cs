@@ -23,6 +23,7 @@ using System.Collections.Concurrent;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.Forecasting.Adapters.Background
 {

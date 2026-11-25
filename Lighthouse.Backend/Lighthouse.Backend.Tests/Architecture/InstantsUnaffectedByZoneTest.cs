@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Forecasting.Application;
@@ -14,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
-using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

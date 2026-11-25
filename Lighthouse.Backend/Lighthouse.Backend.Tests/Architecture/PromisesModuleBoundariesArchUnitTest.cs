@@ -406,7 +406,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             yield return new TestCaseData(typeof(ADeliveryServiceHoldingADbSet), OutboundTarget.BelowOrPlatform, "Microsoft.EntityFrameworkCore.DbSet`1")
                 .SetName("APromisesApplicationTypeHoldingAnEntityFrameworkCoreDbSet_IsNamed");
-            yield return new TestCaseData(typeof(ADeliveryServiceAskingTheAppSettings), OutboundTarget.BelowOrPlatform, "Lighthouse.Backend.Services.Interfaces.IAppSettingService")
+            yield return new TestCaseData(typeof(ADeliveryServiceAskingTheAppSettings), OutboundTarget.BelowOrPlatform, "Lighthouse.Backend.Services.Interfaces.IFeatureListService")
                 .SetName("APromisesApplicationTypeReachingAnUnlistedPlatformType_IsNamed");
             yield return new TestCaseData(typeof(ADeliveryServiceRunningAForecastingAdapter), OutboundTarget.BelowOrPlatform, "Lighthouse.Backend.Modules.Forecasting.Adapters.Background.ForecastUpdater")
                 .SetName("APromisesApplicationTypeReachingAModuleAdapter_IsNamedByTheBelowRule");
@@ -751,7 +751,7 @@ namespace Lighthouse.Backend.Modules.PromisesFixtures.BoundariesOutbound.Holding
 
 namespace Lighthouse.Backend.Modules.PromisesFixtures.BoundariesOutbound.AskingTheAppSettings.Application
 {
-    internal sealed class ADeliveryServiceAskingTheAppSettings(global::Lighthouse.Backend.Services.Interfaces.IAppSettingService settings)
+    internal sealed class ADeliveryServiceAskingTheAppSettings(global::Lighthouse.Backend.Services.Interfaces.IFeatureListService settings)
     {
         public int Describe() => settings.GetHashCode();
     }

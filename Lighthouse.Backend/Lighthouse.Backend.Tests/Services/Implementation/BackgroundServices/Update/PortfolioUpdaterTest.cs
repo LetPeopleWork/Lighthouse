@@ -21,6 +21,7 @@ using Moq;
 using System.Net;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Promises.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {

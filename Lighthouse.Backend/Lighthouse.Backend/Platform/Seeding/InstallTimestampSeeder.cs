@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.Seeding;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Platform.Seeding
 {

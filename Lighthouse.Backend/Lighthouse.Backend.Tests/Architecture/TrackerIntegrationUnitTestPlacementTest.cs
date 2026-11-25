@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             const string theDemoDataFactory = "Factories/DemoDataFactory.cs";
             const string theDemoDataPort = "Factories/IDemoDataFactory.cs";
             const string aStayingRepository = "Services/Implementation/Repositories/WorkTrackingSystemConnectionRepository.cs";
-            const string theConnectionSave = "Services/Implementation/Connections/ConnectionSaveService.cs";
+            const string theConnectionSave = "Modules/OrganisationSetup/Application/Connections/ConnectionSaveService.cs";
             const string theSharedExtensionsOfTheSameShortName = "Extensions/WorkItemExtensions.cs";
             const string aFolderWithASimilarName = "Services/Implementation/OAuthNeighbour/AThing.cs";
             const string aModuleConnector = $"{ModuleFolder}/Adapters/Connectors/Jira/JiraWorkTrackingConnector.cs";

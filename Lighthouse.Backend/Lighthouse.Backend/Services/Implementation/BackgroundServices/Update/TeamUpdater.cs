@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using System.Diagnostics;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {

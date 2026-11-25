@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Options;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Platform.UsageData
 {

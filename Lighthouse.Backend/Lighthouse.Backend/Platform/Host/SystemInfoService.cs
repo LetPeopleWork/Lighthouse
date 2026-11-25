@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Platform.Host
 {

@@ -365,7 +365,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .SetName("ALicensingTypeReachingAnotherContext_IsNamed");
             yield return new TestCaseData(typeof(ALicenceServiceHoldingADbSet), OutboundTarget.BelowOrPlatform, "Microsoft.EntityFrameworkCore.DbSet`1")
                 .SetName("ALicensingApplicationTypeHoldingAnEntityFrameworkCoreDbSet_IsNamed");
-            yield return new TestCaseData(typeof(ALicenceServiceAskingTheAppSettings), OutboundTarget.BelowOrPlatform, "Lighthouse.Backend.Services.Interfaces.IAppSettingService")
+            yield return new TestCaseData(typeof(ALicenceServiceAskingTheAppSettings), OutboundTarget.BelowOrPlatform, "Lighthouse.Backend.Services.Interfaces.IFeatureListService")
                 .SetName("ALicensingApplicationTypeReachingAnUnlistedPlatformType_IsNamed");
         }
 
@@ -755,7 +755,7 @@ namespace Lighthouse.Backend.Modules.LicensingFixtures.BoundariesOutbound.Holdin
 
 namespace Lighthouse.Backend.Modules.LicensingFixtures.BoundariesOutbound.AskingTheAppSettings.Application
 {
-    internal sealed class ALicenceServiceAskingTheAppSettings(global::Lighthouse.Backend.Services.Interfaces.IAppSettingService settings)
+    internal sealed class ALicenceServiceAskingTheAppSettings(global::Lighthouse.Backend.Services.Interfaces.IFeatureListService settings)
     {
         public int Describe() => settings.GetHashCode();
     }
