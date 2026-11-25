@@ -2,7 +2,8 @@
 "counters": {
 "C": 1,
 "D": 11,
-"F": 160,
+"E": 7,
+"F": 167,
 "K": 5,
 "L": 2,
 "P": 7,
@@ -523,6 +524,59 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F161"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F162"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F163"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F164"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F165"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F166"
+},
+{
+"id": "E7",
+"promises": [
+"P7"
+],
+"text": "F167"
+}
+]
+},
 "facts": {
 "F1": "Default Feature sizing (Story 6504's per-Portfolio switch) confuses people. New Portfolios start with it off; existing Portfolios keep their value. Only new Portfolios, no data migration (maintainer, 2026-11-25).",
 "F10": "the Portfolio is saved",
@@ -593,6 +647,13 @@
 "F159": "An older client payload without the switch, read as the create route reads it and synced into a new Portfolio, starts off; a payload naming true or false keeps it.",
 "F16": "Cloned Portfolio keeps the source value",
 "F160": "Portfolio.InfersDefaultFeatureSize after sync: false when absent, the named value when named",
+"F161": "A person who creates a Portfolio and does not turn on Default Feature sizing sees its Features with no child Work Items counted as 0, shown as 0 of 0 and No child Work Items yet, not as an inferred Default Feature Size.",
+"F162": "A Portfolio created in the create wizard without touching the sizing switch is saved with Infer a size for Features without child Work Items off, and its childless Features count as 0 and show 0 of 0 and No child Work Items yet.",
+"F163": "A Portfolio created through the API or Lighthouse-Clients without naming the sizing switch is saved with the switch off, the same as one created in the wizard.",
+"F164": "A Portfolio that already exists with the switch on still has it on after the upgrade, its forecasts do not change, and its stored value is not rewritten.",
+"F165": "A cloned Portfolio keeps the sizing switch value of its source: a clone of a switch-on Portfolio is on, and a clone of a switch-off Portfolio is off.",
+"F166": "A person who switches Default Feature sizing on for a new Portfolio and saves gets Default Feature Size again for Features without child Work Items, as before this change.",
+"F167": "Demo Portfolios have the sizing switch off, except a demo Portfolio that must show Default Feature Size behaviour, which has it on explicitly.",
 "F17": "a Portfolio has the switch on",
 "F18": "a person clones it",
 "F19": "the clone has the switch on; and a clone of a Portfolio with the switch off has it off",

@@ -155,7 +155,70 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A person who creates a Portfolio and does not turn on Default Feature sizing sees its Features with no child Work Items counted as 0, shown as 0 of 0 and No child Work Items yet, not as an inferred Default Feature Size.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>A Portfolio created in the create wizard without touching the sizing switch is saved with Infer a size for Features without child Work Items off, and its childless Features count as 0 and show 0 of 0 and No child Work Items yet.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>A Portfolio created through the API or Lighthouse-Clients without naming the sizing switch is saved with the switch off, the same as one created in the wizard.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>A Portfolio that already exists with the switch on still has it on after the upgrade, its forecasts do not change, and its stored value is not rewritten.
+</code></pre>
+
+<h4>E5</h4>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<pre><code>A cloned Portfolio keeps the sizing switch value of its source: a clone of a switch-on Portfolio is on, and a clone of a switch-off Portfolio is off.
+</code></pre>
+
+<h4>E6</h4>
+
+<h5>Promises</h5>
+
+<p>P6</p>
+
+<pre><code>A person who switches Default Feature sizing on for a new Portfolio and saves gets Default Feature Size again for Features without child Work Items, as before this change.
+</code></pre>
+
+<h4>E7</h4>
+
+<h5>Promises</h5>
+
+<p>P7</p>
+
+<pre><code>Demo Portfolios have the sizing switch off, except a demo Portfolio that must show Default Feature Size behaviour, which has it on explicitly.
+</code></pre>
 
 <h2>Charter</h2>
 
