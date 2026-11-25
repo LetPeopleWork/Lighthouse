@@ -167,12 +167,54 @@
 "stimulus": "F243",
 "user_result": "F245"
 }
+],
+"S4": [
+{
+"covers": [
+"P7",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F249",
+"test": ".github/scripts/renovate-dotnet-updates.test.mjs::no rule caps .NET packages or images below version 11"
+},
+"expected": "F248",
+"stimulus": "F247",
+"user_result": "F36"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F253",
+"test": ".github/scripts/renovate-dotnet-updates.test.mjs::a new major .NET image is still left for a maintainer to merge by hand"
+},
+"expected": "F251",
+"stimulus": "F250",
+"user_result": "F252"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "reviewer and EXAMINE",
+"reason": "F257"
+},
+"expected": "F255",
+"stimulus": "F254",
+"user_result": "F256"
+}
 ]
 },
 "counters": {
 "D": 12,
 "E": 7,
-"F": 246,
+"F": 257,
 "K": 2,
 "P": 7,
 "S": 4,
@@ -1301,7 +1343,18 @@
 "F244": "The container starts, serves the app, and its runtime field starts with .NET 11",
 "F245": "A self-hoster who pulls the image gets the app running on a .NET 11 runtime",
 "F246": "An image on the 10.0 base images that builds and starts fine but reports a .NET 10 runtime would pass a start-only check; the runtime-field check rejects it",
+"F247": "The maintainer reads the Renovate configuration for rules that hold back .NET packages or images",
+"F248": "No rule caps a .NET package or image below version 11",
+"F249": "A cap rule is changed to a different limit or moved to a package name the matcher does not recognise as .NET",
 "F25": "Historical architecture briefs, diagrams and decision records that name .NET 10 as history stay unchanged. Release notes are written at release time, not here.",
+"F250": "The maintainer reads the Renovate configuration for the rule on major .NET image updates",
+"F251": "The manual-merge rule for major .NET images remains and has no version cap",
+"F252": "A new major .NET image still waits for a maintainer to merge it with the framework change",
+"F253": "Another unrelated rule with the same shape is added next to it",
+"F254": "The maintainer reads the current-state docs and pins that named .NET 10",
+"F255": "They name .NET 11; historical records are unchanged",
+"F256": "The docs match the runtime",
+"F257": "Prose is verified by review and EXAMINE; no test pins wording",
 "F26": "DISCOVER and DIVERGE are skipped for this Feature.",
 "F27": "The work item gets the Release Notes tag with one short line at release time: Lighthouse now runs on .NET 11.",
 "F28": "The Quint scenario exploration is not relevant for any of the three values: each has a settled happy path with no refusal, race or stale-input case.",

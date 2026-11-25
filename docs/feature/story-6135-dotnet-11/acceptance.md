@@ -368,6 +368,96 @@ An image on the 10.0 base images that builds and starts fine but reports a .NET 
 
 None.
 
+### S4
+
+##### Covers
+
+P7
+
+P2
+
+```text
+The maintainer reads the Renovate configuration for rules that hold back .NET packages or images
+```
+
+```text
+No rule caps a .NET package or image below version 11
+```
+
+```text
+Renovate proposes .NET 11 updates again
+```
+
+##### Disposition
+
+Tested
+
+\.github\/scripts\/renovate\-dotnet\-updates\.test\.mjs\:\:no rule caps \.NET packages or images below version 11
+
+```text
+A cap rule is changed to a different limit or moved to a package name the matcher does not recognise as .NET
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P7
+
+```text
+The maintainer reads the Renovate configuration for the rule on major .NET image updates
+```
+
+```text
+The manual-merge rule for major .NET images remains and has no version cap
+```
+
+```text
+A new major .NET image still waits for a maintainer to merge it with the framework change
+```
+
+##### Disposition
+
+Tested
+
+\.github\/scripts\/renovate\-dotnet\-updates\.test\.mjs\:\:a new major \.NET image is still left for a maintainer to merge by hand
+
+```text
+Another unrelated rule with the same shape is added next to it
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P7
+
+```text
+The maintainer reads the current-state docs and pins that named .NET 10
+```
+
+```text
+They name .NET 11; historical records are unchanged
+```
+
+```text
+The docs match the runtime
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Prose is verified by review and EXAMINE; no test pins wording
+```
+
+reviewer and EXAMINE
+
 ## Expectations
 
 ### Rows

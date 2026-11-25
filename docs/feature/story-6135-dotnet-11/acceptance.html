@@ -469,6 +469,84 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<p>P2</p>
+
+<pre><code>The maintainer reads the Renovate configuration for rules that hold back .NET packages or images
+</code></pre>
+
+<pre><code>No rule caps a .NET package or image below version 11
+</code></pre>
+
+<pre><code>Renovate proposes .NET 11 updates again
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/scripts/renovate-dotnet-updates.test.mjs::no rule caps .NET packages or images below version 11</p>
+
+<pre><code>A cap rule is changed to a different limit or moved to a package name the matcher does not recognise as .NET
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>The maintainer reads the Renovate configuration for the rule on major .NET image updates
+</code></pre>
+
+<pre><code>The manual-merge rule for major .NET images remains and has no version cap
+</code></pre>
+
+<pre><code>A new major .NET image still waits for a maintainer to merge it with the framework change
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>.github/scripts/renovate-dotnet-updates.test.mjs::a new major .NET image is still left for a maintainer to merge by hand</p>
+
+<pre><code>Another unrelated rule with the same shape is added next to it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>The maintainer reads the current-state docs and pins that named .NET 10
+</code></pre>
+
+<pre><code>They name .NET 11; historical records are unchanged
+</code></pre>
+
+<pre><code>The docs match the runtime
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Prose is verified by review and EXAMINE; no test pins wording
+</code></pre>
+
+<p>reviewer and EXAMINE</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
