@@ -29,6 +29,24 @@ so the Feature shows on every team.
 Slice wrap-up: refactor + review (mutation once, in the final gates). Push: per slice, autonomous, with
 `/clean-ci` after the push; rebasing this run's own unpushed commits onto a moved `origin/main` is allowed.
 
+## Whole-candidate review: consequences decided in AFK (maintainer may revisit)
+
+The review accepted the candidate with four non-blocking findings. Decisions taken:
+
+1. **A Team's share of 0 still makes a 0/0 row: left as it is, follow-up.** `SplitIntoBuckets` gives a
+   size smaller than the Team count a 0 share for some Teams (size 1 over 2 Teams is 1 and 0), and that
+   Team still lists the Feature. Same confusion, but outside the agreed trigger (the Feature's size is 0),
+   so it is a follow-up for the maintainer, not part of this fix.
+2. **A Portfolio whose Features are all 0-size no longer shows on a Team's page.** A Team's Portfolios
+   come from the Features' work rows (`Portfolio.Teams`). With no rows, the Team has no link to that
+   Portfolio. This follows from "not on any Team" and is accepted.
+3. **Fallback split no longer depends on Feature order.** The Teams of a Portfolio with no real child work
+   used to grow while the default-size pass ran, because each 0-size Feature added rows. A later sized
+   Feature could then split over a Team that a 0-size Feature with a Feature Owner value had named. It now
+   splits over the Portfolio's own Teams or, failing that, all Teams, as the rule says. Accepted, no new case.
+4. **The "No teams available" warning is not logged for a 0-size Feature.** There is nothing to assign,
+   so the warning would be noise. Accepted.
+
 ## Context map and usage data
 
 - Contexts: Work Items (default sizing) only. No new term, concept or domain event. No UI surface changes.
