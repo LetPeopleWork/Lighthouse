@@ -7,7 +7,15 @@ export function extractWorkItems(
 	workItemsPerUnitOfTime?: Record<string, IWorkItem[]>,
 ): IWorkItem[] {
 	if (!workItemsPerUnitOfTime) return [];
-	return Object.values(workItemsPerUnitOfTime).flat();
+	const uniqueById = new Map<number, IWorkItem>();
+	for (const items of Object.values(workItemsPerUnitOfTime)) {
+		for (const item of items) {
+			if (!uniqueById.has(item.id)) {
+				uniqueById.set(item.id, item);
+			}
+		}
+	}
+	return [...uniqueById.values()];
 }
 
 function addItemsWithoutDuplicates(
