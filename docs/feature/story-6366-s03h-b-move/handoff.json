@@ -1,0 +1,1869 @@
+{
+"counters": {
+"C": 1,
+"D": 7,
+"E": 5,
+"F": 135,
+"K": 2,
+"L": 2,
+"P": 4,
+"S": 2,
+"T": 2,
+"Y": 4
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F35",
+"driven_ports": [
+"F34"
+],
+"driving_port": "F33"
+},
+"claims": [
+{
+"admitted_input": "F52",
+"bypass": "F54",
+"constructor": "move of each declaring file whole",
+"consumer": "ReportsLivesInItsModuleArchUnitTest and ReportsUnitTestsBesideTheModuleArchUnitTest",
+"harm": "F51",
+"id": "C1",
+"owner": "ReportsMembership",
+"proposition": "F50",
+"public_observation": "F53"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F59",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F58"
+},
+{
+"axis": "Inhabitation",
+"basis": "F61",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F60"
+},
+{
+"axis": "PublicReachability",
+"basis": "F63",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F62"
+},
+{
+"axis": "Liveness",
+"basis": "F65",
+"design": "Pass",
+"runtime": "Indeterminate",
+"subject": "F64"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F29"
+},
+{
+"id": "K2",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F30"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S1"
+],
+"text": "F22"
+},
+{
+"id": "D2",
+"slices": [
+"S1"
+],
+"text": "F23"
+},
+{
+"id": "D3",
+"slices": [
+"S1"
+],
+"text": "F24"
+},
+{
+"id": "D4",
+"slices": [
+"S1"
+],
+"text": "F25"
+},
+{
+"id": "D5",
+"slices": [
+"S2"
+],
+"text": "F26"
+},
+{
+"id": "D6",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F27"
+},
+{
+"id": "D7",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F28"
+}
+],
+"equality": [
+{
+"definition": "F38",
+"under": "namespace-and-folder observation"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "ReportsMembership",
+"statement": "F39",
+"treatment": {
+"cases": [
+"F40",
+"F41",
+"F42",
+"F43"
+],
+"kind": "Finite",
+"reason": "F44"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "ReportsStringsTheMoveRenames",
+"statement": "F45",
+"treatment": {
+"cases": [
+"F46",
+"F47",
+"F48"
+],
+"kind": "Finite",
+"reason": "F49"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F31"
+},
+{
+"analysis": "agreement",
+"reason": "F32"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F37",
+"description": "F36",
+"result_type": "per type: (namespace, folder) pair"
+}
+],
+"risks": [
+{
+"allowed": "F68",
+"forbidden": "F69",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F67",
+"residue": "F70",
+"source": "F66"
+},
+{
+"allowed": "F73",
+"forbidden": "F74",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F72",
+"residue": "F75",
+"source": "F71"
+},
+{
+"allowed": "F68",
+"forbidden": "F78",
+"id": "Y3",
+"kind": "Bypass",
+"owner": "crafter",
+"preserved": "F77",
+"residue": "F79",
+"source": "F76"
+},
+{
+"allowed": "F82",
+"forbidden": "F83",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "candidate review",
+"preserved": "F81",
+"residue": "F84",
+"source": "F80"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "ReportsMembership",
+"state": "F55"
+},
+{
+"kind": "Excluded",
+"owner": "ReportsMembership",
+"state": "F56"
+},
+{
+"kind": "Unknown",
+"owner": "crafter, checked by the full filtered suite",
+"state": "F57"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsRulesSeeTheMoveArchUnitTest.cs",
+"move": "F101",
+"preserved": "F102",
+"verification": [
+"dotnet test Lighthouse.Backend --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"public_oracle": {
+"expected": "F99",
+"falsifier": "F100",
+"promises": [
+"P1",
+"P2",
+"P4"
+],
+"stimulus": "F98"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend --filter FullyQualifiedName~ReportsLivesInItsModule",
+"id": "T1",
+"obligation": "F117",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsLivesInItsModuleArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "source-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Reports/ReportCommands.cs:1",
+"reason": "F103"
+},
+{
+"decision": "Migrated",
+"kind": "port-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/IReportQueries.cs:1",
+"reason": "F104"
+},
+{
+"decision": "Changed",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:32",
+"reason": "F105"
+},
+{
+"decision": "Changed",
+"kind": "api-consumers",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ReportsController.cs:1",
+"reason": "F106"
+},
+{
+"decision": "Changed",
+"kind": "persistence-adapter",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/ReportRepository.cs:1",
+"reason": "F107"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "persistence",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Reports/Report.cs:1",
+"reason": "F108"
+},
+{
+"decision": "Changed",
+"kind": "tests-and-guards",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs:1",
+"reason": "F109"
+},
+{
+"decision": "Changed",
+"kind": "test-consumers",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs:1",
+"reason": "F110"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "frozen-oracles",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembershipArchUnitTest.cs:1",
+"reason": "F111"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "build-and-ci",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj:1",
+"reason": "F112"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportCapPolicy.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportSeriesReading.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportWindowPolicy.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/PortfolioReportMetricSeries.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkCommands.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkRemover.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportCommands.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportMetricSeriesByOwner.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerLookup.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportQueries.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/TeamReportMetricSeries.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ThenAndNowTemplate.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportBulkCommands.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportBulkRemover.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportCommands.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportMetric.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportMetricSeries.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportOwnerLookup.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportOwnerWriteAccess.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportQueries.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportReader.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportTemplate.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportWriter.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/ArrivalsReportMetric.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/CycleTimeReportMetric.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/DailySeriesSummary.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/ReportMetricCatalog.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/ThroughputReportMetric.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/WindowedReportMetric.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/WipReportMetric.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/WorkItemAgeReportMetric.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportsController.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ReportOwnerWriteAccess.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/TeamReportsController.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/BulkReports/BulkReportsAcceptanceTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/BulkReports/ChangesDuringABulkRun.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamReportsControllerTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ReportsControllerTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortFixtureLifetimesTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimes.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs:1",
+"reason": "F114"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportCapPolicyTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/CycleTimeReportMetricTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/DailySeriesSummaryTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThroughputReportMetricTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/WorkItemAgeReportMetricTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/PortfolioReportMetricSeriesTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportBulkCommandsTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportBulkRemoverTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportCommandsTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportMetricSeriesByOwnerTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportOwnerLookupTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportQueriesTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/TeamReportMetricSeriesTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateEditTest.cs:1",
+"reason": "F115"
+},
+{
+"decision": "Changed",
+"kind": "test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs:1",
+"reason": "F115"
+}
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F116"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportCapPolicy.cs",
+"reason": "F85"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportSeriesReading.cs",
+"reason": "F85"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Domain/ReportWindowPolicy.cs",
+"reason": "F85"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/PortfolioReportMetricSeries.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkCommands.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportBulkRemover.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportCommands.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportMetricSeriesByOwner.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportOwnerLookup.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ReportQueries.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/TeamReportMetricSeries.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/ThenAndNowTemplate.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportBulkCommands.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportBulkRemover.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportCommands.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportMetric.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportMetricSeries.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportOwnerLookup.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportOwnerWriteAccess.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportQueries.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportReader.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportTemplate.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/IReportWriter.cs",
+"reason": "F86"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/ArrivalsReportMetric.cs",
+"reason": "F87"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/CycleTimeReportMetric.cs",
+"reason": "F87"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/DailySeriesSummary.cs",
+"reason": "F87"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/ReportMetricCatalog.cs",
+"reason": "F87"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/ThroughputReportMetric.cs",
+"reason": "F87"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/WindowedReportMetric.cs",
+"reason": "F87"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/WipReportMetric.cs",
+"reason": "F87"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/Application/Metrics/WorkItemAgeReportMetric.cs",
+"reason": "F87"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F88"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/Reports/NewReportRequest.cs",
+"reason": "F89"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ReportsControllerBase.cs",
+"reason": "F89"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioReportsController.cs",
+"reason": "F89"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ReportOwnerWriteAccess.cs",
+"reason": "F89"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/ReportsController.cs",
+"reason": "F89"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/TeamReportsController.cs",
+"reason": "F89"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/ReportRepository.cs",
+"reason": "F89"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/BulkReports/BulkReportsAcceptanceTest.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/BulkReports/ChangesDuringABulkRun.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamReportsControllerTest.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ReportsControllerTest.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortFixtureLifetimesTest.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleArchUnitTest.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimes.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/CreateReportWithEqualNowScenarios.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/BaselineReportCreation/EqualLengthReportsScenarios.cs",
+"reason": "F90"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs",
+"reason": "F91"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/LicensingModuleBoundariesArchUnitTest.cs",
+"reason": "F92"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TrackerIntegrationModuleBoundariesArchUnitTest.cs",
+"reason": "F93"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+"reason": "F94"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneUnitTestPlacementTest.cs",
+"reason": "F95"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsStringsTheMoveRenames.cs",
+"reason": "F96"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportCapPolicyTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/CycleTimeReportMetricTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/DailySeriesSummaryTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThroughputReportMetricTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/WorkItemAgeReportMetricTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/PortfolioReportMetricSeriesTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportBulkCommandsTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportBulkRemoverTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportCommandsTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportMetricSeriesByOwnerTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportOwnerLookupTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportQueriesTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/TeamReportMetricSeriesTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateEditTest.cs",
+"reason": "F97"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs",
+"reason": "F97"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend --filter FullyQualifiedName~ReportsLivesInItsModule",
+"dotnet test Lighthouse.Backend --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs",
+"public_oracle": {
+"expected": "F123",
+"falsifier": "F124",
+"promises": [
+"P3",
+"P4"
+],
+"stimulus": "F122"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend --filter FullyQualifiedName~ReportsUnitTestsBesideTheModule",
+"id": "T2",
+"obligation": "F133",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsUnitTestsBesideTheModuleArchUnitTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "test-files",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportCommandsTest.cs:1",
+"reason": "F125"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-project-discovery",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj:1",
+"reason": "F126"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "staying-reports-tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ReportRepositoryTest.cs:1",
+"reason": "F127"
+},
+{
+"decision": "Migrated",
+"kind": "test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportLoggingTest.cs:1",
+"reason": "F128"
+},
+{
+"decision": "Migrated",
+"kind": "test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Domain/ReportWindowPolicyTest.cs:1",
+"reason": "F129"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Domain/ReportCapPolicyTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportCapPolicyTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/ArrivalsReportMetricTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/CycleTimeReportMetricTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/CycleTimeReportMetricTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/DailySeriesSummaryTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/DailySeriesSummaryTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/ThroughputReportMetricTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThroughputReportMetricTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/WorkItemAgeReportMetricTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/WorkItemAgeReportMetricTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/PortfolioReportMetricSeriesTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/PortfolioReportMetricSeriesTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkCommandsTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportBulkCommandsTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkRemoverTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportBulkRemoverTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportCommandsTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportMetricSeriesByOwnerTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportMetricSeriesByOwnerTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportOwnerLookupTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportOwnerLookupTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportQueriesTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportQueriesTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/TeamReportMetricSeriesTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/TeamReportMetricSeriesTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ThenAndNowTemplateEditTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateEditTest.cs:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "moved-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ThenAndNowTemplateTest.cs:1",
+"reason": "F113"
+},
+{
+"decision": "Migrated",
+"kind": "moved-test-file",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs:1",
+"reason": "F130"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F131"
+},
+{
+"analysis": "reuse",
+"reason": "F132"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsMembership.cs"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Domain/ReportWindowPolicyTest.cs",
+"reason": "F118"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Domain/ReportCapPolicyTest.cs",
+"reason": "F118"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportCapPolicyTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/ArrivalsReportMetricTest.cs",
+"reason": "F120"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ArrivalsReportMetricTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/CycleTimeReportMetricTest.cs",
+"reason": "F120"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/CycleTimeReportMetricTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/DailySeriesSummaryTest.cs",
+"reason": "F120"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/DailySeriesSummaryTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/ThroughputReportMetricTest.cs",
+"reason": "F120"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThroughputReportMetricTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/Metrics/WorkItemAgeReportMetricTest.cs",
+"reason": "F120"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/WorkItemAgeReportMetricTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/PortfolioReportMetricSeriesTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/PortfolioReportMetricSeriesTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkCommandsTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportBulkCommandsTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportBulkRemoverTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportBulkRemoverTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportCommandsTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportCommandsTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportLoggingTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportLoggingTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportMetricSeriesByOwnerTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportMetricSeriesByOwnerTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportOwnerLookupTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportOwnerLookupTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ReportQueriesTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportQueriesTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/TeamReportMetricSeriesTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/TeamReportMetricSeriesTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ThenAndNowTemplateEditTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateEditTest.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/Application/ThenAndNowTemplateTest.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ThenAndNowTemplateTest.cs",
+"reason": "F119"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend --filter FullyQualifiedName~ReportsUnitTestsBesideTheModule",
+"dotnet test Lighthouse.Backend --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet build Lighthouse.Backend",
+"dotnet test Lighthouse.Backend --filter FullyQualifiedName~Lighthouse.Backend.Tests.Modules.Reports"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F17"
+},
+{
+"id": "E2",
+"promises": [
+"P1",
+"P3"
+],
+"text": "F134"
+},
+{
+"id": "E3",
+"promises": [
+"P2",
+"P4"
+],
+"text": "F135"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F20"
+},
+{
+"id": "E5",
+"promises": [
+"P2",
+"P4"
+],
+"text": "F21"
+}
+]
+},
+"facts": {
+"F1": "ADO Story #6366 S03h Package Reports, feature B (move): the 31 Reports files that feature A's membership map (ReportsMembership) lists move into Modules/Reports/Domain, /Application and /Application/Metrics, namespace equal to folder, with their using lines, the Program.cs Reports registrations' full names and every literal on feature A's rename list (ReportsStringsTheMoveRenames) renamed (B1); the 18 Reports unit tests move to Tests/Modules/Reports/Domain, /Application and /Application/Metrics, namespace equal to folder, while the port, host, wire-contract and repository tests stay (B2). Behaviour-free. DESIGN and DEVOPS: docs/feature/story-6366-s03h-package-reports/feature-delta.md; feature A: docs/feature/story-6366-s03h-a-rules-first/.",
+"F10": "Feature B starts after feature A is accepted (whole-candidate review and EXAMINE, 2026-11-25). The moves go in refactor(reports): move commits apart from edits; the narrowing and the new rules wait for feature C, and B and C are pushed together. Behaviour-free: no review window, UI sketch and loading or failure looks N/A, usage-data event N/A.",
+"F100": "Before the move every type is still in its old namespace and the list holds entries, so the test fails; a type left or copied in an old namespace, a file left in an old folder, a staying type moved, a moving type renamed or missing, or a leftover rename-list entry fails it.",
+"F101": "L1 move: relocate the 31 files whole into Modules/Reports, changing only the namespace line, using lines and Program.cs usings; makes feature C's narrowed Reports rules and boundary rules possible",
+"F102": "all Reports behaviour, the EF model, routes, DTOs, and every architecture rule and feature A's preservation law",
+"F103": "The 12 implementation files and 8 metric files move whole to Modules/Reports/{Domain,Application,Application/Metrics}; the old folders end without a moving file.",
+"F104": "The 11 port files move whole to Modules/Reports/Application; the old folder ends empty.",
+"F105": "Three using lines change; RegisterReports (18 registrations) keeps text, order, lifetimes and pairs.",
+"F106": "Using lines in the three controllers, ReportsControllerBase, ReportOwnerWriteAccess and NewReportRequest follow the new namespaces; routes, DTOs and headers are unchanged.",
+"F107": "ReportRepository stays; only its using lines follow the moved ports.",
+"F108": "Models/Reports stays; the EF model and migrations are unchanged.",
+"F109": "Five literals renamed, 31 PlatformLaneUnitTestPlacementTest rows removed, the list emptied; guard and acceptance tests change only using lines or the listed literals.",
+"F11": "EXAMINE observes through admitted probes only: architecture-rules (Reports and all), backend-tests with Reports fragments for the unchanged acceptance, integration and wire-contract classes, ef-model-unchanged, test-selection-show for a path under Modules/Reports, and the whole filtered backend-tests run as a background job. No reports-answers-compare command.",
+"F110": "Using lines of the 10 consuming test and fixture files and of the 18 unit tests follow the moved types; assertions unchanged.",
+"F111": "Feature A's membership test and preservation law are namespace-agnostic (old or new) and stay green without edits.",
+"F112": "SDK-style globbing picks up the new folder; no suppression, analyser, budget, host-user, Stryker or script names a moving type (measured); the backend path filter already covers Modules.",
+"F113": "New home of a moved file, namespace equal to folder.",
+"F114": "Using line or listed literal follows the moved types; behaviour and assertions unchanged.",
+"F115": "Using lines follow the moved types until the test moves in the next slice.",
+"F116": "The 31 Create targets are whole-file moves of existing types; each is reused unchanged from its old path (reuse records name the old files that exist today), and no new owner or class is created. A reuse record cannot locate a file that does not exist yet.",
+"F117": "Every moving type of ReportsMembership is in its new Modules.Reports namespace and folder only; no moving file under the old Services folders; staying types where the map lists them; rename list empty. Falsifies the placement law over the whole map, not a sample.",
+"F118": "new home, namespace Lighthouse.Backend.Tests.Modules.Reports.Domain",
+"F119": "file moves away: deleted from the old folder",
+"F12": "Quint and formal models not relevant: a namespace move of a finite, closed set of types with no state, ordering or concurrency claim.",
+"F120": "new home, namespace Lighthouse.Backend.Tests.Modules.Reports.Application.Metrics",
+"F121": "new home, namespace Lighthouse.Backend.Tests.Modules.Reports.Application",
+"F122": "Run ReportsUnitTestsBesideTheModuleArchUnitTest through the NUnit runner (an architecture test over the compiled test assembly and the source tree).",
+"F123": "ReportWindowPolicyTest and ReportCapPolicyTest are in Lighthouse.Backend.Tests.Modules.Reports.Domain; the 5 metric and series-summary tests in ...Reports.Application.Metrics; the other 11 (log-assertion, bulk and the rest) in ...Reports.Application; each class sits in the folder of its namespace, none is left under Tests/Services/Implementation/Reports, and the Reports port, host and wire-contract tests and ReportRepositoryTest are where they were. Each class is looked up by name; absence fails the test.",
+"F124": "Before the move all 18 classes are in Tests.Services.Implementation.Reports and the test fails; a class left in the old folder, put in the wrong layer, duplicated, renamed or missing, or a staying test moved, fails it.",
+"F125": "The 18 unit-test files move whole to Tests/Modules/Reports/{Domain,Application,Application/Metrics}; the old folder ends empty.",
+"F126": "SDK-style globbing and NUnit discovery pick up the new folders; no budget, Stryker or script names a moved test file (measured).",
+"F127": "ReportRepositoryTest and the port, host and wire-contract tests stay; their using lines already changed in the production move.",
+"F128": "New home of the log-assertion test with the other Application tests, namespace equal to folder.",
+"F129": "New home in Domain; keeps its using of Tests.API.Integration.Reports.",
+"F13": "B1: the 31 Reports production files live in Modules/Reports/Domain, /Application and /Application/Metrics, namespace equal to folder, nothing of the moving set is left under Services, the rename-list strings and Program.cs full names follow, and every rule stays green.",
+"F130": "Old location of a unit test, deleted by the move.",
+"F131": "The slice is itself a behaviour-free move of test files; no move precedes it and no behaviour changes, so there is no separate preservation step.",
+"F132": "The 18 Create targets are whole-file moves of existing test classes, reused unchanged from their old paths (reuse records name the old files); a reuse record cannot locate a file that does not exist yet.",
+"F133": "Each of the 18 Reports unit-test classes is in its Tests.Modules.Reports layer namespace and the folder of that namespace; none under the old test folder; the staying Reports tests are where they were.",
+"F134": "test-selection-show for a path under Lighthouse.Backend/Lighthouse.Backend/Modules/Reports/ and for a path under Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/Reports/ prints backend: true and no live tracker suite (CI runs the backend suite for a change in the module); and backend-tests with the fragment Lighthouse.Backend.Tests.Modules.Reports runs the moved Reports unit tests by name, all passing. Leave namespace-equals-folder and exact file locations to architecture-rules (the layout tests name them) and to the whole-candidate review.",
+"F135": "backend-tests with the fragment Reports runs the Reports acceptance, integration and wire-contract classes with their assertions unchanged (create, edit, read Then and Now, list across owners, bulk create, bulk removal, cap, refusals). It takes longer than the 2-minute foreground shell limit, so it runs as a background shell job and is read when it ends. The rename list, Program.cs registration order and the lifetimes are not shown by this probe and are left to the whole-candidate review.",
+"F14": "Reports is packaged in its module and every rule and registration follows it",
+"F15": "B2: the 18 Reports unit tests live in Tests/Modules/Reports/Domain, /Application and /Application/Metrics, namespace equal to folder, and the port, host, wire-contract and repository tests stay.",
+"F16": "The Reports unit tests sit beside the module they test",
+"F17": "Architecture rules probe with the Reports filter stays green after the move, so the layering rules that govern Reports still hold for a user of the build. Exact namespace and folder placement of each moved type is not shown by any admitted probe and is left to the whole-candidate review.",
+"F2": "Reports is packaged in Modules/Reports and nothing a user, a tracker or the database sees changes",
+"F20": "ef-model-unchanged shows the EF model is unchanged with no migration added by the move, so a user of the database sees no schema change.",
+"F21": "architecture-rules and the whole filtered backend suite (backend-tests without fragment, run as a background shell job since it takes about 7 minutes) stay green after the move, so no user-visible behaviour regresses anywhere in the backend. Routes, DTOs and headers being unchanged is not shown by these probes and is left to the whole-candidate review.",
+"F22": "Layer per file: ReportCapPolicy, ReportSeriesReading and ReportWindowPolicy go to Modules/Reports/Domain (namespace Lighthouse.Backend.Modules.Reports.Domain); the nine other implementation files go to Modules/Reports/Application; the eight metric files go to Modules/Reports/Application/Metrics; the eleven port files go whole to Modules/Reports/Application, each with the records and enums it declares. ReportsMembership.MovingTypes is the single owner of which type moves where; the new oracles read it and add no second list.",
+"F23": "Carriers: decisions stay in their existing owners (ReportCapPolicy, ReportWindowPolicy, ReportSeriesReading, the metric classes, ReportCommands, ReportQueries and the others keep their data and behaviour); only namespace and folder change. Errors, effects and per-process state stay as they are: the ports and the Program.cs registrations are unchanged, and no state is added. No class is created, split or merged and no signature changes.",
+"F24": "Staying: ReportRepository (Services/Implementation/Repositories), Models/Reports, the API controllers, ReportsControllerBase, the DTOs and ReportOwnerWriteAccess stay where they are; only their using lines change. Program.cs: the three Reports using lines are replaced by the three module namespaces; RegisterReports keeps its text, order, lifetimes and service and implementation pairs, and there is no AddReports extension. Reports log categories change with the namespace; no appsettings, analyser, suppression, CI, budget, host-user or Stryker target names a moving type (measured: no non-C# file in the repository names the old Reports folders).",
+"F25": "Rename list ReportsStringsTheMoveRenames is a craft target, not a support: its five literals are renamed in their files (FlowMetricsInboundDomainAndAdaptersArchUnitTest, LicensingModuleBoundariesArchUnitTest twice, RepositoryLeakRatchetArchUnitTest, TrackerIntegrationModuleBoundariesArchUnitTest) and its 31 PlatformLaneUnitTestPlacementTest rows are removed, each entry leaving the list in the change that renames its string; the list ends empty. TrackerIntegrationModuleBoundariesArchUnitTest also holds a second old-path reference (a global-qualified IReportQueries in a made-up case) that follows the move. Frozen feature A oracles (ReportsMembership, ReportsMembershipArchUnitTest, ReportsRulesSeeTheMoveArchUnitTest) are not edited; rule patterns are not narrowed here.",
+"F26": "Unit tests follow the module: ReportWindowPolicyTest and ReportCapPolicyTest go to Tests/Modules/Reports/Domain; ArrivalsReportMetricTest, CycleTimeReportMetricTest, DailySeriesSummaryTest, ThroughputReportMetricTest and WorkItemAgeReportMetricTest go to Tests/Modules/Reports/Application/Metrics; the other 11 (PortfolioReportMetricSeriesTest, ReportBulkCommandsTest, ReportBulkRemoverTest, ReportCommandsTest, ReportLoggingTest, ReportMetricSeriesByOwnerTest, ReportOwnerLookupTest, ReportQueriesTest, TeamReportMetricSeriesTest, ThenAndNowTemplateEditTest, ThenAndNowTemplateTest) go to Tests/Modules/Reports/Application, namespace equal to folder. ReportWindowPolicyTest keeps its using of Tests.API.Integration.Reports. The port, host, wire-contract tests and ReportRepositoryTest stay; only their using lines change. Move-only: no assertion is edited.",
+"F27": "Checkers: the claims are a finite closed namespace-and-folder placement over 31 production types and 18 test classes, with no state, ordering or concurrency, so no Quint, TLA+ or Agda model is applicable (confirmed in the DESIGN); each claim is checked by the compiled-IL architecture oracle (production) and the source-tree check (folders) run as NUnit tests, plus feature A's preservation law, and behaviour by the unchanged acceptance, integration and wire-contract tests. Property-based generation is not applicable: finite maps, native finite cases. Liveness is not applicable. Types: the C# compiler is the repository checker; a stale namespace or using fails dotnet build; reflection or string-built names are the bypass, checked by the full filtered suite. Paradigm object_oriented: no new owner, entity or service is created, each rule keeps its cohesive existing owner.",
+"F28": "Rigor standard: architect, acceptance designer and crafter on sonnet, reviewers and EXAMINE on haiku. Moves go in refactor(reports) commits apart from edits: production move first, then the test move. Program.cs order is observed only by the candidate review; no public probe sees it.",
+"F29": "Behaviour-free: no route, DTO, header, wire format, EF model or migration change. Input bounds: none, the move takes no input and has no stored or validated input. Comments never cite internal ids. Narrowing the Reports rule patterns, the new Reports boundary rules, the unit-test placement test and the architecture documents are feature C, not here.",
+"F3": "Every type that feature A's membership map (ReportsMembership) lists as moving lives in its new namespace Lighthouse.Backend.Modules.Reports.Domain, .Application or .Application.Metrics, in the folder of the same name, and in no other namespace; no file of the moving set is left in Services/Implementation/Reports or Services/Interfaces/Reports; the staying Reports files (ReportRepository, Models/Reports, the API controllers, base, DTOs and ReportOwnerWriteAccess) are where they were.",
+"F30": "Declared commands stay under the 120 s shell limit: oracle by name fragment, the Architecture namespace, dotnet build Lighthouse.Backend, and the filtered full suite as a background job. A Program.cs change selects every live connector suite in CI; no live suite runs locally. Per-test budget default; no derogation requested.",
+"F31": "Producer and consumer change in one deployable and one commit set; no persisted or wire data changes; the acceptance, integration and wire-contract tests are the primary oracle for unchanged behaviour.",
+"F32": "No shared schema or wire format is touched: DTOs, routes, headers and the EF model are unchanged; the only shared names are C# namespaces inside one deployable, covered by impact records.",
+"F33": "ReportsController, TeamReportsController and PortfolioReportsController over IReportQueries, IReportCommands, IReportBulkCommands and IReportBulkRemover (unchanged), observed through the Reports acceptance, integration and wire-contract tests",
+"F34": "IReportReader and IReportWriter (implemented by the staying ReportRepository), IReportOwnerLookup, IReportMetricSeries, IReportMetric and IReportTemplate (move with the module)",
+"F35": "API and Program.cs depend on Modules.Reports.Application; Application depends on Modules.Reports.Domain and the shared kernel Models.Reports; Domain depends on nothing of Services. Direction unchanged, only namespaces move.",
+"F36": "Namespace and declaring-file folder of each type of ReportsMembership, read from the compiled IL and the source tree; and the namespace and folder of each of the 18 Reports unit-test classes",
+"F37": "behaviour of the type; a type moved without its behaviour preserved is caught only by the existing acceptance, integration and wire-contract tests; Program.cs registration order is not visible to any public probe",
+"F38": "A type is in place when its full name equals the map's new full name, its namespace equals its folder path, and its old full name no longer exists; behaviour equality is observed by the unchanged acceptance and wire-contract tests.",
+"F39": "For every moving type of ReportsMembership the assembly holds exactly the new full name Lighthouse.Backend.Modules.Reports.Domain, .Application or .Application.Metrics plus the name, not the old one, and its file sits in the folder of that namespace with the types the map lists for it",
+"F4": "Every string on feature A's rename list (ReportsStringsTheMoveRenames) is renamed to the new place or, for the rows that only existed for the old folder, removed, and the list is left with no entry for a moved type; the Program.cs Reports registrations keep their order, lifetimes and service and implementation pairs and change only their using lines and full names; every architecture rule and feature A's preservation law stay green after the move.",
+"F40": "ReportCapPolicy in Domain",
+"F41": "a type of each of the nine Application implementation files",
+"F42": "a type of each of the eight Metrics files",
+"F43": "each of the eleven port files whole in Application",
+"F44": "The domain is the finite map of 31 files; a native finite-case test over the map covers it and shrinking adds nothing.",
+"F45": "The rename list holds no entry and no file of the moving set remains under Services/Implementation/Reports or Services/Interfaces/Reports; the 18 unit-test classes sit in Tests/Modules/Reports/Domain, /Application or /Application/Metrics in the namespace of their folder",
+"F46": "list Entries is empty",
+"F47": "both old production folders hold no moving file",
+"F48": "the old unit-test folder holds none of the 18 classes",
+"F49": "Finite list, finite folders and 18 named classes; native finite cases.",
+"F5": "The 18 Reports unit tests live under Lighthouse.Backend.Tests/Modules/Reports/Domain (ReportWindowPolicyTest, ReportCapPolicyTest), /Application/Metrics (the 5 metric and series-summary tests) and /Application (the other 11, the log-assertion tests together), namespace equal to folder; the Reports port, host and wire-contract tests and ReportRepositoryTest stay where they are, with only their using lines changed.",
+"F50": "Every moving type is in its new namespace only, and every moved unit test is in its new test namespace only",
+"F51": "A type left or duplicated in the old namespace splits the module, and a rule or registration resolves the wrong one",
+"F52": "the membership map of 31 files and the fixed list of 18 test classes",
+"F53": "IL namespace and folder per type; source folder per test class",
+"F54": "reflection by string type name and a stale using line; the compiler catches the using, and no non-C# file or reflection string names a moving type (measured)",
+"F55": "all 31 production files in the new folders with namespace equal to folder, old folders without a moving file, the 18 unit tests in their new folders, the rename list empty",
+"F56": "a moving type in its old namespace, a moving file under the old folders, a moved type declared twice, an entry left in the rename list, a unit test left in Tests/Services/Implementation/Reports",
+"F57": "string-built or reflection-read type names that no search finds; Program.cs registration order, seen only by the candidate review",
+"F58": "the 31 moving types and 18 unit tests in their new namespace and folder",
+"F59": "Safety is exclusion of an old-namespace type: the B1 oracle reads the compiled IL and refuses any moving type in its old namespace or any file left under the old folders; the B2 oracle does the same for the test classes.",
+"F6": "Nothing a user, an API client, a tracker or the database sees changes: the Reports acceptance, integration and wire-contract tests pass with unchanged assertions (create, edit, read Then and Now, list across owners, bulk create, bulk removal, cap, refusals), the EF model is unchanged with no migration, routes, DTOs and headers are unchanged, CI selects the backend suite for a change under Modules/Reports, and the whole filtered backend suite stays green.",
+"F60": "each moving type and test class from the map to its new place",
+"F61": "Every file has an acyclic construction path: the crafter moves each declaring file whole, the compiler resolves it, and the oracle finds it in its new place.",
+"F62": "Reports acceptance, integration and wire-contract tests reach the moved types through the unchanged controllers and ports",
+"F63": "The public ports, controllers and Program.cs registrations are unchanged apart from using lines; the existing tests observe the same behaviour.",
+"F64": "namespace move",
+"F65": "Not applicable: no progress, scheduling or fairness claim; the move adds no state or concurrency.",
+"F66": "assumption: only the five listed literals, the 31 placement rows and the using lines name a moving type by old path; negated: another string names one",
+"F67": "all Reports behaviour and every architecture rule stay green",
+"F68": "none",
+"F69": "an unlisted string or rule left naming the old place silently",
+"F7": "Moving the 31 Reports production files and the 18 Reports unit tests, namespace equal to folder; using lines across production and tests; the Program.cs Reports registrations' using lines and full names; renaming or removing every literal on feature A's rename list and emptying it of moved entries; scripts, Stryker configs, test-time budgets and classifier scenarios that name a moved file follow it.",
+"F70": "an unlisted literal fails the full filtered suite or the Architecture namespace run, not a silent break",
+"F71": "assumption: log categories are not keyed by a moving type; negated: a log override or ReportLoggingTest targets the old namespace",
+"F72": "log output content",
+"F73": "ILogger category string changes to the new namespace",
+"F74": "a lost log override or a log assertion that no longer finds its category",
+"F75": "none: no appsettings names a moving type; ReportLoggingTest moves with its types and runs in the full suite",
+"F76": "second stressor set: a half-applied move, a late rebase, or a using of the old namespace added by another change",
+"F77": "build stays green",
+"F78": "old namespace still compiling",
+"F79": "old namespaces no longer exist after the move, so a stale using fails the build",
+"F8": "Narrowing the Reports rule patterns to Modules.Reports only, the new Reports boundary rules, the Reports unit-test placement test and the architecture documents (feature C); ReportRepository (stays); Models/Reports (stays); an AddReports extension (S09a); any change of order, lifetime or pair in Program.cs; any behaviour, route, DTO, migration or frontend change.",
+"F80": "second stressor set: Program.cs is the one composition root and its registration order is seen by no public probe",
+"F81": "registration order, lifetimes and pairs",
+"F82": "using lines change",
+"F83": "reordered, re-scoped or re-paired registrations",
+"F84": "only the candidate review of the Program.cs diff observes order; the acceptance tests observe the resulting behaviour",
+"F85": "new home of the Domain file, namespace Lighthouse.Backend.Modules.Reports.Domain",
+"F86": "new home, whole, namespace Lighthouse.Backend.Modules.Reports.Application",
+"F87": "new home, namespace Lighthouse.Backend.Modules.Reports.Application.Metrics",
+"F88": "the three Reports using lines follow the new namespaces; RegisterReports keeps its text, order, lifetimes and service and implementation pairs",
+"F89": "using line follows the moved types; behaviour, routes and DTOs unchanged",
+"F9": "Rigor standard for feature B: architect, acceptance designer and crafter on sonnet; reviewers and EXAMINE on haiku (DESIGN open question 1, maintainer's take-DESIGN-defaults on 2026-11-24).",
+"F90": "using line follows the moved types; assertions unchanged",
+"F91": "the one rename-list literal is renamed to the new full name",
+"F92": "the two rename-list literals (ReportCommands, ReportQueries) are renamed to the new full names",
+"F93": "the rename-list literal and the global-qualified IReportQueries reference in a made-up case follow the new namespace",
+"F94": "the one rename-list file-path literal is renamed to the new place",
+"F95": "the 31 rows that only existed for the old Reports folders are removed",
+"F96": "the rename list shrinks as entries are renamed or removed and ends empty; it is feature A's measurement made to shrink, so it is a target and not a support of the oracle",
+"F97": "using lines follow the moved types so the build stays green until the unit tests move",
+"F98": "Run ReportsLivesInItsModuleArchUnitTest through the NUnit runner (an architecture test over the compiled Lighthouse.Backend assembly and the source tree), reading ReportsMembership and ReportsStringsTheMoveRenames.Entries.",
+"F99": "Each of the 31 moving files declares its types in Lighthouse.Backend.Modules.Reports.Domain (3 files), .Application (9 implementation files and 11 port files) or .Application.Metrics (8 files) only, the file sits in Modules/Reports/<same layer folder>, no moving file remains under Services/Implementation/Reports or Services/Interfaces/Reports, the staying types (ReportRepository, Models/Reports, controllers, DTOs, ReportOwnerWriteAccess) are where the map lists them, and the rename list holds no entry; derived from the membership map, not from production code. Each type is looked up by name in the compiled assembly and its absence fails the test."
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F9"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F10"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F11"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F12"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+}
+],
+"scope_in": [
+"F7"
+],
+"scope_out": [
+"F8"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F13",
+"promises": [
+"P1",
+"P2",
+"P4"
+],
+"work": {
+"size": "S",
+"value": "F14"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F15",
+"promises": [
+"P3",
+"P4"
+],
+"work": {
+"size": "S",
+"value": "F16"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6366-s03h-b-move",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
