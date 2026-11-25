@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     public static class RecurringBlackoutRuleExtensions
     {

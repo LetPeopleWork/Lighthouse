@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Services.Interfaces.OptionalFeatures;
 
-namespace Lighthouse.Backend.Services.Implementation.OptionalFeatures
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures
 {
     /// <summary>
     /// Which applier answers for which setting, read off the appliers that are registered rather than

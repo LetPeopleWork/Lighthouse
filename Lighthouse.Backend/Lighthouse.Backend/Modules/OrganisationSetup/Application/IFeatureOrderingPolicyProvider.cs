@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
 {
     /// <summary>
     /// Answers who decides the order Features are forecast in. Read-only on purpose: the choice is

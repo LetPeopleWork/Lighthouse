@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
 {
     public class FeatureRankSeeder(LighthouseAppContext context, IFeatureOrdering featureOrdering) : IFeatureRankSeeder
     {

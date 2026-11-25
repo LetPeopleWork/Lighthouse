@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Microsoft.EntityFrameworkCore;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
 {
     public class FeatureRankingService(
         LighthouseAppContext context,

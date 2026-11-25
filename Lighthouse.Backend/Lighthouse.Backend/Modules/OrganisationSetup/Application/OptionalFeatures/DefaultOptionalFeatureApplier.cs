@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation.OptionalFeatures
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures
 {
     /// <summary>
     /// Storing the new value and nothing else, which is what switching every setting in the table does

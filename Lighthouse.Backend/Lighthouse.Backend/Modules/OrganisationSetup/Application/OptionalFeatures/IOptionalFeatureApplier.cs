@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.OptionalFeatures;
 
-namespace Lighthouse.Backend.Services.Interfaces.OptionalFeatures
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures
 {
     /// <summary>
     /// Everything that happens when one behaviour setting is switched, in one call. Deliberately not a

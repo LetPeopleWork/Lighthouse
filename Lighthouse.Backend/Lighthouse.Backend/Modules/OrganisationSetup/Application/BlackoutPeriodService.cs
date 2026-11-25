@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
 {
     public class BlackoutPeriodService(IRepository<BlackoutPeriod> repository, IRepository<RecurringBlackoutRule> recurringRuleRepository, IDomainEventDispatcher domainEventDispatcher) : IBlackoutPeriodService
     {

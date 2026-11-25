@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
 {
     /// <summary>
     /// INV-A3 - fills the places nobody holds yet, appending, leaving every existing one alone. One rule

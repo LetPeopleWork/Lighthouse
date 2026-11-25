@@ -6,7 +6,7 @@ using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation.OptionalFeatures
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures
 {
     /// <summary>
     /// Switching who decides the order Features are forecast in: hand out the places that are missing,

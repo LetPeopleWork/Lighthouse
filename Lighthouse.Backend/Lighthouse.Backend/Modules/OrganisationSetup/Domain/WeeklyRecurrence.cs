@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Domain
 {
     /// <summary>
     /// "These weekdays, every so many weeks, counted from a starting week": whether a given day falls on it.

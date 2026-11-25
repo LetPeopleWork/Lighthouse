@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.OrganisationSetup.Application
 {
     public enum FeatureMovePlacement
     {
