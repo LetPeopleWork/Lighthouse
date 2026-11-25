@@ -44,8 +44,6 @@ vi.mock("../../../hooks/useRbac", () => ({
 	}),
 }));
 
-vi.setConfig({ testTimeout: 20000 });
-
 const SWITCHED_OFF_EVENT = { name: "DefaultFeatureSizingSwitchedOff" };
 
 describe("Switching default Feature sizing off is counted once, when the save is accepted", () => {
@@ -173,6 +171,27 @@ describe("Switching default Feature sizing off is counted once, when the save is
 			infersDefaultFeatureSize: true,
 		});
 		expect(reportUsage).not.toHaveBeenCalledWith(SWITCHED_OFF_EVENT);
+	});
+
+	it("reports nothing for a save the server rejects, and once for the accepted save that follows", async () => {
+		const { name, user, group } = await openPortfolioSettings(true);
+		saveProjectSettings.mockRejectedValueOnce(new Error("the server said no"));
+
+		await user.click(theSwitch(group));
+		await pastTheAutosaveDelay();
+
+		expect(saveProjectSettings).toHaveBeenCalledTimes(1);
+		expect(reportUsage).not.toHaveBeenCalled();
+
+		await user.type(name, " Two");
+		await pastTheAutosaveDelay();
+
+		expect(saveProjectSettings).toHaveBeenCalledTimes(2);
+		expect(saveProjectSettings.mock.calls[1][0]).toMatchObject({
+			infersDefaultFeatureSize: false,
+		});
+		expect(reportUsage).toHaveBeenCalledTimes(1);
+		expect(reportUsage).toHaveBeenCalledWith(SWITCHED_OFF_EVENT);
 	});
 
 	it("reports nothing for a save that leaves it on", async () => {

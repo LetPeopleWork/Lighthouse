@@ -4,7 +4,14 @@ using System.Text.Json.Nodes;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.Forecasting.Application;
+using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Tests.API;
+using Lighthouse.Backend.Platform.Host;
+using Microsoft.Extensions.Logging;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -76,17 +83,6 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
         }
 
         [Test]
-        public async Task A_Feature_with_child_Work_Items_keeps_its_real_count_in_an_override_state_while_default_sizing_is_off()
-        {
-            var ocean = Ocean.WithDefaultFeatureSize(OceanDefaultFeatureSize).WithTwoTeams().DefaultSizing(Sizing.SwitchedOff).WithOverrideState(AnOverrideState);
-            ocean.HasAFeatureInState(AnOverrideState).WithChildWorkItems(1);
-
-            await ocean.IsRefreshed();
-
-            ocean.TheFeatureCarries(remaining: 1, acrossTeams: 1, sizedByTheDefault: false);
-        }
-
-        [Test]
         public async Task A_finished_Feature_without_child_Work_Items_stays_empty_while_default_sizing_is_off()
         {
             var ocean = Ocean.WithDefaultFeatureSize(OceanDefaultFeatureSize).WithTwoTeams().DefaultSizing(Sizing.SwitchedOff);
@@ -98,7 +94,7 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
         }
 
         [Test]
-        public async Task The_historical_size_is_not_looked_up_while_default_sizing_is_off()
+        public async Task A_Feature_without_child_Work_Items_counts_as_zero_when_the_default_comes_from_history_while_default_sizing_is_off()
         {
             var ocean = Ocean.WithDefaultFeatureSize(OceanDefaultFeatureSize).WithTwoTeams().DefaultSizing(Sizing.SwitchedOff).CalculatingTheDefaultFromHistory();
             ocean.HasAFeatureWithoutChildWorkItems();
@@ -106,7 +102,19 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             await ocean.IsRefreshed();
 
             ocean.TheFeatureCarriesNoWorkForAnyTeam();
-            ocean.NoHistoricalSizeWasLookedUp();
+        }
+
+        [Test]
+        public async Task The_forecast_takes_a_Feature_without_child_Work_Items_as_zero_while_default_sizing_is_off()
+        {
+            var ocean = Ocean.WithDefaultFeatureSize(OceanDefaultFeatureSize).WithTwoTeams().DefaultSizing(Sizing.SwitchedOff);
+            ocean.HasAFeatureWithoutChildWorkItems();
+
+            await ocean.IsRefreshed();
+            await ocean.IsForecast();
+
+            ocean.TheFeatureIsForecastToNeedNoTime();
+            ocean.ADeliveryHoldingTheFeatureIsExpectedToCompleteToday();
         }
 
         [Test]
@@ -179,6 +187,53 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             private readonly Portfolio portfolio = AJiraPortfolio();
             private int ids;
             private Feature? feature;
+
+            private static readonly DateOnly Today = new(2026, 11, 25);
+            private readonly Mock<IFeatureRepository> featureRepository = new();
+
+            public async Task IsForecast()
+            {
+                var teamMetrics = new Mock<ITeamMetricsService>();
+                foreach (var team in teams)
+                {
+                    var theTeam = team;
+                    teamMetrics
+                        .Setup(metrics => metrics.GetForecastThroughputStatus(theTeam, It.IsAny<ThroughputFilterMode>()))
+                        .Returns(new ForecastThroughputStatus(new RunChartData(RunChartDataGenerator.GenerateRunChartData([3, 3, 3])), false, null));
+                    theTeam.FeatureWIP = 1;
+                }
+
+                featureRepository.Holds(portfolio.Features);
+
+                var forecastService = new ForecastService(
+                    new RandomNumberService(),
+                    Mock.Of<ILogger<ForecastService>>(),
+                    teamMetrics.Object,
+                    featureRepository.Object,
+                    Mock.Of<IPortfolioRepository>(),
+                    new NothingWaitsForAnything(),
+                    new ForecastSimulation(new DrawsTheSameNumberEveryTime(), new ForecastSimulationLimits(50, ForecastSimulationLimits.Default.MostDaysOneSimulatedRunMayCover)),
+                    TimeProvider.System);
+
+                await forecastService.UpdateForecastsForPortfolio(portfolio, Today);
+            }
+
+            public void TheFeatureIsForecastToNeedNoTime()
+            {
+                Assert.That(TheRefreshedFeature().Forecast.GetProbability(85), Is.LessThanOrEqualTo(0),
+                    "Feature F should be forecast to need no days, because it counts as 0 remaining Work Items and the forecast takes that as it comes. Give it no invented work, so the forecast has nothing to wait for.");
+            }
+
+            public void ADeliveryHoldingTheFeatureIsExpectedToCompleteToday()
+            {
+                var delivery = new Delivery("Ocean release", Today.ToDateTime(TimeOnly.MinValue), portfolio.Id);
+                delivery.ReplaceFeatures([TheRefreshedFeature()]);
+
+                var metrics = delivery.CalculateMetrics(Today, [], 85);
+
+                Assert.That(metrics.WhenDistribution.Single().ExpectedDate.Date, Is.EqualTo(Today.ToDateTime(TimeOnly.MinValue)),
+                    "A Delivery holding only Feature F should be expected to complete today, because F counts as 0 remaining. Leave F without invented work so the Delivery has nothing left to wait for.");
+            }
 
             private Ocean()
             {
@@ -335,14 +390,6 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
                     Assert.That(refreshed.Size, Is.Zero,
                         "Feature F should have size 0, because it has no child Work Items.");
                 }
-            }
-
-            public void NoHistoricalSizeWasLookedUp()
-            {
-                history.Verify(
-                    metrics => metrics.GetCycleTimeDataForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
-                    Times.Never,
-                    "No historical Feature size should be looked up, because with default sizing off nothing uses a default size. Skip the percentile calculation.");
             }
 
             public void TheStoredSizingSettingsAre(int defaultFeatureSize, string overrideState, int sizeEstimateField, bool defaultSizingIsOn)

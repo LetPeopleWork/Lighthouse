@@ -589,7 +589,7 @@ describe("FeatureSizeComponent default Feature sizing switch", () => {
 		expect(history).toHaveValue(90);
 	});
 
-	it("shows the switch first in the group, says what off means, and reads on for a Portfolio saved before the switch existed", async () => {
+	it("shows the switch first in the group and says what off means", async () => {
 		await openTheForm(aPortfolioHoldingSeven(switchedOn));
 
 		const inferSwitch = screen.getByLabelText(
@@ -608,6 +608,22 @@ describe("FeatureSizeComponent default Feature sizing switch", () => {
 				"When off, a Feature without child Work Items counts as 0.",
 			),
 		).toBeInTheDocument();
+	});
+
+	it("reads on, with every setting enabled, for a Portfolio saved before the switch existed", async () => {
+		const savedBeforeTheSwitchExisted = {
+			...aPortfolioHoldingSeven(switchedOn),
+		} as Record<string, unknown>;
+		delete savedBeforeTheSwitchExisted.infersDefaultFeatureSize;
+
+		await openTheForm(savedBeforeTheSwitchExisted as unknown as IPortfolioSettings);
+
+		expect(screen.getByLabelText(/Infer a size for Features/i)).toBeChecked();
+		expect(
+			screen.getByLabelText(/Default Number of Work Items per Feature/i),
+		).toBeEnabled();
+		expect(theSizeEstimate()).not.toHaveAttribute("aria-disabled", "true");
+		expect(theOverrideState()).not.toHaveAttribute("aria-disabled", "true");
 	});
 
 	it("changes nothing but the switch when it is switched off, and again when it is switched on", async () => {
