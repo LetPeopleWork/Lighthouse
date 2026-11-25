@@ -309,6 +309,58 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The user clicks into the empty field so the suggestions open, hovers &#x27;Waiting for Deployment&#x27;, tabs away, clicks back into the field and presses Enter with the field still empty.
+</code></pre>
+
+<pre><code>Nothing is added.
+</code></pre>
+
+<pre><code>An empty field never adds a suggestion the user only looked at earlier.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx</p>
+
+<pre><code>Enter on an empty field adds the suggestion highlighted before the field was left.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The user types &#x27;Waiting for&#x27;, highlights &#x27;Waiting for Deployment&#x27;, then the suggestions change so that it is no longer offered, and the user presses Enter.
+</code></pre>
+
+<pre><code>Only the entered text &#x27;Waiting for&#x27; is added; the suggestion that is no longer shown is never added.
+</code></pre>
+
+<pre><code>A suggestion that has disappeared from the list is not added in place of what the user entered.
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx</p>
+
+<pre><code>Enter adds the earlier highlighted suggestion even though the list no longer offers it, or adds nothing at all.
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

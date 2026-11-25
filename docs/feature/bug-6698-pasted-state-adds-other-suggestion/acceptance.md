@@ -184,6 +184,66 @@ Enter adds the typed text 'Waiting for A' and ignores a mouse pick.
 
 None.
 
+##### Covers
+
+P1
+
+```text
+The user clicks into the empty field so the suggestions open, hovers 'Waiting for Deployment', tabs away, clicks back into the field and presses Enter with the field still empty.
+```
+
+```text
+Nothing is added.
+```
+
+```text
+An empty field never adds a suggestion the user only looked at earlier.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/ItemListManager\/ItemListManager\.pastedEntry\.test\.tsx
+
+```text
+Enter on an empty field adds the suggestion highlighted before the field was left.
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The user types 'Waiting for', highlights 'Waiting for Deployment', then the suggestions change so that it is no longer offered, and the user presses Enter.
+```
+
+```text
+Only the entered text 'Waiting for' is added; the suggestion that is no longer shown is never added.
+```
+
+```text
+A suggestion that has disappeared from the list is not added in place of what the user entered.
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/ItemListManager\/ItemListManager\.pastedEntry\.test\.tsx
+
+```text
+Enter adds the earlier highlighted suggestion even though the list no longer offers it, or adds nothing at all.
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

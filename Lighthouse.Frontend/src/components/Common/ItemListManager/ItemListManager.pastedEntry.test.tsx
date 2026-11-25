@@ -133,3 +133,58 @@ describe("ItemListManager entry confirmed with Enter", () => {
 		).toEqual([["Waiting for Approval"]]);
 	});
 });
+
+describe("ItemListManager entry confirmed with Enter after the suggestions changed", () => {
+	const onAddItem = vi.fn();
+
+	beforeEach(() => {
+		onAddItem.mockClear();
+	});
+
+	const listWith = (offered: string[]) => (
+		<ItemListManager
+			title={title}
+			items={["Doing"]}
+			suggestions={offered}
+			onAddItem={onAddItem}
+			onRemoveItem={vi.fn()}
+		/>
+	);
+
+	it("adds nothing for an empty field after a suggestion was highlighted and the field was left", async () => {
+		const user = userEvent.setup();
+		render(listWith(suggestions));
+		const input = screen.getByLabelText(`New ${title}`);
+
+		await user.click(input);
+		await user.hover(
+			await screen.findByRole("option", { name: "Waiting for Deployment" }),
+		);
+		await user.tab();
+		await user.click(input);
+		await user.keyboard("{Enter}");
+
+		expect(
+			onAddItem.mock.calls,
+			"Bug 6698: an empty field must add nothing; a suggestion highlighted before leaving the field was added.",
+		).toEqual([]);
+	});
+
+	it("adds the entered text, not a highlighted suggestion that is no longer offered", async () => {
+		const user = userEvent.setup();
+		const { rerender } = render(listWith(suggestions));
+		const input = screen.getByLabelText(`New ${title}`);
+
+		await user.type(input, "Waiting for");
+		await user.hover(
+			await screen.findByRole("option", { name: "Waiting for Deployment" }),
+		);
+		rerender(listWith(["Waiting for Approval"]));
+		await user.keyboard("{Enter}");
+
+		expect(
+			onAddItem.mock.calls,
+			"Bug 6698: Enter must never add a suggestion the list no longer shows; it must add the entered text.",
+		).toEqual([["Waiting for"]]);
+	});
+});

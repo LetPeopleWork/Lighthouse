@@ -78,12 +78,38 @@
 "expected": "F33",
 "stimulus": "F32",
 "user_result": "F34"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F39",
+"test": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx"
+},
+"expected": "F37",
+"stimulus": "F36",
+"user_result": "F38"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F43",
+"test": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx"
+},
+"expected": "F41",
+"stimulus": "F40",
+"user_result": "F42"
 }
 ]
 },
 "counters": {
 "E": 4,
-"F": 35,
+"F": 43,
 "P": 1,
 "S": 1
 },
@@ -166,7 +192,15 @@
 "F33": "'Waiting for Approval' is added once.",
 "F34": "A suggestion the user picked for the current text is added.",
 "F35": "Enter adds the typed text 'Waiting for A' and ignores a mouse pick.",
+"F36": "The user clicks into the empty field so the suggestions open, hovers 'Waiting for Deployment', tabs away, clicks back into the field and presses Enter with the field still empty.",
+"F37": "Nothing is added.",
+"F38": "An empty field never adds a suggestion the user only looked at earlier.",
+"F39": "Enter on an empty field adds the suggestion highlighted before the field was left.",
 "F4": "In a states list (and every other list built on ItemListManager), the user lets a suggestion become highlighted, then pastes or types a different value and presses Enter: the pasted or typed value is added, not the earlier highlighted suggestion.",
+"F40": "The user types 'Waiting for', highlights 'Waiting for Deployment', then the suggestions change so that it is no longer offered, and the user presses Enter.",
+"F41": "Only the entered text 'Waiting for' is added; the suggestion that is no longer shown is never added.",
+"F42": "A suggestion that has disappeared from the list is not added in place of what the user entered.",
+"F43": "Enter adds the earlier highlighted suggestion even though the list no longer offers it, or adds nothing at all.",
 "F5": "Render the list with suggestions such as 'Waiting for Deployment' and 'Waiting for Approval'; open the suggestions and highlight 'Waiting for Deployment' with the mouse (and, in a second case, with the keyboard); then paste or type 'Waiting for Reproduction' and press Enter.",
 "F6": "onAddItem is called once with 'Waiting for Reproduction'. A suggestion that the user highlights and confirms with Enter while it is still shown is still added as before, and a case-insensitive match of a typed value to a suggestion still takes the suggestion's casing.",
 "F7": "onAddItem is called with 'Waiting for Deployment' (or any suggestion other than the one matching the entered text), or is not called at all.",
