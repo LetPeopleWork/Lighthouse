@@ -11,6 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.AspNetCore.Mvc;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.API
 {

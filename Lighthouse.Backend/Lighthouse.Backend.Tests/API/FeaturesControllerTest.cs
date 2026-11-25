@@ -12,6 +12,7 @@ using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Text.Json;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.API
 {

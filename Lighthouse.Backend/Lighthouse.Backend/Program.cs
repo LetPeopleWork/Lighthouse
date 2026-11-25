@@ -84,6 +84,7 @@ using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Promises.Application;
 using Lighthouse.Backend.Modules.Promises.Application.Policies;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend
 {
@@ -1444,9 +1445,9 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IWhatTheForecastWaitsFor, WhatTheForecastWaitsFor>();
             builder.Services.AddScoped<IDependencyRefreshReporter, DependencyRefreshReporter>();
             builder.Services.AddScoped<IFeatureRankSeeder, FeatureRankSeeder>();
-            builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.OptionalFeatures.DefaultOptionalFeatureApplier>();
-            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.OptionalFeatures.IOptionalFeatureApplier, Lighthouse.Backend.Services.Implementation.OptionalFeatures.FeatureOrderingApplier>();
-            builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.OptionalFeatures.OptionalFeatureApplierRegistry>();
+            builder.Services.AddScoped<Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.DefaultOptionalFeatureApplier>();
+            builder.Services.AddScoped<Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.IOptionalFeatureApplier, Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.FeatureOrderingApplier>();
+            builder.Services.AddScoped<Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures.OptionalFeatureApplierRegistry>();
             builder.Services.AddScoped<IFeatureRankingService, FeatureRankingService>();
             builder.Services.AddScoped<IFeatureMoveAuthorization, FeatureMoveAuthorization>();
             builder.Services.AddScoped<FeatureDependencyRendering>();

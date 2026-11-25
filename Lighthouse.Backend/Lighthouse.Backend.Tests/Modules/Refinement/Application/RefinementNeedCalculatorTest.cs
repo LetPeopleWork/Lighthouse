@@ -7,6 +7,7 @@ using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.Forecasting.Application;
 using Moq;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {

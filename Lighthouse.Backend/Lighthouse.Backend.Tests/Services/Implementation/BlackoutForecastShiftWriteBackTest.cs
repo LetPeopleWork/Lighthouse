@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {

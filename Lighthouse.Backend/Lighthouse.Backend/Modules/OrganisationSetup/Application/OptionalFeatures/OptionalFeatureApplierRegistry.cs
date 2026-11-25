@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces.OptionalFeatures;
 
 namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures
 {

@@ -79,22 +79,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             ("Services/Interfaces/IWriteBackTriggerService.cs", "write-back placement"),
 
             // Feature order and rank are Organisation set-up's rules, not a promise; they are placed with that context.
-            ("Services/Implementation/FeatureOrdering.cs", "Organisation set-up"),
-            ("Services/Implementation/FeatureOrderingPolicyProvider.cs", "Organisation set-up"),
-            ("Services/Implementation/FeatureRankingService.cs", "Organisation set-up"),
-            ("Services/Implementation/FeatureRankSeeder.cs", "Organisation set-up"),
-            ("Services/Implementation/OptionalFeatures/FeatureOrderingApplier.cs", "Organisation set-up"),
-            ("Services/Interfaces/IFeatureOrdering.cs", "Organisation set-up"),
-            ("Services/Interfaces/IFeatureOrderingPolicyProvider.cs", "Organisation set-up"),
-            ("Services/Interfaces/IFeatureRankingService.cs", "Organisation set-up"),
-            ("Services/Interfaces/IFeatureRankSeeder.cs", "Organisation set-up"),
         ];
 
         // Words that once put a source file into Promises: the Delivery word, and the write-back and ordering names the
         // Promises scope first held. The update code carries none of them and stays in its own folders.
         private static readonly string[] PromisesWordsInATypeName = ["Deliver"];
 
-        private static readonly string[] PromisesTypeNamePrefixes = ["WriteBack", "IWriteBack", "FeatureOrdering", "IFeatureOrdering", "FeatureRank", "IFeatureRank"];
+        private static readonly string[] PromisesTypeNamePrefixes = ["WriteBack", "IWriteBack"];
 
         private static readonly Lazy<List<string>> TestSourcePaths = new(() => ReadSourcePaths(TestProjectDirectory, ThisFile));
 

@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Moq;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.API
 {

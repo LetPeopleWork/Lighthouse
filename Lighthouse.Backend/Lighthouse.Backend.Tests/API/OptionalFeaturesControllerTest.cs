@@ -2,13 +2,13 @@
 using Lighthouse.Backend.Modules.Access.Adapters.Http;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Lighthouse.Backend.Modules.Licensing.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures;
 
 namespace Lighthouse.Backend.Tests.API
 {

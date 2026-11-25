@@ -9,6 +9,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.Forecasting.Application
 {

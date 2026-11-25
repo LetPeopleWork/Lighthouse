@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Modules.Promises.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.API
 {

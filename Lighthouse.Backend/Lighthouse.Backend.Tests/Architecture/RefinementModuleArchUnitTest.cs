@@ -13,6 +13,7 @@ using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Modules.Access.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

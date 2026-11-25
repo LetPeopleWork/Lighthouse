@@ -19,6 +19,7 @@ using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {

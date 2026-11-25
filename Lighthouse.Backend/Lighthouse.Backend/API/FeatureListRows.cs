@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Modules.WorkItems.Application;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.API
 {

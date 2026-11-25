@@ -3,8 +3,8 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Platform.DomainEvents;
-using Lighthouse.Backend.Services.Interfaces.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures
 {

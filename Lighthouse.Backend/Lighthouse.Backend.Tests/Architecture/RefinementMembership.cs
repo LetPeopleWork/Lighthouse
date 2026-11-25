@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "SizingCommentDto",
                 "SizingLogDto",
                 "SizingVoteDto"),
-            new("WeeklyRecurrence", "Lighthouse.Backend.Services.Implementation", "Organisation set-up",
+            new("WeeklyRecurrence", "Lighthouse.Backend.Modules.OrganisationSetup.Domain", "Organisation set-up",
                 "The recurring blackout rules use it as well, so it moves with the organisation set-up, not with Refinement"),
         ];
 

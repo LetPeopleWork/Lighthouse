@@ -19,6 +19,7 @@ using Lighthouse.Backend.Modules.WorkItems.Application;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Reports
 {

@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application
 {

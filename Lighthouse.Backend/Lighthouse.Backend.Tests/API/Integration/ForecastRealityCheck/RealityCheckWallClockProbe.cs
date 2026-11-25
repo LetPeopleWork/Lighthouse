@@ -19,6 +19,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {

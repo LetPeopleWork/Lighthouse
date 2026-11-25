@@ -34,6 +34,7 @@ using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Lighthouse.Backend.Modules.TrackerIntegration.Application;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Acceptance.WorkItems
 {

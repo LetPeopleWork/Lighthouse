@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Lighthouse.Backend.Modules.WorkItems.Domain.Dependencies;
 using Lighthouse.Backend.Modules.WorkItems.Application.Dependencies;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 {

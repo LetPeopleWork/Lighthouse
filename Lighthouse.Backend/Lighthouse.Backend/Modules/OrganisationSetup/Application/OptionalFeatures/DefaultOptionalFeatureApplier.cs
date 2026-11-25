@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models.OptionalFeatures;
-using Lighthouse.Backend.Services.Interfaces.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures

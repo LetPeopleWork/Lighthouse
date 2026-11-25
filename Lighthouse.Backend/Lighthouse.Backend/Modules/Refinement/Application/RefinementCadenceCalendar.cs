@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Services.Implementation;
 using System.Diagnostics.CodeAnalysis;
 using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Modules.Refinement.Application
 {

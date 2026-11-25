@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Modules.OrganisationSetup.Domain;
 
 namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Domain
 {

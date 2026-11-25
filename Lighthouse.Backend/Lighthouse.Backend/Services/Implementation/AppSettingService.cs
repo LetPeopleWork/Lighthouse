@@ -1,10 +1,11 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
-using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Globalization;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures;
 
 namespace Lighthouse.Backend.Services.Implementation
 {

@@ -158,12 +158,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         // log through the repository ports. The list only shrinks.
         private static readonly string[] EdgesOfTheApplicationIntoAccessSetUpPlatformAndRepositories =
         [
-            "Lighthouse.Backend.Modules.Refinement.Application.RefinementCadenceCalendar -> Lighthouse.Backend.Services.Implementation.WeeklyRecurrence",
             "Lighthouse.Backend.Modules.Refinement.Application.RefinementCalendar -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
-            "Lighthouse.Backend.Modules.Refinement.Application.RefinementCalendar -> Lighthouse.Backend.Services.Interfaces.IBlackoutPeriodService",
             "Lighthouse.Backend.Modules.Refinement.Application.RefinementList -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
             "Lighthouse.Backend.Modules.Refinement.Application.RefinementList -> Lighthouse.Backend.Services.Interfaces.Repositories.IWorkItemRepository",
-            "Lighthouse.Backend.Modules.Refinement.Application.RefinementNeedCalculator -> Lighthouse.Backend.Services.Interfaces.IBlackoutPeriodService",
             "Lighthouse.Backend.Modules.Refinement.Application.RefinementViewQuery -> Lighthouse.Backend.Services.Interfaces.Repositories.IRepository`1",
             "Lighthouse.Backend.Modules.Refinement.Application.RefinementViewQuery -> Lighthouse.Backend.Services.Interfaces.Repositories.ISizingLogRepository",
             "Lighthouse.Backend.Modules.Refinement.Application.SizingLogCommands -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
@@ -434,7 +431,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedAccessType), "Lighthouse.Backend.Modules.Access.Application.IAuthModeResolver")
                 .SetName("ARefinementApplicationTypeReachingAnUnlistedAccessType_IsNamed");
-            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), "Lighthouse.Backend.Services.Interfaces.IBlackoutPeriodService")
+            yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedSetUpType), typeof(global::Lighthouse.Backend.Services.Interfaces.IAppSettingService).FullName!)
                 .SetName("ARefinementApplicationTypeReachingAnUnlistedSetUpType_IsNamed");
             yield return new TestCaseData(typeof(AnApplicationTypeReachingAnUnlistedPlatformType), "Lighthouse.Backend.Platform.Host.ILighthouseClock")
                 .SetName("ARefinementApplicationTypeReachingAnUnlistedPlatformLaneType_IsNamed");
@@ -795,9 +792,9 @@ namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingA
 
 namespace Lighthouse.Backend.Modules.SizingFixtures.BoundariesOutbound.ReachingAnUnlistedSetUpType.Application
 {
-    internal sealed class AnApplicationTypeReachingAnUnlistedSetUpType(global::Lighthouse.Backend.Services.Interfaces.IBlackoutPeriodService blackouts)
+    internal sealed class AnApplicationTypeReachingAnUnlistedSetUpType(global::Lighthouse.Backend.Services.Interfaces.IAppSettingService settings)
     {
-        public int Describe() => blackouts.GetHashCode();
+        public int Describe() => settings.GetHashCode();
     }
 }
 

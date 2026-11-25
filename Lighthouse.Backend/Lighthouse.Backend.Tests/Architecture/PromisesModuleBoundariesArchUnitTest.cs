@@ -142,7 +142,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             "Lighthouse.Backend.Modules.Promises.Application.DeliveryForecastPublishingService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Promises.Application.DeliveryForecastPublishingService -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",
-            "Lighthouse.Backend.Modules.Promises.Application.DeliveryMetricValuesProjector -> Lighthouse.Backend.Services.Interfaces.IBlackoutPeriodService",
             "Lighthouse.Backend.Modules.Promises.Application.DeliveryRuleService -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",
             "Lighthouse.Backend.Modules.Promises.Application.DeliverySourceSyncService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
             "Lighthouse.Backend.Modules.Promises.Application.DeliverySourceSyncService -> Lighthouse.Backend.Services.Interfaces.Repositories.RecordableDeliveries",

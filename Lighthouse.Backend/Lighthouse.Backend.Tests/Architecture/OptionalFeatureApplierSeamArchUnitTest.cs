@@ -1,10 +1,9 @@
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
-using Lighthouse.Backend.Services.Interfaces.OptionalFeatures;
 using Lighthouse.Backend.Platform.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application.OptionalFeatures;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {

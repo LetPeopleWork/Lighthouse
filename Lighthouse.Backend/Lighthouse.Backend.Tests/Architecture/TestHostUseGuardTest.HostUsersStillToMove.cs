@@ -297,7 +297,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest",
             "Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.TeamDataRefreshedGoldTest",
             "Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.WorkItemDomainEventsGoldTest",
-            "Lighthouse.Backend.Tests.Services.Implementation.FeatureRankSeederTest",
+            "Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application.FeatureRankSeederTest",
             "Lighthouse.Backend.Tests.Modules.Licensing.LicensingIntegrationTest",
             "Lighthouse.Backend.Tests.Platform.Host.LighthouseClockTest",
             "Lighthouse.Backend.Tests.Modules.TrackerIntegration.Application.OAuth.OAuthProviderRegistryTest",

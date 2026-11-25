@@ -152,7 +152,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Modules.WorkItems.Application.Policies.PortfolioDeletedOrphanedFeatureCleanupHandler -> Lighthouse.Backend.Services.Interfaces.IOrphanedFeatureCleanupService",
             "Lighthouse.Backend.Modules.WorkItems.Application.RefreshLogService -> Lighthouse.Backend.Services.Interfaces.IAppSettingService",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.UpdateQueue.UpdateCancellationContext",
-            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Services.Interfaces.IFeatureOrdering",
+            "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Modules.OrganisationSetup.Application.IFeatureOrdering",
             "Lighthouse.Backend.Modules.WorkItems.Application.WorkItemService -> Lighthouse.Backend.Platform.Host.ILighthouseClock",
         ];
 

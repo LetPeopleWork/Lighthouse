@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 using Microsoft.VisualStudio.Services.Common;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.API
 {

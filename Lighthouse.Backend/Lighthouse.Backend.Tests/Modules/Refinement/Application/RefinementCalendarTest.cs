@@ -4,6 +4,7 @@ using Lighthouse.Backend.Modules.Refinement.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Moq;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.Tests.Modules.Refinement.Application
 {

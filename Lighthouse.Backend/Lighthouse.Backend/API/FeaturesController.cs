@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
 using System.Text.Json;
 using Lighthouse.Backend.Platform.Host;
+using Lighthouse.Backend.Modules.OrganisationSetup.Application;
 
 namespace Lighthouse.Backend.API
 {
