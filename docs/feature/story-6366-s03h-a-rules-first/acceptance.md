@@ -548,4 +548,88 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules ReportsMembership: Test Run Successful, 23/23 passed incl. both-way type set equality, found-once, Domain-file edge limit to kernel/BCL/Domain, staying types, missing/made-up/unlisted/Domain-reach falsifier tests each named.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules ReportsMembership: Test Run Successful, 23/23 passed incl. both-way type set equality, found-once, Domain-file edge limit to kernel/BCL/Domain, staying types, missing/made-up/unlisted/Domain-reach falsifier tests each named.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules whole Architecture namespace: Test Run Successful, 1846/1846 passed. ef-model-unchanged: Sqlite and Postgres both report no model changes. backend-tests ReportsMembership: 23/23 passed. test-selection-show Architecture path: backend true. No public probe shows production files unchanged.
+```
+
+```text
+Non-probe: no public probe separately lists the rule-pattern old-vs-new namespace law test names (NamespaceMoveLaw filter matched 0); coverage inferred from whole Architecture run 1846/1846.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules whole Architecture namespace: Test Run Successful, 1846/1846 passed. ef-model-unchanged: Sqlite and Postgres both report no model changes. backend-tests ReportsMembership: 23/23 passed. test-selection-show Architecture path: backend true. No public probe shows production files unchanged.
+```
+
+```text
+Non-probe: no public probe separately lists the rule-pattern old-vs-new namespace law test names (NamespaceMoveLaw filter matched 0); coverage inferred from whole Architecture run 1846/1846.
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules NamespaceMove (name filter matched 0 tests) and Rename: 11/11 passed, incl. NoRuleStringNamesReportsByOldPath_OutsideTheRenameList, RenameListCheck naming unlisted and stale strings. No probe named the pattern old-vs-new law tests directly; whole-rule-set run covers them.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules whole Architecture namespace: Test Run Successful, 1846/1846 passed. ef-model-unchanged: Sqlite and Postgres both report no model changes. backend-tests ReportsMembership: 23/23 passed. test-selection-show Architecture path: backend true. No public probe shows production files unchanged.
+```
+
+### E7
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests (no fragment, detached run): Test Run Successful. Total 14774, Passed 14762, Skipped 12, no failed.
+```
+
+```text
+Probe architecture-rules ReportsMembership: Test Run Successful, 23/23 passed incl. both-way type set equality, found-once, Domain-file edge limit to kernel/BCL/Domain, staying types, missing/made-up/unlisted/Domain-reach falsifier tests each named.
+```
+
+```text
+Probe architecture-rules whole Architecture namespace: Test Run Successful, 1846/1846 passed. ef-model-unchanged: Sqlite and Postgres both report no model changes. backend-tests ReportsMembership: 23/23 passed. test-selection-show Architecture path: backend true. No public probe shows production files unchanged.
+```

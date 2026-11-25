@@ -270,7 +270,7 @@
 "counters": {
 "D": 6,
 "E": 7,
-"F": 189,
+"F": 194,
 "K": 6,
 "L": 2,
 "P": 4,
@@ -770,6 +770,54 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F190"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F190"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F191",
+"F192"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F191",
+"F192"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F193"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F191"
+],
+"verdict": "met"
+},
+"E7": {
+"observations": [
+"F194",
+"F190",
+"F191"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -923,6 +971,11 @@
 "F188": "Observable as: ef-model-unchanged reports the EF model unchanged for every provider, and architecture-rules over the whole rule set passes. That no production file moved or changed behaviour in feature A is not seen by any public probe; it is left to the whole-candidate review, which saw production unchanged since e5bbe3fed.",
 "F189": "Every existing backend test stays green after the change. Observable as: backend-tests with the fragment ReportsMembership (green, every test named), and backend-tests without a fragment, run as a background shell job (about 7 minutes) and read when it ends, reporting Test Run Successful with 0 failed; test-selection-show for a path under Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ selects the backend suite.",
 "F19": "Shared law: REUSE. NamespaceMoveLaw already takes a move map and a pattern-role map (lifted by the Refinement packaging), so Reports adds its own map and calls the same law; no second law and no edit to NamespaceMoveLaw. The open renames of RoleBreak.KeepsAPlatformAlternativeAsAnOldLocation and the PlatformLanePatternRoles reason text stay open: this feature does not edit those files. Rejected: a Reports copy of the law (two owners of one rule) and one fixture per pattern (covers only remembered patterns).",
+"F190": "Probe architecture-rules ReportsMembership: Test Run Successful, 23/23 passed incl. both-way type set equality, found-once, Domain-file edge limit to kernel/BCL/Domain, staying types, missing/made-up/unlisted/Domain-reach falsifier tests each named.",
+"F191": "Probe architecture-rules whole Architecture namespace: Test Run Successful, 1846/1846 passed. ef-model-unchanged: Sqlite and Postgres both report no model changes. backend-tests ReportsMembership: 23/23 passed. test-selection-show Architecture path: backend true. No public probe shows production files unchanged.",
+"F192": "Non-probe: no public probe separately lists the rule-pattern old-vs-new namespace law test names (NamespaceMoveLaw filter matched 0); coverage inferred from whole Architecture run 1846/1846.",
+"F193": "Probe architecture-rules NamespaceMove (name filter matched 0 tests) and Rename: 11/11 passed, incl. NoRuleStringNamesReportsByOldPath_OutsideTheRenameList, RenameListCheck naming unlisted and stale strings. No probe named the pattern old-vs-new law tests directly; whole-rule-set run covers them.",
+"F194": "Probe backend-tests (no fragment, detached run): Test Run Successful. Total 14774, Passed 14762, Skipped 12, no failed.",
 "F2": "The rules see the Reports move before any file moves, so the move in feature B cannot silently loosen a rule.",
 "F20": "Layer rule, decided per file, never per type (a move never splits a file): a file is Domain if and only if it is not a port file and every top-level type it declares has IL edges only to the kernel (Lighthouse.Backend.Models and its sub-namespaces), the BCL and types of other Reports Domain files. A port file declares an I-prefixed port interface and stays in Application with every record and enum it declares; the flag is a declared fact on the map. A non-Domain file under Services/Implementation/Reports/Metrics is ApplicationMetrics (the grouping is kept); every other non-Domain file is Application. The check runs both ways: a Domain-listed file reaching beyond the kernel fails, and a kernel-only non-port file listed as Application or ApplicationMetrics fails. Expected Domain: ReportWindowPolicy, ReportCapPolicy, ReportSeriesReading; DailySeriesSummary reaches the Flow metrics Domain and stays ApplicationMetrics. If the IL makes a Metrics file kernel-only, the crafter returns it to the architect instead of choosing a layer.",
 "F21": "Same answer (P2) is the role law of NamespaceMoveLaw: every regex field that sees a moving Reports type under its old subject is declared in ReportsPatternRoles with its subject (Namespace or FullName) and role. A Context pattern must give the same answer under the new subject, widened by one anchored alternative ^Lighthouse\\.Backend\\.Modules\\.Reports(\\.|$); a Place or folder-only pattern must not see the type in Modules.Reports; an undeclared pattern that sees a moving type fails; no Modules.Reports alternative matches a production type outside Modules.Reports. Candidates measured by text on HEAD e5bbe3fed (noisy; the IL-backed law names the definitive set): ModuleBoundariesArchUnitTest.ReportsPattern (line 25; read by ReportsModuleArchUnitTest, ModuleBoundariesArchUnitTest line 67 and the interpolated readers FlowMetricsInboundApplicationArchUnitTest 51, ForecastingModuleBoundariesArchUnitTest 139, WorkItemsModuleBoundariesArchUnitTest 169), TrackerIntegrationModuleBoundariesArchUnitTest.RefinementReportsAccessAndLicensing (line 60, alternation form), and, new against the DESIGN text, AccessModuleBoundariesArchUnitTest.RefinementAndReports and LicensingModuleBoundariesArchUnitTest.RefinementAndReports (line 65 each). ReportsModuleArchUnitTest ReportModelsPattern, RepositoryPortPattern, ApiLayerPattern and CompositionRootPattern name staying code and stay unchanged.",
