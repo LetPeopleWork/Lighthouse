@@ -64,6 +64,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string TheServices => @"^Lighthouse\.Backend\.Services(\.|$)";
 
+        private static string TheServicesAndOrganisationSetUp => @"^Lighthouse\.Backend\.Services(\.|$)|^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)";
+
         private static string MadeUpRoot => typeof(AnEndpoint).Namespace![..^".API".Length];
 
         private static string MadeUpApi => NamespaceAndBelow(typeof(AnEndpoint));
@@ -113,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ThePlatformLane_ReachesCodeStillInServices_OnlyThroughTheListedEdges()
         {
-            var verdict = ReachesServicesOnlyThroughTheList(ProductionModule.Value, ThePlatformLane, TheServices, TheLanesEdgesIntoServices);
+            var verdict = ReachesServicesOnlyThroughTheList(ProductionModule.Value, ThePlatformLane, TheServicesAndOrganisationSetUp, TheLanesEdgesIntoServices);
 
             verdict.Check();
         }
@@ -200,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var listMinusTheEntry = TheLanesEdgesIntoServices.Where((_, index) => index != position).ToList();
 
-            var verdict = ReachesServicesOnlyThroughTheList(ProductionModule.Value, ThePlatformLane, TheServices, listMinusTheEntry);
+            var verdict = ReachesServicesOnlyThroughTheList(ProductionModule.Value, ThePlatformLane, TheServicesAndOrganisationSetUp, listMinusTheEntry);
 
             ThenTheLaneRuleFailsNamingTheNewcomer(verdict.Check, TheLanesEdgesIntoServices[position]);
         }
@@ -211,7 +213,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var dependent = TheLanesEdgesIntoServices[position].Split(" -> ")[0];
             var goneEdge = $"{dependent} -> {typeof(AGoneServicesHelper).FullName}";
 
-            var verdict = ReachesServicesOnlyThroughTheList(ProductionModule.Value, ThePlatformLane, TheServices, [.. TheLanesEdgesIntoServices, goneEdge]);
+            var verdict = ReachesServicesOnlyThroughTheList(ProductionModule.Value, ThePlatformLane, TheServicesAndOrganisationSetUp, [.. TheLanesEdgesIntoServices, goneEdge]);
 
             ThenTheRuleFailsNamingTheStaleEntryForDeletion(verdict.Check, goneEdge);
         }
