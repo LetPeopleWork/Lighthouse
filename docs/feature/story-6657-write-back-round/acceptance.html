@@ -155,7 +155,34 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>For every architecture and layout rule that judges the write-back round, the architecture-rules probe shows the same pass/fail verdict after the round moves as before it, with no rule loosened and no rule dropped or silently emptied; rules still see the round&#x27;s types.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>The write-back round&#x27;s types and its unit tests are listed under Forecasting&#x27;s Application/WriteBack place, and no longer under the old loose Services namespaces; types that stay in those loose namespaces are untouched; the backend tests and the EF model probe show no behaviour change.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>Rules refer to the round only by its Forecasting namespace (the old Services path no longer names it), and the architecture-rules probe lists boundary rules specific to the write-back round that pass, each catching a made-up offender.
+</code></pre>
 
 <h2>Charter</h2>
 

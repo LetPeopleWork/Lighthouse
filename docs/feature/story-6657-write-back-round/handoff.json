@@ -2,7 +2,8 @@
 "counters": {
 "C": 1,
 "D": 19,
-"F": 173,
+"E": 3,
+"F": 176,
 "K": 6,
 "L": 4,
 "P": 3,
@@ -1702,6 +1703,31 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F174"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F175"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F176"
+}
+]
+},
 "facts": {
 "F1": "Place the write-back round (Story 6657): move the 8 write-back round files from the loose Services namespaces into Modules/Forecasting/Application/WriteBack, behaviour-free, with rules first and rules by namespace after",
 "F10": "The write-back round lives in Modules/Forecasting/Application/WriteBack and its unit tests sit beside it; production changes only in namespace and using lines.",
@@ -1786,6 +1812,9 @@
 "F171": "Extra type in the WriteBack namespace: refused",
 "F172": "Eight named types, exhaustively checked over the IL.",
 "F173": "The round lives in Forecasting Application WriteBack and nowhere else.",
+"F174": "For every architecture and layout rule that judges the write-back round, the architecture-rules probe shows the same pass/fail verdict after the round moves as before it, with no rule loosened and no rule dropped or silently emptied; rules still see the round's types.",
+"F175": "The write-back round's types and its unit tests are listed under Forecasting's Application/WriteBack place, and no longer under the old loose Services namespaces; types that stay in those loose namespaces are untouched; the backend tests and the EF model probe show no behaviour change.",
+"F176": "Rules refer to the round only by its Forecasting namespace (the old Services path no longer names it), and the architecture-rules probe lists boundary rules specific to the write-back round that pass, each catching a made-up offender.",
 "F18": "D-4 Tracker integration edge stays listed by name, one caller: WriteBackService is the only outside type of Tracker integration's write-back port (R-T4 entry renamed); Forecasting is not made a legal caller by namespace. ADR-270 gets the row Tracker integration to Forecasting, customer of the ACL's write-back capability, one listed type.",
 "F19": "D-5 Rules first (S1): one owner ModuleRules.TheWriteBackRound, matched against the full name, equal to the 8 old full names union the new namespace; the Access, Licensing and Promises predicates take the round pattern as an argument (production value for the real rule, a made-up value naming the fixture namespace for the falsifier) instead of reading their 8-name lists. The shared NamespaceMoveLaw is reused unchanged with a write-back map; the literal sweep WriteBackStringsTheMoveRenames is fixed from the pre-move grep and only shrinks in meaning.",
 "F2": "The last named exception of the Promises packaging leaves Services; the round sits inside the context that owns it, so S09a sees it there",
