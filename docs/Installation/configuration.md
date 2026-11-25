@@ -48,7 +48,7 @@ A stored timestamp is an instant and has no time zone. A calendar day is *define
 - Command Line: `--Lighthouse:TimeZone`
 - Environment Variable: `Lighthouse__TimeZone`
 
-**Accepted values:** an [IANA time zone id](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) such as `Europe/Zurich`, `America/Los_Angeles` or `Asia/Tokyo`. On Windows, .NET 10 accepts both the IANA id and the Windows id (`W. Europe Standard Time`) — prefer the IANA id so the same configuration works on every platform. Daylight saving is handled for you; do not encode a fixed offset.
+**Accepted values:** an [IANA time zone id](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) such as `Europe/Zurich`, `America/Los_Angeles` or `Asia/Tokyo`. On Windows, Lighthouse accepts both the IANA id and the Windows id (`W. Europe Standard Time`) — prefer the IANA id so the same configuration works on every platform. Daylight saving is handled for you; do not encode a fixed offset.
 
 **Example:**
 

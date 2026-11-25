@@ -37,7 +37,7 @@ an_answer() {
 the_system_info() {
   local folder=$1 process_id=$2 installed_at=$3 database=$4
   an_answer "$folder" system-info "/api/latest/systeminfo" \
-    "{\"os\": \"Linux\", \"runtime\": \".NET 10.0.0\", \"architecture\": \"X64\", \"processId\": $process_id, \"databaseProvider\": \"$database\", \"logPath\": \"logs\", \"authenticationEnabled\": false, \"authorizationEnabled\": false, \"emergencyAdminSubjects\": [], \"baseUrl\": \"http://localhost\", \"installTimestamp\": \"$installed_at\"}"
+    "{\"os\": \"Linux\", \"runtime\": \".NET 11.0.0\", \"architecture\": \"X64\", \"processId\": $process_id, \"databaseProvider\": \"$database\", \"logPath\": \"logs\", \"authenticationEnabled\": false, \"authorizationEnabled\": false, \"emergencyAdminSubjects\": [], \"baseUrl\": \"http://localhost\", \"installTimestamp\": \"$installed_at\"}"
 }
 
 the_log_level() {

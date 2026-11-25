@@ -150,7 +150,7 @@ Lighthouse is **not** intended for:
 | Layer | Technology |
 |-------|------------|
 | Frontend | React 19, TypeScript, Material-UI |
-| Backend | .NET 10, ASP.NET Core |
+| Backend | .NET 11, ASP.NET Core |
 | Database | SQLite (default) or PostgreSQL |
 | Authentication | Token-based (user-configured) |
 | Communication | HTTPS (TLS 1.2+) |

@@ -3,7 +3,7 @@
 This directory contains minimal composite actions used across Lighthouse CI workflows:
 
 - `build-frontend` - builds frontend with the Node version from `.nvmrc` and the pnpm version from `packageManager`, with optional SonarCloud.
-- `build-backend` - builds backend using .NET 10 and JDK 17; can publish self-contained outputs for common targets.
+- `build-backend` - builds backend using .NET 11 and JDK 17; can publish self-contained outputs for common targets.
 - `package-app` - builds frontend & backend and uploads artifacts used for releases.
 
 Notes:
