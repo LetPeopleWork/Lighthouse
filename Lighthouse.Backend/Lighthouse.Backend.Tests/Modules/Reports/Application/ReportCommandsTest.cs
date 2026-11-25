@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
+namespace Lighthouse.Backend.Tests.Modules.Reports.Application
 {
     [TestFixture]
     public class ReportCommandsTest

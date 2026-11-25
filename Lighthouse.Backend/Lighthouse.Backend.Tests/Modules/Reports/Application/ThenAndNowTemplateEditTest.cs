@@ -6,7 +6,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
+namespace Lighthouse.Backend.Tests.Modules.Reports.Application
 {
     [TestFixture]
     public class ThenAndNowTemplateEditTest

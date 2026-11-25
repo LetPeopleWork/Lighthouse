@@ -4,7 +4,7 @@ using Lighthouse.Backend.Modules.Reports.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
+namespace Lighthouse.Backend.Tests.Modules.Reports.Application
 {
     [TestFixture]
     public class ReportOwnerLookupTest

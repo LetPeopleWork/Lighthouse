@@ -7,7 +7,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
+namespace Lighthouse.Backend.Tests.Modules.Reports.Application
 {
     public class ReportMetricSeriesByOwnerTest
     {

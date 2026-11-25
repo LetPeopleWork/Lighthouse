@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Modules.Reports.Domain;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
+namespace Lighthouse.Backend.Tests.Modules.Reports.Domain
 {
     public class ReportCapPolicyTest
     {

@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Reports.Application.Metrics;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
+namespace Lighthouse.Backend.Tests.Modules.Reports.Application.Metrics
 {
     public class DailySeriesSummaryTest
     {

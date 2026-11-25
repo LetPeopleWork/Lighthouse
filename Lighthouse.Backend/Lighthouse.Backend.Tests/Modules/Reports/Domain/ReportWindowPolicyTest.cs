@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Modules.Reports.Domain;
 using Lighthouse.Backend.Tests.API.Integration.Reports;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
+namespace Lighthouse.Backend.Tests.Modules.Reports.Domain
 {
     [TestFixture]
     public class ReportWindowPolicyTest
