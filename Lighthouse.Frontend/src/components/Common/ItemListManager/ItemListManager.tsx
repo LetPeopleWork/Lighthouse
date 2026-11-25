@@ -155,8 +155,13 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 							options={filteredSuggestions}
 							inputValue={inputValue}
 							value={null}
-							onInputChange={(_, newInputValue) => {
+							onInputChange={(_, newInputValue, reason) => {
 								setInputValue(newInputValue);
+								if (reason !== "reset") {
+									// Editing the text makes MUI reset its highlight without calling
+									// onHighlightChange, so Enter would add an option the user no longer sees.
+									setHighlightedOption(null);
+								}
 							}}
 							onChange={(_, selectedOption) => {
 								// This only fires when an option is selected from the dropdown with mouse
@@ -165,7 +170,6 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 								}
 							}}
 							onHighlightChange={(_, option) => {
-								// Track the currently highlighted option
 								setHighlightedOption(option);
 							}}
 							disableCloseOnSelect={false}
