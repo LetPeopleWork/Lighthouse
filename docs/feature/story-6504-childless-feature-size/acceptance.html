@@ -151,6 +151,199 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<p>P8</p>
+
+<pre><code>Portfolio Ocean (default size 4, two Teams) is refreshed with default sizing on or never touched; childless Feature F, F with a tracker estimate of 9, and F in an override state with one child
+</code></pre>
+
+<pre><code>F has 4 remaining split across its Teams and is flagged as sized by the default; with estimate 9 it has 9; the override-state Feature gets the default
+</code></pre>
+
+<pre><code>With the switch on, nothing changes: Features without child Work Items show the default count with today&#x27;s warning
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs</p>
+
+<pre><code>A selector that ignores the switch entirely would still pass these on-cases; the off-cases and the wire table catch it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<pre><code>The owner saves Ocean&#x27;s settings with default sizing off (default size 4, with or without a tracker estimate of 9) and Ocean is refreshed; Feature F has no child Work Items
+</code></pre>
+
+<pre><code>F has 0 remaining and no total, no Team carries work for it, it is not flagged as sized by the default, its size is 0, so no &#x27;0 of 4&#x27; can appear and forecasts take 0
+</code></pre>
+
+<pre><code>F shows 0 remaining Work Items with no invented count and no Team carrying work; forecasts count it as 0
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs</p>
+
+<pre><code>A fix that zeroes only the default size but still spreads a tracker estimate across Teams would pass the first case but fail the estimate-9 case
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Default sizing is off in Ocean: a Feature with one child Work Item in an override state, a finished childless Feature, and a Portfolio calculating its default from history
+</code></pre>
+
+<pre><code>The child-bearing Feature keeps its real count of 1 and is not flagged as default; the finished Feature stays empty; no historical size is looked up
+</code></pre>
+
+<pre><code>Real child counts are never replaced by a guess, finished Features are untouched and no hidden history lookup happens while off
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs</p>
+
+<pre><code>Guarding only the childless selector but not the override-state selector would pass the finished and history cases but fail the one-child case
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<pre><code>The owner saves Ocean&#x27;s settings with default size 7, an override state and a size-estimate field mapped, with default sizing off and then on again
+</code></pre>
+
+<pre><code>After each save the settings read back carry default size 7, the same override state, the same field mapping, and the switch as saved
+</code></pre>
+
+<pre><code>Switching off and on again loses none of the stored values
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs</p>
+
+<pre><code>A switch-off that clears the stored values on the frontend only is not seen here; the component test pins that it changes only the switch
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P7</p>
+
+<p>P8</p>
+
+<pre><code>The settings form opens with default sizing off, then on; the owner toggles the switch; the form is shown under renamed terms
+</code></pre>
+
+<pre><code>Off: default size 7 field, percentile option and its percentile and history fields, size-estimate field and override states are disabled yet show 7, 85, 90, the mapping and the state; on: enabled with the same values; the switch comes first and toggling changes only the switch; a form of a Portfolio saved before the switch reads on
+</code></pre>
+
+<pre><code>Settings without effect are greyed out and keep their values; the switch says what off means in the user&#x27;s own terms
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx</p>
+
+<pre><code>Disabling only the default size field but not the mapping or override states would fail the first case; hiding rather than disabling fails every enabled/disabled check
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>A payload from an older client is saved on a new Portfolio and on one that held the switch on or off; explicit true and false payloads are saved too
+</code></pre>
+
+<pre><code>A new Portfolio reads on; an absent field keeps the stored value; an explicit value moves it
+</code></pre>
+
+<pre><code>Existing and new Portfolios start with the switch on and an older script or client can never turn it off
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioSettingDtoCompatibilityTest.cs</p>
+
+<pre><code>A plain bool that defaults to false would fail the absent cases; a column default of true in the database is not observable here (no declared migration locator)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The owner switches default sizing off in the settings form and the save is accepted; later saves leave it off; a loaded-off Portfolio is saved or switched on
+</code></pre>
+
+<pre><code>The usage event for switching off is reported exactly once, on the accepted on-to-off save, never on a save that leaves it off, turns it on or leaves it on; the saved settings carry the switch
+</code></pre>
+
+<pre><code>Only a real opt-out is counted, without any detail about the Portfolio
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.usageData.test.tsx</p>
+
+<pre><code>Reporting on the click instead of on the accepted save would pass the first case only if the save succeeds; the create path has no declared test locator
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>

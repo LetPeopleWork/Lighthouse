@@ -200,6 +200,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             // --- Excluded: Portfolio-only derivations ---
             new(nameof(Portfolio.DefaultAmountOfWorkItemsPerFeature), Cost.Nothing, "Recomputed every cycle over the stored set."),
+            new("InfersDefaultFeatureSize", Cost.Nothing, "Evaluated over the stored set every refresh cycle, like the default Feature size beside it; switching it changes nothing that is asked for or stored, only whether a childless Feature is sized by the default."),
             new(nameof(Portfolio.OverrideRealChildCountStates), Cost.Nothing, "Recomputed every cycle over the stored set."),
             new(nameof(Portfolio.UsePercentileToCalculateDefaultAmountOfWorkItems), Cost.Nothing, "Recomputed every cycle."),
             new(nameof(Portfolio.PercentileHistoryInDays), Cost.Nothing, "Recomputed every cycle."),

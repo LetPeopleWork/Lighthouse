@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 using NUnit.Framework;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
@@ -23,6 +24,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
         // Case-insensitive because the controller's own binding is, and a payload that saves through the
         // route has to read the same way here or the guard is testing a stricter reader than the real one.
         private static readonly JsonSerializerOptions AsTheRouteReadsIt = new() { PropertyNameCaseInsensitive = true };
+
+        private static readonly JsonSerializerOptions AsTheFormReadsIt = new(JsonSerializerDefaults.Web);
 
         /// <summary>
         /// The shape a client that predates every dependency setting sends: no dependency field, no ignore
@@ -97,7 +100,52 @@ namespace Lighthouse.Backend.Tests.API.DTO
             }
         }
 
+        /// <summary>
+        /// Every combination of what the Portfolio holds and what a save says about default Feature sizing.
+        /// A payload that never heard of the switch must leave it where it was; only a payload that names it
+        /// moves it. A Portfolio nobody has saved yet holds the switch on.
+        /// </summary>
+        [Test]
+        [TestCase(null, null, true)]
+        [TestCase(true, null, true)]
+        [TestCase(false, null, false)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, true)]
+        [TestCase(true, true, true)]
+        [TestCase(false, false, false)]
+        public void TheDefaultFeatureSizingSwitchAfterASave_FollowsTheWireValueWhenPresentAndTheStoredValueWhenAbsent(bool? heldBefore, bool? sentNow, bool heldAfter)
+        {
+            var portfolio = new Portfolio { Name = "Platform" };
+            if (heldBefore is not null)
+            {
+                portfolio.SyncWithPortfolioSettings(Deserialize(AsSentBy(heldBefore)), Mock.Of<IRepository<Team>>());
+            }
+
+            portfolio.SyncWithPortfolioSettings(Deserialize(AsSentBy(sentNow)), Mock.Of<IRepository<Team>>());
+
+            Assert.That(TheSwitchTheSettingsFormReads(portfolio), Is.EqualTo(heldAfter),
+                $"After a save that {(sentNow is null ? "does not mention" : $"sends {sentNow}")} infersDefaultFeatureSize on a Portfolio that held {(heldBefore?.ToString() ?? "nothing yet")}, "
+                + $"the switch should read {heldAfter}, because only an explicit value may move it and an older client must never turn default sizing off. Keep the stored value when the field is absent.");
+        }
+
         private static PortfolioSettingDto Deserialize()
             => JsonSerializer.Deserialize<PortfolioSettingDto>(WhatAnOlderClientSends, AsTheRouteReadsIt)!;
+
+        private static PortfolioSettingDto Deserialize(string payload)
+            => JsonSerializer.Deserialize<PortfolioSettingDto>(payload, AsTheRouteReadsIt)!;
+
+        private static string AsSentBy(bool? infersDefaultFeatureSize)
+        {
+            var payload = JsonNode.Parse(WhatAnOlderClientSends)!.AsObject();
+            if (infersDefaultFeatureSize is not null)
+            {
+                payload["infersDefaultFeatureSize"] = infersDefaultFeatureSize;
+            }
+
+            return payload.ToJsonString();
+        }
+
+        private static bool? TheSwitchTheSettingsFormReads(Portfolio portfolio)
+            => JsonSerializer.SerializeToNode(new PortfolioSettingDto(portfolio), AsTheFormReadsIt)!["infersDefaultFeatureSize"]?.GetValue<bool>();
     }
 }

@@ -1,10 +1,136 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P2",
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F113",
+"L2/F114",
+"L2/F115"
+],
+"still_passes_if": "F313",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs"
+},
+"expected": "F311",
+"stimulus": "F310",
+"user_result": "F312"
+},
+{
+"covers": [
+"P1",
+"P3",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F106",
+"L1/F107"
+],
+"still_passes_if": "F317",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs"
+},
+"expected": "F315",
+"stimulus": "F314",
+"user_result": "F316"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F108",
+"L1/F109",
+"L1/F110"
+],
+"still_passes_if": "F321",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs"
+},
+"expected": "F319",
+"stimulus": "F318",
+"user_result": "F320"
+},
+{
+"covers": [
+"P7"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F118"
+],
+"still_passes_if": "F325",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs"
+},
+"expected": "F323",
+"stimulus": "F322",
+"user_result": "F324"
+},
+{
+"covers": [
+"P7",
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F119",
+"L3/F120",
+"L3/F121",
+"L3/F122"
+],
+"still_passes_if": "F329",
+"test": "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.test.tsx"
+},
+"expected": "F327",
+"stimulus": "F326",
+"user_result": "F328"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L4/F125"
+],
+"still_passes_if": "F333",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioSettingDtoCompatibilityTest.cs"
+},
+"expected": "F331",
+"stimulus": "F330",
+"user_result": "F332"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F337",
+"test": "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.usageData.test.tsx"
+},
+"expected": "F335",
+"stimulus": "F334",
+"user_result": "F336"
+}
+]
+},
 "counters": {
 "B": 2,
 "C": 2,
 "D": 9,
 "E": 8,
-"F": 309,
+"F": 337,
 "K": 8,
 "L": 4,
 "N": 2,
@@ -1485,7 +1611,35 @@
 "F308": "With default sizing off, Default Feature Size, the percentile option, the size-estimate field mapping and the override-states selection are greyed out and cannot be changed; switching sizing back on shows 7, the same mapping and the same states.",
 "F309": "Portfolios that existed before this change show default sizing switched on next to Default Feature Size, and a newly created Portfolio does the same, with Feature counts unchanged from today.",
 "F31": "A per-Portfolio on/off switch for default Feature sizing in the advanced settings next to Default Feature Size, on for existing and new Portfolios.",
+"F310": "Portfolio Ocean (default size 4, two Teams) is refreshed with default sizing on or never touched; childless Feature F, F with a tracker estimate of 9, and F in an override state with one child",
+"F311": "F has 4 remaining split across its Teams and is flagged as sized by the default; with estimate 9 it has 9; the override-state Feature gets the default",
+"F312": "With the switch on, nothing changes: Features without child Work Items show the default count with today's warning",
+"F313": "A selector that ignores the switch entirely would still pass these on-cases; the off-cases and the wire table catch it",
+"F314": "The owner saves Ocean's settings with default sizing off (default size 4, with or without a tracker estimate of 9) and Ocean is refreshed; Feature F has no child Work Items",
+"F315": "F has 0 remaining and no total, no Team carries work for it, it is not flagged as sized by the default, its size is 0, so no '0 of 4' can appear and forecasts take 0",
+"F316": "F shows 0 remaining Work Items with no invented count and no Team carrying work; forecasts count it as 0",
+"F317": "A fix that zeroes only the default size but still spreads a tracker estimate across Teams would pass the first case but fail the estimate-9 case",
+"F318": "Default sizing is off in Ocean: a Feature with one child Work Item in an override state, a finished childless Feature, and a Portfolio calculating its default from history",
+"F319": "The child-bearing Feature keeps its real count of 1 and is not flagged as default; the finished Feature stays empty; no historical size is looked up",
+"F320": "Real child counts are never replaced by a guess, finished Features are untouched and no hidden history lookup happens while off",
+"F321": "Guarding only the childless selector but not the override-state selector would pass the finished and history cases but fail the one-child case",
+"F322": "The owner saves Ocean's settings with default size 7, an override state and a size-estimate field mapped, with default sizing off and then on again",
+"F323": "After each save the settings read back carry default size 7, the same override state, the same field mapping, and the switch as saved",
+"F324": "Switching off and on again loses none of the stored values",
+"F325": "A switch-off that clears the stored values on the frontend only is not seen here; the component test pins that it changes only the switch",
+"F326": "The settings form opens with default sizing off, then on; the owner toggles the switch; the form is shown under renamed terms",
+"F327": "Off: default size 7 field, percentile option and its percentile and history fields, size-estimate field and override states are disabled yet show 7, 85, 90, the mapping and the state; on: enabled with the same values; the switch comes first and toggling changes only the switch; a form of a Portfolio saved before the switch reads on",
+"F328": "Settings without effect are greyed out and keep their values; the switch says what off means in the user's own terms",
+"F329": "Disabling only the default size field but not the mapping or override states would fail the first case; hiding rather than disabling fails every enabled/disabled check",
 "F33": "With the switch off, the override real child count states rule and a mapped size-estimate field have no effect: a Feature's size is its real child count, or 0.",
+"F330": "A payload from an older client is saved on a new Portfolio and on one that held the switch on or off; explicit true and false payloads are saved too",
+"F331": "A new Portfolio reads on; an absent field keeps the stored value; an explicit value moves it",
+"F332": "Existing and new Portfolios start with the switch on and an older script or client can never turn it off",
+"F333": "A plain bool that defaults to false would fail the absent cases; a column default of true in the database is not observable here (no declared migration locator)",
+"F334": "The owner switches default sizing off in the settings form and the save is accepted; later saves leave it off; a loaded-off Portfolio is saved or switched on",
+"F335": "The usage event for switching off is reported exactly once, on the accepted on-to-off save, never on a save that leaves it off, turns it on or leaves it on; the saved settings carry the switch",
+"F336": "Only a real opt-out is counted, without any detail about the Portfolio",
+"F337": "Reporting on the click instead of on the accepted save would pass the first case only if the save succeeds; the create path has no declared test locator",
 "F34": "With the switch off, Default Feature Size, the percentile option, the size-estimate field mapping and the override-states selection are greyed out; their stored values are kept and come back when the switch is on again.",
 "F35": "Special forecast handling for a Feature sized 0 (skipping it, showing no date, warnings on the forecast): excluded because the maintainer decided the forecast takes the 0 as it comes.",
 "F36": "A new or stronger 'assumed' label on inferred counts when the switch is on: excluded because the maintainer did not ask for it; today's warning stays.",

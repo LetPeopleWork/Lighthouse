@@ -86,6 +86,7 @@ export function createMockProjectSettings(): IPortfolioSettings {
 		processBehaviourChartBaselineEndDate: null,
 		stalenessThresholdDays: 14,
 		blockedStalenessThresholdDays: 0,
+		...{ infersDefaultFeatureSize: true },
 	};
 }
 

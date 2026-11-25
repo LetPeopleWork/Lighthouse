@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
@@ -9,6 +15,7 @@ import {
 	createMockApiServiceContext,
 	createMockSuggestionService,
 } from "../../../../tests/MockApiServiceProvider";
+import { RenamedTerms, renderWithTerms } from "../../../../tests/FieldTipsTestKit";
 import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import FeatureSizeComponent from "./FeatureSizeComponent";
 
@@ -477,5 +484,162 @@ describe("FeatureSizeComponent", () => {
 		);
 
 		consoleSpy.mockRestore();
+	});
+});
+
+describe("FeatureSizeComponent default Feature sizing switch", () => {
+	const fields: IAdditionalFieldDefinition[] = [
+		{ id: 2, displayName: "Story Points", reference: "custom.storyPoints" },
+	];
+	const switchedOn = { infersDefaultFeatureSize: true };
+	const switchedOff = { infersDefaultFeatureSize: false };
+	const onChange = vi.fn();
+
+	const suggestionService = createMockSuggestionService();
+	suggestionService.getStatesForProjects = vi
+		.fn()
+		.mockResolvedValue({ toDoStates: [], doingStates: [], doneStates: [] });
+	const context = createMockApiServiceContext({ suggestionService });
+
+	const aPortfolioHoldingSeven = (sizing: object, percentile = false) => ({
+		...createMockProjectSettings(),
+		...sizing,
+		usePercentileToCalculateDefaultAmountOfWorkItems: percentile,
+		defaultAmountOfWorkItemsPerFeature: 7,
+		defaultWorkItemPercentile: 85,
+		percentileHistoryInDays: 90,
+		sizeEstimateSource: "Own" as const,
+		sizeEstimateAdditionalFieldDefinitionId: 2,
+		overrideRealChildCountStates: ["Analysis in Progress"],
+	});
+
+	const theForm = (settings: IPortfolioSettings) => (
+		<ApiServiceContext.Provider value={context}>
+			<FeatureSizeComponent
+				projectSettings={settings}
+				onProjectSettingsChange={onChange}
+				additionalFieldDefinitions={fields}
+			/>
+		</ApiServiceContext.Provider>
+	);
+
+	const openTheForm = async (settings: IPortfolioSettings) => {
+		const view = render(theForm(settings));
+		await act(async () => {
+			fireEvent.click(screen.getByLabelText("toggle"));
+		});
+		return view;
+	};
+
+	const theSizeEstimate = () =>
+		screen.getByRole("combobox", { name: "Size Estimate Field" });
+	const theOverrideState = () =>
+		screen.getByRole("button", { name: "Analysis in Progress" });
+
+	beforeEach(() => {
+		onChange.mockClear();
+	});
+
+	it("greys out the four settings without effect while off, keeps their values, and brings them back when on", async () => {
+		const view = await openTheForm(aPortfolioHoldingSeven(switchedOff));
+
+		expect(screen.getByLabelText(/Infer a size for Features/i)).not.toBeChecked();
+		const numberField = screen.getByLabelText(
+			/Default Number of Work Items per Feature/i,
+		);
+		expect(numberField).toBeDisabled();
+		expect(numberField).toHaveValue(7);
+		expect(
+			screen.getByLabelText(/Use Historical Feature Size To Calculate Default/i),
+		).toBeDisabled();
+		expect(theSizeEstimate()).toHaveAttribute("aria-disabled", "true");
+		expect(theSizeEstimate()).toHaveTextContent("Story Points");
+		expect(theOverrideState()).toHaveAttribute("aria-disabled", "true");
+		expect(screen.getByLabelText(/New Size Override State/i)).toBeDisabled();
+
+		view.rerender(theForm(aPortfolioHoldingSeven(switchedOn)));
+
+		expect(screen.getByLabelText(/Infer a size for Features/i)).toBeChecked();
+		expect(numberField).toBeEnabled();
+		expect(numberField).toHaveValue(7);
+		expect(
+			screen.getByLabelText(/Use Historical Feature Size To Calculate Default/i),
+		).toBeEnabled();
+		expect(theSizeEstimate()).not.toHaveAttribute("aria-disabled", "true");
+		expect(theSizeEstimate()).toHaveTextContent("Story Points");
+		expect(theOverrideState()).not.toHaveAttribute("aria-disabled", "true");
+		expect(screen.getByLabelText(/New Size Override State/i)).toBeEnabled();
+	});
+
+	it("greys out the percentile and history fields while off and keeps their values", async () => {
+		const view = await openTheForm(aPortfolioHoldingSeven(switchedOff, true));
+
+		const percentile = screen.getByLabelText(/Feature Size Percentile/i);
+		const history = screen.getByLabelText(/History in Days/i);
+		expect(percentile).toBeDisabled();
+		expect(percentile).toHaveValue(85);
+		expect(history).toBeDisabled();
+		expect(history).toHaveValue(90);
+
+		view.rerender(theForm(aPortfolioHoldingSeven(switchedOn, true)));
+
+		expect(percentile).toBeEnabled();
+		expect(percentile).toHaveValue(85);
+		expect(history).toBeEnabled();
+		expect(history).toHaveValue(90);
+	});
+
+	it("shows the switch first in the group, says what off means, and reads on for a Portfolio saved before the switch existed", async () => {
+		await openTheForm(aPortfolioHoldingSeven(switchedOn));
+
+		const inferSwitch = screen.getByLabelText(
+			/Infer a size for Features without child Work Items/i,
+		);
+		const percentileSwitch = screen.getByLabelText(
+			/Use Historical Feature Size To Calculate Default/i,
+		);
+		expect(
+			inferSwitch.compareDocumentPosition(percentileSwitch) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(inferSwitch).toBeChecked();
+		expect(
+			screen.getByText(
+				"When off, a Feature without child Work Items counts as 0.",
+			),
+		).toBeInTheDocument();
+	});
+
+	it("changes nothing but the switch when it is switched off, and again when it is switched on", async () => {
+		const view = await openTheForm(aPortfolioHoldingSeven(switchedOn));
+
+		fireEvent.click(screen.getByLabelText(/Infer a size for Features/i));
+		expect(onChange).toHaveBeenCalledTimes(1);
+		expect(onChange).toHaveBeenCalledWith("infersDefaultFeatureSize", false);
+
+		onChange.mockClear();
+		view.rerender(theForm(aPortfolioHoldingSeven(switchedOff)));
+		fireEvent.click(screen.getByLabelText(/Infer a size for Features/i));
+		expect(onChange).toHaveBeenCalledTimes(1);
+		expect(onChange).toHaveBeenCalledWith("infersDefaultFeatureSize", true);
+	});
+
+	it("words the switch and its note in the tenant's own terms", async () => {
+		await renderWithTerms(
+			<FeatureSizeComponent
+				projectSettings={aPortfolioHoldingSeven(switchedOn)}
+				onProjectSettingsChange={onChange}
+			/>,
+			RenamedTerms,
+			{ suggestionService },
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(
+			screen.getByLabelText("Infer a size for Bets without child Tickets"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("When off, a Bet without child Tickets counts as 0."),
+		).toBeInTheDocument();
 	});
 });

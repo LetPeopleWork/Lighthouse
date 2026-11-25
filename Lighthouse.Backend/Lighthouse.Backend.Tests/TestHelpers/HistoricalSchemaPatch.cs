@@ -37,6 +37,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("Portfolios", "FetchFingerprint", "TEXT", "AddFetchFingerprintToQueryOwners"),
             new("Portfolios", "DependencyOverrideAdditionalFieldDefinitionId", "INTEGER", "AddPortfolioDependencySettings"),
             new("Portfolios", "IgnoreDependencies", "boolean", "AddPortfolioDependencySettings"),
+            new("Portfolios", "InfersDefaultFeatureSize", "boolean", "AddPortfolioInfersDefaultFeatureSize"),
             new("Deliveries", "ArchivedOn", "timestamp with time zone", "AddDeliveryArchiveAndClosureRecord"),
             new("Deliveries", "SourceKey", "TEXT", "AddDeliverySourceBinding"),
             new("Deliveries", "SourceReference", "TEXT", "AddDeliverySourceBinding"),
