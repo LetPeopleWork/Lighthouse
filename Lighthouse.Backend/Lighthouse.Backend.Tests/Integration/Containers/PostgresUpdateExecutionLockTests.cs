@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             var firstHold = await lockProvider.AcquireAsync(key);
 
             var secondAcquisition = lockProvider.AcquireAsync(key);
-            var acquiredWhileFirstHeld = await Task.WhenAny(secondAcquisition, Task.Delay(750)) == secondAcquisition;
+            var acquiredWhileFirstHeld = await secondAcquisition.FinishesWithinAsync(750);
 
             await firstHold.DisposeAsync();
             var secondHold = await secondAcquisition;
@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             var teamHold = await lockProvider.AcquireAsync(new UpdateKey(UpdateType.Team, 1));
 
             var featuresAcquisition = lockProvider.AcquireAsync(new UpdateKey(UpdateType.Features, 1));
-            var bothAcquired = await Task.WhenAny(featuresAcquisition, Task.Delay(750)) == featuresAcquisition;
+            var bothAcquired = await featuresAcquisition.FinishesWithinAsync(750);
 
             await teamHold.DisposeAsync();
             if (bothAcquired)

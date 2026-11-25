@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             var emptied = Task.Run(() => filler.DrainAsync(CancellationToken.None));
 
-            if (await Task.WhenAny(emptied, Task.Delay(within)) != emptied)
+            if (!await emptied.FinishesWithinAsync(within))
             {
                 Assert.Fail("The filler's queue did not empty in time; a pass left running would write into the next scenario's database.");
             }

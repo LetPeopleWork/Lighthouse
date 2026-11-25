@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -180,7 +181,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await StartRefreshAndWaitUntil(team, UpdateProgress.InProgress);
 
             if (theTrackerGaveItsFirstPage is { } firstPage
-                && await Task.WhenAny(firstPage.Task, Task.Delay(TimeSpan.FromSeconds(30))) != firstPage.Task)
+                && !await firstPage.Task.FinishesWithinAsync(TimeSpan.FromSeconds(30)))
             {
                 Assert.Fail("The refresh was under way but never asked the tracker for a page; the scenario cannot cancel it mid-flight.");
             }
@@ -295,9 +296,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private async Task ThenWhatWasHeldBehindItWasLetGo()
         {
-            var released = await Task.WhenAny(WhatWasHeldBehind.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+            var released = await WhatWasHeldBehind.Task.FinishesWithinAsync(TimeSpan.FromSeconds(30));
 
-            Assert.That(released, Is.SameAs(WhatWasHeldBehind.Task),
+            Assert.That(released, Is.True,
                 "Held work waits on a key leaving the queue, not on it leaving successfully. A cancel that "
                 + "strands it parks that work until something unrelated happens to poke the same key.");
         }

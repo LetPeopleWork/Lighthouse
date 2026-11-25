@@ -1,4 +1,5 @@
 using System.Net;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
 {
@@ -48,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
             using var client = Factory.CreateClient();
             var read = client.GetAsync(new Uri("/api/latest/portfolios", UriKind.Relative));
 
-            if (await Task.WhenAny(read, Task.Delay(TheLongestAPageMayTake)) != read)
+            if (!await read.FinishesWithinAsync(TheLongestAPageMayTake))
             {
                 return null;
             }

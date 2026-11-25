@@ -306,7 +306,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             public async Task<bool> HasStarted()
             {
-                return await Task.WhenAny(asked.Task, Task.Delay(TheLongestAWaitTakes)) == asked.Task;
+                return await asked.Task.FinishesWithinAsync(TheLongestAWaitTakes);
             }
 
             public void Finish() => answer.TrySetResult();

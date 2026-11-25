@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Tests.Models.Reports
         [Test]
         public void A_payload_written_by_this_version_carries_no_Now_length_member()
         {
-            var written = JsonDocument.Parse(new ThenAndNowPayload { ThenWindow = Then }.ToJson()).RootElement;
+            var written = JsonElement.Parse(new ThenAndNowPayload { ThenWindow = Then }.ToJson());
 
             Assert.That(written.TryGetProperty("nowLengthDays", out _), Is.False,
                 "WHAT: the written payload carries a Now length member. WHY: Now is derived from Then's length, so nothing is stored for it. HOW: the payload record names no Now length.");

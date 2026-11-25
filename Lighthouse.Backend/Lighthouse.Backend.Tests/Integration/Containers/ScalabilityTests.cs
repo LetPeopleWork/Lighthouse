@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             while (!notificationReceived.Task.IsCompleted && DateTime.UtcNow < deadline)
             {
                 await hubContextOnPodB.Clients.Group("GlobalUpdates").SendAsync("GlobalUpdateNotification");
-                await Task.WhenAny(notificationReceived.Task, Task.Delay(500));
+                await notificationReceived.Task.FinishesWithinAsync(500);
             }
 
             Assert.That(notificationReceived.Task.IsCompleted, Is.True,
@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             var releasedWhileInFlight = crossPodAwait.IsCompleted;
 
             releaseInFlightWork.SetResult();
-            var crossPodAwaitReleased = await Task.WhenAny(crossPodAwait, Task.Delay(5000)) == crossPodAwait;
+            var crossPodAwaitReleased = await crossPodAwait.FinishesWithinAsync(5000);
 
             await podA.DrainAsync();
             await podB.DrainAsync();

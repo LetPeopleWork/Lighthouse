@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
     {
         private static readonly string CasesFile = Path.Combine("..", "Lighthouse.Frontend", "src", "utils", "stateMappingRuleCases.json");
 
-        private static JsonElement Cases() => JsonDocument.Parse(File.ReadAllText(Path.Combine(FindRepositoryRoot(), CasesFile))).RootElement;
+        private static JsonElement Cases() => JsonElement.Parse(File.ReadAllText(Path.Combine(FindRepositoryRoot(), CasesFile)));
 
         private static string FindRepositoryRoot()
         {

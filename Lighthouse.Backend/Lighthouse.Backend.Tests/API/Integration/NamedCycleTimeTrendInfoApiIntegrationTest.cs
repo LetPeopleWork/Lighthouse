@@ -245,7 +245,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 foreach (var percentile in new[] { 50, 70, 85, 95 })
                 {
                     Assert.That(DetailRowCurrentValue(body, $"{percentile}th"),
-                        Is.EqualTo(PercentileFromArray(JsonDocument.Parse(body).RootElement.GetProperty("percentiles"), percentile, body).ToString()),
+                        Is.EqualTo(PercentileFromArray(JsonElement.Parse(body).GetProperty("percentiles"), percentile, body).ToString()),
                         $"Row {percentile}th carries the {percentile}th percentile's own current value. Body: {body}");
                 }
             }

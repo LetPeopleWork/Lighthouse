@@ -522,6 +522,6 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
             => Fields($$"""{"issuelinks": [{{string.Join(",", links)}}]}""");
 
         private static JsonElement Fields(string rawFields)
-            => JsonDocument.Parse(rawFields).RootElement.Clone();
+            => JsonElement.Parse(rawFields);
     }
 }

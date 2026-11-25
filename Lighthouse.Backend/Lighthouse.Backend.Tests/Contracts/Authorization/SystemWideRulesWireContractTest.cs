@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.Contracts.Authorization
             var body = await response.Content.ReadAsStringAsync();
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"WHAT: {route} answered {(int)response.StatusCode}, not 200. WHY: the Access tab reads its notice from this route. HOW: add the GET route on the authorization controller under both versions.");
-            var rules = JsonDocument.Parse(body).RootElement;
+            var rules = JsonElement.Parse(body);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(rules.GetArrayLength(), Is.EqualTo(1), $"WHAT: the answer was {body}. WHY: one rule for all Teams and Portfolios exists besides a System Admin group, which stays out. HOW: answer one line per distinct rule.");

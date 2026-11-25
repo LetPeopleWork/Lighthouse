@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
                 await Task.Delay(LongerThanAnyTestWaits, cancellationContext.Current);
             });
 
-            var settled = await Task.WhenAny(awaited, Task.Delay(TheLongestTheStopMayTake)) == awaited;
+            var settled = await awaited.FinishesWithinAsync(TheLongestTheStopMayTake);
 
             using (Assert.EnterMultipleScope())
             {
@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
             var running = await TheStatusReaches(inner, key, UpdateProgress.InProgress);
             await queue.CancelAllAsync();
 
-            var stoppedInTime = await Task.WhenAny(stopped.Task, Task.Delay(TheLongestTheStopMayTake)) == stopped.Task;
+            var stoppedInTime = await stopped.Task.FinishesWithinAsync(TheLongestTheStopMayTake);
 
             using (Assert.EnterMultipleScope())
             {
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
                 reachedTheTracker = true;
                 return Task.CompletedTask;
             });
-            var settled = await Task.WhenAny(awaited, Task.Delay(TheLongestTheStopMayTake)) == awaited;
+            var settled = await awaited.FinishesWithinAsync(TheLongestTheStopMayTake);
 
             using (Assert.EnterMultipleScope())
             {

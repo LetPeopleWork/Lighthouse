@@ -540,9 +540,9 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
                 }
 
                 Writes.Add(path);
-                Description = JsonDocument
+                Description = JsonElement
                     .Parse(request.Content!.ReadAsStringAsync().GetAwaiter().GetResult())
-                    .RootElement.GetProperty("description").GetString();
+                    .GetProperty("description").GetString();
 
                 return Respond(HttpStatusCode.OK, VersionJson());
             }

@@ -116,9 +116,9 @@ namespace Lighthouse.Backend.Tests.Platform.Releases
         // it awaits races the thread pool rather than the code under test.
         private static async Task<T> Signalled<T>(TaskCompletionSource<T> signal, string what)
         {
-            var finished = await Task.WhenAny(signal.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+            var finished = await signal.Task.FinishesWithinAsync(TimeSpan.FromSeconds(10));
 
-            Assert.That(finished, Is.SameAs(signal.Task), $"The update process never reached {what} within 10 s.");
+            Assert.That(finished, Is.True, $"The update process never reached {what} within 10 s.");
 
             return await signal.Task;
         }

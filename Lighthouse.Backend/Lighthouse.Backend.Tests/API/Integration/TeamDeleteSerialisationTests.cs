@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var deleteTask = client.DeleteAsync($"/api/latest/teams/{team.Id}");
 
-            await Task.WhenAny(deleteTask, Task.Delay(TimeSpan.FromMilliseconds(500)));
+            await deleteTask.FinishesWithinAsync(TimeSpan.FromMilliseconds(500));
             Assert.That(deleteTask.IsCompleted, Is.False, "DELETE must not complete while the gated team update is in flight");
 
             gateableWorkItemService.ReleaseAll();

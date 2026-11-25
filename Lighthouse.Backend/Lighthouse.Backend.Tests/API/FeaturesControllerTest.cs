@@ -529,7 +529,7 @@ namespace Lighthouse.Backend.Tests.API
                 .Setup(x => x.PlaceAsync(moved.Id, null, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(FeatureMovePlacement.Placed);
 
-            var response = await CreateSubject().MoveFeature(moved.Id, JsonDocument.Parse("{\"beforeFeatureId\":null}").RootElement);
+            var response = await CreateSubject().MoveFeature(moved.Id, JsonElement.Parse("{\"beforeFeatureId\":null}"));
 
             Assert.That(response, Is.InstanceOf<OkResult>());
             featureRankingServiceMock.Verify(x => x.PlaceAsync(moved.Id, null, true, It.IsAny<CancellationToken>()), Times.Once);
@@ -553,7 +553,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         private static JsonElement MoveCommandNaming(int targetFeatureId)
-            => JsonDocument.Parse($"{{\"beforeFeatureId\":{targetFeatureId}}}").RootElement;
+            => JsonElement.Parse($"{{\"beforeFeatureId\":{targetFeatureId}}}");
 
         private Feature CreateFeatureByReferenceId(string referenceId)
         {

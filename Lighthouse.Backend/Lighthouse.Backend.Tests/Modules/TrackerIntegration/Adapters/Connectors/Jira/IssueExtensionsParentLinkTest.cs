@@ -296,7 +296,7 @@ namespace Lighthouse.Backend.Tests.Modules.TrackerIntegration.Adapters.Connector
         {
             var issue = JiraWireFormat.AnIssueOfType("PROJ-24", "Story", links);
 
-            return JsonDocument.Parse(issue).RootElement.Clone().GetProperty("fields");
+            return JsonElement.Parse(issue).GetProperty("fields");
         }
     }
 }

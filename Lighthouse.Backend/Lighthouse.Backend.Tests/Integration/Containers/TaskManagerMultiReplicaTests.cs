@@ -396,11 +396,11 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             var runawayRefresh = new UpdateKey(UpdateType.Team, 42);
             await podTakingTheClick.PublishCancellationAsync(runawayRefresh);
 
-            var reached = await Task.WhenAny(cancelled.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+            var reached = await cancelled.Task.FinishesWithinAsync(TimeSpan.FromSeconds(10));
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(reached, Is.SameAs(cancelled.Task),
+                Assert.That(reached, Is.True,
                     "The pod answering the click holds no token source for this key. If the ask does not travel, "
                     + "Cancel is a button that silently does nothing for every row another replica is running.");
                 Assert.That(cancelled.Task.Result, Is.EqualTo(runawayRefresh),

@@ -597,7 +597,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             client.AsSystemAdmin();
             var response = await client.GetAsync($"/api/latest/suggestions/states/{(kind == OwnerKind.Team ? "teams" : "projects")}");
             var body = await response.Content.ReadAsStringAsync();
-            var doing = Strings(JsonDocument.Parse(body).RootElement, "doingStates");
+            var doing = Strings(JsonElement.Parse(body), "doingStates");
 
             using (Assert.EnterMultipleScope())
             {
@@ -662,7 +662,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(Strings(JsonDocument.Parse(body).RootElement, "doingStates"), Is.EqualTo(Listed("Analysis", "Code Review", "Testing")));
+                Assert.That(Strings(JsonElement.Parse(body), "doingStates"), Is.EqualTo(Listed("Analysis", "Code Review", "Testing")));
             }
         }
 
@@ -745,7 +745,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var response = await client.GetAsync($"/api/latest/{Route}/{ownerId}/settings");
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-            return JsonDocument.Parse(body).RootElement.Clone();
+            return JsonElement.Parse(body);
         }
 
         private string Route => kind == OwnerKind.Team ? "teams" : "portfolios";

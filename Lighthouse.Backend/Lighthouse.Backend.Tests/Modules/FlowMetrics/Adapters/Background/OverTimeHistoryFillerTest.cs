@@ -633,7 +633,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
 
             await subject.StartAsync(CancellationToken.None);
             subject.AskFor(RequestFor(TeamId, Today));
-            var tookIt = await Task.WhenAny(taken.Task, Task.Delay(TimeSpan.FromSeconds(10))) == taken.Task;
+            var tookIt = await taken.Task.FinishesWithinAsync(TimeSpan.FromSeconds(10));
             await subject.StopAsync(CancellationToken.None);
 
             using (Assert.EnterMultipleScope())

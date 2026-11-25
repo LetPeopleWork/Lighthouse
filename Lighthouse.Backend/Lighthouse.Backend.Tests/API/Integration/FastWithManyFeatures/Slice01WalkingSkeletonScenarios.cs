@@ -4,6 +4,7 @@ using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
@@ -78,7 +79,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
             using var client = Factory.CreateClient();
             var read = client.GetAsync(new Uri(route, UriKind.Relative));
 
-            if (await Task.WhenAny(read, Task.Delay(TheLongestAPageMayTake)) != read)
+            if (!await read.FinishesWithinAsync(TheLongestAPageMayTake))
             {
                 return null;
             }

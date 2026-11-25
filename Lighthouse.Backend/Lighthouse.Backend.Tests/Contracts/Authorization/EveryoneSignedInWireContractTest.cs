@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.Contracts.Authorization
             var body = await response.Content.ReadAsStringAsync();
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"WHAT: GET {route} answered {(int)response.StatusCode}. WHY: Settings > Access reads the switch from this route. HOW: add the GET route on the authorization controller under both versions.");
-            var theSwitch = JsonDocument.Parse(body).RootElement;
+            var theSwitch = JsonElement.Parse(body);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(theSwitch.EnumerateObject().Select(member => member.Name), Is.EquivalentTo(SwitchNames), $"WHAT: the answer was {body}. WHY: the browser reads exactly everyoneCanView and concurrencyToken. HOW: serialise those two members.");
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Contracts.Authorization
         {
             using var response = await Client.GetAsync(route);
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"WHAT: GET {route} answered {(int)response.StatusCode}. WHY: a save is based on what the read answers. HOW: add the GET route.");
-            var theSwitch = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+            var theSwitch = JsonElement.Parse(await response.Content.ReadAsStringAsync());
             return new SwitchState(theSwitch.GetProperty("everyoneCanView").GetBoolean(), theSwitch.GetProperty("concurrencyToken").GetGuid());
         }
     }

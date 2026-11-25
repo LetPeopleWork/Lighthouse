@@ -261,7 +261,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
 
             var body = await response.Content.ReadAsStringAsync();
 
-            return JsonDocument.Parse(body).RootElement.Clone();
+            return JsonElement.Parse(body);
         }
 
         protected static JsonElement TheFeatureNamed(JsonElement features, string name)

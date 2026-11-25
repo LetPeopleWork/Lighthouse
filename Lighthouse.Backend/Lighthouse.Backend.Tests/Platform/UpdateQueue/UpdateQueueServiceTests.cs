@@ -139,9 +139,9 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
 
             releaseInFlight.SetResult();
 
-            var completed = await Task.WhenAny(followUpRan.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+            var completed = await followUpRan.Task.FinishesWithinAsync(TimeSpan.FromSeconds(5));
 
-            Assert.That(completed, Is.SameAs(followUpRan.Task),
+            Assert.That(completed, Is.True,
                 "A trigger raised while the same key was in flight must run once the in-flight update finishes, not be discarded.");
         }
 
@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
             });
 
             releaseInFlight.SetResult();
-            await Task.WhenAny(followUpStarted.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+            await followUpStarted.Task.FinishesWithinAsync(TimeSpan.FromSeconds(5));
             await watcher;
 
             Assert.That(observedIdle, Is.False,
@@ -912,9 +912,9 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
 
             subject.EnqueueUpdate(UpdateType.Team, 70, _ => throw new InvalidOperationException("the refresh could not reach the work tracking system"));
 
-            var finished = await Task.WhenAny(released.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+            var finished = await released.Task.FinishesWithinAsync(TimeSpan.FromSeconds(5));
 
-            Assert.That(finished, Is.SameAs(released.Task),
+            Assert.That(finished, Is.True,
                 "A single failing refresh must not strand the work waiting behind it.");
         }
 
@@ -934,9 +934,9 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
 
             subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
 
-            var finished = await Task.WhenAny(published.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+            var finished = await published.Task.FinishesWithinAsync(TimeSpan.FromSeconds(5));
 
-            Assert.That(finished, Is.SameAs(published.Task),
+            Assert.That(finished, Is.True,
                 "A hold whose release throws must not take the completion signal down with it.");
         }
 
@@ -953,9 +953,9 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
 
             await subject.EnqueueAndAwaitAsync(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
 
-            var finished = await Task.WhenAny(published.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+            var finished = await published.Task.FinishesWithinAsync(TimeSpan.FromSeconds(5));
 
-            Assert.That(finished, Is.SameAs(published.Task),
+            Assert.That(finished, Is.True,
                 "The awaitable path releases its holds while it is already unwinding, so a throw there discards the completion signal as well.");
         }
 
@@ -1078,10 +1078,10 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
             });
 
             await subject.CancelAsync(updateKey);
-            var followUpRan = await Task.WhenAny(followUpStarted.Task, Task.Delay(TimeSpan.FromSeconds(5))) == followUpStarted.Task;
+            var followUpRan = await followUpStarted.Task.FinishesWithinAsync(TimeSpan.FromSeconds(5));
 
             await subject.CancelAsync(updateKey);
-            var followUpWasStopped = await Task.WhenAny(followUpStopped.Task, Task.Delay(TimeSpan.FromSeconds(5))) == followUpStopped.Task;
+            var followUpWasStopped = await followUpStopped.Task.FinishesWithinAsync(TimeSpan.FromSeconds(5));
 
             using (Assert.EnterMultipleScope())
             {
@@ -1145,7 +1145,7 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
             });
             await asked.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-            var settled = await Task.WhenAny(awaited!, Task.Delay(TimeSpan.FromSeconds(5))) == awaited;
+            var settled = await awaited!.FinishesWithinAsync(TimeSpan.FromSeconds(5));
 
             using (Assert.EnterMultipleScope())
             {
@@ -1197,7 +1197,7 @@ namespace Lighthouse.Backend.Tests.Platform.UpdateQueue
             await subject.CancelAsync(fireAndForget);
             await awaitableStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
             await subject.CancelAsync(awaitable);
-            var settled = await Task.WhenAny(awaited!, Task.Delay(TimeSpan.FromSeconds(5))) == awaited;
+            var settled = await awaited!.FinishesWithinAsync(TimeSpan.FromSeconds(5));
 
             using (Assert.EnterMultipleScope())
             {
