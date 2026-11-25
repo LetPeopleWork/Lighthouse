@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Domain
 {
     [TestFixture]
     public class RecurringBlackoutRuleExtensionsTest

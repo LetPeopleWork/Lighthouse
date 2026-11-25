@@ -5,7 +5,7 @@ using Lighthouse.Backend.Platform.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 
-namespace Lighthouse.Backend.Tests.Services.Implementation
+namespace Lighthouse.Backend.Tests.Modules.OrganisationSetup.Application
 {
     [TestFixture]
     public class RecurringBlackoutRuleServiceTest
