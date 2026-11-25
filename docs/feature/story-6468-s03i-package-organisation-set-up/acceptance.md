@@ -501,4 +501,40 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules OrganisationSetup: 150 passed, 0 failed (membership, RulesNameOnlyTheModule, role/literal-sweep, planted-offender checks, per-slice move tests).
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules OrganisationSetup: 150 passed, 0 failed (membership, RulesNameOnlyTheModule, role/literal-sweep, planted-offender checks, per-slice move tests).
+```
+
+```text
+Same run: boundary tests passed: NamesNoEdgeIntoSetUp for every downstream module, TrackerIntegrationsList_HoldsExactlyTheCadenceEdgeIntoTheSettings, AMadeUpControllerPublishingABlackoutChange_IsNamed, SetUpsEvents_AreConstructedOnlyInSetUpsApplication, NoStringOfTheTestProject_StillNamesAMovedTypeByItsOldFullNameOrPath, EveryRuleThatNamesOrganisationSetUpByItsModule_NamesNoOldNamespace.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+test-selection-show with moved test paths under Tests/Modules/OrganisationSetup/Application selects backend: true. ef-model-unchanged: no model changes for Sqlite and Postgres. Full filtered backend-tests (bg job): Total 14994, Passed 14982, Skipped 12, Failed 0. Not probed: namespace-only production edits, Program.cs order (left to review).
+```
+
+```text
+architecture-rules OrganisationSetup: 150 passed, 0 failed (membership, RulesNameOnlyTheModule, role/literal-sweep, planted-offender checks, per-slice move tests).
+```

@@ -280,7 +280,7 @@
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 293,
+"F": 296,
 "K": 9,
 "L": 6,
 "P": 4,
@@ -2696,6 +2696,28 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F294"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F294",
+"F295"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F296",
+"F294"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -2926,6 +2948,9 @@
 "F291": "Narrowing set-up to its module cannot hide a platform type left behind in the loose Services namespaces",
 "F292": "a platform type that lives in a loose namespace but is missing from the platform membership map",
 "F293": "No downstream rule reads set-up's Application or Domain as foreign and no downstream list names an edge into set-up, while each rule still reads one named foreign namespace that is not set-up (the loose services, Licensing, Access, Work Items, the data layer or a set-up adapter; for Work Items' target, Licensing, since it names the loose services by full name once set-up has moved) and Work Items still reaches set-up's settings and Feature ordering in the compiled code. RED at S4 start: Work Items' list names RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering, and Work Items' target reads all four set-up namespaces as foreign.",
+"F294": "architecture-rules OrganisationSetup: 150 passed, 0 failed (membership, RulesNameOnlyTheModule, role/literal-sweep, planted-offender checks, per-slice move tests).",
+"F295": "Same run: boundary tests passed: NamesNoEdgeIntoSetUp for every downstream module, TrackerIntegrationsList_HoldsExactlyTheCadenceEdgeIntoTheSettings, AMadeUpControllerPublishingABlackoutChange_IsNamed, SetUpsEvents_AreConstructedOnlyInSetUpsApplication, NoStringOfTheTestProject_StillNamesAMovedTypeByItsOldFullNameOrPath, EveryRuleThatNamesOrganisationSetUpByItsModule_NamesNoOldNamespace.",
+"F296": "test-selection-show with moved test paths under Tests/Modules/OrganisationSetup/Application selects backend: true. ef-model-unchanged: no model changes for Sqlite and Postgres. Full filtered backend-tests (bg job): Total 14994, Passed 14982, Skipped 12, Failed 0. Not probed: namespace-only production edits, Program.cs order (left to review).",
 "F3": "Every architecture rule keeps its verdict for every moving Organisation set-up type through the move, and every rule pattern that matches a moving type's old name is classified as standing for the context or for the place.",
 "F30": "D-11 DI: same registrations, order and lifetimes. Program.cs gains up to three using lines for the set-up namespaces and rewrites only the namespace text of the four fully qualified registrations (the three optional-feature lines and the ConnectionSaveService line); the loose usings stay. No AddOrganisationSetup (S09a).",
 "F31": "D-12 The ConnectionSaveService log category changes with its namespace; no override, filter or harness reads it.",
