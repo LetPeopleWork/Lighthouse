@@ -262,24 +262,6 @@ describe("ItemListManager", () => {
 		}
 	});
 
-	it("does not make chips draggable while disabled, even when onReorderItems is provided", () => {
-		render(
-			<ItemListManager
-				title={title}
-				items={items}
-				onAddItem={mockOnAddItem}
-				onRemoveItem={mockOnRemoveItem}
-				onReorderItems={vi.fn()}
-				disabled
-			/>,
-		);
-
-		const chips = screen.getAllByText(/Item \d/);
-		for (const chip of chips) {
-			expect(chip.closest('[draggable="true"]')).not.toBeInTheDocument();
-		}
-	});
-
 	it("does not make chips draggable when onReorderItems is not provided", () => {
 		render(
 			<ItemListManager

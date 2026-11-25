@@ -43,7 +43,6 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 	);
 	const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
-	const canReorder = !!onReorderItems && !disabled;
 
 	const filteredSuggestions = suggestions.filter(
 		(suggestion) => !items.includes(suggestion),
@@ -86,7 +85,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 	const handleDrop = (e: React.DragEvent, dropIndex: number) => {
 		e.preventDefault();
 
-		if (draggedIndex === null || !onReorderItems || disabled) return;
+		if (draggedIndex === null || !onReorderItems) return;
 
 		if (draggedIndex !== dropIndex) {
 			const newItems = [...items];
@@ -124,15 +123,15 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 									{...chipLookFor(item, groupTooltip, onRemoveItem)}
 									disabled={disabled}
 									aria-disabled={disabled || undefined}
-									draggable={canReorder}
+									draggable={!!onReorderItems}
 									onDragStart={(e) => handleDragStart(e, index)}
 									onDragOver={handleDragOver}
 									onDrop={(e) => handleDrop(e, index)}
 									onDragEnd={handleDragEnd}
 									sx={{
-										cursor: canReorder ? "grab" : "default",
+										cursor: onReorderItems ? "grab" : "default",
 										"&:active": {
-											cursor: canReorder ? "grabbing" : "default",
+											cursor: onReorderItems ? "grabbing" : "default",
 										},
 										opacity: draggedIndex === index ? 0.5 : 1,
 									}}
