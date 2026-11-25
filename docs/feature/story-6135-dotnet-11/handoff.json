@@ -1,0 +1,238 @@
+{
+"counters": {
+"F": 44,
+"P": 7,
+"S": 4
+},
+"facts": {
+"F1": "ADO Story 6135: Upgrade Lighthouse from .NET 10 to .NET 11 in one change, now that .NET 11.0.0 is GA (2026-11-10, SDK 11.0.100) and Npgsql.EntityFrameworkCore.PostgreSQL 11.0.0 is released. Retarget all four projects, SDK pins, Docker images and the .NET-versioned packages together, and remove the Renovate .NET 10 hold.",
+"F10": "Build pipelines verify the app on .NET 11",
+"F11": "the SDK pins and toolchain pin checks name .NET 11",
+"F12": "the SQLite and Postgres verify builds, E2E and Sonar run",
+"F13": "all are green with no new Sonar issue; a pipeline that still installs SDK 10 falsifies this",
+"F14": "Docker image and standalone builds serve the app",
+"F15": "the Dockerfile uses the 11.0 images and the standalone workflows use the 11 SDK",
+"F16": "the image is built and started, and a standalone package is built and started",
+"F17": "each serves the app and reports a .NET 11 runtime; a build or start failure falsifies this",
+"F18": "Renovate no longer holds .NET",
+"F19": "the .NET 10 hold rule is removed from renovate.json",
+"F2": "Lighthouse runs on .NET 11 with unchanged behaviour, so self-hosters get the current runtime and Renovate can keep the .NET stack current again.",
+"F20": "Renovate reads its configuration",
+"F21": "no rule holds back .NET packages or images, and the remaining docs and pins that name .NET 10 as current now name .NET 11; historical briefs and decision records stay unchanged",
+"F22": "Retarget the four projects to net11.0; move the .NET-versioned packages to 11.x; change SDK pins in the build action and the standalone packaging and SBOM workflows; update the Dockerfile images, Start-DevServer.ps1 path, the Sonar gates workflow, toolchain pin test, solution file, perf readings files, examine script, regenerated SBOM, ARCHITECTURE.md, CLAUDE.md and the two user docs; remove the Renovate .NET 10 hold; check migrations via Create-Migration.ps1, Stryker.NET config and standalone packaging.",
+"F23": "Adopting new .NET 11 APIs, for example the first-class cookie Partitioned property that Program.cs works around today. Possible follow-up only.",
+"F24": "Any change to routes, DTO shapes, serialized responses, UI pixels or topologies; this is a behaviour-free upgrade.",
+"F25": "Historical architecture briefs, diagrams and decision records that name .NET 10 as history stay unchanged. Release notes are written at release time, not here.",
+"F26": "DISCOVER and DIVERGE are skipped for this Feature.",
+"F27": "The work item gets the Release Notes tag with one short line at release time: Lighthouse now runs on .NET 11.",
+"F28": "The Quint scenario exploration is not relevant for any of the three values: each has a settled happy path with no refusal, race or stale-input case.",
+"F29": "The retarget and the package majors form one slice, because splitting them leaves the build broken. The other slices only check or clean up what follows.",
+"F3": "A self-hoster runs Lighthouse on .NET 11 and sees no change in behaviour: the same routes, responses, screens and data. Settings, System Info shows the .NET 11 runtime version.",
+"F30": "No UI sketch is needed: no screen changes. Settings, System Info reads the runtime version at run time and shows .NET 11 with no code change; test fixtures that say .NET 10.0.0 there are values, not pins.",
+"F31": "Platform and hosting only: no bounded context model, glossary term, domain event or UI surface is touched; RBAC, Lighthouse-Clients and the website need no change. The usage-data event question belongs to DEVOPS.",
+"F32": "The maintainer retargets the projects and packages, then runs the backend suite and dev server",
+"F33": "Not supplied",
+"F34": "The maintainer pushes and the verify builds, E2E and Sonar run on SDK 11",
+"F35": "The self-hoster pulls the new Docker image or standalone package and the app runs as before",
+"F36": "Renovate proposes .NET 11 updates again",
+"F37": "A maintainer runs the full backend suite and the dev server on net11.0: every test passes, no migration reports a pending model change, and Settings, System Info shows a .NET 11 runtime.",
+"F38": "Backend, tests and migrations run on .NET 11 with unchanged behaviour",
+"F39": "A maintainer pushes the change: the SQLite and Postgres verify builds, E2E and Sonar run on the .NET 11 SDK and are green with no new Sonar issue.",
+"F4": "The maintainer can build, test and package Lighthouse with the .NET 11 SDK in every pipeline, and Renovate proposes .NET 11 updates again.",
+"F40": "Every pipeline builds and verifies on .NET 11",
+"F41": "A self-hoster builds and starts the Docker image, and a standalone package for Linux, macOS or Windows: each serves the app on a .NET 11 runtime.",
+"F42": "Self-hosted image and standalone builds run on .NET 11",
+"F43": "A maintainer reads renovate.json and the docs: no rule holds back .NET, and current-state docs and pins name .NET 11 while history stays unchanged.",
+"F44": "Renovate keeps the .NET stack current and the docs match the runtime",
+"F5": "The self-hosted Docker image and the Linux, macOS and Windows standalone builds run on .NET 11 and serve the app.",
+"F6": "Backend runs on .NET 11 with the full suite green",
+"F7": "all four projects target net11.0 with .NET 11 package versions",
+"F8": "the full backend suite runs, Integration included, and the app starts from the dev server script",
+"F9": "all tests pass, no migration reports a pending model change, and Settings, System Info shows a .NET 11 runtime; a net10.0 reference or a failing test falsifies this"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F26"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F27"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F28"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F29"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F30"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F31"
+}
+],
+"journey": [
+{
+"emotion": "F33",
+"step": "F32"
+},
+{
+"emotion": "F33",
+"step": "F34"
+},
+{
+"emotion": "F33",
+"step": "F35"
+},
+{
+"emotion": "F33",
+"step": "F36"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"given": "F7",
+"id": "P4",
+"kind": "Scenario",
+"then": "F9",
+"title": "F6",
+"when": "F8"
+},
+{
+"given": "F11",
+"id": "P5",
+"kind": "Scenario",
+"then": "F13",
+"title": "F10",
+"when": "F12"
+},
+{
+"given": "F15",
+"id": "P6",
+"kind": "Scenario",
+"then": "F17",
+"title": "F14",
+"when": "F16"
+},
+{
+"given": "F19",
+"id": "P7",
+"kind": "Scenario",
+"then": "F21",
+"title": "F18",
+"when": "F20"
+}
+],
+"scope_in": [
+"F22"
+],
+"scope_out": [
+"F23",
+"F24",
+"F25"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F37",
+"promises": [
+"P1",
+"P4"
+],
+"work": {
+"size": "M",
+"value": "F38"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F39",
+"promises": [
+"P2",
+"P5"
+],
+"work": {
+"size": "S",
+"value": "F40"
+}
+},
+{
+"depends_on": [
+"S2"
+],
+"id": "S3",
+"observation": "F41",
+"promises": [
+"P3",
+"P6"
+],
+"work": {
+"size": "S",
+"value": "F42"
+}
+},
+{
+"depends_on": [
+"S3"
+],
+"id": "S4",
+"observation": "F43",
+"promises": [
+"P2",
+"P7"
+],
+"work": {
+"size": "S",
+"value": "F44"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6135-dotnet-11",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
