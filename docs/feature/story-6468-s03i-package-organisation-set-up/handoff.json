@@ -2,7 +2,8 @@
 "counters": {
 "C": 1,
 "D": 19,
-"F": 216,
+"E": 3,
+"F": 219,
 "K": 9,
 "L": 6,
 "P": 4,
@@ -2406,6 +2407,32 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F217"
+},
+{
+"id": "E2",
+"promises": [
+"P3",
+"P4"
+],
+"text": "F218"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F219"
+}
+]
+},
 "facts": {
 "F1": "ADO Story #6468 S03i Package Organisation set-up: move the 27 Organisation set-up files from the loose Services.Implementation and Services.Interfaces namespaces into Modules/OrganisationSetup/{Domain, Application, Application/Connections, Application/OptionalFeatures} as they are (namespaces and usings only), with every rule seeing the move before it happens and naming the module only after it; downstream modules reach set-up by namespace; set-up gets its own boundary rules and a TeamDeleted ratchet. No behaviour, schema or configuration change. Design: docs/feature/story-6468-s03i-package-organisation-set-up/feature-delta.md.",
 "F10": "Calendar, Feature ordering and ranking and the optional features live in Modules/OrganisationSetup with their unit tests, and every rule stays green",
@@ -2538,6 +2565,9 @@
 "F214": "Exclusion list equals the named paths and each exists",
 "F215": "Finite fields and files of the test project.",
 "F216": "Rules name Organisation set-up by Modules.OrganisationSetup only.",
+"F217": "Run architecture-rules with class fragments OrganisationSetupMembershipArchUnitTest and OrganisationSetupRulesNameOnlyTheModuleArchUnitTest: one pass line per test, none failing. Every architecture rule keeps its verdict for every moving Organisation set-up type, and each rule pattern that matches a moving type's old name is classified as standing for the context or for the place.",
+"F218": "Run architecture-rules with the oracle class fragments for the Organisation set-up boundary rules (OrganisationSetupMembershipArchUnitTest, OrganisationSetupRulesNameOnlyTheModuleArchUnitTest and the slices' boundary and event-publisher classes): one pass line per test. Downstream modules reach Organisation set-up by namespace with no list entry, Tracker integration only along its one listed edge, Organisation set-up has its own boundary rules read from the IL, no second controller publishes a set-up event unseen, and every rule naming Organisation set-up uses Modules.OrganisationSetup only, with no rule constant or literal naming a moved type by its old place.",
+"F219": "Organisation set-up types live in Modules/OrganisationSetup in their measured layer with unit tests beside them: test-selection-show on the new module paths shows the moved tests selected, and backend-tests with a fragment shows the named tests green. The application behaves as before: ef-model-unchanged reports the EF model unchanged for every provider, and the full filtered backend-tests suite, run as a background shell job (about 8 minutes) and read when it ends, shows 0 failed. That only namespaces changed in production files, and Program.cs order, are not shown by any probe and are left to the whole-candidate review.",
 "F22": "D-3 Models: every set-up Models type stays in the kernel (EF entities, types reached by entities, wire types, events handled by other contexts); ManualRankComparer stays by default for S04b.",
 "F23": "D-4 Repositories stay in Services/*/Repositories, named in the membership with owner (S05c Team, S05d Portfolio, S05e connections, Organisation set-up for settings, terminology and blackouts) and target Modules/OrganisationSetup/Adapters/Persistence when S05 or S10 reshape repositories.",
 "F24": "D-5 The four context seeders (AppSettingSeeder, TerminologySeeder, OptionalFeatureSeeder, CategoryListNormalisationSeeder) stay in Services/Implementation/Seeding, owner Organisation set-up, target module start-up (S09a). Rejected: moving them to Adapters/Seeding (a second seeding decision in the Epic).",
