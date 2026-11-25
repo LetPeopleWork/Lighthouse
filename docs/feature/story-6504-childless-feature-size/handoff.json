@@ -122,6 +122,53 @@
 "stimulus": "F350",
 "user_result": "F336"
 }
+],
+"S2": [
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F106",
+"L1/F107",
+"L1/F108",
+"L1/F109",
+"L1/F110",
+"L2/F113",
+"L2/F114",
+"L2/F115",
+"L3/F118",
+"L3/F119",
+"L3/F120",
+"L3/F121",
+"L3/F122",
+"L4/F125"
+],
+"still_passes_if": "F356",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingOverrideStatesTest.cs::A_Feature_in_an_override_state_keeps_its_real_child_count_while_default_sizing_is_off"
+},
+"expected": "F354",
+"stimulus": "F353",
+"user_result": "F355"
+},
+{
+"covers": [
+"P6"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F106"
+],
+"still_passes_if": "F360",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingOverrideStatesTest.cs::A_Feature_in_an_override_state_with_one_child_is_still_sized_by_the_default_while_default_sizing_is_on"
+},
+"expected": "F358",
+"stimulus": "F357",
+"user_result": "F359"
+}
 ]
 },
 "counters": {
@@ -129,7 +176,7 @@
 "C": 2,
 "D": 9,
 "E": 8,
-"F": 352,
+"F": 360,
 "K": 8,
 "L": 4,
 "N": 2,
@@ -1641,7 +1688,15 @@
 "F350": "The owner switches default sizing off in the settings form and the save is accepted; a save is rejected after switching off and a later save is accepted; later saves leave it off; a loaded-off Portfolio is saved or switched on",
 "F351": "The usage event for switching off is reported exactly once, on the accepted on-to-off save only: none for a rejected save, none for a save that leaves it off, turns it on or leaves it on; the saved settings carry the switch",
 "F352": "Reporting on the click instead of on the accepted save fails the rejected-save case; the create path has no declared test locator",
+"F353": "Portfolio Ocean (default size 4, override state In Progress, default sizing off) is refreshed with Feature G In Progress holding 1, 4 or 6 child Work Items",
+"F354": "G keeps its real child count as remaining and total, only the owning Team carries it, G has that size and is not marked as using the default size",
+"F355": "The owner sees G with its real child count, not the default size 4",
+"F356": "An override rule that ignores the switch but only differs when real count is below the default (counts 4 and 6 pass); or one that keeps the count but still flags G as using the default",
+"F357": "Portfolio Ocean (default size 4, override state In Progress, default sizing on) is refreshed with Feature G In Progress holding 1 child Work Item",
+"F358": "G is re-sized to the default 4 and marked as using the default size, as today",
+"F359": "With default sizing on the owner still sees today's default-sized count",
 "F36": "A new or stronger 'assumed' label on inferred counts when the switch is on: excluded because the maintainer did not ask for it; today's warning stays.",
+"F360": "An override rule that never applies the default even when the switch is on",
 "F37": "Changing how Default Feature Size or its percentile is computed, and rewriting Delivery metrics history or archived Deliveries.",
 "F38": "No Epic, because 6504 is a single stand-alone Story (maintainer, 2026-11-25). DISCOVER and DIVERGE were skipped explicitly by the maintainer on 2026-11-25.",
 "F39": "One general on/off switch for default (inferred) Feature sizing. On: today's behaviour, unchanged. Off: a Feature with no child Work Items gets size 0, so there is no inferred count and nothing is assigned to any Team (maintainer, 2026-11-25: 'a general switch to turn default size off, then we simply take 0 and live with the consequences').",

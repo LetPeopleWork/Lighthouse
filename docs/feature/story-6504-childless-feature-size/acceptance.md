@@ -224,6 +224,79 @@ Reporting on the click instead of on the accepted save fails the rejected-save c
 
 None.
 
+### S2
+
+##### Covers
+
+P6
+
+```text
+Portfolio Ocean (default size 4, override state In Progress, default sizing off) is refreshed with Feature G In Progress holding 1, 4 or 6 child Work Items
+```
+
+```text
+G keeps its real child count as remaining and total, only the owning Team carries it, G has that size and is not marked as using the default size
+```
+
+```text
+The owner sees G with its real child count, not the default size 4
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/WorkItems\/Application\/DefaultFeatureSizingOverrideStatesTest\.cs\:\:A\_Feature\_in\_an\_override\_state\_keeps\_its\_real\_child\_count\_while\_default\_sizing\_is\_off
+
+```text
+An override rule that ignores the switch but only differs when real count is below the default (counts 4 and 6 pass); or one that keeps the count but still flags G as using the default
+```
+
+###### Obligations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### Covers
+
+P6
+
+```text
+Portfolio Ocean (default size 4, override state In Progress, default sizing on) is refreshed with Feature G In Progress holding 1 child Work Item
+```
+
+```text
+G is re-sized to the default 4 and marked as using the default size, as today
+```
+
+```text
+With default sizing on the owner still sees today's default-sized count
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Modules\/WorkItems\/Application\/DefaultFeatureSizingOverrideStatesTest\.cs\:\:A\_Feature\_in\_an\_override\_state\_with\_one\_child\_is\_still\_sized\_by\_the\_default\_while\_default\_sizing\_is\_on
+
+```text
+An override rule that never applies the default even when the switch is on
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

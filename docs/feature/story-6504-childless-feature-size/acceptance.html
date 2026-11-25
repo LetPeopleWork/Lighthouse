@@ -345,6 +345,71 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Portfolio Ocean (default size 4, override state In Progress, default sizing off) is refreshed with Feature G In Progress holding 1, 4 or 6 child Work Items
+</code></pre>
+
+<pre><code>G keeps its real child count as remaining and total, only the owning Team carries it, G has that size and is not marked as using the default size
+</code></pre>
+
+<pre><code>The owner sees G with its real child count, not the default size 4
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingOverrideStatesTest.cs::A_Feature_in_an_override_state_keeps_its_real_child_count_while_default_sizing_is_off</p>
+
+<pre><code>An override rule that ignores the switch but only differs when real count is below the default (counts 4 and 6 pass); or one that keeps the count but still flags G as using the default
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P6</p>
+
+<pre><code>Portfolio Ocean (default size 4, override state In Progress, default sizing on) is refreshed with Feature G In Progress holding 1 child Work Item
+</code></pre>
+
+<pre><code>G is re-sized to the default 4 and marked as using the default size, as today
+</code></pre>
+
+<pre><code>With default sizing on the owner still sees today&#x27;s default-sized count
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingOverrideStatesTest.cs::A_Feature_in_an_override_state_with_one_child_is_still_sized_by_the_default_while_default_sizing_is_on</p>
+
+<pre><code>An override rule that never applies the default even when the switch is on
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
