@@ -224,6 +224,93 @@ Reporting on the click instead of on the accepted save fails the rejected-save c
 
 None.
 
+##### Covers
+
+P3
+
+```text
+With default sizing off, Portfolio Ocean is refreshed and forecast, and a Delivery holds childless Feature F
+```
+
+```text
+The Delivery forecast counts F as 0 remaining: 100 percent likely and expected to complete today, with no special handling
+```
+
+```text
+A Delivery holding only a Feature without child Work Items is not held back by invented work
+```
+
+##### Disposition
+
+Tested
+
+The\_Delivery\_forecast\_counts\_a\_Feature\_without\_child\_Work\_Items\_as\_zero\_while\_default\_sizing\_is\_off
+
+```text
+A Delivery forecast that skips F or shows no date still passes only if it also reports 100 percent and today
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+With default sizing off and Default Feature Size 4, the Feature list shows a childless Feature, and an unflagged Feature with no work counted
+```
+
+```text
+The childless row shows its progress as 0 of 0, not Could not determine work, and no count such as 0 of 4; the unflagged row keeps Could not determine work
+```
+
+```text
+The owner sees 0 remaining and the note, with no invented count
+```
+
+##### Disposition
+
+Tested
+
+with default sizing off\, the Feature list shows a Feature without child Work Items as 0 of 0 and no count out of the default size
+
+```text
+Showing Could not determine work, or 0 of 4, fails; changing every no-work row to 0 of 0 fails the unflagged guard
+```
+
+###### Obligations
+
+
+##### Covers
+
+P8
+
+```text
+The owner creates a new Portfolio through the create wizard
+```
+
+```text
+The settings it is saved with carry infersDefaultFeatureSize true; the wizard renders no size control
+```
+
+```text
+A newly created Portfolio starts with default Feature sizing on
+```
+
+##### Disposition
+
+Tested
+
+saves a newly created Portfolio with default Feature sizing switched on
+
+```text
+A missing field would not equal true and fail; only an explicit true passes
+```
+
+###### Obligations
+
+
 ### S2
 
 ##### Covers

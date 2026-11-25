@@ -468,6 +468,39 @@ describe("a Feature without child Work Items says so in the Feature list", () =>
 		).toBe(NO_CHILDREN_NOTE);
 	});
 
+	it("with default sizing off, the Feature list shows a Feature without child Work Items as 0 of 0 and no count out of the default size", async () => {
+		await renderListOf(
+			aRow(36, "NW-36", "Unsized idea", { hasNoChildWorkItemsYet: true }),
+		);
+
+		const row = await theRowOf(/Unsized idea/);
+		expect(
+			within(row).getByText(/\b0 of 0\b/),
+			"The childless row must show its progress as 0 of 0, because 0 remaining plus the note is the approved look while default sizing is off.",
+		).toBeInTheDocument();
+		expect(
+			within(row).queryByText("Could not determine work"),
+			"The childless row must not say the work could not be determined, because the 0 is known and explained by the note.",
+		).not.toBeInTheDocument();
+		expect(
+			row.textContent,
+			"No count out of the default size (such as 0 of 4) may appear for a Feature without child Work Items.",
+		).not.toMatch(/\bof\s+[1-9]\d*\b/);
+	});
+
+	it("a Feature with no work counted but not flagged keeps showing that the work could not be determined", async () => {
+		await renderListOf(
+			aRow(37, "NW-37", "Unknown work", { noWorkAtAll: true }),
+		);
+
+		expect(
+			within(await theRowOf(/Unknown work/)).getByText(
+				"Could not determine work",
+			),
+			"Only a Feature flagged as having no child Work Items yet shows 0 of 0; an unflagged Feature with no work counted keeps today's message.",
+		).toBeInTheDocument();
+	});
+
 	it("a Feature with real counts shows no warning", async () => {
 		await renderListOf(aRow(33, "NW-33", "Real counts"));
 

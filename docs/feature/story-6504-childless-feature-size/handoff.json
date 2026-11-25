@@ -121,6 +121,54 @@
 "expected": "F351",
 "stimulus": "F350",
 "user_result": "F336"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F106"
+],
+"still_passes_if": "F451",
+"test": "The_Delivery_forecast_counts_a_Feature_without_child_Work_Items_as_zero_while_default_sizing_is_off"
+},
+"expected": "F449",
+"stimulus": "F448",
+"user_result": "F450"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F106"
+],
+"still_passes_if": "F463",
+"test": "with default sizing off, the Feature list shows a Feature without child Work Items as 0 of 0 and no count out of the default size"
+},
+"expected": "F461",
+"stimulus": "F460",
+"user_result": "F462"
+},
+{
+"covers": [
+"P8"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F122"
+],
+"still_passes_if": "F459",
+"test": "saves a newly created Portfolio with default Feature sizing switched on"
+},
+"expected": "F457",
+"stimulus": "F456",
+"user_result": "F458"
 }
 ],
 "S2": [
@@ -399,7 +447,7 @@
 "C": 2,
 "D": 9,
 "E": 8,
-"F": 447,
+"F": 463,
 "K": 8,
 "L": 4,
 "N": 2,
@@ -1999,8 +2047,20 @@
 "F445": "Off: the Feature payload and the list row say hasNoChildWorkItemsYet true; on: both say false",
 "F446": "Switching default sizing off is what makes the Feature say it has no child Work Items yet",
 "F447": "A flag set from the Feature alone, regardless of the Portfolio switch, or never true after a refresh",
+"F448": "With default sizing off, Portfolio Ocean is refreshed and forecast, and a Delivery holds childless Feature F",
+"F449": "The Delivery forecast counts F as 0 remaining: 100 percent likely and expected to complete today, with no special handling",
 "F45": "End-of-DISCUSS checklist view: RBAC unchanged, the switch is a Portfolio setting edited by whoever edits Portfolio settings today (Portfolio admins). Lighthouse-Clients CLI/MCP: the Portfolio settings payload gains the switch and clients that read or write Portfolio settings must carry it; the Feature payload gains nothing new. Website: one line, e.g. 'Turn off default Feature sizing: a Feature without child Work Items counts as 0, never a guess'. Context map: see the Design open decision.",
+"F450": "A Delivery holding only a Feature without child Work Items is not held back by invented work",
+"F451": "A Delivery forecast that skips F or shows no date still passes only if it also reports 100 percent and today",
+"F456": "The owner creates a new Portfolio through the create wizard",
+"F457": "The settings it is saved with carry infersDefaultFeatureSize true; the wizard renders no size control",
+"F458": "A newly created Portfolio starts with default Feature sizing on",
+"F459": "A missing field would not equal true and fail; only an explicit true passes",
 "F46": "No labelling change when the switch is on: the existing warning icon and sentence stay; no stronger 'assumed' mark (maintainer, 2026-11-25).",
+"F460": "With default sizing off and Default Feature Size 4, the Feature list shows a childless Feature, and an unflagged Feature with no work counted",
+"F461": "The childless row shows its progress as 0 of 0, not Could not determine work, and no count such as 0 of 4; the unflagged row keeps Could not determine work",
+"F462": "The owner sees 0 remaining and the note, with no invented count",
+"F463": "Showing Could not determine work, or 0 of 4, fails; changing every no-work row to 0 of 0 fails the unflagged guard",
 "F47": "Switching default sizing off also turns off the 'override real child count states' rule. Off means Lighthouse never puts a default size in place of real children: a Feature's size is its real child count, or 0 if it has none (maintainer, 2026-11-25).",
 "F48": "The switch lives per Portfolio in its advanced settings next to Default Feature Size. It is on for existing and new Portfolios, so nothing changes on upgrade (maintainer, 2026-11-25).",
 "F5": "Portfolio Ocean has Default Feature Size 4, default sizing is switched on, and Feature F has no child Work Items in any Team",

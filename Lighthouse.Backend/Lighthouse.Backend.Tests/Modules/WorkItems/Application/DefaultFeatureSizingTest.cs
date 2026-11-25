@@ -114,6 +114,17 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
             await ocean.IsForecast();
 
             ocean.TheFeatureIsForecastToNeedNoTime();
+        }
+
+        [Test]
+        public async Task The_Delivery_forecast_counts_a_Feature_without_child_Work_Items_as_zero_while_default_sizing_is_off()
+        {
+            var ocean = Ocean.WithDefaultFeatureSize(OceanDefaultFeatureSize).WithTwoTeams().DefaultSizing(Sizing.SwitchedOff);
+            ocean.HasAFeatureWithoutChildWorkItems();
+
+            await ocean.IsRefreshed();
+            await ocean.IsForecast();
+
             ocean.ADeliveryHoldingTheFeatureIsExpectedToCompleteToday();
         }
 
@@ -231,8 +242,13 @@ namespace Lighthouse.Backend.Tests.Modules.WorkItems.Application
 
                 var metrics = delivery.CalculateMetrics(Today, [], 85);
 
-                Assert.That(metrics.WhenDistribution.Single().ExpectedDate.Date, Is.EqualTo(Today.ToDateTime(TimeOnly.MinValue)),
-                    "A Delivery holding only Feature F should be expected to complete today, because F counts as 0 remaining. Leave F without invented work so the Delivery has nothing left to wait for.");
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(metrics.LikelihoodPercentage, Is.EqualTo(100.0),
+                        "A Delivery holding only Feature F should be certain to complete on time, because F counts as 0 remaining and the forecast adds no special handling for it. Leave F without invented work.");
+                    Assert.That(metrics.WhenDistribution.Single().ExpectedDate.Date, Is.EqualTo(Today.ToDateTime(TimeOnly.MinValue)),
+                        "A Delivery holding only Feature F should be expected to complete today, because F counts as 0 remaining. Leave F without invented work so the Delivery has nothing left to wait for.");
+                }
             }
 
             private Ocean()

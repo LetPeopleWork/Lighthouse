@@ -345,6 +345,81 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>With default sizing off, Portfolio Ocean is refreshed and forecast, and a Delivery holds childless Feature F
+</code></pre>
+
+<pre><code>The Delivery forecast counts F as 0 remaining: 100 percent likely and expected to complete today, with no special handling
+</code></pre>
+
+<pre><code>A Delivery holding only a Feature without child Work Items is not held back by invented work
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>The_Delivery_forecast_counts_a_Feature_without_child_Work_Items_as_zero_while_default_sizing_is_off</p>
+
+<pre><code>A Delivery forecast that skips F or shows no date still passes only if it also reports 100 percent and today
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>With default sizing off and Default Feature Size 4, the Feature list shows a childless Feature, and an unflagged Feature with no work counted
+</code></pre>
+
+<pre><code>The childless row shows its progress as 0 of 0, not Could not determine work, and no count such as 0 of 4; the unflagged row keeps Could not determine work
+</code></pre>
+
+<pre><code>The owner sees 0 remaining and the note, with no invented count
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>with default sizing off, the Feature list shows a Feature without child Work Items as 0 of 0 and no count out of the default size</p>
+
+<pre><code>Showing Could not determine work, or 0 of 4, fails; changing every no-work row to 0 of 0 fails the unflagged guard
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P8</p>
+
+<pre><code>The owner creates a new Portfolio through the create wizard
+</code></pre>
+
+<pre><code>The settings it is saved with carry infersDefaultFeatureSize true; the wizard renders no size control
+</code></pre>
+
+<pre><code>A newly created Portfolio starts with default Feature sizing on
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>saves a newly created Portfolio with default Feature sizing switched on</p>
+
+<pre><code>A missing field would not equal true and fail; only an explicit true passes
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h3>S2</h3>
 
 <h5>Covers</h5>
