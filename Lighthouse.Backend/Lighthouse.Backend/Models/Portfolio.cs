@@ -198,7 +198,7 @@ namespace Lighthouse.Backend.Models
                 return [];
             }
 
-            return Features.Where(feature => feature.StateCategory != StateCategories.Done && feature.FeatureWork.Sum(x => x.TotalWorkItems) == 0);
+            return Features.Where(feature => feature.IsOpenWithoutChildWorkItems);
         }
 
         public IEnumerable<Feature> GetFeaturesToOverrideWithDefaultSize()
