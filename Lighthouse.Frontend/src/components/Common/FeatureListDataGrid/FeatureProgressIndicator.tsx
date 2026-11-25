@@ -86,6 +86,7 @@ const FeatureProgressIndicator: React.FC<FeatureProgressIndicatorProps> = ({
 					)
 				}
 				progressableItem={{ remainingWork, totalWork }}
+				isKnownToBeEmpty={feature.hasNoChildWorkItemsYet === true}
 			/>
 			{teamsWithWork.map((team) => (
 				<Box key={team.id}>

@@ -19,6 +19,8 @@ interface ProgressIndicatorProps {
 	progressableItem: IProgressable;
 	showDetails?: boolean;
 	height?: number;
+	/** The item is known to hold no work, so 0 of 0 is the answer rather than a work count that is missing. */
+	isKnownToBeEmpty?: boolean;
 }
 
 const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
@@ -26,6 +28,7 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 	progressableItem,
 	showDetails = true,
 	height = 20,
+	isKnownToBeEmpty = false,
 }) => {
 	const theme = useTheme();
 	const [animatedValue, setAnimatedValue] = useState(0);
@@ -38,6 +41,33 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 		progressableItem.totalWork - progressableItem.remainingWork;
 	const completionPercentage = Number.parseFloat(
 		((100 / progressableItem.totalWork) * completedItems).toFixed(2),
+	);
+
+	const shownPercentage = Number.isNaN(completionPercentage)
+		? 0
+		: completionPercentage;
+
+	const noWorkToShow = isKnownToBeEmpty ? (
+		"0 of 0"
+	) : (
+		<Box sx={{ display: "flex", alignItems: "center" }}>
+			Could not determine work
+			<Tooltip
+				title={`The remaining and total work could not be determined. This can happen if the work was added to a ${teamTerm} in your ${workTrackingSystemTerm}, but you have not defined this ${teamTerm} yet in Lighthouse.`}
+				arrow
+			>
+				<IconButton
+					size="small"
+					sx={{
+						marginLeft: "4px",
+						padding: "0px",
+						color: theme.palette.text.primary,
+					}}
+				>
+					<InfoOutlinedIcon fontSize="small" />
+				</IconButton>
+			</Tooltip>
+		</Box>
 	);
 
 	// Animate progress on component mount
@@ -104,28 +134,9 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
 									: "none",
 						}}
 					>
-						{progressableItem.totalWork > 0 ? (
-							`${Number.isNaN(completionPercentage) ? 0 : completionPercentage}% (${completedItems}/${progressableItem.totalWork})`
-						) : (
-							<Box sx={{ display: "flex", alignItems: "center" }}>
-								Could not determine work
-								<Tooltip
-									title={`The remaining and total work could not be determined. This can happen if the work was added to a ${teamTerm} in your ${workTrackingSystemTerm}, but you have not defined this ${teamTerm} yet in Lighthouse.`}
-									arrow
-								>
-									<IconButton
-										size="small"
-										sx={{
-											marginLeft: "4px",
-											padding: "0px",
-											color: theme.palette.text.primary,
-										}}
-									>
-										<InfoOutlinedIcon fontSize="small" />
-									</IconButton>
-								</Tooltip>
-							</Box>
-						)}
+						{progressableItem.totalWork > 0
+							? `${shownPercentage}% (${completedItems}/${progressableItem.totalWork})`
+							: noWorkToShow}
 					</Typography>
 				)}
 			</Box>
