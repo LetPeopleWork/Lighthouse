@@ -75,3 +75,13 @@ Closed 2026-11-25. Platform lens run (risk is material: base image, packaging, C
 - Post-push only (not required checks): Docker build + health check, standalone packaging, codesign, verifywindows/verifymacos, SBOM. Highest risk: macOS rpath/codesign/notarise step. The release job needs these, so a failed build publishes nothing; remedy is a forward fix or revert.
 - Rollback for self-hosters: no migration planned, key-ring format unchanged across majors — designed, not observed.
 - Support: .NET 10 LTS and .NET 11 STS both end 2028-11-14; no support time lost.
+
+## Wave: DELIVER (AFK)
+
+Rigor: S1 thorough, S2-S4 standard. Slice wrap-up: refactor + review. Push: never (hold locally).
+
+### Decisions taken during DELIVER
+
+- S1: `Microsoft.Extensions.TimeProvider.Testing` 10.11.0 -> 11.0.1 (oracle review finding: it follows the .NET 11 train). Accepted extension of the S1 impact list.
+- S1 refactor: removed the direct `SQLitePCLRaw.bundle_e_sqlite3` 3.0.5 pin. EF Core Sqlite 11.0.0 depends on SQLitePCLRaw 3.0.5 itself, above the CVE-2025-6965 fix (2.1.12); the resolved set stays 3.0.5. Three comments that still called it a pin now describe the engine fix instead. Accepted change to the design line "SQLitePCLRaw stays".
+- S1: EF Core 11 obsoletes `ExecuteSqlInterpolatedAsync`; two test set-up helpers use `ExecuteSqlAsync` (same parameterised SQL, no assertion changed).
