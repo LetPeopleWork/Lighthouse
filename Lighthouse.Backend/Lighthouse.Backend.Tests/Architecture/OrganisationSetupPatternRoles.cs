@@ -78,6 +78,21 @@ namespace Lighthouse.Backend.Tests.Architecture
         };
 
         /// <summary>
+        /// A part of the code that saw Organisation set-up in its old loose Services place and in its module while the types
+        /// moved, and now names set-up by its module only. It sees every moved type in its new place and none in the old one,
+        /// which the role check would read as an area it never saw; the check admits that for these patterns only, and each
+        /// must still see no moved type in its old place. Keyed like <see cref="PatternRoles"/>.
+        /// </summary>
+        public static IReadOnlyDictionary<string, string> NamedByTheModuleOnly { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp"] = "Work Items reaches set-up in its module; the services still loose are named by full name in their own list",
+            ["RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace"] = "the recurring-rule entity must not depend on set-up's module; the implementations still loose are named by full name",
+            ["TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace"] = "the board port must not name set-up's module; the implementations still loose are named by full name",
+            ["TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts"] = "set-up is one of the other contexts in its module; its old Connections and OptionalFeatures folders are empty",
+            ["RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern"] = "the weekly recurrence lives in set-up's Domain only",
+        };
+
+        /// <summary>
         /// A part of the code that takes in a whole parent namespace the set-up types move into, so it sees them for the first
         /// time after the move, and rightly. The check admits that new sight only while the pattern matches the parent
         /// namespace itself and the new namespace of every moving type. Keyed like <see cref="PatternRoles"/>.

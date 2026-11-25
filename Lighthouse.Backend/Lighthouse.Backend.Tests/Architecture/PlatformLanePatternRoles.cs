@@ -89,6 +89,21 @@ namespace Lighthouse.Backend.Tests.Architecture
         };
 
         /// <summary>
+        /// A part of the code that saw a platform area through the loose Services.Implementation or Services.Interfaces
+        /// namespace and no longer reads those namespaces, because Organisation set-up, the last part of the code it read
+        /// there, now lives in its own module. Every platform type that lived in the loose namespaces has left them, so the
+        /// part of the code no longer sees that area in its old place, which the role check would read as an area it never
+        /// saw; the check admits that for these patterns only, while no platform type is left in the loose namespaces.
+        /// Keyed like <see cref="PatternRoles"/>.
+        /// </summary>
+        public static IReadOnlyDictionary<string, string> NoLongerReadTheLooseServicesNamespaces { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp"] = "names set-up by its module and the platform areas by their new place; the loose services Work Items still reaches are named by full name",
+            ["RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace"] = "names set-up by its module and the platform implementations by their new place; the loose implementations are named by full name",
+            ["TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace"] = "names set-up by its module and the platform by its new place; the loose implementations are named by full name",
+        };
+
+        /// <summary>
         /// A part of the code that saw one moving type only through the folder the type lived in, not because the type
         /// belongs to that part of the code. For that pattern, and every pattern built from it, the type is read as an
         /// old location: the pattern must not follow the type into its new place, and the type's area is not widened.

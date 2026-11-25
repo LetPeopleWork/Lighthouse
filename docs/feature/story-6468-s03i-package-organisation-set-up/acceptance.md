@@ -73,15 +73,15 @@ a Domain candidate that reaches a set-up port through an attribute argument, whi
 P1
 
 ```text
-Ask every constant and static read-only string field of the test assembly that matches a moving type's old or new name, on the subject its rule reads, whether it keeps its declared role through the move
+Ask every constant and static read-only string field of the test assembly that matches a moving type's old or new name, on the subject its rule reads, whether it keeps its declared role through the move; and check each pattern on OrganisationSetupPatternRoles.NamedByTheModuleOnly
 ```
 
 ```text
-RED before the S1 rule edits, exactly the five Context patterns that see a set-up type in the old place and not in the new: the Work Items set-up pattern and its composite, the blackout seam's service implementation pattern, the board port's implementation pattern and the weekly recurrence full-name pattern, 80 type breaks in all; every Place pattern and every folder-only pattern holds; made-up keys show an undeclared pattern, a blind context, its composite and an old location widened into the new place are each named and a correctly widened context is not; no OrganisationSetup alternative reaches outside the module
+RED before the S1 rule edits, exactly the five Context patterns that see a set-up type in the old place and not in the new: the Work Items set-up pattern and its composite, the blackout seam's service implementation pattern, the board port's implementation pattern and the weekly recurrence full-name pattern, 80 type breaks in all; every Place pattern and every folder-only pattern holds; made-up keys show an undeclared pattern, a blind context, its composite and an old location widened into the new place are each named and a correctly widened context is not; no OrganisationSetup alternative reaches outside the module. Once the last slice names set-up by its module only, a Context pattern that sees moved types only in their new place passes only if it is on NamedByTheModuleOnly (exactly the Work Items set-up pattern, the blackout seam's and the board port's implementation patterns, Tracker integration's other contexts and the weekly recurrence pattern), and each entry must be a rule pattern of the test assembly, see no moved type in its old place and see one only in its new place; any other pattern that stops seeing the old place still fails
 ```
 
 ```text
-A maintainer sees, by class and field, every rule that would silently stop seeing the set-up types at the move, and which rules rightly stay in the old place
+A maintainer sees, by class and field, every rule that would silently stop seeing the set-up types at the move, and which rules rightly stay in the old place; after the move only the rules declared finished may stop naming the old place
 ```
 
 ##### Disposition
@@ -122,6 +122,36 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetup
 
 ```text
 an old full name built at run time from pieces in a method body, which no literal sweep can read
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Ask every rule pattern of the test assembly whether it keeps its role through the platform move, and check each pattern on PlatformLanePatternRoles.NoLongerReadTheLooseServicesNamespaces against the compiled product
+```
+
+```text
+The Work Items set-up pattern, the blackout seam's and the board port's implementation patterns no longer read the loose Services.Implementation and Services.Interfaces namespaces and pass only because they are on that list; each entry is a rule pattern of the test assembly, matches no platform type whose old home was a loose namespace, sees a platform area only in its new place, and no platform type is still compiled into the loose namespaces (all 35 that lived there have left); a made-up entry that still reads the loose namespaces or names no rule pattern is named
+```
+
+```text
+Narrowing set-up to its module cannot hide a platform type left behind in the loose Services namespaces
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PlatformLaneRulesSeeTheMoveArchUnitTest\.cs
+
+```text
+a platform type that lives in a loose namespace but is missing from the platform membership map
 ```
 
 ###### Obligations
@@ -209,7 +239,7 @@ Read every outbound rule and outbound list of Work Items, Flow metrics, Forecast
 ```
 
 ```text
-No downstream rule reads set-up's Application or Domain as foreign and no downstream list names an edge into set-up, while each rule still reads one named foreign namespace that is not set-up (the loose services, Licensing, Access, Work Items, the data layer or a set-up adapter) and Work Items still reaches set-up's settings and Feature ordering in the compiled code. RED today: Work Items' list names RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering, and Work Items' target reads all four set-up namespaces as foreign.
+No downstream rule reads set-up's Application or Domain as foreign and no downstream list names an edge into set-up, while each rule still reads one named foreign namespace that is not set-up (the loose services, Licensing, Access, Work Items, the data layer or a set-up adapter; for Work Items' target, Licensing, since it names the loose services by full name once set-up has moved) and Work Items still reaches set-up's settings and Feature ordering in the compiled code. RED at S4 start: Work Items' list names RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering, and Work Items' target reads all four set-up namespaces as foreign.
 ```
 
 ```text

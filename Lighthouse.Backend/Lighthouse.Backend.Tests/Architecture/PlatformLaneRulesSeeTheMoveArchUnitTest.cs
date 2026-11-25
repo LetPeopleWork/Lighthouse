@@ -79,7 +79,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var breaks = TheLaw.RoleBreaksOf(patterns);
 
-            ThenNoPatternBreaksItsRole(breaks);
+            ThenNoPatternBreaksItsRole(WithoutTheBreaksOfPatternsThatNoLongerReadTheLooseServicesNamespaces(breaks));
+            ThenEveryPatternThatNoLongerReadsTheLooseServicesNamespacesHoldsItsReason(UnsoundLooseServicesNarrowings(patterns, breaks));
         }
 
         [Test]
@@ -265,6 +266,43 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static OutsideNames GivenTheProductionNamesOutsidePlatform()
             => TheLaw.NamesOutsideTheNewPlace(ProductionModule.Value);
+
+        private static List<PatternBreak> WithoutTheBreaksOfPatternsThatNoLongerReadTheLooseServicesNamespaces(List<PatternBreak> breaks)
+            => [.. breaks.Where(found => !(found.Break == RoleBreak.SeesAnAreaItNeverSaw && PlatformLanePatternRoles.NoLongerReadTheLooseServicesNamespaces.ContainsKey(found.Pattern.Field)))];
+
+        // An entry holds only while it is a rule pattern, sees no platform type in the loose namespaces, sees a platform area
+        // only in its new place, and no platform type is still compiled into the loose namespaces.
+        private static List<string> UnsoundLooseServicesNarrowings(List<RulePattern> patterns, List<PatternBreak> breaks)
+        {
+            var looseNamespaces = new[] { "Lighthouse.Backend.Services.Implementation", "Lighthouse.Backend.Services.Interfaces" };
+            var fromTheLooseNamespaces = ThePlatformMove.MovingTypes.Where(type => looseNamespaces.Contains(type.OldNamespace, StringComparer.Ordinal)).ToList();
+            var stillThere = IlDependencies.TypesIn(ProductionModule.Value, @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)$")
+                .Where(found => fromTheLooseNamespaces.Any(type => type.OldFullName == found.Split('+')[0]))
+                .Select(found => $"{found}: a platform type is still in the loose namespaces, so a pattern that no longer reads them stops seeing it")
+                .ToList();
+            var seeingOnlyTheNewPlace = breaks.Where(found => found.Break == RoleBreak.SeesAnAreaItNeverSaw).Select(found => found.Pattern.Field).ToHashSet(StringComparer.Ordinal);
+
+            return [.. stillThere, .. PlatformLanePatternRoles.NoLongerReadTheLooseServicesNamespaces.Keys
+                .Select(field => (Field: field, Pattern: patterns.FirstOrDefault(pattern => pattern.Field == field)))
+                .Select(entry => entry.Pattern switch
+                {
+                    null => $"{entry.Field}: not a rule pattern of the test assembly",
+                    var pattern when fromTheLooseNamespaces.FirstOrDefault(type => IsMatch(type.OldNamespace, pattern.Value) || IsMatch(type.OldFullName, pattern.Value)) is { } seen
+                        => $"{entry.Field} = {pattern.Value}: still reads {seen.Name} in the loose namespaces",
+                    _ when !seeingOnlyTheNewPlace.Contains(entry.Field) => $"{entry.Field}: sees no platform area only in its new place",
+                    _ => null,
+                })
+                .OfType<string>()];
+        }
+
+        private static void ThenEveryPatternThatNoLongerReadsTheLooseServicesNamespacesHoldsItsReason(List<string> unsound)
+            => Assert.That(
+                unsound,
+                Is.Empty,
+                "PlatformLanePatternRoles.NoLongerReadTheLooseServicesNamespaces no longer holds:" + Environment.NewLine +
+                string.Join(Environment.NewLine, unsound) + Environment.NewLine +
+                "Why it matters: the list lets a pattern that dropped the loose Services namespaces pass the role check; an entry that is not a rule pattern, still reads them or sees nothing would hide a break, and a platform type left in them would go unseen. " +
+                "How to fix: take the entry off the list, or move the platform type out of the loose namespaces.");
 
         private static void ThenNoPatternBreaksItsRole(List<PatternBreak> breaks)
         {

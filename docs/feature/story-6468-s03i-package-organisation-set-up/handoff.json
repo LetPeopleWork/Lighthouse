@@ -52,9 +52,9 @@
 "still_passes_if": "F231",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupMembershipArchUnitTest.cs"
 },
-"expected": "F229",
-"stimulus": "F228",
-"user_result": "F230"
+"expected": "F287",
+"stimulus": "F286",
+"user_result": "F288"
 },
 {
 "covers": [
@@ -72,6 +72,23 @@
 "expected": "F240",
 "stimulus": "F232",
 "user_result": "F234"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2",
+"T1"
+],
+"still_passes_if": "F292",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PlatformLaneRulesSeeTheMoveArchUnitTest.cs"
+},
+"expected": "F290",
+"stimulus": "F289",
+"user_result": "F291"
 }
 ],
 "S2": [
@@ -134,7 +151,7 @@
 "still_passes_if": "F251",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupIsAnOpenHostArchUnitTest.cs"
 },
-"expected": "F249",
+"expected": "F293",
 "stimulus": "F248",
 "user_result": "F250"
 },
@@ -263,7 +280,7 @@
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 285,
+"F": 293,
 "K": 9,
 "L": 6,
 "P": 4,
@@ -2848,10 +2865,7 @@
 "F225": "Each candidate reaches only the kernel, the base library and the other candidate; a made-up candidate that reaches the database is named with the database context; the only reference that compiles today only by sharing a namespace and needs a using after the split is the blackout service calling the recurring-rule extensions",
 "F226": "A maintainer knows the two calendar calculations can go to the module's Domain and which file needs a using line when they do",
 "F227": "a Domain candidate that reaches a set-up port through an attribute argument, which the compiled-reference reader does not see",
-"F228": "Ask every constant and static read-only string field of the test assembly that matches a moving type's old or new name, on the subject its rule reads, whether it keeps its declared role through the move",
-"F229": "RED before the S1 rule edits, exactly the five Context patterns that see a set-up type in the old place and not in the new: the Work Items set-up pattern and its composite, the blackout seam's service implementation pattern, the board port's implementation pattern and the weekly recurrence full-name pattern, 80 type breaks in all; every Place pattern and every folder-only pattern holds; made-up keys show an undeclared pattern, a blind context, its composite and an old location widened into the new place are each named and a correctly widened context is not; no OrganisationSetup alternative reaches outside the module",
 "F23": "D-4 Repositories stay in Services/*/Repositories, named in the membership with owner (S05c Team, S05d Portfolio, S05e connections, Organisation set-up for settings, terminology and blackouts) and target Modules/OrganisationSetup/Adapters/Persistence when S05 or S10 reshape repositories.",
-"F230": "A maintainer sees, by class and field, every rule that would silently stop seeing the set-up types at the move, and which rules rightly stay in the old place",
 "F231": "a Context pattern widened to only the Application namespace, which stops seeing the two Domain types",
 "F232": "Read every string literal of the test project that names a moving set-up type or file by its old Services path and compare it with the fixed rename list",
 "F234": "A maintainer knows every test string the move must rename, so no list or rule is left naming an empty old place",
@@ -2870,7 +2884,6 @@
 "F246": "Settings, terminology, connection defaults and connection usage live in the Organisation set-up module with their unit tests, and the application behaves as before",
 "F247": "A type copied into the module but kept in its old namespace, a connection type placed in the plain Application namespace, a unit test left in an old folder, a second or missing Tracker edge: all are named by the made-up offender checks, so none passes",
 "F248": "Read every outbound rule and outbound list of Work Items, Flow metrics, Forecasting, Promises, Refinement, Reports, Access and Licensing, and the compiled edges of Work Items into set-up.",
-"F249": "No downstream rule reads set-up's Application or Domain as foreign and no downstream list names an edge into set-up, while each rule still reads one named foreign namespace that is not set-up (the loose services, Licensing, Access, Work Items, the data layer or a set-up adapter) and Work Items still reaches set-up's settings and Feature ordering in the compiled code. RED today: Work Items' list names RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering, and Work Items' target reads all four set-up namespaces as foreign.",
 "F25": "D-6 Nothing of Team and Portfolio moves; no unit, level or event change. Their settings services move (AppSettingService, ConnectionSaveService, WorkTrackingSystemConnectionUsage). The brief IN line narrows accordingly (amended in S5).",
 "F250": "Contexts that build on Organisation set-up use its settings, calendar and Feature ordering without an exception on a list, and still cannot reach anything else unseen.",
 "F251": "A downstream rule that admits set-up and also some other foreign namespace than the one checked for that rule.",
@@ -2904,7 +2917,15 @@
 "F283": "Each Place field of the S1 declarations still matches no moved type",
 "F284": "Run the Context-field check: every Context rule pattern that is not folder-only and not on the exact list of 23 broad whole-backend, project-folder and Services-and-modules fields is matched against the old namespace or full name of each of the 27 moved types, with an empty rename list; the broad list is asserted equal to its expected names and each a declared Context field; planted fields (an old alternative, only the old place, Services alternated with the module) are named, a narrowed one passes",
 "F285": "an old Services alternative is re-added to any Context field not on the broad list it fails naming that field",
+"F286": "Ask every constant and static read-only string field of the test assembly that matches a moving type's old or new name, on the subject its rule reads, whether it keeps its declared role through the move; and check each pattern on OrganisationSetupPatternRoles.NamedByTheModuleOnly",
+"F287": "RED before the S1 rule edits, exactly the five Context patterns that see a set-up type in the old place and not in the new: the Work Items set-up pattern and its composite, the blackout seam's service implementation pattern, the board port's implementation pattern and the weekly recurrence full-name pattern, 80 type breaks in all; every Place pattern and every folder-only pattern holds; made-up keys show an undeclared pattern, a blind context, its composite and an old location widened into the new place are each named and a correctly widened context is not; no OrganisationSetup alternative reaches outside the module. Once the last slice names set-up by its module only, a Context pattern that sees moved types only in their new place passes only if it is on NamedByTheModuleOnly (exactly the Work Items set-up pattern, the blackout seam's and the board port's implementation patterns, Tracker integration's other contexts and the weekly recurrence pattern), and each entry must be a rule pattern of the test assembly, see no moved type in its old place and see one only in its new place; any other pattern that stops seeing the old place still fails",
+"F288": "A maintainer sees, by class and field, every rule that would silently stop seeing the set-up types at the move, and which rules rightly stay in the old place; after the move only the rules declared finished may stop naming the old place",
+"F289": "Ask every rule pattern of the test assembly whether it keeps its role through the platform move, and check each pattern on PlatformLanePatternRoles.NoLongerReadTheLooseServicesNamespaces against the compiled product",
 "F29": "D-10 The 9 unit tests move with production to Lighthouse.Backend.Tests/Modules/OrganisationSetup/{Domain, Application, Application/Connections} (namespace = folder), including the misplaced API/TerminologyServiceTest and Services/BlackoutPeriodServiceTest; OrganisationSetupUnitTestPlacementTest keeps them there from S4. API, integration, ManualSorting, container and seeder tests stay and change only using lines. The test-improvement rule is waived for move-only and using-only edits; a mock-heavy moved test is noted for the reviewer, not rewritten.",
+"F290": "The Work Items set-up pattern, the blackout seam's and the board port's implementation patterns no longer read the loose Services.Implementation and Services.Interfaces namespaces and pass only because they are on that list; each entry is a rule pattern of the test assembly, matches no platform type whose old home was a loose namespace, sees a platform area only in its new place, and no platform type is still compiled into the loose namespaces (all 35 that lived there have left); a made-up entry that still reads the loose namespaces or names no rule pattern is named",
+"F291": "Narrowing set-up to its module cannot hide a platform type left behind in the loose Services namespaces",
+"F292": "a platform type that lives in a loose namespace but is missing from the platform membership map",
+"F293": "No downstream rule reads set-up's Application or Domain as foreign and no downstream list names an edge into set-up, while each rule still reads one named foreign namespace that is not set-up (the loose services, Licensing, Access, Work Items, the data layer or a set-up adapter; for Work Items' target, Licensing, since it names the loose services by full name once set-up has moved) and Work Items still reaches set-up's settings and Feature ordering in the compiled code. RED at S4 start: Work Items' list names RefreshLogService to IAppSettingService and WorkItemService to IFeatureOrdering, and Work Items' target reads all four set-up namespaces as foreign.",
 "F3": "Every architecture rule keeps its verdict for every moving Organisation set-up type through the move, and every rule pattern that matches a moving type's old name is classified as standing for the context or for the place.",
 "F30": "D-11 DI: same registrations, order and lifetimes. Program.cs gains up to three using lines for the set-up namespaces and rewrites only the namespace text of the four fully qualified registrations (the three optional-feature lines and the ConnectionSaveService line); the loose usings stay. No AddOrganisationSetup (S09a).",
 "F31": "D-12 The ConnectionSaveService log category changes with its namespace; no override, filter or harness reads it.",

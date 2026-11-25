@@ -146,10 +146,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var patterns = GivenTheRulePatternsOfTheTestAssembly();
 
-            var check = WhenTheRoleCheckRuns(TheLaw, patterns, OrganisationSetupPatternRoles.WholeParentPatterns);
+            var check = WhenTheRoleCheckRuns(TheLaw, patterns, OrganisationSetupPatternRoles.WholeParentPatterns, OrganisationSetupPatternRoles.NamedByTheModuleOnly);
 
             ThenNoPatternBreaksItsRole(check.Breaks);
             ThenEveryWholeParentPatternTakesInAllOfModules(check.NarrowerThanTheParent);
+            ThenEveryPatternNamedByTheModuleOnlySeesSetUpOnlyInItsModule(check.UnsoundModuleOnlyPatterns);
         }
 
         [Test]
@@ -157,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var patterns = GivenTheMadeUpRulePatterns();
 
-            var breaks = WhenTheRoleCheckRuns(TheLawOverTheMadeUpKeys, patterns, new Dictionary<string, string>()).Breaks;
+            var breaks = WhenTheRoleCheckRuns(TheLawOverTheMadeUpKeys, patterns, new Dictionary<string, string>(), new Dictionary<string, string>()).Breaks;
 
             ThenTheMadeUpBreaksNamedAre(
                 breaks,
@@ -318,7 +319,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // A pattern on the whole-parent list sees the moved types for the first time after the move, rightly, so that first
         // sight is not a break, as long as the pattern still takes in all of Modules.
-        private static RoleCheck WhenTheRoleCheckRuns(NamespaceMoveLaw law, List<RulePattern> patterns, IReadOnlyDictionary<string, string> wholeParentPatterns)
+        private static RoleCheck WhenTheRoleCheckRuns(NamespaceMoveLaw law, List<RulePattern> patterns, IReadOnlyDictionary<string, string> wholeParentPatterns, IReadOnlyDictionary<string, string> namedByTheModuleOnly)
         {
             var narrower = patterns
                 .Where(pattern => wholeParentPatterns.ContainsKey(pattern.Field) && !TakesInAllOfModules(pattern.Value))
@@ -328,11 +329,31 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(pattern => wholeParentPatterns.ContainsKey(pattern.Field) && TakesInAllOfModules(pattern.Value))
                 .Select(pattern => pattern.Field)
                 .ToHashSet(StringComparer.Ordinal);
-            var breaks = law.RoleBreaksOf(patterns)
-                .Where(found => !(found.Break == RoleBreak.SeesAnAreaItNeverSaw && admitted.Contains(found.Pattern.Field)))
+            var allBreaks = law.RoleBreaksOf(patterns);
+            var breaks = allBreaks
+                .Where(found => !(found.Break == RoleBreak.SeesAnAreaItNeverSaw && (admitted.Contains(found.Pattern.Field) || namedByTheModuleOnly.ContainsKey(found.Pattern.Field))))
                 .ToList();
 
-            return new RoleCheck(breaks, narrower);
+            return new RoleCheck(breaks, narrower, UnsoundModuleOnlyPatterns(patterns, allBreaks, namedByTheModuleOnly));
+        }
+
+        // A pattern named by the module only must exist, see no moved type in its old place, and see at least one moved type
+        // only in its new place; an entry that does none of that would admit a break the list was never meant for.
+        private static List<string> UnsoundModuleOnlyPatterns(List<RulePattern> patterns, List<PatternBreak> breaks, IReadOnlyDictionary<string, string> namedByTheModuleOnly)
+        {
+            var seeingOnlyTheNewPlace = breaks.Where(found => found.Break == RoleBreak.SeesAnAreaItNeverSaw).Select(found => found.Pattern.Field).ToHashSet(StringComparer.Ordinal);
+
+            return [.. namedByTheModuleOnly.Keys
+                .Select(field => (Field: field, Pattern: patterns.FirstOrDefault(pattern => pattern.Field == field)))
+                .Select(entry => entry.Pattern switch
+                {
+                    null => $"{entry.Field}: not a rule pattern of the test assembly",
+                    var pattern when TheSetUpMove.MovingTypes.FirstOrDefault(type => NamespaceMoveLaw.IsMatch(type.OldNamespace, pattern.Value) || NamespaceMoveLaw.IsMatch(type.OldFullName, pattern.Value)) is { } seen
+                        => $"{entry.Field} = {pattern.Value}: still sees {seen.Name} in its old place",
+                    _ when !seeingOnlyTheNewPlace.Contains(entry.Field) => $"{entry.Field}: sees no moved type only in its new place",
+                    _ => null,
+                })
+                .OfType<string>()];
         }
 
         private static OldPathComparison WhenTheOldPathStringsAreComparedWithTheList(NamespaceMoveLaw law, IReadOnlyList<OrganisationSetupRename> list, List<(string RelativePath, string Source)> sources, HashSet<string> governed)
@@ -433,6 +454,15 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "Why it matters: a part of the code that does not match the new namespace stops seeing the type the moment it moves and then passes because it finds nothing; an old location that matches the new place starts judging code that no longer lives there; an undeclared pattern on the loose Services namespaces could stand for either. " +
                 @"How to fix: declare the pattern in OrganisationSetupPatternRoles with its subject and role; widen a Context pattern with |^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$) (a full-name pattern with the type's new full name); leave a Place pattern in the old place.");
 
+        private static void ThenEveryPatternNamedByTheModuleOnlySeesSetUpOnlyInItsModule(List<string> unsound)
+            => Assert.That(
+                unsound,
+                Is.Empty,
+                "These patterns are on OrganisationSetupPatternRoles.NamedByTheModuleOnly but do not name Organisation set-up by its module only:" + Environment.NewLine +
+                string.Join(Environment.NewLine, unsound) + Environment.NewLine +
+                "Why it matters: the list lets a finished narrowing pass the role check; an entry that is not a rule pattern, still sees the old place, or sees no moved type would hide a break the list was never meant for. " +
+                "How to fix: take the entry off the list, or narrow the pattern to the module and to the full names of the loose types it still needs.");
+
         private static void ThenEveryWholeParentPatternTakesInAllOfModules(List<string> narrowerThanTheParent)
             => Assert.That(
                 narrowerThanTheParent,
@@ -517,7 +547,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private sealed record DomainCheck(List<string> Found, List<string> Offenders);
 
-        private sealed record RoleCheck(List<PatternBreak> Breaks, List<string> NarrowerThanTheParent);
+        private sealed record RoleCheck(List<PatternBreak> Breaks, List<string> NarrowerThanTheParent, List<string> UnsoundModuleOnlyPatterns);
 
         private sealed record OldPathComparison(List<string> Unlisted, List<string> Missing);
     }

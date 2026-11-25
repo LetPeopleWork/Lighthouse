@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly (Type RuleClass, string Module, string Rule, string ForeignNamespace)[] DownstreamOutboundRules =
         [
-            (typeof(WorkItemsModuleBoundariesArchUnitTest), "Work Items", "AccessLicensingOrganisationSetUpAndTheUpdateQueue", TheLooseServices),
+            (typeof(WorkItemsModuleBoundariesArchUnitTest), "Work Items", "AccessLicensingOrganisationSetUpAndTheUpdateQueue", "Lighthouse.Backend.Modules.Licensing.Application"),
             (typeof(WorkItemsModuleBoundariesArchUnitTest), "Work Items", "TheLayersBelowTheApplication", SetUpModule + ".Adapters"),
             (typeof(FlowMetricsApplicationOutboundArchUnitTest), "Flow metrics", "TheLayersBelowTheApplication", "Lighthouse.Backend.Data"),
             (typeof(ForecastingModuleBoundariesArchUnitTest), "Forecasting", "TheLayersBelowTheApplicationAndTheLicence", "Lighthouse.Backend.Modules.Licensing.Application"),
