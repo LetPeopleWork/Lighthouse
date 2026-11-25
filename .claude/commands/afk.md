@@ -165,18 +165,29 @@ update.
 ## Timers — every wait must be able to wake you
 
 A wait only works if something wakes the session when it ends. Use a **one-shot `CronCreate`**
-(`recurring: false`, minute/hour/day/month pinned) for every timed wait: the review window, the
-15-minute default, and a follow-up check on any long job. When it fires, its prompt arrives as a new
-turn. Do not use `sleep N` for a wait:
+(`recurring: false`, minute/hour/day/month pinned) only for a wait that really is a clock time: the
+review window and the 15-minute default. When it fires, its prompt arrives as a new turn. Never use a cron
+to check a job at a guessed time. A job that ends early then sits idle until that time. Do not use
+`sleep N` for a wait:
 
 - A Bash `run_in_background` sleep is killed when the shell sandbox has a time limit (lean-ctx kills any
   shell after about 120 s), so the 5- and 15-minute timers die early or never fire.
 - A `ctx_shell` background job outlives that limit but sends **no** notification when it ends, so a
   timer run there silently expires and the run stalls until someone asks.
 
-Long jobs (gates, CI polls, Stryker) may still run as `ctx_shell` background jobs, but schedule a
-one-shot `CronCreate` a little after their expected end to check them, and check every running job on
-each heartbeat. When a cron fires for a window or job that is already settled, ignore it.
+Long local jobs (gates, Stryker) run as `ctx_shell` background jobs. Each one writes its output to a log
+under the scratchpad and appends `exit=$?` when it ends. Watch the job, never the clock:
+
+- Start a round with `Monitor`, with `timeout_ms: 115000`. Each round waits about 90 s and exits:
+  `bash .claude/scripts/wait-round.sh <log>`.
+- `done: exit=N` means the job ended. Read its log and act at once.
+- `still-waiting`, `exit 137` or an expiry notice means no answer yet. Start the next round right away.
+- A job with several steps appends one `exit=` line per step. Watch for the last step's marker, or pass
+  the pattern as the second argument.
+
+CI runs are watched by invoking `/clean-ci` and following its Step 3 (rounds of
+`.claude/scripts/ci-poll-round.sh`). Check every running job on each heartbeat as well. When a cron fires
+for a window that is already settled, ignore it.
 
 ## When to stop — and then really stop
 
