@@ -13,10 +13,6 @@ on:
         required: false
         type: string
         default: ''
-      dotnet_version:
-        required: false
-        type: string
-        default: '10'
 
 jobs:
   packageapp:
