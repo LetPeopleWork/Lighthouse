@@ -1,21 +1,37 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Feature } from "../../../models/Feature";
+import { Delivery } from "../../../models/Delivery";
+import { Feature, type IFeature } from "../../../models/Feature";
 import type { IForecast } from "../../../models/Forecasts/IForecast";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { Team } from "../../../models/Team/Team";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { DeliverySelectionMode } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IFeatureService } from "../../../services/Api/FeatureService";
 import type { ITeamMetricsService } from "../../../services/Api/MetricsService";
-import { aList } from "../../../tests/FeatureListTestKit";
+import {
+	aFeatureServiceAnswering,
+	aList,
+	aRow,
+	RenamedTerms,
+	renderAFeatureList,
+} from "../../../tests/FeatureListTestKit";
 import {
 	createMockApiServiceContext,
 	createMockTeamMetricsService,
 } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
+import { featureWarningSentences } from "../../../utils/features/featureWarningSentences";
+import { buildDeliveryExportTable } from "./Components/DeliveryGrid/deliveryExportTable";
+import {
+	anythingToWarnAbout,
+	barMarksFor,
+	warningsColumnFor,
+} from "./Components/DeliveryGrid/timeline/deliveryBarMarks";
 import PortfolioFeatureList from "./PortfolioFeatureList";
 
 vi.mock("../../../components/Common/Forecasts/ForecastInfoList", () => ({
@@ -404,5 +420,198 @@ describe("PortfolioFeatureList component", () => {
 		await user.click(screen.getByRole("button", { name: "Overall Progress" }));
 
 		expect(await screen.findByText("Story 201")).toBeInTheDocument();
+	});
+});
+
+// The words a tenant that renamed Feature and Portfolio reads, so a hardcoded default word cannot pass.
+const RENAMED = {
+	workItemsTerm: "Work Items",
+	featureTerm: "Bet",
+	portfolioTerm: "Program",
+};
+
+const NO_CHILDREN_NOTE =
+	"No child Work Items yet for this Bet. It counts as 0 because default Bet sizing is off in this Program's settings.";
+
+const DEFAULT_SIZE_SENTENCE =
+	"No child Work Items were found for this Bet. The remaining Work Items displayed are based on the default Bet size specified in the advanced project settings.";
+
+const theRowOf = (name: RegExp) => screen.findByRole("row", { name });
+
+describe("a Feature without child Work Items says so in the Feature list", () => {
+	it("with default sizing off, the row says it has no child Work Items yet and no default-size sentence, while a Feature with real counts or merely no work counted says nothing", async () => {
+		await renderAFeatureList(
+			<PortfolioFeatureList portfolio={{ ...new Portfolio(), id: 2 }} />,
+			{
+				terms: RenamedTerms,
+				featureService: aFeatureServiceAnswering(
+					Promise.resolve(
+						aList([
+							aRow(31, "NW-31", "Fresh idea", { hasNoChildWorkItemsYet: true }),
+							aRow(32, "NW-32", "Zero but unflagged", { noWorkAtAll: true }),
+							aRow(33, "NW-33", "Real counts"),
+						]),
+					),
+				),
+			},
+		);
+
+		const childless = await theRowOf(/Fresh idea/);
+		const icon = within(childless).getByTestId("warnings");
+		expect(
+			icon.getAttribute("aria-label"),
+			"The childless row's warning icon must carry exactly the note: the sentence about no child Work Items yet, in the tenant's own words, and no default-size sentence.",
+		).toBe(NO_CHILDREN_NOTE);
+
+		await userEvent.hover(icon);
+		expect(
+			(await screen.findByRole("tooltip")).textContent,
+			"Hovering the icon must show the note in the tooltip.",
+		).toBe(NO_CHILDREN_NOTE);
+
+		for (const name of [/Zero but unflagged/, /Real counts/]) {
+			expect(
+				within(screen.getByRole("row", { name })).getByTestId("no-warnings"),
+				`${name} must show no warning: a note keyed on total work alone would wrongly mark it.`,
+			).toBeInTheDocument();
+		}
+	});
+
+	it("with default sizing on, a Feature counted by the default size keeps its default-size sentence only", async () => {
+		await renderAFeatureList(
+			<PortfolioFeatureList portfolio={{ ...new Portfolio(), id: 2 }} />,
+			{
+				terms: RenamedTerms,
+				featureService: aFeatureServiceAnswering(
+					Promise.resolve(
+						aList([
+							aRow(34, "NW-34", "Guessed size", { usesDefaultSize: true }),
+						]),
+					),
+				),
+			},
+		);
+
+		const row = await theRowOf(/Guessed size/);
+		expect(
+			within(row).getByTestId("warnings").getAttribute("aria-label"),
+			"With default sizing on, today's default-size sentence must stay the only sentence, with no note about child Work Items.",
+		).toBe(DEFAULT_SIZE_SENTENCE);
+	});
+});
+
+describe("a Feature without child Work Items says so on the Delivery timeline and in the export", () => {
+	const childlessFeature = (overrides: Partial<IFeature> = {}): IFeature =>
+		Object.assign(new Feature(), {
+			id: 1,
+			name: "Fresh idea",
+			referenceId: "NW-31",
+			state: "In Progress",
+			stateCategory: "Doing",
+			isUsingDefaultFeatureSize: false,
+			hasNoChildWorkItemsYet: true,
+			remainingWork: {},
+			totalWork: {},
+			forecasts: [],
+			dependsOn: [],
+			...overrides,
+		});
+
+	const aDeliveryOf = (features: IFeature[]) =>
+		Delivery.fromBackend({
+			id: 1,
+			name: "Q3",
+			date: "2026-09-12T00:00:00",
+			portfolioId: 2,
+			features: features.map((feature) => feature.id),
+			likelihoodPercentage: 0,
+			progress: 0,
+			remainingWork: 0,
+			totalWork: 0,
+			featureLikelihoods: [],
+			completionDates: [],
+			selectionMode: DeliverySelectionMode.Manual,
+			metricSnapshotCount: 0,
+		} as unknown as ConstructorParameters<typeof Delivery>[0]);
+
+	it("the sentence owner gives the note alone for a childless Feature and the default-size sentence alone for a default-sized one", () => {
+		const notDone = { isDoneWithRemainingWork: false };
+
+		expect(
+			featureWarningSentences(
+				{
+					...notDone,
+					isUsingDefaultFeatureSize: false,
+					hasNoChildWorkItemsYet: true,
+				},
+				RENAMED,
+			),
+		).toEqual([NO_CHILDREN_NOTE]);
+		expect(
+			featureWarningSentences(
+				{
+					...notDone,
+					isUsingDefaultFeatureSize: true,
+					hasNoChildWorkItemsYet: false,
+				},
+				RENAMED,
+			),
+		).toEqual([DEFAULT_SIZE_SENTENCE]);
+		expect(
+			featureWarningSentences(
+				{
+					...notDone,
+					isUsingDefaultFeatureSize: false,
+					hasNoChildWorkItemsYet: false,
+				},
+				RENAMED,
+			),
+		).toEqual([]);
+	});
+
+	it("the timeline bar carries the note as a warning, the warnings column lists it, and the Delivery has something to warn about", () => {
+		const features = [childlessFeature()];
+
+		const marks = barMarksFor(features, new Map(), RENAMED, new Map(), true);
+
+		expect(
+			marks.get(1)?.notes,
+			"The childless Feature's bar must carry the note as a warning, where today's default-size warning sits.",
+		).toEqual([{ text: NO_CHILDREN_NOTE, isWarning: true }]);
+		expect(
+			warningsColumnFor(features, RENAMED).warningsFor({
+				id: 1,
+			} as unknown as Parameters<
+				ReturnType<typeof warningsColumnFor>["warningsFor"]
+			>[0]),
+			"The Delivery's Work Items warnings column must list the same note.",
+		).toEqual([NO_CHILDREN_NOTE]);
+		expect(anythingToWarnAbout(features, RENAMED)).toBe(true);
+		expect(
+			barMarksFor(
+				[childlessFeature({ hasNoChildWorkItemsYet: false })],
+				new Map(),
+				RENAMED,
+				new Map(),
+				true,
+			).has(1),
+			"A Feature with no work counted but no childless flag must stay unmarked on the bar.",
+		).toBe(false);
+	});
+
+	it("the exported table marks the childless Feature as having a warning", () => {
+		const features = [childlessFeature()];
+
+		const table = buildDeliveryExportTable(
+			aDeliveryOf(features),
+			features,
+			[],
+			{ ...RENAMED, deliveryTerm: "Delivery", teamTerm: "Team" },
+		);
+
+		expect(
+			table.rows[0][table.headers.indexOf("Warnings")],
+			"The export's Warnings cell must say Yes for a Feature that has the note.",
+		).toBe("Yes");
 	});
 });

@@ -284,6 +284,188 @@ An override rule that never applies the default even when the switch is on
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P5
+
+```text
+A refreshed Feature with no child Work Items, a Feature that is finished, one sized by the default and one with real child Work Items are sent to the Feature list and the Feature detail
+```
+
+```text
+Only the refreshed childless Feature, not finished and not sized by the default, says it has no child Work Items yet; all other cases say it does not
+```
+
+```text
+The list and timeline can tell a Feature with no child Work Items from one with real counts, so the note never claims a false cause
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/DTO\/FeatureHasNoChildWorkItemsYetTest\.cs
+
+```text
+A payload that says no child Work Items yet whenever total work is 0, or that leaves the field out and so reads as false for every Feature
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The Portfolio Feature list shows a refreshed Feature with no child Work Items while default Feature sizing is off, beside a Feature with real counts and one with no work counted but not flagged, under renamed terms
+```
+
+```text
+The childless row's warning icon and tooltip say exactly: No child Work Items yet for this Bet. It counts as 0 because default Bet sizing is off in this Program's settings. The default-size sentence is absent. The other two rows show no warning
+```
+
+```text
+The Portfolio owner reads why a Feature shows 0 instead of mistaking it for finished
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioFeatureList\.test\.tsx \:\: with default sizing off\, the row says it has no child Work Items yet
+
+```text
+A note keyed on total work alone, which also marks a Feature with zero counted work that is not flagged, or a note with the default words Feature and Portfolio instead of the tenant's terms, or the note shown beside the default-size sentence
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The Portfolio Feature list shows a Feature counted by the default size while default Feature sizing is on
+```
+
+```text
+Its warning keeps today's default-size sentence only, with no note about child Work Items
+```
+
+```text
+With the switch on nothing changes for the Portfolio owner
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioFeatureList\.test\.tsx \:\: with default sizing on\, a Feature counted by the default size keeps its default\-size sentence only
+
+```text
+Replacing the default-size sentence with the new note whenever a Feature has no children, or showing both sentences
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The sentence owner is asked for the reasons of a childless Feature, a default-sized Feature and a clean Feature
+```
+
+```text
+Childless gives the note alone; default-sized gives the default-size sentence alone; clean gives nothing
+```
+
+```text
+Every place that lists a Feature's warnings says the same thing about it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioFeatureList\.test\.tsx \:\: the sentence owner gives the note alone for a childless Feature
+
+```text
+A sentence function that appends the note to the default-size sentence, or that derives the note from the default-size flag
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The Delivery timeline reads a childless Feature with warnings on, with warnings off, and the same Feature unflagged
+```
+
+```text
+The bar carries the note as a warning, the Work Items warnings column lists the same note, the Delivery has something to warn about; an unflagged Feature with no counted work stays unmarked
+```
+
+```text
+The Portfolio owner sees the note on the Delivery timeline bar where today's default-size warning sits
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioFeatureList\.test\.tsx \:\: the timeline bar carries the note as a warning
+
+```text
+A bar note keyed on size 0, or that reaches the bar but not the Work Items warnings column
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+A Delivery containing a childless Feature is exported
+```
+
+```text
+The Warnings cell of that Feature says Yes
+```
+
+```text
+An exported report does not show a childless Feature as clean while the screen marks it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioFeatureList\.test\.tsx \:\: the exported table marks the childless Feature as having a warning
+
+```text
+An export that asks only about the default-size flag and so says No
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

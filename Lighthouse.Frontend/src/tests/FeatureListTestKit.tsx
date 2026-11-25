@@ -81,9 +81,23 @@ export const aRow = (
 	{
 		completed = false,
 		parent = "",
-	}: { completed?: boolean; parent?: string } = {},
-): IFeature =>
-	Object.assign(new Feature(), {
+		hasNoChildWorkItemsYet = false,
+		usesDefaultSize = false,
+		noWorkAtAll = false,
+	}: {
+		completed?: boolean;
+		parent?: string;
+		/** A refreshed Feature without child Work Items while default Feature sizing is off. */
+		hasNoChildWorkItemsYet?: boolean;
+		/** A Feature without child Work Items whose count is the Portfolio's default size. */
+		usesDefaultSize?: boolean;
+		/** No remaining and no total work on any Team, whatever the reason. */
+		noWorkAtAll?: boolean;
+	} = {},
+): IFeature => {
+	const nothingCounted = noWorkAtAll || hasNoChildWorkItemsYet;
+	const remaining = completed || nothingCounted ? 0 : 5;
+	return Object.assign(new Feature(), {
 		id,
 		referenceId,
 		name,
@@ -93,11 +107,13 @@ export const aRow = (
 		parentWorkItemReference: parent,
 		forecasts: [],
 		lastUpdated: new Date("2026-10-24T09:00:00Z"),
-		isUsingDefaultFeatureSize: false,
-		remainingWork: completed ? { 1: 0 } : { 1: 5 },
-		totalWork: { 1: 8 },
+		isUsingDefaultFeatureSize: usesDefaultSize,
+		hasNoChildWorkItemsYet,
+		remainingWork: { 1: remaining },
+		totalWork: { 1: nothingCounted ? 0 : 8 },
 		projects: [],
 	});
+};
 
 export const PlatformRows = [
 	aRow(11, "NW-1", "Checkout redesign", { parent: "ST-1" }),

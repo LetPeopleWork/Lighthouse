@@ -397,6 +397,164 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A refreshed Feature with no child Work Items, a Feature that is finished, one sized by the default and one with real child Work Items are sent to the Feature list and the Feature detail
+</code></pre>
+
+<pre><code>Only the refreshed childless Feature, not finished and not sized by the default, says it has no child Work Items yet; all other cases say it does not
+</code></pre>
+
+<pre><code>The list and timeline can tell a Feature with no child Work Items from one with real counts, so the note never claims a false cause
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/FeatureHasNoChildWorkItemsYetTest.cs</p>
+
+<pre><code>A payload that says no child Work Items yet whenever total work is 0, or that leaves the field out and so reads as false for every Feature
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The Portfolio Feature list shows a refreshed Feature with no child Work Items while default Feature sizing is off, beside a Feature with real counts and one with no work counted but not flagged, under renamed terms
+</code></pre>
+
+<pre><code>The childless row&#x27;s warning icon and tooltip say exactly: No child Work Items yet for this Bet. It counts as 0 because default Bet sizing is off in this Program&#x27;s settings. The default-size sentence is absent. The other two rows show no warning
+</code></pre>
+
+<pre><code>The Portfolio owner reads why a Feature shows 0 instead of mistaking it for finished
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: with default sizing off, the row says it has no child Work Items yet</p>
+
+<pre><code>A note keyed on total work alone, which also marks a Feature with zero counted work that is not flagged, or a note with the default words Feature and Portfolio instead of the tenant&#x27;s terms, or the note shown beside the default-size sentence
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The Portfolio Feature list shows a Feature counted by the default size while default Feature sizing is on
+</code></pre>
+
+<pre><code>Its warning keeps today&#x27;s default-size sentence only, with no note about child Work Items
+</code></pre>
+
+<pre><code>With the switch on nothing changes for the Portfolio owner
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: with default sizing on, a Feature counted by the default size keeps its default-size sentence only</p>
+
+<pre><code>Replacing the default-size sentence with the new note whenever a Feature has no children, or showing both sentences
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The sentence owner is asked for the reasons of a childless Feature, a default-sized Feature and a clean Feature
+</code></pre>
+
+<pre><code>Childless gives the note alone; default-sized gives the default-size sentence alone; clean gives nothing
+</code></pre>
+
+<pre><code>Every place that lists a Feature&#x27;s warnings says the same thing about it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the sentence owner gives the note alone for a childless Feature</p>
+
+<pre><code>A sentence function that appends the note to the default-size sentence, or that derives the note from the default-size flag
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The Delivery timeline reads a childless Feature with warnings on, with warnings off, and the same Feature unflagged
+</code></pre>
+
+<pre><code>The bar carries the note as a warning, the Work Items warnings column lists the same note, the Delivery has something to warn about; an unflagged Feature with no counted work stays unmarked
+</code></pre>
+
+<pre><code>The Portfolio owner sees the note on the Delivery timeline bar where today&#x27;s default-size warning sits
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the timeline bar carries the note as a warning</p>
+
+<pre><code>A bar note keyed on size 0, or that reaches the bar but not the Work Items warnings column
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Delivery containing a childless Feature is exported
+</code></pre>
+
+<pre><code>The Warnings cell of that Feature says Yes
+</code></pre>
+
+<pre><code>An exported report does not show a childless Feature as clean while the screen marks it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: the exported table marks the childless Feature as having a warning</p>
+
+<pre><code>An export that asks only about the default-size flag and so says No
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
