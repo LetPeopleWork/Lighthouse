@@ -127,7 +127,7 @@ Tags are checked when you use the search functionality.
 
 # Default Feature Size
 Not every Feature will be broken down already. This is great, because it might not be worth the effort. However, when we run a forecast, we need to know the approximate size.
-Lighthouse offers a functionality to define a *Default Feature Size* that is applied to features that don't have any child items yet.
+Lighthouse offers a functionality to define a *Default Feature Size* that is applied to Features that don't have any child Work Items yet. It applies only while [default Feature sizing](#switching-default-feature-sizing-on-and-off) is switched on, which a new Portfolio is not unless its connection names a Size Estimate Field.
 
 The default feature size can be defined either as a [fixed number](#default-feature-size), using [historical data](#historical-feature-size), or using an [estimate](#estimated-size).
 
@@ -138,10 +138,15 @@ Lighthouse will determine the size in this order:
 
 If no child items are defined, it will fall back to the estimation. If no field is defined, or the field is defined but no estimate is found for a feature, it will fall back to the default or historical value (depending on your configuration).
 
-## Switching default Feature sizing off
-Some teams would rather see a Feature as empty than give it a size nobody counted. The switch **Infer a size for Features without child Work Items** sits at the top of this group. It is on for every Portfolio, old and new.
+## Switching default Feature sizing on and off
+Some teams would rather see a Feature as empty than give it a size nobody counted. The switch **Infer a size for Features without child Work Items** sits at the top of this group.
 
-When you switch it off:
+- A **new** Portfolio starts with the switch **off**.
+- If its connection names a **Size Estimate Field** for Portfolios when you create it, the new Portfolio starts with the switch **on**, so its Features read the size the field holds.
+- A cloned Portfolio keeps the setting of the Portfolio it copies.
+- A Portfolio that existed before keeps its setting. Nothing changes for it when you upgrade.
+
+While the switch is off:
 - A Feature without child Work Items counts as **0**. No Team carries remaining work for it, and every forecast that contains it, its own and a Delivery's, counts it as 0.
 - The State Override no longer applies. A Feature in one of those states keeps its real child Work Items.
 - The Default Feature Size, the historical percentile, the Size Estimate Field and the override states are greyed out. Lighthouse keeps their values, and they apply again as soon as you switch sizing back on.
