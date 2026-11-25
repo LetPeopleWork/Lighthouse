@@ -469,8 +469,9 @@ carries a `// biome-ignore lint/plugin: <reason>`.
   `[Category("XIntegration")]`, the output in `ci_changes.yml` and the input in `ci_backend.yml`, and
   mirror it in `dev-test.{sh,ps1}`. Not automated because: it is wiring across workflow files.
 - **Test-time budget**: a test file (frontend) or test class (backend) over its budget is a failure to
-  fix. Both per-file and per-class checks fail the build (switch for both: repository variable
-  `LIGHTHOUSE_BUDGET_WARN_ONLY=true`), and the frontend per-test guard fails a single slow test, 2 s
+  fix. Both per-file and per-class checks fail the build unless the repository variable
+  `LIGHTHOUSE_BUDGET_WARN_ONLY=true` turns them into warnings (set since 2026-11-25, after a class ran 38 s over
+  a 34 s budget on a slow runner with every test green; a warning is still a class to look at), and the frontend per-test guard fails a single slow test, 2 s
   in a `.test.tsx` and 0.7 s in any other file, both times 3 on CI (switch:
   `LIGHTHOUSE_TIME_BUDGET=warn|off`). The backend fast limit per test and the `Integration` mean and
   total ceilings are ledgers in `test-time-budget.json`. An entry read from fewer than five runs is
