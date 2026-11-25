@@ -7,18 +7,18 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F16",
+"still_passes_if": "F20",
 "test": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.repeatedItems.test.ts"
 },
-"expected": "F14",
-"stimulus": "F13",
-"user_result": "F15"
+"expected": "F18",
+"stimulus": "F17",
+"user_result": "F19"
 }
 ]
 },
 "counters": {
 "E": 5,
-"F": 16,
+"F": 20,
 "P": 1,
 "S": 1
 },
@@ -95,11 +95,11 @@
 "F10": "A Work Item that stays in progress across many days of the range still appears only once in each chart's data list, not once per day or per snapshot.",
 "F11": "Work Items that were never in progress during the selected range do not appear in any of the four charts' data lists.",
 "F12": "Changing the selected range and reloading a chart yields a data list in which each in-progress Work Item still appears exactly once.",
-"F13": "A Team or Portfolio whose run-chart data has one Work Item in progress on every day of the range and two other Work Items in progress on one day each; the user opens the data list of each of the four over-time charts",
-"F14": "Each data list holds the repeated Work Item once and also holds both single-day Work Items",
-"F15": "The user sees every Work Item that was in progress during the range exactly once, not once per day",
-"F16": "A list that keeps only the first day's items would lose the single-day Work Items of later days; the test requires all three items, so it fails",
+"F17": "A Team or Portfolio whose run-chart data has one Work Item in progress on every day of the range and others on one day each, with other Work Items known from other sources but never in progress during the range; the user opens the data list of each of the four over-time charts, for two different ranges",
+"F18": "Each data list holds exactly the Work Items in progress during that range, each once, and none from outside it or from the other range",
+"F19": "The user sees every Work Item that was in progress during the range exactly once, not once per day, and no unrelated Work Item",
 "F2": "The data list behind each over-time chart lists every Work Item once",
+"F20": "A list that keeps only the first day's items, feeds from cycle time or in-progress items, or carries over the previous range would show wrong ids; the test requires exactly the range's items",
 "F3": "The data list of each over-time chart (Work Items In Progress Over Time, Total Work Item Age Over Time, Work In Progress PBC, Total Work Item Age PBC) shows every Work Item in progress during the range exactly once",
 "F4": "Opening 'data' on Work Items In Progress Over Time, Total Work Item Age Over Time, the Work In Progress Process Behaviour Chart or the Total Work Item Age Process Behaviour Chart lists each Work Item that was in progress during the range once",
 "F5": "A Team or Portfolio whose run-chart data has one Work Item in progress on many days of the range (it appears under several days), and the user opens the data list of each of the four over-time charts",

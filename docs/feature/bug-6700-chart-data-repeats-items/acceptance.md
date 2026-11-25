@@ -9,15 +9,15 @@
 P1
 
 ```text
-A Team or Portfolio whose run-chart data has one Work Item in progress on every day of the range and two other Work Items in progress on one day each; the user opens the data list of each of the four over-time charts
+A Team or Portfolio whose run-chart data has one Work Item in progress on every day of the range and others on one day each, with other Work Items known from other sources but never in progress during the range; the user opens the data list of each of the four over-time charts, for two different ranges
 ```
 
 ```text
-Each data list holds the repeated Work Item once and also holds both single-day Work Items
+Each data list holds exactly the Work Items in progress during that range, each once, and none from outside it or from the other range
 ```
 
 ```text
-The user sees every Work Item that was in progress during the range exactly once, not once per day
+The user sees every Work Item that was in progress during the range exactly once, not once per day, and no unrelated Work Item
 ```
 
 ##### Disposition
@@ -27,7 +27,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/widgetViewData\.repeatedItems\.test\.ts
 
 ```text
-A list that keeps only the first day's items would lose the single-day Work Items of later days; the test requires all three items, so it fails
+A list that keeps only the first day's items, feeds from cycle time or in-progress items, or carries over the previous range would show wrong ids; the test requires exactly the range's items
 ```
 
 ###### Obligations
