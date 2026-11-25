@@ -1,0 +1,18 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Models/Portfolio.cs",
+      "**/API/PortfoliosController.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTest",
+    "test-case-filter": "((FullyQualifiedName~Tests.Models.|FullyQualifiedName~Tests.Modules.WorkItems.Application.DefaultFeatureSizing|FullyQualifiedName~PortfolioSettingDtoCompatibilityTest|FullyQualifiedName~PortfolioDtoTest|FullyQualifiedName~PortfolioExtensionsTest|FullyQualifiedName~PortfoliosControllerTest|FullyQualifiedName~PortfolioControllerTest|FullyQualifiedName~DemoDataFactoryTest)&FullyQualifiedName!~Integration&FullyQualifiedName!~Tests.Acceptance&FullyQualifiedName!~Tests.Contracts)|FullyQualifiedName~NewPortfolioStartingValueTest",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
