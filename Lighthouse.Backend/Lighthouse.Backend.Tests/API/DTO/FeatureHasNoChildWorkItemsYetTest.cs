@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var portfolio = new Portfolio { Id = 100, Name = "Ocean", DefaultAmountOfWorkItemsPerFeature = 4, InfersDefaultFeatureSize = defaultSizingIsOn };
             portfolio.WorkItemTypes.Add("Feature");
             portfolio.WorkTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.Jira };
-            portfolio.UpdateTime = DateTime.UtcNow;
+            portfolio.UpdateTime = TestToday.FrozenNow.UtcDateTime;
             var feature = new Feature { ReferenceId = "F-1" };
             var teams = new List<Team> { Atlas, new() { Id = 2, Name = "Pacific" } };
 
