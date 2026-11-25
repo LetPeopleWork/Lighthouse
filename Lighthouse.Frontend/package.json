@@ -69,7 +69,7 @@
 		"@vitest/spy": "5.1.1",
 		"cross-env": "^10.1.0",
 		"fallow": "3.43.2",
-		"fast-check": "4.10.2",
+		"fast-check": "4.10.3",
 		"jsdom": "^31.0.1",
 		"parse5": "^8.1.1",
 		"typescript": "^7.0.2",
