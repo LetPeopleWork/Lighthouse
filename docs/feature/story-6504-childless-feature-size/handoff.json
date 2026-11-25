@@ -3,7 +3,8 @@
 "B": 2,
 "C": 2,
 "D": 9,
-"F": 301,
+"E": 8,
+"F": 309,
 "K": 8,
 "L": 4,
 "N": 2,
@@ -1189,6 +1190,66 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F302"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F303"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F304"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F305"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F306"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F307"
+},
+{
+"id": "E7",
+"promises": [
+"P7"
+],
+"text": "F308"
+},
+{
+"id": "E8",
+"promises": [
+"P8"
+],
+"text": "F309"
+}
+]
+},
 "facts": {
 "F1": "ADO Story 6504: Choose whether a Feature without children gets an inferred size. Today a Feature with no child Work Items is sized by the Portfolio's Default Feature Size and that count is spread across the teams (e.g. '0 of 4'); some users read it as data from the tracker. Want a setting: Infer (today's behaviour, clearly labelled as an assumption wherever the count shows) or Disable (no inferred count; the Feature shows no remaining work and says it has no child Work Items yet). Open: what a forecast does for such a Feature when inference is off. Source: customer feedback 2026-11-02 ('No guessing when an item has no children ... I'd rather see nothing, or a clear label saying it's an assumption'). Maintainer skipped DISCOVER and DIVERGE explicitly on 2026-11-25; stand-alone Story, no parent Epic.",
 "F10": "a Portfolio owner looks at the forecast of F and of a Delivery that contains F",
@@ -1415,6 +1476,14 @@
 "F30": "With the switch off, a not-Done Feature with no child Work Items gets size 0: no inferred count, no remaining work assigned to any Team, and forecasts take the 0 as it comes.",
 "F300": "A Feature without child Work Items is not listed on any Team page while default sizing is off, because it carries no Team work; the note therefore shows on the Portfolio Feature list and the Delivery timeline only (follows from the confirmed 'no Team carries work' rule; taken in AFK mode 2026-11-25, open for the maintainer to revisit).",
 "F301": "With default Feature sizing off, a Feature with no child Work Items shows 'No child Work Items yet' in the Feature list on the Portfolio page and on the Delivery timeline, instead of today's default-size warning.",
+"F302": "With default sizing switched off, a Feature with no child Work Items is observed as size 0, with no invented count and no remaining work assigned to any Team; with default sizing on, behaviour is unchanged from today.",
+"F303": "With default sizing on and Default Feature Size 4, a Feature without child Work Items shows 4 remaining Work Items split across its Teams, with the existing default-size warning.",
+"F304": "With default sizing off, a Feature without child Work Items counts as 0 remaining in its own forecast and in a containing Delivery forecast, with no special forecast wording or handling visible.",
+"F305": "With default sizing off and Default Feature Size 4, a Feature without child Work Items shows 0 remaining, no count such as 0 of 4 appears, and no Team carries remaining work for it.",
+"F306": "With default sizing off, a Feature without child Work Items shows the note No child Work Items yet where the default-size warning icon sits, both in the Feature list and on the Delivery timeline, and no default-Feature-size sentence appears.",
+"F307": "With default sizing off, a Feature in an override state such as In Progress shows its real child count of 1, not 4, and is not marked as using the default size.",
+"F308": "With default sizing off, Default Feature Size, the percentile option, the size-estimate field mapping and the override-states selection are greyed out and cannot be changed; switching sizing back on shows 7, the same mapping and the same states.",
+"F309": "Portfolios that existed before this change show default sizing switched on next to Default Feature Size, and a newly created Portfolio does the same, with Feature counts unchanged from today.",
 "F31": "A per-Portfolio on/off switch for default Feature sizing in the advanced settings next to Default Feature Size, on for existing and new Portfolios.",
 "F33": "With the switch off, the override real child count states rule and a mapped size-estimate field have no effect: a Feature's size is its real child count, or 0.",
 "F34": "With the switch off, Default Feature Size, the percentile option, the size-estimate field mapping and the override-states selection are greyed out; their stored values are kept and come back when the switch is on again.",
