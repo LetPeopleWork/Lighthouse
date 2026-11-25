@@ -1,0 +1,1065 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: new-portfolio-default-sizing-off</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Owner: Portfolio (Models/Portfolio.cs) owns the starting value of Default Feature sizing. Its property InfersDefaultFeatureSize starts false, so every new Portfolio starts off wherever it is built: API create, demo data, tests. Existing rows keep their stored value, because the column default and the EF sentinel stay true.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>EF mapping: no migration. Mapping stays HasDefaultValue(true).HasSentinel(true). Table, entity value then stored result: absent field gives CLR false, which differs from the sentinel, so EF inserts false (off). Explicit true equals the sentinel, EF omits the column, the DB default true applies (on). Explicit false is inserted false (off). Existing rows and restored old backups hold true and are not touched. Changing the DB column default is rejected: it needs an expand-only migration for every provider and changes no observable outcome.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Create path: the create route stays as it is. PortfolioExtensions keeps the entity value when the DTO bool? is null, so an absent field gives off and a named true or false is kept. The create wizard sends false explicitly (its base settings were true). Clone spreads the source settings, so it keeps the source value. The frontend read fallback stays true: it only meets stored values, or the missing field of an older server, and both mean on.
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>Demo data: demo Portfolios inherit off from the entity with no factory change. A demo Portfolio gets InfersDefaultFeatureSize = true in DemoDataFactory only where a measured screenshot result needs inferred sizes. The crafter runs each affected @screenshot test alone (--grep one test) and decides per Portfolio. Candidates, by what they show: portfolio detail page, Features page, portfolio metrics widgets, delivery creation, retire-delivery record, delivery timeline, team forecasts. No E2E spec sets or reads the sizing fields, so none relies on them. Changed screenshot content is visible to the maintainer: open finding.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>Checker choice: the 6504 Quint model (docs/feature/story-6504-childless-feature-size/model/default-sizing.qnt) is unchanged and not re-run. This feature adds no state, transition or interaction, only a finite starting-value table (absent, true, false, by create, clone, existing). The falsifier is a native NUnit TestCase table over real SQLite EF, because the in-memory EF provider ignores column defaults and sentinels and cannot tell the wrong mapping from the right one. Liveness: not applicable, no temporal behaviour. Agda: no proof obligation. Quint is not used for the table by host direction to stay proportionate; the table claim is DESIGN-checked by the executable table only.
+</code></pre>
+
+<h4>D6</h4>
+
+<pre><code>Test port: create has no application service; the controller builds the Portfolio. The lowest layer that proves absent field gives off is Portfolio plus SyncWithPortfolioSettings plus repository Save on real SQLite. The older-client wire concern is covered by extending PortfolioSettingDtoCompatibilityTest (JSON without the field, read as the route reads it, then synced). No web host start is warranted.
+</code></pre>
+
+<h4>D7</h4>
+
+<pre><code>Usage event (recommendation, DEVOPS to confirm): keep DefaultFeatureSizingSwitchedOff = 29 unchanged, no rename, no renumber; it still counts people who leave sizing on for an existing Portfolio. If DEVOPS wants to measure opting in on new Portfolios, append a name-only DefaultFeatureSizingSwitchedOn with id 30. No usage-data code in this slice.
+</code></pre>
+
+<h4>D8</h4>
+
+<pre><code>Context map: no new context, term, edge or domain event. ADR-270 glossary row Default Feature sizing changes from On by default to On for Portfolios created before this change, off for new ones. docs/portfolios/edit.md section Switching default Feature sizing off gets the same fact. ARCHITECTURE.md: the crafter greps for a stated default of the switch and edits only if one exists.
+</code></pre>
+
+<h4>D9</h4>
+
+<pre><code>Views: no new or changed view. Create wizard, settings tab and Features list keep their existing loading and failure looks; only a starting value and demo content change.
+</code></pre>
+
+<h4>D10</h4>
+
+<pre><code>Patterns: chosen, a constructor-level default on the aggregate (one owner; covers API, demo data and tests). Rejected: set false in the controller and demo factory (two owners, new Portfolio() stays on elsewhere); change the DB column default (migration, no gain); heuristic migration for already using it (maintainer rejected, moves forecasts); nullable stored value as a third state (needs migration and a resolver).
+</code></pre>
+
+<h4>D11</h4>
+
+<pre><code>Paradigm object_oriented applied (nw-code-design-oo): the starting-value rule is data of the Portfolio entity, no service decides it. No anemic or script path is added.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Existing Portfolios keep their stored value (on); no data migration, no heuristic. Only the starting value for new Portfolios changes; what on and off does stays as Story 6504 built it.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>An API or Lighthouse-Clients create that names the switch (true or false) keeps the named value; only an absent field gets off. PortfolioSettingDto.InfersDefaultFeatureSize stays bool?, no bound on its value.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>No EF migration and no change to HasDefaultValue(true).HasSentinel(true). Migrations stay expand-only; none is needed.
+</code></pre>
+
+<h4>K4</h4>
+
+<pre><code>Existing tests that rely on a new Portfolio being on (for example the Untouched cases in DefaultFeatureSizingTest, and fixtures built with new Portfolio) must name the switch explicitly where they test inferred sizing. Owner: acceptance designer, with the crafter running the affected fast loop. The crafter edits no test.
+</code></pre>
+
+<h4>K5</h4>
+
+<pre><code>Test budgets: defaults. The new SQLite table test builds one in-memory database per fixture and stays well inside the per-test budget; no derogation requested.
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>None.</p>
+
+<h3>Boundaries</h3>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<p>None.</p>
+
+<h3>Equality</h3>
+
+<p>None.</p>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<p>None.</p>
+
+<h3>States</h3>
+
+<p>None.</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<p>None.</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs</p>
+
+<p>Extend</p>
+
+<pre><code>InfersDefaultFeatureSize starts false.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Wizard base settings name infersDefaultFeatureSize false.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Only if a measured screenshot needs a demo Portfolio on: set InfersDefaultFeatureSize = true there.
+</code></pre>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md</p>
+
+<p>Extend</p>
+
+<pre><code>Glossary row for Default Feature sizing states the new starting value.
+</code></pre>
+
+<p>docs/portfolios/edit.md</p>
+
+<p>Extend</p>
+
+<pre><code>User docs state the new starting value.
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/WorkItems/Application/DefaultFeatureSizingTest.cs</p>
+
+<h4>Verification</h4>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~DefaultFeatureSizingTest|FullyQualifiedName~NewPortfolioStartingValueTest|FullyQualifiedName~PortfolioSettingDtoCompatibilityTest
+pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/CreateWizards/CreatePortfolioWizard.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioSettingDtoCompatibilityTest.cs</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Data/NewPortfolioStartingValueTest.cs</p>
+
+<p>Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.test.tsx</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Create a Portfolio through the create route with the sizing switch absent (and, as table rows, true and false), clone one with the switch on and one off, then refresh it with a Feature that has no child Work Items; the wizard creates without touching the switch.
+</code></pre>
+
+<pre><code>Absent gives off and the Feature counts as 0 (0 of 0, No child Work Items yet); named values are kept; clones copy the source; an existing stored true stays true; switching on later gives the Default Feature Size.
+</code></pre>
+
+<pre><code>The Portfolio is saved on after an absent field (entity default still true), explicit true is stored off, or an existing row flips; also a wizard create that sends true.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<p>P5</p>
+
+<p>P6</p>
+
+<p>P7</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>InfersDefaultFeatureSize</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:17</p>
+
+<p>Extend</p>
+
+<pre><code>Portfolio already owns the switch and its two guarded selectors; only the initial value changes. No other candidate decides a new Portfolio starting state.
+</code></pre>
+
+<p>HasSentinel</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:355</p>
+
+<p>Reuse</p>
+
+<pre><code>HasDefaultValue(true).HasSentinel(true) already gives absent-false, explicit-true and explicit-false the right stored result once the entity starts false. Unchanged, so no migration.
+</code></pre>
+
+<p>InfersDefaultFeatureSize</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs:31</p>
+
+<p>Reuse</p>
+
+<pre><code>SyncWithPortfolioSettings keeps the entity value when the DTO bool? is null and takes a named value otherwise: exactly decision D4 and the named-value rule. No change.
+</code></pre>
+
+<p>CreatePortfolio</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs:104</p>
+
+<p>Reuse</p>
+
+<pre><code>new Portfolio() then sync is the single create path for API, Clients and wizard; it inherits the new entity default.
+</code></pre>
+
+<p>CreateDemoProject</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs:32</p>
+
+<p>Extend</p>
+
+<pre><code>Inherits off from the entity. Extended only to set InfersDefaultFeatureSize = true on a demo Portfolio whose measured screenshot needs inferred sizes; the factory is the one place demo Portfolios are built.
+</code></pre>
+
+<p>infersDefaultFeatureSize</p>
+
+<p>Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.tsx:47</p>
+
+<p>Extend</p>
+
+<pre><code>The wizard names the switch with true today; it must name false so a wizard create starts off.
+</code></pre>
+
+<p>getPortfolioSettings</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:50</p>
+
+<p>Reuse</p>
+
+<pre><code>Clone spreads the source settings, which carry the stored switch value: decision D3 already holds. No change.
+</code></pre>
+
+<p>infersDefaultFeatureSize</p>
+
+<p>Lighthouse.Frontend/src/models/Portfolio/PortfolioSettings.ts:29</p>
+
+<p>Reuse</p>
+
+<pre><code>Reads stored values, or the missing field of an older server (an existing Portfolio, so on). Fallback true stays correct.
+</code></pre>
+
+<p>Default Feature sizing</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:747</p>
+
+<p>Extend</p>
+
+<pre><code>The glossary row is the one owner of the term; edit its default wording instead of adding a row.
+</code></pre>
+
+<p>Switching default Feature sizing off</p>
+
+<p>docs/portfolios/edit.md:141</p>
+
+<p>Extend</p>
+
+<pre><code>The docs section on the switch is the one user-facing owner; edit it instead of adding a page.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>domain-entity</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs:17</p>
+
+<p>Changed</p>
+
+<pre><code>Initial value true to false.
+</code></pre>
+
+<p>persistence-mapping</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:353</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Sentinel true and DB default true still give the right stored result for every create; existing rows hold true.
+</code></pre>
+
+<p>migration</p>
+
+<p>Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/20261125090443_AddPortfolioInfersDefaultFeatureSize.cs:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Column default true stays; no new migration for Postgres or Sqlite.
+</code></pre>
+
+<p>test-helper</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs:41</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Mirrors the column default TRUE for restored old backups; the default does not change.
+</code></pre>
+
+<p>wire-contract</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs:98</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>bool? with absent meaning keep the entity value; the entity value is now off for a create.
+</code></pre>
+
+<p>api-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs:137</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Validate-style Portfolio is never saved; its switch value is not read.
+</code></pre>
+
+<p>background-adapter</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/Forecasting/Adapters/Background/ForecastUpdater.cs:301</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Short-lived Portfolio built to resolve forecast write-back, never saved; write-back resolution does not use the sizing switch. Crafter re-confirms by reading ResolveForecastWriteBackForPortfolio.
+</code></pre>
+
+<p>demo-data</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs:32</p>
+
+<p>Changed</p>
+
+<pre><code>Demo Portfolios now start off; a demo that needs inferred sizing is set on explicitly.
+</code></pre>
+
+<p>frontend-component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.tsx:47</p>
+
+<p>Changed</p>
+
+<pre><code>Wizard names false.
+</code></pre>
+
+<p>frontend-component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/ProjectSettings/useDefaultFeatureSizingSavedReporter.ts:21</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Compares last saved with new value; a wizard create of a new Portfolio holds false before and after, so event 29 does not fire.
+</code></pre>
+
+<p>client-library</p>
+
+<p>lighthouse-clients/packages/client/src/index.ts:2539</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>createPortfolio passes an untyped payload and never names the switch, so it gets off from the backend.
+</code></pre>
+
+<p>documentation</p>
+
+<p>docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md:747</p>
+
+<p>Changed</p>
+
+<pre><code>Glossary row says On by default; must say on for existing Portfolios, off for new ones.
+</code></pre>
+
+<p>documentation</p>
+
+<p>docs/portfolios/edit.md:141</p>
+
+<p>Changed</p>
+
+<pre><code>User docs section on the switch states the new starting value.
+</code></pre>
+
+<p>documentation</p>
+
+<p>ARCHITECTURE.md:99</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>No statement about the switch default found in the file.
+</code></pre>
+
+<p>e2e-and-screenshots</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts:365</p>
+
+<p>Changed</p>
+
+<pre><code>Screenshot tests over demo data that shows Features without child Work Items (portfolio detail, Features page, portfolio metrics, delivery shots, team forecasts) may change content; crafter measures each alone and sets a demo Portfolio on only where needed.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>PortfolioSettingDto.InfersDefaultFeatureSize (bool?, absent keeps the entity value)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs:98</p>
+
+<p>Producer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Wire shape unchanged; GET maps the stored value.
+</code></pre>
+
+<p>PortfolioSettingDto.InfersDefaultFeatureSize (bool?, absent keeps the entity value)</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs:31</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Absent keeps the entity value, now off for a create; named value kept.
+</code></pre>
+
+<p>PortfolioSettingDto.InfersDefaultFeatureSize (bool?, absent keeps the entity value)</p>
+
+<p>Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.tsx:47</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Wizard sends false instead of true.
+</code></pre>
+
+<p>PortfolioSettingDto.InfersDefaultFeatureSize (bool?, absent keeps the entity value)</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx:50</p>
+
+<p>Producer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Clone sends the source value.
+</code></pre>
+
+<p>PortfolioSettingDto.InfersDefaultFeatureSize (bool?, absent keeps the entity value)</p>
+
+<p>lighthouse-clients/packages/client/src/index.ts:2539</p>
+
+<p>Producer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Untyped payload without the field; now gets off, as decision D4 wants.
+</code></pre>
+
+<p>PortfolioSettingDto.InfersDefaultFeatureSize (bool?, absent keeps the entity value)</p>
+
+<p>Lighthouse.Frontend/src/models/Portfolio/PortfolioSettings.ts:29</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Read fallback true applies to an older server without the field.
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>architectural_tests</p>
+
+<pre><code>No dependency, boundary or owner law is reachable by this change: one entity default and one frontend literal; the existing architecture guards are unaffected.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>One property default and one literal change; no structure blocks the change, so no preserving move is needed.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<pre><code>PortfoliosController.CreatePortfolio (HTTP create, shared by wizard, API and Clients) and EditPortfolio clone form; the Portfolio refresh through WorkItemService for the observed sizing
+</code></pre>
+
+<h6>Driven ports</h6>
+
+<pre><code>IPortfolioRepository.Save on EF (SQLite and Postgres)
+</code></pre>
+
+<pre><code>API adapter to Portfolio entity and PortfolioExtensions; EF mapping depends on the entity; the entity depends on nothing outward
+</code></pre>
+
+<h6>Failures</h6>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<pre><code>Stored and read InfersDefaultFeatureSize of a Portfolio after create, clone or upgrade, and the size a Feature without child Work Items gets after the next refresh
+</code></pre>
+
+<p>bool plus Feature remaining work (0 of 0, No child Work Items yet, or the Default Feature Size)</p>
+
+<pre><code>An in-memory EF store cannot tell a DB-default insert from an explicit insert; the sizing outcome alone cannot tell off from an on Portfolio whose default size is 0.
+</code></pre>
+
+<h5>Equality</h5>
+
+<p>starting value</p>
+
+<pre><code>Two creates are equal when their stored InfersDefaultFeatureSize is equal after save and reload through the real EF mapping.
+</code></pre>
+
+<h5>Constructors</h5>
+
+<p>new Portfolio()</p>
+
+<p>Portfolio() -&gt; Portfolio with InfersDefaultFeatureSize = false</p>
+
+<h5>Laws</h5>
+
+<h6>L1</h6>
+
+<pre><code>Starting-value table: create without the field gives off; create naming true gives on; create naming false gives off; clone gives the source value; an existing stored row is read unchanged; after save and reload through real SQLite EF.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Adapter</p>
+
+<p>Portfolio</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>create absent -&gt; off
+</code></pre>
+
+<pre><code>create true -&gt; on
+</code></pre>
+
+<pre><code>create false -&gt; off
+</code></pre>
+
+<pre><code>clone of on -&gt; on
+</code></pre>
+
+<pre><code>clone of off -&gt; off
+</code></pre>
+
+<pre><code>existing row true -&gt; true
+</code></pre>
+
+<pre><code>Closed finite domain of three inputs by three paths; a native TestCase table is exhaustive and PBT adds nothing.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h6>L2</h6>
+
+<pre><code>Switching on later: a new Portfolio saved with the switch on gives Features without child Work Items the Default Feature Size, as before this change.
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>Portfolio</p>
+
+<h6>Treatment</h6>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>new Portfolio, switched on, refreshed -&gt; Default Feature Size
+</code></pre>
+
+<pre><code>Behaviour of on is unchanged 6504 behaviour, covered by existing DefaultFeatureSizingTest cases; one example.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<h6>C1</h6>
+
+<pre><code>A Portfolio built without naming the switch is off; one naming true or false keeps that value; stored rows are not rewritten.
+</code></pre>
+
+<pre><code>Wrong default: new Portfolios infer sizes (the confusion) or existing Portfolios silently flip and forecasts move.
+</code></pre>
+
+<p>Portfolio</p>
+
+<pre><code>absent, true or false switch in a create payload; stored true
+</code></pre>
+
+<p>Portfolio() default false, with SyncWithPortfolioSettings for a named value</p>
+
+<p>WorkItemService sizing selectors and PortfolioSettingDto GET</p>
+
+<pre><code>GET settings shows the value; Feature rows show 0 of 0 and No child Work Items yet when off
+</code></pre>
+
+<pre><code>Raw SQL insert or an old backup restore omit the column and get the DB default true (on); no writer in the product does so. A direct EF save of a Portfolio set true by code is explicit.
+</code></pre>
+
+<h5>States</h5>
+
+<p>Admitted</p>
+
+<pre><code>switch off (new Portfolio) and on (existing, cloned from on, or set on by the person)
+</code></pre>
+
+<p>Portfolio</p>
+
+<p>Excluded</p>
+
+<pre><code>new Portfolio created without the field starting on
+</code></pre>
+
+<p>Portfolio</p>
+
+<p>Unknown</p>
+
+<pre><code>which demo Portfolio screenshots need inferred sizing until measured
+</code></pre>
+
+<p>crafter</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<pre><code>starting-value table
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Entity default false plus unchanged sentinel gives the table by EF semantics; falsified by the SQLite table test.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>starting-value table
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Input: create payload; constructor: new Portfolio() then SyncWithPortfolioSettings; consumer: PortfolioSettingDto GET and sizing selectors; port: PortfoliosController.CreatePortfolio.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>starting-value table
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Create route to stored value to GET settings and the Features list, all existing public ports.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<pre><code>starting-value table
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: no temporal or progress behaviour, a stored value is set once at create.
+</code></pre>
+
+<h6>Evidence</h6>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<h6>Y1</h6>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: EF omits the column when the CLR value equals the sentinel. Negated: EF writes the column always.
+</code></pre>
+
+<pre><code>Explicit true stays on
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<pre><code>Explicit true stored off
+</code></pre>
+
+<pre><code>Explicit true is written either way, so the outcome holds; the SQLite table test observes it.
+</code></pre>
+
+<p>crafter</p>
+
+<h6>Y2</h6>
+
+<p>Bypass</p>
+
+<pre><code>Assumption: every writer goes through Portfolio and the EF mapping. Negated: backup restore or raw SQL inserts without the column.
+</code></pre>
+
+<pre><code>Existing rows stay on
+</code></pre>
+
+<pre><code>a restored old backup reads on
+</code></pre>
+
+<pre><code>a restore flipping a Portfolio to off
+</code></pre>
+
+<pre><code>Restored old rows get the DB default true, the same as stored today; accepted.
+</code></pre>
+
+<p>maintainer</p>
+
+<h6>Y3</h6>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: existing tests rely on default on only where they test sizing. Negated: many fixtures built with new Portfolio rely on it implicitly.
+</code></pre>
+
+<pre><code>Test suite meaning
+</code></pre>
+
+<pre><code>tests naming the switch explicitly
+</code></pre>
+
+<pre><code>silently weakened tests
+</code></pre>
+
+<pre><code>Broad blast over 13 files that set a default size; the fast loop shows which. Owner: acceptance designer.
+</code></pre>
+
+<p>acceptance-designer</p>
+
+<h6>Y4</h6>
+
+<p>Stressor</p>
+
+<pre><code>Second walk: an older Lighthouse UI tab saves an existing Portfolio without the field; a script creates with infersDefaultFeatureSize null.
+</code></pre>
+
+<pre><code>Update keeps the stored value; null on create means off
+</code></pre>
+
+<pre><code>none
+</code></pre>
+
+<pre><code>update flips the stored value
+</code></pre>
+
+<pre><code>Update goes through sync on a loaded entity, which keeps the stored value on null; create null gives off.
+</code></pre>
+
+<p>crafter</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>An older client payload without the switch, read as the create route reads it and synced into a new Portfolio, starts off; a payload naming true or false keeps it.
+</code></pre>
+
+<p>PortfolioSettingDto.InfersDefaultFeatureSize wire shape</p>
+
+<p>Older client JSON payload (WhatAnOlderClientSends)</p>
+
+<p>PortfolioExtensions.SyncWithPortfolioSettings on a new Portfolio</p>
+
+<pre><code>Portfolio.InfersDefaultFeatureSize after sync: false when absent, the named value when named
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioSettingDtoCompatibilityTest.cs</p>
+
+<pre><code>dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~PortfolioSettingDtoCompatibilityTest
+</code></pre>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>
