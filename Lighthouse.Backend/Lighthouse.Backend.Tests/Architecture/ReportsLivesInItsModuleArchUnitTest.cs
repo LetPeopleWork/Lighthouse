@@ -84,7 +84,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ARenameListEntryThatIsLeft_IsNamedWithItsFile()
         {
-            var left = new ReportsRename("SomeArchUnitTest.cs", "Lighthouse.Backend.Services.Implementation.Reports.ReportCommands", "Lighthouse.Backend.Modules.Reports.Application.ReportCommands");
+            var moved = MovingType("ReportCommands");
+            var left = new ReportsRename("SomeArchUnitTest.cs", $"{moved.OldNamespace}.{moved.Name}", $"{moved.NewNamespace}.{moved.Name}");
 
             var problems = WhenTheRenameListIsRead([left]);
 

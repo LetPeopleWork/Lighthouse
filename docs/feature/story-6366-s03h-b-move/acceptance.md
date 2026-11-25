@@ -13,7 +13,7 @@ Run the Reports placement architecture test over the compiled backend and the so
 ```
 
 ```text
-Each of the 31 moving types is found only in its new Reports module namespace and folder, no moving file is left under the old Services folders, and the staying types are where the map lists them
+The 36 types declared by the 31 moving files are each found only in their new Reports module namespace and folder, no moving file is left under the old Services folders, and the staying types are where the map lists them
 ```
 
 ```text
@@ -67,11 +67,11 @@ A string renamed to a wrong new name while its entry is removed; the build and t
 P4
 
 ```text
-Run the same test against the staying Reports types
+Run the same test against the staying Reports types; the Reports acceptance, integration and wire suites run unchanged and are the observers of behaviour
 ```
 
 ```text
-ReportRepository, the stored models, controllers, owner-write access and DTOs stay in their namespaces, so the wire and stored model are unchanged
+ReportRepository, the stored models, controllers, owner-write access and DTOs stay in their namespaces; this test is only the staying-types proxy, while the unchanged Reports acceptance, integration and wire suites observe that routes, answers and the stored model are unchanged
 ```
 
 ```text
@@ -85,7 +85,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsLivesInItsModuleArchUnitTest\.cs
 
 ```text
-A behaviour change inside a moved file, which the unchanged acceptance and integration suites observe and not this test
+A behaviour change inside a moved file, which the unchanged acceptance, integration and wire suites observe and not this test
 ```
 
 ###### Obligations
