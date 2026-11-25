@@ -529,7 +529,7 @@ No rule constant or string literal in the test project names Reports by the old 
 P4
 
 ```text
-Nothing a user, a tracker or the database sees changes: the ef-model-unchanged probe reports the EF model identical to before, and no production file moves or changes behaviour in feature A.
+Observable as: ef-model-unchanged reports the EF model unchanged for every provider, and architecture-rules over the whole rule set passes. That no production file moved or changed behaviour in feature A is not seen by any public probe; it is left to the whole-candidate review, which saw production unchanged since e5bbe3fed.
 ```
 
 #### E7
@@ -539,7 +539,7 @@ Nothing a user, a tracker or the database sees changes: the ef-model-unchanged p
 P4
 
 ```text
-Every existing backend test stays green after the change, as seen through the backend-tests and test-selection-show probes.
+Every existing backend test stays green after the change. Observable as: backend-tests with the fragment ReportsMembership (green, every test named), and backend-tests without a fragment, run as a background shell job (about 7 minutes) and read when it ends, reporting Test Run Successful with 0 failed; test-selection-show for a path under Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ selects the backend suite.
 ```
 
 ## Charter

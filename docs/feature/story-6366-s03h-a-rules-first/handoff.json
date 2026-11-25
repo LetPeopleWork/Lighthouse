@@ -270,7 +270,7 @@
 "counters": {
 "D": 6,
 "E": 7,
-"F": 187,
+"F": 189,
 "K": 6,
 "L": 2,
 "P": 4,
@@ -812,14 +812,14 @@
 "promises": [
 "P4"
 ],
-"text": "F15"
+"text": "F188"
 },
 {
 "id": "E7",
 "promises": [
 "P4"
 ],
-"text": "F16"
+"text": "F189"
 }
 ]
 },
@@ -880,7 +880,6 @@
 "F147": "A wrong owner or reason text passes; review judges those. A staying type outside the Reports-named namespaces that nobody listed is not found by the completeness part.",
 "F148": "The suppression, analyser, CI-selection, test-budget, host-user, Stryker and log-override files are read for targets naming a moving Reports type by its old or new name, path or test name, and compared with the listed targets; the check is run with a made-up file of such targets, with a listed target its file no longer holds, with one rewritten to the new namespace, and with a scan file missing.",
 "F149": "Today no such target exists and none is listed; the made-up targets naming a moving type are named and those naming staying types, staying tests or a lookalike are not; the vanished listed target is named, the rewritten one still matches, and the missing scan file is named.",
-"F15": "Nothing a user, a tracker or the database sees changes: the ef-model-unchanged probe reports the EF model identical to before, and no production file moves or changes behaviour in feature A.",
 "F150": "No warning suppression, test selection, test budget, mutation run or log level silently stops applying when Reports moves.",
 "F151": "A target built at run time from fragments, or one in a file kind outside the scanned set, passes unseen.",
 "F152": "The whole architecture rule suite and the backend build run with the new membership check added and no production file changed.",
@@ -891,7 +890,6 @@
 "F157": "No pattern breaks its role: a pattern for the Reports context sees each moving type in both places, an old location or a pattern that saw Reports only by its folder does not follow it, and no undeclared pattern sees a moving type. Before the Reports rule constants are widened this names ReportsPattern, RefinementReportsAccessAndLicensing, both RefinementAndReports constants and the readers built from them as stopping to see the type.",
 "F158": "Once the Reports files move, every architecture rule that guards or forbids Reports still judges them, so no rule quietly stops checking.",
 "F159": "A rule that names Reports only by a string built at run time from fragments that never appear as one constant, or a pattern declared folder-only by mistake so it may lose Reports",
-"F16": "Every existing backend test stays green after the change, as seen through the backend-tests and test-selection-show probes.",
 "F160": "The same role check is run over made-up rule constants, each declared with a subject and a role: a context that sees only the old place, one that names Reports as one choice of a group, ones widened by type names or only to the Application namespace, an old location widened into the new place, a part of the code that never saw Reports given Modules.Reports, a folder-only match that follows the types, undeclared constants in a nested class, and an interpolated reader built from a blind context.",
 "F161": "The check names exactly those made-up constants with their break kind, passes the ones that keep their role (both places named, an anchored module alternative on a group, a full-name pattern widened by type names, an old location left in place), and the selection widened only to Application loses exactly the Domain and Metrics types.",
 "F162": "The check cannot be fooled into passing a rule that would go blind or wrong at the move.",
@@ -922,6 +920,8 @@
 "F185": "Every platform verdict is unchanged and every existing architecture test stays green; no production file changes.",
 "F186": "Nothing a user, a tracker or the database sees changes, and the rules that already held still hold.",
 "F187": "A behaviour change in production code that no architecture rule observes; the backend suite run by the host covers it",
+"F188": "Observable as: ef-model-unchanged reports the EF model unchanged for every provider, and architecture-rules over the whole rule set passes. That no production file moved or changed behaviour in feature A is not seen by any public probe; it is left to the whole-candidate review, which saw production unchanged since e5bbe3fed.",
+"F189": "Every existing backend test stays green after the change. Observable as: backend-tests with the fragment ReportsMembership (green, every test named), and backend-tests without a fragment, run as a background shell job (about 7 minutes) and read when it ends, reporting Test Run Successful with 0 failed; test-selection-show for a path under Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ selects the backend suite.",
 "F19": "Shared law: REUSE. NamespaceMoveLaw already takes a move map and a pattern-role map (lifted by the Refinement packaging), so Reports adds its own map and calls the same law; no second law and no edit to NamespaceMoveLaw. The open renames of RoleBreak.KeepsAPlatformAlternativeAsAnOldLocation and the PlatformLanePatternRoles reason text stay open: this feature does not edit those files. Rejected: a Reports copy of the law (two owners of one rule) and one fixture per pattern (covers only remembered patterns).",
 "F2": "The rules see the Reports move before any file moves, so the move in feature B cannot silently loosen a rule.",
 "F20": "Layer rule, decided per file, never per type (a move never splits a file): a file is Domain if and only if it is not a port file and every top-level type it declares has IL edges only to the kernel (Lighthouse.Backend.Models and its sub-namespaces), the BCL and types of other Reports Domain files. A port file declares an I-prefixed port interface and stays in Application with every record and enum it declares; the flag is a declared fact on the map. A non-Domain file under Services/Implementation/Reports/Metrics is ApplicationMetrics (the grouping is kept); every other non-Domain file is Application. The check runs both ways: a Domain-listed file reaching beyond the kernel fails, and a kernel-only non-port file listed as Application or ApplicationMetrics fails. Expected Domain: ReportWindowPolicy, ReportCapPolicy, ReportSeriesReading; DailySeriesSummary reaches the Flow metrics Domain and stays ApplicationMetrics. If the IL makes a Metrics file kernel-only, the crafter returns it to the architect instead of choosing a layer.",
