@@ -331,15 +331,15 @@ A new set-up type that no layer list names, since the layer rule checks the list
 P4
 
 ```text
-Run the Context-field check: every rule pattern that names Organisation set-up by Modules.OrganisationSetup is matched against the old namespace or full name of each of the 27 moved types, with an empty rename list; a planted field with an old alternative is named, a narrowed one passes
+Run the Context-field check: every Context rule pattern that is not folder-only and does not take in all of Services is matched against the old namespace or full name of each of the 27 moved types, with an empty rename list; planted fields, one with an old alternative and one naming only the old place, are named; a narrowed one and one taking in all of Services pass
 ```
 
 ```text
-RED at S5 start: names RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace, RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern, TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace, TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts, WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp; GREEN once each names only the module
+RED at S5 start: names RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace, RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern, TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace, TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts, WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp (and no other field); GREEN once each names only the module
 ```
 
 ```text
-A rule cannot keep naming the old Services place for set-up once the module exists
+A rule cannot keep naming the old Services place for set-up once the module exists, with or without naming the module
 ```
 
 ##### Disposition
@@ -349,7 +349,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest\.cs
 
 ```text
-an old Services alternative is re-added to a module-naming Context field it fails naming that field
+an old Services alternative is re-added to any Context field that is not folder-only it fails naming that field
 ```
 
 ###### Obligations

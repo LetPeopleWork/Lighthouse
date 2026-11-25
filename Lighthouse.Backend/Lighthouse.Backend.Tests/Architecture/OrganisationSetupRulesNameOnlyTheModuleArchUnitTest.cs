@@ -20,6 +20,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Properties, not constants: the other moves' checks read every string field of the test assembly as a rule pattern.
         private static string Architecture => "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/";
 
+        private static string TheLooseServicesAsAWhole => "Lighthouse.Backend.Services";
+
         private static string TheModuleNamespace => @"^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)";
 
         // OrganisationSetup named right after Modules\. in a rule pattern, directly or as one choice of a group.
@@ -71,9 +73,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheSweepExclusions_AreExactlyTheFilesThatMustSpellTheOldNamesAndEachExists()
         {
-            var expected = GivenTheFilesThatMustSpellTheOldNames();
-
-            var problems = WhenTheExclusionsAreComparedWithTheFiles(TheSweepExclusions, expected);
+            var problems = WhenTheExclusionsAreComparedWithTheFiles(TheSweepExclusions, TheSweepExclusions);
 
             ThenTheExclusionsAreExactlyTheFiles(problems);
         }
@@ -111,10 +111,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheExclusionCheck_NamesAnExtraPathAndAPathThatDoesNotExist()
         {
-            var expected = GivenTheFilesThatMustSpellTheOldNames();
-            var exclusions = GivenExclusionsWithARealRuleFileAndAMadeUpPath(expected);
+            var exclusions = GivenExclusionsWithARealRuleFileAndAMadeUpPath(TheSweepExclusions);
 
-            var problems = WhenTheExclusionsAreComparedWithTheFiles(exclusions, expected);
+            var problems = WhenTheExclusionsAreComparedWithTheFiles(exclusions, TheSweepExclusions);
 
             ThenTheRuleFileAndTheMadeUpPathAreNamed(problems, exclusions);
         }
@@ -154,16 +153,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             return files;
         }
 
-        private static string[] GivenTheFilesThatMustSpellTheOldNames()
-            =>
-            [
-                Architecture + "OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs",
-                Architecture + "OrganisationSetupMembership.cs",
-                Architecture + "OrganisationSetupMembershipArchUnitTest.cs",
-                Architecture + "OrganisationSetupPatternRoles.cs",
-                Architecture + "OrganisationSetupStringsTheMoveRenames.cs",
-            ];
-
         private static string[] GivenExclusionsWithARealRuleFileAndAMadeUpPath(string[] expected)
             => [.. expected, Architecture + "WorkItemsModuleBoundariesArchUnitTest.cs", Architecture + "AMadeUpFileThatIsNotThere.cs"];
 
@@ -171,6 +160,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             =>
             [
                 new(PlantedFields.TheOldAlternativeKept, @"^Lighthouse\.Backend\.(Services\.Interfaces|Modules\.OrganisationSetup\.Application)$"),
+                new(PlantedFields.TheTokenlessOldOnly, @"^Lighthouse\.Backend\.Services\.Interfaces$"),
+                new(PlantedFields.TheWholeOfServices, @"^Lighthouse\.Backend\.(Services|Modules)(\.|$)"),
                 new(PlantedFields.TheNarrowedToTheModule, @"^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)"),
             ];
 
@@ -190,7 +181,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             var folderOnly = OrganisationSetupPatternRoles.FolderOnlyMatches;
             var found = new List<string>();
 
-            foreach (var pattern in patterns.Where(pattern => ModuleToken.IsMatch(pattern.Value)))
+            // A field that takes in all of Services, the whole backend or a project folder names no old place of set-up's: it sees
+            // every loose type and every module alike, so the move leaves it as it is.
+            foreach (var pattern in patterns.Where(pattern => !NamespaceMoveLaw.IsMatch(TheLooseServicesAsAWhole, pattern.Value)))
             {
                 var declared = Resolve(roles, pattern.Field, out var components);
                 if (declared is not { Role: PatternRole.Context, Subject: { } subject })
@@ -284,8 +277,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static void ThenOnlyThePlantedFieldWithTheOldAlternativeIsNamed(List<string> stillOld)
             => Assert.That(
                 stillOld,
-                Has.Count.EqualTo(1).And.Some.Contains(PlantedFields.TheOldAlternativeKept),
-                $"The check named [{string.Join(" | ", stillOld)}]; it should name only the planted field that keeps an old alternative. Why it matters: a check that names nothing lets an old alternative stay behind, and one that names the narrowed field fails a finished move. How to fix: match every module-naming Context field against the old subject of each moved type.");
+                Has.Count.EqualTo(2).And.Some.Contains(PlantedFields.TheOldAlternativeKept).And.Some.Contains(PlantedFields.TheTokenlessOldOnly),
+                $"The check named [{string.Join(" | ", stillOld)}]; it should name exactly the planted field that keeps an old alternative and the planted field that names only the old place, and pass the narrowed one and the one taking in all of Services. Why it matters: a check that names nothing lets an old alternative stay behind, and one that names the narrowed field fails a finished move. How to fix: match every module-naming Context field against the old subject of each moved type.");
 
         private static void ThenOnlyThePlantedOldFullNameIsNamed(List<string> stillOld)
             => Assert.That(
@@ -344,11 +337,17 @@ namespace Lighthouse.Backend.Tests.Architecture.OrganisationSetupRulesNameOnlyTh
     {
         public static string TheOldAlternativeKept => "PlantedFields.TheOldAlternativeKept";
 
+        public static string TheTokenlessOldOnly => "PlantedFields.TheTokenlessOldOnly";
+
+        public static string TheWholeOfServices => "PlantedFields.TheWholeOfServices";
+
         public static string TheNarrowedToTheModule => "PlantedFields.Nested.TheNarrowedToTheModule";
 
         public static IReadOnlyDictionary<string, PatternDeclaration> Roles { get; } = new Dictionary<string, PatternDeclaration>(StringComparer.Ordinal)
         {
             [TheOldAlternativeKept] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code that kept its old alternative"),
+            [TheTokenlessOldOnly] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code that never named the module, only the old place"),
+            [TheWholeOfServices] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code taking in all of Services and every module"),
             [TheNarrowedToTheModule] = PatternDeclaration.Context(PatternSubject.Namespace, "a part of the code narrowed to the module"),
         };
     }
