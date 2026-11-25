@@ -1,0 +1,26 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Platform/Host/LighthouseClock.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTest",
+    "test-case-filter": "FullyQualifiedName~LighthouseClock",
+    "reporters": [
+      "progress",
+      "cleartext"
+    ],
+    "concurrency": 3,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
