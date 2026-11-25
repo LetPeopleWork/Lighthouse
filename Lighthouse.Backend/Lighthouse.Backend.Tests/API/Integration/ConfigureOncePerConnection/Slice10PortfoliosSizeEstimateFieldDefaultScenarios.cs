@@ -1,3 +1,7 @@
+using Lighthouse.Backend.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 {
     /// <summary>
@@ -16,6 +20,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private const int ThePortfoliosDefaultSize = 25;
 
         private const int TheSizeAFieldHolds = 8;
+
+        // The Portfolios here exist before the admin names the default, and they size Features without child Work Items.
+        [SetUp]
+        public void EveryPortfolioSizesFeaturesWithoutChildWorkItems()
+        {
+            using var scope = Factory.Services.CreateScope();
+            scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Portfolios
+                .ExecuteUpdate(setters => setters.SetProperty(portfolio => portfolio.InfersDefaultFeatureSize, true));
+        }
 
         [Test]
         public async Task A_following_Feature_is_sized_at_what_the_default_field_holds()

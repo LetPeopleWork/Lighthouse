@@ -13,11 +13,11 @@ The create wizard saves a new Portfolio without the person touching the switch
 ```
 
 ```text
-The saved settings name the switch off
+The saved settings carry no value for the switch, so the backend decides
 ```
 
 ```text
-A wizard-created Portfolio starts with sizing off
+A wizard-created Portfolio starts with sizing off, or on when its connection names a size field default
 ```
 
 ##### Disposition
@@ -27,7 +27,7 @@ Tested
 Lighthouse\.Frontend\/src\/components\/Common\/CreateWizards\/CreatePortfolioWizard\.test\.tsx
 
 ```text
-The wizard omits the field and relies on the server default
+The wizard still sends true or false and overrides the connection rule
 ```
 
 ###### Obligations
@@ -183,16 +183,18 @@ P3
 
 P5
 
+P8
+
 ```text
-A Portfolio is created through the create route without naming the switch, naming on and naming off, and clones of an on and an off Portfolio are created, on real SQLite saved and reloaded
+A Portfolio is created through the create route on a connection with no size field default and on one that names it, saying nothing about the switch, naming on and naming off; clones of an on and an off Portfolio are created, on real SQLite saved and reloaded
 ```
 
 ```text
-Absent gives off, named values are kept and clones copy the source value
+Absent gives off, or on when the connection names a size field default; named values are kept whatever the connection; clones copy the source value
 ```
 
 ```text
-API, Clients and clone behave as promised
+API, Clients, wizard and clone behave as promised
 ```
 
 ##### Disposition
@@ -202,7 +204,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DefaultFeatureSizing\/NewPortfolioStartingValueTest\.cs
 
 ```text
-Absent is stored on by the column default or the route, or an explicit true is stored off
+The connection size field default is ignored at create, or the Portfolio starts on without it, or an explicit value is overridden
 ```
 
 ###### Obligations
@@ -211,6 +213,70 @@ Absent is stored on by the column default or the route, or an explicit true is s
 
 
 
+
+
+
+
+##### Covers
+
+P4
+
+P8
+
+```text
+A Portfolio is created off, then an admin names a size field default on its connection
+```
+
+```text
+The stored Portfolio stays off
+```
+
+```text
+A later connection default never switches an existing Portfolio on
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/DefaultFeatureSizing\/NewPortfolioStartingValueTest\.cs
+
+```text
+The rule runs on load or on connection save and flips stored Portfolios
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+An admin sets the Portfolio Size Estimate Field default on the connection of an existing Portfolio that has default sizing on, and it is refreshed
+```
+
+```text
+Its Features without child Work Items take the size the field holds, or the Portfolio's default size when the field is empty
+```
+
+```text
+An existing on Portfolio follows the connection size field and keeps its value
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/ConfigureOncePerConnection\/Slice10PortfoliosSizeEstimateFieldDefaultScenarios\.cs
+
+```text
+A Portfolio ignores the connection size field while following it
+```
+
+###### Obligations
+
+None.
 
 ## Expectations
 

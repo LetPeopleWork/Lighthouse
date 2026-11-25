@@ -36,6 +36,12 @@ namespace Lighthouse.Backend.Tests.Acceptance.DefaultFeatureSizing
             SwitchOff,
         }
 
+        public enum WhatTheConnectionHolds
+        {
+            NoSizeFieldDefault,
+            ASizeFieldDefault,
+        }
+
         private ServicePortHarness harness = null!;
 
         [SetUp]
@@ -45,17 +51,32 @@ namespace Lighthouse.Backend.Tests.Acceptance.DefaultFeatureSizing
         public void CloseTheDatabase() => harness.Dispose();
 
         [Test]
-        [TestCase(WhatTheCreateSays.NothingAboutTheSwitch, false)]
-        [TestCase(WhatTheCreateSays.SwitchOn, true)]
-        [TestCase(WhatTheCreateSays.SwitchOff, false)]
-        public async Task A_new_Portfolio_starts_with_default_sizing_off_unless_its_create_names_the_switch(WhatTheCreateSays create, bool storedOn)
+        [TestCase(WhatTheConnectionHolds.NoSizeFieldDefault, WhatTheCreateSays.NothingAboutTheSwitch, false)]
+        [TestCase(WhatTheConnectionHolds.NoSizeFieldDefault, WhatTheCreateSays.SwitchOn, true)]
+        [TestCase(WhatTheConnectionHolds.NoSizeFieldDefault, WhatTheCreateSays.SwitchOff, false)]
+        [TestCase(WhatTheConnectionHolds.ASizeFieldDefault, WhatTheCreateSays.NothingAboutTheSwitch, true)]
+        [TestCase(WhatTheConnectionHolds.ASizeFieldDefault, WhatTheCreateSays.SwitchOn, true)]
+        [TestCase(WhatTheConnectionHolds.ASizeFieldDefault, WhatTheCreateSays.SwitchOff, false)]
+        public async Task A_new_Portfolio_starts_with_default_sizing_off_unless_its_connection_names_a_size_field_default_or_its_create_names_the_switch(WhatTheConnectionHolds connection, WhatTheCreateSays create, bool storedOn)
         {
-            var library = new Library(harness);
+            var library = new Library(harness).OnAConnectionHolding(connection);
 
             var id = await library.ACreateIsSaved(create);
 
             library.TheStoredSwitchOf(id, Is.EqualTo(storedOn),
-                $"A Portfolio created {Describe(create)} should be stored with default Feature sizing {(storedOn ? "on" : "off")}, because a new Portfolio counts Features without child Work Items as 0 unless its owner says otherwise. Start a new Portfolio off and keep a named value.");
+                $"A Portfolio created {Describe(create)} on a connection with {(connection == WhatTheConnectionHolds.ASizeFieldDefault ? "a" : "no")} Portfolio Size Estimate Field default should be stored with default Feature sizing {(storedOn ? "on" : "off")}, because a new Portfolio counts Features without child Work Items as 0 unless its owner says otherwise or its connection names a size field to read. Start a new Portfolio on only when the connection names that default, and keep a named value.");
+        }
+
+        [Test]
+        public async Task A_Portfolio_created_before_the_connection_names_a_size_field_default_stays_off()
+        {
+            var library = new Library(harness);
+            var existing = await library.ACreateIsSaved(WhatTheCreateSays.NothingAboutTheSwitch);
+
+            library.TheAdminNamesTheSizeFieldDefaultOnTheConnection();
+
+            library.TheStoredSwitchOf(existing, Is.False,
+                "A Portfolio created before its connection named a size field default should still be off, because only a new Portfolio starts on through the connection and a stored value never moves. Run the connection rule at create only.");
         }
 
         [Test]
@@ -128,6 +149,20 @@ namespace Lighthouse.Backend.Tests.Acceptance.DefaultFeatureSizing
             private static readonly JsonSerializerOptions AsTheFormReadsIt = new(JsonSerializerDefaults.Web);
 
             private int? connectionId;
+            private WhatTheConnectionHolds connectionHolds = WhatTheConnectionHolds.NoSizeFieldDefault;
+
+            public Library OnAConnectionHolding(WhatTheConnectionHolds holds)
+            {
+                connectionHolds = holds;
+                return this;
+            }
+
+            public void TheAdminNamesTheSizeFieldDefaultOnTheConnection()
+            {
+                using var scope = harness.NewScope();
+                var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                NameTheSizeFieldDefault(context, context.WorkTrackingSystemConnections.Single(connection => connection.Id == connectionId));
+            }
 
             public async Task<int> ACreateIsSaved(WhatTheCreateSays create)
             {
@@ -205,9 +240,22 @@ namespace Lighthouse.Backend.Tests.Acceptance.DefaultFeatureSizing
                     context.WorkTrackingSystemConnections.Add(connection);
                     context.SaveChanges();
                     connectionId = connection.Id;
+                    if (connectionHolds == WhatTheConnectionHolds.ASizeFieldDefault)
+                    {
+                        NameTheSizeFieldDefault(context, connection);
+                    }
                 }
 
                 return connectionId.Value;
+            }
+
+            private static void NameTheSizeFieldDefault(LighthouseAppContext context, WorkTrackingSystemConnection connection)
+            {
+                var field = new AdditionalFieldDefinition { DisplayName = "Story Points", Reference = "customfield_10016", WorkTrackingSystemConnectionId = connection.Id };
+                context.Set<AdditionalFieldDefinition>().Add(field);
+                context.SaveChanges();
+                connection.SizeEstimateFieldForPortfolios = field.Id;
+                context.SaveChanges();
             }
 
             private PortfolioSettingDto StoredSettingsOf(int id)

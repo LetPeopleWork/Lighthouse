@@ -160,10 +160,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The create wizard saves a new Portfolio without the person touching the switch
 </code></pre>
 
-<pre><code>The saved settings name the switch off
+<pre><code>The saved settings carry no value for the switch, so the backend decides
 </code></pre>
 
-<pre><code>A wizard-created Portfolio starts with sizing off
+<pre><code>A wizard-created Portfolio starts with sizing off, or on when its connection names a size field default
 </code></pre>
 
 <h5>Disposition</h5>
@@ -172,7 +172,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.test.tsx</p>
 
-<pre><code>The wizard omits the field and relies on the server default
+<pre><code>The wizard still sends true or false and overrides the connection rule
 </code></pre>
 
 <h6>Obligations</h6>
@@ -308,13 +308,15 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P5</p>
 
-<pre><code>A Portfolio is created through the create route without naming the switch, naming on and naming off, and clones of an on and an off Portfolio are created, on real SQLite saved and reloaded
+<p>P8</p>
+
+<pre><code>A Portfolio is created through the create route on a connection with no size field default and on one that names it, saying nothing about the switch, naming on and naming off; clones of an on and an off Portfolio are created, on real SQLite saved and reloaded
 </code></pre>
 
-<pre><code>Absent gives off, named values are kept and clones copy the source value
+<pre><code>Absent gives off, or on when the connection names a size field default; named values are kept whatever the connection; clones copy the source value
 </code></pre>
 
-<pre><code>API, Clients and clone behave as promised
+<pre><code>API, Clients, wizard and clone behave as promised
 </code></pre>
 
 <h5>Disposition</h5>
@@ -323,7 +325,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DefaultFeatureSizing/NewPortfolioStartingValueTest.cs</p>
 
-<pre><code>Absent is stored on by the column default or the route, or an explicit true is stored off
+<pre><code>The connection size field default is ignored at create, or the Portfolio starts on without it, or an explicit value is overridden
 </code></pre>
 
 <h6>Obligations</h6>
@@ -332,6 +334,62 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<p>P8</p>
+
+<pre><code>A Portfolio is created off, then an admin names a size field default on its connection
+</code></pre>
+
+<pre><code>The stored Portfolio stays off
+</code></pre>
+
+<pre><code>A later connection default never switches an existing Portfolio on
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/DefaultFeatureSizing/NewPortfolioStartingValueTest.cs</p>
+
+<pre><code>The rule runs on load or on connection save and flips stored Portfolios
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>An admin sets the Portfolio Size Estimate Field default on the connection of an existing Portfolio that has default sizing on, and it is refreshed
+</code></pre>
+
+<pre><code>Its Features without child Work Items take the size the field holds, or the Portfolio&#x27;s default size when the field is empty
+</code></pre>
+
+<pre><code>An existing on Portfolio follows the connection size field and keeps its value
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice10PortfoliosSizeEstimateFieldDefaultScenarios.cs</p>
+
+<pre><code>A Portfolio ignores the connection size field while following it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 
