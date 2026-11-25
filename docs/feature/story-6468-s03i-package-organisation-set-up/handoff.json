@@ -191,13 +191,78 @@
 "stimulus": "F260",
 "user_result": "F262"
 }
+],
+"S5": [
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6",
+"T6",
+"L6/F212",
+"L1",
+"L1/F66",
+"L1/F67",
+"L1/F68",
+"L1/F69",
+"L1/F70",
+"L1/F73"
+],
+"still_passes_if": "F267",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs"
+},
+"expected": "F265",
+"stimulus": "F264",
+"user_result": "F266"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6",
+"T6",
+"L6/F213"
+],
+"still_passes_if": "F271",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs"
+},
+"expected": "F269",
+"stimulus": "F268",
+"user_result": "F270"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6",
+"T6",
+"L6/F214",
+"L1/F71",
+"L1/F72"
+],
+"still_passes_if": "F275",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs"
+},
+"expected": "F273",
+"stimulus": "F272",
+"user_result": "F274"
+}
 ]
 },
 "counters": {
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 263,
+"F": 275,
 "K": 9,
 "L": 6,
 "P": 4,
@@ -2817,6 +2882,18 @@
 "F261": "Every set-up type lives in its layer and none is left under Services; set-up's Domain reaches only the kernel and the base library; its Application reaches the API, adapters, the data layer, EF Core and downstream contexts only along the listed edges (Feature ranking and its seeder into the database, the connection save into Work Items' fetch fingerprint and EF Core); Tracker integration reaches set-up only along the cadence edge; each deleted entry and a made-up stale entry are named; the nine moved unit tests sit in their layer folder with its namespace, and a made-up misplaced tree is reported.",
 "F262": "Organisation set-up keeps its own boundaries as it grows, and its tests are found beside it.",
 "F263": "A new set-up type that no layer list names, since the layer rule checks the listed types only.",
+"F264": "Run the Context-field check: every rule pattern that names Organisation set-up by Modules.OrganisationSetup is matched against the old namespace or full name of each of the 27 moved types, with an empty rename list; a planted field with an old alternative is named, a narrowed one passes",
+"F265": "RED at S5 start: names RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace, RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern, TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace, TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts, WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp; GREEN once each names only the module",
+"F266": "A rule cannot keep naming the old Services place for set-up once the module exists",
+"F267": "an old Services alternative is re-added to a module-naming Context field it fails naming that field",
+"F268": "Sweep every source file of the test project for string literals naming a moved type by old full name or path with an empty rename list, excluding by exact path only the five files that must spell old names; assert the exclusion list equals exactly those paths, each existing; a planted old literal and a planted extra and missing exclusion path are named",
+"F269": "No literal names an old full name or path (already satisfied after S2-S4); the exclusion list is exactly the five paths and each exists; an extra or missing path is named",
+"F270": "No rule or list names a place the types no longer live in, and no real rule file can hide from the sweep",
+"F271": "an old full-name literal is re-added to a rule file or an extra path is added to the exclusion list it fails naming it",
+"F272": "Match every rule pattern declared as an old place (Place) against the new namespace or full name of each moved type",
+"F273": "No Place pattern matches a moved type in its new place (already satisfied; Place patterns untouched)",
+"F274": "Rules that ask whether a type is left in the old place never find it in the module",
+"F275": "the module is added to an old-place pattern it fails naming the field and type",
 "F28": "D-9 New rules: OrganisationSetupModuleBoundariesArchUnitTest on the shared ModuleRules (R-OS1 layer membership, R-OS2 Domain reaches kernel and base library only, R-OS3 Application reaches no API, module adapter or downstream context except listed edges, EF Core only along listed edges, R-OS4 Tracker integration reaches set-up only along its listed edge, R-OS5 set-up events constructed only in set-up Application except the listed TeamController to TeamDeleted edge, R-OS6 downstream allowance by namespace), lists inline by full type name, compared both ways, only shrink, ModuleWording for Organisation set-up. FeatureOrderingSingleSource, RecurringBlackoutEventsSeam, ConnectionFetchShapeChangedSinglePublisher, OptionalFeatureApplierSeam, BlackoutForecastShiftSeam and CategoryListOwnershipGuard keep every assertion and change only through classified patterns and renamed literals.",
 "F29": "D-10 The 9 unit tests move with production to Lighthouse.Backend.Tests/Modules/OrganisationSetup/{Domain, Application, Application/Connections} (namespace = folder), including the misplaced API/TerminologyServiceTest and Services/BlackoutPeriodServiceTest; OrganisationSetupUnitTestPlacementTest keeps them there from S4. API, integration, ManualSorting, container and seeder tests stay and change only using lines. The test-improvement rule is waived for move-only and using-only edits; a mock-heavy moved test is noted for the reviewer, not rewritten.",
 "F3": "Every architecture rule keeps its verdict for every moving Organisation set-up type through the move, and every rule pattern that matches a moving type's old name is classified as standing for the context or for the place.",

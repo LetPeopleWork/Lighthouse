@@ -433,6 +433,98 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S5</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the Context-field check: every rule pattern that names Organisation set-up by Modules.OrganisationSetup is matched against the old namespace or full name of each of the 27 moved types, with an empty rename list; a planted field with an old alternative is named, a narrowed one passes
+</code></pre>
+
+<pre><code>RED at S5 start: names RecurringBlackoutEventsSeamArchUnitTest.ServiceImplementationNamespace, RefinementModuleArchUnitTest.WeeklyRecurrenceAndItsNestedTypesPattern, TrackerIntegrationApplicationLayoutArchUnitTest.AnImplementationNamespace, TrackerIntegrationModuleBoundariesArchUnitTest.OtherContexts, WorkItemsModuleBoundariesArchUnitTest.OrganisationSetUp; GREEN once each names only the module
+</code></pre>
+
+<pre><code>A rule cannot keep naming the old Services place for set-up once the module exists
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs</p>
+
+<pre><code>an old Services alternative is re-added to a module-naming Context field it fails naming that field
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Sweep every source file of the test project for string literals naming a moved type by old full name or path with an empty rename list, excluding by exact path only the five files that must spell old names; assert the exclusion list equals exactly those paths, each existing; a planted old literal and a planted extra and missing exclusion path are named
+</code></pre>
+
+<pre><code>No literal names an old full name or path (already satisfied after S2-S4); the exclusion list is exactly the five paths and each exists; an extra or missing path is named
+</code></pre>
+
+<pre><code>No rule or list names a place the types no longer live in, and no real rule file can hide from the sweep
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs</p>
+
+<pre><code>an old full-name literal is re-added to a rule file or an extra path is added to the exclusion list it fails naming it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Match every rule pattern declared as an old place (Place) against the new namespace or full name of each moved type
+</code></pre>
+
+<pre><code>No Place pattern matches a moved type in its new place (already satisfied; Place patterns untouched)
+</code></pre>
+
+<pre><code>Rules that ask whether a type is left in the old place never find it in the module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupRulesNameOnlyTheModuleArchUnitTest.cs</p>
+
+<pre><code>the module is added to an old-place pattern it fails naming the field and type
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
