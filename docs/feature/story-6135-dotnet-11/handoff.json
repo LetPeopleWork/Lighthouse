@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 12,
-"F": 191,
+"E": 7,
+"F": 197,
 "K": 2,
 "P": 7,
 "S": 4,
@@ -914,6 +915,59 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F192"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F4"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F193"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F194"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F195"
+},
+{
+"id": "E6",
+"promises": [
+"P6"
+],
+"text": "F196"
+},
+{
+"id": "E7",
+"promises": [
+"P7"
+],
+"text": "F197"
+}
+]
+},
 "facts": {
 "F1": "ADO Story 6135: Upgrade Lighthouse from .NET 10 to .NET 11 in one change, now that .NET 11.0.0 is GA (2026-11-10, SDK 11.0.100) and Npgsql.EntityFrameworkCore.PostgreSQL 11.0.0 is released. Retarget all four projects, SDK pins, Docker images and the .NET-versioned packages together, and remove the Renovate .NET 10 hold.",
 "F10": "Build pipelines verify the app on .NET 11",
@@ -1017,6 +1071,12 @@
 "F19": "the .NET 10 hold rule is removed from renovate.json",
 "F190": "Delete only the packageRule whose description starts Lighthouse stays on .NET 10, with its allowedVersions <11 (lines 39-51). Keep the separate rule for mcr.microsoft.com/dotnet major updates that sets automerge false. No rule makes the dotnet images float.",
 "F191": "Delete only the .NET 10 hold packageRule; the manual-major rule for the dotnet images stays",
+"F192": "A self-hoster who upgrades to the .NET 11 build sees the same routes, responses, screens and data as before, and Settings, System Info shows a .NET 11 runtime version.",
+"F193": "The self-hosted Docker image and the Linux, macOS and Windows standalone builds start on .NET 11 and serve the app.",
+"F194": "The backend, all four projects on net11.0 with .NET 11 packages, passes the full suite including Integration, reports no pending model change for any migration, starts from the dev server script, and shows a .NET 11 runtime in Settings, System Info; any net10.0 reference or failing test breaks this.",
+"F195": "Pipelines verify on .NET 11: SDK pins and toolchain pin checks name .NET 11, and SQLite and Postgres verify builds, E2E and Sonar run green with no new Sonar issue; a pipeline still installing SDK 10 breaks this.",
+"F196": "The Docker image built from the 11.0 images and a standalone package built with the 11 SDK each start, serve the app and report a .NET 11 runtime; a build or start failure breaks this.",
+"F197": "Renovate reads its configuration with no rule holding back .NET packages or images, and current docs and pins naming .NET 10 as current now name .NET 11, while historical briefs and decision records stay unchanged.",
 "F2": "Lighthouse runs on .NET 11 with unchanged behaviour, so self-hosters get the current runtime and Renovate can keep the .NET stack current again.",
 "F20": "Renovate reads its configuration",
 "F21": "no rule holds back .NET packages or images, and the remaining docs and pins that name .NET 10 as current now name .NET 11; historical briefs and decision records stay unchanged",
