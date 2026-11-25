@@ -1,0 +1,145 @@
+{
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F13",
+"test": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx"
+},
+"expected": "F11",
+"stimulus": "F10",
+"user_result": "F12"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F16",
+"test": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx"
+},
+"expected": "F11",
+"stimulus": "F14",
+"user_result": "F15"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F20",
+"test": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx"
+},
+"expected": "F18",
+"stimulus": "F17",
+"user_result": "F19"
+}
+]
+},
+"counters": {
+"E": 2,
+"F": 20,
+"P": 1,
+"S": 1
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx",
+"public_oracle": {
+"expected": "F6",
+"falsifier": "F7",
+"promises": [
+"P1"
+],
+"stimulus": "F5"
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/ItemListManager/ItemListManager.tsx"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/components/Common/ItemListManager/ItemListManager.pastedEntry.test.tsx"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F8"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F9"
+}
+]
+},
+"facts": {
+"F1": "Bug 6698, reported on Slack: When using the free version of Lighthouse, I am updating the definition of a team's workflow statuses. As I had documented those statuses elsewhere before, I have my list ready in a simple text file. Because I fear typos and uppercase/lowercase mismatches, I copy/paste them. Now, when I paste the status 'Waiting for Reproduction', it is not added but a different, previously added one (e.g. for another team) appears. Two examples of what was chosen instead of what I wanted: 'Waiting for Deployment' resp. 'Waiting for Approval'. This means I have to check the outcome of my insert in 'slightly paranoid mode'. The maintainer has seen the same or similar behaviour.",
+"F10": "User hovers the suggestion Waiting for Deployment, then pastes Waiting for Reproduction and presses Enter",
+"F11": "The list adds Waiting for Reproduction once",
+"F12": "The pasted status is added, not another suggestion",
+"F13": "Fix that ignores the highlight only for keyboard highlights, not mouse highlights",
+"F14": "User moves the highlight with the arrow key, then types Waiting for Reproduction and presses Enter",
+"F15": "The typed status is added, not another suggestion",
+"F16": "Fix that clears the highlight only on paste, not on typing",
+"F17": "User types Waiting for A, highlights with arrow key, presses Enter; separately types waiting for approval in lower case and presses Enter",
+"F18": "The shown suggestion Waiting for Approval is added in both cases, with the suggestion's casing",
+"F19": "Confirming a shown suggestion and case-insensitive matching still work",
+"F2": "A state (or any list entry) that the user pastes or types and confirms with Enter is the one that gets added, never a different suggestion that was highlighted earlier.",
+"F20": "Fix that never adds the highlighted option, adding typed text only (second case would still pass; first would not)",
+"F3": "The value the user pasted or typed and confirmed with Enter is the value that is added; a suggestion highlighted before the input changed is never added in its place.",
+"F4": "In a states list (and every other list built on ItemListManager), the user lets a suggestion become highlighted, then pastes or types a different value and presses Enter: the pasted or typed value is added, not the earlier highlighted suggestion.",
+"F5": "Render the list with suggestions such as 'Waiting for Deployment' and 'Waiting for Approval'; open the suggestions and highlight 'Waiting for Deployment' with the mouse (and, in a second case, with the keyboard); then paste or type 'Waiting for Reproduction' and press Enter.",
+"F6": "onAddItem is called once with 'Waiting for Reproduction'. A suggestion that the user highlights and confirms with Enter while it is still shown is still added as before, and a case-insensitive match of a typed value to a suggestion still takes the suggestion's casing.",
+"F7": "onAddItem is called with 'Waiting for Deployment' (or any suggestion other than the one matching the entered text), or is not called at all.",
+"F8": "When the user pastes or types a value and confirms it with Enter, the value added is exactly the value shown in the input at confirmation.",
+"F9": "A suggestion that was highlighted before the input changed is never added in place of the pasted or typed value."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+}
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F4",
+"promises": [
+"P1"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "bug-6698-pasted-state-adds-other-suggestion",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
