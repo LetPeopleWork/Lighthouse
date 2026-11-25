@@ -15,7 +15,12 @@ ADO: Bug #6700 (tagged Release Notes).
 - **EXAMINE:** run it. If the examiner again can record only observation gaps (as for Bug 6698), abort the draft,
   record the waiver here, and the maintainer looks at the real app after the push.
 
-## Likely cause (to be confirmed by the oracle's RED)
+- **EXAMINE waived (applied 2026-11-25, as decided above):** the examiner found an empty public workspace and no
+  admitted probe that opens a chart's data list, so it recorded observation gaps for E1–E5 and `nwdes examine close`
+  refused anything but `accepted`. The draft was aborted. The real-app check is the maintainer's own look after the
+  push. Same gap as Bug 6698 and Story 6648: a public frontend EXAMINE probe.
+
+## Cause (confirmed by the oracle's RED on 17f6bfc21)
 
 The four over-time charts (Work Items In Progress Over Time, Total Work Item Age Over Time, and the Work In Progress
 and Total Work Item Age Process Behaviour Charts) build their data list from the run-chart payload, which holds the
