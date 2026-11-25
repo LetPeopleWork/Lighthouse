@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string RefinementResolutionAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Modules\.Refinement\.Application\.RefinementResolution($|\+.*)";
 
-        private const string WeeklyRecurrenceAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.WeeklyRecurrence($|\+.*)";
+        private const string WeeklyRecurrenceAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.(Services\.Implementation|Modules\.OrganisationSetup\.Domain)\.WeeklyRecurrence($|\+.*)";
 
         private const string RefinementCadenceCalendarAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Modules\.Refinement\.Application\.RefinementCadenceCalendar($|\+.*)";
 

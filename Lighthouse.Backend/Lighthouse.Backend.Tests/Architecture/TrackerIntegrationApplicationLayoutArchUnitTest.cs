@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string WhereTheBoardPortLives = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.Application$";
 
-        private const string AnImplementationNamespace = @"^Lighthouse\.Backend\.(Services\.Implementation|Modules\.TrackerIntegration\.Adapters)(\.|$)"
+        private const string AnImplementationNamespace = @"^Lighthouse\.Backend\.(Services\.Implementation|Modules\.TrackerIntegration\.Adapters|Modules\.OrganisationSetup)(\.|$)"
             + @"|^Lighthouse\.Backend\.Platform\.(Encryption|DatabaseManagement|DemoData|Seeding|Persistence|UsageData|Logging|Releases|DomainEvents|Host|UpdateQueue)(\.|$)";
 
         private const string FixturePorts = @"^Lighthouse\.Backend\.Modules\.TrackerIntegrationFixtures\.ApplicationLayout\.Ports$";

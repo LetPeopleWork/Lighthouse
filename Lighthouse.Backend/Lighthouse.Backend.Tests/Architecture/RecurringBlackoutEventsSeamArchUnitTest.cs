@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     public class RecurringBlackoutEventsSeamArchUnitTest
     {
         private const string RecurringBlackoutRuleFullName = "Lighthouse.Backend.Models.RecurringBlackoutRule";
-        private const string ServiceImplementationNamespace = @"^Lighthouse\.Backend\.Services\.Implementation$|^Lighthouse\.Backend\.Platform\.(DemoData|Encryption|Host|Logging|Persistence|Releases|UpdateQueue)(\.|$)";
+        private const string ServiceImplementationNamespace = @"^Lighthouse\.Backend\.Services\.Implementation$|^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)|^Lighthouse\.Backend\.Platform\.(DemoData|Encryption|Host|Logging|Persistence|Releases|UpdateQueue)(\.|$)";
         private const string ForecastChartControllersPattern = "Lighthouse.Backend.API";
         private const string BlackoutPeriodServiceInterfaceFullName = "Lighthouse.Backend.Services.Interfaces.IBlackoutPeriodService";
 
