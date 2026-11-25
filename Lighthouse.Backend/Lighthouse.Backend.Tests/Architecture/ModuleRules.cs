@@ -123,10 +123,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// Every edge from a type in the Application to a type in the target namespaces, as "Dependent -> Target",
         /// for the verdict to compare with the listed edges both ways.
         /// </summary>
-        public static OutboundVerdict OutboundEdges(ModuleDefinition module, string application, string target, IReadOnlyCollection<string> listed, string rule)
+        public static OutboundVerdict OutboundEdges(ModuleDefinition module, string application, string target, IReadOnlyCollection<string> listed, string rule, string? orTypesWithTheseFullNames = null)
             => new(
                 IlDependencies.TypesIn(module, application),
-                [.. IlDependencies.DependentsIn(module, application, type => IsATypeIn(type, target))
+                [.. IlDependencies.DependentsIn(module, application, type => IsATypeIn(type, target) || IsNamedLike(type, orTypesWithTheseFullNames))
                     .SelectMany(dependent => dependent.Targets.Select(reached => $"{dependent.TypeName} -> {reached}"))],
                 listed,
                 rule,
@@ -207,6 +207,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         // otherwise count its own type parameter as a second type of the base's namespace.
         private static bool IsATypeIn(TypeReference type, string namespacePattern)
             => !IsCompilerMade(type) && IlDependencies.ResidesInNamespaceMatching(type, namespacePattern);
+
+        private static bool IsNamedLike(TypeReference type, string? fullNamePattern)
+            => fullNamePattern is not null
+                && !IsCompilerMade(type)
+                && Regex.IsMatch(type.FullName.Replace('/', '+'), fullNamePattern, RegexOptions.None, TimeSpan.FromSeconds(1));
 
         private static TypeReference OutermostOf(TypeReference type)
             => type.DeclaringType is null ? type : OutermostOf(type.DeclaringType);

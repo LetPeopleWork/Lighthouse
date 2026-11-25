@@ -51,11 +51,19 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string EntityFrameworkCore = @"^Microsoft\.EntityFrameworkCore(\.|$)";
 
+        // The types still loose in Services.Implementation and Services.Interfaces that Organisation set-up's neighbours reach or must not reach.
+        // They are matched by full name, nested types included, never as a namespace, so each rule sees exactly the types it saw before the move.
+        internal const string StrayLooseImplementation = @"^Lighthouse\.Backend\.Services\.Implementation\.(EstimateNormalizationResult|EstimateNormalizationBatchResult|EstimateNormalizer|FeatureListActiveWork|FeatureListOwners|FeatureListService|FeaturePositionMap|InProgressFeatureResolution|OrphanedFeatureCleanupService|WriteBackCollector|WriteBackRoundContext|WriteBackRound|WriteBackService|WriteBackTriggerService)(\+.*)?$";
+
+        internal const string StrayLooseInterfaces = @"^Lighthouse\.Backend\.Services\.Interfaces\.(IFeatureListService|FeatureListRead|TeamAtWork|IFeaturePositionMap|IOrphanedFeatureCleanupService|IWriteBackCollector|IWriteBackService|IWriteBackTriggerService)(\+.*)?$";
+
+        internal static readonly string StrayLooseServices = $"(?:{StrayLooseImplementation})|(?:{StrayLooseInterfaces})";
+
         private const string AnyModuleAdapters = @"^Lighthouse\.Backend\.Modules\.[^.]+\.Adapters(\.|$)";
 
         private const string AccessAndLicensing = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)(\.|$)" + "|" + ModuleRules.AccessModule + "|" + ModuleRules.LicensingModule;
 
-        private const string OrganisationSetUp = @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)$|^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)|^Lighthouse\.Backend\.Platform\.(DemoData|Encryption|Host|Logging|Persistence|Releases|UpdateQueue)(\.|$)";
+        private const string OrganisationSetUp = @"^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)|^Lighthouse\.Backend\.Platform\.(DemoData|Encryption|Host|Logging|Persistence|Releases|UpdateQueue)(\.|$)";
 
         private const string TheDomainEventHandlerPort = "Lighthouse.Backend.Platform.DomainEvents.IDomainEventHandler`1";
 
@@ -474,10 +482,11 @@ namespace Lighthouse.Backend.Tests.Architecture
                 AccessLicensingOrganisationSetUpAndTheUpdateQueue,
                 listed,
                 $"Types in Work Items' Application, namespaces matching \"{application}\", should reach Access, Licensing, the services still in " +
-                $"the loose Services namespaces, set-up's adapters and the update queue, namespaces matching \"{AccessLicensingOrganisationSetUpAndTheUpdateQueue}\", " +
+                $"the loose services named by full name (matching \"{StrayLooseServices}\"), set-up's adapters and the update queue, namespaces matching \"{AccessLicensingOrganisationSetUpAndTheUpdateQueue}\", " +
                 "only through the listed edges, because each of them is another context's decision: who may see what, what the licence allows, " +
                 "which clock applies, and when an update stops. Every new edge spreads one of those decisions into Work Items. Set-up's Application " +
-                "and Domain are open to Work Items, which builds on them: ask set-up there, or where the edge already asks.");
+                "and Domain are open to Work Items, which builds on them: ask set-up there, or where the edge already asks.",
+                StrayLooseServices);
 
         private static KernelRuleVerdict PoliciesHoldOnlyHandlers(ModuleDefinition module, string policies)
         {

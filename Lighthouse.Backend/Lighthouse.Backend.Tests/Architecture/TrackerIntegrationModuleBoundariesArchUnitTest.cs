@@ -163,7 +163,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string OtherContexts =
             $"(?:{OtherModules})|(?:{PromisesAndTheUpdateCode})|(?:{RefinementReportsAccessAndLicensing})" +
-            @"|^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Connections|OptionalFeatures)(\.|$)|^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)";
+            @"|^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)";
 
         private static readonly string TrackerIntegrationLegalCallers = $"(?:{ApplicationCoreRules.TheApi})|(?:{WorkItemsModule})|(?:{PromisesApplicationOutsideItsPolicies})";
 

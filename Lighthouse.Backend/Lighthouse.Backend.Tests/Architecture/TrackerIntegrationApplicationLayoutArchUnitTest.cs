@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.TrackerIntegrationFixtures.ApplicationLayout.Ports;
 using Mono.Cecil;
@@ -23,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string WhereTheBoardPortLives = @"^Lighthouse\.Backend\.Modules\.TrackerIntegration\.Application$";
 
-        private const string AnImplementationNamespace = @"^Lighthouse\.Backend\.(Services\.Implementation|Modules\.TrackerIntegration\.Adapters|Modules\.OrganisationSetup)(\.|$)"
+        private const string AnImplementationNamespace = @"^Lighthouse\.Backend\.(Services\.Implementation\.(Repositories|Seeding|BackgroundServices)|Modules\.TrackerIntegration\.Adapters|Modules\.OrganisationSetup)(\.|$)"
             + @"|^Lighthouse\.Backend\.Platform\.(Encryption|DatabaseManagement|DemoData|Seeding|Persistence|UsageData|Logging|Releases|DomainEvents|Host|UpdateQueue)(\.|$)";
 
         private const string FixturePorts = @"^Lighthouse\.Backend\.Modules\.TrackerIntegrationFixtures\.ApplicationLayout\.Ports$";
@@ -136,7 +137,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheBoardPort_NamesNoImplementationNamespaceInItsSignatures()
         {
-            var naming = TypesNamingAnImplementationNamespace(ProductionModule.Value, WhereTheBoardPortLives, AnImplementationNamespace, TheBoardPort);
+            var naming = TypesNamingAnImplementationNamespace(ProductionModule.Value, WhereTheBoardPortLives, AnImplementationNamespace, TheBoardPort, WorkItemsModuleBoundariesArchUnitTest.StrayLooseImplementation);
 
             Assert.That(
                 naming,
@@ -191,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .ToList();
 
         // The port is looked up by name in the namespaces it may live in, so a port that is missing fails instead of passing unseen.
-        private static List<IlDependent> TypesNamingAnImplementationNamespace(ModuleDefinition module, string whereThePortLives, string implementationNamespace, string portName)
+        private static List<IlDependent> TypesNamingAnImplementationNamespace(ModuleDefinition module, string whereThePortLives, string implementationNamespace, string portName, string? strayFullNames = null)
         {
             var found = IlDependencies.TypesIn(module, whereThePortLives).Select(SimpleNameOf).Contains(portName);
             Assert.That(
@@ -199,10 +200,13 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Is.True,
                 $"The port {portName} was not found in a namespace matching \"{whereThePortLives}\". Why it matters: a rule that looked at no port passes unseen. How to fix: keep the port named {portName} in the module's Application.");
 
-            return IlDependencies.DependentsIn(module, whereThePortLives, target => IlDependencies.ResidesInNamespaceMatching(target, implementationNamespace))
+            return IlDependencies.DependentsIn(module, whereThePortLives, target => IlDependencies.ResidesInNamespaceMatching(target, implementationNamespace) || NamedLikeAStray(target, strayFullNames))
                 .Where(dependent => SimpleNameOf(IlDependencies.DeclaringTypeOf(dependent.TypeName)) == portName)
                 .ToList();
         }
+
+        private static bool NamedLikeAStray(TypeReference type, string? strayFullNames)
+            => strayFullNames is not null && Regex.IsMatch(type.FullName.Replace('/', '+'), strayFullNames, RegexOptions.None, TimeSpan.FromSeconds(1));
 
         private static string SimpleNameOf(string fullName) => fullName[(fullName.LastIndexOf('.') + 1)..];
     }

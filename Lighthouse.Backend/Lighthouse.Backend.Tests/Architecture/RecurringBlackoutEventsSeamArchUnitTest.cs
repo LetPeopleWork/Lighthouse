@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     public class RecurringBlackoutEventsSeamArchUnitTest
     {
         private const string RecurringBlackoutRuleFullName = "Lighthouse.Backend.Models.RecurringBlackoutRule";
-        private const string ServiceImplementationNamespace = @"^Lighthouse\.Backend\.Services\.Implementation$|^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)|^Lighthouse\.Backend\.Platform\.(DemoData|Encryption|Host|Logging|Persistence|Releases|UpdateQueue)(\.|$)";
+        private const string ServiceImplementationNamespace = @"^Lighthouse\.Backend\.Modules\.OrganisationSetup(\.|$)|^Lighthouse\.Backend\.Platform\.(DemoData|Encryption|Host|Logging|Persistence|Releases|UpdateQueue)(\.|$)";
         private const string ForecastChartControllersPattern = "Lighthouse.Backend.API";
         private const string BlackoutPeriodServiceInterfaceFullName = "Lighthouse.Backend.Modules.OrganisationSetup.Application.IBlackoutPeriodService";
 
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void RecurringBlackoutRule_DoesNotDependOnServiceImplementations()
         {
             Classes().That().HaveFullName(RecurringBlackoutRuleFullName)
-                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServiceImplementationNamespace))
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServiceImplementationNamespace).Or().HaveFullNameMatching(WorkItemsModuleBoundariesArchUnitTest.StrayLooseImplementation))
                 .Because(
                     "ADR-060 Models ↛ Services: the recurring-rule entity must not depend on the BlackoutPeriodService " +
                     "or any service that evaluates it. Day expansion lives in an extension method that depends on the " +
