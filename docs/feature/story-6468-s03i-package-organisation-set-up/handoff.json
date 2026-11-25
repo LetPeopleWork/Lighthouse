@@ -101,7 +101,7 @@
 "C": 1,
 "D": 19,
 "E": 3,
-"F": 240,
+"F": 243,
 "K": 9,
 "L": 6,
 "P": 4,
@@ -317,10 +317,11 @@
 {
 "id": "D9",
 "slices": [
+"S2",
 "S3",
 "S4"
 ],
-"text": "F27"
+"text": "F243"
 },
 {
 "id": "D10",
@@ -771,6 +772,9 @@
 "obligation": "F165",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarOrderingAndOptionalFeaturesLiveInOrganisationSetupArchUnitTest.cs"
 }
+],
+"decisions": [
+"F241"
 ],
 "laws": [
 {
@@ -2187,6 +2191,9 @@
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OrganisationSetupModuleBoundariesArchUnitTest.cs"
 }
 ],
+"decisions": [
+"F242"
+],
 "laws": [
 {
 "id": "L5",
@@ -2689,9 +2696,11 @@
 "F239": "A type moved into the module but also kept in its old namespace, or a Domain candidate placed in Application, would pass a rule that only checked the old namespace was empty; the namespace-only and layer rules name both.",
 "F24": "D-5 The four context seeders (AppSettingSeeder, TerminologySeeder, OptionalFeatureSeeder, CategoryListNormalisationSeeder) stay in Services/Implementation/Seeding, owner Organisation set-up, target module start-up (S09a). Rejected: moving them to Adapters/Seeding (a second seeding decision in the Epic).",
 "F240": "Every such literal is on the list for its file, in its old or its new form, and every listed string still exists in one form unless its list row may leave; a row may leave when its list entry becomes legal, when it lists a file that stays in Services, or when it is the expected offender of a made-up type whose rule stops reading the moved type as forbidden (Refinement's unlisted set-up fixture; Reports' unlisted set-up and Promises', Access' and Licensing' unlisted platform fixtures that name the settings port); a made-up unlisted old full name and a listed string found in neither form are each named",
+"F241": "S2 row amended: the four Refinement and Promises set-up edges leave their outbound lists in the S2 move commit (see D-8), the entries are not renamed. PromisesTypeNamePrefixes in PromisesUnitTestPlacementTest drops FeatureOrdering, IFeatureOrdering, FeatureRank and IFeatureRank in S2 as the S2 row says: the scan reads only Services paths, where no file with those prefixes is left (slice review finding 3 misread the unchanged-line note at feature-delta line 323, which concerns SourceFilesThatStay deletion in the same commit).",
+"F242": "S4 row amended: S4's RED no longer names the Refinement edges or the Promises DeliveryMetricValuesProjector to IBlackoutPeriodService edge (already dropped in S2 per D-8); it names the Work Items entries it already names and the exact Tracker integration list. S4 gives Refinement, Promises, Access, Licensing and Reports the set-up namespace allowance, each guarded by a planted falsifier.",
+"F243": "D-8 Open host by namespace, amended 2026-11-25 after the S2 slice review: S4 makes the set-up Application and Domain namespaces a legal outbound target in the Work Items, Flow metrics, Forecasting, Promises, Refinement and Reports rules, with a planted falsifier per module (a made-up downstream type reaching a made-up non-set-up foreign type is still named). Downstream modules whose outbound rules read set-up only through the Services/Platform folder (Refinement, Promises; in S3 the same for Access, Licensing and Reports via IAppSettingService) stop listing their set-up edges in the slice that moves the set-up type, not in S4: a renamed entry is an edge the rule does not read, and the lists are compared both ways, so it cannot be renamed. S1's pattern roles stay folder-only (set-up is a context, not part of the platform) and are not widened. Edges dropped in S2: Refinement RefinementCadenceCalendar to WeeklyRecurrence, RefinementCalendar and RefinementNeedCalculator to IBlackoutPeriodService; Promises DeliveryMetricValuesProjector to IBlackoutPeriodService. Between that move and S4 those edges are legal by omission, not by rule; the five slices are pushed together (D-13), so no pushed revision carries the window. S4's RED keeps the Work Items entries it already names (RefreshLogService to IAppSettingService, WorkItemService to IFeatureOrdering, renamed by S2/S3) and the Tracker integration list holds exactly the one ConnectionHealthCadence to IAppSettingService edge, owner S09a / Epic 6474. Rejected: legal by namespace for Tracker integration (contradicts the acknowledged-cycle decision); keeping every edge listed; widening S1's folder-only patterns.",
 "F25": "D-6 Nothing of Team and Portfolio moves; no unit, level or event change. Their settings services move (AppSettingService, ConnectionSaveService, WorkTrackingSystemConnectionUsage). The brief IN line narrows accordingly (amended in S5).",
 "F26": "D-7 Rules first: EXTEND the shared NamespaceMoveLaw (it already carries PatternDeclaration Context, Place and Composite roles) with an Organisation set-up map and a per-pattern declaration. For every regex-valued const or static readonly string field and every moved type, the law evaluates the field against its declared subject (Namespace or FullName; an undeclared field is evaluated on both and a match on either fails until declared). A field whose old subject matches carries a role: Context must also match the new subject (S1 widens Namespace fields with the alternative for Modules.OrganisationSetup, FullName fields with the new full name), Place must not match the new subject. Composite fields are declared CompositeOf their component and follow it by reference. String fields equal to an old namespace or old full name take roles by equality. Inline method-body literals are caught only by the literal sweep, whose rename list is fixed at S1 from the pre-move grep. Rejected: a text sweep alone (misses the loose-namespace patterns, which name no type) and plain widening of every match (wrong for Place patterns).",
-"F27": "D-8 Open host by namespace: S4 makes the set-up Application and Domain namespaces a legal outbound target in the Work Items, Flow metrics, Forecasting, Promises, Refinement and Reports rules; their listed set-up edges leave the lists (Work Items 2, Promises 1, others measured). Tracker integration keeps set-up forbidden with one listed edge in TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts: ConnectionHealthCadence to IAppSettingService, owner S09a / Epic 6474. Rejected: legal by namespace for Tracker integration (contradicts the acknowledged-cycle decision); keeping every edge listed.",
 "F28": "D-9 New rules: OrganisationSetupModuleBoundariesArchUnitTest on the shared ModuleRules (R-OS1 layer membership, R-OS2 Domain reaches kernel and base library only, R-OS3 Application reaches no API, module adapter or downstream context except listed edges, EF Core only along listed edges, R-OS4 Tracker integration reaches set-up only along its listed edge, R-OS5 set-up events constructed only in set-up Application except the listed TeamController to TeamDeleted edge, R-OS6 downstream allowance by namespace), lists inline by full type name, compared both ways, only shrink, ModuleWording for Organisation set-up. FeatureOrderingSingleSource, RecurringBlackoutEventsSeam, ConnectionFetchShapeChangedSinglePublisher, OptionalFeatureApplierSeam, BlackoutForecastShiftSeam and CategoryListOwnershipGuard keep every assertion and change only through classified patterns and renamed literals.",
 "F29": "D-10 The 9 unit tests move with production to Lighthouse.Backend.Tests/Modules/OrganisationSetup/{Domain, Application, Application/Connections} (namespace = folder), including the misplaced API/TerminologyServiceTest and Services/BlackoutPeriodServiceTest; OrganisationSetupUnitTestPlacementTest keeps them there from S4. API, integration, ManualSorting, container and seeder tests stay and change only using lines. The test-improvement rule is waived for move-only and using-only edits; a mock-heavy moved test is noted for the reviewer, not rewritten.",
 "F3": "Every architecture rule keeps its verdict for every moving Organisation set-up type through the move, and every rule pattern that matches a moving type's old name is classified as standing for the context or for the place.",

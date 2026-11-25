@@ -67,9 +67,9 @@ Governed slices: S1, S5
 #### D9
 
 ```text
-D-8 Open host by namespace: S4 makes the set-up Application and Domain namespaces a legal outbound target in the Work Items, Flow metrics, Forecasting, Promises, Refinement and Reports rules; their listed set-up edges leave the lists (Work Items 2, Promises 1, others measured). Tracker integration keeps set-up forbidden with one listed edge in TrackerIntegrationModuleBoundariesArchUnitTest.EdgesOfTheModuleIntoOtherContexts: ConnectionHealthCadence to IAppSettingService, owner S09a / Epic 6474. Rejected: legal by namespace for Tracker integration (contradicts the acknowledged-cycle decision); keeping every edge listed.
+D-8 Open host by namespace, amended 2026-11-25 after the S2 slice review: S4 makes the set-up Application and Domain namespaces a legal outbound target in the Work Items, Flow metrics, Forecasting, Promises, Refinement and Reports rules, with a planted falsifier per module (a made-up downstream type reaching a made-up non-set-up foreign type is still named). Downstream modules whose outbound rules read set-up only through the Services/Platform folder (Refinement, Promises; in S3 the same for Access, Licensing and Reports via IAppSettingService) stop listing their set-up edges in the slice that moves the set-up type, not in S4: a renamed entry is an edge the rule does not read, and the lists are compared both ways, so it cannot be renamed. S1's pattern roles stay folder-only (set-up is a context, not part of the platform) and are not widened. Edges dropped in S2: Refinement RefinementCadenceCalendar to WeeklyRecurrence, RefinementCalendar and RefinementNeedCalculator to IBlackoutPeriodService; Promises DeliveryMetricValuesProjector to IBlackoutPeriodService. Between that move and S4 those edges are legal by omission, not by rule; the five slices are pushed together (D-13), so no pushed revision carries the window. S4's RED keeps the Work Items entries it already names (RefreshLogService to IAppSettingService, WorkItemService to IFeatureOrdering, renamed by S2/S3) and the Tracker integration list holds exactly the one ConnectionHealthCadence to IAppSettingService edge, owner S09a / Epic 6474. Rejected: legal by namespace for Tracker integration (contradicts the acknowledged-cycle decision); keeping every edge listed; widening S1's folder-only patterns.
 ```
-Governed slices: S3, S4
+Governed slices: S2, S3, S4
 
 #### D10
 
@@ -2334,7 +2334,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+S2 row amended: the four Refinement and Promises set-up edges leave their outbound lists in the S2 move commit (see D-8), the entries are not renamed. PromisesTypeNamePrefixes in PromisesUnitTestPlacementTest drops FeatureOrdering, IFeatureOrdering, FeatureRank and IFeatureRank in S2 as the S2 row says: the scan reads only Services paths, where no file with those prefixes is left (slice review finding 3 misread the unchanged-line note at feature-delta line 323, which concerns SourceFilesThatStay deletion in the same commit).
+```
 
 ##### Constraints
 
@@ -3614,7 +3616,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+S4 row amended: S4's RED no longer names the Refinement edges or the Promises DeliveryMetricValuesProjector to IBlackoutPeriodService edge (already dropped in S2 per D-8); it names the Work Items entries it already names and the exact Tracker integration list. S4 gives Refinement, Promises, Access, Licensing and Reports the set-up namespace allowance, each guarded by a planted falsifier.
+```
 
 ##### Constraints
 
