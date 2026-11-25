@@ -69,6 +69,421 @@ A rule narrowed in its constant but kept as a literal in another file, or an exc
 
 
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Run Reports' layer rule, its kernel-only Domain rule and its four listed edge rules over today's compiled code
+```
+
+```text
+Each listed type sits in its layer and none under Services; Domain reaches only the kernel and System; the inbound lists (empty for Domain, the report repository for Application) and the outbound lists (2 EF Core edges, 12 Flow metrics, Licensing, set-up and platform edges) equal the measured sets both ways
+```
+
+```text
+Today's Reports passes its own rules, so a later new edge is the only thing that can fail them
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AReportsListedRule\_MatchesWhatTheCompiledCodeReaches\_InBothDirections
+
+```text
+A list with an extra stale entry or a missing entry would pass if the comparison ran one way only; it runs both ways
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Delete each entry in turn from every Reports list and add an entry that no longer exists
+```
+
+```text
+Each deleted entry is named as offending in Reports wording and each gone entry is named for deletion
+```
+
+```text
+A list that drifts from the code is told which entry to add or delete
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#EveryEntryDeletedFromAReportsList\_IsNamedAsOffending\_AndAnEntryWithNoEdgeIsNamedForDeletion
+
+```text
+A list that silently ignores a deleted or stale entry would pass
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the layer and layer-contents rules on a made-up misplaced type and on a made-up unlisted layer type
+```
+
+```text
+The misplaced type and the unlisted type are named; the well placed twin and the full list pass
+```
+
+```text
+A type put in the wrong Reports layer or added without a decision is named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AReportsTypeLeftUnderServices\_IsNamed\_AndAWellPlacedTwinIsNot
+
+```text
+A rule that names every type as offending, or none, would pass a single-sided check
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the Domain rule and both inbound rules on made-up Domain, API, composition-root, listed and newcomer types
+```
+
+```text
+A Domain type reaching a service, an outside newcomer reaching Domain and an outside newcomer reaching Application are each named in Reports wording; the API, the composition root and the listed callers are not
+```
+
+```text
+A new caller of Reports' Domain or Application is caught, the legal callers are not
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AnOutsideTypeOffTheList\_ReachingTheReportsApplication\_IsNamed\_AndTheApiTheCompositionRootAndTheListedCallerAreNot
+
+```text
+A rule that flags the API or the composition root, or none of the newcomers, would pass
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the forbidden-code rule on made-up Application types that hold a DbSet or reach data, API, adapters, Tracker integration, RBAC or update code
+```
+
+```text
+Each offender is named with its edge in Reports wording
+```
+
+```text
+Reports' Application cannot quietly start reaching storage, the API, the RBAC service or the update queue
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AReportsApplicationTypeReachingForbiddenCode\_IsNamedWithTheEdge
+
+```text
+A forbidden pattern that omitted RBAC or one update namespace would pass
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the Flow metrics, Licensing, set-up and platform rule on made-up Application types reaching an unlisted edge of each kind and on a compliant twin, and run each rule over an empty namespace
+```
+
+```text
+Each unlisted edge is named; the Flow metrics Application twin passes; a rule over nothing fails
+```
+
+```text
+A new edge to Flow metrics' Domain, Licensing, set-up or the platform is caught, and a rule that checks nothing cannot go green
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AReportsApplicationTypeReachingAnUnlistedFlowMetricsLicensingSetUpOrPlatformType\_IsNamedWithTheEdge
+
+```text
+A rule over an empty set that passes, or a Flow metrics Application edge that is wrongly flagged
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P3
+
+```text
+Check every Reports rule constant of the test project against a made-up lookalike namespace
+```
+
+```text
+No Reports alternative matches a namespace that only starts like the module's, and an unanchored made-up constant is named
+```
+
+```text
+No rule is loosened; nothing a user sees changes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#NoReportsAlternativeOfTheRuleConstantsMatchesALookalikeNamespace
+
+```text
+An unanchored Reports alternative would silently constrain a neighbouring namespace
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the layer rule on a made-up misplaced Reports type
+```
+
+```text
+The misplaced type is named, its twin is not
+```
+
+```text
+A Reports type left in the wrong place is named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AReportsTypeLeftUnderServices\_IsNamed\_AndAWellPlacedTwinIsNot
+
+```text
+A rule that names nothing
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run the Domain rule on a made-up Domain type reaching a service
+```
+
+```text
+The type is named, its compliant twin is not
+```
+
+```text
+A Domain type reaching a service is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AReportsDomainTypeReachingAService\_IsNamed\_AndItsCompliantTwinIsNot
+
+```text
+A Domain rule that allows services
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run the Domain inbound rule on made-up outside types
+```
+
+```text
+The newcomer is named; API, composition root and listed caller are not
+```
+
+```text
+An outside type reaching Domain is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AnOutsideTypeOffTheList\_ReachingTheReportsDomain\_IsNamed\_AndTheApiTheCompositionRootAndTheListedCallerAreNot
+
+```text
+A rule that also flags the API
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run the Application inbound rule on made-up outside types
+```
+
+```text
+The newcomer is named; legal callers are not
+```
+
+```text
+An outside type reaching Application off the list is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AnOutsideTypeOffTheList\_ReachingTheReportsApplication\_IsNamed\_AndTheApiTheCompositionRootAndTheListedCallerAreNot
+
+```text
+A rule that ignores newcomers
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run the forbidden-code rule on made-up Application offenders
+```
+
+```text
+Each offender is named with its edge
+```
+
+```text
+Forbidden reaches are caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AReportsApplicationTypeReachingForbiddenCode\_IsNamedWithTheEdge
+
+```text
+A pattern missing RBAC or update code
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Run the outbound rule on made-up unlisted edges
+```
+
+```text
+Each unlisted edge is named
+```
+
+```text
+A new Flow metrics, Licensing, set-up or platform edge is caught
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#AReportsApplicationTypeReachingAnUnlistedFlowMetricsLicensingSetUpOrPlatformType\_IsNamedWithTheEdge
+
+```text
+An outbound rule that lets one kind through
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Delete each entry from each list and add a gone entry
+```
+
+```text
+Deleted entries named as offending, gone entries named for deletion
+```
+
+```text
+List drift is named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ReportsModuleBoundariesArchUnitTest\.cs\#EveryEntryDeletedFromAReportsList\_IsNamedAsOffending\_AndAnEntryWithNoEdgeIsNamedForDeletion
+
+```text
+A one-way comparison
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

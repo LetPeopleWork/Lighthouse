@@ -39,12 +39,245 @@
 "stimulus": "F118",
 "user_result": "F12"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1"
+],
+"still_passes_if": "F140",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AReportsListedRule_MatchesWhatTheCompiledCodeReaches_InBothDirections"
+},
+"expected": "F138",
+"stimulus": "F137",
+"user_result": "F139"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1"
+],
+"still_passes_if": "F144",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#EveryEntryDeletedFromAReportsList_IsNamedAsOffending_AndAnEntryWithNoEdgeIsNamedForDeletion"
+},
+"expected": "F142",
+"stimulus": "F141",
+"user_result": "F143"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1"
+],
+"still_passes_if": "F148",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AReportsTypeLeftUnderServices_IsNamed_AndAWellPlacedTwinIsNot"
+},
+"expected": "F146",
+"stimulus": "F145",
+"user_result": "F147"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1"
+],
+"still_passes_if": "F152",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AnOutsideTypeOffTheList_ReachingTheReportsApplication_IsNamed_AndTheApiTheCompositionRootAndTheListedCallerAreNot"
+},
+"expected": "F150",
+"stimulus": "F149",
+"user_result": "F151"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1"
+],
+"still_passes_if": "F156",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AReportsApplicationTypeReachingForbiddenCode_IsNamedWithTheEdge"
+},
+"expected": "F154",
+"stimulus": "F153",
+"user_result": "F155"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1"
+],
+"still_passes_if": "F160",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AReportsApplicationTypeReachingAnUnlistedFlowMetricsLicensingSetUpOrPlatformType_IsNamedWithTheEdge"
+},
+"expected": "F158",
+"stimulus": "F157",
+"user_result": "F159"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1",
+"L1"
+],
+"still_passes_if": "F164",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#NoReportsAlternativeOfTheRuleConstantsMatchesALookalikeNamespace"
+},
+"expected": "F162",
+"stimulus": "F161",
+"user_result": "F163"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F44"
+],
+"still_passes_if": "F168",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AReportsTypeLeftUnderServices_IsNamed_AndAWellPlacedTwinIsNot"
+},
+"expected": "F166",
+"stimulus": "F165",
+"user_result": "F167"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F45"
+],
+"still_passes_if": "F172",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AReportsDomainTypeReachingAService_IsNamed_AndItsCompliantTwinIsNot"
+},
+"expected": "F170",
+"stimulus": "F169",
+"user_result": "F171"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F46"
+],
+"still_passes_if": "F176",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AnOutsideTypeOffTheList_ReachingTheReportsDomain_IsNamed_AndTheApiTheCompositionRootAndTheListedCallerAreNot"
+},
+"expected": "F174",
+"stimulus": "F173",
+"user_result": "F175"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F47"
+],
+"still_passes_if": "F180",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AnOutsideTypeOffTheList_ReachingTheReportsApplication_IsNamed_AndTheApiTheCompositionRootAndTheListedCallerAreNot"
+},
+"expected": "F178",
+"stimulus": "F177",
+"user_result": "F179"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F48"
+],
+"still_passes_if": "F184",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AReportsApplicationTypeReachingForbiddenCode_IsNamedWithTheEdge"
+},
+"expected": "F182",
+"stimulus": "F181",
+"user_result": "F183"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F49"
+],
+"still_passes_if": "F188",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#AReportsApplicationTypeReachingAnUnlistedFlowMetricsLicensingSetUpOrPlatformType_IsNamedWithTheEdge"
+},
+"expected": "F186",
+"stimulus": "F185",
+"user_result": "F187"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F50"
+],
+"still_passes_if": "F192",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ReportsModuleBoundariesArchUnitTest.cs#EveryEntryDeletedFromAReportsList_IsNamedAsOffending_AndAnEntryWithNoEdgeIsNamedForDeletion"
+},
+"expected": "F190",
+"stimulus": "F189",
+"user_result": "F191"
+}
 ]
 },
 "counters": {
 "D": 5,
 "E": 5,
-"F": 136,
+"F": 192,
 "K": 2,
 "L": 2,
 "P": 3,
@@ -582,7 +815,63 @@
 "F134": "Every Modules.Reports alternative matches a Reports module type, a made-up dead alternative is named, and the joint Tracker integration pattern names Reports by its module only while keeping the old Auth, Authorization and Licensing alternatives under Services; a made-up pattern keeping Reports under Services or dropping the guard is named and a narrowed one is not",
 "F135": "Reports rules keep constraining Reports, the Tracker integration rule still catches a connector reaching the old Access and Licensing places, and no dead Reports alternative remains",
 "F136": "A joint pattern that drops Reports entirely, leaving it unconstrained, is caught only by the Modules.Reports and owner checks",
+"F137": "Run Reports' layer rule, its kernel-only Domain rule and its four listed edge rules over today's compiled code",
+"F138": "Each listed type sits in its layer and none under Services; Domain reaches only the kernel and System; the inbound lists (empty for Domain, the report repository for Application) and the outbound lists (2 EF Core edges, 12 Flow metrics, Licensing, set-up and platform edges) equal the measured sets both ways",
+"F139": "Today's Reports passes its own rules, so a later new edge is the only thing that can fail them",
 "F14": "A new edge into or out of Reports is caught by its own rules",
+"F140": "A list with an extra stale entry or a missing entry would pass if the comparison ran one way only; it runs both ways",
+"F141": "Delete each entry in turn from every Reports list and add an entry that no longer exists",
+"F142": "Each deleted entry is named as offending in Reports wording and each gone entry is named for deletion",
+"F143": "A list that drifts from the code is told which entry to add or delete",
+"F144": "A list that silently ignores a deleted or stale entry would pass",
+"F145": "Run the layer and layer-contents rules on a made-up misplaced type and on a made-up unlisted layer type",
+"F146": "The misplaced type and the unlisted type are named; the well placed twin and the full list pass",
+"F147": "A type put in the wrong Reports layer or added without a decision is named",
+"F148": "A rule that names every type as offending, or none, would pass a single-sided check",
+"F149": "Run the Domain rule and both inbound rules on made-up Domain, API, composition-root, listed and newcomer types",
+"F150": "A Domain type reaching a service, an outside newcomer reaching Domain and an outside newcomer reaching Application are each named in Reports wording; the API, the composition root and the listed callers are not",
+"F151": "A new caller of Reports' Domain or Application is caught, the legal callers are not",
+"F152": "A rule that flags the API or the composition root, or none of the newcomers, would pass",
+"F153": "Run the forbidden-code rule on made-up Application types that hold a DbSet or reach data, API, adapters, Tracker integration, RBAC or update code",
+"F154": "Each offender is named with its edge in Reports wording",
+"F155": "Reports' Application cannot quietly start reaching storage, the API, the RBAC service or the update queue",
+"F156": "A forbidden pattern that omitted RBAC or one update namespace would pass",
+"F157": "Run the Flow metrics, Licensing, set-up and platform rule on made-up Application types reaching an unlisted edge of each kind and on a compliant twin, and run each rule over an empty namespace",
+"F158": "Each unlisted edge is named; the Flow metrics Application twin passes; a rule over nothing fails",
+"F159": "A new edge to Flow metrics' Domain, Licensing, set-up or the platform is caught, and a rule that checks nothing cannot go green",
+"F160": "A rule over an empty set that passes, or a Flow metrics Application edge that is wrongly flagged",
+"F161": "Check every Reports rule constant of the test project against a made-up lookalike namespace",
+"F162": "No Reports alternative matches a namespace that only starts like the module's, and an unanchored made-up constant is named",
+"F163": "No rule is loosened; nothing a user sees changes",
+"F164": "An unanchored Reports alternative would silently constrain a neighbouring namespace",
+"F165": "Run the layer rule on a made-up misplaced Reports type",
+"F166": "The misplaced type is named, its twin is not",
+"F167": "A Reports type left in the wrong place is named",
+"F168": "A rule that names nothing",
+"F169": "Run the Domain rule on a made-up Domain type reaching a service",
+"F170": "The type is named, its compliant twin is not",
+"F171": "A Domain type reaching a service is caught",
+"F172": "A Domain rule that allows services",
+"F173": "Run the Domain inbound rule on made-up outside types",
+"F174": "The newcomer is named; API, composition root and listed caller are not",
+"F175": "An outside type reaching Domain is caught",
+"F176": "A rule that also flags the API",
+"F177": "Run the Application inbound rule on made-up outside types",
+"F178": "The newcomer is named; legal callers are not",
+"F179": "An outside type reaching Application off the list is caught",
+"F180": "A rule that ignores newcomers",
+"F181": "Run the forbidden-code rule on made-up Application offenders",
+"F182": "Each offender is named with its edge",
+"F183": "Forbidden reaches are caught",
+"F184": "A pattern missing RBAC or update code",
+"F185": "Run the outbound rule on made-up unlisted edges",
+"F186": "Each unlisted edge is named",
+"F187": "A new Flow metrics, Licensing, set-up or platform edge is caught",
+"F188": "An outbound rule that lets one kind through",
+"F189": "Delete each entry from each list and add a gone entry",
+"F190": "Deleted entries named as offending, gone entries named for deletion",
+"F191": "List drift is named",
+"F192": "A one-way comparison",
 "F2": "Reports' boundaries are guarded by its own module rules and no rule still points at where it used to live",
 "F20": "Test side only, behaviour-free. No production file, no Program.cs, no configuration key changes. Carrier owners: rule constants stay on their existing rule classes (ModuleBoundariesArchUnitTest, TrackerIntegrationModuleBoundariesArchUnitTest, Access and Licensing module boundaries tests); the module rule shapes stay on ModuleRules; Reports module boundaries get one new NUnit fixture ReportsModuleBoundariesArchUnitTest that holds its inline lists by full type name. Procedural-style static rule helpers are the repository convention for architecture tests; no new class is invented beyond the fixture and its made-up offender types.",
 "F21": "Claim-to-checker: every claim here is a finite set comparison over the compiled IL (listed types equal measured types, listed edges equal measured edges, both ways) or a text sweep. Quint, TLA+ and Agda are not applicable: there is no state machine, no transition, no temporal or fairness claim and no unbounded input, so a model would restate the set comparison. The executable checker is the NUnit oracle itself on the compiled IL, with a made-up offender per rule and per list position as falsifier. Liveness: not applicable, nothing runs over time. Types: Mono.Cecil IL reading gives string full names, so a list entry is a string key, not a type; the made-up offenders prove each key position is live. Property testing: not applicable, the domains are finite and enumerated.",
